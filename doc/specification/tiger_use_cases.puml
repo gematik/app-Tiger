@@ -1,0 +1,68 @@
+@startuml
+
+skinparam actorStyle awesome
+
+actor GematikTestTeam as gemTT
+actor ExternalPoductTeam as extProd
+
+package TestEnvironmentManager {
+    usecase "Use local docker containers" as TEMUC1
+    usecase "Use test instances from TU/RU" as TEMUC2
+}
+
+package BaseBDDSuite {
+}
+
+package ReverseProxy {
+}
+
+package TitusConnect {
+}
+
+package SerenityIntegration {
+    usecase "Analyze test runs based on local reports with detailed testlogs" as SIUC1
+    usecase "See requirements coverage in test report" as SIUC2
+}
+
+package PolarionIntegration {
+    usecase "Sync test cases to Polarion" as PIUC1
+    usecase "Sync test run results to Polarion and Aurora" as PIUC2
+}
+gemTT --> TEMUC1
+gemTT --> TEMUC2
+
+gemTT --> PIUC1
+gemTT --> PIUC2
+
+gemTT --> SIUC1
+gemTT --> SIUC2
+
+extProd --> TEMUC1
+extProd --> TEMUC2
+
+
+@enduml
+
+
+
+* Als ExtProd möchte ich mein Produkt unter Zuhilfenahme vorgefertigter Testsuites/Testschritte systemintegrationstesten
+
+    * gegen lokal Instanzen (Github download, manuelle gestartet oder Docker Image über lokalen Docker client oder über
+      Cloud based Docker hosts)
+    * gegen gehostete Instanzen in Gematik RUs/TUs
+* Als GemTT möchte ich externe und interne Produkte einfach systemintegrationstesten
+    * Ich möchte Schritte aus anderen Testsuite einfach wiederverwenden
+    * Ich möchte lokale Testumgebungen für mehrere TI Services / Produkte, welche von der Gematik entwickelt wurden,
+      einfach konfigurieren und für meine Tests nutzen
+    * Ich möchte einen detaillierten Testreport erhalten, in welchem neben dem Verdict auch die Kommunikation
+      mitprotokolliert wurde.
+    * Ich möchte die Abdeckung der Anforderungen durch den aktuellen Testlauf einsehen
+* Als GemTT möchte ich die Testfälle und Testergebnisse ins Polarion (über Aurora) einspielen und revisionssicher
+  aufbewahren
+
+* Als GemTT möchte ich Zulassungstests gegen Produkte in der RU/TU durchführen
+
+* Als GemTT möchte ich bei der Durchführung meiner Tests eine Anbindung an Titus (Ablegen der
+  Testdurchführungsergebnisse)
+
+* Als Gematik möchte ich diese Dienste gegen Gebühren an dezidierte Nutzer*innen vermieten
