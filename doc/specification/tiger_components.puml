@@ -1,8 +1,7 @@
-
 @startuml
 
 
-' left to right direction
+left to right direction
 
 skinparam component {
     BackgroundColor<<Business>> LightGreen
@@ -20,35 +19,23 @@ component TestcodeParser
 component TestResultParser
 component PolarionConnector
 component RBelLogger
-
 component AfoReporter
 
 component BDDTestrunManager as bddtrm
 
-interface ITigerAPI <<NextRelease>>
-
-interface ITigerTestEnvMgr
-interface ITigerContext
-interface ITigerCodeParser
-interface ITigerResultParser
-interface ITigerTestPersistence
-interface ITigerComLogging
-
 ITigerAPI - TigerServer
 
-ITigerTestEnvMgr <--- TigerServer
-ITigerTestEnvMgr - TestEnvironmentManager
-ITigerTestEnvMgr <--- bddtrm
+TestEnvironmentManager <--- TigerServer
+TestEnvironmentManager <--- bddtrm
 
-ITigerContext <--- TigerServer
-ITigerContext - TestContextManager
-ITigerContext <--- bddtrm
+TigerContext <--- TigerServer
+TigerContext - TestContextManager
+TigerContext <--- bddtrm
 
 ITigerReverseProxy <--- TestEnvironmentManager
 ITigerReverseProxy - ReverseProxy
 
-ITigerCodeParser <--- bddtrm
-ITigerCodeParser - TestcodeParser
+TestcodeParser <--- bddtrm
 
 ITigerResultParser <--- bddtrm
 ITigerResultParser - TestResultParser
@@ -57,7 +44,6 @@ ITigerTestPersistence <--- bddtrm
 ITigerTestPersistence <--- TigerServer
 ITigerTestPersistence - PolarionConnector
 
-ITigerComLogging <---- bddtrm
-ITigerComLogging <--- ReverseProxy
-ITigerComLogging - RBelLogger
+RBelLogger <---- bddtrm
+RBelLogger <--- ReverseProxy
 @enduml
