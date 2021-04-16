@@ -34,27 +34,27 @@ gemTT --> BBSUC3
 tigUsr --> BBSUC4
 tigUsr --> BBSUC5
 
-' package TestEnvironmentManager {
+package TestEnvironmentManager {
     usecase "Use local docker containers" as TEMUC1
     usecase "Use cloud based docker containers" as TEMUC3
     usecase "Use test instances from TU/RU" as TEMUC2
     usecase "Use self hosted services" as TEMUC4
-' }
+}
 
-' package TitusConnect {
+package TitusConnect {
   usecase "Sync test cases to Titus" as TCUC1
   usecase "Sync test run results to Titus" as TCUC2
-' }
+}
 
-' package SerenityIntegration {
+package SerenityIntegration {
     usecase "Analyze test runs based on local reports with detailed testlogs" as SIUC1
     usecase "See requirements coverage in test report" as SIUC2
-' }
+}
 
-' package PolarionIntegration {
+package PolarionIntegration {
     usecase "Sync test cases to Polarion" as PIUC1
     usecase "Sync test run results to Polarion and Aurora" as PIUC2
-' }
+}
 
 usecase "Support C# test automation" as NJTUC1
 usecase "Support Rust test automation" as NJTUC2
@@ -82,27 +82,3 @@ BBSUC5 ..> NJTUC2  : &#171;include&#187;
 BBSUC5 ..> NJTUC3  : &#171;include&#187;
 
 @enduml
-
-
-
-* Als ExtProd möchte ich mein Produkt unter Zuhilfenahme vorgefertigter Testsuites/Testschritte systemintegrationstesten
-
-    * gegen lokal Instanzen (Github download, manuelle gestartet oder Docker Image über lokalen Docker client oder über
-      Cloud based Docker hosts)
-    * gegen gehostete Instanzen in Gematik RUs/TUs
-* Als GemTT möchte ich externe und interne Produkte einfach systemintegrationstesten
-    * Ich möchte Schritte aus anderen Testsuite einfach wiederverwenden
-    * Ich möchte lokale Testumgebungen für mehrere TI Services / Produkte, welche von der Gematik entwickelt wurden,
-      einfach konfigurieren und für meine Tests nutzen
-    * Ich möchte einen detaillierten Testreport erhalten, in welchem neben dem Verdict auch die Kommunikation
-      mitprotokolliert wurde.
-    * Ich möchte die Abdeckung der Anforderungen durch den aktuellen Testlauf einsehen
-* Als GemTT möchte ich die Testfälle und Testergebnisse ins Polarion (über Aurora) einspielen und revisionssicher
-  aufbewahren
-
-* Als GemTT möchte ich Zulassungstests gegen Produkte in der RU/TU durchführen
-
-* Als GemTT möchte ich bei der Durchführung meiner Tests eine Anbindung an Titus (Ablegen der
-  Testdurchführungsergebnisse)
-
-* Als Gematik möchte ich diese Dienste gegen Gebühren an dezidierte Nutzer*innen vermieten
