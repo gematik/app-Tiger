@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <artifactId>Tiger</artifactId>
+        <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <version>0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
