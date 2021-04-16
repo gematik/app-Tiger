@@ -17,64 +17,85 @@ skinparam component {
     BackgroundColor<<NextRelease>> LightGray
     FontColor<<NextRelease>> Gray
     BorderColor<<NextRelease>> Gray
+    ArrowColor<<HTTP>> DodgerBlue
+    FontColor<<HTTP>> Gray
+    ArrowFontColor DarkOrange
+    ArrowThickness 1
 }
 
-component TigerProxy as tp
-component TigerEnvMgr as tem
-component "Current Testsuite" as tdir <<Other>>
-
-package TestSuites as suites {
-    component TigerTestLib as ts
-    component "Idp test suite" as its <<Idp>>
-    component "Other test suites" as ots <<Other>>
+skinparam interface {
+    BorderColor<<HTTP>> DodgerBlue
 }
+
+
+' left to right direction
+
+' component TigerServer  <<NextRelease>>
 
 package TestSystems as tsys {
     component "RU/TU service instances" as rutu <<External>>
-    component "local started docker containers" as locdock <<Other>>
+    component "locally started\ndocker containers" as locdock <<Other>>
 
-    component "cloud based docker containers" as clddock <<NextRelease>>
+    component "cloud based\ndocker containers" as clddock <<NextRelease>>
     component "Simulators" as sims <<NextRelease>>
 }
-component TigerServer  <<NextRelease>>
+
+component TigerEnvMgr as tem
+component TigerProxy as tp
+
+package TestSuitePool as suites {
+    component "Idp test suite" as its <<Idp>>
+    component "Other test suites" as ots <<Other>>
+    component TigerTestLib [
+    TigerTestLib
+    ---
+    Basic steps
+    ---
+    PolarionConnector
+    Context
+    Variables
+    JSONChecker
+    AfoReporter
+    ]
+}
+
+component "Current Testsuite" as tdir <<Other>>
+
 
 
 ' tem
 interface ITestEnvironment as item
 ' tp
-interface "Http Traffic" as ihttp
+interface "Local Http traffic" as ihttp <<HTTP>>
 interface "ProxyConfiguration" as ipconf
 ' ts
-interface "RBel messaging" as irbel
+interface "IRBelMessaging" as irbel
 'tsys
-interface "Http Routes" as iroutes
+interface "Routed HTTP traffic" as iroutes <<HTTP>>
 'suites
 ' interface "Steps" as isteps
 ' interface "Helpers" as ihelpers
 interface "Reuse" as ireuse
 
-item -- tem
-tdir --> item : build me an test env
 
-ihttp -- tp
-tdir --> ihttp : test traffic
+ihttp -down- tp <<HTTP>>
+tdir --> ihttp <<HTTP>> : test traffic
 
-iroutes -- tsys
-tp --> iroutes : test traffic
+irbel -up-> tdir
+tp -up-> irbel : return traffic\nmessages\nform test traffic
+
+
+iroutes -left- tsys <<HTTP>>
+tp --> iroutes <<HTTP>> : routed test traffic
 
 ipconf -- tp
 tem --> ipconf : configure URLs, \nURL mappings and certs
 
-irbel - tdir
-' irbel - suites
-tp -> irbel : forward traffic messages
+item -left- tem
+tdir -left-> item : build me\na test env
 
-' suites - isteps
-' suites - ihelpers
 
-' tdir --> isteps
-' tdir --> ihelpers
+ireuse -left- suites
+tdir -right-> ireuse
 
-ireuse - suites
-tdir -> ireuse
 @enduml
