@@ -47,15 +47,18 @@ package TestSuitePool as suites {
     component "Idp test suite" as its <<Idp>>
     component "Other test suites" as ots <<Other>>
     component TigerTestLib [
-    TigerTestLib
-    ---
-    Basic steps
-    ---
-    PolarionConnector
-    Context
-    Variables
-    JSONChecker
-    AfoReporter
+      TigerTestLib
+      ---
+      Basic steps
+      ---
+      PolarionConnector
+      Context
+      Variables
+      JSONChecker
+      AfoReporter
+      TestCodeParser
+      TestResultParser
+      SerenityIntegration
     ]
 }
 
