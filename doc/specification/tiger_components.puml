@@ -1,63 +1,80 @@
 
 @startuml
 
+hide stereotype
 
 ' left to right direction
 
 skinparam component {
-    BackgroundColor<<Business>> LightGreen
-    BorderColor<<Business>> Green
+    BackgroundColor Gold
+    BorderColor DarkOrange
+    BackgroundColor<<External>> LightGray
+    BorderColor<<External>> Blue
+    BackgroundColor<<Idp>> LightGreen
+    BorderColor<<Idp>> Green
+    BackgroundColor<<Other>> DeepSkyBlue
+    BorderColor<<Other>> Blue
+    BackgroundColor<<NextRelease>> LightGray
     FontColor<<NextRelease>> Gray
     BorderColor<<NextRelease>> Gray
 }
 
+component TigerProxy as tp
+component TigerEnvMgr as tem
+component "Current Testsuite" as tdir <<Other>>
+
+package TestSuites as suites {
+    component TigerTestLib as ts
+    component "Idp test suite" as its <<Idp>>
+    component "Other test suites" as ots <<Other>>
+}
+
+package TestSystems as tsys {
+    component "RU/TU service instances" as rutu <<External>>
+    component "local started docker containers" as locdock <<Other>>
+
+    component "cloud based docker containers" as clddock <<NextRelease>>
+    component "Simulators" as sims <<NextRelease>>
+}
 component TigerServer  <<NextRelease>>
 
-component TestEnvironmentManager
-component TestContextManager
-component ReverseProxy
-component TestcodeParser
-component TestResultParser
-component PolarionConnector
-component RBelLogger
 
-component AfoReporter
+' tem
+interface ITestEnvironment as item
+' tp
+interface "Http Traffic" as ihttp
+interface "ProxyConfiguration" as ipconf
+' ts
+interface "RBel messaging" as irbel
+'tsys
+interface "Http Routes" as iroutes
+'suites
+' interface "Steps" as isteps
+' interface "Helpers" as ihelpers
+interface "Reuse" as ireuse
 
-component BDDTestrunManager as bddtrm
+item -- tem
+tdir --> item : build me an test env
 
-interface ITigerAPI <<NextRelease>>
+ihttp -- tp
+tdir --> ihttp : test traffic
 
-interface ITigerTestEnvMgr
-interface ITigerContext
-interface ITigerCodeParser
-interface ITigerResultParser
-interface ITigerTestPersistence
-interface ITigerComLogging
+iroutes -- tsys
+tp --> iroutes : test traffic
 
-ITigerAPI - TigerServer
+ipconf -- tp
+tem --> ipconf : configure URLs, \nURL mappings and certs
 
-ITigerTestEnvMgr <--- TigerServer
-ITigerTestEnvMgr - TestEnvironmentManager
-ITigerTestEnvMgr <--- bddtrm
+irbel - tdir
+' irbel - suites
+tp -> irbel : forward traffic messages
 
-ITigerContext <--- TigerServer
-ITigerContext - TestContextManager
-ITigerContext <--- bddtrm
+' suites - isteps
+' suites - ihelpers
 
-ITigerReverseProxy <--- TestEnvironmentManager
-ITigerReverseProxy - ReverseProxy
+' tdir --> isteps
+' tdir --> ihelpers
 
-ITigerCodeParser <--- bddtrm
-ITigerCodeParser - TestcodeParser
-
-ITigerResultParser <--- bddtrm
-ITigerResultParser - TestResultParser
-
-ITigerTestPersistence <--- bddtrm
-ITigerTestPersistence <--- TigerServer
-ITigerTestPersistence - PolarionConnector
-
-ITigerComLogging <---- bddtrm
-ITigerComLogging <--- ReverseProxy
-ITigerComLogging - RBelLogger
+ireuse - suites
+tdir -> ireuse
 @enduml
