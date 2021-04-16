@@ -15,7 +15,7 @@
     </organization>
 
     <modules>
-        <module>tiger-bdd</module>
+        <module>tiger-test-lib</module>
         <module>tiger-proxy</module>
     </modules>
 
@@ -109,8 +109,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>${version.java}</source>
-                    <target>${version.java}</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
         </plugins>
