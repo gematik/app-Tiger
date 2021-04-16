@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/tiger.iml" filepath="$PROJECT_DIR$/.idea/tiger.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tiger-bdd/tiger-bdd.iml" filepath="$PROJECT_DIR$/tiger-bdd/tiger-bdd.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tiger-proxy/tiger-proxy.iml" filepath="$PROJECT_DIR$/tiger-proxy/tiger-proxy.iml" />
     </modules>
   </component>
 </project>
