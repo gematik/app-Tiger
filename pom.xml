@@ -9,6 +9,7 @@
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+
     <organization>
         <name>gematik GmbH</name>
         <url>http://www.gematik.de</url>
@@ -17,6 +18,7 @@
     <modules>
         <module>tiger-test-lib</module>
         <module>tiger-proxy</module>
+        <module>tiger-testenv-mgr</module>
     </modules>
 
     <repositories>
@@ -36,6 +38,8 @@
         <version.serenity.cucumber.6>2.3.4</version.serenity.cucumber.6>
         <version.serenity.maven.plugin>2.3.4</version.serenity.maven.plugin>
         <version.lombok>1.18.20</version.lombok>
+        <version.jackson>2.11.2</version.jackson>
+        <version.slf4j>1.6.1</version.slf4j>
 
         <encoding>UTF-8</encoding>
     </properties>
@@ -99,6 +103,28 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
             <version>${version.assertj}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${version.jackson}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${version.jackson}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${version.slf4j}</version>
         </dependency>
     </dependencies>
 
