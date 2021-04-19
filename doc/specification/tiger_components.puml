@@ -40,7 +40,7 @@ package TestSystems as tsys {
     component "Simulators" as sims <<NextRelease>>
 }
 
-component TigerEnvMgr as tem
+component TigerTestEnvMgr as tem
 component TigerProxy as tp
 
 package TestSuitePool as suites {
