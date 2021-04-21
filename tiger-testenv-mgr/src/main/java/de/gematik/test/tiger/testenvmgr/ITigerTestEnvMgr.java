@@ -2,12 +2,18 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import java.io.File;
+import java.util.List;
 
 public interface ITigerTestEnvMgr {
 
     Configuration getConfiguration();
 
+    List<CfgServer> getTestEnvironment();
+
     void setUpEnvironment();
+
+    void composeEnvironment(File composeFile);
 
     void start(final CfgServer srv);
 

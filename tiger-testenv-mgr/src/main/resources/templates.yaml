@@ -1,0 +1,36 @@
+templates:
+  - name: idp-ref
+    product: IDP_REF
+    # where to get the server from or where to connect to,
+    instanceUri: docker:gstopdr1.top.local/idp/idp-server
+    version: 14.0.0-731
+    # folder containing all certs and keys used in encrypting/signing the traffic data
+    pkiFolder: src/main/java/resources/pki/idp-ref
+    # list of regex to be matched by the proxy
+    urlMappings:
+    params:
+      protocol: http
+      port: 8080
+
+  - name: idp-ref-rru
+    product: IDP_RISE
+    # where to get the server from or where to connect to,
+    instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
+    # folder containing all certs and keys used in encrypting/signing the traffic data
+    pkiFolder:
+    # list of regex to be matched by the proxy
+    urlMappings:
+    params:
+      protocol: https
+
+  - name: erzpt-fd-ref
+    product: ERZP_FD_REF
+    instanceUri: docker:gstopdr1.top.local/erezept/ref-erx-fd-server
+    version: 0.15.1
+    # folder containing all certs and keys used in encrypting/signing the traffic data
+    pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
+    # list of regex to be matched by the proxy
+    urlMappings:
+    params:
+      protocol: http
+      port: 80

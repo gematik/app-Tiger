@@ -11,4 +11,21 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-testenv-mgr</artifactId>
+
+    <dependencies>
+        <!--java operation docker -->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java</artifactId>
+            <version>3.2.8</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.testcontainers/testcontainers -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.15.3</version>
+        </dependency>
+    </dependencies>
+
+
 </project>

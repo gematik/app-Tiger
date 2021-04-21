@@ -7,4 +7,8 @@ public class TigerTestEnvException extends RuntimeException {
     public TigerTestEnvException(final String msg) {
         super(msg);
     }
+
+    public TigerTestEnvException(final String msg, final Throwable t) {
+        super(msg, t);
+    }
 }
