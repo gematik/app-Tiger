@@ -24,7 +24,11 @@ public class CfgServer {
     @JsonProperty
     private final LinkedHashMap<String, String> params = new LinkedHashMap<>();
     @JsonProperty
+    private boolean active = true;
+    @JsonProperty
     private String pkiFolder;
+    @JsonProperty
+    private final List<String> exports = new ArrayList<>();
     @JsonProperty
     private final List<String> urlMappings = new ArrayList<>();
     @JsonProperty
@@ -46,6 +50,9 @@ public class CfgServer {
         }
         if (pkiFolder == null && template.pkiFolder != null) {
             pkiFolder = template.pkiFolder;
+        }
+        if (exports.isEmpty() && template.exports != null && !template.exports.isEmpty()) {
+            exports.addAll(template.exports);
         }
         if (urlMappings.isEmpty() && template.urlMappings != null && !template.urlMappings.isEmpty()) {
             urlMappings.addAll(template.urlMappings);

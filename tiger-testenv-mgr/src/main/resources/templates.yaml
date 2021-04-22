@@ -8,11 +8,12 @@ templates:
     pkiFolder: src/main/java/resources/pki/idp-ref
     # list of regex to be matched by the proxy
     urlMappings:
+    exports:
+      - IDP_SERVER=http://localhost/idp/.well-known/openid-configuration
+      - GEMATIK_TESTCONFIG=default
     params:
-      protocol: http
-      port: 8080
 
-  - name: idp-ref-rru
+  - name: idp-rise-rru
     product: IDP_RISE
     # where to get the server from or where to connect to,
     instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
@@ -20,8 +21,27 @@ templates:
     pkiFolder:
     # list of regex to be matched by the proxy
     urlMappings:
+    exports:
+      - IDP_SERVER=https://localhost/idp/.well-known/openid-configuration
+      - GEMATIK_TESTCONFIG=rise-rru
+      - https.proxyHost=192.168.230.85
+      - https.proxyPort=3128
     params:
-      protocol: https
+
+  - name: idp-rise-rtu
+    product: IDP_RISE
+    # where to get the server from or where to connect to,
+    instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    # folder containing all certs and keys used in encrypting/signing the traffic data
+    pkiFolder:
+    # list of regex to be matched by the proxy
+    urlMappings:
+    exports:
+      - IDP_SERVER=https://localhost/idp/.well-known/openid-configuration
+      - GEMATIK_TESTCONFIG=rise-rtu
+      - https.proxyHost=192.168.230.85
+      - https.proxyPort=3128
+    params:
 
   - name: erzpt-fd-ref
     product: ERZP_FD_REF
@@ -31,6 +51,6 @@ templates:
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
     # list of regex to be matched by the proxy
     urlMappings:
+    exports:
+    # TODO which variables announce the fd server location?
     params:
-      protocol: http
-      port: 80

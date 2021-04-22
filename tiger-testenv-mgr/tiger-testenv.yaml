@@ -1,33 +1,19 @@
-repos:
-  - name: localdocker
-    url: localhost:8000
-  - name: gematikharbour
-    url: https://gstopdr1.top.local/harbor
-
 servers:
   - name: idp
-    product: IDP_REF
-    # where to get the server from or where to connect to,
-    # default is localhost docker and latest version of idp/idp-server image
-    instanceUri: docker:gematikharbour:idp:idp-server:14.0.0-737
-    # folder containing all certs and keys used in encrypting/signing the traffic data
-    pkiFolder: src/main/java/resources/pki/idp-ref
-    # list of regex to be matched by the proxy
-    urlMappings:
-      - http://localhost/idp,https://rtu.idp-ref.gematik.de
-    params:
-      port: 8080
-      testconfig: default
+    template: idp-ref
+    active: true
 
-  - name: idp-rise
-    product: IDP_RISE
+  - name: idp-snapshot
+    template: idp-ref
+    instanceUri: docker:idp-server
+    version: 0.1-SNAPSHOT
+    active: false
+
+  - name: idp-rise-rtu-manual
+    template: idp-rise-rtu
     instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    params:
-      testconfig: rise-rtu
+    active: true
 
-  # minimum viable testenv spec
-  - name: idp-default
-    product: IDP_REF
-    # instance uri is normally not needed as default value would be taken from hardcoded yaml in classpath
-    # but not implemented by now :)
-    instanceUri: docker:localdocker:idp:idp-server:14.0.0-737
+  - name: erzpt-default
+    template: erzpt-fd-ref
+    active: true

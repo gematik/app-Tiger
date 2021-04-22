@@ -28,7 +28,11 @@ public class Configuration {
         final Configuration cfg = mapper.readValue(cfgFile.toURL().openStream(), Configuration.class);
         servers = cfg.servers;
         templates = cfg.templates;
-        log.info("read {} server instances", cfg.getServers().size());
+        if (cfg.getTemplates().size() > 0) {
+            log.info("read {} templates", cfg.getTemplates().size());
+        } else {
+            log.info("read {} server instances", cfg.getServers().size());
+        }
     }
 
     public void applyTemplates() {
