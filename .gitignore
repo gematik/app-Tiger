@@ -1,5 +1,6 @@
 /.idea/
-/tiger.iml
+**/*.iml
+*.iml
 /target/
 /tiger-proxy/target/
 /tiger-testenv-mgr/target/
