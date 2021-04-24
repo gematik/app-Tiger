@@ -3,20 +3,34 @@ package de.gematik.test.tiger.proxy;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.any;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+
 import com.github.tomakehurst.wiremock.WireMockServer;
+import java.util.Map;
 
 public class TigerProxy {
 
-    public TigerProxy() {
-        final WireMockServer wireMockServer = new WireMockServer(
-            options().port(3129).httpsPort(3130).proxyVia("192.168.230.85", 3128)
-                .trustAllProxyTargets(true));
+    private final WireMockServer wireMockServer;
+
+    public TigerProxy(Map<String, String> mappings) {
+        wireMockServer = new WireMockServer(wireMockConfig()
+            .dynamicPort()
+            .extensions(WiremockProxyUrlTransformer.class));
         wireMockServer.start();
-        // basic prove of concept
-        wireMockServer
-            .stubFor(any(urlMatching("/idp.*"))
-                .willReturn(aResponse().proxiedFrom("https://orf.at")));
-        // probably realized with https://laptrinhx.com/wiremock-with-dynamic-proxies-1687621799/
+
+        WiremockProxyUrlTransformer.URL_MAP.putAll(mappings);
+//        wireMockServer
+//            .stubFor(any(urlMatching(".*"))
+//                .willReturn(aResponse()
+//                    .withTransformers(WiremockProxyUrlTransformer.EXTENSION_NAME)
+//                ));
+    }
+
+    public String getBaseUrl() {
+        return "http://localhost:" + wireMockServer.port();
+    }
+
+    public int getPort() {
+        return wireMockServer.port();
     }
 }
