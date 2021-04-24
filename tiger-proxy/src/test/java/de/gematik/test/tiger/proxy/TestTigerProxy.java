@@ -13,7 +13,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import java.util.Map;
 import org.apache.http.HttpHost;
-import org.eclipse.jetty.client.HttpProxy;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -22,18 +22,18 @@ public class TestTigerProxy {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
 
-    @Test
-    public void useAsWebProxyServer_shouldForward() throws UnirestException {
+    @Before
+    public void setupBackendServer() {
         wireMockRule.stubFor(get(urlEqualTo("/foobar"))
             .willReturn(aResponse()
                 .withStatus(666)
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}")));
+    }
 
-        final TigerProxy tigerProxy = new TigerProxy(
-            Map.of(
-                "backend", "http://localhost:" + wireMockRule.port()
-            ));
+    @Test
+    public void useAsWebProxyServer_shouldForward() throws UnirestException {
+        final TigerProxy tigerProxy = new TigerProxy(Map.of("backend", "http://localhost:" + wireMockRule.port()));
 
         Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
 
@@ -42,5 +42,18 @@ public class TestTigerProxy {
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @Test
+    public void requestAndResponseThroughWebProxy_shouldGiveRbelObjects() throws UnirestException {
+        final TigerProxy tigerProxy = new TigerProxy(Map.of("backend", "http://localhost:" + wireMockRule.port()));
+
+        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
+        System.out.println(Unirest.get("http://backend/foobar").asString().getBody());
+
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .getFirst("body").get()
+            .getFirst("foo").get().getContent()
+        ).isEqualTo("bar");
     }
 }
