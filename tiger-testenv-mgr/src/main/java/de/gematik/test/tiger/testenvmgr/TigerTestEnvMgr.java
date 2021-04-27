@@ -23,7 +23,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private final Map<String, Object> environmentVariables;
 
-    private TigerProxy localDockerProxy;
+    private final TigerProxy localDockerProxy;
 
     @SneakyThrows
     public TigerTestEnvMgr() {
@@ -75,6 +75,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 final List<String> imports = server.getImports();
                 for (int i = 0; i < imports.size(); i++) {
                     imports.set(i, substituteTokens(imports.get(i), "", environmentVariables));
+                    imports.set(i, substituteTokens(imports.get(i), "", Map.of("PROXYHOST", "localhost", "PROXYPORT", localDockerProxy.getPort())));
                 }
                 startDocker(server);
             } else if (uri[0].equals("external")) {
@@ -83,7 +84,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 throw new TigerTestEnvException(
                     String.format("Unsupported server type %s found in server %s", uri[0], server.getName()));
             }
+
             // TODO add routes needed for each server to local docker proxy
+            localDockerProxy.addRoute("http://" + server.getName(),
+                "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue(),
+                true);
             // set system properties from exports section and store the value in environmentVariables map
             server.getExports().forEach(exp -> {
                 final int sep = exp.indexOf("=");

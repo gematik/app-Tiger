@@ -38,7 +38,7 @@
         <version.serenity.core>2.3.4</version.serenity.core>
         <version.serenity.cucumber.6>2.3.4</version.serenity.cucumber.6>
         <version.serenity.maven.plugin>2.3.4</version.serenity.maven.plugin>
-        <version.lombok>1.18.20</version.lombok>
+        <version.lombok>1.18.18</version.lombok>
         <version.jackson>2.11.2</version.jackson>
         <version.slf4j>1.6.1</version.slf4j>
 

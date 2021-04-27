@@ -26,6 +26,8 @@ public class DockerMgr {
             }
             final GenericContainer<?> container = new GenericContainer<>(DockerImageName.parse(imageName));
             container.setLogConsumers(List.of(new Slf4jLogConsumer((log))));
+            log.info("Passing in environment:");
+            server.getImports().forEach(envvar -> log.info("  " + envvar));
             container.setEnv(server.getImports());
             container.start();
             // make startup time and intervall and url (supporting ${PORT} and regex content configurable
@@ -35,10 +37,16 @@ public class DockerMgr {
                 e.printStackTrace();
             }
             final boolean health = false;
-            while (!container.isHealthy()) {
-                try {
+            try {
+                while (!container.isHealthy()) {
                     Thread.sleep(2000);
-                } catch (final InterruptedException e) {
+                }
+            } catch (final Exception e) {
+                log.warn("probably no health check configured - defaulting to 20s startup time");
+                try {
+                    Thread.sleep(20000);
+                } catch (InterruptedException interruptedException) {
+                    interruptedException.printStackTrace();
                 }
             }
             log.warn("HealthCheck OK for " + server.getName());

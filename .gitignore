@@ -5,6 +5,4 @@
 /tiger-proxy/target/
 /tiger-testenv-mgr/target/
 /tiger-test-lib/target/
-/tiger-proxy/tiger-proxy.iml
-/tiger-testenv-mgr/tiger-testenv-mgr.iml
-/tiger-test-lib/tiger-test-lib.iml
+/tiger-common/target/

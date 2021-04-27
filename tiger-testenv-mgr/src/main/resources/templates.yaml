@@ -3,7 +3,7 @@ templates:
     product: IDP_REF
     # where to get the server from or where to connect to,
     instanceUri: docker:gstopdr1.top.local/idp/idp-server
-    version: 14.0.0-731
+    version: 15.0.0-106
     # folder containing all certs and keys used in encrypting/signing the traffic data
     pkiFolder: src/main/java/resources/pki/idp-ref
     # list of regex to be matched by the proxy
@@ -11,7 +11,7 @@ templates:
     imports:
       - GEMATIK_TESTCONFIG=default
     exports:
-      - IDP_SERVER=http://localhost:${PORT:8080}/.well-known/openid-configuration
+      - IDP_SERVER=http://idp/.well-known/openid-configuration
       - IDP_SERVER_PORT=${PORT:8080}
     params:
 
@@ -55,11 +55,11 @@ templates:
     imports:
       - TOKEN=${IDP_SERVER}
       - TSL=https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
-      - http_proxy=http://192.168.230.85:3128
-      - https_proxy=http://192.168.230.85:3128
+      - http_proxy=http://${PROXYHOST}:${PROXYPORT}
+      - https_proxy=http://${PROXYHOST}:${PROXYPORT}
       # telematik-test is needed for download of ocsp pki
       # localhost,
-      - no_proxy=localhost:${IDP_SERVER_PORT},*.telematik-test
+      - no_proxy=*.telematik-test
       #- ENC_KEY=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.prv.pem
       #- ENC_CERT=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.pem
       #- SIG_KEY=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.prv.pem

@@ -11,7 +11,10 @@ import de.gematik.test.tiger.proxy.wiremockUtils.WiremockProxyUrlTransformer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+// TODO allow to configure an upstream proxy for internet connections
+@Slf4j
 public class TigerProxy implements ITigerProxy {
 
     private final WiremockCapture wiremockCapture;
@@ -56,6 +59,7 @@ public class TigerProxy implements ITigerProxy {
     public void addRoute(String urlRegexPattern, String targetUrl, boolean rbelEnabled) {
         //TODO urlRegexPattern wird momentan einfach fix ausgewertet. Da müssen wir bei Gelegenheit mal drüber reden
         //TODO rbelEnabled wird ignoriert.
+        log.info("adding route " + urlRegexPattern + " -> " + targetUrl);
         urlTransformer.getUrlMap().put(urlRegexPattern, targetUrl);
     }
 
