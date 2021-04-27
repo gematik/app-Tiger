@@ -5,6 +5,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.File;
 import lombok.SneakyThrows;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 
 public class TestTigerTestEnvMgr {
 
@@ -18,7 +19,7 @@ public class TestTigerTestEnvMgr {
     }
 
     @SneakyThrows
-    @Test
+    //@Test
     public void testCreateEnv() {
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         // TODO not for now

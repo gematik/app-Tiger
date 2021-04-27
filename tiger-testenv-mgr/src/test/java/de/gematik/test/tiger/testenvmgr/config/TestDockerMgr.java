@@ -2,10 +2,11 @@ package de.gematik.test.tiger.testenvmgr.config;
 
 import de.gematik.test.tiger.testenvmgr.DockerMgr;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 
 public class TestDockerMgr {
 
-    @Test
+    //@Test
     public void testDockerMgr() {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
