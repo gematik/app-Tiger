@@ -1,22 +1,43 @@
 package de.gematik.test.tiger.proxy;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.any;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+
 import com.github.tomakehurst.wiremock.WireMockServer;
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.captures.WiremockCapture;
+import de.gematik.rbellogger.converter.RbelConfiguration;
+import de.gematik.rbellogger.data.RbelElement;
+import java.util.List;
+import java.util.Map;
 
 public class TigerProxy {
 
-    public TigerProxy() {
-        final WireMockServer wireMockServer = new WireMockServer(
-            options().port(3129).httpsPort(3130).proxyVia("192.168.230.85", 3128)
-                .trustAllProxyTargets(true));
-        wireMockServer.start();
-        // basic prove of concept
-        wireMockServer
-            .stubFor(any(urlMatching("/idp.*"))
-                .willReturn(aResponse().proxiedFrom("https://orf.at")));
-        // probably realized with https://laptrinhx.com/wiremock-with-dynamic-proxies-1687621799/
+    private final WiremockCapture wiremockCapture;
+    private final RbelLogger rbelLogger;
+
+    public TigerProxy(Map<String, String> mappings) {
+
+        wiremockCapture = WiremockCapture.builder()
+            .wireMockConfiguration(wireMockConfig()
+                .dynamicPort()
+                .extensions(WiremockProxyUrlTransformer.class))
+            .build();
+
+        rbelLogger = RbelLogger.build(new RbelConfiguration()
+            .addCapturer(wiremockCapture));
+
+        WiremockProxyUrlTransformer.URL_MAP.putAll(mappings);
+    }
+
+    public String getBaseUrl() {
+        return "http://localhost:" + wiremockCapture.getWireMockServer().port();
+    }
+
+    public int getPort() {
+        return wiremockCapture.getWireMockServer().port();
+    }
+
+    public List<RbelElement> getRbelMessages() {
+        return rbelLogger.getMessageHistory();
     }
 }

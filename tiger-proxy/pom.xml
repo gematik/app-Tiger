@@ -95,6 +95,16 @@
             <version>0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.mashape.unirest</groupId>
+            <artifactId>unirest-java</artifactId>
+            <version>1.4.9</version>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik</groupId>
+            <artifactId>rbellogger</artifactId>
+            <version>0.7.3-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
