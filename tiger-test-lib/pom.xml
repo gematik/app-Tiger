@@ -15,18 +15,44 @@
     </parent>
 
     <dependencies>
+        <!-- needed for java test code parsing -->
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
             <version>3.16.2</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.json/json -->
+
+        <!-- common helper libs -->
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20201115</version>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.10</version>
+        </dependency>
 
+        <!-- for Junit 4 based driver -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+        <!-- TestNG driver is currently not supported with Serenity -->
+        <!-- Junit 5 driver is currently not supported with Tiger -->
+
+        <dependency>
+            <groupId>org.fusesource.jansi</groupId>
+            <artifactId>jansi</artifactId>
+            <version>2.3.2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -39,25 +65,70 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <!-- plugin used to generate serenity driver classes from vm template file -->
             <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M5</version>
-                <configuration>
-                    <includes>
-                        <include>**/TestSerenityDriver.java</include>
-                    </includes>
-                    <parallel>classes</parallel>
-                    <parallel>methods</parallel>
-                    <useUnlimitedThreads>true</useUnlimitedThreads>
-                </configuration>
+                <groupId>com.github.temyers</groupId>
+                <artifactId>cucumber-jvm-parallel-plugin</artifactId>
+                <version>4.2.0</version>
                 <executions>
                     <execution>
+                        <configuration>
+                            <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
+                            <glue>
+                                <package>de.gematik.test.tiger.glue</package>
+                                <!-- add your packages here -->
+                            </glue>
+                            <plugins>
+                            </plugins>
+                            <parallelScheme>FEATURE</parallelScheme>
+
+                            <!-- deactivated as jenkins xunit plugin is not very flexible and does not work well with serenity junit xml exports
+                            see https://issues.apache.org/jira/browse/SUREFIRE-1533
+                            <plugins>
+                              <plugin>
+                                <name>junit</name>
+                                <extension>xml</extension>
+                              </plugin>
+                            </plugins>-->
+                        </configuration>
+                        <goals>
+                            <goal>generateRunners</goal>
+                        </goals>
+                        <id>generateRunners</id>
+                        <phase>generate-test-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <executions>
+                    <execution>
+                        <id>run-tests</id>
+                        <phase>integration-test</phase>
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <includes>
+                        <include>**/Parallel*IT.java</include>
+                        <!--<include>**/TigerBDDDriver.java</include>-->
+                    </includes>
+                    <!--<parallel>classes</parallel>
+                    <perCoreThreadCount>true</perCoreThreadCount>-->
+                    <skipITs>false</skipITs>
+                    <systemPropertyVariables>
+                        <!--
+                        <cucumber.filter.tags>@Approval and not @OpenBug and not @WiP and not @LongRunning
+                        </cucumber.filter.tags>
+                        -->
+                    </systemPropertyVariables>
+                    <threadCount>16</threadCount>
+                    <forkCount>2</forkCount>
+                </configuration>
             </plugin>
 
             <plugin>

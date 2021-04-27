@@ -8,9 +8,11 @@ templates:
     pkiFolder: src/main/java/resources/pki/idp-ref
     # list of regex to be matched by the proxy
     urlMappings:
-    exports:
-      - IDP_SERVER=http://localhost/idp/.well-known/openid-configuration
+    imports:
       - GEMATIK_TESTCONFIG=default
+    exports:
+      - IDP_SERVER=http://localhost:${PORT:8080}/.well-known/openid-configuration
+      - IDP_SERVER_PORT=${PORT:8080}
     params:
 
   - name: idp-rise-rru
@@ -21,11 +23,10 @@ templates:
     pkiFolder:
     # list of regex to be matched by the proxy
     urlMappings:
-    exports:
-      - IDP_SERVER=https://localhost/idp/.well-known/openid-configuration
+    imports:
       - GEMATIK_TESTCONFIG=rise-rru
-      - https.proxyHost=192.168.230.85
-      - https.proxyPort=3128
+    exports:
+      - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     params:
 
   - name: idp-rise-rtu
@@ -36,11 +37,10 @@ templates:
     pkiFolder:
     # list of regex to be matched by the proxy
     urlMappings:
-    exports:
-      - IDP_SERVER=https://localhost/idp/.well-known/openid-configuration
+    imports:
       - GEMATIK_TESTCONFIG=rise-rtu
-      - https.proxyHost=192.168.230.85
-      - https.proxyPort=3128
+    exports:
+      - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     params:
 
   - name: erzpt-fd-ref
@@ -51,6 +51,20 @@ templates:
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
     # list of regex to be matched by the proxy
     urlMappings:
+    # set those as env for docker image and replace ${xxx}
+    imports:
+      - TOKEN=${IDP_SERVER}
+      - TSL=https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
+      - http_proxy=http://192.168.230.85:3128
+      - https_proxy=http://192.168.230.85:3128
+      # telematik-test is needed for download of ocsp pki
+      # localhost,
+      - no_proxy=localhost:${IDP_SERVER_PORT},*.telematik-test
+      #- ENC_KEY=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.prv.pem
+      #- ENC_CERT=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.pem
+      #- SIG_KEY=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.prv.pem
+      #- SIG_CERT=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.pem
+      - BNETZA=file://./Pseudo-BNetzA-VL-seq24.xml
     exports:
-    # TODO which variables announce the fd server location?
     params:
+

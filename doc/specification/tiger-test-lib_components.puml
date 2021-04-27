@@ -77,6 +77,11 @@ skinparam interface {
         attaches the RBel messages as test evidence to scenarios in serenity report
         attaches curl calls to steps in serenity report
       ]
+      component banner [ASCII banner
+        ===
+        allows to display large ascii banners in console/log output
+        for ansi color compliant consoles also coloring is supported
+      ]
 
           note as n1
             SerenityIntegration, Rbel Messaging Client,

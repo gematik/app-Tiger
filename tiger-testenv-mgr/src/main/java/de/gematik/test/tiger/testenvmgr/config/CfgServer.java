@@ -30,6 +30,8 @@ public class CfgServer {
     @JsonProperty
     private final List<String> exports = new ArrayList<>();
     @JsonProperty
+    private final List<String> imports = new ArrayList<>();
+    @JsonProperty
     private final List<String> urlMappings = new ArrayList<>();
     @JsonProperty
     @JsonIgnore
@@ -45,14 +47,17 @@ public class CfgServer {
         if (version == null && template.version != null) {
             version = template.version;
         }
-        if (params.isEmpty() && template.params != null && !template.params.isEmpty()) {
-            params.putAll(template.params);
-        }
         if (pkiFolder == null && template.pkiFolder != null) {
             pkiFolder = template.pkiFolder;
         }
+        if (params.isEmpty() && template.params != null && !template.params.isEmpty()) {
+            params.putAll(template.params);
+        }
         if (exports.isEmpty() && template.exports != null && !template.exports.isEmpty()) {
             exports.addAll(template.exports);
+        }
+        if (imports.isEmpty() && template.imports != null && !template.imports.isEmpty()) {
+            imports.addAll(template.imports);
         }
         if (urlMappings.isEmpty() && template.urlMappings != null && !template.urlMappings.isEmpty()) {
             urlMappings.addAll(template.urlMappings);
