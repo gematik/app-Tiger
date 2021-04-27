@@ -1,15 +1,15 @@
-package de.gematik.test.tiger.lib;
+package de.gematik.test.tiger.lib.context;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestVariables extends ThreadSafeDomainContextProvider {
+public class TestContext extends ThreadSafeDomainContextProvider {
 
-    public TestVariables() {
+    public TestContext() {
 
     }
 
-    public TestVariables(final String domain) {
+    public TestContext(final String domain) {
         this.domain = domain;
     }
 
@@ -23,9 +23,5 @@ public class TestVariables extends ThreadSafeDomainContextProvider {
     @Override
     public Map<String, Object> getContext(final String otherDomain) {
         return threadedContexts.computeIfAbsent(getId(otherDomain), threadid -> new HashMap<>());
-    }
-
-    public String substituteVariables(final String str) {
-        return substituteTokens(str, "VAR", getContext());
     }
 }

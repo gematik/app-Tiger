@@ -1,7 +1,7 @@
 package de.gematik.test.tiger.glue;
 
-import de.gematik.test.tiger.lib.TestContext;
-import de.gematik.test.tiger.lib.TestVariables;
+import de.gematik.test.tiger.lib.context.TestContext;
+import de.gematik.test.tiger.lib.context.TestVariables;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;

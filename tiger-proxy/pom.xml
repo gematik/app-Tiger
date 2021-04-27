@@ -103,7 +103,7 @@
         <dependency>
             <groupId>de.gematik</groupId>
             <artifactId>rbellogger</artifactId>
-            <version>0.7.3-SNAPSHOT</version>
+            <version>0.7.4</version>
         </dependency>
     </dependencies>
 

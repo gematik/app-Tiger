@@ -1,7 +1,10 @@
-package de.gematik.test.tiger.lib;
+package de.gematik.test.tiger.lib.context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import de.gematik.test.tiger.lib.context.TestContext;
+import de.gematik.test.tiger.lib.context.TestVariables;
+import de.gematik.test.tiger.lib.context.ThreadSafeDomainContextProvider;
 import java.util.Map;
 import org.junit.Test;
 

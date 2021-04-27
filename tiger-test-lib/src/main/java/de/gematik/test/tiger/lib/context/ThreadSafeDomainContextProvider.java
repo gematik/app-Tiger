@@ -1,7 +1,7 @@
 /*
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
-package de.gematik.test.tiger.lib;
+package de.gematik.test.tiger.lib.context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.charset.StandardCharsets;
