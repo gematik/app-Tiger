@@ -1,22 +1,57 @@
 package de.gematik.test.tiger.lib;
 
+import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class TigerDirector {
 
-    public static void init() {
-        String active = getEnvOrSystemProperty("TIGER_ACTIVE");
-        if (active == null || !active.equals("1")) {
+    private static final Map<Long, RbelMessageProvider> rbelMsgProviderMap = new HashMap<>();
+
+    public static void beforeTestRun() {
+        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             return;
         }
-        String cfgFile = getEnvOrSystemProperty("TIGER_CONFIG");
+        String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
         // TODO read configuration including testenv var settings
 
+        // TODO start single Tiger Proxy for local docker containers
+
         // TODO start TestEnvMgr
-        //TigerTestEnvMgr envmgr
+        TigerTestEnvMgr tigerTestEnvMgr = new TigerTestEnvMgr();
+        tigerTestEnvMgr.setUpEnvironment();
+        // TODO store routes from server instances in static field for reuse by beforeTestThreadStart
+
     }
 
-    public static String getEnvOrSystemProperty(String name) {
-        return Optional.ofNullable(System.getenv(name)).orElse(System.getProperty(name));
+    public static void beforeTestThreadStart() {
+        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+            return;
+        }
+        // check if testdirector was initialized
+
+        // get route infos
+
+        RbelMessageProvider rbelMessageProvider = new RbelMessageProvider();
+
+        // instanatiate proxy and supply routes and register messageprovider as listener to proxy
+
+        rbelMsgProviderMap.computeIfAbsent(tid(), key -> rbelMessageProvider);
+
     }
+
+    public static RbelMessageProvider getRbelMessageProvider() {
+        // get instance from map with thread id as key
+        return Optional.ofNullable(rbelMsgProviderMap.get(tid()))
+            .orElseThrow(() -> new TigerLibraryException("Tiger has not been initialized for Thread '%s'. "
+                + "Did you call beforeTestThreadStart?", tid()));
+    }
+
+    public static long tid() {
+        return Thread.currentThread().getId();
+    }
+
 }

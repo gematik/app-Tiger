@@ -1,6 +1,8 @@
 package de.gematik.test.tiger.testenvmgr;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
@@ -21,11 +23,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private final Map<String, Object> environmentVariables;
 
+    private TigerProxy localDockerProxy;
+
     @SneakyThrows
     public TigerTestEnvMgr() {
         // read configuration from file and templates from classpath resource
-        final File cfgFile = new File(Optional.ofNullable(System.getenv("TIGER_TESTENV_CFGFILE"))
-            .orElse(System.getProperty("TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml")));
+        final File cfgFile = new File(OSEnvironment.getAsString(
+            "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
         configuration = new Configuration();
         configuration.readConfig(cfgFile.toURI());
         final Configuration templates = new Configuration();
@@ -39,6 +43,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         environmentVariables = new HashMap<>();
 
         dockerManager = new DockerMgr();
+
+        localDockerProxy = new TigerProxy(new HashMap<>());
     }
 
     @Override
@@ -64,6 +70,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         if (server.isActive()) {
 
+            // TODO if proxy env are in imports replace  with localdockerproxy data
             if (uri[0].equals("docker")) {
                 final List<String> imports = server.getImports();
                 for (int i = 0; i < imports.size(); i++) {
@@ -76,6 +83,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 throw new TigerTestEnvException(
                     String.format("Unsupported server type %s found in server %s", uri[0], server.getName()));
             }
+            // TODO add routes needed for each server to local docker proxy
             // set system properties from exports section and store the value in environmentVariables map
             server.getExports().forEach(exp -> {
                 final int sep = exp.indexOf("=");

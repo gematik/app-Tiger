@@ -15,6 +15,25 @@
     </parent>
 
     <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-proxy</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-testenv-mgr</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-common</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- needed for java test code parsing -->
         <dependency>
             <groupId>com.github.javaparser</groupId>
@@ -47,24 +66,6 @@
         </dependency>
         <!-- TestNG driver is currently not supported with Serenity -->
         <!-- Junit 5 driver is currently not supported with Tiger -->
-
-        <dependency>
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>2.3.2</version>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-proxy</artifactId>
-            <version>0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-testenv-mgr</artifactId>
-            <version>0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>

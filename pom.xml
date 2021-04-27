@@ -19,6 +19,7 @@
         <module>tiger-test-lib</module>
         <module>tiger-proxy</module>
         <module>tiger-testenv-mgr</module>
+        <module>tiger-common</module>
     </modules>
 
     <repositories>

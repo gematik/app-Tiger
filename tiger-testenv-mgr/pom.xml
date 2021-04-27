@@ -13,6 +13,18 @@
     <artifactId>tiger-testenv-mgr</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-common</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-proxy</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
         <!--java operation docker -->
         <dependency>
             <groupId>com.github.docker-java</groupId>
