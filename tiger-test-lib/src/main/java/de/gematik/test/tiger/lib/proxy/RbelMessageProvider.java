@@ -17,7 +17,7 @@ public class RbelMessageProvider implements IRbelMessageListener {
     private boolean wait = false;
 
     @Override
-    public void rbelMessageReceived(RbelElement el) {
+    public void triggerNewReceivedMessage(RbelElement el) {
         messages.add(el);
         wait = false;
     }
