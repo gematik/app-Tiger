@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.proxy.wiremockUtils;
 
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.common.FileSource;
@@ -12,20 +12,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
 public class WiremockProxyUrlTransformer extends ResponseDefinitionTransformer {
 
     public static final String EXTENSION_NAME = "tiger-proxy-url-transformer";
-    public static final Map<String, String> URL_MAP = new HashMap<>();
+    private final Map<String, String> urlMap = new HashMap<>();
 
     @Override
     public ResponseDefinition transform(Request request, ResponseDefinition responseDefinition, FileSource files,
         Parameters parameters) {
         try {
             URI requestUri = new URI(request.getAbsoluteUrl());
-            for (Entry<String, String> entry : URL_MAP.entrySet()) {
+            for (Entry<String, String> entry : urlMap.entrySet()) {
                 Optional<ResponseDefinition> definition = getResponseDefinition(responseDefinition, requestUri,
                     entry.getKey(), entry.getValue());
                 if (definition.isPresent()) {
