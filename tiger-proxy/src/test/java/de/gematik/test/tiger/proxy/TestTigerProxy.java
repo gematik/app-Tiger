@@ -12,6 +12,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,11 +50,24 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(Map.of("backend", "http://localhost:" + wireMockRule.port()));
 
         Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
-        System.out.println(Unirest.get("http://backend/foobar").asString().getBody());
+        Unirest.get("http://backend/foobar").asString().getBody();
 
         assertThat(tigerProxy.getRbelMessages().get(1)
             .getFirst("body").get()
             .getFirst("foo").get().getContent()
         ).isEqualTo("bar");
+    }
+
+    @Test
+    public void registerListenerThenSentRequest_shouldTriggerListener() throws UnirestException {
+        AtomicInteger callCounter = new AtomicInteger(0);
+
+        final TigerProxy tigerProxy = new TigerProxy(Map.of("backend", "http://localhost:" + wireMockRule.port()));
+        tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+
+        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
+        Unirest.get("http://backend/foobar").asString().getBody();
+
+        assertThat(callCounter.get()).isEqualTo(2);
     }
 }
