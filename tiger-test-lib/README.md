@@ -13,13 +13,7 @@ docekr system prune
 
 # TODOs
 
-TestenvMgr: wait strategy seems to be not implemented neither for idp nor for erezept
-
-TestenvMgr: how to tell erezept fd where to download tsl
-
-Polarion box: check if internal ID exists before adding a new test case
-
-Feature Parser: support at least also german key words
+TestenvMgr: add timeout for health check loop
 
 Banner component
 

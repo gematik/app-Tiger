@@ -3,7 +3,7 @@ templates:
     product: IDP_REF
     # where to get the server from or where to connect to,
     instanceUri: docker:gstopdr1.top.local/idp/idp-server
-    version: 15.0.0-106
+    version: 15.0.0-758
     # folder containing all certs and keys used in encrypting/signing the traffic data
     pkiFolder: src/main/java/resources/pki/idp-ref
     # list of regex to be matched by the proxy

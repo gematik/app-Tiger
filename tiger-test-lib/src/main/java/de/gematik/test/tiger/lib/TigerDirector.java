@@ -10,6 +10,7 @@ import java.util.Optional;
 public class TigerDirector {
 
     private static final Map<Long, RbelMessageProvider> rbelMsgProviderMap = new HashMap<>();
+    private static TigerTestEnvMgr tigerTestEnvMgr;
 
     public static void beforeTestRun() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
@@ -21,7 +22,7 @@ public class TigerDirector {
         // TODO start single Tiger Proxy for local docker containers
 
         // TODO start TestEnvMgr
-        TigerTestEnvMgr tigerTestEnvMgr = new TigerTestEnvMgr();
+        tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
         // TODO store routes from server instances in static field for reuse by beforeTestThreadStart
 
@@ -43,6 +44,9 @@ public class TigerDirector {
 
     }
 
+    public static String getProxySettings() {
+        return tigerTestEnvMgr.getLocalDockerProxy().getBaseUrl();
+    }
     public static RbelMessageProvider getRbelMessageProvider() {
         // get instance from map with thread id as key
         return Optional.ofNullable(rbelMsgProviderMap.get(tid()))
