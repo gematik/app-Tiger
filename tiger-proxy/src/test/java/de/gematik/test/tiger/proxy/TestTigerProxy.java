@@ -11,7 +11,9 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.http.HttpHost;
@@ -20,6 +22,9 @@ import org.junit.Rule;
 import org.junit.Test;
 
 public class TestTigerProxy {
+
+    //TODO insatntiate tigerproxy with gematik forwardproxy and try to reach http and https sites
+    // currently doesnt work
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
@@ -76,5 +81,16 @@ public class TestTigerProxy {
         Unirest.get("http://backend/foobar").asString().getBody();
 
         assertThat(callCounter.get()).isEqualTo(2);
+    }
+
+    //@Test
+    public void startProxyFor30s() {
+        TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder().forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128)).proxyRoutes(
+            Collections.emptyMap()).build());
+        try {
+            Thread.sleep(30000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -6,26 +6,32 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class TigerDirector {
 
     private static final Map<Long, RbelMessageProvider> rbelMsgProviderMap = new HashMap<>();
     private static TigerTestEnvMgr tigerTestEnvMgr;
 
-    public static void beforeTestRun() {
+    private static boolean initialized = false;
+
+    public static synchronized void beforeTestRun() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+            log.warn("ABORTING initialisation as TIGER_ACTIVE is not set to '1'");
             return;
         }
+        log.info("reading test configuration...");
         String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
         // TODO read configuration including testenv var settings
 
-        // TODO start single Tiger Proxy for local docker containers
-
-        // TODO start TestEnvMgr
+        log.info("starting test environment manager...");
         tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
         // TODO store routes from server instances in static field for reuse by beforeTestThreadStart
 
+        initialized = true;
+        log.info("director is initialized OK");
     }
 
     public static void beforeTestThreadStart() {
@@ -33,7 +39,10 @@ public class TigerDirector {
             return;
         }
         // check if testdirector was initialized
-
+        if (!initialized) {
+            throw new AssertionError("Tiger test environment has not been initialized. "
+                + "Did you call TigerDirector.beforeTestRun before starting test run?");
+        }
         // get route infos
 
         RbelMessageProvider rbelMessageProvider = new RbelMessageProvider();
@@ -51,7 +60,7 @@ public class TigerDirector {
         // get instance from map with thread id as key
         return Optional.ofNullable(rbelMsgProviderMap.get(tid()))
             .orElseThrow(() -> new TigerLibraryException("Tiger has not been initialized for Thread '%s'. "
-                + "Did you call beforeTestThreadStart?", tid()));
+                + "Did you call TigerDirector.beforeTestThreadStart for this thread?", tid()));
     }
 
     public static long tid() {
