@@ -29,7 +29,11 @@ public class TigerProxy implements ITigerProxy {
 
         final WireMockConfiguration wireMockConfiguration = wireMockConfig()
             .dynamicPort()
-            .extensions(urlTransformer);
+            .dynamicHttpsPort()
+            .extensions(urlTransformer)
+            .keystoreType("JKS")
+            .keystorePath("src/test/resources/tls_cert.jks")
+            .keystorePassword("gematik");
 
         if (configuration.getForwardToProxy() != null
             && !StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())
@@ -59,6 +63,10 @@ public class TigerProxy implements ITigerProxy {
     @Override
     public int getPort() {
         return wiremockCapture.getWireMockServer().port();
+    }
+
+    public int getTslPort() {
+        return wiremockCapture.getWireMockServer().httpsPort();
     }
 
     @Override

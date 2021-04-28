@@ -2,6 +2,7 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.seeOther;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,12 +15,15 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.util.Collections;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.springframework.util.StreamUtils;
 
 public class TestTigerProxy {
 
@@ -48,6 +52,22 @@ public class TestTigerProxy {
 
         final HttpResponse<JsonNode> response = Unirest.get("http://backend/foobar")
             .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @Test
+    public void useTsl_shouldForward() throws UnirestException, IOException {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("https://backend", "http://localhost:" + wireMockRule.port()))
+            .build());
+
+        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getTslPort()));
+
+        final HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
+            .asJson();
+        System.out.println(StreamUtils.copyToString(response.getRawBody(), Charset.defaultCharset()));
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
