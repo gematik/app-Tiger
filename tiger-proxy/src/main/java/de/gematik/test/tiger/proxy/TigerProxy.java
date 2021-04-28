@@ -2,7 +2,6 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
-import com.github.tomakehurst.wiremock.common.ProxySettings;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.WiremockCapture;
@@ -16,7 +15,6 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-// TODO allow to configure an upstream proxy for internet connections
 @Slf4j
 public class TigerProxy implements ITigerProxy {
 
@@ -31,6 +29,8 @@ public class TigerProxy implements ITigerProxy {
         final WireMockConfiguration wireMockConfiguration = wireMockConfig()
             .dynamicPort()
             .dynamicHttpsPort()
+            .trustAllProxyTargets(true)
+            .enableBrowserProxying(true)
             .extensions(urlTransformer);
 
         if (configuration.getForwardToProxy() != null
@@ -38,7 +38,7 @@ public class TigerProxy implements ITigerProxy {
             && configuration.getForwardToProxy().getPort() != null) {
             wireMockConfiguration
                 .proxyVia(configuration.getForwardToProxy().getHostname(),
-                configuration.getForwardToProxy().getPort());
+                    configuration.getForwardToProxy().getPort());
         }
 
         wiremockCapture = WiremockCapture.builder()
