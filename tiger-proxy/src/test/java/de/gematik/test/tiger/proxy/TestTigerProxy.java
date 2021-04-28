@@ -101,14 +101,17 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    @Test
+//    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
             .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
-            .proxyRoutes(Map.of("http://startrinity.com", "http://google.com")).build());
+            .proxyRoutes(Map.of(
+                "https://magog", "https://google.com",
+                "http://magog", "http://google.com"
+            )).build());
         System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
         try {
-            Thread.sleep(300000);
+            Thread.sleep(30 * 1_000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

@@ -26,6 +26,7 @@ public class WiremockProxyUrlTransformer extends ResponseDefinitionTransformer {
     public ResponseDefinition transform(Request request, ResponseDefinition responseDefinition, FileSource files,
         Parameters parameters) {
         try {
+            log.info("Incoming request " + request.getAbsoluteUrl());
             URI requestUri = new URI(request.getAbsoluteUrl());
             for (Entry<String, String> entry : urlMap.entrySet()) {
                 Optional<ResponseDefinition> definition = getResponseDefinition(responseDefinition, requestUri,
@@ -34,13 +35,16 @@ public class WiremockProxyUrlTransformer extends ResponseDefinitionTransformer {
                     return definition.get();
                 }
             }
-            return responseDefinition;
+            return ResponseDefinitionBuilder
+                .like(responseDefinition)
+                .proxiedFrom(request.getAbsoluteUrl())
+                .build();
         } catch (RuntimeException e) {
             e.printStackTrace();
             throw e;
         } catch (URISyntaxException e) {
             e.printStackTrace();
-            return null;
+            throw new RuntimeException(e);
         }
     }
 

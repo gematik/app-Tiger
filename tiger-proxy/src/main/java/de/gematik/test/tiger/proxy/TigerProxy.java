@@ -2,6 +2,7 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
+import com.github.tomakehurst.wiremock.common.ProxySettings;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.WiremockCapture;
@@ -35,7 +36,8 @@ public class TigerProxy implements ITigerProxy {
         if (configuration.getForwardToProxy() != null
             && !StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())
             && configuration.getForwardToProxy().getPort() != null) {
-            wireMockConfiguration.proxyVia(configuration.getForwardToProxy().getHostname(),
+            wireMockConfiguration
+                .proxyVia(configuration.getForwardToProxy().getHostname(),
                 configuration.getForwardToProxy().getPort());
         }
 
