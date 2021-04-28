@@ -3,7 +3,6 @@ package de.gematik.test.tiger.testenvmgr;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
@@ -47,11 +46,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         dockerManager = new DockerMgr();
 
         localDockerProxy = new TigerProxy(
-            TigerProxyConfiguration.builder()
-                .forwardToProxy(ForwardProxyInfo.builder().hostname("192.168.230.85").port(3128).build())
-                .proxyRoutes(Collections.emptyMap())
-                .build());
+            TigerProxyConfiguration.builder().forwardToProxy(configuration.getTigerProxy().getForwardToProxy())
+                .proxyRoutes(Collections.emptyMap()).build());
     }
+
     @Override
     public void setUpEnvironment() {
         log.info("starting set up of test environment...");

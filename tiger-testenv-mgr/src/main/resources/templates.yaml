@@ -1,29 +1,51 @@
 templates:
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # Latest IDP REF as local docker container
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
   - name: idp-ref
     product: IDP_REF
     # where to get the server from or where to connect to,
+    # for external instances
+    # instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     instanceUri: docker:gstopdr1.top.local/idp/idp-server
+    # version of the docker image
     version: 15.0.0-759
+    # max time to get the container up (with health check causes an error,
+    # if no health check wait at least this time before going on)
     startupTimeoutSec: 30
     # folder containing all certs and keys used in encrypting/signing the traffic data
+    # TODO add idp ref pki files here
     pkiFolder: src/main/java/resources/pki/idp-ref
-    # list of regex to be matched by the proxy
+    # list of regex to be matched by the proxy, currently unused
     urlMappings:
+    # environment variables sent to the docker container at startup
+    # support substitution of exported env variables from previously started servers
     imports:
       - GEMATIK_TESTCONFIG=default
+    # environment variables made available to other servers
+    # are not automatically imported but can be used as token ${ENVVAR}
+    # ${NAME} is replaced with server name
+    # ${PORT:XXXXX} is replaced with the external port matchign the internal port XXXXX
+    # ${PROXYHOST} is replaced with the local docker proxy host
+    # ${PROXYPORT} is replaced with the local docker proxy port
+    # for this to work the port must be exported in the docker container config
     exports:
       - IDP_SERVER=http://idp/.well-known/openid-configuration
-      - IDP_SERVER_PORT=${PORT:8080}
+    # currently unused, but could be used to manage app specific properties
     params:
 
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # RISE IDP in RRU
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
   - name: idp-rise-rru
     product: IDP_RISE
-    # where to get the server from or where to connect to,
     instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     startupTimeoutSec: 5
-    # folder containing all certs and keys used in encrypting/signing the traffic data
-    pkiFolder:
-    # list of regex to be matched by the proxy
+    pkiFolder: # as HSM is used no pki data available
     urlMappings:
     imports:
       - GEMATIK_TESTCONFIG=rise-rru
@@ -31,14 +53,16 @@ templates:
       - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     params:
 
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # RISE IDP in RTU
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
   - name: idp-rise-rtu
     product: IDP_RISE
-    # where to get the server from or where to connect to,
     instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
     startupTimeoutSec: 5
-    # folder containing all certs and keys used in encrypting/signing the traffic data
-    pkiFolder:
-    # list of regex to be matched by the proxy
+    pkiFolder: # as HSM is used no pki data available
     urlMappings:
     imports:
       - GEMATIK_TESTCONFIG=rise-rtu
@@ -46,28 +70,31 @@ templates:
       - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     params:
 
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # Latest E-Rezept FD Ref as local docker container
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
   - name: erzpt-fd-ref
     product: ERZP_FD_REF
     instanceUri: docker:gstopdr1.top.local/erezept/ref-erx-fd-server
     version: 0.15.1
-    startupTimeoutSec: 400
-    # folder containing all certs and keys used in encrypting/signing the traffic data
+    startupTimeoutSec: 40
+    # todo add pki files there
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
-    # list of regex to be matched by the proxy
     urlMappings:
-    # set those as env for docker image and replace ${xxx}
     imports:
       - TOKEN=${IDP_SERVER}
       - TSL=https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
       - http_proxy=http://${PROXYHOST}:${PROXYPORT}
       - https_proxy=http://${PROXYHOST}:${PROXYPORT}
       # telematik-test is needed for download of ocsp pki
-      # localhost,
       - no_proxy=*.telematik-test
-      #- ENC_KEY=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.prv.pem
-      #- ENC_CERT=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.pem
-      #- SIG_KEY=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.prv.pem
-      #- SIG_CERT=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.pem
+      - ENC_KEY=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.prv.pem
+      - ENC_CERT=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.pem
+      - SIG_KEY=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.prv.pem
+      - SIG_CERT=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.pem
       - BNETZA=file://./Pseudo-BNetzA-VL-seq24.xml
     exports:
     params:

@@ -31,6 +31,7 @@ public class Configuration {
         final Configuration cfg = mapper.readValue(cfgFile.toURL().openStream(), Configuration.class);
         servers = cfg.servers;
         templates = cfg.templates;
+        tigerProxy = cfg.tigerProxy;
         if (cfg.getTemplates().size() > 0) {
             log.info("read {} templates", cfg.getTemplates().size());
         } else {
