@@ -2,16 +2,18 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.WiremockCapture;
 import de.gematik.rbellogger.converter.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHttpMessage;
+import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.wiremockUtils.WiremockProxyUrlTransformer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 // TODO allow to configure an upstream proxy for internet connections
 @Slf4j
@@ -22,13 +24,22 @@ public class TigerProxy implements ITigerProxy {
     private final WiremockProxyUrlTransformer urlTransformer;
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
 
-    public TigerProxy(Map<String, String> mappings) {
+    public TigerProxy(TigerProxyConfiguration configuration) {
         urlTransformer = new WiremockProxyUrlTransformer();
 
+        final WireMockConfiguration wireMockConfiguration = wireMockConfig()
+            .dynamicPort()
+            .extensions(urlTransformer);
+
+        if (configuration.getForwardToProxy() != null
+            && StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())
+            && configuration.getForwardToProxy().getPort() != null) {
+            wireMockConfiguration.proxyVia(configuration.getForwardToProxy().getHostname(),
+                configuration.getForwardToProxy().getPort());
+        }
+
         wiremockCapture = WiremockCapture.builder()
-            .wireMockConfiguration(wireMockConfig()
-                .dynamicPort()
-                .extensions(urlTransformer))
+            .wireMockConfiguration(wireMockConfiguration)
             .build();
 
         rbelLogger = RbelLogger.build(new RbelConfiguration()
@@ -37,7 +48,7 @@ public class TigerProxy implements ITigerProxy {
         rbelLogger.getRbelConverter().registerListener(RbelHttpMessage.class, (message, context) ->
             rbelMessageListeners.forEach(listener -> listener.triggerNewReceivedMessage(message)));
 
-        urlTransformer.getUrlMap().putAll(mappings);
+        urlTransformer.getUrlMap().putAll(configuration.getProxyRoutes());
     }
 
     @Override

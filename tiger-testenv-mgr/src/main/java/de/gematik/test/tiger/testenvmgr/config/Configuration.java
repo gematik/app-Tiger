@@ -3,6 +3,7 @@ package de.gematik.test.tiger.testenvmgr.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,6 +21,8 @@ public class Configuration {
     private List<CfgServer> templates = new ArrayList<>();
     @JsonProperty
     private List<CfgServer> servers = new ArrayList<>();
+    @JsonProperty
+    private TigerProxyConfiguration tigerProxy;
 
     @SneakyThrows
     public void readConfig(final URI cfgFile) {

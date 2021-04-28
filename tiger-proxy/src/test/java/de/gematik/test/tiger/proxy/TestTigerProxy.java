@@ -11,6 +11,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.http.HttpHost;
@@ -34,7 +35,9 @@ public class TestTigerProxy {
 
     @Test
     public void useAsWebProxyServer_shouldForward() throws UnirestException {
-        final TigerProxy tigerProxy = new TigerProxy(Map.of("backend", "http://localhost:" + wireMockRule.port()));
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("backend", "http://localhost:" + wireMockRule.port()))
+            .build());
 
         Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
 
@@ -47,7 +50,9 @@ public class TestTigerProxy {
 
     @Test
     public void requestAndResponseThroughWebProxy_shouldGiveRbelObjects() throws UnirestException {
-        final TigerProxy tigerProxy = new TigerProxy(Map.of("backend", "http://localhost:" + wireMockRule.port()));
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("backend", "http://localhost:" + wireMockRule.port()))
+            .build());
 
         Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
         Unirest.get("http://backend/foobar").asString().getBody();
@@ -62,7 +67,9 @@ public class TestTigerProxy {
     public void registerListenerThenSentRequest_shouldTriggerListener() throws UnirestException {
         AtomicInteger callCounter = new AtomicInteger(0);
 
-        final TigerProxy tigerProxy = new TigerProxy(Map.of("backend", "http://localhost:" + wireMockRule.port()));
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("backend", "http://localhost:" + wireMockRule.port()))
+            .build());
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
         Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
