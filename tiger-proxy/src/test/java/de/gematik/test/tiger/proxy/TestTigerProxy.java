@@ -2,7 +2,6 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.seeOther;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,7 +13,6 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import java.util.Collections;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -103,12 +101,14 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    //@Test
+    @Test
     public void startProxyFor30s() {
-        TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder().forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128)).proxyRoutes(
-            Collections.emptyMap()).build());
+        TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
+            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+            .proxyRoutes(Map.of("http://startrinity.com", "http://google.com")).build());
+        System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
         try {
-            Thread.sleep(30000);
+            Thread.sleep(300000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
