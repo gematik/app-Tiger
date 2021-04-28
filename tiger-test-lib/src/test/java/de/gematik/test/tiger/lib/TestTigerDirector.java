@@ -7,26 +7,33 @@ import org.junit.Test;
 
 public class TestTigerDirector {
 
-    @SneakyThrows
     @Test
-    public void testDirector() {
+    public void testDirectorSimpleIdp() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleidp.yaml");
         TigerDirector.beforeTestRun();
 
-
-        ProcessBuilder builder = new ProcessBuilder("C:\\Users\\t.eitzenberger\\curl\\bin\\curl.exe", "-v", "http://idp/.well-known/openid-configuration", "--proxy", TigerDirector.getProxySettings());
-        System.out.println("TEST Starting curl...");
-        Process process = builder.start();
-        System.out.println("TEST curl started");
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-            }
+        try {
+            Thread.sleep(200000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+
         System.out.println("TEST DONE");
-//        Thread.sleep(10000);
+    }
+
+    @Test
+    public void testDirectorIdpAndERezept() {
+        System.setProperty("TIGER_ACTIVE", "1");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/idpAnderezept.yaml");
+        TigerDirector.beforeTestRun();
+
+        try {
+            Thread.sleep(200000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("TEST DONE");
     }
 }
