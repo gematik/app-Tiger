@@ -22,6 +22,8 @@ public class CfgServer {
     @JsonProperty
     private String version;
     @JsonProperty
+    private Integer startupTimeoutSec;
+    @JsonProperty
     private final LinkedHashMap<String, String> params = new LinkedHashMap<>();
     @JsonProperty
     private boolean active = true;
@@ -49,6 +51,9 @@ public class CfgServer {
         }
         if (pkiFolder == null && template.pkiFolder != null) {
             pkiFolder = template.pkiFolder;
+        }
+        if (startupTimeoutSec == null && template.startupTimeoutSec != null) {
+            startupTimeoutSec = template.startupTimeoutSec;
         }
         if (params.isEmpty() && template.params != null && !template.params.isEmpty()) {
             params.putAll(template.params);

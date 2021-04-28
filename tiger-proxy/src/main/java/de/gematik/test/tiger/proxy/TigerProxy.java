@@ -32,7 +32,7 @@ public class TigerProxy implements ITigerProxy {
             .extensions(urlTransformer);
 
         if (configuration.getForwardToProxy() != null
-            && StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())
+            && !StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())
             && configuration.getForwardToProxy().getPort() != null) {
             wireMockConfiguration.proxyVia(configuration.getForwardToProxy().getHostname(),
                 configuration.getForwardToProxy().getPort());

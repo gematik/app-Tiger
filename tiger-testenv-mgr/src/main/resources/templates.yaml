@@ -3,7 +3,8 @@ templates:
     product: IDP_REF
     # where to get the server from or where to connect to,
     instanceUri: docker:gstopdr1.top.local/idp/idp-server
-    version: 15.0.0-758
+    version: 15.0.0-759
+    startupTimeoutSec: 30
     # folder containing all certs and keys used in encrypting/signing the traffic data
     pkiFolder: src/main/java/resources/pki/idp-ref
     # list of regex to be matched by the proxy
@@ -19,6 +20,7 @@ templates:
     product: IDP_RISE
     # where to get the server from or where to connect to,
     instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
+    startupTimeoutSec: 5
     # folder containing all certs and keys used in encrypting/signing the traffic data
     pkiFolder:
     # list of regex to be matched by the proxy
@@ -33,6 +35,7 @@ templates:
     product: IDP_RISE
     # where to get the server from or where to connect to,
     instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    startupTimeoutSec: 5
     # folder containing all certs and keys used in encrypting/signing the traffic data
     pkiFolder:
     # list of regex to be matched by the proxy
@@ -47,6 +50,7 @@ templates:
     product: ERZP_FD_REF
     instanceUri: docker:gstopdr1.top.local/erezept/ref-erx-fd-server
     version: 0.15.1
+    startupTimeoutSec: 400
     # folder containing all certs and keys used in encrypting/signing the traffic data
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
     # list of regex to be matched by the proxy

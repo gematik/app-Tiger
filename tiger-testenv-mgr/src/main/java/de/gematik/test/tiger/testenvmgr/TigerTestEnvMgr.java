@@ -3,6 +3,7 @@ package de.gematik.test.tiger.testenvmgr;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
@@ -45,10 +46,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         dockerManager = new DockerMgr();
 
-        localDockerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .build());
+        localDockerProxy = new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .forwardToProxy(ForwardProxyInfo.builder().hostname("192.168.230.85").port(3128).build())
+                .proxyRoutes(Collections.emptyMap())
+                .build());
     }
-
     @Override
     public void setUpEnvironment() {
         log.info("starting set up of test environment...");
@@ -77,7 +80,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 final List<String> imports = server.getImports();
                 for (int i = 0; i < imports.size(); i++) {
                     imports.set(i, substituteTokens(imports.get(i), "", environmentVariables));
-                    imports.set(i, substituteTokens(imports.get(i), "", Map.of("PROXYHOST", "localhost", "PROXYPORT", localDockerProxy.getPort())));
+                    imports.set(i, substituteTokens(imports.get(i), "",
+                        Map.of("PROXYHOST", "localhost", "PROXYPORT", localDockerProxy.getPort())));
                 }
                 startDocker(server);
             } else if (uri[0].equals("external")) {

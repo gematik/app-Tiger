@@ -32,24 +32,36 @@ public class DockerMgr {
             container.start();
             // make startup time and intervall and url (supporting ${PORT} and regex content configurable
             try {
-                Thread.sleep(12000);
+                Thread.sleep(5000);
             } catch (final InterruptedException e) {
                 e.printStackTrace();
             }
             final boolean health = false;
+            final long startms = System.currentTimeMillis();
             try {
                 while (!container.isHealthy()) {
-                    Thread.sleep(2000);
+                    Thread.sleep(1000);
+                    if (server.getStartupTimeoutSec() != null && startms + server.getStartupTimeoutSec() * 1000 < System
+                        .currentTimeMillis()) {
+                        throw new TigerTestEnvException("Startup of server %s timed out after %d seconds!",
+                            server.getName(), server.getStartupTimeoutSec());
+                    }
                 }
-            } catch (final Exception e) {
-                log.warn("probably no health check configured - defaulting to 20s startup time");
+                log.info("HealthCheck OK for " + server.getName());
+            } catch (InterruptedException ie) {
+                throw new TigerTestEnvException("Interruption signaled while waiting for server " + server.getName() + " to start up", ie);
+            } catch (TigerTestEnvException ttee) {
+                throw ttee;
+            } catch (final RuntimeException rte) {
+                int timeout = server.getStartupTimeoutSec() != null ?  server.getStartupTimeoutSec() : 20;
+                log.warn("probably no health check configured - defaulting to " + timeout + "s startup time");
                 try {
-                    Thread.sleep(20000);
+                    Thread.sleep(timeout*1000);
                 } catch (InterruptedException interruptedException) {
                     interruptedException.printStackTrace();
                 }
+                log.info("HealthCheck UNCLEAR for " + server.getName() + " as no healtcheck is configured, we assume it works and continue setup!");
             }
-            log.warn("HealthCheck OK for " + server.getName());
             container.getDockerClient().renameContainerCmd(container.getContainerId())
                 .withName("tiger." + server.getName()).exec();
             containers.put(server.getName(), container);

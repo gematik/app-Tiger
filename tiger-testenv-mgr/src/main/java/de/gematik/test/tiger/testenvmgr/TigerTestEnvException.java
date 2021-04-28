@@ -8,6 +8,10 @@ public class TigerTestEnvException extends RuntimeException {
         super(msg);
     }
 
+    public TigerTestEnvException(final String pattern, Object... args) {
+        super(String.format(pattern, args));
+    }
+
     public TigerTestEnvException(final String msg, final Throwable t) {
         super(msg, t);
     }

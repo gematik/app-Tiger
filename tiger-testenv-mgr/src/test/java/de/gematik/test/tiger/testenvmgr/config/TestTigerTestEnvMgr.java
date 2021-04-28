@@ -12,14 +12,14 @@ public class TestTigerTestEnvMgr {
     @Test
     public void testReadConfig() {
         final Configuration cfg = new Configuration();
-        cfg.readConfig(new File("tiger-testenv.yaml").toURI());
+        cfg.readConfig(new File("../tiger-testenv.yaml").toURI());
         assertThat(cfg.getServers()).hasSize(4);
         assertThat(cfg.getServers().get(0).getParams()).isEmpty();
         assertThat(cfg.getServers().get(2).getParams()).isEmpty();
     }
 
     @SneakyThrows
-    //@Test
+    @Test
     public void testCreateEnv() {
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         // TODO not for now
