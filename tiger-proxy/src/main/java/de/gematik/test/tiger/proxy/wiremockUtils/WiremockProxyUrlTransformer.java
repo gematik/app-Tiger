@@ -46,7 +46,7 @@ public class WiremockProxyUrlTransformer extends ResponseDefinitionTransformer {
 
     private Optional<ResponseDefinition> getResponseDefinition(ResponseDefinition responseDefinition, URI requestUri,
         String mappingSource, String mappingTarget) {
-        if (!mappingSource.equals(requestUri.getHost())) {
+        if (!mappingSource.equals(requestUri.getScheme() + "://" + requestUri.getHost())) {
             return Optional.empty();
         }
 
