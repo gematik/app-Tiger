@@ -1,0 +1,20 @@
+@startuml
+(*) --> "initialize forward proxy"
+ --> "initialize proxy routes list"
+
+if "Incoming request URI matches any\nscheme, hostname and port from list" then
+  -->[true] "replace uri and send request to new URI"
+  --> "check forward proxy"
+else
+  -->[false] "check forward proxy"
+endif
+
+if "Forward proxy is active"
+    -down->[true] "send request via forward proxy"
+    --> (*)
+else
+    ->[false] "send request directly"
+    --> (*)
+endif
+
+@enduml
