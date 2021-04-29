@@ -1,86 +1,71 @@
 package de.gematik.test.tiger.proxy;
 
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static org.mockserver.model.HttpRequest.request;
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.captures.WiremockCapture;
-import de.gematik.rbellogger.converter.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHttpMessage;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.wiremockUtils.WiremockProxyUrlTransformer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.model.SocketAddress.Scheme;
+import org.mockserver.netty.MockServer;
+import org.mockserver.proxyconfiguration.ProxyConfiguration;
+import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 
 @Slf4j
 public class TigerProxy implements ITigerProxy {
 
-    private final WiremockCapture wiremockCapture;
-    private final RbelLogger rbelLogger;
-    private final WiremockProxyUrlTransformer urlTransformer;
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
+    private MockServer mockServer;
+    private MockServerClient mockServerClient;
 
     public TigerProxy(TigerProxyConfiguration configuration) {
-        urlTransformer = new WiremockProxyUrlTransformer();
+        ProxyConfiguration proxyConfiguration = ProxyConfiguration.proxyConfiguration(Type.HTTPS,
+            configuration.getForwardToProxy().getHostname()
+                + ":"
+                + configuration.getForwardToProxy().getPort());
+        mockServer = new MockServer(proxyConfiguration);
+        mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
-        final WireMockConfiguration wireMockConfiguration = wireMockConfig()
-            .dynamicPort()
-            .dynamicHttpsPort()
-            .trustAllProxyTargets(true)
-            .enableBrowserProxying(true)
-            .extensions(urlTransformer);
-
-        if (configuration.getForwardToProxy() != null
-            && !StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())
-            && configuration.getForwardToProxy().getPort() != null) {
-            log.info("activating forward proxy " + configuration.getForwardToProxy().getHostname()
-                + ":" + configuration.getForwardToProxy().getPort());
-            wireMockConfiguration
-                .proxyVia(configuration.getForwardToProxy().getHostname(),
-                    configuration.getForwardToProxy().getPort());
+        for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
+            addRoute(routeEntry.getKey(), routeEntry.getValue());
         }
-
-        wiremockCapture = WiremockCapture.builder()
-            .wireMockConfiguration(wireMockConfiguration)
-            .build();
-
-        rbelLogger = RbelLogger.build(new RbelConfiguration()
-            .addCapturer(wiremockCapture));
-
-        rbelLogger.getRbelConverter().registerListener(RbelHttpMessage.class, (message, context) ->
-            rbelMessageListeners.forEach(listener -> listener.triggerNewReceivedMessage(message)));
-
-        urlTransformer.getUrlMap().putAll(configuration.getProxyRoutes());
     }
 
     @Override
     public String getBaseUrl() {
-        return "http://localhost:" + wiremockCapture.getWireMockServer().port();
+        return "http://localhost:" + mockServer.getLocalPort();
     }
 
     @Override
     public int getPort() {
-        return wiremockCapture.getWireMockServer().port();
-    }
-
-    public int getTslPort() {
-        return wiremockCapture.getWireMockServer().httpsPort();
+        return mockServer.getLocalPort();
     }
 
     @Override
     public List<RbelElement> getRbelMessages() {
-        return rbelLogger.getMessageHistory();
+//        return rbelLogger.getMessageHistory();
+        return null;
     }
 
     @Override
-    public void addRoute(String urlRegexPattern, String targetUrl, boolean rbelEnabled) {
+    public void addRoute(String sourceHost, String targetHost) {
         //TODO urlRegexPattern wird momentan einfach fix ausgewertet. Da müssen wir bei Gelegenheit mal drüber reden
         //TODO rbelEnabled wird ignoriert.
-        log.info("adding route " + urlRegexPattern + " -> " + targetUrl);
-        urlTransformer.getUrlMap().put(urlRegexPattern, targetUrl);
+        log.info("adding route {} -> {}", sourceHost, targetHost);
+        mockServerClient.when(request()
+            .withHeader("Host", sourceHost))
+            .forward(
+                forwardOverriddenRequest(
+                    request()
+                        .withHeader("Host", targetHost)
+                ));
     }
 
     @Override

@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface ITigerProxy {
 
-    void addRoute(String urlRegexPattern, String targetUrl, boolean rbelEnabled);
+    void addRoute(String sourceHost, String targetHost);
 
     void addRbelMessageListener(IRbelMessageListener listener);
 

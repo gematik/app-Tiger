@@ -61,7 +61,7 @@ public class TestTigerProxy {
             .proxyRoutes(Map.of("https://backend", "http://localhost:" + wireMockRule.port()))
             .build());
 
-        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getTslPort()));
+        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
 
         final HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
             .asJson();
@@ -101,7 +101,7 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    //    @Test
+    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
             .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
@@ -111,7 +111,7 @@ public class TestTigerProxy {
             )).build());
         System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
         try {
-            Thread.sleep(30 * 1000 * 1_000);
+            Thread.sleep(30 * 1_000 * 1_000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
