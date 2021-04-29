@@ -1,8 +1,5 @@
 package de.gematik.test.tiger.lib;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import lombok.SneakyThrows;
 import org.junit.Test;
 
 public class TestTigerDirector {

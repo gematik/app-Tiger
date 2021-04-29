@@ -5,7 +5,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -18,11 +17,11 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.springframework.util.StreamUtils;
 
 public class TestTigerProxy {
 
@@ -66,7 +65,7 @@ public class TestTigerProxy {
 
         final HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
             .asJson();
-        System.out.println(StreamUtils.copyToString(response.getRawBody(), Charset.defaultCharset()));
+        System.out.println(IOUtils.toString(response.getRawBody(), Charset.defaultCharset()));
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
@@ -102,7 +101,7 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    @Test
+    //@Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
             .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))

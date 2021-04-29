@@ -62,10 +62,27 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>RELEASE</version>
+            <version>4.13.2</version>
         </dependency>
         <!-- TestNG driver is currently not supported with Serenity -->
         <!-- Junit 5 driver is currently not supported with Tiger -->
+
+        <!-- JSON Checker -->
+        <dependency>
+            <groupId>org.skyscreamer</groupId>
+            <artifactId>jsonassert</artifactId>
+            <version>1.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.2</version>
+        </dependency>
+        <dependency>
+            <artifactId>json-unit-spring</artifactId>
+            <groupId>net.javacrumbs.json-unit</groupId>
+            <version>2.25.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -115,6 +132,7 @@
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <groupId>org.apache.maven.plugins</groupId>
+                <version>3.0.0-M5</version>
                 <executions>
                     <execution>
                         <id>run-tests</id>

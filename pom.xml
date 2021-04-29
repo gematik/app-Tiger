@@ -41,6 +41,7 @@
         <version.lombok>1.18.18</version.lombok>
         <version.jackson>2.11.2</version.jackson>
         <version.slf4j>1.6.1</version.slf4j>
+        <version.junit5>5.7.1</version.junit5>
 
         <encoding>UTF-8</encoding>
     </properties>
@@ -50,7 +51,6 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-core</artifactId>
-            <scope>test</scope>
             <version>${version.serenity.core}</version>
         </dependency>
 
@@ -69,13 +69,11 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-cucumber6</artifactId>
-            <scope>test</scope>
             <version>${version.serenity.cucumber.6}</version>
         </dependency>
         <dependency><!-- needed for type registry -->
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-core</artifactId>
-            <scope>test</scope>
             <version>${version.cucumber}</version>
         </dependency>
         <dependency>
@@ -128,7 +126,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
+            <version>${version.junit5}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -143,6 +141,11 @@
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.9.1</version>
             </plugin>
         </plugins>
     </build>
