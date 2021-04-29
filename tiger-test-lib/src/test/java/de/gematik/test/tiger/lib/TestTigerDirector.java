@@ -14,7 +14,7 @@ public class TestTigerDirector {
         TigerDirector.beforeTestRun();
     }
 
-    //@Test
+    @Test
     public void testDirectorIdpAndERezept() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/idpAnderezept.yaml");

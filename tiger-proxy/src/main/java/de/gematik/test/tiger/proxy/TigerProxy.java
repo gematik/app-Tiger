@@ -36,6 +36,8 @@ public class TigerProxy implements ITigerProxy {
         if (configuration.getForwardToProxy() != null
             && !StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())
             && configuration.getForwardToProxy().getPort() != null) {
+            log.info("activating forward proxy " + configuration.getForwardToProxy().getHostname()
+                + ":" + configuration.getForwardToProxy().getPort());
             wireMockConfiguration
                 .proxyVia(configuration.getForwardToProxy().getHostname(),
                     configuration.getForwardToProxy().getPort());

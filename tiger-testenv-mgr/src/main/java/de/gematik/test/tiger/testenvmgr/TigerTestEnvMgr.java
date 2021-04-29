@@ -42,12 +42,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         configuration.applyTemplates();
 
         environmentVariables = new HashMap<>();
-
         dockerManager = new DockerMgr();
-
-        localDockerProxy = new TigerProxy(
-            TigerProxyConfiguration.builder().forwardToProxy(configuration.getTigerProxy().getForwardToProxy())
-                .proxyRoutes(Collections.emptyMap()).build());
+        if (configuration.getTigerProxy() != null) {
+            configuration.getTigerProxy().setProxyRoutes(Collections.emptyMap());
+        } else {
+            configuration.setTigerProxy(TigerProxyConfiguration.builder().proxyRoutes(Collections.emptyMap()).build());
+        }
+        localDockerProxy = new TigerProxy(configuration.getTigerProxy());
     }
 
     @Override
@@ -59,7 +60,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     @Override
     public void composeEnvironment(final File composeFile) {
-        // TODO
+        // TODO NEXTREL after first poc maybe even for next release
     }
 
     @Override
@@ -73,13 +74,19 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         if (server.isActive()) {
 
-            // TODO if proxy env are in imports replace  with localdockerproxy data
+            // if proxy env are in imports replace  with localdockerproxy data
             if (uri[0].equals("docker")) {
                 final List<String> imports = server.getImports();
                 for (int i = 0; i < imports.size(); i++) {
                     imports.set(i, substituteTokens(imports.get(i), "", environmentVariables));
                     imports.set(i, substituteTokens(imports.get(i), "",
-                        Map.of("PROXYHOST", "localhost", "PROXYPORT", localDockerProxy.getPort())));
+                        Map.of("PROXYHOST", "host.docker.internal", "PROXYPORT", localDockerProxy.getPort())));
+                }
+                if (server.getUrlMappings() != null) {
+                    server.getUrlMappings().forEach(mapping -> {
+                        String[] kvp = mapping.split(" --> ", 2);
+                        localDockerProxy.addRoute(kvp[0], kvp[1], false);
+                    });
                 }
                 startDocker(server);
             } else if (uri[0].equals("external")) {
@@ -89,26 +96,28 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     String.format("Unsupported server type %s found in server %s", uri[0], server.getName()));
             }
 
-            // TODO add routes needed for each server to local docker proxy
-            localDockerProxy.addRoute("http://" + server.getName(),
-                "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue(),
-                true);
+            // add routes needed for each server to local docker proxy
+            // ATTENTION only one route per server!
+            if (!server.getPorts().isEmpty()) {
+                localDockerProxy.addRoute("http://" + server.getName(),
+                    "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue(),
+                    true);
+            }
+
             // set system properties from exports section and store the value in environmentVariables map
             server.getExports().forEach(exp -> {
-                final int sep = exp.indexOf("=");
-                assertThat(sep).isNotEqualTo(-1);
-                final String key = exp.substring(0, sep);
-                String value = exp.substring(sep + 1);
+                String[] kvp = exp.split("=", 2);
                 // ports substitution are only supported for docker based instances
                 if (uri[0].equals("docker") && server.getPorts() != null) {
-                    for (final Entry<Integer, Integer> entry : server.getPorts().entrySet()) {
-                        value = value.replace("${PORT:" + entry.getKey() + "}", String.valueOf(entry.getValue()));
-                    }
+                    server.getPorts().forEach((localPort, externPort)   ->
+                        kvp[1] = kvp[1].replace("${PORT:" + localPort + "}", String.valueOf(externPort))
+                    );
                 }
-                value = value.replace("${NAME}", server.getName());
-                log.info("  setting system property " + key + "=" + value);
-                System.setProperty(key, value);
-                environmentVariables.put(key, value);
+                kvp[1] = kvp[1].replace("${NAME}", server.getName());
+
+                log.info("  setting system property " + kvp[0] + "=" + kvp[1]);
+                System.setProperty(kvp[0], kvp[1]);
+                environmentVariables.put(kvp[0], kvp[1]);
             });
         } else {
             log.warn("skipping inactive server " + server.getName());

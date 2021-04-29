@@ -18,7 +18,7 @@ public class TigerDirector {
 
     public static synchronized void beforeTestRun() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.warn("ABORTING initialisation as TIGER_ACTIVE is not set to '1'");
+            log.warn("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
             return;
         }
         log.info("reading test configuration...");
@@ -38,11 +38,8 @@ public class TigerDirector {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             return;
         }
-        // check if testdirector was initialized
-        if (!initialized) {
-            throw new AssertionError("Tiger test environment has not been initialized. "
-                + "Did you call TigerDirector.beforeTestRun before starting test run?");
-        }
+        checkIsInitialized();
+        checkIsInitialized();
         // get route infos
 
         RbelMessageProvider rbelMessageProvider = new RbelMessageProvider();
@@ -67,4 +64,10 @@ public class TigerDirector {
         return Thread.currentThread().getId();
     }
 
+    private static void checkIsInitialized() {
+        if (!initialized) {
+            throw new AssertionError("Tiger test environment has not been initialized. "
+                + "Did you call TigerDirector.beforeTestRun before starting test run?");
+        }
+    }
 }

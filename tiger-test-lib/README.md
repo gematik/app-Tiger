@@ -13,11 +13,10 @@ docekr system prune
 
 # TODOs
 
-TestenvMgr: add timeout for health check loop
-
-Banner component
+Banner component with ANSI support
 
 # TODO Next release
+
 
 # NOGOs
 
