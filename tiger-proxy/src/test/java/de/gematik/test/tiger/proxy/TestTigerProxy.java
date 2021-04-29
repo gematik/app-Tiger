@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
+
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -14,7 +15,6 @@ import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.IOUtils;
@@ -101,14 +101,17 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    //@Test
+    //    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
             .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
-            .proxyRoutes(Collections.emptyMap()).build());
+            .proxyRoutes(Map.of(
+                "magog", "google.com",
+                "tsl", "download-ref.tsl.ti-dienste.de"
+            )).build());
         System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
         try {
-            Thread.sleep(300 * 1_000);
+            Thread.sleep(30 * 1000 * 1_000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
