@@ -2,11 +2,9 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.seeOther;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpRequest.request;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.mashape.unirest.http.HttpResponse;
@@ -25,7 +23,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.jupiter.api.Disabled;
 
 public class TestTigerProxy {
 
@@ -77,10 +74,9 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void requestAndResponseThroughWebProxy_shouldGiveRbelObjects() throws UnirestException {
+    public void requestAndResponseThroughWebProxy_shouldGiveRbelObjects() throws UnirestException, InterruptedException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(Map.of(
-                "backend", "localhost:" + wireMockRule.port(),
                 "backend", "localhost:" + wireMockRule.port()
             ))
             .build());
@@ -110,7 +106,7 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    @Test
+    //    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
 //            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))

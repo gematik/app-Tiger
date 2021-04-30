@@ -3,18 +3,28 @@ package de.gematik.test.tiger.proxy;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 
+import com.github.tomakehurst.wiremock.http.HttpHeader;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelHttpRequest;
+import de.gematik.rbellogger.data.RbelHttpResponse;
+import de.gematik.rbellogger.data.RbelMultiValuedMapElement;
+import de.gematik.rbellogger.data.RbelPathElement;
+import de.gematik.rbellogger.data.RbelStringElement;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.model.Header;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
@@ -27,13 +37,16 @@ public class TigerProxy implements ITigerProxy {
     private MockServer mockServer;
     private MockServerClient mockServerClient;
     private RbelLogger rbelLogger;
+    private MockServerToRbelConverter mockServerToRbelConverter;
 
     public TigerProxy(TigerProxyConfiguration configuration) {
+        rbelLogger = RbelLogger.build();
+        mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
+
         mockServer = convertProxyConfiguration(configuration)
             .map(config -> new MockServer(config, 6666))
             .orElse(new MockServer());
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
-        rbelLogger = RbelLogger.build();
 
         for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
             addRoute(routeEntry.getKey(), routeEntry.getValue());
@@ -75,11 +88,20 @@ public class TigerProxy implements ITigerProxy {
         mockServerClient.when(request()
             .withHeader("Host", sourceHost))
             .forward(
-                //  forward().withScheme("http")
-                forwardOverriddenRequest(
-                    request()
-                        .withHeader("Host", targetHost)
-                ));
+                req -> forwardOverriddenRequest(
+                    req.replaceHeader(Header.header("Host", targetHost))
+                ).getHttpRequest(),
+                (req, resp) -> {
+                    triggerListener(mockServerToRbelConverter.convertRequest(req));
+                    triggerListener(mockServerToRbelConverter.convertResponse(resp));
+                    return resp;
+                }
+            );
+    }
+
+    private void triggerListener(RbelElement element) {
+        getRbelMessageListeners()
+            .forEach(listener -> listener.triggerNewReceivedMessage(element));
     }
 
     @Override
