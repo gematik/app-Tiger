@@ -101,10 +101,11 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    @Test
+//    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
-            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+//            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
             .proxyRoutes(Map.of(
                 "magog", "google.com",
                 "tsl", "download-ref.tsl.ti-dienste.de"

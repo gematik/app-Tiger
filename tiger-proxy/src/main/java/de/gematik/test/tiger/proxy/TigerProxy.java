@@ -33,6 +33,17 @@ public class TigerProxy implements ITigerProxy {
         mockServer = new MockServer(proxyConfiguration);
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
+
+        //https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml'
+
+        mockServerClient.when(request()
+                .withHeader("Host", "tsl"))
+            .forward(
+                forwardOverriddenRequest(
+                    request()
+                        .withHeader("Host", "download-ref.tsl.ti-dienste.de")
+                ));
+
         for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
             addRoute(routeEntry.getKey(), routeEntry.getValue());
         }
