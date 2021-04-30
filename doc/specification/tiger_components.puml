@@ -54,7 +54,7 @@ package TestSuitePool as suites {
       PolarionConnector
       Context
       Variables
-      JSONChecker
+      JsonChecker
       AfoReporter
       TestCodeParser
       TestResultParser

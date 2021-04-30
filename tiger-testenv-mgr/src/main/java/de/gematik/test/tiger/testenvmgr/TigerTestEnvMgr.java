@@ -1,6 +1,5 @@
 package de.gematik.test.tiger.testenvmgr;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
@@ -9,7 +8,6 @@ import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
 import java.net.ServerSocket;
 import java.util.*;
-import java.util.Map.Entry;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -85,7 +83,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 if (server.getUrlMappings() != null) {
                     server.getUrlMappings().forEach(mapping -> {
                         String[] kvp = mapping.split(" --> ", 2);
-                        localDockerProxy.addRoute(kvp[0], kvp[1], false);
+                        localDockerProxy.addRoute(kvp[0], kvp[1]);
                     });
                 }
                 startDocker(server);
@@ -99,9 +97,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             // add routes needed for each server to local docker proxy
             // ATTENTION only one route per server!
             if (!server.getPorts().isEmpty()) {
-                localDockerProxy.addRoute("http://" + server.getName(),
-                    "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue(),
-                    true);
+                localDockerProxy.addRoute(server.getName(),
+                    "localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
             }
 
             // set system properties from exports section and store the value in environmentVariables map

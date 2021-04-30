@@ -51,7 +51,7 @@ templates:
     imports:
       - GEMATIK_TESTCONFIG=rise-rru
     exports:
-      - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
+      - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     params:
 
   # ----------------------------------------------------------------------------------------------------------------------
@@ -84,25 +84,27 @@ templates:
     startupTimeoutSec: 40
     # todo add pki files there
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
-    # dirty hack for now to circumvent ssl certificate issues at tiger proxy
     urlMappings:
-      - http://download.tsl --> https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
+      - http://name --> http://localhost:23424
+      - http://tsl --> https://dsfgdfsg
+      - https://tsl --> https://dsfgdfsg
+    # download-ref.tsl.ti-dienste.de
     imports:
       - TOKEN=${IDP_SERVER}
-      - TSL=http://download.tsl
+      - TSL=https://tls/ECC/ECC-RSA_TSL-ref.xml
       - http_proxy=http://${PROXYHOST}:${PROXYPORT}
       - https_proxy=http://${PROXYHOST}:${PROXYPORT}
       - HTTP_PROXY=http://${PROXYHOST}:${PROXYPORT}
       - HTTPS_PROXY=http://${PROXYHOST}:${PROXYPORT}
-      - NO_PROXY=localhost,127.0.0.1
-      - no_proxy=localhost,127.0.0.1
-      # telematik-test is needed for download of ocsp pki
-      - no_proxy=*.telematik-test
+      - NO_PROXY=localhost,127.0.0.1,*.telematik-test
+      - no_proxy=localhost,127.0.0.1,*.telematik-test
       - ENC_KEY=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.prv.pem
       - ENC_CERT=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.pem
       - SIG_KEY=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.prv.pem
       - SIG_CERT=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.pem
       - BNETZA=file://./Pseudo-BNetzA-VL-seq24.xml
+      # telematik-test is needed for download of ocsp pki
     exports:
     params:
+
 

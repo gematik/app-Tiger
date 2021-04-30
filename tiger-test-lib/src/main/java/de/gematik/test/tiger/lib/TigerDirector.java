@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TigerDirector {
 
     private static final Map<Long, RbelMessageProvider> rbelMsgProviderMap = new HashMap<>();
+
     private static TigerTestEnvMgr tigerTestEnvMgr;
 
     private static boolean initialized = false;
@@ -34,12 +35,25 @@ public class TigerDirector {
         log.info("director is initialized OK");
     }
 
-    public static void beforeTestThreadStart() {
-        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+    public static synchronized  boolean isInitialized() {
+        return initialized;
+    }
+
+    public static TigerTestEnvMgr getTigerTestEnvMgr() {
+        return tigerTestEnvMgr;
+    }
+
+    public static void synchronizeTestCasesWIthPolaarion() {
+        if (!checkIsInitialized()) {
             return;
         }
-        checkIsInitialized();
-        checkIsInitialized();
+        // TODO call Polarion Toolbox via Java lang reflect to allow for soft coupling
+    }
+
+    public static void beforeTestThreadStart() {
+        if (!checkIsInitialized()) {
+            return;
+        }
         // get route infos
 
         RbelMessageProvider rbelMessageProvider = new RbelMessageProvider();
@@ -50,10 +64,23 @@ public class TigerDirector {
 
     }
 
+    public static void createAfoRepoort() {
+        if (!checkIsInitialized()) {
+            return;
+        }
+        // TODO create Aforeport and embedd it into serenity report
+    }
+
     public static String getProxySettings() {
+        if (!checkIsInitialized()) {
+            return null;
+        }
         return tigerTestEnvMgr.getLocalDockerProxy().getBaseUrl();
     }
     public static RbelMessageProvider getRbelMessageProvider() {
+        if (!checkIsInitialized()) {
+            return null;
+        }
         // get instance from map with thread id as key
         return Optional.ofNullable(rbelMsgProviderMap.get(tid()))
             .orElseThrow(() -> new TigerLibraryException("Tiger has not been initialized for Thread '%s'. "
@@ -64,10 +91,16 @@ public class TigerDirector {
         return Thread.currentThread().getId();
     }
 
-    private static void checkIsInitialized() {
+    private static boolean checkIsInitialized() {
+        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+            log.warn("Tiger test environment has not been initialized,"
+                + "as the TIGER_ACTIVE environment variable is nto set to '1'.");
+            return false;
+        }
         if (!initialized) {
             throw new AssertionError("Tiger test environment has not been initialized. "
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
         }
+        return true;
     }
 }

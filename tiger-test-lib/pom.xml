@@ -87,6 +87,59 @@
 
     <build>
         <plugins>
+
+            <!-- plugins to create reusable test jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <tags>
+                        <tag>
+                            <name>testenv</name>
+                            <placement>a</placement>
+                            <head>Testenvironment Variables:</head>
+                        </tag>
+                        <tag>
+                            <name>gematik.context.out</name>
+                            <placement>a</placement>
+                            <head>Context OUT:</head>
+                        </tag>
+                        <tag>
+                            <name>gematik.context.in</name>
+                            <placement>a</placement>
+                            <head>Context INPUT:</head>
+                        </tag>
+                    </tags>
+                </configuration>
+            </plugin>
+
+            <!-- end reusable plugin part -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

@@ -34,7 +34,7 @@ skinparam interface {
 
     package TigerTestLib {
       component "Basic steps" as bs
-      component jsonchck [JSONChecker
+      component jsonchck [JsonChecker
         ===
         allows to use regex based docstrings to compare received JSON data
         includes tree support allowing to assert multi level JSON data
