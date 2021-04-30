@@ -3,22 +3,13 @@ package de.gematik.test.tiger.proxy;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 
-import com.github.tomakehurst.wiremock.http.HttpHeader;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHttpRequest;
-import de.gematik.rbellogger.data.RbelHttpResponse;
-import de.gematik.rbellogger.data.RbelMultiValuedMapElement;
-import de.gematik.rbellogger.data.RbelPathElement;
-import de.gematik.rbellogger.data.RbelStringElement;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -47,6 +38,12 @@ public class TigerProxy implements ITigerProxy {
             .map(config -> new MockServer(config, 6666))
             .orElse(new MockServer());
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
+
+        mockServerClient
+            .when(request()
+                .withSecure(false))
+            .forward(req -> forwardOverriddenRequest(req)
+                .getHttpRequest().withSecure(true));
 
         for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
             addRoute(routeEntry.getKey(), routeEntry.getValue());
