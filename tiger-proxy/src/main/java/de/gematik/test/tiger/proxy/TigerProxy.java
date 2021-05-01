@@ -31,6 +31,7 @@ public class TigerProxy implements ITigerProxy {
     private MockServerToRbelConverter mockServerToRbelConverter;
 
     public TigerProxy(TigerProxyConfiguration configuration) {
+
         rbelLogger = RbelLogger.build();
         mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
 
@@ -38,13 +39,6 @@ public class TigerProxy implements ITigerProxy {
             .map(config -> new MockServer(config, 6666))
             .orElse(new MockServer());
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
-
-        mockServerClient
-            .when(request()
-                .withSecure(false))
-            .forward(req -> forwardOverriddenRequest(req)
-                .getHttpRequest().withSecure(true));
-
         for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
             addRoute(routeEntry.getKey(), routeEntry.getValue());
         }
@@ -78,19 +72,23 @@ public class TigerProxy implements ITigerProxy {
     }
 
     @Override
-    public void addRoute(String sourceHost, String targetHost) {
-        //TODO urlRegexPattern wird momentan einfach fix ausgewertet. Da müssen wir bei Gelegenheit mal drüber reden
-        //TODO rbelEnabled wird ignoriert.
-        log.info("adding route {} -> {}", sourceHost, targetHost);
+    public void addRoute(String sourceSchemeNHost, String targetSchemeNHost) {
+        log.info("adding route {} -> {}", sourceSchemeNHost, targetSchemeNHost);
         mockServerClient.when(request()
-            .withHeader("Host", sourceHost))
+            .withHeader("Host", sourceSchemeNHost.split("://")[1])
+            .withSecure(sourceSchemeNHost.startsWith("https://")))
             .forward(
                 req -> forwardOverriddenRequest(
-                    req.replaceHeader(Header.header("Host", targetHost))
-                ).getHttpRequest(),
+                    req.replaceHeader(Header.header("Host", targetSchemeNHost.split("://")[1]))
+                ).
+                    getHttpRequest().withSecure(targetSchemeNHost.startsWith("https://")),
                 (req, resp) -> {
-                    triggerListener(mockServerToRbelConverter.convertRequest(req));
-                    triggerListener(mockServerToRbelConverter.convertResponse(resp));
+                    try {
+                        triggerListener(mockServerToRbelConverter.convertRequest(req));
+                        triggerListener(mockServerToRbelConverter.convertResponse(resp));
+                    } catch (Exception e) {
+                        log.error("RBel FAILED!", e);
+                    }
                     return resp;
                 }
             );

@@ -85,13 +85,12 @@ templates:
     # todo add pki files there
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
     urlMappings:
-      - http://name --> http://localhost:23424
-      - http://tsl --> https://dsfgdfsg
-      - https://tsl --> https://dsfgdfsg
+    - http://tsl --> https://download-ref.tsl.ti-dienste.de
     # download-ref.tsl.ti-dienste.de
     imports:
       - TOKEN=${IDP_SERVER}
-      - TSL=https://tls/ECC/ECC-RSA_TSL-ref.xml
+      - TSL=http://tsl/ECC/ECC-RSA_TSL-ref.xml
+      # https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
       - http_proxy=http://${PROXYHOST}:${PROXYPORT}
       - https_proxy=http://${PROXYHOST}:${PROXYPORT}
       - HTTP_PROXY=http://${PROXYHOST}:${PROXYPORT}

@@ -6,13 +6,13 @@ tigerProxy:
 servers:
   - name: idp
     template: idp-ref
-    active: true
+    active: false
 
   - name: idp
     template: idp-ref
     instanceUri: docker:idp-server
     version: 0.1-SNAPSHOT
-    active: false
+    active: true
 
   - name: idp-rise-rtu-manual
     template: idp-rise-rtu

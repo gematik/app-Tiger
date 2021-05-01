@@ -97,8 +97,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             // add routes needed for each server to local docker proxy
             // ATTENTION only one route per server!
             if (!server.getPorts().isEmpty()) {
-                localDockerProxy.addRoute(server.getName(),
-                    "localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
+                localDockerProxy.addRoute("http://" + server.getName(),
+                    "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
             }
 
             // set system properties from exports section and store the value in environmentVariables map

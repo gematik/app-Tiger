@@ -1,14 +1,21 @@
 package de.gematik.test.tiger.testenvmgr;
 
+import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 
 @Slf4j
 public class DockerMgr {
@@ -24,7 +31,41 @@ public class DockerMgr {
             if (server.getVersion() != null) {
                 imageName += ":" + server.getVersion();
             }
-            final GenericContainer<?> container = new GenericContainer<>(DockerImageName.parse(imageName));
+            DockerImageName imgName = DockerImageName.parse(imageName);
+            final GenericContainer<?> container = new GenericContainer<>(imageName);
+            InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
+
+            String[] startCmd = iiResponse.getConfig().getCmd();
+            String[] entryPointCmd = iiResponse.getConfig().getEntrypoint();
+
+            // erezept hardcoded
+            if (entryPointCmd != null && entryPointCmd[0].equals("/bin/sh") && entryPointCmd[1].equals("-c")) {
+                entryPointCmd = new String[] { "su", iiResponse.getConfig().getUser(), "-c", "'" + entryPointCmd[2] + "'"};
+            }
+            try {
+                String scriptName = "__tigerStart_" + server.getName() + ".sh";
+                FileUtils.writeStringToFile(Path.of(scriptName).toFile(),
+                    "#!/bin/sh\nenv\n"
+                        + "whoami\n"
+                        + "ls -al /usr/local/share/ca-certificates\n"
+                        + "update-ca-certificates\n"
+                        + "cd " + iiResponse.getConfig().getWorkingDir() + "\n" +
+                        String.join(" ", Optional.ofNullable(entryPointCmd).orElse(new String[0])).replace("\t", " ") + " " +
+                        String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n", StandardCharsets.UTF_8);
+
+                container.withCopyFileToContainer(MountableFile.forHostPath("cert-tiger-proxy.crt", 0644), "/usr/local/share/ca-certificates/cert-tiger-proxy.crt");
+                container.withCopyFileToContainer(MountableFile.forHostPath(scriptName, 0777), iiResponse.getConfig().getWorkingDir()  + "/" + scriptName);
+
+
+                container.withCreateContainerCmdModifier(
+                    cmd -> {
+                        cmd.withUser("root");
+                        cmd.withEntrypoint(iiResponse.getConfig().getWorkingDir() + "/" + scriptName);
+                    });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             container.setLogConsumers(List.of(new Slf4jLogConsumer((log))));
             log.info("Passing in environment:");
             server.getImports().stream()
