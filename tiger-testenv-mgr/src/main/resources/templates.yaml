@@ -25,6 +25,7 @@ templates:
     # support substitution of exported env variables from previously started servers
     imports:
       - GEMATIK_TESTCONFIG=default
+      - IDP_SERVER_URL=http://idp
     # environment variables made available to other servers
     # are not automatically imported but can be used as token ${ENVVAR}
     # ${NAME} is replaced with server name

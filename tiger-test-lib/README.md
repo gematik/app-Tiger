@@ -35,6 +35,8 @@ docekr system prune
 
 # TODOs
 
+TestEnv reader from property file
+
 Banner component with ANSI support
 
 # TODO Next release
