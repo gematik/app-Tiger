@@ -1,6 +1,6 @@
 package de.gematik.test.tiger.glue;
 
-import de.gematik.test.tiger.lib.Ansi;
+import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Feature;

@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.lib;
+package de.gematik.test.tiger.common;
 
 public interface Ansi {
 

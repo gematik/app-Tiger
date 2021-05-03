@@ -3,6 +3,7 @@ package de.gematik.test.tiger.testenvmgr;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
@@ -25,14 +27,14 @@ public class DockerMgr {
     public DockerMgr() {
     }
 
-    public void startContainer(final CfgServer server) {
+    public void startContainer(final CfgServer server, final TigerTestEnvMgr envmgr) {
         try {
             String imageName = server.getInstanceUri().substring("docker:".length());
             if (server.getVersion() != null) {
                 imageName += ":" + server.getVersion();
             }
             DockerImageName imgName = DockerImageName.parse(imageName);
-            final GenericContainer<?> container = new GenericContainer<>(imageName);
+            final GenericContainer<?> container = new GenericContainer<>(imgName);
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
 
             String[] startCmd = iiResponse.getConfig().getCmd();
@@ -40,22 +42,35 @@ public class DockerMgr {
 
             // erezept hardcoded
             if (entryPointCmd != null && entryPointCmd[0].equals("/bin/sh") && entryPointCmd[1].equals("-c")) {
-                entryPointCmd = new String[] { "su", iiResponse.getConfig().getUser(), "-c", "'" + entryPointCmd[2] + "'"};
+                entryPointCmd = new String[]{"su", iiResponse.getConfig().getUser(), "-c",
+                    "'" + entryPointCmd[2] + "'"};
             }
             try {
+
+                String proxycert = IOUtils.toString(new File("../tiger-testenv-mgr/cert-tiger-proxy.crt").toURI());
+                String idpcert = IOUtils.toString(new File("../tiger-testenv-mgr/idp-rise-tu.crt").toURI());
+                String lecert = IOUtils.toString(new File("../tiger-testenv-mgr/letsencrypt.crt").toURI());
                 String scriptName = "__tigerStart_" + server.getName() + ".sh";
                 FileUtils.writeStringToFile(Path.of(scriptName).toFile(),
-                    "#!/bin/sh\nenv\n"
-                        + "whoami\n"
-                        + "ls -al /usr/local/share/ca-certificates\n"
-                        + "update-ca-certificates\n"
-                        + "cd " + iiResponse.getConfig().getWorkingDir() + "\n" +
-                        String.join(" ", Optional.ofNullable(entryPointCmd).orElse(new String[0])).replace("\t", " ") + " " +
-                        String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n", StandardCharsets.UTF_8);
-
-                container.withCopyFileToContainer(MountableFile.forHostPath("cert-tiger-proxy.crt", 0644), "/usr/local/share/ca-certificates/cert-tiger-proxy.crt");
-                container.withCopyFileToContainer(MountableFile.forHostPath(scriptName, 0777), iiResponse.getConfig().getWorkingDir()  + "/" + scriptName);
-
+                    "#!/bin/sh -x\nenv\n"
+                        + "echo \"" + proxycert + "\n\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                        + "echo \"" + idpcert + "\n\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                        + "echo \"" + lecert + "\n\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                        //+ "update-ca-certificates\n"
+                        //+ "cat /etc/ssl/certs/ca-certificates.crt\n"
+                        // idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+                        //+ "sleep 2\ncurl -vvvv  https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration --proxy http://host.docker.internal:"
+                        //+ envmgr.getLocalDockerProxy().getPort() + "\n"
+                        + "cd " + iiResponse.getConfig().getWorkingDir() + "\n"
+                    + String.join(" ", Optional.ofNullable(entryPointCmd).orElse(new String[0])).replace("\t", " ") + " "
+                    + String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n", StandardCharsets.UTF_8);
+                //);
+                container.withCopyFileToContainer(MountableFile.forHostPath("cert-tiger-proxy.crt", 0644),
+                    "/usr/local/share/ca-certificates/cert-tiger-proxy.crt");
+                container.withCopyFileToContainer(MountableFile.forHostPath("idp-rise-tu.crt", 0644),
+                    "/usr/local/share/ca-certificates/idp-rise-tu.crt");
+                container.withCopyFileToContainer(MountableFile.forHostPath(scriptName, 0777),
+                    iiResponse.getConfig().getWorkingDir() + "/" + scriptName);
 
                 container.withCreateContainerCmdModifier(
                     cmd -> {

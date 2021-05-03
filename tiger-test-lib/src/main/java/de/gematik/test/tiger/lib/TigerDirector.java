@@ -1,6 +1,8 @@
 package de.gematik.test.tiger.lib;
 
+import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.util.HashMap;
@@ -21,20 +23,20 @@ public class TigerDirector {
     @SneakyThrows
     public static synchronized void beforeTestRun() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.warn("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
+            log.warn(Ansi.BOLD + Ansi.RED + "ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'" + Ansi.RESET);
             return;
         }
-        log.info("reading test configuration...");
+        log.info("\n" + Banner.toBannerStr("READING TEST CONFIG...", Ansi.BOLD + Ansi.BLUE));
         String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
         // TODO read configuration including testenv var settings
 
-        log.info("starting test environment manager...");
+        log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", Ansi.BOLD + Ansi.BLUE));
         tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
         // TODO store routes from server instances in static field for reuse by beforeTestThreadStart
 
         // set proxy to local tiger proxy for test suites
-        log.info("setting tiger proxy...");
+        log.info("\n" + Banner.toBannerStr("SETTING TIGER PROXY...", Ansi.BOLD + Ansi.BLUE));
         System.setProperty("http.proxyHost", "localhost");
         System.setProperty("http.proxyPort",
             "" + TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
@@ -45,7 +47,7 @@ public class TigerDirector {
 
 
         initialized = true;
-        log.info("director is initialized OK");
+        log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", Ansi.BOLD + Ansi.BLUE));
     }
 
     public static synchronized  boolean isInitialized() {

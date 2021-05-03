@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.testenvmgr;
 
+import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
@@ -7,6 +8,7 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
 import java.net.ServerSocket;
+import java.net.URI;
 import java.util.*;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -74,18 +76,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
             // if proxy env are in imports replace  with localdockerproxy data
             if (uri[0].equals("docker")) {
-                final List<String> imports = server.getImports();
-                for (int i = 0; i < imports.size(); i++) {
-                    imports.set(i, substituteTokens(imports.get(i), "", environmentVariables));
-                    imports.set(i, substituteTokens(imports.get(i), "",
-                        Map.of("PROXYHOST", "host.docker.internal", "PROXYPORT", localDockerProxy.getPort())));
-                }
-                if (server.getUrlMappings() != null) {
-                    server.getUrlMappings().forEach(mapping -> {
-                        String[] kvp = mapping.split(" --> ", 2);
-                        localDockerProxy.addRoute(kvp[0], kvp[1]);
-                    });
-                }
                 startDocker(server);
             } else if (uri[0].equals("external")) {
                 initializeExternal(server);
@@ -94,12 +84,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     String.format("Unsupported server type %s found in server %s", uri[0], server.getName()));
             }
 
-            // add routes needed for each server to local docker proxy
-            // ATTENTION only one route per server!
-            if (server.getPorts() != null && !server.getPorts().isEmpty()) {
-                localDockerProxy.addRoute("http://" + server.getName(),
-                    "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
-            }
 
             // set system properties from exports section and store the value in environmentVariables map
             server.getExports().forEach(exp -> {
@@ -121,20 +105,42 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
     }
 
-    private void startDocker(final CfgServer srv) {
-        log.info("starting docker instance " + srv.getName() + "...");
-        dockerManager.startContainer(srv);
-        loadPKIForServer(srv);
-        configureProxyForServer(srv);
+    private void startDocker(final CfgServer server) {
+        log.info(Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getInstanceUri() + Ansi.RESET);
+        final List<String> imports = server.getImports();
+        for (int i = 0; i < imports.size(); i++) {
+            imports.set(i, substituteTokens(imports.get(i), "", environmentVariables));
+            imports.set(i, substituteTokens(imports.get(i), "",
+                Map.of("PROXYHOST", "host.docker.internal", "PROXYPORT", localDockerProxy.getPort())));
+        }
+        if (server.getUrlMappings() != null) {
+            server.getUrlMappings().forEach(mapping -> {
+                String[] kvp = mapping.split(" --> ", 2);
+                localDockerProxy.addRoute(kvp[0], kvp[1]);
+            });
+        }
+        dockerManager.startContainer(server, this);
+        loadPKIForServer(server);
+        // add routes needed for each server to local docker proxy
+        // ATTENTION only one route per server!
+        if (server.getPorts() != null && !server.getPorts().isEmpty()) {
+            localDockerProxy.addRoute("http://" + server.getName(),
+                "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
+        }
+        log.info(Ansi.BOLD + Ansi.GREEN + "Docker container Startup OK " + server.getInstanceUri() + Ansi.RESET);
     }
 
-    public void initializeExternal(final CfgServer srv) {
-        log.info("starting external instance " + srv.getName() + "...");
-        // TODO NOGO SOMEHOW forward all exports from all already started servers
-        loadPKIForServer(srv);
-        configureProxyForServer(srv);
-        log.info("  Checking external instance  " + srv.getName() + " is available ...");
+    @SneakyThrows
+    public void initializeExternal(final CfgServer server) {
+        log.info(Ansi.BOLD + Ansi.GREEN + "starting external instance " + server.getName() + "..." + Ansi.RESET);
+        URI uri = new URI(server.getInstanceUri().substring("external:".length()));
+
+        localDockerProxy.addRoute("http://" + server.getName(), uri.getScheme() + "://" + uri.getHost());
+
+        loadPKIForServer(server);
+        log.info("  Checking external instance  " + server.getName() + " is available ...");
         // TODO check availability
+        log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getInstanceUri() + Ansi.RESET);
     }
 
     @Override
@@ -144,11 +150,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (uri[0].equals("external")) {
             shutDownExternal(server);
         }
-    }
-
-    private void configureProxyForServer(final CfgServer srv) {
-        log.info("  initializing proxy for instance " + srv.getName() + "...");
-        // TODO send url mappings and keys
     }
 
     private void loadPKIForServer(final CfgServer srv) {

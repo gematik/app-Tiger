@@ -11,7 +11,7 @@ templates:
     # instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     instanceUri: docker:gstopdr1.top.local/idp/idp-server
     # version of the docker image
-    version: 15.0.0-759
+    version: 15.0.0-764
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on)
     startupTimeoutSec: 30
@@ -82,20 +82,25 @@ templates:
     product: ERZP_FD_REF
     instanceUri: docker:gstopdr1.top.local/erezept/ref-erx-fd-server
     version: 0.15.1
-    startupTimeoutSec: 40
+    startupTimeoutSec: 180
     # todo add pki files there
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
     urlMappings:
     - http://tsl --> https://download-ref.tsl.ti-dienste.de
     # download-ref.tsl.ti-dienste.de
     imports:
+      #- TOKEN=http://idp/.well-known/openid-configuration
       - TOKEN=${IDP_SERVER}
       - TSL=http://tsl/ECC/ECC-RSA_TSL-ref.xml
-      # https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
+      #- TSL=https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
       - http_proxy=http://${PROXYHOST}:${PROXYPORT}
       - https_proxy=http://${PROXYHOST}:${PROXYPORT}
       - HTTP_PROXY=http://${PROXYHOST}:${PROXYPORT}
       - HTTPS_PROXY=http://${PROXYHOST}:${PROXYPORT}
+      #- http_proxy=http://192.168.230.85:3128
+      #- https_proxy=http://192.168.230.85:3128
+      #- HTTP_PROXY=http://192.168.230.85:3128
+      #- HTTPS_PROXY=http://192.168.230.85:3128
       - NO_PROXY=localhost,127.0.0.1,*.telematik-test
       - no_proxy=localhost,127.0.0.1,*.telematik-test
       - ENC_KEY=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.prv.pem
