@@ -19,19 +19,16 @@
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-proxy</artifactId>
             <version>0.1-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-testenv-mgr</artifactId>
             <version>0.1-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-common</artifactId>
             <version>0.1-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- needed for java test code parsing -->

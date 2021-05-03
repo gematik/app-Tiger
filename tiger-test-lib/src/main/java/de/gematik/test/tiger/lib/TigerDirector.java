@@ -6,6 +6,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -17,6 +18,7 @@ public class TigerDirector {
 
     private static boolean initialized = false;
 
+    @SneakyThrows
     public static synchronized void beforeTestRun() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.warn("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
@@ -30,6 +32,17 @@ public class TigerDirector {
         tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
         // TODO store routes from server instances in static field for reuse by beforeTestThreadStart
+
+        // set proxy to local tiger proxy for test suites
+        log.info("setting tiger proxy...");
+        System.setProperty("http.proxyHost", "localhost");
+        System.setProperty("http.proxyPort",
+            "" + TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
+        System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
+        System.setProperty("https.proxyHost", "localhost");
+        System.setProperty("https.proxyPort",
+            "" + TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
+
 
         initialized = true;
         log.info("director is initialized OK");

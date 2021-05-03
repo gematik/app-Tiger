@@ -96,7 +96,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
             // add routes needed for each server to local docker proxy
             // ATTENTION only one route per server!
-            if (!server.getPorts().isEmpty()) {
+            if (server.getPorts() != null && !server.getPorts().isEmpty()) {
                 localDockerProxy.addRoute("http://" + server.getName(),
                     "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
             }
@@ -130,7 +130,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     public void initializeExternal(final CfgServer srv) {
         log.info("starting external instance " + srv.getName() + "...");
-        // TODO SOMEHOW forward all exports from all already started servers
+        // TODO NOGO SOMEHOW forward all exports from all already started servers
         loadPKIForServer(srv);
         configureProxyForServer(srv);
         log.info("  Checking external instance  " + srv.getName() + " is available ...");

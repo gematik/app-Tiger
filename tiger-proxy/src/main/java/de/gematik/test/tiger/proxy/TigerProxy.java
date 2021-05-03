@@ -2,7 +2,6 @@ package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
-
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
@@ -13,7 +12,6 @@ import java.util.Optional;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.Header;
 import org.mockserver.netty.MockServer;
@@ -44,7 +42,6 @@ public class TigerProxy implements ITigerProxy {
         }
     }
 
-    @NotNull
     private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {
         if (configuration.getForwardToProxy() == null
             || StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())) {
