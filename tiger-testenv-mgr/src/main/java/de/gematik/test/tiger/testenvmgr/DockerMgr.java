@@ -3,14 +3,10 @@ package de.gematik.test.tiger.testenvmgr;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -47,9 +43,12 @@ public class DockerMgr {
             }
             try {
 
-                String proxycert = IOUtils.toString(new File("../tiger-testenv-mgr/cert-tiger-proxy.crt").toURI());
-                String idpcert = IOUtils.toString(new File("../tiger-testenv-mgr/idp-rise-tu.crt").toURI());
-                String lecert = IOUtils.toString(new File("../tiger-testenv-mgr/letsencrypt.crt").toURI());
+                String proxycert = IOUtils.toString(
+                    Objects.requireNonNull(getClass().getResourceAsStream("/cert-tiger-proxy.crt")));
+                String idpcert = IOUtils
+                    .toString(Objects.requireNonNull(getClass().getResourceAsStream("/idp-rise-tu.crt")));
+                String lecert = IOUtils
+                    .toString(Objects.requireNonNull(getClass().getResourceAsStream("/letsencrypt.crt")));
                 String scriptName = "__tigerStart_" + server.getName() + ".sh";
                 FileUtils.writeStringToFile(Path.of(scriptName).toFile(),
                     "#!/bin/sh -x\nenv\n"
@@ -62,8 +61,10 @@ public class DockerMgr {
                         //+ "sleep 2\ncurl -vvvv  https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration --proxy http://host.docker.internal:"
                         //+ envmgr.getLocalDockerProxy().getPort() + "\n"
                         + "cd " + iiResponse.getConfig().getWorkingDir() + "\n"
-                    + String.join(" ", Optional.ofNullable(entryPointCmd).orElse(new String[0])).replace("\t", " ") + " "
-                    + String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n", StandardCharsets.UTF_8);
+                        + String.join(" ", Optional.ofNullable(entryPointCmd).orElse(new String[0])).replace("\t", " ")
+                        + " "
+                        + String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n",
+                    StandardCharsets.UTF_8);
                 //);
                 container.withCopyFileToContainer(MountableFile.forHostPath("cert-tiger-proxy.crt", 0644),
                     "/usr/local/share/ca-certificates/cert-tiger-proxy.crt");
