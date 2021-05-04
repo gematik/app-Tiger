@@ -6,3 +6,5 @@
 /tiger-testenv-mgr/target/
 /tiger-test-lib/target/
 /tiger-common/target/
+/tiger-test-lib/__tiger*.sh
+/tiger-testenv-mgr/__tiger*.sh
