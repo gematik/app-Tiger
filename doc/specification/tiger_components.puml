@@ -52,6 +52,7 @@ package TestSuitePool as suites {
       Basic steps
       ---
       PolarionConnector
+      Banner
       Context
       Variables
       JsonChecker
@@ -62,7 +63,16 @@ package TestSuitePool as suites {
     ]
 }
 
+component Polarion <<Other>> [
+    <img:https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-thumbnail/s3/0024/4635/brand.gif?itok=imrp3xNh{scale=0.5}>
+]
+
 component "Current Testsuite" as tdir <<Other>>
+component Serenity <<Other>> [
+    <img:https://scontent-vie1-1.xx.fbcdn.net/v/t1.18169-9/21740326_1850957461900136_3070866374564879594_n.png?_nc_cat=106&ccb=1-3&_nc_sid=09cbfe&_nc_ohc=Kd-z1agN-TYAX9ox76b&_nc_ht=scontent-vie1-1.xx&oh=d41865fdf71d1bda9660545a57177814&oe=60B8AABD{scale=0.18}>
+    <color:white><b>Serenity BDD</b></color>
+]
+
 
 
 
@@ -88,8 +98,12 @@ irbel -up-> tdir
 tp -up-> irbel : return traffic\nmessages\nform test traffic
 
 
-iroutes -left- tsys <<HTTP>>
-tp --> iroutes <<HTTP>> : routed test traffic
+locdock -down- iroutes <<HTTP>>
+clddock -down- iroutes <<HTTP>>
+sims -down- iroutes <<HTTP>>
+rutu -down- iroutes <<HTTP>>
+
+tp -left-> iroutes <<HTTP>> : routed test traffic
 
 ipconf -- tp
 tem --> ipconf : configure URLs, \nURL mappings and certs
@@ -97,8 +111,13 @@ tem --> ipconf : configure URLs, \nURL mappings and certs
 item -left- tem
 tdir -left-> item : build me\na test env
 
-
+tem -down-> locdock : creates containers
+tem -left-> sims : starts simulators
 ireuse -left- suites
 tdir -right-> ireuse
 
+tdir -down--> Serenity : creates detailed\nlocal test reports
+
+Serenity -right-> Polarion
+TigerTestLib -down-> Polarion : sync test cases and test results
 @enduml

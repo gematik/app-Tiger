@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 // TODO support german umlauts
 
@@ -51,9 +52,11 @@ public class Banner {
     }
 
     public static String toBannerStr(String msg, String ansiColors) {
-        return toBannerLines(msg).stream()
+        return  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
+            + toBannerLines(msg).stream()
             .map(line -> ansiColors + line + Ansi.RESET)
-            .collect(Collectors.joining("\n"));
+            .collect(Collectors.joining("\n"))
+            +"\n" +  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
     }
 
     private static List<String> toBannerLines(String msg) {

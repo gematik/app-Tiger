@@ -52,24 +52,22 @@ public class DockerMgr {
                 String scriptName = "__tigerStart_" + server.getName() + ".sh";
                 FileUtils.writeStringToFile(Path.of(scriptName).toFile(),
                     "#!/bin/sh -x\nenv\n"
-                        + "echo \"" + proxycert + "\n\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                        + "echo \"" + idpcert + "\n\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                        + "echo \"" + lecert + "\n\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                        //+ "update-ca-certificates\n"
-                        //+ "cat /etc/ssl/certs/ca-certificates.crt\n"
-                        // idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
-                        //+ "sleep 2\ncurl -vvvv  https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration --proxy http://host.docker.internal:"
-                        //+ envmgr.getLocalDockerProxy().getPort() + "\n"
+                        // TODO I think we only need the proxy cert here or?
+                        + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                        //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
+                        + "echo \"" + idpcert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                        + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                        //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
+                        //+ envmgr.getLocalDockerProxy().getPort()
+                        //+ " -CAfile /tmp/chain.pem\n"
+                        //+ "RUST_LOG=trace /usr/bin/webclient https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration \n"
                         + "cd " + iiResponse.getConfig().getWorkingDir() + "\n"
                         + String.join(" ", Optional.ofNullable(entryPointCmd).orElse(new String[0])).replace("\t", " ")
                         + " "
                         + String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n",
                     StandardCharsets.UTF_8);
-                //);
-                container.withCopyFileToContainer(MountableFile.forHostPath("cert-tiger-proxy.crt", 0644),
-                    "/usr/local/share/ca-certificates/cert-tiger-proxy.crt");
-                container.withCopyFileToContainer(MountableFile.forHostPath("idp-rise-tu.crt", 0644),
-                    "/usr/local/share/ca-certificates/idp-rise-tu.crt");
+                container.withCopyFileToContainer(MountableFile.forHostPath("webclient", 0777),
+                    "/usr/bin/webclient");
                 container.withCopyFileToContainer(MountableFile.forHostPath(scriptName, 0777),
                     iiResponse.getConfig().getWorkingDir() + "/" + scriptName);
 
