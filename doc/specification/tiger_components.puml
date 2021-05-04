@@ -1,6 +1,8 @@
 
 @startuml
 
+skinparam backgroundColor #ffffff
+
 hide stereotype
 
 ' left to right direction
@@ -32,50 +34,39 @@ skinparam interface {
 
 ' component TigerServer  <<NextRelease>>
 
-package TestSystems as tsys {
-    component "RU/TU service instances" as rutu <<External>>
+rectangle TestSystems as tsys {
+    component "RU/TU service\ninstances" as rutu <<External>>
     component "locally started\ndocker containers" as locdock <<Other>>
 
     component "cloud based\ndocker containers" as clddock <<NextRelease>>
     component "Simulators" as sims <<NextRelease>>
 }
 
+rectangle Tiger as tiger {
 component TigerTestEnvMgr as tem
 component TigerProxy as tp
 
-package TestSuitePool as suites {
-    component "Idp test suite" as its <<Idp>>
-    component "Other test suites" as ots <<Other>>
-    component TigerTestLib [
-      TigerTestLib
-      ---
-      Basic steps
-      ---
-      PolarionConnector
-      Banner
-      Context
-      Variables
-      JsonChecker
-      AfoReporter
-      TestCodeParser
-      TestResultParser
-      SerenityIntegration
-    ]
-}
-
-component Polarion <<Other>> [
-    <img:https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-thumbnail/s3/0024/4635/brand.gif?itok=imrp3xNh{scale=0.5}>
+component TigerTestLib [
+  TigerTestLib
+  ---
+  Basic steps
+  ---
+  PolarionConnector
+  Banner
+  TestConfig
+  Context
+  Variables
+  JsonChecker
+  AfoReporter
+  TestCodeParser
+  TestResultParser
+  SerenityIntegration
 ]
 
-component "Current Testsuite" as tdir <<Other>>
-component Serenity <<Other>> [
-    <img:https://scontent-vie1-1.xx.fbcdn.net/v/t1.18169-9/21740326_1850957461900136_3070866374564879594_n.png?_nc_cat=106&ccb=1-3&_nc_sid=09cbfe&_nc_ohc=Kd-z1agN-TYAX9ox76b&_nc_ht=scontent-vie1-1.xx&oh=d41865fdf71d1bda9660545a57177814&oe=60B8AABD{scale=0.18}>
-    <color:white><b>Serenity BDD</b></color>
-]
-
-
-
-
+'suites
+' interface "Steps" as isteps
+' interface "Helpers" as ihelpers
+interface "Reuse" as ireuse
 ' tem
 interface ITestEnvironment as item
 ' tp
@@ -83,38 +74,58 @@ interface "Local Http traffic" as ihttp <<HTTP>>
 interface "ProxyConfiguration" as ipconf
 ' ts
 interface "IRBelMessaging" as irbel
+
+component "Current Testsuite" as tdir <<Other>>
+component Serenity <<Other>> [
+    <img:https://pbs.twimg.com/profile_images/875117009171820544/Kgy599vq_400x400.jpg{scale=0.207}>
+    <color:white><b>Serenity BDD</b></color>
+]
+
+
+component Polarion <<Other>> [
+    <img:https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-thumbnail/s3/0024/4635/brand.gif?itok=imrp3xNh{scale=0.5}>
+]
+
+}
+
+rectangle TestSuitePool as suites {
+    component "Idp test suite" as its <<Idp>>
+    component "Other test suites" as ots <<Other>>
+}
+
+
+
 'tsys
 interface "Routed HTTP traffic" as iroutes <<HTTP>>
-'suites
-' interface "Steps" as isteps
-' interface "Helpers" as ihelpers
-interface "Reuse" as ireuse
 
+sims -right- locdock <<HTTP>>
+sims -down- clddock <<HTTP>>
+rutu -right- clddock <<HTTP>>
+locdock -down- rutu <<HTTP>>
+locdock -down- clddock <<HTTP>>
+sims -- rutu <<HTTP>>
 
 ihttp -down- tp <<HTTP>>
 tdir --> ihttp <<HTTP>> : test traffic
 
 irbel -up-> tdir
-tp -up-> irbel : return traffic\nmessages\nform test traffic
+tp -up-> irbel : return traffic\nmessages\nfrom test traffic
 
-
-locdock -down- iroutes <<HTTP>>
-clddock -down- iroutes <<HTTP>>
-sims -down- iroutes <<HTTP>>
-rutu -down- iroutes <<HTTP>>
+tsys --down- iroutes <<HTTP>>
 
 tp -left-> iroutes <<HTTP>> : routed test traffic
 
 ipconf -- tp
 tem --> ipconf : configure URLs, \nURL mappings and certs
 
-item -left- tem
+tem -right- item
 tdir -left-> item : build me\na test env
 
 tem -down-> locdock : creates containers
-tem -left-> sims : starts simulators
+tem -up-> sims : starts\nsimulators
 ireuse -left- suites
 tdir -right-> ireuse
+tdir -down- TigerTestLib : use generic helpers
 
 tdir -down--> Serenity : creates detailed\nlocal test reports
 

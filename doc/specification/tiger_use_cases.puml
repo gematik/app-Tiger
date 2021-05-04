@@ -1,6 +1,7 @@
 @startuml
 
 skinparam actorStyle awesome
+skinparam backgroundColor #ffffff
 
 skinparam usecase {
     BackgroundColor<<Business>> LightGreen

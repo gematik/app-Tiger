@@ -28,8 +28,8 @@ skinparam interface {
       parses feature files for annotated scenarios
       imports those scenarios as test cases to Polarion
       merging existing and creating new test cases based on internal id
-      TODO utilizes teh test result parser and stores test run results
-      from serenity into a test run in Polarion
+      TODO utilizes the test result parser and stores test run results
+      from serenity via Aurora into a test run in Polarion
     ]
 
     package TigerTestLib {
@@ -78,14 +78,19 @@ skinparam interface {
         attaches curl calls to steps in serenity report
       ]
       component banner [ASCII banner
-        ===
-        allows to display large ascii banners in console/log output
-        for ansi color compliant consoles also coloring is supported
-      ]
+              ===
+              allows to display large ascii banners in console/log output
+              for ansi color compliant consoles also coloring is supported
+            ]
+            component testcfg [TestConfig
+                    ===
+                    provides support for maintaining test configuration in property, yaml or xml files.
+                    manages multiple sets of config files so its easy to switch from RU to TU test config.
+                  ]
 
           note as n1
             SerenityIntegration, Rbel Messaging Client,
-            Context and Variables
+            Context, Variables and TestConfig
             are all created automatically at
             initialisation time of the BDD test run
             utilizing static initializers.
