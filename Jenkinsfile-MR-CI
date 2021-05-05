@@ -52,6 +52,7 @@ pipeline {
             }
         }
         stage('Test') {
+         when { false}
             steps {
                 mavenTest()
             }
