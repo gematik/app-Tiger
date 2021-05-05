@@ -21,3 +21,7 @@ Feature: Provide a test context to testsuites to maintain data between steps
       | type          | domaintype |
       | context entry | context    |
       | variable      | variables  |
+
+    Scenario: Banner text
+      Given TGR I want to show banner "TEST BANNER 1.0"
+      Given TGR I want to show YELLOW banner "TEST BANNER 2.0"

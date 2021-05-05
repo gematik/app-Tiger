@@ -41,16 +41,23 @@ use
 docekr system prune
 ```
 
+# Dos and Donts
+
+* don't use custom parameter types in steps that ought to become public / exported for reuse as intellij currently does
+  not support reading those from external test jars.
+* don't put your Hooks into the glue code but refactor them into a separate class / package so that one can deactivate
+  your hooks but still is able to use your steps.
+* always assume your testsuite is run in parallel sessions concurrently. Base your test context data management on the
+  current thread / thread id
+
 # TODOs
 
-TestEnv reader from property file
-
-Banner component with ANSI support
+TestEnv reader from property file cfg4j based
 
 # TODO Next release
-
 
 # NOGOs
 
 JANSI lib for colored output https://github.com/fusesource/jansijansi
 (but serenity does not deal with this lib gracefully, changing all output to error level :)
+

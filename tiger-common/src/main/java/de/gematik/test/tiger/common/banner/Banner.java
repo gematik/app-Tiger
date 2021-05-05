@@ -59,6 +59,17 @@ public class Banner {
             +"\n" +  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
     }
 
+    @SneakyThrows
+    public static String toBannerStrWithCOLOR(String msg, String colorName) {
+        String ansiColors = (String) Ansi.class.getDeclaredField(colorName).get(null);
+
+        return  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
+            + toBannerLines(msg).stream()
+            .map(line -> ansiColors + line + Ansi.RESET)
+            .collect(Collectors.joining("\n"))
+            +"\n" +  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
+    }
+
     private static List<String> toBannerLines(String msg) {
         if (asciiArt == null) {
             initialize();

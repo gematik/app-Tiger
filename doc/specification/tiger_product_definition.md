@@ -15,6 +15,10 @@
 
 ## Anwendungsfälle
 
+![UseCaseDiagramme](tiger_use_cases.white.svg)
+
+** needs to be synced with diagramme **
+
 * Als ExtProd möchte ich mein Produkt unter Zuhilfenahme vorgefertigter Testsuites/Testschritte systemintegrationstesten
 
     * gegen lokal Instanzen (Github download, manuelle gestartet oder Docker Image über lokalen Docker client oder über
@@ -31,7 +35,7 @@
   aufbewahren
 
 * Als GemTT möchte ich Zulassungstests gegen Produkte in der RU/TU durchführen
-
+ 
 * Als GemTT möchte ich bei der Durchführung meiner Tests eine Anbindung an Titus (Ablegen der
   Testdurchführungsergebnisse)
 
@@ -48,7 +52,12 @@ Out of scope
 
 ## Architekturdraft
 
+![ComponentsDiagramme](tiger_components.white.svg)
+
+
 ### Testumgebungsmanager
+
+** needs to be synced with diagramme **
 
 Aufgabe des Testumgebungsmanagers ist es der verwendenden Testsuite konfigurierte Instanzen von
 Referenzimplementierungen / TI Produkten zur Verfügung zu stellen, bzw. Routen über den Reverse Proxy zu routen.
@@ -58,7 +67,11 @@ Referenzimplementierungen / TI Produkten zur Verfügung zu stellen, bzw. Routen 
 * Routen am Reverse Proxy zu Instanzen in RU/TU zu aktivieren
 * Die Produkttestsuiten so zu konfigurieren, dass deren Testschritte diese konfigurierten Instanzen ansprechen.
 
-### Tiger Base BDD Testsuite
+### Tiger Test Lib
+
+![TigerTestLibComponentsDiagramme](tiger-test-lib_components.white.svg)
+
+** needs to be synced with diagramme **
 
 AfoReporter, Polarion integration für JUnit, TestNG, Cucumber
 
@@ -75,7 +88,11 @@ dem Produktkürzel in Großbuchstaben beginnen.
 
 IDP für den Identity Provider, ERZP für das eRezept, EPA für die elektronische Patientenakte
 
-### Reverse Proxy zur Anbindung von RU/TU Umgebungen + RbelLogger service
+### Tiger Proxy
+
+** needs some text **
+
+Reverse Proxy zur Anbindung von RU/TU Umgebungen + RbelLogger service
 
 ### Anbindung an Titus (→PI IV)
 

@@ -1,12 +1,15 @@
 package de.gematik.test.tiger.glue;
 
+import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.context.TestContext;
 import de.gematik.test.tiger.lib.context.TestVariables;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import lombok.extern.slf4j.Slf4j;
 import net.thucydides.core.annotations.Steps;
 
+@Slf4j
 public class TigerGlue {
 
     @Steps
@@ -105,5 +108,15 @@ public class TigerGlue {
     @Then("TGR assert variable {string} matches {string}")
     public void ctxtAssertVariablesEntryMatches(final String key, final String regex) {
         vars.assertRegexMatches(vars.substituteVariables(key), vars.substituteVariables(regex));
+    }
+
+    @Given("TGR I want to show {word} banner {string}")
+    public void tgrIWantToShowColoredBanner(String color, String text) {
+        log.info("\n" + Banner.toBannerStrWithCOLOR(text, color.toUpperCase()));
+    }
+
+    @Given("TGR I want to show banner {string}")
+    public void tgrIWantToShowBanner(String text) {
+        log.info("\n" + Banner.toBannerStrWithCOLOR(text, "WHITE"));
     }
 }

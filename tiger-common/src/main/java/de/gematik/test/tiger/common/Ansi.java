@@ -30,5 +30,4 @@ public interface Ansi {
     String BGMAGENTA = "\u001B[45m";
     String BGCYAN = "\u001B[46m";
     String BGWHITE = "\u001B[47m";
-
 }
