@@ -52,7 +52,7 @@ pipeline {
             }
         }
         stage('Test') {
-         when { false}
+         when { branch 'neverDoIt'}
             steps {
                 mavenTest()
             }
