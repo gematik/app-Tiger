@@ -106,14 +106,16 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    //    @Test
+    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
 //            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
             .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
             .proxyRoutes(Map.of(
-                "magog", "google.com",
-                "tsl", "download-ref.tsl.ti-dienste.de"
+                "https://magog", "https://google.com",
+                "http://magog", "http://google.com",
+                "http://tsl", "http://download-ref.tsl.ti-dienste.de",
+                "https://tsl", "https://download-ref.tsl.ti-dienste.de"
             )).build());
         System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
         try {

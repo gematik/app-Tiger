@@ -13,6 +13,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.model.Header;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -37,6 +38,10 @@ public class TigerProxy implements ITigerProxy {
         //System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,SSLv3,TLSv1.3");
         rbelLogger = RbelLogger.build();
         mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
+//        ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
+//        ConfigurationProperties.logLevel("DEBUG");
+//        ConfigurationProperties.dynamicallyCreateCertificateAuthorityCertificate(true);
+//        ConfigurationProperties.directoryToSaveDynamicSSLCertificate(".");
 
         mockServer = convertProxyConfiguration(configuration)
             .map(config -> new MockServer(config, 6666))
