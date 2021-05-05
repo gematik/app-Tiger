@@ -39,8 +39,15 @@ public class TigerProxy implements ITigerProxy {
         rbelLogger = RbelLogger.build();
         mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
-        ConfigurationProperties.certificateAuthorityCertificate("CertificateAuthorityCertificate.pem");
-        ConfigurationProperties.certificateAuthorityPrivateKey("PKCS8CertificateAuthorityPrivateKey.pem");
+        if (StringUtils.isNotEmpty(configuration.getServerRootCaCertPem())) {
+            ConfigurationProperties.certificateAuthorityCertificate(configuration.getServerRootCaCertPem());
+        }
+        if (StringUtils.isNotEmpty(configuration.getServerRootCaKeyPem())) {
+            ConfigurationProperties.certificateAuthorityPrivateKey(configuration.getServerRootCaKeyPem());
+        }
+        if (configuration.isDeactivateProxyLog()) {
+            ConfigurationProperties.logLevel("OFF");
+        }
 
         mockServer = convertProxyConfiguration(configuration)
             .map(config -> new MockServer(config, 6666))

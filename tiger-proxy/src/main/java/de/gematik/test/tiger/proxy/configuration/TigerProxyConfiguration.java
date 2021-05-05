@@ -14,4 +14,7 @@ public class TigerProxyConfiguration {
 
     private Map<String, String> proxyRoutes;
     private ForwardProxyInfo forwardToProxy;
+    private boolean deactivateProxyLog = true;
+    private String serverRootCaCertPem;
+    private String serverRootCaKeyPem;
 }
