@@ -38,10 +38,9 @@ public class TigerProxy implements ITigerProxy {
         //System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,SSLv3,TLSv1.3");
         rbelLogger = RbelLogger.build();
         mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
-//        ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
-//        ConfigurationProperties.logLevel("DEBUG");
-//        ConfigurationProperties.dynamicallyCreateCertificateAuthorityCertificate(true);
-//        ConfigurationProperties.directoryToSaveDynamicSSLCertificate(".");
+        ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
+        ConfigurationProperties.certificateAuthorityCertificate("CertificateAuthorityCertificate.pem");
+        ConfigurationProperties.certificateAuthorityPrivateKey("PKCS8CertificateAuthorityPrivateKey.pem");
 
         mockServer = convertProxyConfiguration(configuration)
             .map(config -> new MockServer(config, 6666))
