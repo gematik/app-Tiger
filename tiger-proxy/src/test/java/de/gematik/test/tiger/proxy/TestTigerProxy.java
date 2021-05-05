@@ -11,12 +11,15 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.junit.Before;
@@ -42,9 +45,9 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void useAsWebProxyServer_shouldForward() throws UnirestException {
+    public void useAsWebProxyServer_shouldForward() throws UnirestException, IOException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .proxyRoutes(Map.of("backend", "localhost:" + wireMockRule.port()))
+            .proxyRoutes(Map.of("http://backend", "http://localhost:" + wireMockRule.port()))
             .build());
 
         Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
@@ -54,6 +57,8 @@ public class TestTigerProxy {
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+
+        new RbelHtmlRenderer().doRender(tigerProxy.getRbelMessages());
     }
 
     @Test

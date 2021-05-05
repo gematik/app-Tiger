@@ -1,19 +1,16 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHttpRequest;
-import de.gematik.rbellogger.data.RbelHttpResponse;
-import de.gematik.rbellogger.data.RbelMultiValuedMapElement;
-import de.gematik.rbellogger.data.RbelPathElement;
-import de.gematik.rbellogger.data.RbelStringElement;
+import de.gematik.rbellogger.data.*;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.mockserver.model.Header;
 import org.mockserver.model.Headers;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
+import org.pcap4j.packet.factory.statik.StaticUdpPortPacketFactory;
 
 @Data
 public class MockServerToRbelConverter {
@@ -39,7 +36,11 @@ public class MockServerToRbelConverter {
     }
 
     private RbelElement convertMessage(String input) {
-        return rbelLogger.getRbelConverter().convertMessage(input);
+        if (input == null) {
+            return rbelLogger.getRbelConverter().convertMessage(new RbelNullElement());
+        } else {
+            return rbelLogger.getRbelConverter().convertMessage(input);
+        }
     }
 
     public RbelHttpRequest convertRequest(HttpRequest request) {
@@ -48,7 +49,7 @@ public class MockServerToRbelConverter {
                 .method(request.getMethod().getValue())
                 .path((RbelPathElement) convertMessage(request.getPath().getValue()))
                 .header(mapHeader(request.getHeaders()))
-                .body(new RbelStringElement(request.getBodyAsString()))
+                .body(convertMessage(request.getBodyAsString()))
                 .build()
                 .setRawMessage(request.getMethod().toString() + " " + request.getPath().getValue() + " HTTP/1.1\n"
                     + request.getHeaders().getEntries().stream().map(Header::toString)
