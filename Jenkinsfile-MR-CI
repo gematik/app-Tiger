@@ -1,0 +1,87 @@
+@Library('gematik-jenkins-shared-library@master') _
+
+def REPO_URL = 'https://build.top.local/source/git/Testtools/tiger.git'
+def GITLAB_PROJECT_ID = '644'
+def JIRA_PROJECT_ID = 'TGR'
+def TAG_NAME = "ci/build"
+def IS_MERGE_REQUEST = env.GITLAB_OBJECT_KIND == 'merge_request'
+def BRANCH = 'master'
+
+pipeline {
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')
+    }
+    agent { label 'Docker-TShark' }
+
+    tools {
+        maven 'Default'
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                gitSetIdentity()
+            }
+        }
+         stage('gitCreateBranch') {
+             //nur für Executables nicht für Libraries nötig
+             when { branch BRANCH}
+             steps {
+                 gitCreateBranch()
+             }
+         }
+        stage('Merge Request') {
+            when { changeRequest target: BRANCH }
+            steps {
+                echo "Merge request target branch: master"
+                sh """
+                        git merge origin/master -q
+                        """
+            }
+        }
+        stage('set Version') {
+            //nur für Executables nicht für Libraries nötig
+            steps {
+                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID)
+            }
+        }
+        stage('Build') {
+            steps {
+                mavenBuild()
+            }
+        }
+        stage('Test') {
+         when { branch 'neverDoIt'}
+            steps {
+                mavenTest()
+            }
+        }
+        stage('Sonar') {
+            when { branch BRANCH }
+            steps {
+                mavenCheckWithSonarQube("pom.xml", '', false)
+            }
+        }
+        stage('deploy') {
+            when { branch BRANCH}
+            steps {
+                mavenDeploy("pom.xml", "-DaltDeploymentRepository=releases::default::https://build.top.local/nexus/content/repositories/releases")
+            }
+        }
+        stage('Tag and Push CI-build') {
+        //nur für Executables nicht für Libraries nötig
+        when { branch BRANCH}
+            steps {
+                gitCreateAndPushTag(JIRA_PROJECT_ID)
+            }
+        }
+       stage('GitLab-Update-Snapshot') {
+            //nur für Executables nicht für Libraries nötig
+            when { branch BRANCH}
+            steps {
+                gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID)
+            }
+        }
+    }
+}
