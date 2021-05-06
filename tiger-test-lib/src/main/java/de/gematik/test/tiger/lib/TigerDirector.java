@@ -5,11 +5,13 @@ import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
 @Slf4j
 public class TigerDirector {
@@ -24,8 +26,10 @@ public class TigerDirector {
     public static synchronized void beforeTestRun() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.warn(Ansi.BOLD + Ansi.RED + "ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'" + Ansi.RESET);
-            return;
+            throw new AssertionError("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
         }
+
+        log.info("\n" + IOUtils.toString(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi"), StandardCharsets.UTF_8));
         log.info("\n" + Banner.toBannerStr("READING TEST CONFIG...", Ansi.BOLD + Ansi.BLUE));
         String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
         // TODO read configuration including testenv var settings

@@ -82,7 +82,7 @@ templates:
     product: ERZP_FD_REF
     instanceUri: docker:gstopdr1.top.local/erezept/ref-erx-fd-server
     version: 0.15.1
-    startupTimeoutSec: 180
+    startupTimeoutSec: 50
     # todo add pki files there
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
     urlMappings:

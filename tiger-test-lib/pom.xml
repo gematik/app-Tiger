@@ -80,6 +80,19 @@
             <groupId>net.javacrumbs.json-unit</groupId>
             <version>2.25.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>de.gematik</groupId>
+            <artifactId>rbellogger</artifactId>
+            <version>0.8.1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk16</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
     </dependencies>
 
     <build>

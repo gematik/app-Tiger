@@ -6,7 +6,7 @@ tigerProxy:
 servers:
   - name: idp
     template: idp-ref
-    active: true
+    active: false
 
   - name: idp
     template: idp-ref
@@ -17,9 +17,9 @@ servers:
   - name: idp
     template: idp-rise-rtu
     instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    active: false
+    active: true
 
   - name: erzpt-default
     template: erzpt-fd-ref
-    # version: e1aacbb55bc4eb855596b30b727beff71da76496
+    version: e1aacbb55bc4eb855596b30b727beff71da76496
     active: true

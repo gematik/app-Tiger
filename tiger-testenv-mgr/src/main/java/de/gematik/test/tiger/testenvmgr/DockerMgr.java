@@ -3,6 +3,7 @@ package de.gematik.test.tiger.testenvmgr;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -44,19 +45,13 @@ public class DockerMgr {
             try {
 
                 String proxycert = IOUtils.toString(
-                    Objects.requireNonNull(getClass().getResourceAsStream("/cert-tiger-proxy.crt")));
-                String idpcert = IOUtils
-                    .toString(Objects.requireNonNull(getClass().getResourceAsStream("/idp-rise-tu.crt")));
-                String lecert = IOUtils
-                    .toString(Objects.requireNonNull(getClass().getResourceAsStream("/letsencrypt.crt")));
+                    new File("CertificateAuthorityCertificate.pem").toURI(), StandardCharsets.UTF_8);
+                    //Objects.requireNonNull(getClass().getResourceAsStream("/cert-tiger-proxy.crt")));
                 String scriptName = "__tigerStart_" + server.getName() + ".sh";
                 FileUtils.writeStringToFile(Path.of(scriptName).toFile(),
                     "#!/bin/sh -x\nenv\n"
-                        // TODO I think we only need the proxy cert here or?
                         + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
                         //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
-                        + "echo \"" + idpcert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                        + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
                         //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
                         //+ envmgr.getLocalDockerProxy().getPort()
                         //+ " -CAfile /tmp/chain.pem\n"
@@ -64,10 +59,9 @@ public class DockerMgr {
                         + "cd " + iiResponse.getConfig().getWorkingDir() + "\n"
                         + String.join(" ", Optional.ofNullable(entryPointCmd).orElse(new String[0])).replace("\t", " ")
                         + " "
-                        + String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n",
-                    StandardCharsets.UTF_8);
-                container.withCopyFileToContainer(MountableFile.forHostPath("webclient", 0777),
-                    "/usr/bin/webclient");
+                        + String.join(" ", Optional.ofNullable(startCmd).orElse(new String[0])) + "\n", StandardCharsets.UTF_8);
+                //container.withCopyFileToContainer(MountableFile.forHostPath("webclient", 0777),
+                //    "/usr/bin/webclient");
                 container.withCopyFileToContainer(MountableFile.forHostPath(scriptName, 0777),
                     iiResponse.getConfig().getWorkingDir() + "/" + scriptName);
 
@@ -111,7 +105,8 @@ public class DockerMgr {
                 throw new TigerTestEnvException(
                     "Interruption signaled while waiting for server " + server.getName() + " to start up", ie);
             } catch (TigerTestEnvException ttee) {
-                throw ttee;
+                ttee.printStackTrace();
+                //throw ttee;
             } catch (final RuntimeException rte) {
                 int timeout = server.getStartupTimeoutSec() != null ? server.getStartupTimeoutSec() : 20;
                 log.warn("probably no health check configured - defaulting to " + timeout + "s startup time");
