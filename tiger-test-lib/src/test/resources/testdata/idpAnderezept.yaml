@@ -2,6 +2,9 @@ tigerProxy:
   forwardToProxy:
     hostname: 192.168.230.85
     port: 3128
+  serverRootCaCertPem: CertificateAuthorityCertificate.pem
+  serverRootCaKeyPem: PKCS8CertificateAuthorityPrivateKey.pem
+
 
 servers:
   - name: idp
@@ -21,5 +24,5 @@ servers:
 
   - name: erzpt-default
     template: erzpt-fd-ref
-    version: e1aacbb55bc4eb855596b30b727beff71da76496
+    version: 0.17.2
     active: true

@@ -45,8 +45,8 @@ public class TigerProxy implements ITigerProxy {
         if (StringUtils.isNotEmpty(configuration.getServerRootCaKeyPem())) {
             ConfigurationProperties.certificateAuthorityPrivateKey(configuration.getServerRootCaKeyPem());
         }
-        if (configuration.isDeactivateProxyLog()) {
-            ConfigurationProperties.logLevel("OFF");
+        if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
+            ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
 
         mockServer = convertProxyConfiguration(configuration)

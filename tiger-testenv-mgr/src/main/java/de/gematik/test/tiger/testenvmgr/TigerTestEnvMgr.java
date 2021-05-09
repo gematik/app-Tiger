@@ -26,6 +26,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private final TigerProxy localDockerProxy;
 
+    private List<String[]> routesList = new ArrayList<>();
+
     @SneakyThrows
     public TigerTestEnvMgr() {
         // read configuration from file and templates from classpath resource
@@ -34,7 +36,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         configuration = new Configuration();
         configuration.readConfig(cfgFile.toURI());
         final Configuration templates = new Configuration();
-        templates.readConfig(Objects.requireNonNull(getClass().getResource("/templates.yaml")).toURI());
+        templates.readConfig(Objects.requireNonNull(getClass().getResource(
+            "templates.yaml")).toURI());
 
         // apply templates to read in configuration
         log.info("applying server templates");
@@ -48,6 +51,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         } else {
             configuration.setTigerProxy(TigerProxyConfiguration.builder().proxyRoutes(Collections.emptyMap()).build());
         }
+        configuration.getTigerProxy().setProxyLogLevel("WARN");
+        configuration.getTigerProxy().setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
+        configuration.getTigerProxy().setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
+
         localDockerProxy = new TigerProxy(configuration.getTigerProxy());
     }
 
@@ -124,6 +131,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         // add routes needed for each server to local docker proxy
         // ATTENTION only one route per server!
         if (server.getPorts() != null && !server.getPorts().isEmpty()) {
+            routesList.add(new String[] { "http://" + server.getName(),"http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue() });
             localDockerProxy.addRoute("http://" + server.getName(),
                 "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
         }
@@ -191,4 +199,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         return str;
     }
 
+    public List<String[]> getRoutes() {
+        return routesList;
+    }
 }

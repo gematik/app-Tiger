@@ -23,12 +23,6 @@
             <artifactId>tiger-proxy</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
-        <!--java operation docker -->
-        <dependency>
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java</artifactId>
-            <version>3.2.8</version>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/org.testcontainers/testcontainers -->
         <dependency>
             <groupId>org.testcontainers</groupId>

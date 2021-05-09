@@ -5,7 +5,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -14,12 +13,10 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.junit.Before;
@@ -114,14 +111,15 @@ public class TestTigerProxy {
 //    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
-//            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
-            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
+            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+//            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
             .proxyRoutes(Map.of(
                 "https://magog", "https://google.com",
                 "http://magog", "http://google.com",
                 "http://tsl", "http://download-ref.tsl.ti-dienste.de",
                 "https://tsl", "https://download-ref.tsl.ti-dienste.de"
-            )).build());
+            )).proxyLogLevel("DEBUG").serverRootCaCertPem("src/main/resources/CertificateAuthorityCertificate.pem")
+            .serverRootCaKeyPem("src/main/resources/PKCS8CertificateAuthorityPrivateKey.pem").build());
         System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
         try {
             Thread.sleep(30 * 1_000 * 1_000);

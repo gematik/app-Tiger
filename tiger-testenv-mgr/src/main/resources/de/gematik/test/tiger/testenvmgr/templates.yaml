@@ -11,7 +11,7 @@ templates:
     # instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     instanceUri: docker:gstopdr1.top.local/idp/idp-server
     # version of the docker image
-    version: 15.0.0-764
+    version: 16.0.0-769
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on)
     startupTimeoutSec: 30
@@ -81,7 +81,7 @@ templates:
   - name: erzpt-fd-ref
     product: ERZP_FD_REF
     instanceUri: docker:gstopdr1.top.local/erezept/ref-erx-fd-server
-    version: 0.15.1
+    version: 0.17.2
     startupTimeoutSec: 50
     # todo add pki files there
     pkiFolder: src/main/java/resources/pki/erzpt-fd-ref
@@ -89,8 +89,8 @@ templates:
     - http://tsl --> https://download-ref.tsl.ti-dienste.de
     # download-ref.tsl.ti-dienste.de
     imports:
-      #- TOKEN=http://idp/.well-known/openid-configuration
-      - TOKEN=${IDP_SERVER}
+      - TOKEN=http://idp/.well-known/openid-configuration
+      #- TOKEN=${IDP_SERVER}
       - TSL=http://tsl/ECC/ECC-RSA_TSL-ref.xml
       #- TSL=https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
       - http_proxy=http://${PROXYHOST}:${PROXYPORT}

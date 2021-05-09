@@ -4,7 +4,10 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +40,6 @@ public class TigerDirector {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", Ansi.BOLD + Ansi.BLUE));
         tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
-        // TODO store routes from server instances in static field for reuse by beforeTestThreadStart
 
         // set proxy to local tiger proxy for test suites
         log.info("\n" + Banner.toBannerStr("SETTING TIGER PROXY...", Ansi.BOLD + Ansi.BLUE));
@@ -62,25 +64,42 @@ public class TigerDirector {
         return tigerTestEnvMgr;
     }
 
-    public static void synchronizeTestCasesWIthPolaarion() {
+    public static void synchronizeTestCasesWithPolarion() {
         if (!checkIsInitialized()) {
             return;
         }
-        // TODO call Polarion Toolbox via Java lang reflect to allow for soft coupling
+
+        if (OSEnvironment.getAsBoolean("TIGER_SYNC_TESTCASES")) {
+            try {
+                Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
+                    .getDeclaredMethod("main", String[].class);
+                String[] args = new String[]{"-m", "tcimp", "-dryrun"};
+                // TODO read from tiger-testlib.yaml or env vars values for -h -u -p -prj -aq -fd -f -bdd
+
+                log.info("Syncing test cases with Polarion...");
+                polarionToolBoxMain.invoke(null, args);
+                log.info("Test cases synched with Polarion...");
+            } catch (NoSuchMethodException | ClassNotFoundException e) {
+                throw new TigerLibraryException("Unable to access Polarion Toolbox! "
+                    + "Be sure to have it included in mvn dependencies.", e);
+                // TODO add the mvn dependency lines to log output
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw new TigerLibraryException("Unable to call Polarion Toolbox's main method!", e);
+            }
+        }
     }
 
     public static void beforeTestThreadStart() {
         if (!checkIsInitialized()) {
             return;
         }
-        // get route infos
+        // instanatiate proxy and supply routes and register messageprovider as listener to proxy
+        TigerProxy threadProxy = new TigerProxy(tigerTestEnvMgr.getConfiguration().getTigerProxy());
+        getTigerTestEnvMgr().getRoutes().forEach(route -> threadProxy.addRoute(route[0], route[1]));
 
         RbelMessageProvider rbelMessageProvider = new RbelMessageProvider();
-
-        // instanatiate proxy and supply routes and register messageprovider as listener to proxy
-
         rbelMsgProviderMap.computeIfAbsent(tid(), key -> rbelMessageProvider);
-
+        threadProxy.addRbelMessageListener(rbelMessageProvider);
     }
 
     public static void createAfoRepoort() {
