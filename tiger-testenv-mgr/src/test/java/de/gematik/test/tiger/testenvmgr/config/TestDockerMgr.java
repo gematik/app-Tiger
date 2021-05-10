@@ -28,7 +28,7 @@ public class TestDockerMgr {
         srv.setProduct(CfgProductType.IDP_REF);
         long startms = System.currentTimeMillis();
         dmgr.startContainer(srv, null);
-        assertThat(System.currentTimeMillis() - startms).isLessThan(16000);
+        assertThat(System.currentTimeMillis() - startms).isLessThan(14000);
         // 9s to get docker up and running and starting container and check no health working
         dmgr.stopContainer(srv);
     }
