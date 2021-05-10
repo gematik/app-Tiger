@@ -48,7 +48,7 @@
         <encoding>UTF-8</encoding>
     </properties>
 
-
+    <dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
@@ -96,14 +96,6 @@
             <scope>test</scope>
             <version>3.5.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-            <version>${version.lombok}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -127,10 +119,25 @@
             <version>${version.slf4j}</version>
         </dependency>
         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit4}</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${version.junit5}</version>
             <scope>test</scope>
+        </dependency>
+    </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+            <version>${version.lombok}</version>
         </dependency>
     </dependencies>
 

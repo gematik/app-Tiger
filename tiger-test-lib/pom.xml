@@ -31,6 +31,24 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-cucumber6</artifactId>
+        </dependency>
+        <dependency><!-- needed for type registry -->
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-core</artifactId>
+        </dependency>
+
         <!-- needed for java test code parsing -->
         <dependency>
             <groupId>com.github.javaparser</groupId>
@@ -59,7 +77,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${version.junit4}</version>
         </dependency>
         <!-- TestNG driver is currently not supported with Serenity -->
         <!-- Junit 5 driver is currently not supported with Tiger -->
