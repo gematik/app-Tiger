@@ -50,8 +50,9 @@ public class TigerProxy implements ITigerProxy {
         }
 
         mockServer = convertProxyConfiguration(configuration)
-            .map(config -> new MockServer(config, 6666))
+            .map(config -> new MockServer(config))
             .orElse(new MockServer());
+        log.info("Proxy started on port " + mockServer.getLocalPort());
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
             addRoute(routeEntry.getKey(), routeEntry.getValue());
