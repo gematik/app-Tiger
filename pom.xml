@@ -33,6 +33,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
+        <version.tiger>0.1-SNAPSHOT</version.tiger>
         <version.assertj>3.18.1</version.assertj>
         <version.cucumber>6.6.0</version.cucumber>
         <version.serenity.core>2.3.4</version.serenity.core>
@@ -46,91 +47,126 @@
         <encoding>UTF-8</encoding>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>de.gematik</groupId>
+                <artifactId>rbellogger</artifactId>
+                <version>0.8.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.8.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.10</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.7</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-proxy</artifactId>
+                <version>${version.tiger}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-testenv-mgr</artifactId>
+                <version>${version.tiger}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-common</artifactId>
+                <version>${version.tiger}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${version.assertj}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.serenity-bdd</groupId>
+                <artifactId>serenity-core</artifactId>
+                <version>${version.serenity.core}</version>
+                <scope>test</scope>
+            </dependency>
 
-    <dependencies>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-core</artifactId>
-            <version>${version.serenity.core}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-model</artifactId>
-            <version>${version.serenity.core}</version>
-        </dependency>
+            <dependency>
+                <groupId>net.serenity-bdd</groupId>
+                <artifactId>serenity-model</artifactId>
+                <version>${version.serenity.core}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.serenity-bdd</groupId>
+                <artifactId>serenity-rest-assured</artifactId>
+                <scope>test</scope>
+                <version>${version.serenity.core}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>4.3.3</version>
+            </dependency>
 
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-rest-assured</artifactId>
-            <scope>test</scope>
-            <version>${version.serenity.core}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <version>4.3.3</version>
-        </dependency>
+            <dependency>
+                <groupId>net.serenity-bdd</groupId>
+                <artifactId>serenity-cucumber6</artifactId>
+                <version>${version.serenity.cucumber.6}</version>
+            </dependency>
+            <dependency><!-- needed for type registry -->
+                <groupId>io.cucumber</groupId>
+                <artifactId>cucumber-core</artifactId>
+                <version>${version.cucumber}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>datatable</artifactId>
+                <scope>test</scope>
+                <version>3.5.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>datatable-matchers</artifactId>
+                <scope>test</scope>
+                <version>3.5.0</version>
+            </dependency>
 
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber6</artifactId>
-            <version>${version.serenity.cucumber.6}</version>
-        </dependency>
-        <dependency><!-- needed for type registry -->
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-core</artifactId>
-            <version>${version.cucumber}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>datatable</artifactId>
-            <scope>test</scope>
-            <version>3.5.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>datatable-matchers</artifactId>
-            <scope>test</scope>
-            <version>3.5.0</version>
-        </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <scope>provided</scope>
+                <version>${version.lombok}</version>
+            </dependency>
 
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-            <version>${version.lombok}</version>
-        </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
 
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>${version.assertj}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${version.jackson}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${version.jackson}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${version.slf4j}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${version.junit5}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${version.slf4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
