@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,11 @@ import org.apache.commons.io.IOUtils;
 /**
  * The TigerDirector is the public interface to the tiger test suite, the tige rtestenv manager and the tiger proxies.
  */
+@SuppressWarnings("unused")
 @Slf4j
 public class TigerDirector {
+
+    private TigerDirector() {}
 
     /**
      * Thread id based map of rbel message providers. For each thread this provider receives and collects
@@ -47,9 +51,10 @@ public class TigerDirector {
             throw new AssertionError("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
         }
 
-        log.info("\n" + IOUtils.toString(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi"), StandardCharsets.UTF_8));
+        log.info("\n" + IOUtils.toString(
+            Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")), StandardCharsets.UTF_8));
         log.info("\n" + Banner.toBannerStr("READING TEST CONFIG...", Ansi.BOLD + Ansi.BLUE));
-        String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
+        // String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
         // TODO read configuration including testenv var settings
 
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", Ansi.BOLD + Ansi.BLUE));
@@ -92,7 +97,7 @@ public class TigerDirector {
                 // TODO read from tiger-testlib.yaml or env vars values for -h -u -p -prj -aq -fd -f -bdd
 
                 log.info("Syncing test cases with Polarion...");
-                polarionToolBoxMain.invoke(null, args);
+                polarionToolBoxMain.invoke(null, (Object[]) args);
                 log.info("Test cases synched with Polarion...");
             } catch (NoSuchMethodException | ClassNotFoundException e) {
                 throw new TigerLibraryException("Unable to access Polarion Toolbox! "
@@ -112,14 +117,11 @@ public class TigerDirector {
             log.warn("Proxy for given thread '" + tid() + "' already initialized!");
             return;
         }
-        // instanatiate proxy and supply routes and register messageprovider as listener to proxy
-        TigerProxy threadProxy = new TigerProxy(tigerTestEnvMgr.getConfiguration().getTigerProxy());
+        // instantiate proxy and supply routes and register message provider as listener to proxy
+        final var threadProxy = new TigerProxy(tigerTestEnvMgr.getConfiguration().getTigerProxy());
         getTigerTestEnvMgr().getRoutes().forEach(route -> threadProxy.addRoute(route[0], route[1]));
-
-        RbelMessageProvider rbelMessageProvider = new RbelMessageProvider();
-        rbelMsgProviderMap.computeIfAbsent(tid(), key -> rbelMessageProvider);
-        threadProxy.addRbelMessageListener(rbelMessageProvider);
-        proxiesMap.computeIfAbsent(tid(), key -> threadProxy);
+        threadProxy.addRbelMessageListener(rbelMsgProviderMap.computeIfAbsent(tid(), key -> new RbelMessageProvider()));
+        proxiesMap.putIfAbsent(tid(), threadProxy);
     }
 
     public static void createAfoRepoort() {
@@ -159,6 +161,6 @@ public class TigerDirector {
             throw new AssertionError("Tiger test environment has not been initialized. "
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
         }
-        return true;
+        return initialized;
     }
 }

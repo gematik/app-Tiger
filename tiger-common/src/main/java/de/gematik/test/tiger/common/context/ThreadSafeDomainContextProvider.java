@@ -1,14 +1,14 @@
 /*
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
-package de.gematik.test.tiger.lib.context;
+package de.gematik.test.tiger.common.context;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.assertj.core.api.Assertions;
 
 public abstract class ThreadSafeDomainContextProvider {
 
@@ -23,18 +23,19 @@ public abstract class ThreadSafeDomainContextProvider {
     }
 
     public void setDomain(final String d) {
-        assertThat(d).isNotBlank();
+        Assertions.assertThat(d).isNotBlank();
         domain = d;
         getContext();
     }
 
     public String getString(final String key) {
         final Map<String, Object> ctxt = getContext();
-        assertThat(ctxt).containsKey(key);
+        Assertions.assertThat(ctxt).containsKey(key);
         final Object value = ctxt.get(key);
         return value == null ? null : value.toString();
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public String putString(final String key, final String value) {
         final Object o = getContext().put(key, value);
         return o == null ? null : o.toString();
@@ -50,13 +51,15 @@ public abstract class ThreadSafeDomainContextProvider {
     /**
      * shallow copy !
      */
+    @SuppressWarnings("UnusedReturnValue")
     public Object copyToDomain(final String otherDomain, final String key) {
         return getContext(otherDomain).put(key, getContext().get(key));
 
     }
 
     public Map<String, Object> getObjectMapCopy(final String key) {
-        assertThat(getContext().get(key)).isInstanceOf(Map.class);
+        Assertions.assertThat(getContext().get(key)).isInstanceOf(Map.class);
+        //noinspection unchecked
         return new HashMap<>((Map<String, Object>) getContext().get(key));
     }
 
@@ -66,33 +69,32 @@ public abstract class ThreadSafeDomainContextProvider {
     public void assertRegexMatches(final String key, final String regex) {
         final Map<String, Object> ctxt = getContext();
         if (regex == null || "$NULL".equals(regex)) {
-            assertThat(ctxt).containsKey(key);
-            assertThat(ctxt.get(key)).isNull();
+            Assertions.assertThat(ctxt).containsKey(key);
+            Assertions.assertThat(ctxt.get(key)).isNull();
         } else if ("$DOESNOTEXIST".equals(regex)) {
-            assertThat(ctxt).doesNotContainKey(key);
+            Assertions.assertThat(ctxt).doesNotContainKey(key);
         } else {
-            assertThat(ctxt).containsKey(key);
+            Assertions.assertThat(ctxt).containsKey(key);
             final String value = Optional.ofNullable(ctxt.get(key))
-                .filter(Objects::nonNull)
                 .map(Object::toString)
                 .orElse(null);
             if (!Objects.equals(value, regex)) {
-                assertThat(value).matches(regex);
+                Assertions.assertThat(value).matches(regex);
             }
         }
     }
 
     public void remove(final String key) {
-        assertThat(getContext()).containsKey(key);
+        Assertions.assertThat(getContext()).containsKey(key);
         getContext().remove(key);
     }
 
     public void flipBit(final int bitidx, final String key) {
-        assertThat(getContext()).containsKey(key);
-        assertThat(getContext().get(key))
+        Assertions.assertThat(getContext()).containsKey(key);
+        Assertions.assertThat(getContext().get(key))
             .withFailMessage("Value for '" + key + "' in context is null!")
             .isNotNull();
-        final String value = getContext().get(key).toString();
+        final var value = getContext().get(key).toString();
         final byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         final int idx;
         final int shift;
@@ -104,8 +106,8 @@ public abstract class ThreadSafeDomainContextProvider {
             shift = 8 - (bitidx % 8);
         }
         bytes[idx] ^= (byte) (0b00000001 << shift);
-        final String flippedValue = new String(bytes);
-        assertThat(flippedValue).isNotEqualTo(value);
+        final var flippedValue = new String(bytes);
+        Assertions.assertThat(flippedValue).isNotEqualTo(value);
         getContext().put(key, flippedValue);
     }
 

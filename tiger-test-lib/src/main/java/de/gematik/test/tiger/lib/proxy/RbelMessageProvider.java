@@ -1,6 +1,5 @@
 package de.gematik.test.tiger.lib.proxy;
 
-import com.google.common.collect.UnmodifiableListIterator;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;

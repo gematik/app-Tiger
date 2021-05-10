@@ -2,6 +2,7 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.common.context.ThreadSafeDomainContextProvider;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -26,16 +27,16 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private final TigerProxy localDockerProxy;
 
-    private List<String[]> routesList = new ArrayList<>();
+    private final List<String[]> routesList = new ArrayList<>();
 
     @SneakyThrows
     public TigerTestEnvMgr() {
         // read configuration from file and templates from classpath resource
-        final File cfgFile = new File(OSEnvironment.getAsString(
+        final var cfgFile = new File(OSEnvironment.getAsString(
             "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
         configuration = new Configuration();
         configuration.readConfig(cfgFile.toURI());
-        final Configuration templates = new Configuration();
+        final var templates = new Configuration();
         templates.readConfig(Objects.requireNonNull(getClass().getResource(
             "templates.yaml")).toURI());
 
@@ -46,11 +47,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         environmentVariables = new HashMap<>();
         dockerManager = new DockerMgr();
-        if (configuration.getTigerProxy() != null) {
-            configuration.getTigerProxy().setProxyRoutes(Collections.emptyMap());
-        } else {
-            configuration.setTigerProxy(TigerProxyConfiguration.builder().proxyRoutes(Collections.emptyMap()).build());
+        if (configuration.getTigerProxy() == null) {
+            configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
         }
+        configuration.getTigerProxy().setProxyRoutes(Collections.emptyMap());
         configuration.getTigerProxy().setProxyLogLevel("WARN");
         configuration.getTigerProxy().setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
         configuration.getTigerProxy().setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
@@ -63,11 +63,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         log.info("starting set up of test environment...");
         configuration.getServers().forEach(this::start);
         log.info("finished set up test environment OK");
-    }
-
-    @Override
-    public void composeEnvironment(final File composeFile) {
-        // TODO NEXTREL after first poc maybe even for next release
     }
 
     @Override
@@ -91,13 +86,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     String.format("Unsupported server type %s found in server %s", uri[0], server.getName()));
             }
 
-
             // set system properties from exports section and store the value in environmentVariables map
             server.getExports().forEach(exp -> {
                 String[] kvp = exp.split("=", 2);
                 // ports substitution are only supported for docker based instances
                 if (uri[0].equals("docker") && server.getPorts() != null) {
-                    server.getPorts().forEach((localPort, externPort)   ->
+                    server.getPorts().forEach((localPort, externPort) ->
                         kvp[1] = kvp[1].replace("${PORT:" + localPort + "}", String.valueOf(externPort))
                     );
                 }
@@ -115,9 +109,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private void startDocker(final CfgServer server) {
         log.info(Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getInstanceUri() + Ansi.RESET);
         final List<String> imports = server.getImports();
-        for (int i = 0; i < imports.size(); i++) {
-            imports.set(i, substituteTokens(imports.get(i), "", environmentVariables));
-            imports.set(i, substituteTokens(imports.get(i), "",
+        for (var i = 0; i < imports.size(); i++) {
+            imports.set(i, ThreadSafeDomainContextProvider.substituteTokens(imports.get(i), "", environmentVariables));
+            imports.set(i, ThreadSafeDomainContextProvider.substituteTokens(imports.get(i), "",
                 Map.of("PROXYHOST", "host.docker.internal", "PROXYPORT", localDockerProxy.getPort())));
         }
         if (server.getUrlMappings() != null) {
@@ -131,9 +125,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         // add routes needed for each server to local docker proxy
         // ATTENTION only one route per server!
         if (server.getPorts() != null && !server.getPorts().isEmpty()) {
-            routesList.add(new String[] { "http://" + server.getName(),"http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue() });
+            routesList.add(new String[]{"http://" + server.getName(),
+                "http://localhost:" + server.getPorts().values().iterator().next()});
             localDockerProxy.addRoute("http://" + server.getName(),
-                "http://localhost:" + server.getPorts().entrySet().stream().findFirst().get().getValue());
+                "http://localhost:" + server.getPorts().values().iterator().next());
         }
         log.info(Ansi.BOLD + Ansi.GREEN + "Docker container Startup OK " + server.getInstanceUri() + Ansi.RESET);
     }
@@ -141,22 +136,25 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     @SneakyThrows
     public void initializeExternal(final CfgServer server) {
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external instance " + server.getName() + "..." + Ansi.RESET);
-        URI uri = new URI(server.getInstanceUri().substring("external:".length()));
+        final var uri = new URI(server.getInstanceUri().substring("external:".length()));
 
         localDockerProxy.addRoute("http://" + server.getName(), uri.getScheme() + "://" + uri.getHost());
 
         loadPKIForServer(server);
         log.info("  Checking external instance  " + server.getName() + " is available ...");
-        // TODO check availability
+        // TODO check availability, configure http client to use 5 s timeout max, run in loop for timeout config value
         log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getInstanceUri() + Ansi.RESET);
     }
 
     @Override
     public void shutDown(final CfgServer server) {
         final String[] uri = server.getInstanceUri().split(":");
-        // uri[0].equals("docker") nothing to do as testcontainers is cleaning up after run automatically (see ryuk)
         if (uri[0].equals("external")) {
             shutDownExternal(server);
+        } else if (uri[0].equals("docker")) {
+            shutDownDocker(server);
+        } else {
+            throw new TigerTestEnvException("Unsupported server uri type " + server.getInstanceUri());
         }
     }
 
@@ -169,34 +167,29 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void shutDownDocker(final CfgServer server) {
         dockerManager.stopContainer(server);
+        removeRoute(server);
     }
 
-    private void shutDownExternal(final CfgServer srv) {
-        // TODO tell proxy to drop this route
+    private void shutDownExternal(final CfgServer server) {
+        removeRoute(server);
     }
 
+    private void removeRoute(CfgServer server) {
+        String serverUrl = "http://" + server.getName();
+        localDockerProxy.removeRoute(serverUrl);
+        routesList.remove(routesList.stream()
+            .filter(r -> r[0].equals("http://" + server.getName()))
+            .findAny()
+            .orElseThrow()
+        );
+    }
+
+    @SuppressWarnings("unused")
     @SneakyThrows
     private Integer getFreePort() {
-        try (final ServerSocket socket = new ServerSocket(0)) {
+        try (final var socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         }
-    }
-
-    // TODO copied from ThreadSafeDomainContextProvider
-    private static String substituteTokens(String str, final String token, final Map<String, Object> valueMap) {
-        final String tokenStr = "${" + (token.isBlank() ? "" : token + ".");
-        int varIdx = str.indexOf(tokenStr);
-        while (varIdx != -1) {
-            final int endVar = str.indexOf("}", varIdx);
-            final String varName = str.substring(varIdx + tokenStr.length(), endVar);
-            if (valueMap.get(varName) != null) {
-                str = str.substring(0, varIdx) + valueMap.get(varName) + str.substring(endVar + 1);
-                varIdx = str.indexOf(tokenStr);
-            } else {
-                varIdx = str.indexOf(tokenStr, varIdx + 1);
-            }
-        }
-        return str;
     }
 
     public List<String[]> getRoutes() {

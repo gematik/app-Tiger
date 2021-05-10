@@ -93,10 +93,9 @@ public class JsonChecker {
             json = new JSONObject(jsonStr);
             oracle = new JSONObject(oracleStr);
             Assertions.assertThat(IteratorUtils.toArray(json.keys()))
-                .contains(
-                    IteratorUtils.toList(oracle.keys()).stream()
-                        .filter(key -> !key.toString().startsWith("____"))
-                        .toArray());
+                .contains(IteratorUtils.toList(oracle.keys()).stream()
+                    .filter(key -> !key.toString().startsWith("____"))
+                    .toArray());
 
             if (checkExtraAttributes) {
                 // check json keys are all in oracle (either as name or as ____name
@@ -107,49 +106,48 @@ public class JsonChecker {
                 );
             }
 
-            final Iterator<String> keyIt = oracle.keys();
-            while (keyIt.hasNext()) {
-                final String oracleKey = keyIt.next();
-                final boolean optionalAttribute = oracleKey.startsWith("____");
-                final String jsonKey = optionalAttribute ? oracleKey.substring(4) : oracleKey;
-                if (optionalAttribute && !json.has(jsonKey)) {
-                    continue;
-                }
-                final String oracleValue = oracle.get(oracleKey).toString();
-                if ("$NULL".equals(oracleValue) && json.get(jsonKey) == JSONObject.NULL) {
-                    continue;
-                }
-                if (!IGNORE_JSON_VALUE.equals(oracleValue)) {
-                    if (json.get(jsonKey) instanceof JSONObject) {
-                        assertJsonObjectShouldMatchOrContainInAnyOrder(json.get(jsonKey).toString(),
-                            oracle.get(oracleKey).toString(), true);
-                    } else if (json.get(jsonKey) instanceof JSONArray) {
-                        // TODO shouldn't this call assertJsonArrayShouldMatchInAnyOrder?
-                        JSONAssert.assertEquals(oracle.get(oracleKey).toString(), json.get(jsonKey).toString(),
-                            customComparator);
-                    } else {
-                        final String jsoValue = json.get(jsonKey).toString();
-                        if (!jsoValue.equals(oracleValue)) {
-                            try {
-                                assertThat(jsoValue)
-                                    .withFailMessage(dumpComparisonAtKeyDiffer(oracleKey, oracleValue, jsoValue))
-                                    .matches(oracleValue);
-                            } catch (final Exception ex) {
-                                Assertions.fail(dumpComparisonAtKeyDiffer(oracleKey, oracleValue, jsoValue));
-                            }
+            compareAllAttributes(json, oracle);
+
+        } catch (final NoSuchMethodError | JSONException exc) {
+            Assertions.fail(dumpComparisonBetween(
+                "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
+                null, oracle == null ? jsonStr : oracle.toString(2),
+                json == null ? oracleStr : json.toString(2)), exc);
+        }
+    }
+
+    private void compareAllAttributes(JSONObject json, JSONObject oracle) {
+        final Iterator<String> keyIt = oracle.keys();
+        while (keyIt.hasNext()) {
+            final String oracleKey = keyIt.next();
+            final boolean optionalAttribute = oracleKey.startsWith("____");
+            final String jsonKey = optionalAttribute ? oracleKey.substring(4) : oracleKey;
+            final var oracleValue = oracle.get(oracleKey).toString();
+            if ((optionalAttribute && !json.has(jsonKey))
+                || ("$NULL".equals(oracleValue) && json.get(jsonKey) == JSONObject.NULL)) {
+                continue;
+            }
+            if (!IGNORE_JSON_VALUE.equals(oracleValue)) {
+                if (json.get(jsonKey) instanceof JSONObject) {
+                    assertJsonObjectShouldMatchOrContainInAnyOrder(json.get(jsonKey).toString(),
+                        oracle.get(oracleKey).toString(), true);
+                } else if (json.get(jsonKey) instanceof JSONArray) {
+                    // TODO shouldn't this call assertJsonArrayShouldMatchInAnyOrder?
+                    JSONAssert.assertEquals(oracle.get(oracleKey).toString(), json.get(jsonKey).toString(),
+                        customComparator);
+                } else {
+                    final var jsoValue = json.get(jsonKey).toString();
+                    if (!jsoValue.equals(oracleValue)) {
+                        try {
+                            assertThat(jsoValue)
+                                .withFailMessage(dumpComparisonAtKeyDiffer(oracleKey, oracleValue, jsoValue))
+                                .matches(oracleValue);
+                        } catch (final Exception ex) {
+                            Assertions.fail(dumpComparisonAtKeyDiffer(oracleKey, oracleValue, jsoValue));
                         }
                     }
                 }
             }
-        } catch (final NoSuchMethodError nsme) {
-            Assertions.fail(dumpComparisonBetween(
-                "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
-                null, oracle == null ? null : oracle.toString(2),
-                json == null ? null : json.toString(2)), nsme);
-        } catch (final JSONException jse) {
-            Assertions.fail(dumpComparisonBetween(
-                "Unable to parse JSON!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
-                null, jsonStr, oracleStr));
         }
     }
 

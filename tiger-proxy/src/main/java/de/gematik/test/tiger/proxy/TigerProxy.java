@@ -50,7 +50,7 @@ public class TigerProxy implements ITigerProxy {
         }
 
         mockServer = convertProxyConfiguration(configuration)
-            .map(config -> new MockServer(config))
+            .map(MockServer::new)
             .orElse(new MockServer());
         log.info("Proxy started on port " + mockServer.getLocalPort());
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
@@ -106,6 +106,11 @@ public class TigerProxy implements ITigerProxy {
                     return resp;
                 }
             );
+    }
+
+    @Override
+    public void removeRoute(String sourceHost) {
+        // TODO how to remove a route?
     }
 
     private void triggerListener(RbelElement element) {

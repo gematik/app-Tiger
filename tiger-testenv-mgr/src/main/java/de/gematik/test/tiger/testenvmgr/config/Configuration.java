@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
-import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +27,7 @@ public class Configuration {
     @SneakyThrows
     public void readConfig(final URI cfgFile) {
         log.info("reading testenv configuration from " + cfgFile.toURL() + "...");
-        final ObjectMapper mapper = new ObjectMapper(new YAMLFactory()); // jackson databind
+        final var mapper = new ObjectMapper(new YAMLFactory()); // jackson databind
         final Configuration cfg = mapper.readValue(cfgFile.toURL().openStream(), Configuration.class);
         servers = cfg.servers;
         templates = cfg.templates;
