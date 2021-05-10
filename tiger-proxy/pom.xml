@@ -99,7 +99,7 @@
         <dependency>
             <groupId>de.gematik</groupId>
             <artifactId>rbellogger</artifactId>
-            <version>0.8.1-SNAPSHOT</version>
+            <version>0.8.2-83</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.bouncycastle</groupId>
