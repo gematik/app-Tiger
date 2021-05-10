@@ -5,7 +5,7 @@
 * add all required paths tp step/glue code packages
     * for Tiger steps: de.gematik.test.tiger.glue
     * for IDP: de.gematik.idp.test.steps
-* optionally if classpath is too long switch to javaargs
+* optionally if classpath is too long switch to javaargs in the build dialog
 
 # Configure maven
 
@@ -25,6 +25,8 @@
 </dependency>
 ```
 
+You might have to add additional dependencies!
+
 # Docker config
 
 make sure to have login configure to connect to gstopdr1.top.local
@@ -34,8 +36,8 @@ make sure to have login configure to connect to gstopdr1.top.local
 ```
 
 ## docker container creation fails
-l
-use
+
+use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.
 
 ```
 docekr system prune
@@ -49,15 +51,3 @@ docekr system prune
   your hooks but still is able to use your steps.
 * always assume your testsuite is run in parallel sessions concurrently. Base your test context data management on the
   current thread / thread id
-
-# TODOs
-
-TestEnv reader from property file cfg4j based
-
-# TODO Next release
-
-# NOGOs
-
-JANSI lib for colored output https://github.com/fusesource/jansijansi
-(but serenity does not deal with this lib gracefully, changing all output to error level :)
-

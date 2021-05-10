@@ -1,5 +1,7 @@
 # Tiger Produkt Definition
 
+** TODO convert to english **
+
 ## Zielgruppen/Nutzer
 
 * Gematik interne Testteams (GemTT) die IOP Tests für ihre Ref oder Produktentwicklungen durchführen
@@ -43,12 +45,12 @@
 
 ## Systemgrenzen
 
-Out of scope
 
-* Anbindung von PU Instanzen
-* Unterstützung von nicht Java basierten Testtechnologien
-* Unterstützung des VAU Protokolls (→ PI IV)
-* Externe Produktdienstleister die keine Testautomatisierung betreiben
+## Out of system scope (as of May 2021)
+
+* Connect to service nodes in PU
+* Support for non Java test code
+* External test teams doing only UI based test automation
 
 ## Architekturdraft
 

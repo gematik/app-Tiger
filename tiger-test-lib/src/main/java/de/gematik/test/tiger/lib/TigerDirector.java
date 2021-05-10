@@ -16,10 +16,25 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
+/**
+ * The TigerDirector is the public interface to the tiger test suite, the tige rtestenv manager and the tiger proxies.
+ */
 @Slf4j
 public class TigerDirector {
 
+    /**
+     * Thread id based map of rbel message providers. For each thread this provider receives and collects
+     * all rbel messages from the proxy assigned to the current thread.
+     */
     private static final Map<Long, RbelMessageProvider> rbelMsgProviderMap = new HashMap<>();
+
+    /**
+     * Thread id based map of tiger proxies. For each thread a separate proxy is instantiated to ensure
+     * the traffic is assigned to the correct test runner thread / test step.
+     * TODO CRITICAL make sure we can do proxiing thread based!
+     * https://stackoverflow.com/questions/16388112/each-thread-using-its-own-proxy
+     */
+    private static final Map<Long, TigerProxy> proxiesMap = new HashMap<>();
 
     private static TigerTestEnvMgr tigerTestEnvMgr;
 
@@ -93,6 +108,10 @@ public class TigerDirector {
         if (!checkIsInitialized()) {
             return;
         }
+        if (proxiesMap.containsKey(tid())) {
+            log.warn("Proxy for given thread '" + tid() + "' already initialized!");
+            return;
+        }
         // instanatiate proxy and supply routes and register messageprovider as listener to proxy
         TigerProxy threadProxy = new TigerProxy(tigerTestEnvMgr.getConfiguration().getTigerProxy());
         getTigerTestEnvMgr().getRoutes().forEach(route -> threadProxy.addRoute(route[0], route[1]));
@@ -100,6 +119,7 @@ public class TigerDirector {
         RbelMessageProvider rbelMessageProvider = new RbelMessageProvider();
         rbelMsgProviderMap.computeIfAbsent(tid(), key -> rbelMessageProvider);
         threadProxy.addRbelMessageListener(rbelMessageProvider);
+        proxiesMap.computeIfAbsent(tid(), key -> threadProxy);
     }
 
     public static void createAfoRepoort() {
