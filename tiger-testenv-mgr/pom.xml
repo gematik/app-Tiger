@@ -16,12 +16,17 @@
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-common</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-proxy</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${version.assertj}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.testcontainers/testcontainers -->
         <dependency>
@@ -30,6 +35,4 @@
             <version>1.15.3</version>
         </dependency>
     </dependencies>
-
-
 </project>

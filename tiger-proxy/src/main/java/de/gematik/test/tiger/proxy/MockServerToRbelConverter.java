@@ -5,12 +5,10 @@ import de.gematik.rbellogger.data.*;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
 import org.mockserver.model.Header;
 import org.mockserver.model.Headers;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
-import org.pcap4j.packet.factory.statik.StaticUdpPortPacketFactory;
 
 @Data
 public class MockServerToRbelConverter {
@@ -47,7 +45,7 @@ public class MockServerToRbelConverter {
         return (RbelHttpRequest) convertMessage(
             RbelHttpRequest.builder()
                 .method(request.getMethod().getValue())
-                .path((RbelPathElement) convertMessage(request.getPath().getValue()))
+                .path((RbelUriElement) convertMessage(request.getPath().getValue()))
                 .header(mapHeader(request.getHeaders()))
                 .body(convertMessage(request.getBodyAsString()))
                 .build()

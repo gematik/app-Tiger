@@ -75,18 +75,18 @@ pipeline {
                     steps {
                         mavenSetVersion("${RELEASE_VERSION}")
                         //GH Pages
-                        sh label: 'createHtmlFiles', script: """
-                            mvn -Dtest=TokenLoggerTest -DfailIfNoTests=false test
-                            cp ./idp-server/target/classes/static/tokenFlow*.html ./doc/
-                            cp ./idp-server/target/classes/static/tokenFlow*.html ../   
-                        """
+                        //sh label: 'createHtmlFiles', script: """
+                        //    mvn -Dtest=TokenLoggerTest -DfailIfNoTests=false test
+                        //    cp ./idp-server/target/classes/static/tokenFlow*.html ./doc/
+                        //    cp ./idp-server/target/classes/static/tokenFlow*.html ../
+                        //"""
                         gitCommitAndTag("IDP-SERVER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
-                        sh label: 'copyHtmlFilesForGhPages', script: """
-                            git checkout gh-pages
-                            cp ../tokenFlow*.html  .
-                            git add tokenFlow*.html 
-                        """
-                        gitCommitAndTagDocu("IDP-SERVER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                        //sh label: 'copyHtmlFilesForGhPages', script: """
+                        //    git checkout gh-pages
+                        //    cp ../tokenFlow*.html  .
+                        //    git add tokenFlow*.html
+                        //"""
+                        //gitCommitAndTagDocu("IDP-SERVER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
                     }
                 }
                 stage('UpdateProject with new Version') {
@@ -104,8 +104,6 @@ pipeline {
                 }
             }
         }
-
-
     }
 }
 

@@ -12,7 +12,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.images.PullPolicy;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import org.testcontainers.utility.TestcontainersConfiguration;
@@ -33,8 +32,8 @@ public class DockerMgr {
             }
             TestcontainersConfiguration cfg = TestcontainersConfiguration.getInstance();
             DockerImageName imgName = DockerImageName.parse(imageName);
-            final GenericContainer<?> container = new GenericContainer<>(imgName)
-                .withImagePullPolicy(PullPolicy.alwaysPull());
+            final GenericContainer<?> container = new GenericContainer<>(imgName);
+                //.withImagePullPolicy(PullPolicy.alwaysPull());
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
 
             String[] startCmd = iiResponse.getConfig().getCmd();
