@@ -57,6 +57,11 @@ pipeline {
                 mavenTest()
             }
         }
+        stage('OwaspScan') {
+            steps {
+                mavenOwaspScan()
+            }
+        }
         stage('Sonar') {
             when { branch BRANCH }
             steps {
