@@ -33,7 +33,8 @@ public class DockerMgr {
             imageName += ":" + server.getVersion();
         }
         var imgName = DockerImageName.parse(imageName);
-        try (final GenericContainer<?> container = new GenericContainer<>(imgName)) {
+        final GenericContainer<?> container = new GenericContainer<>(imgName);
+        try {
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
             if (iiResponse.getConfig() == null) {
                 throw new TigerTestEnvException("Docker image '" + imageName + "' has no configuration info!");
