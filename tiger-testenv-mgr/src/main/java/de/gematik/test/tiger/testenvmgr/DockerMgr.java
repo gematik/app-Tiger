@@ -92,6 +92,8 @@ public class DockerMgr {
             throw new TigerTestEnvException(
                 "Docker image of server '" + server.getName() + "' has no configuration info!");
         }
+        startCmd = startCmd == null ? new String[0] : startCmd;
+        entryPointCmd = entryPointCmd == null ? new String[0] : entryPointCmd;
         try {
             final var proxycert = IOUtils.toString(
                 Objects.requireNonNull(getClass().getResourceAsStream("/CertificateAuthorityCertificate.pem")),
