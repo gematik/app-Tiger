@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.lib.parser;
 
 import de.gematik.test.tiger.lib.parser.model.Testcase;
-import de.gematik.test.tiger.lib.parser.model.gherkin.Feature;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,10 +42,10 @@ public class CucumberTestParser implements ITestParser {
     }
 
     private void inspectFile(final File f) {
-        final Feature feature = new FeatureParser().parseFeatureFile(f);
+        final var feature = new FeatureParser().parseFeatureFile(f);
         feature.getScenarios()
             .forEach(ch -> {
-                    final Testcase tc = new Testcase();
+                    final var tc = new Testcase();
                     tc.setFeatureName(feature.getName());
                     tc.setScenarioName(ch.getName());
                     tc.setClazz(convertToId(feature.getName()));
@@ -62,7 +61,7 @@ public class CucumberTestParser implements ITestParser {
                             parsedTestcasesPerAfo.get(afoid).add(tc);
                             ref.set(true);
                         });
-                    if (!ref.get().booleanValue()) {
+                    if (!ref.get()) {
                         unreferencedTestcases.putIfAbsent(tc.getClazz() + ":" + tc.getMethod(), tc);
                     }
                 }
@@ -71,8 +70,8 @@ public class CucumberTestParser implements ITestParser {
     }
 
     private String convertToId(String name) {
-        final String chars = " ;,.+*~\\/!$()[]{}";
-        for (int i = 0; i < chars.length(); i++) {
+        final var chars = " ;,.+*~\\/!$()[]{}";
+        for (var i = 0; i < chars.length(); i++) {
             name = name.replace(chars.charAt(i), '-');
         }
         return name.toLowerCase();
