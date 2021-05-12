@@ -43,7 +43,7 @@
         <version.slf4j>1.6.1</version.slf4j>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.7.1</version.junit5>
-        <version.rbellogger>0.8.2-82</version.rbellogger>
+        <version.rbellogger>0.8.2</version.rbellogger>
 
         <encoding>UTF-8</encoding>
     </properties>
@@ -128,6 +128,11 @@
             <artifactId>junit-jupiter</artifactId>
             <version>${version.junit5}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik</groupId>
+            <artifactId>rbellogger</artifactId>
+            <version>${version.rbellogger}</version>
         </dependency>
     </dependencies>
     </dependencyManagement>
