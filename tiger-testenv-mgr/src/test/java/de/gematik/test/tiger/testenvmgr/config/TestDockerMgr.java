@@ -29,8 +29,9 @@ public class TestDockerMgr {
         srv.setProduct(CfgProductType.IDP_REF);
         long startms = System.currentTimeMillis();
         dmgr.startContainer(srv, null);
-        assertThat(System.currentTimeMillis() - startms).isLessThan(14000);
+        assertThat(System.currentTimeMillis() - startms).isLessThan(30000);
         // 9s to get docker up and running and starting container and check no health working
+        // docker host environment -> Time elapsed: 26.062 sec
         dmgr.stopContainer(srv);
     }
 }
