@@ -62,7 +62,6 @@ pipeline {
             }
         }
         stage('Sonar') {
-            when { branch BRANCH }
             steps {
                 mavenCheckWithSonarQube("pom.xml", '', false)
             }
