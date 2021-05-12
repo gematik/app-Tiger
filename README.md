@@ -10,7 +10,7 @@ Take a look at our short pitch video explaining the basic ideo of Tiger
 
 [![](doc/images/tiger-promo-screenie.png)](https://youtu.be/eJJZDeuFlyI)
 
-## Target audience
+## Target audience 
 
 * Internal test teams that want to perform iop or e2e tests for reference or product implementation.
 
