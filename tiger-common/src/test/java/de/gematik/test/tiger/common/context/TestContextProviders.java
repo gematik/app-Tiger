@@ -7,6 +7,7 @@ import org.junit.Test;
 
 public class TestContextProviders {
 
+    public static final String NL = System.lineSeparator();
     // =================================================================================================================
     //
     // testing ThreadSafeDomainContextProvider via means of TestContext
@@ -70,7 +71,7 @@ public class TestContextProviders {
         final TestContext ctxt = new TestContext("test004a");
         ctxt.getContext().put("nullkey", null);
         assertThatThrownBy(() -> ctxt.assertRegexMatches("nullkey", ".*"))
-            .hasMessage("\r\nExpecting actual not to be null");
+            .hasMessage("\nExpecting actual not to be null".replace("\n", NL));
         ctxt.assertRegexMatches("nullkey", null);
     }
 
@@ -80,7 +81,7 @@ public class TestContextProviders {
         ctxt.putString("key1", "value1");
         ctxt.assertRegexMatches("key2", "$DOESNOTEXIST");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key1", "$DOESNOTEXIST"))
-            .hasMessage("\r\nExpecting:\r\n  <{\"key1\"=\"value1\"}>\r\nnot to contain key:\r\n  <\"key1\">");
+            .hasMessage("\nExpecting:\n  <{\"key1\"=\"value1\"}>\nnot to contain key:\n  <\"key1\">".replace("\n", NL));
     }
 
     @Test
@@ -90,7 +91,7 @@ public class TestContextProviders {
         ctxt.assertRegexMatches("key1", ".*");
         ctxt.assertRegexMatches("key1", "v.*1");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key1", "[\\d]*"))
-            .hasMessage("\r\nExpecting:\r\n \"value1\"\r\nto match pattern:\r\n \"[\\d]*\"");
+            .hasMessage("\nExpecting:\n \"value1\"\nto match pattern:\n \"[\\d]*\"".replace("\n", NL));
     }
 
     @Test
@@ -103,8 +104,8 @@ public class TestContextProviders {
             .containsEntry("mkey2", 2)
             .hasSize(2);
         assertThatThrownBy(() -> ctxt.getObjectMapCopy("key1"))
-            .hasMessage("\r\nExpecting:\r\n  <\"value1\">\r\nto be an instance of:\r\n  <java.util.Map>\r\n"
-                + "but was instance of:\r\n  <java.lang.String>");
+            .hasMessage(("\nExpecting:\n  <\"value1\">\nto be an instance of:\n  <java.util.Map>\n"
+                + "but was instance of:\n  <java.lang.String>").replace("\n", NL));
     }
 
     @Test
@@ -114,7 +115,7 @@ public class TestContextProviders {
         assertThat(ctxt.getContext()).containsKey("key1");
         ctxt.setDomain("test007a");
         assertThatThrownBy(() -> ctxt.remove("key1"))
-            .hasMessage("\r\nExpecting:\r\n <{}>\r\nto contain key:\r\n <\"key1\">");
+            .hasMessage("\nExpecting:\n <{}>\nto contain key:\n <\"key1\">".replace("\n", NL));
         ctxt.setDomain("test007");
         assertThat(ctxt.getContext()).containsKey("key1");
         ctxt.remove("key1");
