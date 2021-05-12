@@ -35,6 +35,7 @@ public class DockerMgr {
         var imgName = DockerImageName.parse(imageName);
         final GenericContainer<?> container = new GenericContainer<>(imgName);
         try {
+            container.start();
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
             if (iiResponse.getConfig() == null) {
                 throw new TigerTestEnvException("Docker image '" + imageName + "' has no configuration info!");

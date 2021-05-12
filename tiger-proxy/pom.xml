@@ -42,7 +42,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.17.2</version>
+            <version>3.19.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -54,7 +54,6 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.8.6</version>
         </dependency>
         <dependency>
             <artifactId>jose4j</artifactId>
@@ -79,7 +78,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.67</version>
+            <version>1.68</version>
         </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
@@ -106,18 +105,6 @@
         <dependency>
             <groupId>de.gematik</groupId>
             <artifactId>rbellogger</artifactId>
-            <version>0.8.2-83</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk16</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.8.6</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
