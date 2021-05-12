@@ -12,7 +12,7 @@ pipeline {
         disableConcurrentBuilds()
         buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')
     }
-    agent { label 'Docker-TShark' }
+    agent { label 'Docker-Maven' }
 
     tools {
         maven 'Default'
