@@ -1,6 +1,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.data.RbelElement;
+import java.security.Key;
 import java.util.List;
 
 public interface ITigerProxy {
@@ -18,4 +19,6 @@ public interface ITigerProxy {
     int getPort();
 
     List<RbelElement> getRbelMessages();
+
+    void addKey(String keyid, Key key);
 }

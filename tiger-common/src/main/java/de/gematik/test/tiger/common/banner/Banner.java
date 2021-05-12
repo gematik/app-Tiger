@@ -21,17 +21,18 @@ public class Banner {
 
     @SneakyThrows
     private static void initialize() {
-        configs.put("Spliff", new BannerConfig(9,5, true));
-        configs.put("Doom", new BannerConfig(12,8, true));
-        configs.put("Thin", new BannerConfig(6,6, false));
-        configs.put("Straight", new BannerConfig(6,4, false));
+        configs.put("Spliff", new BannerConfig(9, 5, true));
+        configs.put("Doom", new BannerConfig(12, 8, true));
+        configs.put("Thin", new BannerConfig(6, 6, false));
+        configs.put("Straight", new BannerConfig(6, 4, false));
 
         String font = OSEnvironment.getAsString("TIGER_BANNER_FONT", "Straight");
         cfg = configs.get(font);
 
         asciiArt = new HashMap<>();
         List<String> lines = IOUtils
-            .readLines(Objects.requireNonNull(Banner.class.getResourceAsStream("/banner/ascii-" + font + ".txt")),
+            .readLines(Objects.requireNonNull(Banner.class.getResourceAsStream(
+                "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
                 StandardCharsets.UTF_8);
         for (int ascii = (int) ' '; ascii < 'ü'; ascii++) {
             List<String> linesForChar = new ArrayList<>();
@@ -52,22 +53,25 @@ public class Banner {
     }
 
     public static String toBannerStr(String msg, String ansiColors) {
-        return  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
+        return ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
             + toBannerLines(msg).stream()
             .map(line -> ansiColors + line + Ansi.RESET)
             .collect(Collectors.joining("\n"))
-            +"\n" +  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
+            + "\n" + ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
     }
 
-    @SneakyThrows
     public static String toBannerStrWithCOLOR(String msg, String colorName) {
-        String ansiColors = (String) Ansi.class.getDeclaredField(colorName).get(null);
+        try {
+            final String ansiColors = (String) Ansi.class.getDeclaredField(colorName).get(null);
 
-        return  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
-            + toBannerLines(msg).stream()
-            .map(line -> ansiColors + line + Ansi.RESET)
-            .collect(Collectors.joining("\n"))
-            +"\n" +  ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
+            return ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
+                + toBannerLines(msg).stream()
+                .map(line -> ansiColors + line + Ansi.RESET)
+                .collect(Collectors.joining("\n"))
+                + "\n" + ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new AssertionError("Unknown color name '" + colorName + "'!", e);
+        }
     }
 
     private static List<String> toBannerLines(String msg) {

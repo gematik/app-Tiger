@@ -28,6 +28,8 @@ public class CfgServer {
     @JsonProperty
     private boolean active = true;
     @JsonProperty
+    private final List<CfgKey> pkiKeys = new ArrayList<>();
+    @JsonProperty
     private String pkiFolder;
     @JsonProperty
     private final List<String> exports = new ArrayList<>();

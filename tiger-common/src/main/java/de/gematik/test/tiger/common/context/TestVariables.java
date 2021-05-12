@@ -1,6 +1,5 @@
-package de.gematik.test.tiger.lib.context;
+package de.gematik.test.tiger.common.context;
 
-import de.gematik.test.tiger.common.context.ThreadSafeDomainContextProvider;
 import java.util.HashMap;
 import java.util.Map;
 

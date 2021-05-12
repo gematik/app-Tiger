@@ -3,6 +3,7 @@ package de.gematik.test.tiger.testenvmgr;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.common.context.ThreadSafeDomainContextProvider;
+import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -160,9 +161,18 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void loadPKIForServer(final CfgServer srv) {
         log.info("  loading PKI resources for instance " + srv.getName() + "...");
-        // TODO initialize pki cert and key pool either from local folder
-        //  if env TIGER_TESTENV_PKIFOLDER is set
-        // or from classpath in resources/pki
+        srv.getPkiKeys().stream()
+            .filter(key -> key.getPem().contains("BEGIN CERTIFICATE"))
+            .forEach(key -> {
+                log.info("Adding certificate " + key.getId());
+                getLocalDockerProxy().addKey(key.getId(), KeyMgr.readCertificateFromPem(key.getPem()).getPublicKey());
+            });
+        srv.getPkiKeys().stream()
+            .filter(key -> !key.getPem().contains("BEGIN CERTIFICATE"))
+            .forEach(key -> {
+                log.info("Adding key " + key.getId());
+                getLocalDockerProxy().addKey(key.getId(), KeyMgr.readKeyFromPem(key.getPem()));
+            });
     }
 
     private void shutDownDocker(final CfgServer server) {

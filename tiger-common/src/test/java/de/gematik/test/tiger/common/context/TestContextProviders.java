@@ -1,8 +1,7 @@
-package de.gematik.test.tiger.lib.context;
+package de.gematik.test.tiger.common.context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import de.gematik.test.tiger.common.context.ThreadSafeDomainContextProvider;
 import java.util.Map;
 import org.junit.Test;
 
@@ -58,12 +57,12 @@ public class TestContextProviders {
         ctxt.getContext().put("nullkey", null);
         ctxt.putString("key3", "$NULL");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key1", "$NULL"))
-            .hasMessage("\r\nExpecting:\r\n <\"value1\">\r\nto be equal to:\r\n <null>\r\nbut was not.");
+            .hasMessage("expected:<null> but was:<\"value1\">");
 
         ctxt.assertRegexMatches("nullkey", null);
         ctxt.assertRegexMatches("nullkey", "$NULL");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key3", "$NULL"))
-            .hasMessage("\r\nExpecting:\r\n <\"$NULL\">\r\nto be equal to:\r\n <null>\r\nbut was not.");
+            .hasMessage("expected:<null> but was:<\"$NULL\">");
     }
 
     @Test

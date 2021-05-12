@@ -26,9 +26,6 @@ import org.junit.Test;
 
 public class TestTigerProxy {
 
-    //TODO insatntiate tigerproxy with gematik forwardproxy and try to reach http and https sites
-    // currently doesnt work
-
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
 

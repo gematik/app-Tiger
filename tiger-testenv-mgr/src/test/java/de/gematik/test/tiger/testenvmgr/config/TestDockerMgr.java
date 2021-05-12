@@ -2,22 +2,23 @@ package de.gematik.test.tiger.testenvmgr.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.testenvmgr.DockerMgr;
-import org.junit.Test;
 
 public class TestDockerMgr {
 
-    @Test
+    // TODO OPENBUG TGR-6 reactivate after fix
+    // @Test
     public void testDockerMgr() {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        srv.setInstanceUri("docker:gstopdr1.top.local/idp/idp-server:15.0.0-759");
+        srv.setInstanceUri("docker:gstopdr1.top.local/idp/idp-server:16.0.0-36");
         srv.setName("idp");
         srv.setProduct(CfgProductType.IDP_REF);
         dmgr.startContainer(srv, null);
         dmgr.stopContainer(srv);
     }
 
-    @Test
+    // TODO OPENBUG TGR-6 reactivate after fix
+    // @Test
     public void testDockerMgrStartupTimeoutFallback() {
         // TODO ensure image with given version is available locally
         final DockerMgr dmgr = new DockerMgr();

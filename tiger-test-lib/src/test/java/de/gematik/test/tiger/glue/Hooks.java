@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.glue;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
@@ -10,15 +11,16 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.Feature;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import io.cucumber.java.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.serenitybdd.core.Serenity;
+import org.apache.commons.io.FileUtils;
 
 @Slf4j
 public class Hooks {
@@ -85,14 +87,66 @@ public class Hooks {
         scenarioStepsIdxMap.put(scenario.getId(), idx + 1);
     }
 
+    private static final Map<String, List<Scenario>> processedScenarios = new HashMap<>();
+    private static int scPassed = 0;
+    private static int scFailed = 0;
+
+
     @SneakyThrows
     @After
     public void purgeFeatureFileNSaveRbelLog(final Scenario scenario) {
         scenarioStepsMap.remove(scenario.getId());
-        String html = new RbelHtmlRenderer().doRender(rbelElements);
-        Path htmlFile = Path.of("rbel-" + scenario.getName() + ".html");
-        log.info("Saving rbel log to " + htmlFile.toFile().getAbsolutePath());
-        Files.writeString(htmlFile, html);
+
+         switch (scenario.getStatus()) {
+            case PASSED:
+                scPassed++;
+                break;
+            case FAILED:
+                scFailed++;
+                break;
+        }
+        if (scFailed > 0) {
+            log.error("------------ STATUS: {} passed  {} failed", scPassed, scFailed);
+        } else {
+            log.info("------------ STATUS: {} passed", scPassed);
+        }
+
+        final File folder = Paths.get("target", "rbellogs").toFile();
+        if (!folder.exists()) {
+            if (!folder.mkdirs()) {
+                assertThat(folder).exists();
+            }
+        }
+        final String scenarioId = scenario.getUri().toString() + ":" + scenario.getName();
+        processedScenarios.computeIfAbsent(scenarioId, uri -> new ArrayList<>());
+        final int dataVariantIdx = processedScenarios.get(scenarioId).size();
+        processedScenarios.get(scenarioId).add(scenario);
+
+        var rbelRenderer =  new RbelHtmlRenderer();
+        rbelRenderer.setSubTitle(
+            "<p><b>" + scenario.getName() + "</b>&nbsp&nbsp;<u>" + (dataVariantIdx + 1) + "</u></p>"
+                + "<p><i>" + scenario.getUri() + "</i></p>");
+        String html = rbelRenderer.doRender(rbelElements);
+        try {
+            String name = scenario.getName();
+            final String map = "äaÄAöoÖOüuÜUßs _(_)_[_]_{_}_<_>_|_$_%_&_/_\\_?_:_*_\"_";
+            for (int i = 0; i < map.length(); i += 2) {
+                name = name.replace(map.charAt(i), map.charAt(i + 1));
+            }
+            if (name.length() > 100) { // Serenity can not deal with longer filenames
+                name = name.substring(0, 60) + UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)).toString();
+            }
+            if (dataVariantIdx > 0) {
+                name = name + "_" + (dataVariantIdx + 1);
+            }
+            final File logFile = Paths.get("target", "rbellogs", name + ".html").toFile();
+            FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
+            (Serenity.recordReportData().asEvidence().withTitle("RBellog " + (dataVariantIdx + 1))).downloadable()
+                .fromFile(logFile.toPath());
+            log.info("Saved HTML report to " + logFile.getAbsolutePath());
+        } catch (final IOException e) {
+            log.error("Unable to save rbel log for scenario " + scenario.getName());
+        }
     }
 }
 

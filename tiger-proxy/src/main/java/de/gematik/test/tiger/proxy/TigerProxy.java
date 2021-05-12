@@ -4,7 +4,9 @@ import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverridde
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -83,6 +85,11 @@ public class TigerProxy implements ITigerProxy {
     @Override
     public List<RbelElement> getRbelMessages() {
         return rbelLogger.getMessageHistory();
+    }
+
+    @Override
+    public void addKey(String keyid, Key key) {
+        rbelLogger.getRbelKeyManager().addKey(keyid, key, RbelKey.PRECEDENCE_KEY_FOLDER);
     }
 
     @Override
