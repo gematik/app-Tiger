@@ -7,8 +7,8 @@ import org.junit.Test;
 public class TestOSEnvironment {
 
     @Test
-    public void getEnvAsStringUSEROK() {
-        assertThat(OSEnvironment.getAsString("PATH")).isNotBlank();
+    public void getEnvAsStringPATHOK() {
+        assertThat(OSEnvironment.getAsString(System.getenv().keySet().iterator().next())).isNotBlank();
     }
 
     @Test
@@ -18,7 +18,7 @@ public class TestOSEnvironment {
 
     @Test
     public void getEnvAsStringExistingNotDefaultOK() {
-        assertThat(OSEnvironment.getAsString("PATH", "DEFAULT")).isNotEqualTo("DEFAULT");
+        assertThat(OSEnvironment.getAsString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
     }
 
     @Test
