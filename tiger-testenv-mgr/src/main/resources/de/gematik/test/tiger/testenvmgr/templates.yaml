@@ -11,10 +11,10 @@ templates:
     # instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     instanceUri: docker:gstopdr1.top.local/idp/idp-server
     # version of the docker image
-    version: 16.0.0-769
+    version: 17.0.0-38
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on)
-    startupTimeoutSec: 30
+    startupTimeoutSec: 35
     # list of keys and certs to be used in encrypting/signing the traffic data
     pkiKeys:
       - id: disc_sig

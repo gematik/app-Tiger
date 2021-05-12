@@ -10,6 +10,7 @@ servers:
   - name: idp
     template: idp-ref
     active: true
+    version: 17.0.0-38
 
   - name: idp
     template: idp-ref

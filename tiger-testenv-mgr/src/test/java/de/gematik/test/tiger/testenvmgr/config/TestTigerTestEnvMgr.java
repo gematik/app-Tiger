@@ -24,8 +24,7 @@ public class TestTigerTestEnvMgr {
         assertThat(cfg.getTemplates().get(0).getPkiKeys()).hasSize(3);
     }
 
-    // TODO OPENBUG TGR-6 reactivate after fix
-    // @Test
+    @Test
     public void testCreateEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpOnly.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();

@@ -1,7 +1,9 @@
 package de.gematik.test.tiger.testenvmgr;
 
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.model.PullResponseItem;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,9 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
@@ -33,9 +38,11 @@ public class DockerMgr {
             imageName += ":" + server.getVersion();
         }
         var imgName = DockerImageName.parse(imageName);
+
+        pullImage(imageName);
+
         final GenericContainer<?> container = new GenericContainer<>(imgName);
         try {
-            container.start();
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
             if (iiResponse.getConfig() == null) {
                 throw new TigerTestEnvException("Docker image '" + imageName + "' has no configuration info!");
@@ -83,9 +90,42 @@ public class DockerMgr {
 
 
         } catch (final DockerException de) {
-            throw new TigerTestEnvException("Faield to start container for server " + server.getName(), de);
+            throw new TigerTestEnvException("Failed to start container for server " + server.getName(), de);
         }
 
+    }
+
+    public void pullImage(final String imageName) {
+        log.info("Pulling docker image " + imageName+ "...");
+        final AtomicBoolean pullComplete = new AtomicBoolean();
+        pullComplete.set(false);
+        final AtomicReference<Throwable> cbException = new AtomicReference<>();
+        DockerClientFactory.instance().client().pullImageCmd(imageName).exec(new ResultCallback.Adapter<PullResponseItem>() {
+            @Override
+            public void onNext(PullResponseItem item) {
+                log.debug(item.getStatus() + " " + (item.getProgress() != null ? item.getProgress() : ""));
+            }
+            @Override
+            public void onError(Throwable throwable) {
+                cbException.set(throwable);
+            }
+            @Override
+            public void onComplete() {
+                pullComplete.set(true);
+            }
+        });
+
+        while (!pullComplete.get()) {
+            if (cbException.get() != null) {
+                throw new TigerTestEnvException("Unable to pull image " + imageName + "!", cbException.get());
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        log.info("Docker image " + imageName + " is available locally!");
     }
 
     private String createContainerStartupScript(CfgServer server, InspectImageResponse iiResponse, String[] startCmd,
@@ -169,8 +209,10 @@ public class DockerMgr {
 
     public void stopContainer(final CfgServer srv) {
         final GenericContainer<?> container = containers.get(srv.getName());
-        container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
-        container.stop();
+        if (container != null && container.getDockerClient() != null) {
+            container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
+            container.stop();
+        }
     }
 
     @SuppressWarnings("unused")
