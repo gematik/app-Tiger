@@ -161,17 +161,8 @@
                     </tags>
                 </configuration>
             </plugin>
+            <!-- end create reusable test jar part -->
 
-            <!-- end reusable plugin part -->
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
             <!-- plugin used to generate serenity driver classes from vm template file -->
             <plugin>
                 <groupId>com.github.temyers</groupId>
@@ -221,6 +212,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <argLine>${failsafe.jacoco.args}</argLine>
                     <includes>
                         <include>**/Parallel*IT.java</include>
                         <!--<include>**/TigerBDDDriver.java</include>-->
@@ -237,6 +229,25 @@
                     <threadCount>16</threadCount>
                     <forkCount>2</forkCount>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.7</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>

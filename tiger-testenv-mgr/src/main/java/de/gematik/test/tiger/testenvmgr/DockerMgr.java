@@ -5,6 +5,7 @@ import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.PullResponseItem;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -56,9 +57,11 @@ public class DockerMgr {
                     "'" + entryPointCmd[2] + "'"};
             }
 
+            File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
             final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
             String containerScriptPath = iiResponse.getConfig().getWorkingDir() + "/" + scriptName;
-            container.withCopyFileToContainer(MountableFile.forHostPath(scriptName, MOD_ALL_EXEC), containerScriptPath);
+            container.withCopyFileToContainer(
+                MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC), containerScriptPath);
 
             container.withCreateContainerCmdModifier(
                 cmd -> cmd.withUser("root").withEntrypoint(containerScriptPath));
@@ -96,24 +99,27 @@ public class DockerMgr {
     }
 
     public void pullImage(final String imageName) {
-        log.info("Pulling docker image " + imageName+ "...");
+        log.info("Pulling docker image " + imageName + "...");
         final AtomicBoolean pullComplete = new AtomicBoolean();
         pullComplete.set(false);
         final AtomicReference<Throwable> cbException = new AtomicReference<>();
-        DockerClientFactory.instance().client().pullImageCmd(imageName).exec(new ResultCallback.Adapter<PullResponseItem>() {
-            @Override
-            public void onNext(PullResponseItem item) {
-                log.debug(item.getStatus() + " " + (item.getProgress() != null ? item.getProgress() : ""));
-            }
-            @Override
-            public void onError(Throwable throwable) {
-                cbException.set(throwable);
-            }
-            @Override
-            public void onComplete() {
-                pullComplete.set(true);
-            }
-        });
+        DockerClientFactory.instance().client().pullImageCmd(imageName)
+            .exec(new ResultCallback.Adapter<PullResponseItem>() {
+                @Override
+                public void onNext(PullResponseItem item) {
+                    log.debug(item.getStatus() + " " + (item.getProgress() != null ? item.getProgress() : ""));
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    cbException.set(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    pullComplete.set(true);
+                }
+            });
 
         while (!pullComplete.get()) {
             if (cbException.get() != null) {
@@ -146,8 +152,11 @@ public class DockerMgr {
             final var risecert = IOUtils.toString(
                 Objects.requireNonNull(getClass().getResourceAsStream("/idp-rise-tu.crt")),
                 StandardCharsets.UTF_8);
+
+            File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
+            tmpScriptFolder.mkdirs();
             final var scriptName = "__tigerStart_" + server.getName() + ".sh";
-            FileUtils.writeStringToFile(Path.of(scriptName).toFile(),
+            FileUtils.writeStringToFile(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName).toFile(),
                 "#!/bin/sh -x\nenv\n"
                     // append proxy and other certs (for rise idp)
                     + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
