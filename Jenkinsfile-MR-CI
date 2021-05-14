@@ -69,7 +69,7 @@ pipeline {
         stage('deploy') {
             when { branch BRANCH}
             steps {
-                mavenDeploy("pom.xml", "-DskipTests -DaltDeploymentRepository=releases::default::https://build.top.local/nexus/content/repositories/releases")
+                sh "mvn deploy -DskipTests -DaltDeploymentRepository=releases::default::https://build.top.local/nexus/content/repositories/releases"
             }
         }
         stage('Tag and Push CI-build') {
