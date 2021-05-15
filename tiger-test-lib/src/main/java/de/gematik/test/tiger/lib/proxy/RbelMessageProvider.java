@@ -38,6 +38,6 @@ public class RbelMessageProvider implements IRbelMessageListener {
 
 
     public void startStep(Step st) {
-        messages.clear();
+        messages.clear(); wait = false;
     }
 }

@@ -65,11 +65,11 @@ public class TigerDirector {
         log.info("\n" + Banner.toBannerStr("SETTING TIGER PROXY...", Ansi.BOLD + Ansi.BLUE));
         System.setProperty("http.proxyHost", "localhost");
         System.setProperty("http.proxyPort",
-            "" + TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
+            "" + tigerTestEnvMgr.getLocalDockerProxy().getPort());
         System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
         System.setProperty("https.proxyHost", "localhost");
         System.setProperty("https.proxyPort",
-            "" + TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
+            "" + tigerTestEnvMgr.getLocalDockerProxy().getPort());
 
 
         initialized = true;
@@ -81,6 +81,9 @@ public class TigerDirector {
     }
 
     public static TigerTestEnvMgr getTigerTestEnvMgr() {
+        if (!checkIsInitialized()) {
+            return null;
+        }
         return tigerTestEnvMgr;
     }
 
@@ -154,7 +157,7 @@ public class TigerDirector {
     private static boolean checkIsInitialized() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.warn("Tiger test environment has not been initialized,"
-                + "as the TIGER_ACTIVE environment variable is nto set to '1'.");
+                + "as the TIGER_ACTIVE environment variable is not set to '1'.");
             return false;
         }
         if (!initialized) {
@@ -162,5 +165,10 @@ public class TigerDirector {
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
         }
         return initialized;
+    }
+
+    static void testUninitialize()  {
+        initialized = false;
+        tigerTestEnvMgr = null;
     }
 }

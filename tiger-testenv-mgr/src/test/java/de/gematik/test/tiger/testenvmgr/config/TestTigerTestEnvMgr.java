@@ -30,4 +30,6 @@ public class TestTigerTestEnvMgr {
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
     }
+
+    // TODO check external server creation, unsupported type, pkis set, routings set,....
 }

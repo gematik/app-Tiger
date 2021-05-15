@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.464" tests="353" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="sun.desktop" value="windows"/>
+    <property name="awt.toolkit" value="sun.awt.windows.WToolkit"/>
+    <property name="java.specification.version" value="11"/>
+    <property name="sun.cpu.isalist" value="amd64"/>
+    <property name="sun.jnu.encoding" value="Cp1252"/>
+    <property name="java.class.path" value="C:\Users\t.eitzenberger\IdeaProjects\aforeporter\target\test-classes;C:\Users\t.eitzenberger\IdeaProjects\aforeporter\target\classes;C:\usr\local\share\maven\repository\org\projectlombok\lombok\1.18.12\lombok-1.18.12.jar;C:\usr\local\share\maven\repository\commons-io\commons-io\2.7\commons-io-2.7.jar;C:\usr\local\share\maven\repository\org\slf4j\slf4j-api\1.7.30\slf4j-api-1.7.30.jar;C:\usr\local\share\maven\repository\org\slf4j\slf4j-simple\1.7.30\slf4j-simple-1.7.30.jar;C:\usr\local\share\maven\repository\com\beust\jcommander\1.78\jcommander-1.78.jar;C:\usr\local\share\maven\repository\com\github\javaparser\javaparser-core\3.16.2\javaparser-core-3.16.2.jar;C:\usr\local\share\maven\repository\com\fasterxml\jackson\core\jackson-databind\2.11.2\jackson-databind-2.11.2.jar;C:\usr\local\share\maven\repository\com\fasterxml\jackson\core\jackson-annotations\2.11.2\jackson-annotations-2.11.2.jar;C:\usr\local\share\maven\repository\com\fasterxml\jackson\core\jackson-core\2.11.2\jackson-core-2.11.2.jar;C:\usr\local\share\maven\repository\org\json\json\20201115\json-20201115.jar;C:\usr\local\share\maven\repository\org\junit\jupiter\junit-jupiter-engine\5.4.2\junit-jupiter-engine-5.4.2.jar;C:\usr\local\share\maven\repository\org\apiguardian\apiguardian-api\1.0.0\apiguardian-api-1.0.0.jar;C:\usr\local\share\maven\repository\org\junit\platform\junit-platform-engine\1.4.2\junit-platform-engine-1.4.2.jar;C:\usr\local\share\maven\repository\org\junit\jupiter\junit-jupiter-params\5.4.2\junit-jupiter-params-5.4.2.jar;C:\usr\local\share\maven\repository\org\junit\jupiter\junit-jupiter-api\5.4.2\junit-jupiter-api-5.4.2.jar;C:\usr\local\share\maven\repository\org\opentest4j\opentest4j\1.1.1\opentest4j-1.1.1.jar;C:\usr\local\share\maven\repository\org\junit\platform\junit-platform-commons\1.4.2\junit-platform-commons-1.4.2.jar;C:\usr\local\share\maven\repository\org\assertj\assertj-core\3.18.1\assertj-core-3.18.1.jar;"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="user.variant" value=""/>
+    <property name="java.vendor.url" value="https://openjdk.java.net/"/>
+    <property name="user.timezone" value="Europe/Berlin"/>
+    <property name="user.country.format" value="DE"/>
+    <property name="java.vm.specification.version" value="11"/>
+    <property name="os.name" value="Windows 10"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.boot.library.path" value="C:\Program Files\OpenJDK\openjdk-11.0.8_10\bin"/>
+    <property name="sun.java.command" value="C:\Users\T508A~1.EIT\AppData\Local\Temp\surefire8385268538503372804\surefirebooter2027509175310205969.jar C:\Users\t.eitzenberger\AppData\Local\Temp\surefire8385268538503372804 2021-03-02T16-57-44_082-jvmRun1 surefire5508657274330967551tmp surefire_05124737068325370987tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="C:\Users\t.eitzenberger\IdeaProjects\aforeporter\target\test-classes;C:\Users\t.eitzenberger\IdeaProjects\aforeporter\target\classes;C:\usr\local\share\maven\repository\org\projectlombok\lombok\1.18.12\lombok-1.18.12.jar;C:\usr\local\share\maven\repository\commons-io\commons-io\2.7\commons-io-2.7.jar;C:\usr\local\share\maven\repository\org\slf4j\slf4j-api\1.7.30\slf4j-api-1.7.30.jar;C:\usr\local\share\maven\repository\org\slf4j\slf4j-simple\1.7.30\slf4j-simple-1.7.30.jar;C:\usr\local\share\maven\repository\com\beust\jcommander\1.78\jcommander-1.78.jar;C:\usr\local\share\maven\repository\com\github\javaparser\javaparser-core\3.16.2\javaparser-core-3.16.2.jar;C:\usr\local\share\maven\repository\com\fasterxml\jackson\core\jackson-databind\2.11.2\jackson-databind-2.11.2.jar;C:\usr\local\share\maven\repository\com\fasterxml\jackson\core\jackson-annotations\2.11.2\jackson-annotations-2.11.2.jar;C:\usr\local\share\maven\repository\com\fasterxml\jackson\core\jackson-core\2.11.2\jackson-core-2.11.2.jar;C:\usr\local\share\maven\repository\org\json\json\20201115\json-20201115.jar;C:\usr\local\share\maven\repository\org\junit\jupiter\junit-jupiter-engine\5.4.2\junit-jupiter-engine-5.4.2.jar;C:\usr\local\share\maven\repository\org\apiguardian\apiguardian-api\1.0.0\apiguardian-api-1.0.0.jar;C:\usr\local\share\maven\repository\org\junit\platform\junit-platform-engine\1.4.2\junit-platform-engine-1.4.2.jar;C:\usr\local\share\maven\repository\org\junit\jupiter\junit-jupiter-params\5.4.2\junit-jupiter-params-5.4.2.jar;C:\usr\local\share\maven\repository\org\junit\jupiter\junit-jupiter-api\5.4.2\junit-jupiter-api-5.4.2.jar;C:\usr\local\share\maven\repository\org\opentest4j\opentest4j\1.1.1\opentest4j-1.1.1.jar;C:\usr\local\share\maven\repository\org\junit\platform\junit-platform-commons\1.4.2\junit-platform-commons-1.4.2.jar;C:\usr\local\share\maven\repository\org\assertj\assertj-core\3.18.1\assertj-core-3.18.1.jar;"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="C:\Users\t.eitzenberger"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2020-07-14"/>
+    <property name="java.home" value="C:\Program Files\OpenJDK\openjdk-11.0.8_10"/>
+    <property name="file.separator" value="\"/>
+    <property name="basedir" value="C:\Users\t.eitzenberger\IdeaProjects\aforeporter"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.Win32GraphicsEnvironment"/>
+    <property name="surefire.real.class.path" value="C:\Users\T508A~1.EIT\AppData\Local\Temp\surefire8385268538503372804\surefirebooter2027509175310205969.jar"/>
+    <property name="user.script" value=""/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="11.0.8+10"/>
+    <property name="user.name" value="t.eitzenberger"/>
+    <property name="path.separator" value=";"/>
+    <property name="os.version" value="10.0"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="Cp1252"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="18.9"/>
+    <property name="localRepository" value="C:\usr\local\share\maven\repository"/>
+    <property name="java.vendor.url.bug" value="https://bugreport.java.com/bugreport/"/>
+    <property name="java.io.tmpdir" value="C:\Users\T508A~1.EIT\AppData\Local\Temp\"/>
+    <property name="java.version" value="11.0.8"/>
+    <property name="user.dir" value="C:\Users\t.eitzenberger\IdeaProjects\aforeporter"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="java.awt.printerjob" value="sun.awt.windows.WPrinterJob"/>
+    <property name="user.language.format" value="de"/>
+    <property name="sun.os.patch.level" value=""/>
+    <property name="java.library.path" value="C:\Program Files\OpenJDK\openjdk-11.0.8_10\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Users\t.eitzenberger\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\local\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\t.eitzenberger\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\ProgramData\chocolatey\bin;C:\Program Files\OpenJDK\openjdk-11.0.8_10\bin;C:\Program Files\Git\cmd;C:\ProgramData\chocolatey\lib\maven\apache-maven-3.6.3\bin;C:\Program Files\PuTTY;C:\Program Files\Gradle\bin;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Python\Scripts;C:\Python;C:\Users\t.eitzenberger\AppData\Local\Microsoft\WindowsApps;C:\Program Files\Git\usr\bin\vendor_perl;C:\Program Files\Git\usr\bin\core_perl;."/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.vendor" value="N/A"/>
+    <property name="java.vm.version" value="11.0.8+10"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="55.0"/>
+  </properties>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.031"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.002"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneMiddle{Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdentical{Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.007"/>
+  <testcase name="testRequirementStatusAllIdentical{Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdentical{Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdentical{Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdentical{Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.016"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.002"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[21]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[22]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[23]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[24]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[25]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[26]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[27]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[28]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[29]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[30]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[31]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[32]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[33]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[34]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[35]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[36]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[37]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[38]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[39]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[40]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[41]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[42]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[43]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[44]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[45]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[46]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[47]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstMiddle{Result, Result, Result, Result}[48]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.002"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[21]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[22]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[23]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[24]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[25]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[26]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[27]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[28]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[29]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[30]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[31]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[32]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[33]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[34]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[35]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.002"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[36]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[37]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[38]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[39]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[40]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[41]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[42]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[43]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[44]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[45]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[46]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[47]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastFirst{Result, Result, Result, Result}[48]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[21]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[22]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[23]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[24]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[25]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[26]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[27]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[28]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[29]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[30]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[31]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[32]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[33]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[34]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[35]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[36]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[37]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[38]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[39]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[40]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[41]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[42]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[43]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[44]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[45]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[46]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[47]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButLastMiddle{Result, Result, Result, Result}[48]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneLast{Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButOneFirst{Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[21]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[22]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[23]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[24]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[25]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[26]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[27]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[28]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[29]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[30]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[31]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[32]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[33]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[34]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[35]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[36]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[37]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[38]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[39]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[40]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[41]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[42]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[43]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[44]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[45]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[46]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[47]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleFirst{Result, Result, Result, Result}[48]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[21]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[22]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[23]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[24]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[25]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[26]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[27]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[28]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[29]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[30]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[31]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[32]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[33]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[34]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[35]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[36]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[37]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[38]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[39]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[40]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[41]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[42]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[43]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[44]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[45]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[46]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[47]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButFirstLast{Result, Result, Result, Result}[48]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[1]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[2]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[3]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[4]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[5]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[6]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[7]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[8]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[9]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[10]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[11]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[12]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[13]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[14]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[15]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[16]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[17]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[18]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[19]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[20]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[21]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[22]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[23]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[24]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[25]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[26]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[27]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[28]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[29]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[30]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[31]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[32]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[33]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[34]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[35]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[36]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[37]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[38]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[39]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[40]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[41]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[42]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[43]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0.001"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[44]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[45]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[46]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[47]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+  <testcase name="testRequirementStatusAllIdenticalButMiddleLast{Result, Result, Result, Result}[48]" classname="de.gematik.idp.tests.aforeport.TestAfoReporter" time="0"/>
+</testsuite>
