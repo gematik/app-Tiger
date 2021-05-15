@@ -7,7 +7,7 @@ public class TestTigerDirector {
     @Test
     public void testDirectorSimpleIdp() {
         System.setProperty("TIGER_ACTIVE", "1");
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleidp.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
         TigerDirector.beforeTestRun();
     }
 

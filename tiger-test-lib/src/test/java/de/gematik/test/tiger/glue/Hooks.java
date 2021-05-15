@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
@@ -41,7 +42,7 @@ public class Hooks {
     };
 
     // TODO check if outlines get called once or multiple times and how their id looks like?
-    @Before
+    @Before(order = 100)
     public void loadFeatureFileNResetRbelLog(final Scenario scenario) {
         final Feature feature = uriFeatureMap
             .computeIfAbsent(scenario.getUri(), uri -> new FeatureParser().parseFeatureFile(uri));
@@ -57,6 +58,11 @@ public class Hooks {
         scenarioStepsIdxMap.put(scenario.getId(), 0);
 
         rbelElements.clear();
+        if (!TigerDirector.isInitialized()) {
+            OSEnvironment.setEnv(Map.of("TIGER_ACTIVE", "1"));
+            System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
+            TigerDirector.beforeTestRun();
+        }
         if (!rbelListenerAdded) {
             TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().addRbelMessageListener(rbelMessageListener);
             rbelListenerAdded = true;
