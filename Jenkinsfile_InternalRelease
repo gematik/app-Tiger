@@ -7,7 +7,7 @@ def GITLAB_PROJECT_ID = '644'
 def TITLE_TEXT = 'Release'
 def GROUP_ID_PATH = "de/gematik/test"
 def GROUP_ID = "de.gematik.test"
-def ARTIFACT_ID = 'tiger'
+def ARTIFACT_ID = 'tiger-common'
 def ARTIFACT_IDs = 'tiger,tiger-common,tiger-proxy,tiger-test-lib'
 def PACKAGING = "jar"
 
