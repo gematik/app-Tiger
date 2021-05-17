@@ -5,29 +5,27 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
+
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHost;
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
+import kong.unirest.UnirestException;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 public class TestTigerProxy {
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
+    public WireMockRule wireMockRule = new WireMockRule(options()
+        .dynamicPort()
+        .dynamicHttpsPort());
 
     @Before
     public void setupBackendServer() {
@@ -39,12 +37,13 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void useAsWebProxyServer_shouldForward() throws UnirestException, IOException {
+    public void useAsWebProxyServer_shouldForward() {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(Map.of("http://backend", "http://localhost:" + wireMockRule.port()))
             .build());
 
-        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
 
         final HttpResponse<JsonNode> response = Unirest.get("http://backend/foobar")
             .asJson();
@@ -56,32 +55,50 @@ public class TestTigerProxy {
     }
 
     @Test
-    @Ignore("Trust all fehlt")
-    public void useTsl_shouldForward() throws UnirestException, IOException {
+    public void useTslBetweenClientAndProxy_shouldForward() throws UnirestException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .proxyRoutes(Map.of("backend", "localhost:" + wireMockRule.port()))
+            .proxyRoutes(Map.of("https://backend", "http://localhost:" + wireMockRule.port()))
             .build());
 
-        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        Unirest.config().verifySsl(false);
 
-        final HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
+        final kong.unirest.HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
             .asJson();
-        System.out.println(IOUtils.toString(response.getRawBody(), Charset.defaultCharset()));
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
     }
 
-    // TODO Fix it and then reactivate it
-    // @Test
-    public void requestAndResponseThroughWebProxy_shouldGiveRbelObjects() throws UnirestException, InterruptedException {
+    @Test
+    public void useTslBetweenProxyAndServer_shouldForward() throws UnirestException {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("http://backend", "https://localhost:" + wireMockRule.httpsPort()))
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+
+        final kong.unirest.HttpResponse<JsonNode> response = Unirest.get("http://backend/foobar")
+            .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @Test
+    public void requestAndResponseThroughWebProxy_shouldGiveRbelObjects()
+        throws UnirestException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(Map.of(
-                "backend", "localhost:" + wireMockRule.port()
+                "http://backend", "http://localhost:" + wireMockRule.port()
             ))
             .build());
 
-        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+
         Unirest.get("http://backend/foobar").asString().getBody();
 
         assertThat(tigerProxy.getRbelMessages().get(1)
@@ -91,23 +108,24 @@ public class TestTigerProxy {
         ).isEqualTo("bar");
     }
 
-    // TODO Fix it and then reactivate it
-    // @Test
+    @Test
     public void registerListenerThenSentRequest_shouldTriggerListener() throws UnirestException {
         AtomicInteger callCounter = new AtomicInteger(0);
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .proxyRoutes(Map.of("backend", "localhost:" + wireMockRule.port()))
+            .proxyRoutes(Map.of("http://backend", "http://localhost:" + wireMockRule.port()))
             .build());
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
-        Unirest.setProxy(new HttpHost("localhost", tigerProxy.getPort()));
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+
         Unirest.get("http://backend/foobar").asString().getBody();
 
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-//    @Test
+    //    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
             .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
