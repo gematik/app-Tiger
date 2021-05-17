@@ -1,6 +1,8 @@
 package de.gematik.test.tiger.testenvmgr.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.File;
 import org.junit.Test;
@@ -25,11 +27,38 @@ public class TestTigerTestEnvMgr {
     }
 
     @Test
-    public void testCreateEnv() {
+    public void testCreateShutdownEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpOnly.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        CfgServer srv = new CfgServer();
+        srv.setName("idp");
+        srv.setInstanceUri("docker:anything......");
+        envMgr.shutDown(srv);
+    }
+
+    @Test
+    public void testCreateExternalEnv() {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/riseIdpOnly.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
     }
 
-    // TODO check external server creation, unsupported type, pkis set, routings set,....
+
+    @Test
+    public void testCreateInvalidInstanceType() {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/invalidInstanceType.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
+    }
+
+    @Test
+    public void testCreateNonExisitngVersion() {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpNonExisitngVersion.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
+    }
+
+    // TODO check pkis set, routings set,....
+
 }

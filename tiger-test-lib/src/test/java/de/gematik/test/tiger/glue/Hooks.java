@@ -44,6 +44,10 @@ public class Hooks {
     // TODO check if outlines get called once or multiple times and how their id looks like?
     @Before(order = 100)
     public void loadFeatureFileNResetRbelLog(final Scenario scenario) {
+        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
+            return;
+        }
         final Feature feature = uriFeatureMap
             .computeIfAbsent(scenario.getUri(), uri -> new FeatureParser().parseFeatureFile(uri));
 
@@ -56,7 +60,6 @@ public class Hooks {
                 String.format("Unable to obtain test steps for scenario %s in feature file %s",
                     scenario.getName(), scenario.getUri()))));
         scenarioStepsIdxMap.put(scenario.getId(), 0);
-
         rbelElements.clear();
         if (!TigerDirector.isInitialized()) {
             OSEnvironment.setEnv(Map.of("TIGER_ACTIVE", "1"));
@@ -71,6 +74,10 @@ public class Hooks {
 
     @BeforeStep
     public void beforeStep(final Scenario scenario) {
+        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
+            return;
+        }
         final int idx = scenarioStepsIdxMap.get(scenario.getId());
         log.info(Ansi.GREEN + Ansi.BOLD +
             "Executing step " + String.join("\r\n", scenarioStepsMap.get(scenario.getId()).get(idx).getLines())
@@ -80,6 +87,10 @@ public class Hooks {
 
     @AfterStep
     public void afterStep(final Scenario scenario) {
+        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
+            return;
+        }
         final int idx = scenarioStepsIdxMap.get(scenario.getId());
         if (scenario.isFailed()) {
             if (!scenarioStatus.containsKey(scenario.getId())) {
@@ -101,6 +112,10 @@ public class Hooks {
     @SneakyThrows
     @After
     public void purgeFeatureFileNSaveRbelLog(final Scenario scenario) {
+        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
+            return;
+        }
         scenarioStepsMap.remove(scenario.getId());
 
          switch (scenario.getStatus()) {

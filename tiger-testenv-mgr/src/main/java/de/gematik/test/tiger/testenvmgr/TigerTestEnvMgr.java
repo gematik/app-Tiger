@@ -9,7 +9,6 @@ import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.util.*;
 import lombok.Getter;
@@ -192,14 +191,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .findAny()
             .orElseThrow()
         );
-    }
-
-    @SuppressWarnings("unused")
-    @SneakyThrows
-    private Integer getFreePort() {
-        try (final var socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        }
     }
 
     public List<String[]> getRoutes() {

@@ -36,4 +36,22 @@ public class TestDockerMgr {
         // docker host environment -> Time elapsed: 26.062 sec
         dmgr.stopContainer(srv);
     }
+
+    @Test
+    public void testDockerMgrPauseUnpause() {
+        // TODO ensure image with given version is available locally
+        final DockerMgr dmgr = new DockerMgr();
+        final CfgServer srv = new CfgServer();
+        dmgr.pullImage("gstopdr1.top.local/idp/idp-server:17.0.0-38");
+        srv.setInstanceUri("docker:gstopdr1.top.local/idp/idp-server:17.0.0-38"); // has no healtchcheck
+        srv.setName("idp");
+        srv.setProduct(CfgProductType.IDP_REF);
+        try {
+            dmgr.startContainer(srv, null);
+            dmgr.pauseContainer(srv);
+            dmgr.unpauseContainer(srv);
+        } finally {
+            dmgr.stopContainer(srv);
+        }
+    }
 }

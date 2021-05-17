@@ -1,0 +1,13 @@
+tigerProxy:
+  forwardToProxy:
+    hostname: 192.168.230.85
+    port: 3128
+  serverRootCaCertPem: CertificateAuthorityCertificate.pem
+  serverRootCaKeyPem: PKCS8CertificateAuthorityPrivateKey.pem
+
+
+servers:
+  - name: idp
+    template: idp-rise-rtu
+    instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: true
