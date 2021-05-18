@@ -22,6 +22,7 @@ pipeline {
         stage('Initialize') {
             steps {
                 gitSetIdentity()
+                createPipelineTriggers()
             }
         }
          stage('gitCreateBranch') {
@@ -88,5 +89,17 @@ pipeline {
                 gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID)
             }
         }
+    }
+}
+
+void createPipelineTriggers() {
+    script {
+        def triggers = []
+        if (env.BRANCH_NAME == 'owasp') {
+            triggers = [cron('H H(0-3) * * 1-5')]
+        }
+        properties([
+                pipelineTriggers(triggers)
+        ])
     }
 }
