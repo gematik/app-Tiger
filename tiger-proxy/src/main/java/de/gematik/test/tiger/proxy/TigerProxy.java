@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;

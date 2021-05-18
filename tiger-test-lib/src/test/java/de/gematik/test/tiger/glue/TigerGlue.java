@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.glue;
 
 import de.gematik.test.tiger.common.banner.Banner;
