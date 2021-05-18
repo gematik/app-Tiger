@@ -67,6 +67,11 @@ public class Hooks {
                     scenario.getName(), scenario.getUri()))));
         scenarioStepsIdxMap.put(scenario.getId(), 0);
         rbelElements.clear();
+        if (!TigerDirector.isInitialized()) {
+            System.setProperty("TIGER_ACTIVE", "1");
+            System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
+            TigerDirector.beforeTestRun();
+        }
         if (!rbelListenerAdded) {
             TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().addRbelMessageListener(rbelMessageListener);
             rbelListenerAdded = true;
