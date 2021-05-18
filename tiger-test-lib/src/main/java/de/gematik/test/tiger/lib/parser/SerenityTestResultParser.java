@@ -10,6 +10,8 @@ import de.gematik.test.tiger.lib.parser.model.Testcase;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +67,13 @@ public class SerenityTestResultParser implements ITestResultParser {
                 tr.setErrdetails(""); // TO DO add stacktrace here
                 tr.setErrtype(jsoErr.getString("errorType"));
             }
+            if (jso.has("startTime")) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.nXXXXX'['z']'");
+                ZonedDateTime zonedDateTime = ZonedDateTime.parse(jso.getString("startTime"), formatter);
+                tr.setStartms(zonedDateTime.toInstant().toEpochMilli());
+                tr.setEndms(tr.getStartms() + jso.getInt("duration")*1000L);
+            }
+
             results.put(tr.getClazz() + ":" + tr.getMethod(), tr);
 
         } catch (final IOException | JSONException ioe) {

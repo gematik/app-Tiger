@@ -29,6 +29,8 @@ public class TestResult extends Testcase {
     private String errdetails;
     private String errsysout;
     private String errsyserr;
+    private long startms;
+    private long endms;
 }
 
 

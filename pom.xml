@@ -28,6 +28,7 @@
         <module>tiger-proxy</module>
         <module>tiger-testenv-mgr</module>
         <module>tiger-test-lib</module>
+        <module>tiger-aurora-plugin</module>
     </modules>
 
     <repositories>

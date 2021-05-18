@@ -2,9 +2,4 @@
 **/*.iml
 *.iml
 /target/
-/tiger-proxy/target/
-/tiger-testenv-mgr/target/
-/tiger-test-lib/target/
-/tiger-common/target/
-/tiger-test-lib/__tiger*.sh
-/tiger-testenv-mgr/__tiger*.sh
+/*/target/
