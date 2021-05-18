@@ -25,3 +25,10 @@ Feature: Provide a test context to testsuites to maintain data between steps
     Scenario: Banner text
       Given TGR I want to show banner "TEST BANNER 1.0"
       Given TGR I want to show YELLOW banner "TEST BANNER 2.0"
+
+  Scenario: Check German umlauts
+    Given TGR I set context domain to "test003"
+    And  TGR I set context entry "test01" to "testvalue"
+    And  TGR I set context entry "test02" to "täßtvalÜ"
+    Then TGR assert context matches file 'classpath:/testdata/testdata080.properties'
+

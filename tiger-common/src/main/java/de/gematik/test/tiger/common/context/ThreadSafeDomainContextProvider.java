@@ -3,12 +3,12 @@
  */
 package de.gematik.test.tiger.common.context;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import org.assertj.core.api.Assertions;
+import java.util.*;
+import lombok.SneakyThrows;
 
 public abstract class ThreadSafeDomainContextProvider {
 
@@ -23,14 +23,14 @@ public abstract class ThreadSafeDomainContextProvider {
     }
 
     public void setDomain(final String d) {
-        Assertions.assertThat(d).isNotBlank();
+        assertThat(d).isNotBlank();
         domain = d;
         getContext();
     }
 
     public String getString(final String key) {
         final Map<String, Object> ctxt = getContext();
-        Assertions.assertThat(ctxt).containsKey(key);
+        assertThat(ctxt).containsKey(key);
         final Object value = ctxt.get(key);
         return value == null ? null : value.toString();
     }
@@ -58,7 +58,7 @@ public abstract class ThreadSafeDomainContextProvider {
     }
 
     public Map<String, Object> getObjectMapCopy(final String key) {
-        Assertions.assertThat(getContext().get(key)).isInstanceOf(Map.class);
+        assertThat(getContext().get(key)).isInstanceOf(Map.class);
         //noinspection unchecked
         return new HashMap<>((Map<String, Object>) getContext().get(key));
     }
@@ -69,29 +69,29 @@ public abstract class ThreadSafeDomainContextProvider {
     public void assertRegexMatches(final String key, final String regex) {
         final Map<String, Object> ctxt = getContext();
         if (regex == null || "$NULL".equals(regex)) {
-            Assertions.assertThat(ctxt).containsKey(key);
-            Assertions.assertThat(ctxt.get(key)).isNull();
+            assertThat(ctxt).containsKey(key);
+            assertThat(ctxt.get(key)).isNull();
         } else if ("$DOESNOTEXIST".equals(regex)) {
-            Assertions.assertThat(ctxt).doesNotContainKey(key);
+            assertThat(ctxt).doesNotContainKey(key);
         } else {
-            Assertions.assertThat(ctxt).containsKey(key);
+            assertThat(ctxt).containsKey(key);
             final String value = Optional.ofNullable(ctxt.get(key))
                 .map(Object::toString)
                 .orElse(null);
             if (!Objects.equals(value, regex)) {
-                Assertions.assertThat(value).matches(regex);
+                assertThat(value).matches(regex);
             }
         }
     }
 
     public void remove(final String key) {
-        Assertions.assertThat(getContext()).containsKey(key);
+        assertThat(getContext()).containsKey(key);
         getContext().remove(key);
     }
 
     public void flipBit(final int bitidx, final String key) {
-        Assertions.assertThat(getContext()).containsKey(key);
-        Assertions.assertThat(getContext().get(key))
+        assertThat(getContext()).containsKey(key);
+        assertThat(getContext().get(key))
             .withFailMessage("Value for '" + key + "' in context is null!")
             .isNotNull();
         final var value = getContext().get(key).toString();
@@ -107,7 +107,7 @@ public abstract class ThreadSafeDomainContextProvider {
         }
         bytes[idx] ^= (byte) (0b00000001 << shift);
         final var flippedValue = new String(bytes);
-        Assertions.assertThat(flippedValue).isNotEqualTo(value);
+        assertThat(flippedValue).isNotEqualTo(value);
         getContext().put(key, flippedValue);
     }
 
@@ -133,5 +133,25 @@ public abstract class ThreadSafeDomainContextProvider {
 
     protected String getId(final String otherDomain) {
         return Thread.currentThread().getId() + otherDomain;
+    }
+
+    @SneakyThrows
+    public void assertPropFileMatches(String propFileName) {
+        InputStream in = null;
+        try {
+            if (propFileName.startsWith("classpath:")) {
+                in = getClass().getResourceAsStream(propFileName.substring("classpath:".length()));
+            } else {
+                in = new FileInputStream(propFileName);
+            }
+            assertThat(in).withFailMessage("Unable to access properties file '" + propFileName + "'").isNotNull();
+            Properties p = new Properties();
+            p.load(in);
+            getContext().keySet().forEach(key -> {
+                assertThat(getContext().get(key).toString()).isEqualTo(p.getProperty(key));
+            });
+        } finally {
+            if (in != null) in.close();
+        }
     }
 }

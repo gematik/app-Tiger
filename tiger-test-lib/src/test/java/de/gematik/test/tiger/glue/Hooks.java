@@ -45,8 +45,10 @@ public class Hooks {
     @Before(order = 100)
     public void loadFeatureFileNResetRbelLog(final Scenario scenario) {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
-            return;
+            throw new AssertionError("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
+        }
+        if (!TigerDirector.isInitialized()) {
+            TigerDirector.beforeTestRun();
         }
         final Feature feature = uriFeatureMap
             .computeIfAbsent(scenario.getUri(), uri -> new FeatureParser().parseFeatureFile(uri));
@@ -61,11 +63,6 @@ public class Hooks {
                     scenario.getName(), scenario.getUri()))));
         scenarioStepsIdxMap.put(scenario.getId(), 0);
         rbelElements.clear();
-        if (!TigerDirector.isInitialized()) {
-            OSEnvironment.setEnv(Map.of("TIGER_ACTIVE", "1"));
-            System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
-            TigerDirector.beforeTestRun();
-        }
         if (!rbelListenerAdded) {
             TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().addRbelMessageListener(rbelMessageListener);
             rbelListenerAdded = true;
@@ -75,7 +72,7 @@ public class Hooks {
     @BeforeStep
     public void beforeStep(final Scenario scenario) {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
+            log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;
         }
         final int idx = scenarioStepsIdxMap.get(scenario.getId());
@@ -88,7 +85,7 @@ public class Hooks {
     @AfterStep
     public void afterStep(final Scenario scenario) {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
+            log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;
         }
         final int idx = scenarioStepsIdxMap.get(scenario.getId());
@@ -113,7 +110,7 @@ public class Hooks {
     @After
     public void purgeFeatureFileNSaveRbelLog(final Scenario scenario) {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.error("TIGER_ACTIVE is nto set to '1'. ABORTING Tiger hook!");
+            log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;
         }
         scenarioStepsMap.remove(scenario.getId());

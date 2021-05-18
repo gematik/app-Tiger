@@ -157,7 +157,7 @@ public class TestContextProviders {
 
     @Test
     public void testSubstituteToken2OK() {
-        final TestContext ctxt = new TestContext("test010");
+        final TestContext ctxt = new TestContext("test020");
         ctxt.putString("key1", "value1");
         ctxt.putString("key2", "KEY2VALUE");
         assertThat(
@@ -168,7 +168,7 @@ public class TestContextProviders {
 
     @Test
     public void testSubstituteTokenUnsetValueOK() {
-        final TestContext ctxt = new TestContext("test010");
+        final TestContext ctxt = new TestContext("test030");
         ctxt.putString("key1", "value1");
         ctxt.putString("key2", "KEY2VALUE");
         assertThat(
@@ -182,13 +182,32 @@ public class TestContextProviders {
         final TestContext ctxt = new TestContext();
         ctxt.setDomain("test050");
         ctxt.putString("testkey", "testvalue");
-        ctxt.setDomain("test51");
+        ctxt.setDomain("test051");
         assertThat(ctxt.getContext()).doesNotContainKey("testkey");
         assertThat(ctxt.getContext()).doesNotContainEntry("testkey", "testvalue");
         ctxt.setDomain("test050");
         assertThat(ctxt.getContext("test051")).doesNotContainKey("testkey");
         assertThat(ctxt.getContext("test051")).doesNotContainEntry("testkey", "testvalue");
         assertThat(ctxt.getString("testkey")).isEqualTo("testvalue");
+    }
+
+    @Test
+    public void testAssertPropFileMatchesOK() {
+        final TestContext ctxt = new TestContext();
+        ctxt.setDomain("test080");
+        ctxt.putString("test01", "testvalue");
+        ctxt.putString("test02", "täßtvalÜ");
+        ctxt.assertPropFileMatches("classpath:/testdata/testdata080.properties");
+    }
+
+    @Test
+    public void testAssertPropFileMatchesNOTOK() {
+        final TestContext ctxt = new TestContext();
+        ctxt.setDomain("test080");
+        ctxt.putString("test01", "testvalue");
+        ctxt.putString("test02", "täßtvalÜ++");
+        assertThatThrownBy(() -> ctxt.assertPropFileMatches("classpath:/testdata/testdata080.properties"))
+            .isInstanceOf(AssertionError.class);
     }
 
     // =================================================================================================================

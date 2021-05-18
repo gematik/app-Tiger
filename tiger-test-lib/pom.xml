@@ -243,6 +243,8 @@
                     <perCoreThreadCount>true</perCoreThreadCount>-->
                     <skipITs>false</skipITs>
                     <systemPropertyVariables>
+                        <TIGER_ACTIVE>1</TIGER_ACTIVE>
+                        <TIGER_TESTENV_CFGFILE>src/test/resources/testdata/noServersActive.yaml</TIGER_TESTENV_CFGFILE>
                         <!--
                         <cucumber.filter.tags>@Approval and not @OpenBug and not @WiP and not @LongRunning
                         </cucumber.filter.tags>

@@ -43,6 +43,13 @@ use the command below to remove all unused containers. Or look for containers st
 docekr system prune
 ```
 
+Last resort:
+
+```
+netcfg -d
+```
+and restart docker
+
 # Dos and Donts
 
 * don't use custom parameter types in steps that ought to become public / exported for reuse as intellij currently does

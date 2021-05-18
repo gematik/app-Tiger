@@ -110,6 +110,19 @@ public class TigerGlue {
         vars.assertRegexMatches(vars.substituteVariables(key), vars.substituteVariables(regex));
     }
 
+    /**
+     * asserts that the current context entries (assuming all to be strings) match the content of the given properties file.
+     * If the file name starts with "classpath:" the properties file will be loaded from class resources instead.
+     *
+     * ATTENTION! care must be taken to ensure the properties file is ISO8859-1 encoded which is the expected encoding from java for properties files!
+     *
+     * @param propFileName  name of the properties file
+     */
+    @Then("TGR assert context matches file {string}")
+    public void ctxtAssertVariablesEntryMatches(final String propFileName) {
+        ctxt.assertPropFileMatches(propFileName);
+    }
+
     @Given("TGR I want to show {word} banner {string}")
     public void tgrIWantToShowColoredBanner(String color, String text) {
         log.info("\n" + Banner.toBannerStrWithCOLOR(text, color.toUpperCase()));
