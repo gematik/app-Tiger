@@ -57,8 +57,10 @@ pipeline {
             }
         }
         stage('OwaspScan') {
+            when { branch 'owasp' }
             steps {
-                //mavenOwaspScan()
+                sh "git merge origin/master -q"
+                mavenOwaspScan()
             }
         }
         stage('Sonar') {
