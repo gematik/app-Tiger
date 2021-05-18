@@ -29,6 +29,7 @@
         <module>tiger-testenv-mgr</module>
         <module>tiger-test-lib</module>
         <module>tiger-aurora-plugin</module>
+        <module>tiger-aforeporter-plugin</module>
     </modules>
 
     <repositories>

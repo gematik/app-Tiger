@@ -2,21 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <version>0.2.0-SNAPSHOT</version>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tiger-aurora-plugin</artifactId>
+    <artifactId>tiger-aforeporter-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <version.aurora.client.common>2.0.10-SNAPSHOT</version.aurora.client.common>
     </properties>
 
     <dependencies>
@@ -34,15 +33,9 @@
         </dependency>
 
         <dependency>
-            <groupId>de.gematik</groupId>
-            <artifactId>aurora.client.common</artifactId>
-            <version>${version.aurora.client.common}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-lib</artifactId>
-            <version>0.2.0-SNAPSHOT</version>
+            <groupId>de.gematik.idp.aforeporter</groupId>
+            <artifactId>aforeporter</artifactId>
+            <version>1.2.1</version>
         </dependency>
     </dependencies>
 

@@ -26,7 +26,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 @Mojo(name = "import-testrun")
-public class TestRunAuroraImporter extends AbstractMojo {
+public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
 
     @Parameter(property = "import-testrun.aurora.profile", defaultValue = "prod_ref_env")
     String auroraProfile;
