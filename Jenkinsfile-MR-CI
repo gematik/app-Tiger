@@ -76,14 +76,12 @@ pipeline {
             }
         }
         stage('Tag and Push CI-build') {
-        //nur für Executables nicht für Libraries nötig
         when { branch BRANCH}
             steps {
                 gitCreateAndPushTag(JIRA_PROJECT_ID)
             }
         }
        stage('GitLab-Update-Snapshot') {
-            //nur für Executables nicht für Libraries nötig
             when { branch BRANCH}
             steps {
                 gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID)
