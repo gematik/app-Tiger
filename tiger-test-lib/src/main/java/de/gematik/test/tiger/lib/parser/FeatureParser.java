@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.lib.parser;
 
 import de.gematik.test.tiger.lib.parser.model.gherkin.*;

@@ -22,6 +22,7 @@ pipeline {
         stage('Initialize') {
             steps {
                 gitSetIdentity()
+                createPipelineTriggers()
             }
         }
          stage('gitCreateBranch') {
@@ -57,7 +58,9 @@ pipeline {
             }
         }
         stage('OwaspScan') {
+            when { branch 'owasp' }
             steps {
+                sh "git merge origin/master -q"
                 mavenOwaspScan()
             }
         }
@@ -73,18 +76,28 @@ pipeline {
             }
         }
         stage('Tag and Push CI-build') {
-        //nur für Executables nicht für Libraries nötig
         when { branch BRANCH}
             steps {
                 gitCreateAndPushTag(JIRA_PROJECT_ID)
             }
         }
        stage('GitLab-Update-Snapshot') {
-            //nur für Executables nicht für Libraries nötig
             when { branch BRANCH}
             steps {
                 gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID)
             }
         }
+    }
+}
+
+void createPipelineTriggers() {
+    script {
+        def triggers = []
+        if (env.BRANCH_NAME == 'owasp') {
+            triggers = [cron('H H(0-3) * * 1-5')]
+        }
+        properties([
+                pipelineTriggers(triggers)
+        ])
     }
 }
