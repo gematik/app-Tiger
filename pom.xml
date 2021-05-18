@@ -53,7 +53,7 @@
         <version.slf4j>1.7.30</version.slf4j>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.7.1</version.junit5>
-        <version.rbellogger>0.8.3-91</version.rbellogger>
+        <version.rbellogger>0.8.4-96</version.rbellogger>
 
         <encoding>UTF-8</encoding>
 
