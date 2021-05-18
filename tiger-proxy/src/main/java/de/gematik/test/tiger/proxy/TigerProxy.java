@@ -7,6 +7,8 @@ package de.gematik.test.tiger.proxy;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.converter.RbelConfiguration;
+import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Stream;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +45,7 @@ public class TigerProxy implements ITigerProxy {
         // https://bugs.openjdk.java.net/browse/JDK-8221218
         // https://forum.portswigger.net/thread/complete-proxy-failure-due-to-java-tls-bug-1e334581
         //System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,SSLv3,TLSv1.3");
-        rbelLogger = RbelLogger.build();
+        rbelLogger = RbelLogger.build(buildRbelLoggerConfiguration(configuration));
         mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
         if (StringUtils.isNotEmpty(configuration.getServerRootCaCertPem())) {
@@ -63,6 +66,15 @@ public class TigerProxy implements ITigerProxy {
         for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
             addRoute(routeEntry.getKey(), routeEntry.getValue());
         }
+    }
+
+    private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
+        final RbelConfiguration rbelConfiguration = new RbelConfiguration();
+        if (configuration.getKeyFolders() != null) {
+            configuration.getKeyFolders().stream()
+                .forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
+        }
+        return rbelConfiguration;
     }
 
     private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {

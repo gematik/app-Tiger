@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.configuration;
 
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,4 +22,5 @@ public class TigerProxyConfiguration {
     private String proxyLogLevel = "WARN";
     private String serverRootCaCertPem;
     private String serverRootCaKeyPem;
+    private List<String> keyFolders;
 }
