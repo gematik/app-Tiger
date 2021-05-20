@@ -14,6 +14,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <properties>
+        <docker.image.name>tiger-proxy</docker.image.name>
+    </properties>
+
     <dependencies>
         <!-- test assets -->
         <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -166,6 +170,32 @@
                             <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
                             <finalName>${project.name}-${project.version}-standalone</finalName>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>docker-maven-plugin</artifactId>
+                <groupId>io.fabric8</groupId>
+                <version>0.34.1</version>
+                <configuration>
+                    <images>
+                        <image>
+                            <build>
+                                <dockerFile>${basedir}/Dockerfile</dockerFile>
+                            </build>
+                            <name>${docker.image.name}:${project.version}</name>
+                        </image>
+                    </images>
+                    <verbose>true</verbose>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <id>default</id>
+                        <phase>install</phase>
                     </execution>
                 </executions>
             </plugin>

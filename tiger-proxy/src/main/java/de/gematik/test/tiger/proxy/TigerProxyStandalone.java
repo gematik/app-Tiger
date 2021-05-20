@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import com.beust.jcommander.IDefaultProvider;
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -24,24 +25,29 @@ public class TigerProxyStandalone {
 
     @Parameter(names = {"-r", "--routes"}, converter = RouteConverter.class)
     private List<Pair<String, String>> proxyRoutes;
-    @Parameter(names = {"-p", "--proxy"}, converter = RouteConverter.class)
+    @Parameter(names = {"--proxy"})
     private String proxy;
+    @Parameter(names = {"-p", "--port"})
+    private Integer port;
 
     public static void main(String[] args) {
         final TigerProxyStandalone standalone = new TigerProxyStandalone();
         JCommander jc = JCommander.newBuilder()
             .addObject(standalone)
-            .defaultProvider(new EnvironmentVariableDefaultProvider())
+            .defaultProvider(new EnvDefaultProvider())
             .build();
         jc.parse(args);
 
         final TigerProxyConfiguration configuration = new TigerProxyConfiguration();
         if (StringUtils.isNotEmpty(standalone.proxy) && standalone.proxy.contains(":")) {
-            configuration.setForwardToProxy(new ForwardProxyInfo(standalone.proxy.split(":")[0],
-                Integer.parseInt(standalone.proxy.split(":")[1])));
+            final ForwardProxyInfo forwardToProxy = new ForwardProxyInfo(standalone.proxy.split(":")[0],
+                Integer.parseInt(standalone.proxy.split(":")[1]));
+            configuration.setForwardToProxy(forwardToProxy);
+            log.info("Using proxy configuration {} (converted from {})", forwardToProxy, standalone.proxy);
         }
         configuration.setKeyFolders(new ArrayList<>(List.of(".")));
         configuration.setProxyRoutes(new HashMap<>());
+        configuration.setPort(standalone.port);
         configuration.setActivateRbelEndpoint(true);
         if (standalone.proxyRoutes != null) {
             standalone.proxyRoutes
@@ -67,6 +73,15 @@ public class TigerProxyStandalone {
                     + "'http://not.a.real.server;http://google.com'");
             }
             return Pair.of(parts[0], parts[1]);
+        }
+    }
+
+    private static class EnvDefaultProvider implements IDefaultProvider {
+        @Override
+        public String getDefaultValueFor(String variable) {
+            log.info("Looking for value for '{}'...", variable);
+            final String key = variable.replace("-", "").toUpperCase();
+            return System.getProperty(key, System.getenv(key));
         }
     }
 }

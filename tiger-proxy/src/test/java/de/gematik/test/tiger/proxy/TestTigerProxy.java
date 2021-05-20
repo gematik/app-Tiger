@@ -155,9 +155,10 @@ public class TestTigerProxy {
 //    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
-            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+//            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
             .activateRbelEndpoint(true)
-//            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
+            .port(6666)
+            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
             .proxyRoutes(Map.of(
                 "https://magog", "https://google.com",
                 "http://magog", "http://google.com",

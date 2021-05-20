@@ -61,9 +61,10 @@ public class TigerProxy implements ITigerProxy {
         }
 
         mockServer = convertProxyConfiguration(configuration)
-            .map(MockServer::new)
-            .orElse(new MockServer());
+            .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
+            .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
+
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         if (configuration.getProxyRoutes() != null) {
             for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
@@ -80,9 +81,9 @@ public class TigerProxy implements ITigerProxy {
                 .withHeader("Host", null)
                 .withPath("/rbel"))
                 .respond(httpRequest ->
-                        HttpResponse.response()
-                            .withHeader("content-type", "text/html; charset=utf-8")
-                            .withBody(new RbelHtmlRenderer().doRender(rbelLogger.getMessageHistory())));
+                    HttpResponse.response()
+                        .withHeader("content-type", "text/html; charset=utf-8")
+                        .withBody(new RbelHtmlRenderer().doRender(rbelLogger.getMessageHistory())));
         }
     }
 
