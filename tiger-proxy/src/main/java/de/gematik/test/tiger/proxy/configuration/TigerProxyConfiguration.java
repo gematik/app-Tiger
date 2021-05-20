@@ -23,4 +23,5 @@ public class TigerProxyConfiguration {
     private String serverRootCaCertPem;
     private String serverRootCaKeyPem;
     private List<String> keyFolders;
+    private boolean activateRbelEndpoint = false;
 }

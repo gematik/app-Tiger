@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.apache.http.HttpHeaders;
+import org.mockserver.mappers.MockServerHttpRequestToFullHttpRequest;
 import org.mockserver.model.*;
 
 @Data
@@ -32,7 +33,7 @@ public class MockServerToRbelConverter {
     }
 
     private RbelElement convertBody(Body body, Headers headers) {
-        if (body == null || body.getRawBytes() == null ||body.getRawBytes().length == 0) {
+        if (body == null || body.getRawBytes() == null || body.getRawBytes().length == 0) {
             return new RbelNullElement();
         }
         if (headers.getValues(HttpHeaders.CONTENT_TYPE).stream()
@@ -41,7 +42,7 @@ public class MockServerToRbelConverter {
             .findAny().isPresent()) {
             return convertMessage(new RbelBinaryElement(body.getRawBytes()));
         } else {
-            return convertMessage(new String(body.getRawBytes()));
+            return rbelLogger.getRbelConverter().convertMessage(new String(body.getRawBytes()));
         }
     }
 
@@ -49,19 +50,12 @@ public class MockServerToRbelConverter {
         return rbelLogger.getRbelConverter().convertMessage(input);
     }
 
-    private RbelElement convertMessage(String input) {
-        if (input == null) {
-            return rbelLogger.getRbelConverter().convertMessage(new RbelNullElement());
-        } else {
-            return rbelLogger.getRbelConverter().convertMessage(input);
-        }
-    }
-
-    public RbelHttpRequest convertRequest(HttpRequest request) {
+    public RbelHttpRequest convertRequest(HttpRequest request, String protocolAndHost) {
         return (RbelHttpRequest) convertMessage(
             RbelHttpRequest.builder()
                 .method(request.getMethod().getValue())
-                .path((RbelUriElement) convertMessage(request.getPath().getValue()))
+                .path((RbelUriElement) rbelLogger.getRbelConverter().convertMessage(
+                    buildOriginalRequestUri(request, protocolAndHost)))
                 .header(mapHeader(request.getHeaders()))
                 .body(convertBody(request.getBody(), request.getHeaders()))
                 .build()
@@ -69,6 +63,12 @@ public class MockServerToRbelConverter {
                     + request.getHeaders().getEntries().stream().map(Header::toString)
                     .collect(Collectors.joining("\n")) + "\n\n"
                     + request.getBodyAsString()));
+    }
+
+    private String buildOriginalRequestUri(HttpRequest request, String protocolAndHost) {
+        return protocolAndHost + new MockServerHttpRequestToFullHttpRequest(null)
+            .mapMockServerRequestToNettyRequest(request)
+            .uri();
     }
 
     private RbelMultiValuedMapElement mapHeader(Headers headers) {
