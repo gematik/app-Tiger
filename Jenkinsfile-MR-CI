@@ -81,7 +81,7 @@ pipeline {
             }
         }
 
-        stage('Publish artifact and docker image') {
+       /* stage('Publish artifact and docker image') {
             when { branch BRANCH }
             steps {
                 script {
@@ -93,7 +93,7 @@ pipeline {
                 }
             }
         }
-
+*/
         stage('Tag and Push CI-build') {
         when { branch BRANCH}
             steps {

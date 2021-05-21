@@ -173,32 +173,33 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <artifactId>docker-maven-plugin</artifactId>
-                <groupId>io.fabric8</groupId>
-                <version>0.34.1</version>
-                <configuration>
-                    <images>
-                        <image>
-                            <build>
-                                <dockerFile>${basedir}/Dockerfile</dockerFile>
-                            </build>
-                            <name>${docker.image.name}:${project.version}</name>
-                        </image>
-                    </images>
-                    <verbose>true</verbose>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                        <id>default</id>
-                        <phase>install</phase>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-</project>
+            <!--
+                       <plugin>
+                           <artifactId>docker-maven-plugin</artifactId>
+                           <groupId>io.fabric8</groupId>
+                           <version>0.34.1</version>
+                           <configuration>
+                               <images>
+                                   <image>
+                                       <build>
+                                           <dockerFile>${basedir}/Dockerfile</dockerFile>
+                                       </build>
+                                       <name>${docker.image.name}:${project.version}</name>
+                                   </image>
+                               </images>
+                               <verbose>true</verbose>
+                           </configuration>
+                           <executions>
+                               <execution>
+                                   <goals>
+                                       <goal>build</goal>
+                                   </goals>
+                                   <id>default</id>
+                                   <phase>install</phase>
+                               </execution>
+                           </executions>
+                       </plugin>
+                        -->
+                   </plugins>
+               </build>
+           </project>
