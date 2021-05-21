@@ -6,17 +6,20 @@ A tool to give you flexible Routing from a to b and to protocol the traffic seen
 
 
 ###Routes
+
 Via `-r` or `--routes` you can specify routes for the proxy to map.
 Example: 
 
 `http://not.a.real.server;http://google.com,https://gog;https://google.com`
 
 ###Forward-Proxy
+
 To specify a forward-proxy (a proxy-server that the Tiger-proxy should query) you can do so via `--proxy`:
 
 `--proxy "192.168.110.10:3128"`
 
 ###Port
+
 To customize the port that the tiger proxy should use simple give the value via `-p` or `--port`:
 
 `-p 6667`
