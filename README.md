@@ -33,3 +33,8 @@ For non BDD test suites it must be easily possible to utilize most of the featur
 ## Product specification draft
 
 For more details please check out the [specification document](doc/specification/tiger_product_definition.md) 
+
+## Simple example project
+
+[For a standalone example see here in our examples section](doc/examples/tigerOnly)
+

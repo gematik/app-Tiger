@@ -28,7 +28,7 @@
 
 You might have to add additional dependencies!
 
-[For a standalone example see here in our examples section](doc/examples/tigerOnly)
+[For a standalone example see here in our examples section](../doc/examples/tigerOnly)
 
 # Docker config
 
