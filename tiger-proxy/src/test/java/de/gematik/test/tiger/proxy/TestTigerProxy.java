@@ -11,9 +11,11 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import de.gematik.rbellogger.data.RbelBinaryElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import kong.unirest.HttpResponse;
@@ -23,6 +25,7 @@ import kong.unirest.UnirestException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockserver.model.MediaType;
 
 public class TestTigerProxy {
 
@@ -56,6 +59,26 @@ public class TestTigerProxy {
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
 
         new RbelHtmlRenderer().doRender(tigerProxy.getRbelMessages());
+    }
+
+    @Test
+    public void binaryMessage_shouldGiveBinaryResult() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("http://backend", "http://localhost:" + wireMockRule.port()))
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        wireMockRule.stubFor(get(urlEqualTo("/binary"))
+            .willReturn(aResponse()
+                .withHeader("content-type", MediaType.APPLICATION_OCTET_STREAM.toString())
+                .withBody(Base64.getEncoder().encode("Hallo".getBytes()))));
+
+        Unirest.get("http://backend/binary").asBytes();
+
+        assertThat(tigerProxy.getRbelMessages().get(tigerProxy.getRbelMessages().size() - 1)
+        .findRbelPathMembers("$.body").get(0))
+            .isInstanceOf(RbelBinaryElement.class);
     }
 
     @Test
@@ -129,11 +152,13 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    //    @Test
+//    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
-            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
-//            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
+//            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+            .activateRbelEndpoint(true)
+            .port(6666)
+            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
             .proxyRoutes(Map.of(
                 "https://magog", "https://google.com",
                 "http://magog", "http://google.com",

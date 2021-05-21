@@ -5,6 +5,7 @@ def GITLAB_PROJECT_ID = '644'
 def JIRA_PROJECT_ID = 'TGR'
 def TAG_NAME = "ci/build"
 def IS_MERGE_REQUEST = env.GITLAB_OBJECT_KIND == 'merge_request'
+def VERSION = '0.1-SNAPSHOT'
 def BRANCH = 'master'
 
 pipeline {
@@ -44,7 +45,11 @@ pipeline {
         stage('set Version') {
             //nur für Executables nicht für Libraries nötig
             steps {
-                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID)
+                script{
+                    def  versionJira = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
+                    VERSION = "${versionJira}-${BUILD_NUMBER}"
+                    mavenSetVersion(VERSION)
+                }
             }
         }
         stage('Build') {
@@ -75,6 +80,20 @@ pipeline {
                 sh "mvn deploy -DskipTests -DaltDeploymentRepository=releases::default::https://build.top.local/nexus/content/repositories/releases"
             }
         }
+
+        stage('Publish artifact and docker image') {
+            when { branch BRANCH }
+            steps {
+                script {
+                    //mavenDeploy()
+                    docker.withRegistry('https://gstopdr1.top.local', "Harbor") {
+                        def tigerProxy = docker.image("tiger/tiger-proxy:${VERSION}")
+                        tigerProxy.push("${VERSION}")
+                    }
+                }
+            }
+        }
+
         stage('Tag and Push CI-build') {
         when { branch BRANCH}
             steps {

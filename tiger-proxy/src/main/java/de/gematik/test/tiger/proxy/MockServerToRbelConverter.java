@@ -9,10 +9,9 @@ import de.gematik.rbellogger.data.*;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 import lombok.Data;
-import org.mockserver.model.Header;
-import org.mockserver.model.Headers;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
+import org.apache.http.HttpHeaders;
+import org.mockserver.mappers.MockServerHttpRequestToFullHttpRequest;
+import org.mockserver.model.*;
 
 @Data
 public class MockServerToRbelConverter {
@@ -24,7 +23,7 @@ public class MockServerToRbelConverter {
             RbelHttpResponse.builder()
                 .responseCode(response.getStatusCode())
                 .header(mapHeader(response.getHeaders()))
-                .body(convertMessage(response.getBodyAsString()))
+                .body(convertBody(response.getBody(), response.getHeaders()))
                 .build()
                 .setRawMessage("HTTP/1.1 " + response.getStatusCode() + " "
                     + (response.getReasonPhrase() != null ? response.getReasonPhrase() : "") + "\n"
@@ -33,30 +32,43 @@ public class MockServerToRbelConverter {
                     + "\n\n" + response.getBodyAsString()));
     }
 
+    private RbelElement convertBody(Body body, Headers headers) {
+        if (body == null || body.getRawBytes() == null || body.getRawBytes().length == 0) {
+            return new RbelNullElement();
+        }
+        if (headers.getValues(HttpHeaders.CONTENT_TYPE).stream()
+            .filter(v -> v.startsWith(MediaType.APPLICATION_BINARY.toString())
+                || v.startsWith(MediaType.APPLICATION_OCTET_STREAM.toString()))
+            .findAny().isPresent()) {
+            return convertMessage(new RbelBinaryElement(body.getRawBytes()));
+        } else {
+            return rbelLogger.getRbelConverter().convertMessage(new String(body.getRawBytes()));
+        }
+    }
+
     private RbelElement convertMessage(RbelElement input) {
         return rbelLogger.getRbelConverter().convertMessage(input);
     }
 
-    private RbelElement convertMessage(String input) {
-        if (input == null) {
-            return rbelLogger.getRbelConverter().convertMessage(new RbelNullElement());
-        } else {
-            return rbelLogger.getRbelConverter().convertMessage(input);
-        }
-    }
-
-    public RbelHttpRequest convertRequest(HttpRequest request) {
+    public RbelHttpRequest convertRequest(HttpRequest request, String protocolAndHost) {
         return (RbelHttpRequest) convertMessage(
             RbelHttpRequest.builder()
                 .method(request.getMethod().getValue())
-                .path((RbelUriElement) convertMessage(request.getPath().getValue()))
+                .path((RbelUriElement) rbelLogger.getRbelConverter().convertMessage(
+                    buildOriginalRequestUri(request, protocolAndHost)))
                 .header(mapHeader(request.getHeaders()))
-                .body(convertMessage(request.getBodyAsString()))
+                .body(convertBody(request.getBody(), request.getHeaders()))
                 .build()
                 .setRawMessage(request.getMethod().toString() + " " + request.getPath().getValue() + " HTTP/1.1\n"
                     + request.getHeaders().getEntries().stream().map(Header::toString)
                     .collect(Collectors.joining("\n")) + "\n\n"
                     + request.getBodyAsString()));
+    }
+
+    private String buildOriginalRequestUri(HttpRequest request, String protocolAndHost) {
+        return protocolAndHost + new MockServerHttpRequestToFullHttpRequest(null)
+            .mapMockServerRequestToNettyRequest(request)
+            .uri();
     }
 
     private RbelMultiValuedMapElement mapHeader(Headers headers) {
