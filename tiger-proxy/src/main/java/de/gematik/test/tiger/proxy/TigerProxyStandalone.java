@@ -8,7 +8,6 @@ import com.beust.jcommander.IDefaultProvider;
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.defaultprovider.EnvironmentVariableDefaultProvider;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.util.ArrayList;
