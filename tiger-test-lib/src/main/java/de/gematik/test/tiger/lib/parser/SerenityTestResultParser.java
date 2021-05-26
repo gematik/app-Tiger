@@ -4,9 +4,6 @@
 
 package de.gematik.test.tiger.lib.parser;
 
-import de.gematik.test.tiger.lib.parser.model.Result;
-import de.gematik.test.tiger.lib.parser.model.TestResult;
-import de.gematik.test.tiger.lib.parser.model.Testcase;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,9 +11,17 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Objects;
+import java.util.stream.IntStream;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import de.gematik.test.tiger.lib.parser.model.Result;
+import de.gematik.test.tiger.lib.parser.model.TestResult;
+import de.gematik.test.tiger.lib.parser.model.Testcase;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SerenityTestResultParser implements ITestResultParser {
@@ -33,8 +38,8 @@ public class SerenityTestResultParser implements ITestResultParser {
                 }
             } else {
                 Arrays.stream(files)
-                    .filter(f -> f.isFile() && f.getName().endsWith(".json"))
-                    .forEach(f -> inspectFileForResults(f, results));
+                        .filter(f -> f.isFile() && f.getName().endsWith(".json"))
+                        .forEach(f -> inspectFileForResults(f, results));
             }
         }
     }
@@ -49,6 +54,15 @@ public class SerenityTestResultParser implements ITestResultParser {
             final JSONObject jso = new JSONObject(gherkin);
             final TestResult tr = new TestResult();
             setTestCaseClassNMethod(jso, tr);
+            if (jso.has("tags")) {
+                final JSONArray tags = jso.getJSONArray("tags");
+                tr.setPolarionID(IntStream.range(0, tags.length())
+                        .mapToObj(i -> tags.getJSONObject(i))
+                        .filter(tag -> Objects.equals(tag.getString("type"), "TCID"))
+                        .map(tag -> tag.getString("name"))
+                        .findAny().orElse(null));
+            }
+
             tr.setStatus(mapSerenityStatus(jso.getString("result")));
             if (tr.getStatus() == Result.ERROR || tr.getStatus() == Result.FAILED) {
                 final JSONObject jsoErr;
@@ -68,10 +82,10 @@ public class SerenityTestResultParser implements ITestResultParser {
                 tr.setErrtype(jsoErr.getString("errorType"));
             }
             if (jso.has("startTime")) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.nXXXXX'['z']'");
-                ZonedDateTime zonedDateTime = ZonedDateTime.parse(jso.getString("startTime"), formatter);
+                final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.nXXXXX'['z']'");
+                final ZonedDateTime zonedDateTime = ZonedDateTime.parse(jso.getString("startTime"), formatter);
                 tr.setStartms(zonedDateTime.toInstant().toEpochMilli());
-                tr.setEndms(tr.getStartms() + jso.getInt("duration")*1000L);
+                tr.setEndms(tr.getStartms() + jso.getInt("duration") * 1000L);
             }
 
             results.put(tr.getClazz() + ":" + tr.getMethod(), tr);

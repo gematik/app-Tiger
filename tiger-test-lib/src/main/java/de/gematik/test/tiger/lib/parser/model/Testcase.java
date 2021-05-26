@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.lib.parser.model;
 
 import java.util.Objects;
+
 import lombok.Data;
 
 @Data
@@ -15,12 +16,13 @@ public class Testcase {
     private String featureName;
     private String scenarioName;
     private String path;
+    private String polarionID;
 
     @Override
     public boolean equals(final Object o) {
         if (o instanceof Testcase) {
             return Objects.equals(((Testcase) o).clazz, clazz) && Objects.equals(((Testcase) o).method,
-                method);
+                    method);
         }
         return false;
     }
