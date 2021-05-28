@@ -28,7 +28,7 @@ public class TestTigerTestEnvMgr {
     public void testReadTemplates() {
         final Configuration cfg = new Configuration();
         cfg.readConfig(new File("src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml").toURI());
-        assertThat(cfg.getTemplates()).hasSize(4);
+        assertThat(cfg.getTemplates()).hasSize(6);
         assertThat(cfg.getTemplates().get(0).getPkiKeys()).hasSize(3);
     }
 
