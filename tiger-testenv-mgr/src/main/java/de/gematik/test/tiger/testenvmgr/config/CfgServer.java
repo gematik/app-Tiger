@@ -32,6 +32,8 @@ public class CfgServer {
     @JsonProperty
     private List<String> options= new ArrayList<>();
     @JsonProperty
+    private List<String> arguments= new ArrayList<>();
+    @JsonProperty
     private String version;
     @JsonProperty
     private Integer startupTimeoutSec;
@@ -77,6 +79,9 @@ public class CfgServer {
         }
         if (options.isEmpty() && template.options != null && !template.options.isEmpty()) {
             options.addAll(template.options);
+        }
+        if (arguments.isEmpty() && template.arguments != null && !template.arguments.isEmpty()) {
+            arguments.addAll(template.arguments);
         }
         if (version == null && template.version != null) {
             version = template.version;

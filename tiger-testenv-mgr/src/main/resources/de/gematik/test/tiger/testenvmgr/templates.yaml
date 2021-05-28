@@ -167,5 +167,6 @@ templates:
       - -Dhttp.proxyHost=${PROXYHOST}
       - -Dhttp.proxyPort=${PROXYPORT}
       - -Dfile.encoding=UTF-8
+    arguments:
       - --spring.profiles.active=instance2local
       - --aktor.rproxySGD2.use=false

@@ -177,9 +177,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
             .collect(Collectors.toList());
         options.add(0, "C:\\Program Files\\OpenJDK\\openjdk-11.0.8_10\\bin\\java.exe");
-        options.add(1, "-jar");
-        options.add(2, server.getInstanceUri().split(":", 2)[1]);
-
+        options.add("-jar");
+        options.add(server.getInstanceUri().split(":", 2)[1]);
+        options.addAll(server.getArguments());
         log.info("executing '" + String.join(" ", options));
         Thread t = new Thread(() -> {
             try {
