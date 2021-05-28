@@ -20,7 +20,7 @@ public class TestTestRunAuroraImporterMavenPlugin {
 //      String keystore = "X:/21_Team_Entwicklung/Entwicklung/KeystoresAuroraDev/auroraPublic.jks";
 
 //       String profile = "prod_ref_env"; // Polarion Prod bzw. Ref, je nachdem mit welchem Profil man aktuell angemeldet ist
-        final String profile = "test_env"; // Polarion-Dev
+        final String profile = "prod_ref_env"; // Polarion-Dev
         final String keystorePassword = "aurora";
         final String keystore = getAbsolutePathOfFile("keystore/aurora.jks");
 
@@ -28,6 +28,7 @@ public class TestTestRunAuroraImporterMavenPlugin {
         System.setProperty(ClientCryptor.PARAM_KEYSTORE_PASSWORD, keystorePassword);
         System.setProperty(ClientCryptor.PARAM_KEYSTORE, keystore);
         Assert.assertNotNull(ClientCryptor.getInstance());
+
     }
 
 

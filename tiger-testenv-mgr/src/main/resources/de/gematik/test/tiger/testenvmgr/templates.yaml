@@ -151,4 +151,9 @@ templates:
     exports:
     params:
 
-
+  - name: epa1
+    product: EPA_REF
+    instanceUri: compose
+    composeFiles:
+      - src/mein/java/resources/de/gematik/test/tiger/testenvmgr/titus-epa.yml
+      - src/mein/java/resources/de/gematik/test/tiger/testenvmgr/titus-epa-local-instance-1.yml

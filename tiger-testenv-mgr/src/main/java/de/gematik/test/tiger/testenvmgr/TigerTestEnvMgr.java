@@ -54,18 +54,21 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (configuration.getTigerProxy() == null) {
             configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
         }
-        configuration.getTigerProxy().setProxyRoutes(Collections.emptyMap());
-        configuration.getTigerProxy().setProxyLogLevel("WARN");
-        configuration.getTigerProxy().setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
-        configuration.getTigerProxy().setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
-
+        TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
+        if (proxyConfig.getProxyRoutes() == null) {
+            proxyConfig.setProxyRoutes(Collections.emptyMap());
+        }
+        if (proxyConfig.getServerRootCaCertPem() == null) {
+            proxyConfig.setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
+            proxyConfig.setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
+        }
         localDockerProxy = new TigerProxy(configuration.getTigerProxy());
     }
 
     @Override
     public void setUpEnvironment() {
         log.info("starting set up of test environment...");
-        configuration.getServers().forEach(this::start);
+        configuration.getServers().forEach(server -> start(server, configuration));
         log.info("finished set up test environment OK");
     }
 
@@ -75,14 +78,16 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     @Override
-    public void start(final CfgServer server) {
+    public void start(final CfgServer server, Configuration configuration) {
         final String[] uri = server.getInstanceUri().split(":");
 
         if (server.isActive()) {
 
             // if proxy env are in imports replace  with localdockerproxy data
             if (uri[0].equals("docker")) {
-                startDocker(server);
+                startDocker(server, configuration);
+            } else if (uri[0].equals("compose")) {
+                startDocker(server, configuration);
             } else if (uri[0].equals("external")) {
                 initializeExternal(server);
             } else {
@@ -110,7 +115,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
     }
 
-    private void startDocker(final CfgServer server) {
+    private void startDocker(final CfgServer server, Configuration configuration) {
         log.info(Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getInstanceUri() + Ansi.RESET);
         final List<String> imports = server.getImports();
         for (var i = 0; i < imports.size(); i++) {
@@ -124,7 +129,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 localDockerProxy.addRoute(kvp[0], kvp[1]);
             });
         }
-        dockerManager.startContainer(server, this);
+        if (server.getInstanceUri().startsWith("docker:")) {
+            dockerManager.startContainer(server, configuration, this);
+        } else {
+            dockerManager.startComposition(server, configuration, this);
+        }
         loadPKIForServer(server);
         // add routes needed for each server to local docker proxy
         // ATTENTION only one route per server!

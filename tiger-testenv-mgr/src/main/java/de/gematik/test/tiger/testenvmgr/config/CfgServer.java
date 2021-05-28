@@ -24,6 +24,8 @@ public class CfgServer {
     @JsonProperty
     private String instanceUri;
     @JsonProperty
+    private List<String> composeFiles = new ArrayList<>();
+    @JsonProperty
     private String version;
     @JsonProperty
     private Integer startupTimeoutSec;
@@ -35,6 +37,12 @@ public class CfgServer {
     private final List<CfgKey> pkiKeys = new ArrayList<>();
     @JsonProperty
     private String pkiFolder;
+    @JsonProperty(defaultValue="true")
+    private boolean proxied;
+    @JsonProperty(defaultValue="false")
+    private boolean oneShot;
+    @JsonProperty
+    private String entryPoint;
     @JsonProperty
     private final List<String> exports = new ArrayList<>();
     @JsonProperty
@@ -52,17 +60,26 @@ public class CfgServer {
         if (instanceUri == null && template.instanceUri != null) {
             instanceUri = template.instanceUri;
         }
+        if (composeFiles.isEmpty() && template.composeFiles != null && !template.composeFiles.isEmpty()) {
+            composeFiles.addAll(template.composeFiles);
+        }
         if (version == null && template.version != null) {
             version = template.version;
-        }
-        if (pkiFolder == null && template.pkiFolder != null) {
-            pkiFolder = template.pkiFolder;
         }
         if (startupTimeoutSec == null && template.startupTimeoutSec != null) {
             startupTimeoutSec = template.startupTimeoutSec;
         }
         if (params.isEmpty() && template.params != null && !template.params.isEmpty()) {
             params.putAll(template.params);
+        }
+        if (pkiKeys.isEmpty() && template.pkiKeys != null && !template.pkiKeys.isEmpty()) {
+            pkiKeys.addAll(template.pkiKeys);
+        }
+        if (pkiFolder == null && template.pkiFolder != null) {
+            pkiFolder = template.pkiFolder;
+        }
+        if (entryPoint == null && template.entryPoint != null) {
+            entryPoint = template.entryPoint;
         }
         if (exports.isEmpty() && template.exports != null && !template.exports.isEmpty()) {
             exports.addAll(template.exports);

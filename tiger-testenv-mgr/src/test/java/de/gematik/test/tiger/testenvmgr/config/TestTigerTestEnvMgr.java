@@ -9,7 +9,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.File;
+import java.util.Map;
 import org.junit.Test;
+import org.yaml.snakeyaml.Yaml;
 
 public class TestTigerTestEnvMgr {
 
@@ -61,6 +63,23 @@ public class TestTigerTestEnvMgr {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpNonExisitngVersion.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
+    }
+
+
+    @Test
+    public void load_yml_as_map_snake() {
+
+        String yamlAsString = "{JYaml: { test1: Original Java Implementation}, "
+            + "JvYaml: Java port of RbYaml, SnakeYAML: Java 5 / YAML 1.1, "
+            + "YamlBeans: To/from JavaBeans}";
+
+        Yaml yaml = new Yaml();
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> yamlParsers = (Map<String, String>) yaml
+            .load(yamlAsString);
+
+        assertThat(yamlParsers.keySet()).contains("JYaml", "JvYaml", "YamlBeans", "SnakeYAML");
     }
 
     // TODO check pkis set, routings set,....

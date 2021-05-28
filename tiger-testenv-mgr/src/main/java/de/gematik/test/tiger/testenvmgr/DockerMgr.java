@@ -8,7 +8,9 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.PullResponseItem;
+import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -19,12 +21,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -37,7 +42,7 @@ public class DockerMgr {
     Map<String, GenericContainer<?>> containers = new HashMap<>();
 
     @SuppressWarnings("unused")
-    public void startContainer(final CfgServer server, final TigerTestEnvMgr envmgr) {
+    public void startContainer(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
         var imageName = server.getInstanceUri().substring("docker:".length());
         if (server.getVersion() != null) {
             imageName += ":" + server.getVersion();
@@ -52,32 +57,44 @@ public class DockerMgr {
             if (iiResponse.getConfig() == null) {
                 throw new TigerTestEnvException("Docker image '" + imageName + "' has no configuration info!");
             }
-            String[] startCmd = iiResponse.getConfig().getCmd();
-            String[] entryPointCmd = iiResponse.getConfig().getEntrypoint();
 
-            // erezept hardcoded
-            if (entryPointCmd != null && entryPointCmd[0].equals("/bin/sh") && entryPointCmd[1].equals("-c")) {
-                entryPointCmd = new String[]{"su", iiResponse.getConfig().getUser(), "-c",
-                    "'" + entryPointCmd[2] + "'"};
+            if (server.isProxied()) {
+                String[] startCmd = iiResponse.getConfig().getCmd();
+                String[] entryPointCmd = iiResponse.getConfig().getEntrypoint();
+                if (server.getEntryPoint() != null && !server.getEntryPoint().isEmpty()) {
+                    entryPointCmd = new String[]{server.getEntryPoint()};
+                }
+                // erezept hardcoded
+                if (entryPointCmd != null && entryPointCmd[0].equals("/bin/sh") && entryPointCmd[1].equals("-c")) {
+                    entryPointCmd = new String[]{"su", iiResponse.getConfig().getUser(), "-c",
+                        "'" + entryPointCmd[2] + "'"};
+                }
+                File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
+                final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
+                String containerScriptPath = iiResponse.getConfig().getWorkingDir() + "/" + scriptName;
+                container.withCopyFileToContainer(
+                    MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC),
+                    containerScriptPath);
+                container.withCreateContainerCmdModifier(
+                    cmd -> cmd.withUser("root").withEntrypoint(containerScriptPath));
             }
-
-            File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
-            final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
-            String containerScriptPath = iiResponse.getConfig().getWorkingDir() + "/" + scriptName;
-            container.withCopyFileToContainer(
-                MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC), containerScriptPath);
-
-            container.withCreateContainerCmdModifier(
-                cmd -> cmd.withUser("root").withEntrypoint(containerScriptPath));
 
             container.setLogConsumers(List.of(new Slf4jLogConsumer((log))));
             log.info("Passing in environment:");
+            addEnvVarsToContainer(container, server.getImports());
             server.getImports().stream()
-                .map(i -> i.split("=", 2))
-                .forEach(envvar -> {
-                    log.info("  " + envvar[0] + "=" + envvar[1]);
-                    container.addEnv(envvar[0], envvar[1]);
+                .filter(i -> i.startsWith("${"))
+                .map(i -> i.substring(2, i.length()-1))
+                .forEach(envsetName -> {
+                    List<String> envVars = configuration.getEnvSets().stream()
+                        .filter(envset -> envset.getName().equals(envsetName))
+                        .map(CfgEnvSets::getEnvVars)
+                        .findAny().orElseThrow(() -> new TigerTestEnvException("Unknown reference to testenv set '" + envsetName));
+                    addEnvVarsToContainer(container, envVars);
                 });
+            if (server.isOneShot()) {
+                container.withStartupCheckStrategy(new OneShotStartupCheckStrategy());
+            }
             container.start();
             // make startup time and intervall and url (supporting ${PORT} and regex content configurable
             try {
@@ -99,7 +116,22 @@ public class DockerMgr {
         } catch (final DockerException de) {
             throw new TigerTestEnvException("Failed to start container for server " + server.getName(), de);
         }
+    }
 
+    public void startComposition(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
+        List<File> composeFiles = server.getComposeFiles().stream().map(f -> new File(f)).collect(Collectors.toList());
+        DockerComposeContainer composition = new DockerComposeContainer(composeFiles.toArray(new File[0]));
+        composition.start();
+    }
+
+    private void addEnvVarsToContainer(GenericContainer<?> container, List<String> envVars) {
+        envVars.stream()
+            .filter(i -> i.contains("="))
+            .map(i -> i.split("=", 2))
+            .forEach(envvar -> {
+                log.info("  * " + envvar[0] + "=" + envvar[1]);
+                container.addEnv(envvar[0], envvar[1]);
+            });
     }
 
     public void pullImage(final String imageName) {
