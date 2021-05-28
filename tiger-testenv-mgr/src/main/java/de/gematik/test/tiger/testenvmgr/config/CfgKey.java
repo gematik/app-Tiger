@@ -13,4 +13,6 @@ public class CfgKey {
     private String id;
     @JsonProperty
     private String pem;
+    @JsonProperty
+    private String type;
 }

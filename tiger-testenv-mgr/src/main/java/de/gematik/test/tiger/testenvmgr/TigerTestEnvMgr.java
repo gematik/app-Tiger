@@ -227,16 +227,24 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private void loadPKIForServer(final CfgServer srv) {
         log.info("  loading PKI resources for instance " + srv.getName() + "...");
         srv.getPkiKeys().stream()
-            .filter(key -> key.getPem().contains("BEGIN CERTIFICATE"))
+            .filter(key -> key.getType().equals("cert"))
             .forEach(key -> {
                 log.info("Adding certificate " + key.getId());
-                getLocalDockerProxy().addKey(key.getId(), KeyMgr.readCertificateFromPem(key.getPem()).getPublicKey());
+                getLocalDockerProxy().addKey(
+                    key.getId(),
+                    KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
+                        + key.getPem().replace(" ", "\n")
+                        + "\n-----END CERTIFICATE-----").getPublicKey());
             });
         srv.getPkiKeys().stream()
-            .filter(key -> !key.getPem().contains("BEGIN CERTIFICATE"))
+            .filter(key -> key.getType().equals("key"))
             .forEach(key -> {
                 log.info("Adding key " + key.getId());
-                getLocalDockerProxy().addKey(key.getId(), KeyMgr.readKeyFromPem(key.getPem()));
+                getLocalDockerProxy().addKey(
+                    key.getId(),
+                    KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
+                        + key.getPem().replace(" ", "\n")
+                        + "\n-----END PRIVATE KEY-----"));
             });
     }
 
