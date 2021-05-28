@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -26,7 +27,7 @@ import de.gematik.test.tiger.lib.parser.SerenityTestResultParser;
 import de.gematik.test.tiger.lib.parser.model.Result;
 import de.gematik.test.tiger.lib.parser.model.TestResult;
 
-@Mojo(name = "import-testrun")
+@Mojo(name = "import-testrun", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
 
     @Parameter(property = "import-testrun.aurora.profile", defaultValue = "prod_ref_env")

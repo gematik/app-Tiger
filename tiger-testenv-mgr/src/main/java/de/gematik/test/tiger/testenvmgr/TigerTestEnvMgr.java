@@ -13,8 +13,10 @@ import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
+    private static boolean SHUTDOWN_HOOK_ACTIVE = false;
     private final Configuration configuration;
 
     private final DockerMgr dockerManager;
@@ -32,6 +35,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private final TigerProxy localDockerProxy;
 
     private final List<String[]> routesList = new ArrayList<>();
+
+    private final List<Process> externalProcesses = new ArrayList<>();
 
     @SneakyThrows
     public TigerTestEnvMgr() {
@@ -90,6 +95,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 startDocker(server, configuration);
             } else if (uri[0].equals("external")) {
                 initializeExternal(server);
+            } else if (uri[0].equals("externalJar")) {
+                initializeExternalJar(server);
             } else {
                 throw new TigerTestEnvException(
                     String.format("Unsupported server type %s found in server %s", uri[0], server.getName()));
@@ -116,7 +123,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void startDocker(final CfgServer server, Configuration configuration) {
-        log.info(Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getInstanceUri() + Ansi.RESET);
+        log.info(
+            Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getInstanceUri()
+                + Ansi.RESET);
         final List<String> imports = server.getImports();
         for (var i = 0; i < imports.size(); i++) {
             imports.set(i, ThreadSafeDomainContextProvider.substituteTokens(imports.get(i), "", environmentVariables));
@@ -158,6 +167,50 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         // TODO check availability, configure http client to use 5 s timeout max, run in loop for timeout config value
         log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getInstanceUri() + Ansi.RESET);
     }
+
+    @SneakyThrows
+    public void initializeExternalJar(final CfgServer server) {
+        log.info(Ansi.BOLD + Ansi.GREEN + "starting external jar instance " + server.getName() + "..." + Ansi.RESET);
+
+        List<String> options = server.getOptions().stream()
+            .map(o -> ThreadSafeDomainContextProvider.substituteTokens(o, "",
+                Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
+            .collect(Collectors.toList());
+        options.add(0, "C:\\Program Files\\OpenJDK\\openjdk-11.0.8_10\\bin\\java.exe");
+        options.add(1, "-jar");
+        options.add(2, server.getInstanceUri().split(":", 2)[1]);
+
+        log.info("executing '" + String.join(" ", options));
+        Thread t = new Thread(() -> {
+            try {
+                externalProcesses.add(new ProcessBuilder()
+                    .command(options.toArray(String[]::new))
+                    .directory(new File(server.getWorkingDir()))
+                    .inheritIO()
+                    .start());
+            } catch (IOException e) {
+                throw new TigerTestEnvException("Unable to start server " + server.getName(), e);
+            }
+        });
+        t.setName(server.getName());
+        t.start();
+
+        if (!SHUTDOWN_HOOK_ACTIVE) {
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    log.info("interrupting threads...");
+                    externalProcesses.forEach(Process::destroy);
+                    log.info("stopping threads...");
+                    externalProcesses.forEach(Process::destroyForcibly);
+                }
+            });
+            SHUTDOWN_HOOK_ACTIVE = true;
+        }
+
+        Thread.sleep(server.getStartupTimeoutSec()*1000);
+    // TODO check availability
+        log.info(Ansi.BOLD +Ansi.GREEN +"External jar server Startup OK "+server.getInstanceUri()+Ansi.RESET);
+}
 
     @Override
     public void shutDown(final CfgServer server) {

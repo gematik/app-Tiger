@@ -151,9 +151,24 @@ templates:
     exports:
     params:
 
-  - name: epa1
-    product: EPA_REF
+  - name: epa2
+    product: EPA2_REF
     instanceUri: compose
+    projectName: epa2
+    startupTimeoutSec: 120
     composeFiles:
-      - src/mein/java/resources/de/gematik/test/tiger/testenvmgr/titus-epa.yml
-      - src/mein/java/resources/de/gematik/test/tiger/testenvmgr/titus-epa-local-instance-1.yml
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
+
+  - name: epa2-fdv
+    product: EPA2_FDV_REF
+    startupTimeoutSec: 20
+    workingDir: ../epa-modul/config/downloads/FdVPortable
+    instanceUri: externalJar:epa-fdv-2.0.0-SNAPSHOT.jar
+    options:
+      - -Djdk.internal.httpclient.disableHostnameVerification
+      - -Dhttp.proxyHost=${PROXYHOST}
+      - -Dhttp.proxyPort=${PROXYPORT}
+      - -Dfile.encoding=UTF-8
+      - --spring.profiles.active=instance2local
+      - --aktor.rproxySGD2.use=false

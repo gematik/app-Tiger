@@ -1,0 +1,214 @@
+# Copyright (c) 2021 gematik - Gesellschaft für Telematikanwendungen der Gesundheitskarte mbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+###################################################
+#                                                 #
+#         Basic definition of ePA Services        #
+#                                                 #
+###################################################
+
+###################################################
+# General Service Definition
+###################################################
+
+version: "3.7"
+
+###################################################
+# Definition of common settings across services
+###################################################
+
+# Common Service Properties
+x-service-setup: &service-setup-ref
+  restart: always
+
+# Common Volume Properties
+x-volume-config: &volume-setup-ref
+  volumes:
+    - epa2-config-volume:/app/config/epa2
+
+# Common Environment Configuration Properties
+x-env-config: &environment-config-ref
+  CONFIGURATION_PATH: /app/config/epa2
+
+# Common Environment Timezone Entry
+x-environment-timezone: &environment-timezone-ref
+  TZ: Europe/Berlin
+
+# Common Health Check Properties
+x-healthcheck-config: &healthcheck-ref
+  interval: 15s
+  timeout: 10s
+  retries: 20
+  start_period: 30s
+
+###################################################
+# Definition of services
+###################################################
+services:
+  # OpenDJ - LDAP-VZD Backend
+  epa-ldap-vzd:
+    image: gstopdr1.top.local/titus/opendj:4.4.10
+    <<: *service-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+      test: [ "CMD-SHELL", "/opt/opendj/bin/status --bindDN \"$$ROOT_USER_DN\" --bindPassword \"$$ROOT_PASSWORD\"" ]
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-timezone-ref
+
+  # ePA Configuration Files - The image is terminated immediately, it serves as data container
+  epa-config-data:
+    image: gstopdr1.top.local/titus/epa2/config:latest
+    restart: "no"
+    <<: *volume-setup-ref
+
+  # ePA Authentication Service
+  epa-authn:
+    image: gstopdr1.top.local/titus/epa2/authn:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-config-data
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-authn.log
+
+  # ePA Authorization Service
+  epa-authz:
+    image: gstopdr1.top.local/titus/epa2/authz:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-authn
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-authz.log
+
+  # ePA Document Verwaltung - Frontend der Versicherten
+  epa-docv-fdv:
+    image: gstopdr1.top.local/titus/epa2/docv-fdv:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-authn
+      - epa-authz
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-docv-fdv.log
+
+  # ePA Document Verwaltung - Fachmodul
+  epa-docv-fm:
+    image: gstopdr1.top.local/titus/epa2/docv-fm:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-authn
+      - epa-authz
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-docv-fm.log
+
+  # ePA LDAP Proxy / Verzeichnisdienst (VZD) - Directory Service Markup Language
+  epa-dsml:
+    image: gstopdr1.top.local/titus/epa2/dsml:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-authn
+      - epa-ldap-vzd
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-dsml.log
+
+  # ePA Key Generation Service (Schlüsselgenerierungsdienst - SGD)
+  epa-sgd:
+    image: gstopdr1.top.local/titus/epa2/sgd:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-authn
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-sgd.log
+
+  # ePA Platform Service
+  epa-service:
+    image: gstopdr1.top.local/titus/epa2/service:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-sgd
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-service.log
+
+  # ePA Zugangsgateway
+  epa-gateway:
+    image: gstopdr1.top.local/titus/epa2/gateway:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    healthcheck:
+      <<: *healthcheck-ref
+    depends_on:
+      - epa-service
+    networks:
+      epa2-network:
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+      LOGGING_FILE_NAME: /app/epa-gateway.log
+
+# Network definition
+networks:
+  epa2-network:
+
+# Volume definition
+volumes:
+  epa2-config-volume:

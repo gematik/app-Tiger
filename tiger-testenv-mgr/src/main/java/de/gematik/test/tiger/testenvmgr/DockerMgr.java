@@ -12,16 +12,20 @@ import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -30,6 +34,7 @@ import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -38,6 +43,8 @@ public class DockerMgr {
 
     @SuppressWarnings("OctalInteger")
     private static final int MOD_ALL_EXEC = 0777;
+
+    private static final String CLZPATH = "classpath:";
 
     Map<String, GenericContainer<?>> containers = new HashMap<>();
 
@@ -79,17 +86,18 @@ public class DockerMgr {
                     cmd -> cmd.withUser("root").withEntrypoint(containerScriptPath));
             }
 
-            container.setLogConsumers(List.of(new Slf4jLogConsumer((log))));
+            container.setLogConsumers(List.of(new Slf4jLogConsumer(log)));
             log.info("Passing in environment:");
             addEnvVarsToContainer(container, server.getImports());
             server.getImports().stream()
                 .filter(i -> i.startsWith("${"))
-                .map(i -> i.substring(2, i.length()-1))
+                .map(i -> i.substring(2, i.length() - 1))
                 .forEach(envsetName -> {
                     List<String> envVars = configuration.getEnvSets().stream()
                         .filter(envset -> envset.getName().equals(envsetName))
                         .map(CfgEnvSets::getEnvVars)
-                        .findAny().orElseThrow(() -> new TigerTestEnvException("Unknown reference to testenv set '" + envsetName));
+                        .findAny().orElseThrow(
+                            () -> new TigerTestEnvException("Unknown reference to testenv set '" + envsetName));
                     addEnvVarsToContainer(container, envVars);
                 });
             if (server.isOneShot()) {
@@ -119,9 +127,36 @@ public class DockerMgr {
     }
 
     public void startComposition(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
-        List<File> composeFiles = server.getComposeFiles().stream().map(f -> new File(f)).collect(Collectors.toList());
-        DockerComposeContainer composition = new DockerComposeContainer(composeFiles.toArray(new File[0]));
-        composition.start();
+        var folder = Paths.get("target", "tiger-testenv-mgr", server.getName()).toFile();
+        if (!folder.exists() && !folder.mkdirs()) {
+            throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
+        }
+        File[] composeFiles = server.getComposeFiles().stream().map(f -> {
+            if (f.startsWith(CLZPATH)) {
+                var tmpFile = Paths.get(folder.getAbsolutePath(), f.substring(CLZPATH.length())).toFile();
+                InputStream is = getClass().getResourceAsStream(f.substring(CLZPATH.length()));
+                if (is == null) {
+                    throw new TigerTestEnvException("Missing docker compose file in classpath " + f);
+                }
+                if (!tmpFile.getParentFile().exists() && !tmpFile.getParentFile().mkdirs()) {
+                    throw new TigerTestEnvException(
+                        "Unable to create temp folder " + tmpFile.getParentFile().getAbsolutePath());
+                }
+                try (var fos = new FileOutputStream(tmpFile)) {
+                    IOUtils.copy(is, fos);
+                    f = tmpFile.getAbsolutePath();
+                } catch (IOException ioe) {
+                    throw new TigerTestEnvException("Unable to create temp docker compose files (" + f + ")", ioe);
+                }
+            }
+            return new File(f);
+        }).toArray(File[]::new);
+        var composition = new DockerComposeContainer(composeFiles);
+        composition.withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)))
+            .withExposedService("epa-gateway", 8001, Wait.forHttp("/")
+                .forStatusCode(200)
+                .forStatusCode(404).withStartupTimeout(Duration.of(server.getStartupTimeoutSec(), ChronoUnit.SECONDS)))
+            .start();
     }
 
     private void addEnvVarsToContainer(GenericContainer<?> container, List<String> envVars) {

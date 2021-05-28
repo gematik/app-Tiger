@@ -24,7 +24,13 @@ public class CfgServer {
     @JsonProperty
     private String instanceUri;
     @JsonProperty
+    private String projectName;
+    @JsonProperty
     private List<String> composeFiles = new ArrayList<>();
+    @JsonProperty
+    private String workingDir;
+    @JsonProperty
+    private List<String> options= new ArrayList<>();
     @JsonProperty
     private String version;
     @JsonProperty
@@ -60,8 +66,17 @@ public class CfgServer {
         if (instanceUri == null && template.instanceUri != null) {
             instanceUri = template.instanceUri;
         }
+        if (projectName == null && template.projectName != null) {
+            projectName = template.projectName;
+        }
         if (composeFiles.isEmpty() && template.composeFiles != null && !template.composeFiles.isEmpty()) {
             composeFiles.addAll(template.composeFiles);
+        }
+        if (workingDir == null && template.workingDir != null) {
+            workingDir = template.workingDir;
+        }
+        if (options.isEmpty() && template.options != null && !template.options.isEmpty()) {
+            options.addAll(template.options);
         }
         if (version == null && template.version != null) {
             version = template.version;

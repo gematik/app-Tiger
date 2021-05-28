@@ -1,0 +1,244 @@
+# Copyright (c) 2021 gematik - Gesellschaft für Telematikanwendungen der Gesundheitskarte mbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+###################################################
+# Local Environment Overrides
+###################################################
+
+version: "3.7"
+
+###################################################
+# Definition of common settings across services
+###################################################
+
+# Common Environment Database Properties
+x-env-database: &environment-database-ref
+  DATABASE_JDBC_DRIVER: org.mariadb.jdbc.Driver
+  DATABASE_JDBC_URL: jdbc:mariadb://epa2-database-local:3306/epa
+  DATABASE_USERNAME: epa
+  DATABASE_PASSWORD: epa
+
+# Common Environment Event Log Properties
+x-env-eventlog: &environment-eventlog-ref
+  EVENT_LOG_URL: http://host.docker.internal:11000
+  EVENT_LOG_INSTANCE_NAME: EPA2
+  EVENT_LOG_REMOTING: "true"
+  EVENT_LOG_AS_LOCAL_LOG: "true"
+
+# Common Environment Token Properties
+x-environment-token: &environment-token-ref
+  TOKEN_KEYSTORE_PASSWORD: stsspass
+  TOKEN_KEY_PASSWORD: stskpass
+  TOKEN_KEY_ALIAS: mystskey
+  TOKEN_TTL_MINUTES: 5
+  TOKEN_AUDIENCE_INTERNET: aktor-gateway.gematik.de
+  TOKEN_AUDIENCE_TI: authn.aktor.epa.telematik-test,authz.aktor.epa.telematik-test,docv.aktor.epa.telematik-test
+
+# Common Command Call
+# Defines constrained memory resources to reduce SpringBoot overhead
+# Enables the remote debugger on port 6000
+x-command-application: &command-ref
+  command: -Xms32M -Xmx1024M -XX:+UseSerialGC -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6000 -jar /app/app.jar
+
+###################################################
+# Definition of services
+###################################################
+services:
+
+  # MariaDB - ePA
+  epa-database:
+    image: mariadb:10.3
+    # TIGER container_name: epa2-database-local
+    entrypoint: "sh -c 'cp -v /app/config/db/*.sh /docker-entrypoint-initdb.d/db-init.sh ; /docker-entrypoint.sh mysqld'"
+    restart: 'unless-stopped'
+    volumes:
+      - epa2-database-volume:/var/lib/mysql
+      - epa2-config-volume:/app/config:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "/usr/bin/mysqladmin --user=root --password=$$MYSQL_ROOT_PASSWORD ping" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      - epa-config-data
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-database-local
+    ports:
+      - "23306:3306"
+    environment:
+      TZ: Europe/Berlin
+      MYSQL_ROOT_PASSWORD: "root"
+
+  # ePA Configuration Files
+  epa-config-data:
+    #TIGER container_name: epa2-config-data-local
+
+  # OpenDJ - LDAP-VZD Backend
+  epa-ldap-vzd:
+    # TIGER container_name: epa2-ldap-vzd-local
+
+  # ePA Authentication Service
+  epa-authn:
+    <<: *command-ref
+    # TIGER container_name: epa2-authn-local
+    depends_on:
+      - epa-database
+    ports:
+      - "5102:6000"
+      - "8102:8002"
+      - "9102:9002"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-authn-local
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      <<: *environment-token-ref
+      TITUS_INIT_PATIENT_ID: LOCAL
+      TOKEN_ISSUER_URL: https://aktor-gateway.gematik.de/authn
+
+  # ePA Authorization Service
+  epa-authz:
+    <<: *command-ref
+    # TIGER container_name: epa2-authz-local
+    ports:
+      - "5103:6000"
+      - "8103:8003"
+      - "9103:9003"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-authz-local
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      <<: *environment-token-ref
+
+  # ePA Document Verwaltung - Frontend der Versicherten
+  epa-docv-fdv:
+    <<: *command-ref
+    # TIGER container_name: epa2-docv-fdv-local
+    ports:
+      - "5105:6000"
+      - "8105:8005"
+      - "9105:9005"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-docv-fdv-local
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      KEYSTORE_PASSWORD: "00"
+      KEYSTORE_KEY_PASSWORD: "00"
+
+  # ePA Document Verwaltung - Fachmodul
+  epa-docv-fm:
+    <<: *command-ref
+    # TIGER container_name: epa2-docv-fm-local
+    ports:
+      - "5104:6000"
+      - "8104:8004"
+      - "9104:9004"
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      KEYSTORE_PASSWORD: "00"
+      KEYSTORE_KEY_PASSWORD: "00"
+
+  # ePA LDAP Proxy / Verzeichnisdienst (VZD) - Directory Service Markup Language
+  epa-dsml:
+    <<: *command-ref
+    # TIGER container_name: epa2-dsml-local
+    ports:
+      - "5115:6000"
+      - "8115:8015"
+      - "9115:9015"
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      <<: *environment-token-ref
+      LDAP_HOST: epa2-ldap-vzd-local
+
+  # ePA Key Generation Service (Schlüsselgenerierungsdienst - SGD)^
+  epa-sgd:
+    <<: *command-ref
+    # TIGER container_name: epa2-sgd-local
+    ports:
+      - "5109:6000"
+      - "8109:8009"
+      - "1009:9009"
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      <<: *environment-token-ref
+      SGD_P12_PASSWORD: "00"
+
+  # ePA Platform Service
+  epa-service:
+    <<: *command-ref
+    # TIGER container_name: epa2-service-local
+    ports:
+      - "5100:6000"
+      - "8100:8000"
+      - "9100:9000"
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      <<: *environment-token-ref
+      CERTGEN_KEYSTORE_PASSWORD: "00"
+      DEFAULT_TEST_DRIVER_URL: https://host.docker.internal:9007/services/rs/
+      DEFAULT_TEST_DRIVER_URL_FM: https://host.docker.internal:9008/services/rs/
+
+  # ePA Zugangsgateway
+  epa-gateway:
+    <<: *command-ref
+    # TIGER container_name: epa2-gateway-local
+    ports:
+      - "5101:6000"
+      - "8101:8001"
+      - "9101:9001"
+    environment:
+      <<: *environment-database-ref
+      <<: *environment-eventlog-ref
+      BACKEND_ADDRESS: "host.docker.internal"
+      SERVER_KEYSTORE_PASSWORD: "cQM61omBiQBSB3mxuoKG5WlxoiRSvM"
+      AUTHN_HOST: epa2-authn-local
+      AUTHN_PORT: 9002
+      AUTHZ_HOST: epa2-authz-local
+      AUTHZ_PORT: 9003
+      DOCVFM_HOST: epa2-docv-fm-local
+      DOCVFM_PORT: 9004
+      DOCVFDV_HOST: epa2-docv-fdv-local
+      DOCVFDV_PORT: 9005
+      SGD_HOST: epa2-sgd-local
+      SGD_PORT: 9009
+      DSML_HOST: epa2-dsml-local
+      DSML_PORT: 9015
+
+# Network definition
+networks:
+  epa-network:
+    name: epa2-network-local
+
+# Volume definition
+volumes:
+  epa2-config-volume:
+    name: epa2-config-volume-local
+  epa2-database-volume:
+    name: epa2-database-volume-local

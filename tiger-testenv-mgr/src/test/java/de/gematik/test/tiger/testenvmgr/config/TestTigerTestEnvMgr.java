@@ -82,6 +82,22 @@ public class TestTigerTestEnvMgr {
         assertThat(yamlParsers.keySet()).contains("JYaml", "JvYaml", "YamlBeans", "SnakeYAML");
     }
 
+    //@Test
+    public void testCreateEpa2() throws InterruptedException {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/epa.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        Thread.sleep(200000);
+    }
+
+    //@Test
+    public void testCreateEpa2FDV() throws InterruptedException {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/epa-fdv.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        Thread.sleep(2000);
+    }
+
     // TODO check pkis set, routings set,....
 
 }
