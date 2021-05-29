@@ -65,6 +65,10 @@ public class Hooks {
             .orElseThrow(() -> new TestParserException(
                 String.format("Unable to obtain test steps for scenario %s in feature file %s",
                     scenario.getName(), scenario.getUri()))));
+        if (feature.getBackground() != null) {
+            scenarioStepsMap.get(scenario.getId()).addAll(0, feature.getBackground().getSteps());
+        }
+
         scenarioStepsIdxMap.put(scenario.getId(), 0);
         rbelElements.clear();
         if (!TigerDirector.isInitialized()) {
