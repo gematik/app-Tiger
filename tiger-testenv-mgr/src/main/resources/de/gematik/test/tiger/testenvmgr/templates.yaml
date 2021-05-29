@@ -160,8 +160,8 @@ templates:
   - name: epa2-fdv
     product: EPA2_FDV_REF
     startupTimeoutSec: 20
-    workingDir: ../epa-modul/config/downloads/FdVPortable
-    instanceUri: externalJar:epa-fdv-2.0.0-SNAPSHOT.jar
+    workingDir: FdVPortable
+    instanceUri: externalJar:https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-fdv/2.0.0-111/epa-fdv-2.0.0-111.jar
     options:
       - -Djdk.internal.httpclient.disableHostnameVerification
       - -Dhttp.proxyHost=${PROXYHOST}

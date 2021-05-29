@@ -15,11 +15,14 @@ import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 
 @Slf4j
 @Getter
@@ -170,15 +173,31 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     @SneakyThrows
     public void initializeExternalJar(final CfgServer server) {
+        var jarUrl = server.getInstanceUri().split(":", 2)[1];
+        var jarName = jarUrl.substring(jarUrl.lastIndexOf("/")+1);
+
+        File jarFile = Paths.get(server.getWorkingDir(), jarName).toFile();
+        if (!jarFile.exists()) {
+            log.info("downloading jar for external server from " + jarUrl + "...");
+            File workDir = new File(server.getWorkingDir());
+            if (!workDir.exists() && !workDir.mkdirs()) {
+                throw new TigerTestEnvException("Unable to create working directory " + workDir.getAbsolutePath());
+            }
+            FileUtils.copyURLToFile(new URL(jarUrl), jarFile);
+            // TODO add thread informing about download status
+        }
+
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external jar instance " + server.getName() + "..." + Ansi.RESET);
 
         List<String> options = server.getOptions().stream()
             .map(o -> ThreadSafeDomainContextProvider.substituteTokens(o, "",
                 Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
             .collect(Collectors.toList());
+        // TODO check for java process being in PATH
+        // (actually iterate over all entries and try to find java or java.exe depending on OS)
         options.add(0, "C:\\Program Files\\OpenJDK\\openjdk-11.0.8_10\\bin\\java.exe");
         options.add("-jar");
-        options.add(server.getInstanceUri().split(":", 2)[1]);
+        options.add(jarName);
         options.addAll(server.getArguments());
         log.info("executing '" + String.join(" ", options));
         Thread t = new Thread(() -> {
@@ -208,7 +227,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
 
         Thread.sleep(server.getStartupTimeoutSec()*1000);
-    // TODO check availability
+        // TODO check availability
         log.info(Ansi.BOLD +Ansi.GREEN +"External jar server Startup OK "+server.getInstanceUri()+Ansi.RESET);
 }
 
