@@ -86,11 +86,17 @@ services:
   # ePA Configuration Files
   epa-config-data:
     #TIGER container_name: epa2-config-data-local
-
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-config-data-local
   # OpenDJ - LDAP-VZD Backend
   epa-ldap-vzd:
     # TIGER container_name: epa2-ldap-vzd-local
-
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-ldap-vzd-local
   # ePA Authentication Service
   epa-authn:
     <<: *command-ref
@@ -155,6 +161,10 @@ services:
       - "5104:6000"
       - "8104:8004"
       - "9104:9004"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-docv-fm-local
     environment:
       <<: *environment-database-ref
       <<: *environment-eventlog-ref
@@ -169,6 +179,10 @@ services:
       - "5115:6000"
       - "8115:8015"
       - "9115:9015"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-dsml-local
     environment:
       <<: *environment-database-ref
       <<: *environment-eventlog-ref
@@ -183,6 +197,10 @@ services:
       - "5109:6000"
       - "8109:8009"
       - "1009:9009"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-sgd-local
     environment:
       <<: *environment-database-ref
       <<: *environment-eventlog-ref
@@ -197,6 +215,10 @@ services:
       - "5100:6000"
       - "8100:8000"
       - "9100:9000"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-service-local
     environment:
       <<: *environment-database-ref
       <<: *environment-eventlog-ref
@@ -213,6 +235,10 @@ services:
       - "5101:6000"
       - "8101:8001"
       - "9101:9001"
+    networks:
+      epa2-network:
+        aliases:
+          - epa2-gateway-local
     environment:
       <<: *environment-database-ref
       <<: *environment-eventlog-ref

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,6 +27,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 @Slf4j
 @Getter
@@ -174,7 +176,20 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         loadPKIForProxy(server);
         log.info("  Checking external instance  " + server.getName() + " is available ...");
-        // TODO check availability, configure http client to use 5 s timeout max, run in loop for timeout config value
+        long startms = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
+            URL url = new URL(server.getHealthcheck());
+            URLConnection con = url.openConnection();
+            con.setConnectTimeout(1);
+            try {
+                con.connect();
+                startms = -1;
+                log.info("External node " + server.getName() + " is online");
+            } catch (Exception e) {
+                // find do nothing
+            }
+            Thread.sleep(1000);
+        }
         log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0) + Ansi.RESET);
     }
 
@@ -194,9 +209,15 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .map(o -> ThreadSafeDomainContextProvider.substituteTokens(o, "",
                 Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
             .collect(Collectors.toList());
-        // TODO check for java process being in PATH
-        // (actually iterate over all entries and try to find java or java.exe depending on OS)
-        options.add(0, "C:\\Program Files\\OpenJDK\\openjdk-11.0.8_10\\bin\\java.exe");
+        String[] paths = System.getenv("PATH").split(SystemUtils.IS_OS_WINDOWS ? ";" : ":");
+        String javaProg = "java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
+        String javaExe = Arrays.stream(paths)
+            .map(path -> Path.of(path, javaProg).toFile())
+            .filter(file -> file.exists() && file.canExecute())
+            .map(File::getAbsolutePath)
+            .findAny()
+            .orElseThrow(() -> new TigerTestEnvException("Unable to find executable java program in PATH"));
+        options.add(0, javaExe);
         options.add("-jar");
         options.add(jarName);
         options.addAll(server.getArguments());
@@ -227,7 +248,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             });
             SHUTDOWN_HOOK_ACTIVE = true;
         }
-
         long startms = System.currentTimeMillis();
         while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
             if (exception.get() != null) {
@@ -239,6 +259,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             try {
                 con.connect();
                 startms = -1;
+                log.info("External jar node " + server.getName() + " is online");
             } catch (Exception e) {
                 // find do nothing
             }
@@ -273,7 +294,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             if (System.currentTimeMillis() - startms > 600*1000) {
                 t.interrupt();
                 t.stop();
-                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 2 minutes!");
+                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 10 minutes!");
             }
             if (exception.get() != null) {
                 throw new TigerTestEnvException("Failure while downloading jar " + jarUrl + "!", exception.get());
