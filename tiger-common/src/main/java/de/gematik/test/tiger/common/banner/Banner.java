@@ -17,6 +17,9 @@ import org.apache.commons.lang3.StringUtils;
 
 public class Banner {
 
+    private Banner() {
+    }
+
     private static Map<Character, List<String>> asciiArt = null;
 
     private static final Map<String, BannerConfig> configs = new HashMap<>();
@@ -38,18 +41,18 @@ public class Banner {
             .readLines(Objects.requireNonNull(Banner.class.getResourceAsStream(
                 "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
                 StandardCharsets.UTF_8);
-        for (int ascii = (int) ' '; ascii < 'ü'; ascii++) {
+        for (int ascii = ' '; ascii < 'ü'; ascii++) {
             List<String> linesForChar = new ArrayList<>();
             int maxWidth = 0;
-            for (int i = 0; i < cfg.height; i++) {
-                maxWidth = Math.max(lines.get((ascii - ' ' + 1) * cfg.height + i).trim().length(), maxWidth);
+            for (int i = 0; i < cfg.getHeight(); i++) {
+                maxWidth = Math.max(lines.get((ascii - ' ' + 1) * cfg.getHeight() + i).trim().length(), maxWidth);
             }
-            if (maxWidth < cfg.width) {
+            if (maxWidth < cfg.getWidth()) {
                 maxWidth++;
             }
 
-            for (int i = 0; i < cfg.height; i++) {
-                String line = lines.get((ascii - ' ' + 1) * cfg.height + i);
+            for (int i = 0; i < cfg.getHeight(); i++) {
+                String line = lines.get((ascii - ' ' + 1) * cfg.getHeight() + i);
                 linesForChar.add(line.substring(0, Math.min(maxWidth, line.length())));
             }
             asciiArt.put((char) ascii, linesForChar);
@@ -83,7 +86,7 @@ public class Banner {
             initialize();
         }
         List<String> outLines = new ArrayList<>();
-        for (int y = 0; y < cfg.height; y++) {
+        for (int y = 0; y < cfg.getHeight(); y++) {
             StringBuilder outLine = new StringBuilder();
             for (int i = 0; i < msg.length(); i++) {
                 char ascii = msg.charAt(i);
@@ -107,236 +110,3 @@ public class Banner {
 }
 
 // https://patorjk.com/software/taag/#p=display&f=Doom&t=
-
-/*
-
-!
-"
-#
-$
-%
-&
-'
-(
-)
-*
-+
-,
--
-.
-/
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
-:
-;
-<
-=
->
-?
-@
-A
-B
-C
-D
-E
-F
-G
-H
-I
-J
-K
-L
-M
-N
-O
-P
-Q
-R
-S
-T
-U
-V
-W
-X
-Y
-Z
-[
-\
-]
-^
-_
-`
-a
-b
-c
-d
-e
-f
-g
-h
-i
-j
-k
-l
-m
-n
-o
-p
-q
-r
-s
-t
-u
-v
-w
-x
-y
-z
-{
-|
-}
-~
-
-
-
-
-e
-H
-€
-
-‚
-ƒ
-„
-…
-†
-‡
-ˆ
-‰
-Š
-‹
-Œ
-
-Ž
-
-
-‘
-’
-“
-”
-•
-–
-—
-˜
-™
-š
-›
-œ
-
-ž
-Ÿ
-
-¡
-¢
-£
-¤
-¥
-¦
-§
-¨
-©
-ª
-«
-¬
-­
-®
-¯
-°
-±
-²
-³
-´
-µ
-¶
-·
-¸
-¹
-º
-»
-¼
-½
-¾
-¿
-À
-Á
-Â
-Ã
-Ä
-Å
-Æ
-Ç
-È
-É
-Ê
-Ë
-Ì
-Í
-Î
-Ï
-Ð
-Ñ
-Ò
-Ó
-Ô
-Õ
-Ö
-×
-Ø
-Ù
-Ú
-Û
-Ü
-Ý
-Þ
-ß
-à
-á
-â
-ã
-ä
-å
-æ
-ç
-è
-é
-ê
-ë
-ì
-í
-î
-ï
-ð
-ñ
-ò
-ó
-ô
-õ
-ö
-÷
-ø
-ù
-ú
-û
-ü
-ý
-þ
-ÿ
-
- */

@@ -14,7 +14,7 @@ import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Feature;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
-import de.gematik.test.tiger.proxy.IRbelMessageListener;
+import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import io.cucumber.java.*;
 import java.io.File;
 import java.io.IOException;
@@ -38,10 +38,10 @@ public class Hooks {
 
     private static boolean rbelListenerAdded = false;
     private static final List<RbelElement> rbelElements = new ArrayList<>();
-    private static final IRbelMessageListener rbelMessageListener = new IRbelMessageListener() {
+    private static final RbelMessageProvider rbelMessageListener = new RbelMessageProvider() {
         @Override
-        public void triggerNewReceivedMessage(RbelElement el) {
-            rbelElements.add(el);
+        public void triggerNewReceivedMessage(RbelElement e) {
+            rbelElements.add(e);
         }
     };
 
