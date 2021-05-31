@@ -29,6 +29,9 @@ import org.apache.commons.io.FileUtils;
 public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private static boolean SHUTDOWN_HOOK_ACTIVE = false;
+    private static String HTTP = "http://";
+    private static String HTTPS = "https://";
+
     private final Configuration configuration;
 
     private final DockerMgr dockerManager;
@@ -87,29 +90,29 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     @Override
     public void start(final CfgServer server, Configuration configuration) {
-        final String[] uri = server.getInstanceUri().split(":");
+        final String type = server.getType();
 
         if (server.isActive()) {
 
             // if proxy env are in imports replace  with localdockerproxy data
-            if (uri[0].equals("docker")) {
+            if (type.equalsIgnoreCase("docker")) {
                 startDocker(server, configuration);
-            } else if (uri[0].equals("compose")) {
+            } else if (type.equalsIgnoreCase("compose")) {
                 startDocker(server, configuration);
-            } else if (uri[0].equals("external")) {
+            } else if (type.equalsIgnoreCase("externalUrl")) {
                 initializeExternal(server);
-            } else if (uri[0].equals("externalJar")) {
+            } else if (type.equalsIgnoreCase("externalJar")) {
                 initializeExternalJar(server);
             } else {
                 throw new TigerTestEnvException(
-                    String.format("Unsupported server type %s found in server %s", uri[0], server.getName()));
+                    String.format("Unsupported server type %s found in server %s", type, server.getName()));
             }
 
             // set system properties from exports section and store the value in environmentVariables map
             server.getExports().forEach(exp -> {
                 String[] kvp = exp.split("=", 2);
                 // ports substitution are only supported for docker based instances
-                if (uri[0].equals("docker") && server.getPorts() != null) {
+                if (type.equalsIgnoreCase("docker") && server.getPorts() != null) {
                     server.getPorts().forEach((localPort, externPort) ->
                         kvp[1] = kvp[1].replace("${PORT:" + localPort + "}", String.valueOf(externPort))
                     );
@@ -127,9 +130,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void startDocker(final CfgServer server, Configuration configuration) {
         log.info(
-            Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getInstanceUri()
+            Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getSource().get(0)
                 + Ansi.RESET);
-        final List<String> imports = server.getImports();
+        final List<String> imports = server.getEnvironment();
         for (var i = 0; i < imports.size(); i++) {
             imports.set(i, ThreadSafeDomainContextProvider.substituteTokens(imports.get(i), "", environmentVariables));
             imports.set(i, ThreadSafeDomainContextProvider.substituteTokens(imports.get(i), "",
@@ -141,12 +144,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 localDockerProxy.addRoute(kvp[0], kvp[1]);
             });
         }
-        if (server.getInstanceUri().startsWith("docker:")) {
+        if (server.getType().equalsIgnoreCase("docker")) {
             dockerManager.startContainer(server, configuration, this);
         } else {
             dockerManager.startComposition(server, configuration, this);
         }
-        loadPKIForServer(server);
+        loadPKIForProxy(server);
         // add routes needed for each server to local docker proxy
         // ATTENTION only one route per server!
         if (server.getPorts() != null && !server.getPorts().isEmpty()) {
@@ -155,25 +158,25 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             localDockerProxy.addRoute("http://" + server.getName(),
                 "http://localhost:" + server.getPorts().values().iterator().next());
         }
-        log.info(Ansi.BOLD + Ansi.GREEN + "Docker container Startup OK " + server.getInstanceUri() + Ansi.RESET);
+        log.info(Ansi.BOLD + Ansi.GREEN + "Docker container Startup OK " + server.getSource().get(0) + Ansi.RESET);
     }
 
     @SneakyThrows
     public void initializeExternal(final CfgServer server) {
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external instance " + server.getName() + "..." + Ansi.RESET);
-        final var uri = new URI(server.getInstanceUri().substring("external:".length()));
+        final var uri = new URI(server.getSource().get(0));
 
         localDockerProxy.addRoute("http://" + server.getName(), uri.getScheme() + "://" + uri.getHost());
 
-        loadPKIForServer(server);
+        loadPKIForProxy(server);
         log.info("  Checking external instance  " + server.getName() + " is available ...");
         // TODO check availability, configure http client to use 5 s timeout max, run in loop for timeout config value
-        log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getInstanceUri() + Ansi.RESET);
+        log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0) + Ansi.RESET);
     }
 
     @SneakyThrows
     public void initializeExternalJar(final CfgServer server) {
-        var jarUrl = server.getInstanceUri().split(":", 2)[1];
+        var jarUrl = server.getSource().get(0);
         var jarName = jarUrl.substring(jarUrl.lastIndexOf("/")+1);
 
         File jarFile = Paths.get(server.getWorkingDir(), jarName).toFile();
@@ -228,22 +231,23 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         Thread.sleep(server.getStartupTimeoutSec()*1000);
         // TODO check availability
-        log.info(Ansi.BOLD +Ansi.GREEN +"External jar server Startup OK "+server.getInstanceUri()+Ansi.RESET);
+        log.info(Ansi.BOLD +Ansi.GREEN +"External jar server Startup OK "+server.getSource()+Ansi.RESET);
 }
 
     @Override
     public void shutDown(final CfgServer server) {
-        final String[] uri = server.getInstanceUri().split(":");
-        if (uri[0].equals("external")) {
+        final String type = server.getType();
+        if (type.equalsIgnoreCase("externalUrl")) {
             shutDownExternal(server);
-        } else if (uri[0].equals("docker")) {
+        } else if (type.equalsIgnoreCase("docker")) {
             shutDownDocker(server);
         } else {
-            throw new TigerTestEnvException("Unsupported server uri type " + server.getInstanceUri());
+            // TODO externalJar, docker compose
+            throw new TigerTestEnvException("Unsupported server uri type " + type);
         }
     }
 
-    private void loadPKIForServer(final CfgServer srv) {
+    private void loadPKIForProxy(final CfgServer srv) {
         log.info("  loading PKI resources for instance " + srv.getName() + "...");
         srv.getPkiKeys().stream()
             .filter(key -> key.getType().equals("cert"))
@@ -277,10 +281,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void removeRoute(CfgServer server) {
-        String serverUrl = "http://" + server.getName();
-        localDockerProxy.removeRoute(serverUrl);
+        String serverUrl = server.getName();
+        localDockerProxy.removeRoute(HTTP + serverUrl);
+        localDockerProxy.removeRoute(HTTPS + serverUrl);
         routesList.remove(routesList.stream()
-            .filter(r -> r[0].equals("http://" + server.getName()))
+            .filter(r -> r[0].equals(HTTP + server.getName()) || r[0].equals(HTTPS + server.getName()))
             .findAny()
             .orElseThrow()
         );

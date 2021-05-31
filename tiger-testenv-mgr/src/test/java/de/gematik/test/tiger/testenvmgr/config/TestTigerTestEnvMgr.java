@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
@@ -20,8 +21,6 @@ public class TestTigerTestEnvMgr {
         final Configuration cfg = new Configuration();
         cfg.readConfig(new File("src/test/resources/de/gematik/test/tiger/testenvmgr/idpOnly.yaml").toURI());
         assertThat(cfg.getServers()).hasSize(4);
-        assertThat(cfg.getServers().get(0).getParams()).isEmpty();
-        assertThat(cfg.getServers().get(2).getParams()).isEmpty();
     }
 
     @Test
@@ -39,7 +38,8 @@ public class TestTigerTestEnvMgr {
         envMgr.setUpEnvironment();
         CfgServer srv = new CfgServer();
         srv.setName("idp");
-        srv.setInstanceUri("docker:anything......");
+        srv.setType("docker");
+        srv.setSource(List.of("anything......"));
         envMgr.shutDown(srv);
     }
 
@@ -60,7 +60,7 @@ public class TestTigerTestEnvMgr {
 
     @Test
     public void testCreateNonExisitngVersion() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpNonExisitngVersion.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpNonExistingVersion.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
     }

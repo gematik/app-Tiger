@@ -50,7 +50,7 @@ public class DockerMgr {
 
     @SuppressWarnings("unused")
     public void startContainer(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
-        var imageName = server.getInstanceUri().substring("docker:".length());
+        var imageName = server.getSource().get(0);
         if (server.getVersion() != null) {
             imageName += ":" + server.getVersion();
         }
@@ -88,8 +88,8 @@ public class DockerMgr {
 
             container.setLogConsumers(List.of(new Slf4jLogConsumer(log)));
             log.info("Passing in environment:");
-            addEnvVarsToContainer(container, server.getImports());
-            server.getImports().stream()
+            addEnvVarsToContainer(container, server.getEnvironment());
+            server.getEnvironment().stream()
                 .filter(i -> i.startsWith("${"))
                 .map(i -> i.substring(2, i.length() - 1))
                 .forEach(envsetName -> {
@@ -131,7 +131,7 @@ public class DockerMgr {
         if (!folder.exists() && !folder.mkdirs()) {
             throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
         }
-        File[] composeFiles = server.getComposeFiles().stream().map(f -> {
+        File[] composeFiles = server.getSource().stream().map(f -> {
             if (f.startsWith(CLZPATH)) {
                 var tmpFile = Paths.get(folder.getAbsolutePath(), f.substring(CLZPATH.length())).toFile();
                 InputStream is = getClass().getResourceAsStream(f.substring(CLZPATH.length()));
