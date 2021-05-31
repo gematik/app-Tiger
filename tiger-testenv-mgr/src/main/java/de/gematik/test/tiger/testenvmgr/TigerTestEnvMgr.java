@@ -16,8 +16,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -130,7 +133,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void startDocker(final CfgServer server, Configuration configuration) {
         log.info(
-            Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getSource().get(0)
+            Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getSource()
+                .get(0)
                 + Ansi.RESET);
         final List<String> imports = server.getEnvironment();
         for (var i = 0; i < imports.size(); i++) {
@@ -177,17 +181,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     @SneakyThrows
     public void initializeExternalJar(final CfgServer server) {
         var jarUrl = server.getSource().get(0);
-        var jarName = jarUrl.substring(jarUrl.lastIndexOf("/")+1);
+        var jarName = jarUrl.substring(jarUrl.lastIndexOf("/") + 1);
+        var jarFile = Paths.get(server.getWorkingDir(), jarName).toFile();
 
-        File jarFile = Paths.get(server.getWorkingDir(), jarName).toFile();
         if (!jarFile.exists()) {
-            log.info("downloading jar for external server from " + jarUrl + "...");
-            File workDir = new File(server.getWorkingDir());
-            if (!workDir.exists() && !workDir.mkdirs()) {
-                throw new TigerTestEnvException("Unable to create working directory " + workDir.getAbsolutePath());
-            }
-            FileUtils.copyURLToFile(new URL(jarUrl), jarFile);
-            // TODO add thread informing about download status
+            downloadJar(server, jarUrl, jarFile);
         }
 
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external jar instance " + server.getName() + "..." + Ansi.RESET);
@@ -203,19 +201,20 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         options.add(jarName);
         options.addAll(server.getArguments());
         log.info("executing '" + String.join(" ", options));
-        Thread t = new Thread(() -> {
+        final AtomicReference<Throwable> exception = new AtomicReference<>();
+        var thread = new Thread(() -> {
             try {
                 externalProcesses.add(new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(server.getWorkingDir()))
                     .inheritIO()
                     .start());
-            } catch (IOException e) {
-                throw new TigerTestEnvException("Unable to start server " + server.getName(), e);
+            } catch (Throwable t) {
+                exception.set(t);
             }
         });
-        t.setName(server.getName());
-        t.start();
+        thread.setName(server.getName());
+        thread.start();
 
         if (!SHUTDOWN_HOOK_ACTIVE) {
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -229,10 +228,64 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             SHUTDOWN_HOOK_ACTIVE = true;
         }
 
-        Thread.sleep(server.getStartupTimeoutSec()*1000);
-        // TODO check availability
-        log.info(Ansi.BOLD +Ansi.GREEN +"External jar server Startup OK "+server.getSource()+Ansi.RESET);
-}
+        long startms = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
+            if (exception.get() != null) {
+                throw new TigerTestEnvException("Unable to start external jar!", exception.get());
+            }
+            URL url = new URL(server.getHealthcheck());
+            URLConnection con = url.openConnection();
+            con.setConnectTimeout(1);
+            try {
+                con.connect();
+                startms = -1;
+            } catch (Exception e) {
+                // find do nothing
+            }
+            Thread.sleep(1000);
+            if (!externalProcesses.get(externalProcesses.size()-1).isAlive()) {
+                throw new TigerTestEnvException("Process aborted with exit code " + externalProcesses.get(externalProcesses.size()-1).exitValue());
+            }
+        }
+        log.info(Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
+    }
+
+    private void downloadJar(CfgServer server, String jarUrl, File jarFile) throws InterruptedException {
+        log.info("downloading jar for external server from " + jarUrl + "...");
+        var workDir = new File(server.getWorkingDir());
+        if (!workDir.exists() && !workDir.mkdirs()) {
+            throw new TigerTestEnvException("Unable to create working directory " + workDir.getAbsolutePath());
+        }
+        long startms = System.currentTimeMillis();
+        var finished = new AtomicBoolean(false);
+        var exception = new AtomicReference<Exception>();
+        var t = new Thread(() -> {
+            try {
+                FileUtils.copyURLToFile(new URL(jarUrl), jarFile);
+                finished.set(true);
+            } catch (IOException ioe) {
+                exception.set(ioe);
+            }
+        });
+        t.start();
+        var progressCtr = 0;
+        while (!finished.get()) {
+            if (System.currentTimeMillis() - startms > 600*1000) {
+                t.interrupt();
+                t.stop();
+                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 2 minutes!");
+            }
+            if (exception.get() != null) {
+                throw new TigerTestEnvException("Failure while downloading jar " + jarUrl + "!", exception.get());
+            }
+            Thread.sleep(500);
+            progressCtr++;
+            if (progressCtr == 6) {
+                log.info("downloaded " + jarFile.length() / 1000 + " kb");
+                progressCtr = 0;
+            }
+        }
+    }
 
     @Override
     public void shutDown(final CfgServer server) {

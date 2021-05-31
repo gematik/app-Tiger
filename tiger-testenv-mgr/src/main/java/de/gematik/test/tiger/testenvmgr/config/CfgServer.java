@@ -34,6 +34,8 @@ public class CfgServer {
     @JsonProperty
     private Integer startupTimeoutSec;
     @JsonProperty
+    private String healthcheck;
+    @JsonProperty
     private boolean active = true;
     @JsonProperty
     private final List<CfgKey> pkiKeys = new ArrayList<>();

@@ -179,3 +179,4 @@ templates:
       - --spring.profiles.active=instance2local
       - --aktor.rproxySGD2.use=false
     startupTimeoutSec: 20
+    healthcheck: https://127.0.0.1:9107
