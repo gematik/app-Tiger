@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.lib.proxy;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import java.util.ArrayList;
@@ -17,6 +18,8 @@ public class RbelMessageProvider implements IRbelMessageListener {
     // use multiple proxies, one for each THREAD!
     private final List<RbelElement> messages = new ArrayList<>();
 
+    private long timeoutms = 5000;
+
     private boolean wait = false;
 
     @Override
@@ -27,13 +30,26 @@ public class RbelMessageProvider implements IRbelMessageListener {
 
     public void waitForMessage() {
         wait = true;
+        long startms = System.currentTimeMillis();
         while (wait) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            if (System.currentTimeMillis() - startms > timeoutms) {
+                throw new TigerLibraryException("Timeout waiting for rbel message");
+            }
         }
+    }
+
+    public RbelElement pullMessage() {
+        if (messages.isEmpty()) {
+            waitForMessage();
+        }
+        RbelElement el = messages.get(0);
+        messages.remove(0);
+        return el;
     }
 
     public List<RbelElement> getMessages() {
@@ -43,5 +59,9 @@ public class RbelMessageProvider implements IRbelMessageListener {
 
     public void startStep(Step st) {
         messages.clear(); wait = false;
+    }
+
+    public void setTimeoutms(long timeout) {
+        timeoutms = timeout;
     }
 }

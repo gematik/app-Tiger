@@ -168,7 +168,7 @@ public class JsonChecker {
             }
             return;
         }
-        final String jsoValue = json.get(claimName).toString();
+        var jsoValue = json.get(claimName).toString();
         if (!jsoValue.equals(regex)) {
             assertThat(jsoValue).withFailMessage(dumpComparisonAtKeyDiffer(claimName, regex, jsoValue))
                 .matches(regex);
@@ -187,7 +187,7 @@ public class JsonChecker {
             assertThat(json.get(claimName)).isNotNull();
         } else {
 
-            final String jsoValue = json.get(claimName).toString();
+            var jsoValue = json.get(claimName).toString();
             if (!jsoValue.equals(regex)) {
                 assertThat(jsoValue).withFailMessage(
                     dumpComparisonAtKeyDiffer(claimName, regex, jsoValue))

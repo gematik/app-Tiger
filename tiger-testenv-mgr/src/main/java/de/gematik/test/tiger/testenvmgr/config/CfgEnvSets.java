@@ -1,18 +1,13 @@
-/*
- * ${GEMATIK_COPYRIGHT_STATEMENT}
- */
-
 package de.gematik.test.tiger.testenvmgr.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.Data;
 
 @Data
-public class CfgKey {
+public class CfgEnvSets {
     @JsonProperty
-    private String id;
+    private String name;
     @JsonProperty
-    private String pem;
-    @JsonProperty
-    private String type;
+    private List<String> envVars;
 }

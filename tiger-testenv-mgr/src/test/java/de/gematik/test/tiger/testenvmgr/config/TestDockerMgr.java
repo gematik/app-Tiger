@@ -8,18 +8,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.DockerMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
+import java.util.List;
 import org.junit.Test;
 
 public class TestDockerMgr {
+
+    Configuration cfg = new Configuration();
 
     @Test
     public void testDockerMgr() {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        srv.setInstanceUri("docker:gstopdr1.top.local/idp/idp-server:17.0.0-38");
+        srv.setType("docker");
+        srv.setSource(List.of("gstopdr1.top.local/idp/idp-server:17.0.0-38"));
         srv.setName("idp");
         srv.setProduct(CfgProductType.IDP_REF);
-        dmgr.startContainer(srv, null);
+        dmgr.startContainer(srv, cfg, null);
         dmgr.stopContainer(srv);
     }
 
@@ -29,12 +33,13 @@ public class TestDockerMgr {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
         dmgr.pullImage("gstopdr1.top.local/idp/idp-server:17.0.0-38");
-        srv.setInstanceUri("docker:gstopdr1.top.local/idp/idp-server:17.0.0-38"); // has no healtchcheck
+        srv.setType("docker");
+        srv.setSource(List.of("gstopdr1.top.local/idp/idp-server:17.0.0-38")); // has no healtchcheck
         srv.setName("idp");
         srv.setStartupTimeoutSec(5); // to few seconds for startup
         srv.setProduct(CfgProductType.IDP_REF);
         long startms = System.currentTimeMillis();
-        assertThatThrownBy(() -> { dmgr.startContainer(srv, null); }).isInstanceOf(TigerTestEnvException.class);
+        assertThatThrownBy(() -> { dmgr.startContainer(srv, cfg,null); }).isInstanceOf(TigerTestEnvException.class);
         assertThat(System.currentTimeMillis() - startms).isLessThan(30000);
         // 9s to get docker up and running and starting container and check no health working
         // docker host environment -> Time elapsed: 26.062 sec
@@ -47,11 +52,12 @@ public class TestDockerMgr {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
         dmgr.pullImage("gstopdr1.top.local/idp/idp-server:17.0.0-38");
-        srv.setInstanceUri("docker:gstopdr1.top.local/idp/idp-server:17.0.0-38"); // has no healtchcheck
+        srv.setType("docker");
+        srv.setSource(List.of("gstopdr1.top.local/idp/idp-server:17.0.0-38")); // has no healtchcheck
         srv.setName("idp");
         srv.setProduct(CfgProductType.IDP_REF);
         try {
-            dmgr.startContainer(srv, null);
+            dmgr.startContainer(srv, cfg,null);
             dmgr.pauseContainer(srv);
             dmgr.unpauseContainer(srv);
         } finally {

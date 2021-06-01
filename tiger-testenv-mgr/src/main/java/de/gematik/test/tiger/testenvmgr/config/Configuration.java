@@ -26,6 +26,10 @@ public class Configuration {
     @JsonProperty
     private List<CfgServer> servers = new ArrayList<>();
     @JsonProperty
+    private List<CfgEnvSets> envSets = new ArrayList<>();
+
+
+    @JsonProperty
     private TigerProxyConfiguration tigerProxy;
 
     @SneakyThrows

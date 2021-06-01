@@ -21,7 +21,12 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 public class KeyMgr {
 
     private static final String BEGINPUBKEY_STR = "-----BEGIN PUBLIC KEY-----";
+
     private static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
+
+    private KeyMgr() {
+
+    }
 
     public static Key readKeyFromPem(String pem) {
         if (pem.contains(BEGINPUBKEY_STR)) {

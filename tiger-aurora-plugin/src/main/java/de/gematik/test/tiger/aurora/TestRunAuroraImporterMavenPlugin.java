@@ -1,16 +1,5 @@
 package de.gematik.test.tiger.aurora;
 
-import java.io.File;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.Map.Entry;
-
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-
 import de.gematik.aurora.client.common.actions.AuroraClientActionFactory;
 import de.gematik.aurora.client.common.actions.interfaces.IAuroraResultClientAction;
 import de.gematik.aurora.common.entities.TestResultAssignment;
@@ -23,10 +12,19 @@ import de.gematik.aurora.connector.session.AuroraSessionFactory;
 import de.gematik.aurora.connector.session.IAuroraSession;
 import de.gematik.aurora.connector.session.actions.parameter.FreezeTestResultParameter;
 import de.gematik.test.tiger.lib.parser.SerenityTestResultParser;
-import de.gematik.test.tiger.lib.parser.model.Result;
 import de.gematik.test.tiger.lib.parser.model.TestResult;
+import java.io.File;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.Map.Entry;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
-@Mojo(name = "import-testrun")
+@Mojo(name = "import-testrun", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
 
     @Parameter(property = "import-testrun.aurora.profile", defaultValue = "prod_ref_env")
@@ -84,8 +82,8 @@ public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
         System.setProperty("polarion_password", auroraEncPassword);
         final UserCredentials userCredentials = new UserCredentials(auroraUser, auroraEncPassword);
         final IAuroraResultClientAction<Boolean> action = AuroraClientActionFactory.getInstance()
-                .getUserCrendetialsActions()
-                .getCheckPolarionCredentials(userCredentials);
+            .getUserCrendetialsActions()
+            .getCheckPolarionCredentials(userCredentials);
         try {
             if (!action.executeAndgetResult()) {
                 throw new MojoExecutionException("Failed to log in to Aurora with user " + auroraUser);
@@ -123,12 +121,10 @@ public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
                         resultFile = new File("result." + reportExtension);
                     }
                     freezeList.add(
-                            createFreezeParameter(resultFile.getAbsolutePath(), tr.getStatus(),
-                                    auroraProjectId, tr.getPolarionID(), auroraTestrunId,
-                                    String.valueOf(tr.getStartms()), String.valueOf(tr.getEndms()),
-                                    auroraComment));
+                        createFreezeParameter(resultFile.getAbsolutePath(),
+                            auroraProjectId, auroraTestrunId, tr, auroraComment));
                 } else {
-                    getLog().warn("Skipping result for test case " + tr.toString() + " as no TCID annotation was found!");
+                    getLog().warn("Skipping result for test case " + tr + " as no TCID annotation was found!");
                 }
             }
         }
@@ -136,13 +132,12 @@ public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
     }
 
     FreezeTestResultParameter createFreezeParameter(
-            final String fileToFreeze, final Result result, final String projectId,
-            final String testcase, final String testrun,
-            final String startTimeInMillis, final String endTimeInMillis, final String comment)
-            throws MojoExecutionException {
+        final String fileToFreeze, final String projectId, final String testrun,
+        final TestResult tr, final String comment)
+        throws MojoExecutionException {
         final TestcaseExecutionVerdict verdictEnum;
         final FreezeTestResultParameter freezeTestResultParameter;
-        switch (result) {
+        switch (tr.getStatus()) {
             case PASSED:
                 verdictEnum = TestcaseExecutionVerdict.PASSED;
                 break;
@@ -164,41 +159,41 @@ public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
                 testresultFile = new File(fileToFreeze);
                 if (!testresultFile.exists()) {
                     throw new MojoExecutionException(
-                            String.format("The result file '%s' was not found!", fileToFreeze));
+                        String.format("The result file '%s' was not found!", fileToFreeze));
                 }
             }
 
             final TestResultAssignment testResultAssignment = new TestResultAssignment();
             testResultAssignment.setAuroraField(AuroraWorkItemField.PROJECT, projectId)
-                    .setAuroraField(AuroraWorkItemField.INTERNAL_ID, testcase)
-                    .setAuroraField(AuroraWorkItemField.TESTRUN, testrun);
+                .setAuroraField(AuroraWorkItemField.INTERNAL_ID, tr.getPolarionID())
+                .setAuroraField(AuroraWorkItemField.TESTRUN, testrun);
             testResultAssignment
-                    .setAdditionalTestResultParameter(AuroraAdditionalTestResultParameter.AURORA_TESTRESULT_START,
-                            startTimeInMillis)
-                    .setAdditionalTestResultParameter(AuroraAdditionalTestResultParameter.AURORA_TESTRESULT_END,
-                            endTimeInMillis)
-                    .setAdditionalTestResultParameter(AuroraAdditionalTestResultParameter.AURORA_TESTRESULT_COMMENT,
-                            comment);
+                .setAdditionalTestResultParameter(AuroraAdditionalTestResultParameter.AURORA_TESTRESULT_START,
+                    String.valueOf(tr.getStartms()))
+                .setAdditionalTestResultParameter(AuroraAdditionalTestResultParameter.AURORA_TESTRESULT_END,
+                    String.valueOf(tr.getEndms()))
+                .setAdditionalTestResultParameter(AuroraAdditionalTestResultParameter.AURORA_TESTRESULT_COMMENT,
+                    comment);
             freezeTestResultParameter = new FreezeTestResultParameter(testresultFile, testResultAssignment,
-                    verdictEnum);
+                verdictEnum);
             return freezeTestResultParameter;
         } catch (final Exception exception) {
             throw new MojoExecutionException(String.format(
-                    "Persisting result '%s' of test case '%s', test run '%s', verdict '%s' failed with: %s",
-                    testresultFile != null ? testresultFile.getAbsolutePath() : "NO FILE", testcase, testrun,
-                    verdictEnum, exception.getMessage()), exception);
+                "Persisting result '%s' of test case '%s', test run '%s', verdict '%s' failed with: %s",
+                testresultFile != null ? testresultFile.getAbsolutePath() : "NO FILE", tr.getPolarionID(),
+                testrun, verdictEnum, exception.getMessage()), exception);
         }
     }
 
     boolean freezeResults(final List<FreezeTestResultParameter> freezeList) throws MojoExecutionException {
         try (final IAuroraSession session = AuroraSessionFactory.createAuroraSessionForCurrentProfile()) {
             return AuroraClientActionFactory.getInstance()
-                    .getFreezeTestResultParameterAction(session, freezeList)
-                    .execute();
+                .getFreezeTestResultParameterAction(session, freezeList)
+                .execute();
         } catch (final Exception exception) {
             throw new MojoExecutionException(String.format(
-                    "While persisting test results a failure happened, %d results were not persisted!",
-                    freezeList.size()), exception);
+                "While persisting test results a failure happened, %d results were not persisted!",
+                freezeList.size()), exception);
         }
     }
 }

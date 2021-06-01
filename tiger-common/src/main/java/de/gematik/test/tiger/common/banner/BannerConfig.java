@@ -5,10 +5,12 @@
 package de.gematik.test.tiger.common.banner;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @AllArgsConstructor
+@Data
 public class BannerConfig {
-    public int width;
-    public int height;
-    public boolean upperCaseOnly;
+    private int width;
+    private int height;
+    private boolean upperCaseOnly;
 }
