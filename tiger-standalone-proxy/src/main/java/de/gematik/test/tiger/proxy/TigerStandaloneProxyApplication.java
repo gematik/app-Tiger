@@ -5,6 +5,8 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
+import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,7 +16,7 @@ import org.springframework.context.annotation.Bean;
 @RequiredArgsConstructor
 public class TigerStandaloneProxyApplication {
 
-    private ApplicationConfiguration applicationConfiguration;
+    private final ApplicationConfiguration applicationConfiguration;
 
     public static void main(String[] args) {
         SpringApplication.run(TigerStandaloneProxyApplication.class, args);
@@ -22,6 +24,10 @@ public class TigerStandaloneProxyApplication {
 
     @Bean
     public TigerProxy tigerProxy() {
-        return new TigerProxy(applicationConfiguration.getProxy());
+        if (applicationConfiguration.getProxy() != null) {
+            return new TigerProxy(applicationConfiguration.getProxy());
+        } else {
+            return new TigerProxy(new TigerProxyConfiguration());
+        }
     }
 }
