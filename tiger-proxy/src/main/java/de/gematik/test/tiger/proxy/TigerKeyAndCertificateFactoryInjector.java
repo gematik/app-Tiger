@@ -7,7 +7,7 @@ import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 public class TigerKeyAndCertificateFactoryInjector {
 
     public static void injectIntoMockServer(TigerProxyConfiguration configuration) {
-        KeyAndCertificateFactoryFactory.customKeyAndCertificateFactorySupplier =
-            mockServerLogger -> new TigerKeyAndCertificateFactory(mockServerLogger, configuration);
+        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
+            mockServerLogger -> new TigerKeyAndCertificateFactory(mockServerLogger, configuration));
     }
 }

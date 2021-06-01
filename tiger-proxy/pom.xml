@@ -84,6 +84,10 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk15on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
         </dependency>
         <dependency>
@@ -100,7 +104,7 @@
         <dependency>
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>
-            <version>5.11.3-SNAPSHOT</version>
+            <version>5.11.3-patched3</version>
         </dependency>
         <dependency>
             <groupId>com.konghq</groupId>
