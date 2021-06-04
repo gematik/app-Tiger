@@ -33,7 +33,7 @@ public class JsonChecker {
     public static final String IGNORE_JSON_VALUE = "${json-unit.ignore}";
 
     final CustomComparator customComparator = new CustomComparator(JSONCompareMode.LENIENT,
-        new Customization("***", (testJson, oracleJson) -> {
+        new Customization("***", (oracleJson, testJson) -> {
             try {
                 new JSONObject(testJson.toString());
                 new JSONObject(oracleJson.toString());
