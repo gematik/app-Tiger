@@ -6,6 +6,7 @@ package de.gematik.test.tiger.common.context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import java.util.Map;
 import org.junit.Test;
 
@@ -148,38 +149,6 @@ public class TestContextProviders {
         assertThat(ctxt.getString("key1")).isEqualTo("value1");
     }
 
-    // TODO replace next three methods with data provided methods
-    @Test
-    public void testSubstituteTokenOK() {
-        final TestContext ctxt = new TestContext("test010");
-        ctxt.putString("key1", "value1");
-        ctxt.putString("key2", "KEY2VALUE");
-        assertThat(ThreadSafeDomainContextProvider
-            .substituteTokens("value1${TESTENV.key2}textblabla", "TESTENV", ctxt.getContext()))
-            .isEqualTo("value1KEY2VALUEtextblabla");
-    }
-
-    @Test
-    public void testSubstituteToken2OK() {
-        final TestContext ctxt = new TestContext("test020");
-        ctxt.putString("key1", "value1");
-        ctxt.putString("key2", "KEY2VALUE");
-        assertThat(
-            ThreadSafeDomainContextProvider
-                .substituteTokens("value1${TESTENV.key2}text${TESTENV.key1}blabla", "TESTENV", ctxt.getContext()))
-            .isEqualTo("value1KEY2VALUEtextvalue1blabla");
-    }
-
-    @Test
-    public void testSubstituteTokenUnsetValueOK() {
-        final TestContext ctxt = new TestContext("test030");
-        ctxt.putString("key1", "value1");
-        ctxt.putString("key2", "KEY2VALUE");
-        assertThat(
-            ThreadSafeDomainContextProvider
-                .substituteTokens("value1${TESTENV.key2}text${TESTENV.key3}blabla", "TESTENV", ctxt.getContext()))
-            .isEqualTo("value1KEY2VALUEtext${TESTENV.key3}blabla");
-    }
 
     @Test
     public void testContextDifferentDomainsPutOK() {

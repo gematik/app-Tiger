@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.common.context;
 
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +31,6 @@ public class TestVariables extends ThreadSafeDomainContextProvider {
     }
 
     public String substituteVariables(final String str) {
-        return substituteTokens(str, "VAR", getContext());
+        return TokenSubstituteHelper.substitute(str, "VAR", getContext());
     }
 }

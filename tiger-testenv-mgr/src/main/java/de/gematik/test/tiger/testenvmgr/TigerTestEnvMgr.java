@@ -6,7 +6,7 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
-import de.gematik.test.tiger.common.context.ThreadSafeDomainContextProvider;
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
@@ -34,8 +34,8 @@ import org.apache.commons.lang3.SystemUtils;
 public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private static boolean SHUTDOWN_HOOK_ACTIVE = false;
-    private static String HTTP = "http://";
-    private static String HTTPS = "https://";
+    private static final String HTTP = "http://";
+    private static final String HTTPS = "https://";
 
     private final Configuration configuration;
 
@@ -65,7 +65,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         configuration.getTemplates().addAll(templates.getTemplates());
         configuration.applyTemplates();
 
-        environmentVariables = new HashMap<>();
         dockerManager = new DockerMgr();
         if (configuration.getTigerProxy() == null) {
             configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
@@ -79,6 +78,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             proxyConfig.setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
         }
         localDockerProxy = new TigerProxy(configuration.getTigerProxy());
+        environmentVariables = new HashMap<>(
+            Map.of("PROXYHOST", "host.docker.internal",
+                "PROXYPORT", localDockerProxy.getPort()));
     }
 
     @Override
@@ -140,9 +142,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 + Ansi.RESET);
         final List<String> imports = server.getEnvironment();
         for (var i = 0; i < imports.size(); i++) {
-            imports.set(i, ThreadSafeDomainContextProvider.substituteTokens(imports.get(i), "", environmentVariables));
-            imports.set(i, ThreadSafeDomainContextProvider.substituteTokens(imports.get(i), "",
-                Map.of("PROXYHOST", "host.docker.internal", "PROXYPORT", localDockerProxy.getPort())));
+            imports.set(i, TokenSubstituteHelper.substitute(imports.get(i), "", environmentVariables));
         }
         if (server.getUrlMappings() != null) {
             server.getUrlMappings().forEach(mapping -> {
@@ -178,8 +178,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         log.info("  Checking external instance  " + server.getName() + " is available ...");
         long startms = System.currentTimeMillis();
         while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
-            URL url = new URL(server.getHealthcheck());
-            URLConnection con = url.openConnection();
+            var url = new URL(server.getHealthcheck());
+            var con = url.openConnection();
             con.setConnectTimeout(1);
             try {
                 con.connect();
@@ -206,7 +206,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external jar instance " + server.getName() + "..." + Ansi.RESET);
 
         List<String> options = server.getOptions().stream()
-            .map(o -> ThreadSafeDomainContextProvider.substituteTokens(o, "",
+            .map(o -> TokenSubstituteHelper.substitute(o, "",
                 Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
             .collect(Collectors.toList());
         String[] paths = System.getenv("PATH").split(SystemUtils.IS_OS_WINDOWS ? ";" : ":");
@@ -238,14 +238,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         thread.start();
 
         if (!SHUTDOWN_HOOK_ACTIVE) {
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    log.info("interrupting threads...");
-                    externalProcesses.forEach(Process::destroy);
-                    log.info("stopping threads...");
-                    externalProcesses.forEach(Process::destroyForcibly);
-                }
-            });
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                log.info("interrupting threads...");
+                externalProcesses.forEach(Process::destroy);
+                log.info("stopping threads...");
+                externalProcesses.forEach(Process::destroyForcibly);
+            }));
             SHUTDOWN_HOOK_ACTIVE = true;
         }
         long startms = System.currentTimeMillis();
@@ -253,7 +251,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             if (exception.get() != null) {
                 throw new TigerTestEnvException("Unable to start external jar!", exception.get());
             }
-            URL url = new URL(server.getHealthcheck());
+            var url = new URL(server.getHealthcheck());
             URLConnection con = url.openConnection();
             con.setConnectTimeout(1);
             try {
