@@ -59,14 +59,15 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         final var cfgFile = new File(OSEnvironment.getAsString(
             "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
         JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
-        TigerConfigurationHelper.overwriteWithSysPropsAndEnvVars("TIGER_TESTENV", "tiger.testenv", jsonCfg);
+
         JSONObject jsonTemplate = TigerConfigurationHelper.yamlStringToJson(
             IOUtils.toString(Objects.requireNonNull(getClass().getResource(
                 "templates.yaml")).toURI(), StandardCharsets.UTF_8));
-
         TigerConfigurationHelper.applyTemplate(
             jsonCfg.getJSONArray("servers"),"template",
             jsonTemplate.getJSONArray("templates"), "name" );
+
+        TigerConfigurationHelper.overwriteWithSysPropsAndEnvVars("TIGER_TESTENV", "tiger.testenv", jsonCfg);
 
         configuration = new TigerConfigurationHelper<Configuration>().jsonStringToConfig(jsonCfg.toString(), Configuration.class);
 
@@ -262,17 +263,19 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             con.setConnectTimeout(1);
             try {
                 con.connect();
-                startms = -1;
                 log.info("External jar node " + server.getName() + " is online");
+                log.info(Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
+                return;
             } catch (Exception e) {
-                // find do nothing
+                log.info("Failed to connect - " + e.getMessage());
+                // fine do nothing
             }
             Thread.sleep(1000);
             if (!externalProcesses.get(externalProcesses.size()-1).isAlive()) {
                 throw new TigerTestEnvException("Process aborted with exit code " + externalProcesses.get(externalProcesses.size()-1).exitValue());
             }
         }
-        log.info(Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
+        throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
     }
 
     private void downloadJar(CfgServer server, String jarUrl, File jarFile) throws InterruptedException {

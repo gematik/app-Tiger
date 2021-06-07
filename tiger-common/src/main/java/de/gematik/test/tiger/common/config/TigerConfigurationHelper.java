@@ -71,7 +71,7 @@ public class TigerConfigurationHelper<T> {
 
 
     public static void overwriteWithSysPropsAndEnvVars(String rootEnv, String rootProps, JSONObject json) {
-        json.keySet().forEach(key -> {
+        json.keys().forEachRemaining(key -> {
             Object obj = json.get(key);
             if (obj instanceof JSONObject) {
                 overwriteWithSysPropsAndEnvVars(rootEnv + "_" + key.toUpperCase(), rootProps + "." + key, (JSONObject)obj);
