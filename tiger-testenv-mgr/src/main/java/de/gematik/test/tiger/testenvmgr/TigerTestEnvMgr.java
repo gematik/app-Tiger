@@ -183,25 +183,29 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         loadPKIForProxy(server);
         log.info("  Checking external instance  " + server.getName() + " is available ...");
-        HttpsTrustManager.saveContext();
-        HttpsTrustManager.allowAllSSL();
-        // TODO how to UNSET this afterwards
-        long startms = System.currentTimeMillis();
-        boolean started = false;
-        while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
-            var url = new URL(server.getHealthcheck());
-            URLConnection con = url.openConnection();
-            con.setConnectTimeout(1);
-            try {
-                con.connect();
-                startms = -1;
-                log.info("External node " + server.getName() + " is online");
-            } catch (Exception e) {
-                // find do nothing
+        try {
+            HttpsTrustManager.saveContext();
+            HttpsTrustManager.allowAllSSL();
+            long startms = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
+                var url = new URL(server.getHealthcheck());
+                URLConnection con = url.openConnection();
+                con.setConnectTimeout(1000);
+                try {
+                    con.connect();
+                    log.info("External node " + server.getName() + " is online");
+                    log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
+                        + Ansi.RESET);
+                    return;
+                } catch (Exception e) {
+                    log.info("Connection failed - " + e.getMessage());
+                }
+                Thread.sleep(1000);
             }
-            Thread.sleep(1000);
+            throw new TigerTestEnvException("Timeout waiting for external server to respond!");
+        } finally {
+            HttpsTrustManager.restoreContext();
         }
-        log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0) + Ansi.RESET);
     }
 
     @SneakyThrows
@@ -259,36 +263,38 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             SHUTDOWN_HOOK_ACTIVE = true;
         }
 
-        HttpsTrustManager.saveContext();
-        HttpsTrustManager.allowAllSSL();
-        var started = false;
-        long startms = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
-            if (exception.get() != null) {
-                throw new TigerTestEnvException("Unable to start external jar!", exception.get());
+        try {
+            HttpsTrustManager.saveContext();
+            HttpsTrustManager.allowAllSSL();
+            var started = false;
+            long startms = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
+                if (exception.get() != null) {
+                    throw new TigerTestEnvException("Unable to start external jar!", exception.get());
+                }
+                URL url = new URL(server.getHealthcheck());
+                URLConnection con = url.openConnection();
+                con.setConnectTimeout(1);
+                try {
+                    con.connect();
+                    log.info("External jar node " + server.getName() + " is online");
+                    log.info(
+                        Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
+                    return;
+                } catch (Exception e) {
+                    log.info("Failed to connect - " + e.getMessage());
+                }
+                Thread.sleep(1000);
+                if (!externalProcesses.get(externalProcesses.size() - 1).isAlive()) {
+                    throw new TigerTestEnvException(
+                        "Process aborted with exit code " + externalProcesses.get(externalProcesses.size() - 1)
+                            .exitValue());
+                }
             }
-            URL url = new URL(server.getHealthcheck());
-            URLConnection con = url.openConnection();
-            con.setConnectTimeout(1);
-            try {
-                con.connect();
-                log.info("External jar node " + server.getName() + " is online");
-                log.info(Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
-                return;
-            } catch (Exception e) {
-                log.info("Failed to connect - " + e.getMessage());
-                // fine do nothing
-            }
-            Thread.sleep(1000);
-            if (!externalProcesses.get(externalProcesses.size() - 1).isAlive()) {
-                HttpsTrustManager.restoreContext();
-                throw new TigerTestEnvException(
-                    "Process aborted with exit code " + externalProcesses.get(externalProcesses.size() - 1)
-                        .exitValue());
-            }
+            throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
+        } finally {
+            HttpsTrustManager.restoreContext();
         }
-        HttpsTrustManager.restoreContext();
-        throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
     }
 
     private void downloadJar(CfgServer server, String jarUrl, File jarFile) throws InterruptedException {

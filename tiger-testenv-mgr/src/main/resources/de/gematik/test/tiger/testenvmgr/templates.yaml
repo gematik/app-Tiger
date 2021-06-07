@@ -88,8 +88,8 @@ templates:
     source:
       - https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     # version: N/A
-    startupTimeoutSec: 5
-    healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
+    startupTimeoutSec: 15
+    healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
       - GEMATIK_TESTCONFIG=rise-rru
@@ -104,8 +104,8 @@ templates:
     type: externalUrl
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    startupTimeoutSec: 5
-    healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    startupTimeoutSec: 15
+    healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
       - GEMATIK_TESTCONFIG=rise-rtu

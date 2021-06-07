@@ -27,6 +27,10 @@ public class TestTigerTestEnvMgr {
     @Test
     public void testCreateExternalEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/riseIdpOnly.yaml");
+        System.setProperty("http.proxyHost", "192.168.110.10");
+        System.setProperty("https.proxyHost", "192.168.110.10");
+        System.setProperty("http.proxyPort", "3128");
+        System.setProperty("https.proxyPort", "3128");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
     }
