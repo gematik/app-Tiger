@@ -29,7 +29,7 @@ public class TestTigerTestEnvMgr {
     public void testCreateExternalEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/riseIdpOnly.yaml");
         try {
-            URL url = new URL("http://192.168.230.85");
+            URL url = new URL("http://192.168.230.85:3128");
             url.openConnection().connect();
             System.setProperty("http.proxyHost", "192.168.230.85");
             System.setProperty("https.proxyHost", "192.168.230.85");
@@ -38,6 +38,8 @@ public class TestTigerTestEnvMgr {
         } catch (Exception e) {
             // else lets try without internal proxy
             e.printStackTrace();
+            System.out.println("Only works with internal gematik proxy! SKIPPED");
+            return;
         }
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
