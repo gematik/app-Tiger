@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr.config;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import java.net.URL;
 import java.util.List;
 import org.junit.Test;
 
@@ -27,10 +28,17 @@ public class TestTigerTestEnvMgr {
     @Test
     public void testCreateExternalEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/riseIdpOnly.yaml");
-        System.setProperty("http.proxyHost", "192.168.110.10");
-        System.setProperty("https.proxyHost", "192.168.110.10");
-        System.setProperty("http.proxyPort", "3128");
-        System.setProperty("https.proxyPort", "3128");
+        try {
+            URL url = new URL("http://192.168.230.85");
+            url.openConnection().connect();
+            System.setProperty("http.proxyHost", "192.168.230.85");
+            System.setProperty("https.proxyHost", "192.168.230.85");
+            System.setProperty("http.proxyPort", "3128");
+            System.setProperty("https.proxyPort", "3128");
+        } catch (Exception e) {
+            // else lets try without internal proxy
+            e.printStackTrace();
+        }
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
     }
