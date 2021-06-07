@@ -17,6 +17,7 @@
         <docker.image.name>tiger-proxy</docker.image.name>
         <java.version>11</java.version>
         <spring-native.version>0.9.1</spring-native.version>
+        <jacoco.skip>true</jacoco.skip>
     </properties>
 
     <dependencies>
