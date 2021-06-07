@@ -64,12 +64,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             IOUtils.toString(Objects.requireNonNull(getClass().getResource(
                 "templates.yaml")).toURI(), StandardCharsets.UTF_8));
         TigerConfigurationHelper.applyTemplate(
-            jsonCfg.getJSONArray("servers"),"template",
-            jsonTemplate.getJSONArray("templates"), "name" );
+            jsonCfg.getJSONArray("servers"), "template",
+            jsonTemplate.getJSONArray("templates"), "name");
 
         TigerConfigurationHelper.overwriteWithSysPropsAndEnvVars("TIGER_TESTENV", "tiger.testenv", jsonCfg);
 
-        configuration = new TigerConfigurationHelper<Configuration>().jsonStringToConfig(jsonCfg.toString(), Configuration.class);
+        configuration = new TigerConfigurationHelper<Configuration>()
+            .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
 
         dockerManager = new DockerMgr();
         if (configuration.getTigerProxy() == null) {
@@ -182,10 +183,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         loadPKIForProxy(server);
         log.info("  Checking external instance  " + server.getName() + " is available ...");
+        HttpsTrustManager.saveContext();
+        HttpsTrustManager.allowAllSSL();
+        // TODO how to UNSET this afterwards
         long startms = System.currentTimeMillis();
+        boolean started = false;
         while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
             var url = new URL(server.getHealthcheck());
-            var con = url.openConnection();
+            URLConnection con = url.openConnection();
             con.setConnectTimeout(1);
             try {
                 con.connect();
@@ -253,12 +258,16 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             }));
             SHUTDOWN_HOOK_ACTIVE = true;
         }
+
+        HttpsTrustManager.saveContext();
+        HttpsTrustManager.allowAllSSL();
+        var started = false;
         long startms = System.currentTimeMillis();
         while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
             if (exception.get() != null) {
                 throw new TigerTestEnvException("Unable to start external jar!", exception.get());
             }
-            var url = new URL(server.getHealthcheck());
+            URL url = new URL(server.getHealthcheck());
             URLConnection con = url.openConnection();
             con.setConnectTimeout(1);
             try {
@@ -271,10 +280,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 // fine do nothing
             }
             Thread.sleep(1000);
-            if (!externalProcesses.get(externalProcesses.size()-1).isAlive()) {
-                throw new TigerTestEnvException("Process aborted with exit code " + externalProcesses.get(externalProcesses.size()-1).exitValue());
+            if (!externalProcesses.get(externalProcesses.size() - 1).isAlive()) {
+                HttpsTrustManager.restoreContext();
+                throw new TigerTestEnvException(
+                    "Process aborted with exit code " + externalProcesses.get(externalProcesses.size() - 1)
+                        .exitValue());
             }
         }
+        HttpsTrustManager.restoreContext();
         throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
     }
 
@@ -298,7 +311,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         t.start();
         var progressCtr = 0;
         while (!finished.get()) {
-            if (System.currentTimeMillis() - startms > 600*1000) {
+            if (System.currentTimeMillis() - startms > 600 * 1000) {
                 t.interrupt();
                 t.stop();
                 throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 10 minutes!");

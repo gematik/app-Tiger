@@ -13,15 +13,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import de.gematik.rbellogger.data.RbelBinaryElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.CryptoLoader;
+import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import java.io.File;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestException;
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -99,6 +109,64 @@ public class TestTigerProxy {
     }
 
     @Test
+    public void customRsaCaFileInTruststore_shouldVerifyConnection() throws UnirestException, IOException {
+        final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
+            FileUtils.readFileToByteArray(new File("src/test/resources/selfSignedCa/rootCa.p12")), "00");
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("https://backend", "http://localhost:" + wireMockRule.port()))
+            .serverRootCa(ca)
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        Unirest.config().verifySsl(true);
+        Unirest.config().sslContext(buildSslContextTrustingCaFile(ca.getCertificate()));
+
+        final kong.unirest.HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
+            .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @Test
+    public void customEccCaFileInTruststore_shouldVerifyConnection() throws UnirestException, IOException {
+        final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
+            FileUtils.readFileToByteArray(new File("src/test/resources/customCa.p12")), "00");
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("https://backend", "http://localhost:" + wireMockRule.port()))
+            .serverRootCa(ca)
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        Unirest.config().verifySsl(true);
+        Unirest.config().sslContext(buildSslContextTrustingCaFile(ca.getCertificate()));
+
+        final kong.unirest.HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
+            .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @SneakyThrows
+    private SSLContext buildSslContextTrustingCaFile(X509Certificate certificate) {
+        TrustManagerFactory tmf = TrustManagerFactory
+            .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        ks.load(null);
+        ks.setCertificateEntry("caCert", certificate);
+
+        tmf.init(ks);
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, tmf.getTrustManagers(), null);
+
+        return sslContext;
+    }
+
+    @Test
     public void useTslBetweenProxyAndServer_shouldForward() throws UnirestException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(Map.of("http://backend", "https://localhost:" + wireMockRule.httpsPort()))
@@ -155,17 +223,18 @@ public class TestTigerProxy {
 //    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
-//            .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+           // .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
             .activateRbelEndpoint(true)
+            .proxyLogLevel("TRACE")
             .port(6666)
-            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
+//            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
             .proxyRoutes(Map.of(
-                "https://magog", "https://google.com",
-                "http://magog", "http://google.com",
-                "http://tsl", "http://download-ref.tsl.ti-dienste.de",
-                "https://tsl", "https://download-ref.tsl.ti-dienste.de"
-            )).proxyLogLevel("DEBUG").serverRootCaCertPem("src/main/resources/CertificateAuthorityCertificate.pem")
-            .serverRootCaKeyPem("src/main/resources/PKCS8CertificateAuthorityPrivateKey.pem").build());
+                "https://localhost:9101", "https://gateway.epa-instanz1.titus.ti-dienste.de",
+                "https://127.0.0.1:9101", "https://gateway.epa-instanz1.titus.ti-dienste.de"
+            )).proxyLogLevel("DEBUG")
+            .serverRootCaCertPem("src/main/resources/CertificateAuthorityCertificate.pem")
+            .serverRootCaKeyPem("src/main/resources/PKCS8CertificateAuthorityPrivateKey.pem")
+            .build());
         System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
         try {
             Thread.sleep(30 * 1_000 * 1_000);

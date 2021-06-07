@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.configuration;
 
+import de.gematik.rbellogger.util.RbelPkiIdentity;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,7 @@ public class TigerProxyConfiguration {
     private String proxyLogLevel = "WARN";
     private String serverRootCaCertPem;
     private String serverRootCaKeyPem;
+    private RbelPkiIdentity serverRootCa;
     private List<String> keyFolders;
     private boolean activateRbelEndpoint = false;
     private Integer port;
