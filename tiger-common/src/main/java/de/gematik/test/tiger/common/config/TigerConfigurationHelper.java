@@ -10,6 +10,20 @@ import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+/**
+ * This helper class eases test suite configuration based on yaml config files.
+ * First step is to use {@link #yamlToJson(String)} to create a JSON representation of the yaml config file.
+ * Now you can optionally apply a template by calling {@link #applyTemplate(JSONArray, String, JSONArray, String)}.
+ * and overwrite yaml config values with env vars or system properties by calling
+ * {@link #overwriteWithSysPropsAndEnvVars(String, String, JSONObject)}.
+ *
+ * For simple test configuration without templating you can use the instance method
+ * {@link #yamlToConfig(String, String, Class)}.
+ * Due to Java restrictions Generics can not be used with static methods so you will need to instantiate an instance
+ * to use this method.
+ *
+ * @param <T>
+ */
 @Slf4j
 public class TigerConfigurationHelper<T> {
 
@@ -18,19 +32,31 @@ public class TigerConfigurationHelper<T> {
 
     @SneakyThrows
     public T yamlToConfig(String yamlFile, String product, Class<T> cfgClazz) {
-        Object yamlCfg = yamlMapper.
-            readValue(IOUtils.toString(Path.of(yamlFile).toUri(), StandardCharsets.UTF_8), Object.class);
-
-        // convert to JSON and iterate over all entries looking for system properties or env vars to overwrite
-        var json = new JSONObject(objMapper.writeValueAsString(yamlCfg));
+        JSONObject json = yamlToJson(yamlFile);
         overwriteWithSysPropsAndEnvVars(product.toUpperCase(), product, json);
-
         return objMapper.readValue(json.toString(), cfgClazz);
     }
 
     @SneakyThrows
+    public static JSONObject yamlToJson(String yamlFile)  {
+        Object yamlCfg = yamlMapper.
+            readValue(IOUtils.toString(Path.of(yamlFile).toUri(), StandardCharsets.UTF_8), Object.class);
+        return new JSONObject(objMapper.writeValueAsString(yamlCfg));
+    }
+
+    @SneakyThrows
+    public static JSONObject yamlStringToJson(String yaml)  {
+        Object yamlCfg = yamlMapper.readValue(yaml, Object.class);
+        return new JSONObject(objMapper.writeValueAsString(yamlCfg));
+    }
+    @SneakyThrows
     public T jsonToConfig(String jsonFile, Class<T> cfgClazz) {
-       return objMapper.readValue(IOUtils.toString(Path.of(jsonFile).toUri(), StandardCharsets.UTF_8), cfgClazz);
+        return objMapper.readValue(IOUtils.toString(Path.of(jsonFile).toUri(), StandardCharsets.UTF_8), cfgClazz);
+    }
+
+    @SneakyThrows
+    public T jsonStringToConfig(String jsonStr, Class<T> cfgClazz) {
+        return objMapper.readValue(jsonStr, cfgClazz);
     }
 
     @SneakyThrows
@@ -43,7 +69,8 @@ public class TigerConfigurationHelper<T> {
         return yamlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(cfg);
     }
 
-    private void overwriteWithSysPropsAndEnvVars(String rootEnv, String rootProps, JSONObject json) {
+
+    public static void overwriteWithSysPropsAndEnvVars(String rootEnv, String rootProps, JSONObject json) {
         json.keySet().forEach(key -> {
             Object obj = json.get(key);
             if (obj instanceof JSONObject) {
@@ -61,9 +88,33 @@ public class TigerConfigurationHelper<T> {
         });
     }
 
-    private void overwriteWithSysPropsAndEnvVars(String rootEnv, String rootProps, JSONArray jarr) {
-        for (var i = 0; i < jarr.length(); i++) {
-            Object obj = jarr.get(i);
+    @SneakyThrows
+    public static void applyTemplate(JSONArray cfgArray, String templateKey, JSONArray templates, String templateIdKey) {
+        for (var i = 0; i < cfgArray.length(); i++) {
+            var json = cfgArray.getJSONObject(i);
+            var templateId = json.getString(templateKey);
+            for (var j = 0; j < templates.length(); j++) {
+                var jsonTemplate = templates.getJSONObject(j);
+                if (jsonTemplate.getString(templateIdKey).equals(templateId)) {
+                    jsonTemplate.keySet().stream()
+                        .filter(key -> jsonTemplate.get(key) != null)
+                        .filter(key -> jsonTemplate.get(key) instanceof JSONArray)
+                        .filter(key -> !jsonTemplate.getJSONArray(key).isEmpty())
+                        .filter(key -> !json.has(key) || json.get(key) == null || json.getJSONArray(key).isEmpty())
+                        .forEach(key -> json.put(key, new JSONArray(jsonTemplate.getJSONArray(key))));
+                    jsonTemplate.keySet().stream()
+                        .filter(key -> jsonTemplate.get(key) != null)
+                        .filter(key -> !(jsonTemplate.get(key) instanceof JSONArray))
+                        .filter(key -> !json.has(key) || json.get(key) == null)
+                        .forEach(key -> json.put(key, jsonTemplate.get(key)));
+                }
+            }
+        }
+    }
+
+    private static void overwriteWithSysPropsAndEnvVars(String rootEnv, String rootProps, JSONArray jsonArray) {
+        for (var i = 0; i < jsonArray.length(); i++) {
+            Object obj = jsonArray.get(i);
             if (obj instanceof JSONObject) {
                 overwriteWithSysPropsAndEnvVars(rootEnv + "_" + i, rootProps + "." + i,(JSONObject) obj);
             } else if (obj instanceof JSONArray) {
@@ -73,7 +124,7 @@ public class TigerConfigurationHelper<T> {
                 String value = System.getProperty(rootProps + "." + i, System.getenv(rootEnv + "_" + i));
                 if (value != null)  {
                     log.info("modifying " + rootEnv + "_" + i + ":" + obj);
-                    jarr.put(i, value);
+                    jsonArray.put(i, value);
                 }
             }
         }

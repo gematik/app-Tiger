@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -27,7 +29,9 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.json.JSONObject;
 
 @Slf4j
 @Getter
@@ -54,16 +58,17 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         // read configuration from file and templates from classpath resource
         final var cfgFile = new File(OSEnvironment.getAsString(
             "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
-        configuration = new Configuration();
-        configuration.readConfig(cfgFile.toURI());
-        final var templates = new Configuration();
-        templates.readConfig(Objects.requireNonNull(getClass().getResource(
-            "templates.yaml")).toURI());
+        JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
+        TigerConfigurationHelper.overwriteWithSysPropsAndEnvVars("TIGER_TESTENV", "tiger.testenv", jsonCfg);
+        JSONObject jsonTemplate = TigerConfigurationHelper.yamlStringToJson(
+            IOUtils.toString(Objects.requireNonNull(getClass().getResource(
+                "templates.yaml")).toURI(), StandardCharsets.UTF_8));
 
-        // apply templates to read in configuration
-        log.info("applying server templates");
-        configuration.getTemplates().addAll(templates.getTemplates());
-        configuration.applyTemplates();
+        TigerConfigurationHelper.applyTemplate(
+            jsonCfg.getJSONArray("servers"),"template",
+            jsonTemplate.getJSONArray("templates"), "name" );
+
+        configuration = new TigerConfigurationHelper<Configuration>().jsonStringToConfig(jsonCfg.toString(), Configuration.class);
 
         dockerManager = new DockerMgr();
         if (configuration.getTigerProxy() == null) {
@@ -203,7 +208,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             downloadJar(server, jarUrl, jarFile);
         }
 
-        log.info(Ansi.BOLD + Ansi.GREEN + "starting external jar instance " + server.getName() + "..." + Ansi.RESET);
+        log.info(Ansi.BOLD + Ansi.GREEN + "starting external jar instance " + server.getName() + " in folder " + server
+            .getWorkingDir() + "..." + Ansi.RESET);
 
         List<String> options = server.getOptions().stream()
             .map(o -> TokenSubstituteHelper.substitute(o, "",
