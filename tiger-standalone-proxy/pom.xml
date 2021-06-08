@@ -99,4 +99,17 @@
             </exclusions>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.7</version>
+                <configuration>
+                    <dataFileIncludes>**/target/jacoco-output/*.exec</dataFileIncludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
