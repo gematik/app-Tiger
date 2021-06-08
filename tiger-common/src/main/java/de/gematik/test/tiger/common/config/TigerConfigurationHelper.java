@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -11,16 +12,37 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * This helper class eases test suite configuration based on yaml config files.
+ * This helper class helps managing test suite configuration based on yaml config files.
+ *
  * First step is to use {@link #yamlToJson(String)} to create a JSON representation of the yaml config file.
  * Now you can optionally apply a template by calling {@link #applyTemplate(JSONArray, String, JSONArray, String)}.
- * and overwrite yaml config values with env vars or system properties by calling
+ * Then you can overwrite yaml config values with env vars or system properties by calling
  * {@link #overwriteWithSysPropsAndEnvVars(String, String, JSONObject)}.
+ * Finally you can convert to your data structure config class by calling {@link #jsonStringToConfig(String, Class)}.
  *
- * For simple test configuration without templating you can use the instance method
- * {@link #yamlToConfig(String, String, Class)}.
- * Due to Java restrictions Generics can not be used with static methods so you will need to instantiate an instance
- * to use this method.
+ * For simple test configurations without templating you can use the instance method
+ * {@link #yamlToConfig(String, String, Class)}. This method also performs the overwriting of yaml config values
+ * with env vars and system properties.
+ * Due to Java Generics restrictions you will need to instantiate an instance to use this method.
+ *
+ * <p>The format of the environment variables looks like:
+ * <ul>
+ * <li>TIGER_TESTENV_TIGERPROXY_PROXYLOGLEVEL</li>
+ * <li>TIGER_TESTENV_TIGERPROXY_PORT</li>
+ * <li>TIGER_TESTENV_TIGERPROXY_PROXYROUTES_HTTPS</li>
+ * <li>TIGER_TESTENV_TIGERPROXY_PROXYROUTES_HTTPS</li>
+ * <li>TIGER_TESTENV_SERVERS_0_TEMPLATE</li>
+ * <li>TIGER_TESTENV_SERVERS_0_STARTUPTIMEOUTSEC</li>
+ * <li>...</li>
+ * </ul></p>
+ * <p>For <b>Envrionmental variables:</b><br/>TIGER is the product name passed in as parameter to {@link #overwriteWithSysPropsAndEnvVars(String, String, JSONObject)}
+ * and then separated by "_" the hierarchy walking down all properties / path nodes being uppercase.
+ * Entries in Lists are indexed by integer value.
+ * <p>For <b>System properties:</b><br/>
+ *
+ * To use tokens such as ${TESTENV.xxxx} in the yaml file and replace it with appropriate values, first convert
+ * the JSON Object to string and use the {@link de.gematik.test.tiger.common.TokenSubstituteHelper#substitute(String, String, Map)}
+ * method to replace all tokens. Afterwards convert it back to JSONObject.
  *
  * @param <T>
  */
