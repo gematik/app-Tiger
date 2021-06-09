@@ -116,12 +116,6 @@
             <artifactId>rbellogger</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-            <version>${version.lombok}</version>
-        </dependency>
-        <dependency>
             <groupId>org.cfg4j</groupId>
             <artifactId>cfg4j-core</artifactId>
             <version>4.4.0</version>
