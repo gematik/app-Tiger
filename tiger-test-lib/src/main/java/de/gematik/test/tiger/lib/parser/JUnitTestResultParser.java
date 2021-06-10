@@ -4,16 +4,23 @@
 
 package de.gematik.test.tiger.lib.parser;
 
-import de.gematik.test.tiger.lib.parser.model.Result;
-import de.gematik.test.tiger.lib.parser.model.TestResult;
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
-import lombok.extern.slf4j.Slf4j;
+
 import org.w3c.dom.*;
+
+import de.gematik.test.tiger.lib.parser.model.Result;
+import de.gematik.test.tiger.lib.parser.model.TestResult;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JUnitTestResultParser implements ITestResultParser {
@@ -56,12 +63,26 @@ public class JUnitTestResultParser implements ITestResultParser {
     }
 
     private void parseTestSuite(final Element suite, final Map<String, TestResult> results) {
+        // TODO workaround for now
+        LocalDateTime start = LocalDateTime.parse(suite.getAttribute("timestamp").split(" ")[0],
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
         final NodeList tcs = suite.getChildNodes();
         for (int i = 0; i < tcs.getLength(); i++) {
             final Node tc = tcs.item(i);
             if (tc.getNodeName().equals("testcase")) {
                 final TestResult tr = parseTestCase((Element) tc);
                 tr.setSuite(suite.getAttribute("name"));
+                if (!((Element) tc).getAttribute("time").isBlank()) {
+                    tr.setStartms(start.toInstant(ZoneOffset.UTC).toEpochMilli());
+                    start = start.plus((long) (1000.0 * Float.parseFloat(((Element) tc).getAttribute("time"))), ChronoUnit.MILLIS);
+                    tr.setEndms(start.toInstant(ZoneOffset.UTC).toEpochMilli());
+                } else {
+                    tr.setStartms(0);
+                    tr.setEndms(0);
+                }
+                // TODO workaround for now we assume junit methods have to pass in the polarion ID as test method name
+                // Later on parse test case json and look for annotations by matching the test class and method name
+                tr.setPolarionID(tr.getMethod());
                 results.put(tr.getClazz() + ":" + tr.getMethod(), tr);
             }
         }

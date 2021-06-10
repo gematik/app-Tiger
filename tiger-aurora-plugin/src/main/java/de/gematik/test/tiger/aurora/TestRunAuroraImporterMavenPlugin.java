@@ -22,6 +22,7 @@ import de.gematik.aurora.common.messages.enums.AuroraWorkItemField;
 import de.gematik.aurora.connector.session.AuroraSessionFactory;
 import de.gematik.aurora.connector.session.IAuroraSession;
 import de.gematik.aurora.connector.session.actions.parameter.FreezeTestResultParameter;
+import de.gematik.test.tiger.lib.parser.JUnitTestResultParser;
 import de.gematik.test.tiger.lib.parser.SerenityTestResultParser;
 import de.gematik.test.tiger.lib.parser.model.Result;
 import de.gematik.test.tiger.lib.parser.model.TestResult;
@@ -47,8 +48,14 @@ public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
     @Parameter(property = "import-testrun.aurora.comment", defaultValue = "no comment")
     String auroraComment;
 
-    @Parameter(property = "import-testrun.resultfolder", defaultValue = "target/site/serenity")
+    @Parameter(property = "import-testrun.result.mode", defaultValue = "bdd")
+    String mode;
+
+    @Parameter(property = "import-testrun.bdd.resultfolder", defaultValue = "target/site/serenity")
     String bddRootFolder;
+
+    @Parameter(property = "import-testrun.junit.resultfolder", defaultValue = "target/junit")
+    String junitRootFolder;
 
     @Parameter(property = "import-testrun.reportfolder", defaultValue = "results")
     String reportFolder;
@@ -60,9 +67,11 @@ public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
         pi.auroraProfile = "prod_ref_env";
         pi.auroraUser = "t.eitzenberger";
         pi.auroraEncPassword = "SDeSDVveTNleEDS6PNJq7iZ4dj27b1GFdgBv6AWA/HaYs32FebIIrytI8KQIa7gKAT93Dti5f+oEZVyghEVvJLLWhixnxZuxqZuwAsSelQQbNscrcTykG9GxB+YU51yWWZz21PQTgCxZcqwyy1hcpxYTFORhTjp93oBo8tF2MyzNsWdykbEhyArDawy7bNEjrTAE0oPSnLOs0M0w5aipvhyVTlKyn8Kn4lsGkyQ5vcdggIhk6PgrzW0qvmimgaUimPNIamXYFrjObVOkUsuFu8c6dwcVzS4bwSzpDSZrNsQHntR/X8zEkZsKnsRxR6jV/Bk9zPkxUUt/wJGBJBZelA==";
-        pi.auroraProjectId = "OPB401";
-        pi.auroraTestrunId = "TIGER-DEV-TEST2";
-        pi.bddRootFolder = "../testaurora/target/site/serenity";
+        pi.auroraProjectId = "Mainline_OPB1"; // OPB401";
+        pi.auroraTestrunId = "TIGER_TEST_REZEPS";
+        pi.mode = "junit";
+        // pi.bddRootFolder = "../testaurora/target/site/serenity";
+        pi.junitRootFolder = "../testaurora/logs_RefImpl_0_19_0/test-output/junitreports";
         pi.auroraComment = "Uploaded " + new Date();
         pi.reportFolder = "../testaurora/results";
         pi.reportExtension = "html";
@@ -105,9 +114,15 @@ public class TestRunAuroraImporterMavenPlugin extends AbstractMojo {
     List<FreezeTestResultParameter> getFreezeTestResultParameters() throws MojoExecutionException {
         getLog().info("Parsing test results...");
 
-        final SerenityTestResultParser resultParser = new SerenityTestResultParser();
         final Map<String, TestResult> results = new HashMap<>();
-        resultParser.parseDirectoryForResults(results, new File(bddRootFolder));
+        if (mode.equals("bdd")) {
+            final SerenityTestResultParser resultParser = new SerenityTestResultParser();
+            resultParser.parseDirectoryForResults(results, new File(bddRootFolder));
+        } else {
+            final JUnitTestResultParser resultParser = new JUnitTestResultParser();
+            resultParser.parseDirectoryForResults(results, new File(junitRootFolder));
+            // TODO parse testcases json and crosslink
+        }
 
         getLog().info("Creating result list (" + results.size() + ") for Aurora...");
         if (auroraComment.isEmpty()) {
