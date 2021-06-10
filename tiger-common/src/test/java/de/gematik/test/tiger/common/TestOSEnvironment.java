@@ -5,10 +5,6 @@
 package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class TestOSEnvironment {
@@ -26,19 +22,5 @@ public class TestOSEnvironment {
     @Test
     public void getEnvAsStringExistingNotDefaultOK() {
         assertThat(OSEnvironment.getAsString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
-    }
-
-    @Test
-    public void getEnvAsBooleanOK() {
-        OSEnvironment.setEnv(Map.of("TEST_TIGER_ENV", "1"));
-        assertThat(OSEnvironment.getAsBoolean("TEST_TIGER_ENV")).isTrue();
-    }
-
-    // Testcase is highly OS-specific
-    @Test
-    public void setEnvAndListAllEntries() {
-        OSEnvironment.setEnv(Map.of("foo", "bar"));
-        System.getenv().values().stream()
-            .collect(Collectors.toList());
     }
 }

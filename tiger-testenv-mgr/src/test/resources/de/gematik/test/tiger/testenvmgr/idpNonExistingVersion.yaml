@@ -9,5 +9,5 @@ tigerProxy:
 servers:
   - name: idp
     template: idp-ref
-    active: true
     version: 200.200.200-2000
+    active: true

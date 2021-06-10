@@ -76,6 +76,7 @@ public class TigerProxyStandalone {
     }
 
     private static class EnvDefaultProvider implements IDefaultProvider {
+
         @Override
         public String getDefaultValueFor(String variable) {
             log.info("Looking for value for '{}'...", variable);

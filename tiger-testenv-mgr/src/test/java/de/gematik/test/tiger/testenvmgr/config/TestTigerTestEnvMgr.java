@@ -4,31 +4,14 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import java.io.File;
+import java.net.URL;
+import java.util.List;
 import org.junit.Test;
 
 public class TestTigerTestEnvMgr {
-
-    @Test
-    public void testReadConfig() {
-        final Configuration cfg = new Configuration();
-        cfg.readConfig(new File("src/test/resources/de/gematik/test/tiger/testenvmgr/idpOnly.yaml").toURI());
-        assertThat(cfg.getServers()).hasSize(4);
-        assertThat(cfg.getServers().get(0).getParams()).isEmpty();
-        assertThat(cfg.getServers().get(2).getParams()).isEmpty();
-    }
-
-    @Test
-    public void testReadTemplates() {
-        final Configuration cfg = new Configuration();
-        cfg.readConfig(new File("src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml").toURI());
-        assertThat(cfg.getTemplates()).hasSize(4);
-        assertThat(cfg.getTemplates().get(0).getPkiKeys()).hasSize(3);
-    }
 
     @Test
     public void testCreateShutdownEnv() {
@@ -37,13 +20,27 @@ public class TestTigerTestEnvMgr {
         envMgr.setUpEnvironment();
         CfgServer srv = new CfgServer();
         srv.setName("idp");
-        srv.setInstanceUri("docker:anything......");
+        srv.setType("docker");
+        srv.setSource(List.of("anything......"));
         envMgr.shutDown(srv);
     }
 
     @Test
     public void testCreateExternalEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/riseIdpOnly.yaml");
+        try {
+            URL url = new URL("http://192.168.230.85:3128");
+            url.openConnection().connect();
+            System.setProperty("http.proxyHost", "192.168.230.85");
+            System.setProperty("https.proxyHost", "192.168.230.85");
+            System.setProperty("http.proxyPort", "3128");
+            System.setProperty("https.proxyPort", "3128");
+        } catch (Exception e) {
+            // else lets try without internal proxy
+            e.printStackTrace();
+            System.out.println("Only works with internal gematik proxy! SKIPPED");
+            return;
+        }
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
     }
@@ -58,9 +55,26 @@ public class TestTigerTestEnvMgr {
 
     @Test
     public void testCreateNonExisitngVersion() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpNonExisitngVersion.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpNonExistingVersion.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
+    }
+
+
+    //@Test
+    public void testCreateEpa2() throws InterruptedException {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/epa.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        Thread.sleep(200000);
+    }
+
+    //@Test
+    public void testCreateEpa2FDV() throws InterruptedException {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/epa-fdv.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        Thread.sleep(2000);
     }
 
     // TODO check pkis set, routings set,....

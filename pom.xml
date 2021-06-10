@@ -26,6 +26,7 @@
     <modules>
         <module>tiger-common</module>
         <module>tiger-proxy</module>
+<!--        <module>tiger-standalone-proxy</module>-->
         <module>tiger-testenv-mgr</module>
         <module>tiger-test-lib</module>
         <module>tiger-aurora-plugin</module>
@@ -53,8 +54,7 @@
         <version.slf4j>1.7.30</version.slf4j>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.7.1</version.junit5>
-        <version.rbellogger>0.8.3</version.rbellogger>
-
+        <version.rbellogger>0.8.5-104</version.rbellogger>
         <encoding>UTF-8</encoding>
 
         <sonar.coverage.jacoco.xmlReportPaths>${project.reporting.outputDirectory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -126,6 +126,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>20201115</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${version.slf4j}</version>
@@ -163,8 +169,12 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-jdk15on</artifactId>
+                <version>1.68</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
-                <scope>compile</scope>
                 <version>1.68</version>
             </dependency>
 

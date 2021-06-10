@@ -111,22 +111,6 @@ public abstract class ThreadSafeDomainContextProvider {
         getContext().put(key, flippedValue);
     }
 
-    public static String substituteTokens(String str, final String token, final Map<String, Object> valueMap) {
-        final String tokenStr = "${" + (token.isBlank() ? "" : token + ".");
-        int varIdx = str.indexOf(tokenStr);
-        while (varIdx != -1) {
-            final int endVar = str.indexOf("}", varIdx);
-            final String varName = str.substring(varIdx + tokenStr.length(), endVar);
-            if (valueMap.get(varName) != null) {
-                str = str.substring(0, varIdx) + valueMap.get(varName) + str.substring(endVar + 1);
-                varIdx = str.indexOf(tokenStr);
-            } else {
-                varIdx = str.indexOf(tokenStr, varIdx + 1);
-            }
-        }
-        return str;
-    }
-
     protected String getId() {
         return Thread.currentThread().getId() + domain;
     }
@@ -145,11 +129,10 @@ public abstract class ThreadSafeDomainContextProvider {
                 in = new FileInputStream(propFileName);
             }
             assertThat(in).withFailMessage("Unable to access properties file '" + propFileName + "'").isNotNull();
-            Properties p = new Properties();
+            var p = new Properties();
             p.load(in);
-            getContext().keySet().forEach(key -> {
-                assertThat(getContext().get(key).toString()).isEqualTo(p.getProperty(key));
-            });
+            getContext().keySet().forEach(key ->
+                assertThat(getContext().get(key).toString()).isEqualTo(p.getProperty(key)));
         } finally {
             if (in != null) in.close();
         }

@@ -33,7 +33,7 @@ public class JsonChecker {
     public static final String IGNORE_JSON_VALUE = "${json-unit.ignore}";
 
     final CustomComparator customComparator = new CustomComparator(JSONCompareMode.LENIENT,
-        new Customization("***", (testJson, oracleJson) -> {
+        new Customization("***", (oracleJson, testJson) -> {
             try {
                 new JSONObject(testJson.toString());
                 new JSONObject(oracleJson.toString());
@@ -168,7 +168,7 @@ public class JsonChecker {
             }
             return;
         }
-        final String jsoValue = json.get(claimName).toString();
+        var jsoValue = json.get(claimName).toString();
         if (!jsoValue.equals(regex)) {
             assertThat(jsoValue).withFailMessage(dumpComparisonAtKeyDiffer(claimName, regex, jsoValue))
                 .matches(regex);
@@ -187,7 +187,7 @@ public class JsonChecker {
             assertThat(json.get(claimName)).isNotNull();
         } else {
 
-            final String jsoValue = json.get(claimName).toString();
+            var jsoValue = json.get(claimName).toString();
             if (!jsoValue.equals(regex)) {
                 assertThat(jsoValue).withFailMessage(
                     dumpComparisonAtKeyDiffer(claimName, regex, jsoValue))

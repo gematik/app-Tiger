@@ -16,7 +16,7 @@ public interface ITigerTestEnvMgr {
 
     void setUpEnvironment();
 
-    void start(final CfgServer srv);
+    void start(final CfgServer srv, final Configuration cfg);
 
     void shutDown(final CfgServer srv);
 

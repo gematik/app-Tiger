@@ -15,13 +15,16 @@ import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import java.security.Key;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import javax.net.ssl.SSLException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.model.Header;
@@ -29,6 +32,7 @@ import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
+import org.mockserver.socket.tls.NettySslContextFactory;
 
 @Slf4j
 @Data
@@ -41,25 +45,38 @@ public class TigerProxy implements ITigerProxy {
     private MockServerToRbelConverter mockServerToRbelConverter;
 
     public TigerProxy(TigerProxyConfiguration configuration) {
-
         // TODO still checking why https connections from rustls are not working sometimes yielding the mentioned buggy behaviour
         // with bad tag exception, unsure how to reproduce it best
         // https://bugs.openjdk.java.net/browse/JDK-8221218
         // https://forum.portswigger.net/thread/complete-proxy-failure-due-to-java-tls-bug-1e334581
         //System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,SSLv3,TLSv1.3");
+        if (configuration.getServerRootCa() != null) {
+            TigerKeyAndCertificateFactoryInjector.injectIntoMockServer(configuration);
+        } else {
+            if (StringUtils.isNotEmpty(configuration.getServerRootCaCertPem())) {
+                log.info("Changing CA to file {}", configuration.getServerRootCaCertPem());
+                ConfigurationProperties.certificateAuthorityCertificate(configuration.getServerRootCaCertPem());
+            }
+            if (StringUtils.isNotEmpty(configuration.getServerRootCaKeyPem())) {
+                log.info("Changing CA-key to file {}", configuration.getServerRootCaKeyPem());
+                ConfigurationProperties.certificateAuthorityPrivateKey(configuration.getServerRootCaKeyPem());
+            }
+        }
         rbelLogger = RbelLogger.build(buildRbelLoggerConfiguration(configuration));
         mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
-        if (StringUtils.isNotEmpty(configuration.getServerRootCaCertPem())) {
-            ConfigurationProperties.certificateAuthorityCertificate(configuration.getServerRootCaCertPem());
-        }
-        if (StringUtils.isNotEmpty(configuration.getServerRootCaKeyPem())) {
-            ConfigurationProperties.certificateAuthorityPrivateKey(configuration.getServerRootCaKeyPem());
-        }
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
 
+        NettySslContextFactory.clientSslContextBuilderFunction =  sslContextBuilder -> {
+            try {
+                sslContextBuilder.sslContextProvider(new BouncyCastleJsseProvider());
+                return sslContextBuilder.build();
+            } catch (SSLException e) {
+                throw new RuntimeException(e);
+            }
+        };
         mockServer = convertProxyConfiguration(configuration)
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));

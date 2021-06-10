@@ -62,6 +62,18 @@
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-cucumber6</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-rest-assured</artifactId>
+            <version>${version.serenity.core}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>3.3.0</version>
+            <!-- serenity 2.3.4 uses version 3.3.0 -->
+        </dependency>
+
         <dependency><!-- needed for type registry -->
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-core</artifactId>
@@ -75,11 +87,6 @@
         </dependency>
 
         <!-- common helper libs -->
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20201115</version>
-        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>

@@ -27,13 +27,15 @@ public class AfoReporterMavenPlugin extends AbstractMojo {
     String reportHtmlFile;
 
     public void execute() throws MojoExecutionException {
-        AfoReporter.main(new String[]{ "-bdd",
-            "-rr" ,serenityRootFolder, "-tr" , bddRootFolder, "-f", afoFile, "-o", reportHtmlFile});
-
-        final File indexFile = new File(serenityRootFolder + "/index.html");
-        String serenityIndex = null;
         try {
-            serenityIndex = FileUtils
+            AfoReporter.main(new String[]{"-bdd",
+                "-rr", serenityRootFolder, "-tr", bddRootFolder, "-f", afoFile, "-o", reportHtmlFile});
+        } catch (Exception e) {
+            throw new MojoExecutionException("Failed to create afo report!", e);
+        }
+        try {
+            File indexFile = new File(serenityRootFolder + "/index.html");
+            String serenityIndex = FileUtils
                 .readFileToString(indexFile, StandardCharsets.UTF_8);
             if (!serenityIndex.contains("Afo Überdeckung")) {
                 getLog().info("Adding Afo Tab to Serenity Report...");
@@ -49,6 +51,7 @@ public class AfoReporterMavenPlugin extends AbstractMojo {
             }
         } catch (final IOException e) {
             getLog().error("Adding Afo tab to Serenity failed", e);
+            // Don't throw anything as adding the afo report should not break the build
         }
     }
 }
