@@ -7,44 +7,43 @@ package de.gematik.test.tiger.proxy;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 
-import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import java.security.Key;
-import java.security.Security;
-import java.util.ArrayList;
+import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLException;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
+import org.mockserver.mock.Expectation;
+import org.mockserver.model.ExpectationId;
 import org.mockserver.model.Header;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.NettySslContextFactory;
+import wiremock.org.eclipse.jetty.util.URIUtil;
 
 @Slf4j
-@Data
-public class TigerProxy implements ITigerProxy {
+public class TigerProxy extends AbstractTigerProxy {
 
-    private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
     private MockServer mockServer;
     private MockServerClient mockServerClient;
-    private RbelLogger rbelLogger;
     private MockServerToRbelConverter mockServerToRbelConverter;
+    private Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
 
     public TigerProxy(TigerProxyConfiguration configuration) {
+        super(configuration);
         // TODO still checking why https connections from rustls are not working sometimes yielding the mentioned buggy behaviour
         // with bad tag exception, unsure how to reproduce it best
         // https://bugs.openjdk.java.net/browse/JDK-8221218
@@ -62,14 +61,13 @@ public class TigerProxy implements ITigerProxy {
                 ConfigurationProperties.certificateAuthorityPrivateKey(configuration.getServerRootCaKeyPem());
             }
         }
-        rbelLogger = RbelLogger.build(buildRbelLoggerConfiguration(configuration));
-        mockServerToRbelConverter = new MockServerToRbelConverter(rbelLogger);
+        mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
 
-        NettySslContextFactory.clientSslContextBuilderFunction =  sslContextBuilder -> {
+        NettySslContextFactory.clientSslContextBuilderFunction = sslContextBuilder -> {
             try {
                 sslContextBuilder.sslContextProvider(new BouncyCastleJsseProvider());
                 return sslContextBuilder.build();
@@ -93,24 +91,15 @@ public class TigerProxy implements ITigerProxy {
                 .withHeader("Host", "rbel"))
                 .respond(HttpResponse.response()
                     .withHeader("content-type", "text/html; charset=utf-8")
-                    .withBody(new RbelHtmlRenderer().doRender(rbelLogger.getMessageHistory())));
+                    .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
             mockServerClient.when(request()
                 .withHeader("Host", null)
                 .withPath("/rbel"))
                 .respond(httpRequest ->
                     HttpResponse.response()
                         .withHeader("content-type", "text/html; charset=utf-8")
-                        .withBody(new RbelHtmlRenderer().doRender(rbelLogger.getMessageHistory())));
+                        .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
         }
-    }
-
-    private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
-        final RbelConfiguration rbelConfiguration = new RbelConfiguration();
-        if (configuration.getKeyFolders() != null) {
-            configuration.getKeyFolders().stream()
-                .forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
-        }
-        return rbelConfiguration;
     }
 
     private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {
@@ -135,19 +124,23 @@ public class TigerProxy implements ITigerProxy {
     }
 
     @Override
-    public List<RbelElement> getRbelMessages() {
-        return rbelLogger.getMessageHistory();
+    public List<TigerRoute> getRoutes() {
+        return tigerRouteMap.entrySet().stream()
+            .map(Entry::getValue)
+            .collect(Collectors.toList());
     }
 
     @Override
-    public void addKey(String keyid, Key key) {
-        rbelLogger.getRbelKeyManager().addKey(keyid, key, RbelKey.PRECEDENCE_KEY_FOLDER);
-    }
+    public TigerRoute addRoute(final String sourceSchemeNHost, final String targetSchemeNHost) {
+        tigerRouteMap.values().stream()
+            .filter(existingRoute -> URIUtil.equalsIgnoreEncodings(existingRoute.getFrom(), sourceSchemeNHost))
+            .findAny()
+            .ifPresent(existingRoute -> {
+                throw new TigerProxyRouteConflictException(existingRoute);
+            });
 
-    @Override
-    public void addRoute(final String sourceSchemeNHost, final String targetSchemeNHost) {
         log.info("adding route {} -> {}", sourceSchemeNHost, targetSchemeNHost);
-        mockServerClient.when(request()
+        final Expectation[] expectations = mockServerClient.when(request()
             .withHeader("Host", sourceSchemeNHost.split("://")[1])
             .withSecure(sourceSchemeNHost.startsWith("https://")))
             .forward(
@@ -157,32 +150,37 @@ public class TigerProxy implements ITigerProxy {
                 (req, resp) -> {
                     try {
                         triggerListener(mockServerToRbelConverter.convertRequest(req, sourceSchemeNHost));
-                        triggerListener(mockServerToRbelConverter.convertResponse(resp));
+                        triggerListener(mockServerToRbelConverter.convertResponse(resp, sourceSchemeNHost));
                     } catch (Exception e) {
                         log.error("RBel FAILED!", e);
                     }
                     return resp;
                 }
             );
+        if (expectations.length > 1) {
+            log.warn("Unexpected number of expectations created! Got {}, expected 1", expectations.length);
+        }
+
+        if (expectations.length == 0) {
+            throw new TigerProxyConfigurationException(
+                "Error while adding route from '{}' to '{}': Got 0 new expectations");
+        }
+        final TigerRoute tigerRoute = TigerRoute.builder()
+            .from(sourceSchemeNHost)
+            .to(targetSchemeNHost)
+            .id(expectations[0].getId())
+            .build();
+        tigerRouteMap.put(expectations[0].getId(), tigerRoute);
+        return tigerRoute;
     }
 
     @Override
-    public void removeRoute(String sourceHost) {
-        // TODO how to remove a route?
-    }
+    public void removeRoute(String routeId) {
+        mockServerClient.clear(new ExpectationId().withId(routeId));
+        final TigerRoute route = tigerRouteMap.remove(routeId);
 
-    private void triggerListener(RbelElement element) {
-        getRbelMessageListeners()
-            .forEach(listener -> listener.triggerNewReceivedMessage(element));
-    }
-
-    @Override
-    public void addRbelMessageListener(IRbelMessageListener listener) {
-        rbelMessageListeners.add(listener);
-    }
-
-    @Override
-    public void removeRbelMessageListener(IRbelMessageListener listener) {
-        rbelMessageListeners.remove(listener);
+        log.info("Deleted route {}. Current # expectations {}",
+            route,
+            mockServerClient.retrieveActiveExpectations(request()).length);
     }
 }

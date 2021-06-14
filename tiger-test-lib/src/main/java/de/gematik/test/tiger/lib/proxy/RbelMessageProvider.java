@@ -4,26 +4,28 @@
 
 package de.gematik.test.tiger.lib.proxy;
 
-import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessage;
+import de.gematik.rbellogger.data.elements.RbelHttpMessage;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RbelMessageProvider implements IRbelMessageListener {
 
     // TODO how to make it safe for multithreaded test scenarios
     // use multiple proxies, one for each THREAD!
-    private final List<RbelElement> messages = new ArrayList<>();
+    private final List<RbelMessage> messages = new ArrayList<>();
 
     private long timeoutms = 5000;
 
     private boolean wait = false;
 
     @Override
-    public void triggerNewReceivedMessage(RbelElement el) {
+    public void triggerNewReceivedMessage(RbelMessage el) {
         messages.add(el);
         wait = false;
     }
@@ -43,16 +45,22 @@ public class RbelMessageProvider implements IRbelMessageListener {
         }
     }
 
-    public RbelElement pullMessage() {
+    public RbelMessage pullMessage() {
         if (messages.isEmpty()) {
             waitForMessage();
         }
-        RbelElement el = messages.get(0);
+        RbelMessage el = messages.get(0);
         messages.remove(0);
         return el;
     }
 
-    public List<RbelElement> getMessages() {
+    public List<RbelHttpMessage> getHttpMessages() {
+        return messages.stream()
+            .map(RbelMessage::getHttpMessage)
+            .collect(Collectors.toList());
+    }
+
+    public List<RbelMessage> getMessages() {
         return Collections.unmodifiableList(messages);
     }
 

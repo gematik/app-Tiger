@@ -9,12 +9,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import de.gematik.rbellogger.data.RbelBinaryElement;
+import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.elements.RbelBinaryElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
@@ -66,7 +70,27 @@ public class TestTigerProxy {
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
 
+        assertThat(tigerProxy.getRbelMessages().get(0).getRecipient())
+            .isEqualTo(new RbelHostname("backend", 80));
+        assertThat(tigerProxy.getRbelMessages().get(0).getSender())
+            .isNull();
+        assertThat(tigerProxy.getRbelMessages().get(1).getSender())
+            .isEqualTo(new RbelHostname("backend", 80));
+        assertThat(tigerProxy.getRbelMessages().get(1).getRecipient())
+            .isNull();
+
         new RbelHtmlRenderer().doRender(tigerProxy.getRbelMessages());
+    }
+
+    @Test
+    public void addAlreadyExistingRoute_shouldThrowException() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(Map.of("http://backend", "http://localhost:" + wireMockRule.port()))
+            .build());
+
+        assertThatThrownBy(() ->
+            tigerProxy.addRoute("http://backend", "http://localhost:1234"))
+            .isInstanceOf(TigerProxyConfigurationException.class);
     }
 
     @Test
@@ -85,7 +109,7 @@ public class TestTigerProxy {
         Unirest.get("http://backend/binary").asBytes();
 
         assertThat(tigerProxy.getRbelMessages().get(tigerProxy.getRbelMessages().size() - 1)
-        .findRbelPathMembers("$.body").get(0))
+            .findRbelPathMembers("$.body").get(0))
             .isInstanceOf(RbelBinaryElement.class);
     }
 
@@ -194,7 +218,7 @@ public class TestTigerProxy {
 
         Unirest.get("http://backend/foobar").asString().getBody();
 
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessages().get(1).getHttpMessage()
             .getFirst("body").get()
             .getFirst("foo").get()
             .getContent()
@@ -218,17 +242,25 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-//    @Test
+    //    @Test
     public void startProxyFor30s() {
         TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
-           // .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
+            // .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
             .activateRbelEndpoint(true)
             .proxyLogLevel("TRACE")
             .port(6666)
 //            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
             .proxyRoutes(Map.of(
+                "http://localhost:11001", "http://frontend.titus.ti-dienste.de/",
+                "https://localhost:11001", "https://frontend.titus.ti-dienste.de/",
+                "http://frontend.titus.ti-dienste.de/", "http://frontend.titus.ti-dienste.de/",
+                "https://frontend.titus.ti-dienste.de/", "https://frontend.titus.ti-dienste.de/",
+                "https://127.0.0.1:11001", "https://gateway.epa-instanz1.titus.ti-dienste.de",
                 "https://localhost:9101", "https://gateway.epa-instanz1.titus.ti-dienste.de",
-                "https://127.0.0.1:9101", "https://gateway.epa-instanz1.titus.ti-dienste.de"
+                "https://127.0.0.1:9101", "https://gateway.epa-instanz1.titus.ti-dienste.de",
+                "https://localhost:9001", "https://gateway.epa-instanz1.titus.ti-dienste.de",
+                "https://127.0.0.1:9001", "https://gateway.epa-instanz1.titus.ti-dienste.de"
+//                "https://gateway.epa-instanz1.titus.ti-dienste.de", "https://gateway.epa-instanz1.titus.ti-dienste.de"
             )).proxyLogLevel("DEBUG")
             .serverRootCaCertPem("src/main/resources/CertificateAuthorityCertificate.pem")
             .serverRootCaKeyPem("src/main/resources/PKCS8CertificateAuthorityPrivateKey.pem")

@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessage;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
@@ -37,11 +37,11 @@ public class Hooks {
     private static final Map<String, Status> scenarioStatus = new HashMap<>();
 
     private static boolean rbelListenerAdded = false;
-    private static final List<RbelElement> rbelElements = new ArrayList<>();
+    private static final List<RbelMessage> rbelMessages = new ArrayList<>();
     private static final RbelMessageProvider rbelMessageListener = new RbelMessageProvider() {
         @Override
-        public void triggerNewReceivedMessage(RbelElement e) {
-            rbelElements.add(e);
+        public void triggerNewReceivedMessage(RbelMessage e) {
+            rbelMessages.add(e);
         }
     };
 
@@ -70,7 +70,7 @@ public class Hooks {
         }
 
         scenarioStepsIdxMap.put(scenario.getId(), 0);
-        rbelElements.clear();
+        rbelMessages.clear();
         if (!TigerDirector.isInitialized()) {
             System.setProperty("TIGER_ACTIVE", "1");
             System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
@@ -157,7 +157,7 @@ public class Hooks {
         rbelRenderer.setSubTitle(
             "<p><b>" + scenario.getName() + "</b>&nbsp&nbsp;<u>" + (dataVariantIdx + 1) + "</u></p>"
                 + "<p><i>" + scenario.getUri() + "</i></p>");
-        String html = rbelRenderer.doRender(rbelElements);
+        String html = rbelRenderer.doRender(rbelMessages);
         try {
             String name = scenario.getName();
             final String map = "äaÄAöoÖOüuÜUßs _(_)_[_]_{_}_<_>_|_$_%_&_/_\\_?_:_*_\"_";
