@@ -4,21 +4,11 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
-import static org.mockserver.model.HttpRequest.request;
-
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import javax.net.ssl.SSLException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -33,6 +23,17 @@ import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.NettySslContextFactory;
 import wiremock.org.eclipse.jetty.util.URIUtil;
+
+import javax.net.ssl.SSLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static org.mockserver.model.HttpRequest.request;
 
 @Slf4j
 public class TigerProxy extends AbstractTigerProxy {
@@ -76,41 +77,41 @@ public class TigerProxy extends AbstractTigerProxy {
             }
         };
         mockServer = convertProxyConfiguration(configuration)
-            .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
-            .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
+                .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
+                .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
 
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         if (configuration.getProxyRoutes() != null) {
-            for (Entry<String, String> routeEntry : configuration.getProxyRoutes().entrySet()) {
-                addRoute(routeEntry.getKey(), routeEntry.getValue());
+            for (TigerRoute tigerRoute : configuration.getProxyRoutes()) {
+                addRoute(tigerRoute);
             }
         }
         if (configuration.isActivateRbelEndpoint()) {
             mockServerClient.when(request()
-                .withHeader("Host", "rbel"))
-                .respond(HttpResponse.response()
-                    .withHeader("content-type", "text/html; charset=utf-8")
-                    .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
+                    .withHeader("Host", "rbel"))
+                    .respond(HttpResponse.response()
+                            .withHeader("content-type", "text/html; charset=utf-8")
+                            .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
             mockServerClient.when(request()
-                .withHeader("Host", null)
-                .withPath("/rbel"))
-                .respond(httpRequest ->
-                    HttpResponse.response()
-                        .withHeader("content-type", "text/html; charset=utf-8")
-                        .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
+                    .withHeader("Host", null)
+                    .withPath("/rbel"))
+                    .respond(httpRequest ->
+                            HttpResponse.response()
+                                    .withHeader("content-type", "text/html; charset=utf-8")
+                                    .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
         }
     }
 
     private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {
         if (configuration.getForwardToProxy() == null
-            || StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())) {
+                || StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())) {
             return Optional.empty();
         }
         return Optional.of(ProxyConfiguration.proxyConfiguration(Type.HTTPS,
-            configuration.getForwardToProxy().getHostname()
-                + ":"
-                + configuration.getForwardToProxy().getPort()));
+                configuration.getForwardToProxy().getHostname()
+                        + ":"
+                        + configuration.getForwardToProxy().getPort()));
     }
 
     @Override
@@ -126,50 +127,48 @@ public class TigerProxy extends AbstractTigerProxy {
     @Override
     public List<TigerRoute> getRoutes() {
         return tigerRouteMap.entrySet().stream()
-            .map(Entry::getValue)
-            .collect(Collectors.toList());
+                .map(Entry::getValue)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public TigerRoute addRoute(final String sourceSchemeNHost, final String targetSchemeNHost) {
+    public TigerRoute addRoute(final TigerRoute tigerRoute) {
         tigerRouteMap.values().stream()
-            .filter(existingRoute -> URIUtil.equalsIgnoreEncodings(existingRoute.getFrom(), sourceSchemeNHost))
-            .findAny()
-            .ifPresent(existingRoute -> {
-                throw new TigerProxyRouteConflictException(existingRoute);
-            });
+                .filter(existingRoute -> URIUtil.equalsIgnoreEncodings(existingRoute.getFrom(), tigerRoute.getFrom()))
+                .findAny()
+                .ifPresent(existingRoute -> {
+                    throw new TigerProxyRouteConflictException(existingRoute);
+                });
 
-        log.info("adding route {} -> {}", sourceSchemeNHost, targetSchemeNHost);
+        log.info("adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
         final Expectation[] expectations = mockServerClient.when(request()
-            .withHeader("Host", sourceSchemeNHost.split("://")[1])
-            .withSecure(sourceSchemeNHost.startsWith("https://")))
-            .forward(
-                req -> forwardOverriddenRequest(
-                    req.replaceHeader(Header.header("Host", targetSchemeNHost.split("://")[1])))
-                    .getHttpRequest().withSecure(targetSchemeNHost.startsWith("https://")),
-                (req, resp) -> {
-                    try {
-                        triggerListener(mockServerToRbelConverter.convertRequest(req, sourceSchemeNHost));
-                        triggerListener(mockServerToRbelConverter.convertResponse(resp, sourceSchemeNHost));
-                    } catch (Exception e) {
-                        log.error("RBel FAILED!", e);
-                    }
-                    return resp;
-                }
-            );
+                .withHeader("Host", tigerRoute.getFrom().split("://")[1])
+                .withSecure(tigerRoute.getFrom().startsWith("https://")))
+                .forward(
+                        req -> forwardOverriddenRequest(
+                                req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1])))
+                                .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://")),
+                        (req, resp) -> {
+                            if (tigerRoute.isActivateRbelLogging()) {
+                                try {
+                                    triggerListener(mockServerToRbelConverter.convertRequest(req, tigerRoute.getFrom()));
+                                    triggerListener(mockServerToRbelConverter.convertResponse(resp, tigerRoute.getFrom()));
+                                } catch (Exception e) {
+                                    log.error("RBel FAILED!", e);
+                                }
+                            }
+                            return resp;
+                        }
+                );
         if (expectations.length > 1) {
             log.warn("Unexpected number of expectations created! Got {}, expected 1", expectations.length);
         }
 
         if (expectations.length == 0) {
             throw new TigerProxyConfigurationException(
-                "Error while adding route from '{}' to '{}': Got 0 new expectations");
+                    "Error while adding route from '{}' to '{}': Got 0 new expectations");
         }
-        final TigerRoute tigerRoute = TigerRoute.builder()
-            .from(sourceSchemeNHost)
-            .to(targetSchemeNHost)
-            .id(expectations[0].getId())
-            .build();
+        tigerRoute.setId(expectations[0].getId());
         tigerRouteMap.put(expectations[0].getId(), tigerRoute);
         return tigerRoute;
     }
@@ -180,7 +179,7 @@ public class TigerProxy extends AbstractTigerProxy {
         final TigerRoute route = tigerRouteMap.remove(routeId);
 
         log.info("Deleted route {}. Current # expectations {}",
-            route,
-            mockServerClient.retrieveActiveExpectations(request()).length);
+                route,
+                mockServerClient.retrieveActiveExpectations(request()).length);
     }
 }

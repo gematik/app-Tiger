@@ -77,7 +77,7 @@ public class TigerWebUiController {
     public GetMessagesAfterDto getMessagesAfter(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
         @RequestParam(name = "maxMsgs", required = false) final Integer maxMsgs) {
-        log.info("requesting messages since " + lastMsgUuid + " (max. " + maxMsgs + ")");
+        log.debug("requesting messages since " + lastMsgUuid + " (max. " + maxMsgs + ")");
 
         List<RbelMessage> msgs = tigerProxy.getRbelLogger().getMessageHistory();
         int start = lastMsgUuid == null || lastMsgUuid.isBlank() ?

@@ -22,12 +22,16 @@ public class TracingPushController {
     @PostConstruct
     public void addWebSocketListener() {
         tigerProxy.addRbelMessageListener(msg -> {
-            log.info("Handling Rbel-Message!");
+            log.debug("Handling Rbel-Message!");
             if (msg.getHttpMessage() instanceof RbelHttpRequest) {
-                log.info("Skipping propagation of request");
+                log.trace("Skipping propagation of request");
                 return;
             }
             RbelHttpResponse rbelHttpResponse = (RbelHttpResponse) msg.getHttpMessage();
+            log.info("Propagating new request/response pair (from {} to {}, path {}, status {})",
+                    msg.getSender(), msg.getRecipient(),
+                    rbelHttpResponse.getRequest().getPath().getOriginalUrl(),
+                    rbelHttpResponse.getResponseCode());
             template.convertAndSend("/topic/traces",
                 TigerTracingDto.builder()
                     .uuid(msg.getUuid())

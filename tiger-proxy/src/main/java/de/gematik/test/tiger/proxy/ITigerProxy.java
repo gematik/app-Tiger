@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface ITigerProxy {
 
-    TigerRoute addRoute(String sourceHost, String targetHost);
+    TigerRoute addRoute(TigerRoute tigerRoute);
 
     void removeRoute(String routeId);
 

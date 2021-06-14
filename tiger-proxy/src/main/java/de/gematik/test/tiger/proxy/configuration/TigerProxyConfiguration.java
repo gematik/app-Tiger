@@ -7,6 +7,8 @@ package de.gematik.test.tiger.proxy.configuration;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import java.util.List;
 import java.util.Map;
+
+import de.gematik.test.tiger.proxy.data.TigerRoute;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TigerProxyConfiguration {
 
-    private Map<String, String> proxyRoutes;
+    private List<TigerRoute> proxyRoutes;
     private ForwardProxyInfo forwardToProxy;
     private String proxyLogLevel = "WARN";
     private String serverRootCaCertPem;

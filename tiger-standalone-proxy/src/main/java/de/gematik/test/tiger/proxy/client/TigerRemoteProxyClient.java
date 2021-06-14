@@ -39,7 +39,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
     }
 
     @Override
-    public TigerRoute addRoute(String sourceHost, String targetHost) {
+    public TigerRoute addRoute(TigerRoute tigerRoute) {
         return null;
     }
 

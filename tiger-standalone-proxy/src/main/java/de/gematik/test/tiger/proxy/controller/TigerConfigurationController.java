@@ -24,9 +24,12 @@ public class TigerConfigurationController {
     private final TigerProxy tigerProxy;
 
     @PutMapping(value = "/route", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public TigerRouteDto addRoute(@RequestBody AddRouteDto addRouteDto) {
+    public TigerRouteDto addRoute(@RequestBody TigerRouteDto addRouteDto) {
         log.info("Adding route from '{}' to '{}'", addRouteDto.getFrom(), addRouteDto.getTo());
-        final TigerRoute tigerRoute = tigerProxy.addRoute(addRouteDto.getFrom(), addRouteDto.getTo());
+        final TigerRoute tigerRoute = tigerProxy.addRoute(TigerRoute.builder()
+                .from(addRouteDto.getFrom())
+                .to(addRouteDto.getTo())
+                .build());
         return TigerRouteDto.from(tigerRoute);
     }
 

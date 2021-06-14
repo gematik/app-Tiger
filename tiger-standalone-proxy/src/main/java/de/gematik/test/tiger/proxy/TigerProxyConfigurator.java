@@ -1,10 +1,12 @@
 package de.gematik.test.tiger.proxy;
 
-import javax.annotation.PostConstruct;
+import de.gematik.test.tiger.proxy.data.TigerRoute;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.PostConstruct;
 
 @Configuration
 @RequiredArgsConstructor
@@ -18,7 +20,11 @@ public class TigerProxyConfigurator {
     public void init() {
         // you might be tempted to look for "server.port", but don't:
         // when it is zero (random free port) then it stays zero
-        tigerProxy.addRoute("http://tiger.proxy",
-            "http://localhost:" + webServerAppCtxt.getWebServer().getPort());
+        tigerProxy.addRoute(
+                TigerRoute.builder()
+                        .from("http://tiger.proxy")
+                        .to("http://localhost:" + webServerAppCtxt.getWebServer().getPort())
+                        .activateRbelLogging(false)
+                        .build());
     }
 }

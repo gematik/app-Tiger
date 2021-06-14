@@ -9,6 +9,7 @@ import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -126,7 +127,7 @@ public class TigerDirector {
         }
         // instantiate proxy and supply routes and register message provider as listener to proxy
         final var threadProxy = new TigerProxy(tigerTestEnvMgr.getConfiguration().getTigerProxy());
-        getTigerTestEnvMgr().getRoutes().forEach(route -> threadProxy.addRoute(route[0], route[1]));
+        getTigerTestEnvMgr().getRoutes().forEach(route -> threadProxy.addRoute(route));
         threadProxy.addRbelMessageListener(rbelMsgProviderMap.computeIfAbsent(tid(), key -> new RbelMessageProvider()));
         proxiesMap.putIfAbsent(tid(), threadProxy);
     }
