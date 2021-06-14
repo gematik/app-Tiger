@@ -154,7 +154,7 @@ pre.json {
     width: 20px;
     height: 20px;
     border-radius: 11px;
-    border: 2px solid #aaa;
+    border: 2px solid #666;
     background-color: transparent;
 }
 
@@ -201,4 +201,8 @@ pre.json {
 
 .routeListDiv button {
     height: 100%;
+}
+
+.navbar-item span {
+    color: #aaa;
 }

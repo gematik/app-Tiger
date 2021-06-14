@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("webui")
 @Validated
 @Slf4j
-public class TigerWebUIController {
+public class TigerWebUiController {
 
     private final TigerProxy tigerProxy;
 
@@ -60,11 +60,16 @@ public class TigerWebUIController {
                         radio("5s", "updates", "update5", "5", "updates"),
                         radio("Manual", "updates", "noupdate", "0", "updates", true),
                         button("Update").withId("updateBtn").withClass("button is-outlined is-success")
+                    ),
+                    div().withClass("navbar-item").with(
+                        span("Proxy port "),
+                        b("" + tigerProxy.getPort()).withClass("ml-3")
                     )
                 )
             )
         ).render();
-        String routeModalHtml = IOUtils.toString(getClass().getResourceAsStream("/routeModal.html"), StandardCharsets.UTF_8);
+        String routeModalHtml = IOUtils
+            .toString(getClass().getResourceAsStream("/routeModal.html"), StandardCharsets.UTF_8);
         return html.replace("<div id=\"navbardiv\"></div>", navbar + routeModalHtml);
     }
 
@@ -77,14 +82,14 @@ public class TigerWebUIController {
         List<RbelMessage> msgs = tigerProxy.getRbelLogger().getMessageHistory();
         int start = lastMsgUuid == null || lastMsgUuid.isBlank() ?
             -1 :
-            (int)msgs.stream()
-            .map(RbelMessage::getHttpMessage)
-            .map(RbelHttpMessage::getUuid)
-            .takeWhile(uuid -> !uuid.equals(lastMsgUuid))
-            .count();
+            (int) msgs.stream()
+                .map(RbelMessage::getHttpMessage)
+                .map(RbelHttpMessage::getUuid)
+                .takeWhile(uuid -> !uuid.equals(lastMsgUuid))
+                .count();
         // -1 as we get the uuid of the last response
         int end = msgs.size();
-        if (maxMsgs != null && maxMsgs > 0 && end-start > maxMsgs) {
+        if (maxMsgs != null && maxMsgs > 0 && end - start > maxMsgs) {
             end = start + 1 + maxMsgs;
         }
         var result = new GetMessagesAfterDto();
@@ -131,13 +136,16 @@ public class TigerWebUIController {
     }
 
 
-    private ContainerTag radio(final String text, final String name, final String id, String value, final String clazz) {
+    private ContainerTag radio(final String text, final String name, final String id, String value,
+        final String clazz) {
         return radio(text, name, id, value, clazz, false);
     }
 
-    private ContainerTag radio(final String text, final String name, final String id, String value, final String clazz, boolean checked) {
+    private ContainerTag radio(final String text, final String name, final String id, String value, final String clazz,
+        boolean checked) {
         return div().withClass("radio-item").with(
-            input().withType("radio").withName(name).withId(id).withValue(value).withClass(clazz).attr("checked", checked),
+            input().withType("radio").withName(name).withId(id).withValue(value).withClass(clazz)
+                .attr("checked", checked),
             label(text).attr("for", id)
         );
     }

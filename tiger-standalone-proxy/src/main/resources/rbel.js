@@ -6,6 +6,10 @@ let rootEl;
 let updateTimeout = 0;
 let updateHandler = null;
 
+let fieldRouteTo;
+let fieldRouteFrom;
+let btnAddRoute;
+
 const menuReqHtmlTemplate = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"menu-label mb-1 has-text-link\"><span\n"
@@ -22,10 +26,13 @@ const menuResHtmlTemplate = "<a href=\"#${uuid}\" class=\"menu-label ml-5 mt-3 i
 
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
+  fieldRouteFrom = document.getElementById("addNewRouteFromField");
+  fieldRouteTo = document.getElementById("addNewRouteToField");
+  btnAddRoute = document.getElementById("addNewRouteBtn");
+
 
   enableModals();
-
-  document.addEventListener('keydown', function (event) {
+  document.addEventListener('keydown', event => {
     var e = event || window.event;
     if (e.keyCode === 27) {
       closeModals();
@@ -35,20 +42,17 @@ document.addEventListener('DOMContentLoaded', function () {
   enableCardToggles();
   enableCollapseExpandAll();
 
-  document.getElementById("updateBtn").addEventListener('click',
-      function (event) {
-        pollMessages();
-      });
+  document.getElementById("updateBtn").addEventListener('click',pollMessages);
 
   document.getElementById("routeModalBtn").addEventListener('click',
-      function(e) {
+      e => {
         document.getElementById("routeModalBtn").disabled = true;
         getRoutes();
         document.getElementById("addNewRouteBtn").disabled = true;
       })
 
   getAll("input.updates").forEach(function (el) {
-    el.addEventListener("click", function (e) {
+    el.addEventListener("click", () => {
       updateTimeout = el.value;
       if (updateHandler) {
         clearInterval(updateHandler);
@@ -57,8 +61,12 @@ document.addEventListener('DOMContentLoaded', function () {
         updateHandler = setInterval(pollMessages, updateTimeout * 1000);
       }
     })
-  })
+  });
 
+
+  btnAddRoute.addEventListener("click", addRoute);
+  fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
+  fieldRouteTo.addEventListener("keydown", updateAddRouteBtnState);
 });
 
 // Functions
@@ -269,7 +277,52 @@ function updateRouteList(json) {
   }
   let html = "";
   json.forEach(function(route) {
-    html += "<div id='route-" + route.id + "' class='box routeentry columns'><div class='column is-one-fifth'><button class='button is-fullwidth is-danger'><i class=\"far fa-trash-alt\"></i></button></div><div class='column is-four-fifths'>&rarr; " + route.from + "<br/>&larr; " + route.to + "</div></div>";
+    html += "<div class='box routeentry columns'>"
+        + "<div class='column is-one-fifth'>"
+        + "<button id='route-" + route.id + "' class='button delete-route is-fullwidth is-danger'>"
+        + "<i class=\"far fa-trash-alt\"></i>"
+        + "</button></div>"
+        + "<div class='column is-four-fifths'>&rarr; " + route.from + "<br/>&larr; " + route.to + "</div></div>";
   });
   getAll(".routeListDiv")[0].innerHTML = html;
+  getAll("button.delete-route").forEach(function(el) {
+    el.addEventListener("click", function(e) {
+      deleteRoute(e);
+    });
+  });
+}
+
+function deleteRoute(e) {
+  const routeid = e.currentTarget.id.substring("route-".length);
+  const xhttp = new XMLHttpRequest();
+  xhttp.open("DELETE", "/route/" + routeid, true);
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status !== 200) {
+        console.log("ERROR " + this.status + " " + this.responseText);
+      }
+      getRoutes();
+    }
+  }
+  xhttp.send();
+}
+
+function updateAddRouteBtnState() {
+  btnAddRoute.disabled = !(fieldRouteTo.value && fieldRouteFrom.value);
+}
+
+function addRoute() {
+  const xhttp = new XMLHttpRequest();
+  xhttp.open("PUT", "/route", true);
+  xhttp.setRequestHeader('Content-Type', 'application/json')
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status !== 200) {
+        console.log("ERROR " + this.status + " " + this.responseText);
+      }
+      getRoutes();
+    }
+  }
+  xhttp.send("{\"from\":\"" + fieldRouteFrom.value +"\",\n"
+      +"\"to\":\"" + fieldRouteTo.value + "\"}");
 }

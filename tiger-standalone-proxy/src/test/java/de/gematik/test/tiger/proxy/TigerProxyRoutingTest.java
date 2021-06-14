@@ -102,4 +102,23 @@ public class TigerProxyRoutingTest {
             .extracting(TigerRouteDto::getFrom)
             .contains("http://tiger.proxy", "http://myserv.er");
     }
+
+    //@Test
+    public void testRouteUI() throws InterruptedException {
+        mockServerClient.when(request()
+            .withPath("/foo1"))
+            .respond(httpRequest ->
+                response()
+                    .withBody("bar1"));
+
+        String routeId = Unirest.put("http://tiger.proxy/route")
+            .header("Content-Type", "application/json")
+            .body("{\"from\":\"http://temp.server\","
+                + "\"to\":\"http://localhost:" + mockServerClient.getPort() + "\"}")
+            .asObject(TigerRouteDto.class)
+            .getBody().getId();
+
+
+        Thread.sleep(20000000000L);
+    }
 }
