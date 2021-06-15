@@ -193,11 +193,17 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 .build());
 
         loadPKIForProxy(server);
+        log.info("  Waiting 50% of start up time for external instance  " + server.getName() + " to come up ...");
+        long startms = System.currentTimeMillis();
+        try {
+            Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
+        } catch (InterruptedException ie) {
+            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+        }
         log.info("  Checking external instance  " + server.getName() + " is available ...");
         try {
             HttpsTrustManager.saveContext();
             HttpsTrustManager.allowAllSSL();
-            long startms = System.currentTimeMillis();
             while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
                 var url = new URL(server.getHealthcheck());
                 URLConnection con = url.openConnection();
@@ -274,11 +280,17 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             SHUTDOWN_HOOK_ACTIVE = true;
         }
 
+        log.info("  Waiting 50% of start up time for external server  " + server.getName() + " to come up ...");
+        long startms = System.currentTimeMillis();
+        try {
+            Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
+        } catch (InterruptedException ie) {
+            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+        }
         try {
             HttpsTrustManager.saveContext();
             HttpsTrustManager.allowAllSSL();
             var started = false;
-            long startms = System.currentTimeMillis();
             while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
                 if (exception.get() != null) {
                     throw new TigerTestEnvException("Unable to start external jar!", exception.get());

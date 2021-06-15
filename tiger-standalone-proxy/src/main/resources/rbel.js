@@ -10,6 +10,9 @@ let fieldRouteTo;
 let fieldRouteFrom;
 let btnAddRoute;
 
+let btnScrollLock;
+let scrollLock = false;
+
 const menuReqHtmlTemplate = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"menu-label mb-1 has-text-link\"><span\n"
@@ -29,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
   fieldRouteFrom = document.getElementById("addNewRouteFromField");
   fieldRouteTo = document.getElementById("addNewRouteToField");
   btnAddRoute = document.getElementById("addNewRouteBtn");
-
+  btnScrollLock = document.getElementById("scrollLockBtn");
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -49,7 +52,20 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById("routeModalBtn").disabled = true;
         getRoutes();
         document.getElementById("addNewRouteBtn").disabled = true;
-      })
+      });
+
+  btnScrollLock.addEventListener('click',
+      e => {
+        scrollLock = !scrollLock;
+        if (scrollLock) {
+          btnScrollLock.innerText = 'Locked';
+          btnScrollLock.classList.remove("is-outlined");
+        } else {
+          btnScrollLock.innerText = 'Unlocked';
+          btnScrollLock.classList.add("is-outlined");
+          btnScrollLock.blur();
+        }
+      });
 
   getAll("input.updates").forEach(function (el) {
     el.addEventListener("click", () => {
@@ -246,6 +262,12 @@ function updateMessageList(json) {
 
   enableCardToggles();
   enableModals();
+  if (!scrollLock) {
+    const sidebar = getAll('.menu')[0];
+    const msgListDiv = sidebar.nextElementSibling;
+    sidebar.children[sidebar.children.length-1].scrollIntoView({behaviour: "smooth", block: "end"});
+    msgListDiv.children[msgListDiv.children.length-1].scrollIntoView({behaviour: "smooth", block: "end"});
+  }
 }
 
 function getRoutes() {

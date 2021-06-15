@@ -54,7 +54,10 @@ public class TigerWebUiController {
                 ),
                 div().withClass("navbar-end").with(
                     div().withClass("navbar-item").with(
-                        div().withId("updateLed").withClass("led"),
+                        button("Unlocked").withId("scrollLockBtn").withClass("button is-outlined is-info")
+                    ),
+                    div().withClass("navbar-item").with(
+                        div().withId("updateLed").withClass("led "),
                         radio("1s", "updates", "update1", "1", "updates"),
                         radio("2s", "updates", "update2", "2", "updates"),
                         radio("5s", "updates", "update5", "5", "updates"),

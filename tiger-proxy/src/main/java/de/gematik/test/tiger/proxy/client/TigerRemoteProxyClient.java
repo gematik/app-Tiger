@@ -5,8 +5,13 @@ import de.gematik.rbellogger.data.RbelMessage;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.websocket.ContainerProvider;
+import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
-import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,33 +20,49 @@ import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.util.Assert;
+import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
-
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.function.Consumer;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 @Slf4j
 public class TigerRemoteProxyClient extends AbstractTigerProxy {
 
     private final String remoteProxyUrl;
     private final WebSocketStompClient tigerProxyStompClient;
-    private Consumer<HttpResponse<List<TigerRoute>>> remoteProxyErrorConsumer;
 
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
+        final String tracingWebSocketUrl = remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
         this.remoteProxyUrl = remoteProxyUrl;
 
-        WebSocketClient tigerProxyWebSocketClient = new StandardWebSocketClient();
-        tigerProxyStompClient = new WebSocketStompClient(tigerProxyWebSocketClient);
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        container.setDefaultMaxBinaryMessageBufferSize(1024 * configuration.getBufferSizeInKb());
+        container.setDefaultMaxTextMessageBufferSize(1024 * configuration.getBufferSizeInKb());
+        WebSocketClient webSocketClient = new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
+
+        tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        tigerProxyStompClient.setInboundMessageSizeLimit(1024 * configuration.getBufferSizeInKb());
         final TigerStompSessionHandler tigerStompSessionHandler = new TigerStompSessionHandler(remoteProxyUrl);
-        tigerProxyStompClient.connect(
-                remoteProxyUrl.replaceFirst("http", "ws") + "/tracing",
-                tigerStompSessionHandler);
+        final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
+                tracingWebSocketUrl, tigerStompSessionHandler);
+
+        connectFuture.addCallback(stompSession -> log.info("Succesfully opened stomp session {} to url",
+                stompSession.getSessionId(), tracingWebSocketUrl),
+                throwable -> {
+                    throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
+                            + tracingWebSocketUrl, throwable);
+                });
+
+        try {
+            connectFuture.get(configuration.getConnectionTimeoutInSeconds(), TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
+                    + tracingWebSocketUrl, e);
+        }
     }
 
     @Override
@@ -141,6 +162,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
         public void handleException(StompSession stompSession, StompCommand stompCommand, StompHeaders stompHeaders,
                                     byte[] bytes, Throwable throwable) {
             log.error("handle exception TigerRemoteProxy: {}, {}", new String(bytes), throwable);
+            throw new TigerRemoteProxyClientException(throwable);
+        }
+
+        @Override
+        public void handleTransportError(StompSession session, Throwable exception) {
+            log.error("handle transport Error TigerRemoteProxy: {}", exception);
+            throw new TigerRemoteProxyClientException(exception);
         }
     }
 }
