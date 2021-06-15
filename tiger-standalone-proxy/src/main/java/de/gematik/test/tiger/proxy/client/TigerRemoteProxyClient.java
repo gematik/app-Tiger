@@ -48,6 +48,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
 
         tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        tigerProxyStompClient.setInboundMessageSizeLimit(1024 * configuration.getBufferSizeInKb());
         final TigerStompSessionHandler tigerStompSessionHandler = new TigerStompSessionHandler(remoteProxyUrl);
         final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
                 tracingWebSocketUrl, tigerStompSessionHandler);
