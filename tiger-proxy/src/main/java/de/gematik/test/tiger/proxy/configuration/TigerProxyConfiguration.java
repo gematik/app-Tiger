@@ -30,6 +30,10 @@ public class TigerProxyConfiguration {
     private boolean activateRbelEndpoint = false;
     private Integer port;
     private List<String> trafficEndpoints;
+    @Builder.Default
+    private int connectionTimeoutInSeconds = 10;
+    @Builder.Default
+    private int bufferSizeInKb = 1024;
 
     public Integer[] getPortAsArray() {
         if (port == null) {

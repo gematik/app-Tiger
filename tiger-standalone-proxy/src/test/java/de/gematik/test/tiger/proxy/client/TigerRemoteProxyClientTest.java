@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import wiremock.org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +39,17 @@ import static org.mockserver.model.HttpResponse.response;
 @RequiredArgsConstructor
 @Slf4j
 public class TigerRemoteProxyClientTest {
+    /*
+     *  Our Testsetup:
+     *
+     *
+     * -------------------     --------------    --------------------
+     * | unirestInstance |  -> | tigerProxy | -> | mockServerClient |
+     * -------------------     -----     ----    --------------------
+     *          ?                  |     |
+     *          ----<-----<-----<--Tracing
+     *
+     */
 
     // the remote server (to which we send requests)
     private final ClientAndServer mockServerClient;
@@ -57,7 +69,9 @@ public class TigerRemoteProxyClientTest {
     public void setup() {
         if (tigerRemoteProxyClient == null) {
             tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
-                    new TigerProxyConfiguration());
+                    TigerProxyConfiguration.builder()
+                            .proxyLogLevel("WARN")
+                            .build());
         }
 
         try {
@@ -111,6 +125,21 @@ public class TigerRemoteProxyClientTest {
 
         assertThat(tigerRemoteProxyClient.getRbelMessages().get(0).getHttpMessage().getRawBody())
                 .isEqualTo(DigestUtils.sha256("hello"));
+    }
+
+    @Test
+    public void giantMessage_shouldTriggerListener() {
+        AtomicInteger listenerCallCounter = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+
+        unirestInstance.post("http://myserv.er/foo")
+                .body(RandomStringUtils.randomAlphanumeric(1024 * 10))
+                .asString()
+                .ifFailure(response -> fail(""));
+
+        await()
+                .atMost(2, TimeUnit.SECONDS)
+                .until(() -> listenerCallCounter.get() > 0);
     }
 
     @Test
