@@ -14,12 +14,14 @@ public class TigerRouteDto {
     private String id;
     private String from;
     private String to;
+    private boolean activateRbelLogging;
 
     public static TigerRouteDto from(TigerRoute route) {
         return TigerRouteDto.builder()
-            .from(route.getFrom())
-            .to(route.getTo())
-            .id(route.getId())
-            .build();
+                .from(route.getFrom())
+                .to(route.getTo())
+                .id(route.getId())
+                .activateRbelLogging(route.isActivateRbelLogging())
+                .build();
     }
 }

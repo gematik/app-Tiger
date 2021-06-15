@@ -29,6 +29,7 @@ public class TigerProxyConfiguration {
     private List<String> keyFolders;
     private boolean activateRbelEndpoint = false;
     private Integer port;
+    private List<String> trafficEndpoints;
 
     public Integer[] getPortAsArray() {
         if (port == null) {

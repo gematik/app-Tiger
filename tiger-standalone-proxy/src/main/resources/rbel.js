@@ -214,7 +214,7 @@ function updateMessageList(json) {
   const listDiv = getAll('.column')[2];
   while (i < json.htmlMsgList.length) {
     const req = json.metaMsgList[i];
-    if (req.path && !req.path.startsWith("http://tiger.proxy")) {
+    if (req.path) {
       const reqEl = htmlToElement(json.htmlMsgList[i]);
       let span = getAll(".msg-sequence", reqEl)[0];
       span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");

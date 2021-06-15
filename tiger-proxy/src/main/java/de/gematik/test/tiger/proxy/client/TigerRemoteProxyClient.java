@@ -5,14 +5,8 @@ import de.gematik.rbellogger.data.RbelMessage;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
-import de.gematik.test.tiger.proxy.tracing.TigerTracingDto;
-import de.gematik.test.tiger.proxy.tracing.TracingEndpointConfiguration;
-import de.gematik.test.tiger.proxy.tracing.TracingMessage;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import kong.unirest.GenericType;
+import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +19,17 @@ import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.function.Consumer;
+
 @Slf4j
 public class TigerRemoteProxyClient extends AbstractTigerProxy {
 
     private final String remoteProxyUrl;
     private final WebSocketStompClient tigerProxyStompClient;
+    private Consumer<HttpResponse<List<TigerRoute>>> remoteProxyErrorConsumer;
 
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
@@ -83,24 +83,23 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
     @Override
     public List<TigerRoute> getRoutes() {
         return Unirest.get(remoteProxyUrl + "/route")
-            .asObject(new GenericType<List<TigerRoute>>() {
-            })
-            .ifFailure(response -> {
-                throw new TigerRemoteProxyClientException(
-                        "Unable to get routes. Got " + response.getStatus() +
-                                ": " + response.mapError(String.class)
-                );
-            })
-            .getBody();
-
+                .asObject(new GenericType<List<TigerRoute>>() {
+                })
+                .ifFailure(response -> {
+                    throw new TigerRemoteProxyClientException(
+                            "Unable to get routes. Got " + response.getStatus() +
+                                    ": " + response.mapError(String.class)
+                    );
+                })
+                .getBody();
     }
 
     private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, TracingMessage tracingMessage) {
         byte[] messageBytes = ArrayUtils.addAll((
-                tracingMessage.getHeader().replace("\n", "\r\n")
-                    .stripTrailing() + "\r\n\r\n")
-                .getBytes(StandardCharsets.US_ASCII),
-            tracingMessage.getBody());
+                        tracingMessage.getHeader().replace("\n", "\r\n")
+                                .stripTrailing() + "\r\n\r\n")
+                        .getBytes(StandardCharsets.US_ASCII),
+                tracingMessage.getBody());
 
         log.info("Propagating new message {}", new String(messageBytes));
 
@@ -119,28 +118,28 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
             log.info("Connecting to tracing point {}", remoteProxyUrl);
 
             stompSession.subscribe("/topic/traces", new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders stompHeaders) {
-                        return TigerTracingDto.class;
-                    }
+                        @Override
+                        public Type getPayloadType(StompHeaders stompHeaders) {
+                            return TigerTracingDto.class;
+                        }
 
-                    @Override
-                    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-                        if (frameContent instanceof TigerTracingDto) {
-                            final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
-                            propagateNewRbelMessage(tigerTracingDto.getSender(), tigerTracingDto.getReceiver(),
-                                tigerTracingDto.getRequest());
-                            propagateNewRbelMessage(tigerTracingDto.getReceiver(), tigerTracingDto.getSender(),
-                                tigerTracingDto.getResponse());
+                        @Override
+                        public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
+                            if (frameContent instanceof TigerTracingDto) {
+                                final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
+                                propagateNewRbelMessage(tigerTracingDto.getSender(), tigerTracingDto.getReceiver(),
+                                        tigerTracingDto.getRequest());
+                                propagateNewRbelMessage(tigerTracingDto.getReceiver(), tigerTracingDto.getSender(),
+                                        tigerTracingDto.getResponse());
+                            }
                         }
                     }
-                }
             );
         }
 
         @Override
         public void handleException(StompSession stompSession, StompCommand stompCommand, StompHeaders stompHeaders,
-            byte[] bytes, Throwable throwable) {
+                                    byte[] bytes, Throwable throwable) {
             log.error("handle exception TigerRemoteProxy: {}, {}", new String(bytes), throwable);
         }
     }

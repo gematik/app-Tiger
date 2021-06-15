@@ -124,7 +124,6 @@ public class TigerProxyRoutingTest {
             .asObject(TigerRouteDto.class)
             .getBody().getId();
 
-
         Thread.sleep(20000000000L);
     }
 }

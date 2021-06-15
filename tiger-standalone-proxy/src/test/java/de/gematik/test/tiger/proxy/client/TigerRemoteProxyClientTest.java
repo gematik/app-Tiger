@@ -4,6 +4,8 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
+import kong.unirest.Config;
+import kong.unirest.UnirestInstance;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +20,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -36,11 +41,14 @@ public class TigerRemoteProxyClientTest {
 
     // the remote server (to which we send requests)
     private final ClientAndServer mockServerClient;
+
     // the remote proxy (routing the requests to the remote server)
     @Autowired
     private TigerProxy tigerProxy;
+
     // the local TigerProxy-Client (which syphons the message from the remote tiger-proxy)
     private TigerRemoteProxyClient tigerRemoteProxyClient;
+    private UnirestInstance unirestInstance;
 
     @LocalServerPort
     private int springServerPort;
@@ -73,19 +81,16 @@ public class TigerRemoteProxyClientTest {
                         .withHeaders(httpRequest.getHeaders())
                         .withBody(httpRequest.getBodyAsRawBytes()));
 
-        Unirest.config().reset();
-        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance = new UnirestInstance(
+                new Config().proxy("localhost", tigerProxy.getPort()));
     }
 
     @Test
     public void sendMessage_shouldTriggerListener() {
-        log.info("Send Routes: {}", tigerProxy.getRoutes());
-        log.info("wanted tomcat port: {}", mockServerClient.getPort());
-
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
-        Unirest.get("http://myserv.er/foo").asString()
+        unirestInstance.get("http://myserv.er/foo").asString()
                 .ifFailure(response -> fail(""));
 
         await()
@@ -95,10 +100,7 @@ public class TigerRemoteProxyClientTest {
 
     @Test
     public void rawBytesInMessage_shouldSurviveReconstruction() {
-        log.info("Bytes Routes: {}", tigerProxy.getRoutes());
-        log.info("wanted tomcat port: {}", mockServerClient.getPort());
-
-        Unirest.post("http://myserv.er/echo")
+        unirestInstance.post("http://myserv.er/echo")
                 .body(DigestUtils.sha256("hello"))
                 .asString()
                 .ifFailure(response -> fail(""));
@@ -111,7 +113,35 @@ public class TigerRemoteProxyClientTest {
                 .isEqualTo(DigestUtils.sha256("hello"));
     }
 
-    public void testUI() throws InterruptedException {
-        Thread.sleep(200000000);
+    @Test
+    public void addAndDeleteRoute_shouldWork() {
+        final String routeId = tigerRemoteProxyClient.addRoute(TigerRoute.builder()
+                .from("http://new.server")
+                .to("http://localhost:" + mockServerClient.getPort())
+                .build()).getId();
+
+        assertThat(unirestInstance.post("http://new.server/echo")
+                .body("hello new server")
+                .asString()
+                .getBody())
+                .isEqualTo("hello new server");
+
+        tigerRemoteProxyClient.removeRoute(routeId);
+
+        assertThat(unirestInstance.post("http://new.server/echo")
+                .body("hello new server")
+                .asString()
+                .getStatus())
+                .isEqualTo(404);
+    }
+
+    @Test
+    public void listRoutes() {
+        final List<TigerRoute> routes = tigerRemoteProxyClient.getRoutes();
+
+        assertThat(routes)
+                .extracting("from", "to", "activateRbelLogging")
+                .contains(tuple("http://myserv.er", "http://localhost:" + mockServerClient.getPort(), true),
+                        tuple("http://tiger.proxy", "http://localhost:" + springServerPort, false));
     }
 }

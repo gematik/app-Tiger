@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
@@ -25,11 +26,8 @@ import org.mockserver.socket.tls.NettySslContextFactory;
 import wiremock.org.eclipse.jetty.util.URIUtil;
 
 import javax.net.ssl.SSLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
@@ -42,6 +40,7 @@ public class TigerProxy extends AbstractTigerProxy {
     private MockServerClient mockServerClient;
     private MockServerToRbelConverter mockServerToRbelConverter;
     private Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
+    private List<TigerRemoteProxyClient> tigerRemoteProxyClients;
 
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
@@ -101,6 +100,18 @@ public class TigerProxy extends AbstractTigerProxy {
                                     .withHeader("content-type", "text/html; charset=utf-8")
                                     .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
         }
+
+        Optional.of(configuration)
+                .filter(Objects::nonNull)
+                .map(TigerProxyConfiguration::getTrafficEndpoints)
+                .filter(Objects::nonNull)
+                .stream()
+                .flatMap(List::stream)
+                .map(url -> new TigerRemoteProxyClient(url, new TigerProxyConfiguration()))
+                .forEach(remoteClient -> {
+                    remoteClient.setRbelLogger(getRbelLogger());
+                    remoteClient.addRbelMessageListener(this::triggerListener);
+                });
     }
 
     private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {

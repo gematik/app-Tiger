@@ -15,7 +15,7 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 @RequiredArgsConstructor
 public class TracingEndpointConfiguration implements WebSocketMessageBrokerConfigurer {
 
-    public static final String TRACING_ENDPOINT = "/gs-guide-websocket";
+    public static final String TRACING_ENDPOINT = "/tracing";
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
