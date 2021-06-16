@@ -214,3 +214,20 @@ pre.json {
 #scrollLockBtn {
     color: #aaa;
 }
+
+@media screen and (max-width: 1023px) {
+    .navbar-menu {
+        display: flex;
+    }
+}
+
+.navbar-item, .navbar-link {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    padding-bottom: 1rem;
+}
+
+.navbar-end .navbar-item {
+    align-items: center;
+}
