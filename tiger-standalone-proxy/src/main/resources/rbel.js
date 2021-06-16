@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
       e => {
         document.getElementById("routeModalBtn").disabled = true;
         getRoutes();
-        document.getElementById("addNewRouteBtn").disabled = true;
+        updateAddRouteBtnState();
       });
 
   btnScrollLock.addEventListener('click',
@@ -87,6 +87,10 @@ document.addEventListener('DOMContentLoaded', function () {
   btnAddRoute.addEventListener("click", addRoute);
   fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
   fieldRouteTo.addEventListener("keydown", updateAddRouteBtnState);
+  fieldRouteFrom.addEventListener("blur", updateAddRouteBtnState);
+  fieldRouteTo.addEventListener("blur", updateAddRouteBtnState);
+  fieldRouteFrom.addEventListener("mouseleave", updateAddRouteBtnState);
+  fieldRouteTo.addEventListener("mouseleave", updateAddRouteBtnState);
 });
 
 // Functions
@@ -340,6 +344,13 @@ function updateAddRouteBtnState() {
 }
 
 function addRoute() {
+  try {
+    new URL(fieldRouteTo.value);
+    new URL(fieldRouteFrom.value);
+  } catch (e) {
+    alert("Invalid URL!");
+    return;
+  }
   const xhttp = new XMLHttpRequest();
   xhttp.open("PUT", "/route", true);
   xhttp.setRequestHeader('Content-Type', 'application/json')
