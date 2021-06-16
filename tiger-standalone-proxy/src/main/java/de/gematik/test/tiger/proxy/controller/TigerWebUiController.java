@@ -46,15 +46,20 @@ public class TigerWebUiController {
             div().withClass("navbar-menu").with(
                 div().withClass("navbar-start").with(
                     div().withClass("navbar-item").with(
-                        div().withId("routeModalLed").withClass("led"),
-                        button("Routes").withId("routeModalBtn")
-                            .withClass("button is-outlined is-success modal-button")
-                            .attr("data-target", "routeModalDialog")
+                        button().withId("routeModalBtn")
+                            .withClass("button is-dark modal-button")
+                            .attr("data-target", "routeModalDialog").with(
+                                div().withId("routeModalLed").withClass("led"),
+                                span("Routes")
+                        )
                     )
                 ),
                 div().withClass("navbar-end").with(
                     div().withClass("navbar-item").with(
-                        button("Unlocked").withId("scrollLockBtn").withClass("button is-outlined is-info")
+                        button().withId("scrollLockBtn").withClass("button is-dark").with(
+                            div().withId("scrollLockLed").withClass("led"),
+                            span("Scroll Lock")
+                        )
                     ),
                     div().withClass("navbar-item").with(
                         div().withId("updateLed").withClass("led "),

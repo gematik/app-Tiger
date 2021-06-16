@@ -210,3 +210,7 @@ pre.json {
 #sidebar-menu, .menu + div {
     padding-bottom: 10rem;
 }
+
+#scrollLockBtn {
+    color: #aaa;
+}

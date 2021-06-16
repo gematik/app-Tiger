@@ -5,12 +5,14 @@ let rootEl;
 
 let updateTimeout = 0;
 let updateHandler = null;
+let updateBtn;
 
 let fieldRouteTo;
 let fieldRouteFrom;
 let btnAddRoute;
 
 let btnScrollLock;
+let ledScrollLock;
 let scrollLock = false;
 
 const menuReqHtmlTemplate = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
@@ -29,10 +31,12 @@ const menuResHtmlTemplate = "<a href=\"#${uuid}\" class=\"menu-label ml-5 mt-3 i
 
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
+  updateBtn = document.getElementById("updateBtn");
   fieldRouteFrom = document.getElementById("addNewRouteFromField");
   fieldRouteTo = document.getElementById("addNewRouteToField");
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
+  ledScrollLock  = document.getElementById("scrollLockLed");
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -45,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
   enableCardToggles();
   enableCollapseExpandAll();
 
-  document.getElementById("updateBtn").addEventListener('click',pollMessages);
+  updateBtn.addEventListener('click',pollMessages);
 
   document.getElementById("routeModalBtn").addEventListener('click',
       e => {
@@ -58,12 +62,9 @@ document.addEventListener('DOMContentLoaded', function () {
       e => {
         scrollLock = !scrollLock;
         if (scrollLock) {
-          btnScrollLock.innerText = 'Locked';
-          btnScrollLock.classList.remove("is-outlined");
+          ledScrollLock.classList.add("lederror");
         } else {
-          btnScrollLock.innerText = 'Unlocked';
-          btnScrollLock.classList.add("is-outlined");
-          btnScrollLock.blur();
+          ledScrollLock.classList.remove("lederror");
         }
       });
 
@@ -75,6 +76,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (updateTimeout != 0) {
         updateHandler = setInterval(pollMessages, updateTimeout * 1000);
+        document.getElementById("updateBtn").disabled = true;
+      } else {
+        document.getElementById("updateBtn").disabled = false;
       }
     })
   });
@@ -211,12 +215,14 @@ function pollMessages() {
       if (this.status === 200) {
         const response = JSON.parse(this.responseText);
         updateMessageList(response);
-        document.getElementById("updateLed").classList.remove("ledactive");
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
-        document.getElementById("updateLed").classList.remove("ledactive");
         document.getElementById("updateLed").classList.add("lederror");
       }
+      setTimeout(() => {
+        updateBtn.blur();
+        document.getElementById("updateLed").classList.remove("ledactive");
+      }, 200);
     }
   }
   xhttp.send();
