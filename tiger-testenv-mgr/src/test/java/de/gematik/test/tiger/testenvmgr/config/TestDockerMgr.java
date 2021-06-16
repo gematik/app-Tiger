@@ -40,7 +40,7 @@ public class TestDockerMgr {
         srv.setProduct(CfgProductType.IDP_REF);
         long startms = System.currentTimeMillis();
         assertThatThrownBy(() -> { dmgr.startContainer(srv, cfg,null); }).isInstanceOf(TigerTestEnvException.class);
-        assertThat(System.currentTimeMillis() - startms).isLessThan(30000);
+        assertThat(System.currentTimeMillis() - startms).isLessThan(60000);
         // 9s to get docker up and running and starting container and check no health working
         // docker host environment -> Time elapsed: 26.062 sec
         dmgr.stopContainer(srv);

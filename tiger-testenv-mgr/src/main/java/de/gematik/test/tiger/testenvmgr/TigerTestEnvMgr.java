@@ -11,8 +11,17 @@ import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -25,22 +34,14 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import lombok.Getter;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.json.JSONObject;
 
 @Slf4j
 @Getter
 public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
-    private static boolean SHUTDOWN_HOOK_ACTIVE = false;
     private static final String HTTP = "http://";
     private static final String HTTPS = "https://";
-
+    private static boolean SHUTDOWN_HOOK_ACTIVE = false;
     private final Configuration configuration;
 
     private final DockerMgr dockerManager;
@@ -49,7 +50,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private final TigerProxy localDockerProxy;
 
-    private final List<String[]> routesList = new ArrayList<>();
+    private final List<TigerRoute> routesList = new ArrayList<>();
 
     private final List<Process> externalProcesses = new ArrayList<>();
 
@@ -57,20 +58,20 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     public TigerTestEnvMgr() {
         // read configuration from file and templates from classpath resource
         final var cfgFile = new File(OSEnvironment.getAsString(
-            "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
+                "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
         JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
 
         JSONObject jsonTemplate = TigerConfigurationHelper.yamlStringToJson(
-            IOUtils.toString(Objects.requireNonNull(getClass().getResource(
-                "templates.yaml")).toURI(), StandardCharsets.UTF_8));
+                IOUtils.toString(Objects.requireNonNull(getClass().getResource(
+                        "templates.yaml")).toURI(), StandardCharsets.UTF_8));
         TigerConfigurationHelper.applyTemplate(
-            jsonCfg.getJSONArray("servers"), "template",
-            jsonTemplate.getJSONArray("templates"), "name");
+                jsonCfg.getJSONArray("servers"), "template",
+                jsonTemplate.getJSONArray("templates"), "name");
 
         TigerConfigurationHelper.overwriteWithSysPropsAndEnvVars("TIGER_TESTENV", "tiger.testenv", jsonCfg);
 
         configuration = new TigerConfigurationHelper<Configuration>()
-            .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
+                .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
 
         dockerManager = new DockerMgr();
         if (configuration.getTigerProxy() == null) {
@@ -78,7 +79,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
         if (proxyConfig.getProxyRoutes() == null) {
-            proxyConfig.setProxyRoutes(Collections.emptyMap());
+            proxyConfig.setProxyRoutes(List.of());
         }
         if (proxyConfig.getServerRootCaCertPem() == null) {
             proxyConfig.setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
@@ -86,8 +87,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         localDockerProxy = new TigerProxy(configuration.getTigerProxy());
         environmentVariables = new HashMap<>(
-            Map.of("PROXYHOST", "host.docker.internal",
-                "PROXYPORT", localDockerProxy.getPort()));
+                Map.of("PROXYHOST", "host.docker.internal",
+                        "PROXYPORT", localDockerProxy.getPort()));
     }
 
     @Override
@@ -119,7 +120,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 initializeExternalJar(server);
             } else {
                 throw new TigerTestEnvException(
-                    String.format("Unsupported server type %s found in server %s", type, server.getName()));
+                        String.format("Unsupported server type %s found in server %s", type, server.getName()));
             }
 
             // set system properties from exports section and store the value in environmentVariables map
@@ -128,7 +129,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 // ports substitution are only supported for docker based instances
                 if (type.equalsIgnoreCase("docker") && server.getPorts() != null) {
                     server.getPorts().forEach((localPort, externPort) ->
-                        kvp[1] = kvp[1].replace("${PORT:" + localPort + "}", String.valueOf(externPort))
+                            kvp[1] = kvp[1].replace("${PORT:" + localPort + "}", String.valueOf(externPort))
                     );
                 }
                 kvp[1] = kvp[1].replace("${NAME}", server.getName());
@@ -144,9 +145,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void startDocker(final CfgServer server, Configuration configuration) {
         log.info(
-            Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getSource()
-                .get(0)
-                + Ansi.RESET);
+                Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getSource()
+                        .get(0)
+                        + Ansi.RESET);
         final List<String> imports = server.getEnvironment();
         for (var i = 0; i < imports.size(); i++) {
             imports.set(i, TokenSubstituteHelper.substitute(imports.get(i), "", environmentVariables));
@@ -154,7 +155,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (server.getUrlMappings() != null) {
             server.getUrlMappings().forEach(mapping -> {
                 String[] kvp = mapping.split(" --> ", 2);
-                localDockerProxy.addRoute(kvp[0], kvp[1]);
+                localDockerProxy.addRoute(TigerRoute.builder()
+                        .from(kvp[0])
+                        .to(kvp[1])
+                        .build());
             });
         }
         if (server.getType().equalsIgnoreCase("docker")) {
@@ -166,10 +170,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         // add routes needed for each server to local docker proxy
         // ATTENTION only one route per server!
         if (server.getPorts() != null && !server.getPorts().isEmpty()) {
-            routesList.add(new String[]{"http://" + server.getName(),
-                "http://localhost:" + server.getPorts().values().iterator().next()});
-            localDockerProxy.addRoute("http://" + server.getName(),
-                "http://localhost:" + server.getPorts().values().iterator().next());
+            routesList.add(TigerRoute.builder()
+                    .from("http://" + server.getName())
+                    .to("http://localhost:" + server.getPorts().values().iterator().next())
+                    .build());
+            localDockerProxy.addRoute(TigerRoute.builder()
+                    .from("http://" + server.getName())
+                    .to("http://localhost:" + server.getPorts().values().iterator().next())
+                    .build());
         }
         log.info(Ansi.BOLD + Ansi.GREEN + "Docker container Startup OK " + server.getSource().get(0) + Ansi.RESET);
     }
@@ -179,14 +187,23 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external instance " + server.getName() + "..." + Ansi.RESET);
         final var uri = new URI(server.getSource().get(0));
 
-        localDockerProxy.addRoute("http://" + server.getName(), uri.getScheme() + "://" + uri.getHost());
+        localDockerProxy.addRoute(TigerRoute.builder()
+                .from("http://" + server.getName())
+                .to(uri.getScheme() + "://" + uri.getHost())
+                .build());
 
         loadPKIForProxy(server);
+        log.info("  Waiting 50% of start up time for external instance  " + server.getName() + " to come up ...");
+        long startms = System.currentTimeMillis();
+        try {
+            Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
+        } catch (InterruptedException ie) {
+            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+        }
         log.info("  Checking external instance  " + server.getName() + " is available ...");
         try {
             HttpsTrustManager.saveContext();
             HttpsTrustManager.allowAllSSL();
-            long startms = System.currentTimeMillis();
             while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
                 var url = new URL(server.getHealthcheck());
                 URLConnection con = url.openConnection();
@@ -195,7 +212,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     con.connect();
                     log.info("External node " + server.getName() + " is online");
                     log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
-                        + Ansi.RESET);
+                            + Ansi.RESET);
                     return;
                 } catch (Exception e) {
                     log.info("Connection failed - " + e.getMessage());
@@ -219,20 +236,20 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
 
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external jar instance " + server.getName() + " in folder " + server
-            .getWorkingDir() + "..." + Ansi.RESET);
+                .getWorkingDir() + "..." + Ansi.RESET);
 
         List<String> options = server.getOptions().stream()
-            .map(o -> TokenSubstituteHelper.substitute(o, "",
-                Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
-            .collect(Collectors.toList());
+                .map(o -> TokenSubstituteHelper.substitute(o, "",
+                        Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
+                .collect(Collectors.toList());
         String[] paths = System.getenv("PATH").split(SystemUtils.IS_OS_WINDOWS ? ";" : ":");
         String javaProg = "java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
         String javaExe = Arrays.stream(paths)
-            .map(path -> Path.of(path, javaProg).toFile())
-            .filter(file -> file.exists() && file.canExecute())
-            .map(File::getAbsolutePath)
-            .findAny()
-            .orElseThrow(() -> new TigerTestEnvException("Unable to find executable java program in PATH"));
+                .map(path -> Path.of(path, javaProg).toFile())
+                .filter(file -> file.exists() && file.canExecute())
+                .map(File::getAbsolutePath)
+                .findAny()
+                .orElseThrow(() -> new TigerTestEnvException("Unable to find executable java program in PATH"));
         options.add(0, javaExe);
         options.add("-jar");
         options.add(jarName);
@@ -242,10 +259,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         var thread = new Thread(() -> {
             try {
                 externalProcesses.add(new ProcessBuilder()
-                    .command(options.toArray(String[]::new))
-                    .directory(new File(server.getWorkingDir()))
-                    .inheritIO()
-                    .start());
+                        .command(options.toArray(String[]::new))
+                        .directory(new File(server.getWorkingDir()))
+                        .inheritIO()
+                        .start());
             } catch (Throwable t) {
                 exception.set(t);
             }
@@ -263,11 +280,17 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             SHUTDOWN_HOOK_ACTIVE = true;
         }
 
+        log.info("  Waiting 50% of start up time for external server  " + server.getName() + " to come up ...");
+        long startms = System.currentTimeMillis();
+        try {
+            Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
+        } catch (InterruptedException ie) {
+            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+        }
         try {
             HttpsTrustManager.saveContext();
             HttpsTrustManager.allowAllSSL();
             var started = false;
-            long startms = System.currentTimeMillis();
             while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
                 if (exception.get() != null) {
                     throw new TigerTestEnvException("Unable to start external jar!", exception.get());
@@ -279,7 +302,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     con.connect();
                     log.info("External jar node " + server.getName() + " is online");
                     log.info(
-                        Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
+                            Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
                     return;
                 } catch (Exception e) {
                     log.info("Failed to connect - " + e.getMessage());
@@ -287,8 +310,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 Thread.sleep(1000);
                 if (!externalProcesses.get(externalProcesses.size() - 1).isAlive()) {
                     throw new TigerTestEnvException(
-                        "Process aborted with exit code " + externalProcesses.get(externalProcesses.size() - 1)
-                            .exitValue());
+                            "Process aborted with exit code " + externalProcesses.get(externalProcesses.size() - 1)
+                                    .exitValue());
                 }
             }
             throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
@@ -350,25 +373,25 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private void loadPKIForProxy(final CfgServer srv) {
         log.info("  loading PKI resources for instance " + srv.getName() + "...");
         srv.getPkiKeys().stream()
-            .filter(key -> key.getType().equals("cert"))
-            .forEach(key -> {
-                log.info("Adding certificate " + key.getId());
-                getLocalDockerProxy().addKey(
-                    key.getId(),
-                    KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
-                        + key.getPem().replace(" ", "\n")
-                        + "\n-----END CERTIFICATE-----").getPublicKey());
-            });
+                .filter(key -> key.getType().equals("cert"))
+                .forEach(key -> {
+                    log.info("Adding certificate " + key.getId());
+                    getLocalDockerProxy().addKey(
+                            key.getId(),
+                            KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
+                                    + key.getPem().replace(" ", "\n")
+                                    + "\n-----END CERTIFICATE-----").getPublicKey());
+                });
         srv.getPkiKeys().stream()
-            .filter(key -> key.getType().equals("key"))
-            .forEach(key -> {
-                log.info("Adding key " + key.getId());
-                getLocalDockerProxy().addKey(
-                    key.getId(),
-                    KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
-                        + key.getPem().replace(" ", "\n")
-                        + "\n-----END PRIVATE KEY-----"));
-            });
+                .filter(key -> key.getType().equals("key"))
+                .forEach(key -> {
+                    log.info("Adding key " + key.getId());
+                    getLocalDockerProxy().addKey(
+                            key.getId(),
+                            KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
+                                    + key.getPem().replace(" ", "\n")
+                                    + "\n-----END PRIVATE KEY-----"));
+                });
     }
 
     private void shutDownDocker(final CfgServer server) {
@@ -385,13 +408,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         localDockerProxy.removeRoute(HTTP + serverUrl);
         localDockerProxy.removeRoute(HTTPS + serverUrl);
         routesList.remove(routesList.stream()
-            .filter(r -> r[0].equals(HTTP + server.getName()) || r[0].equals(HTTPS + server.getName()))
-            .findAny()
-            .orElseThrow()
+                .filter(r -> r.getFrom().equals(HTTP + server.getName())
+                        || r.getFrom().equals(HTTPS + server.getName()))
+                .findAny()
+                .orElseThrow()
         );
     }
 
-    public List<String[]> getRoutes() {
+    public List<TigerRoute> getRoutes() {
         return routesList;
     }
 }

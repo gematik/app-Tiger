@@ -4,3 +4,4 @@
 /target/
 /*/target/
 /tiger-proxy/dependency-reduced-pom.xml
+application.yml

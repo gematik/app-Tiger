@@ -64,15 +64,18 @@ public class JUnitTestResultParser implements ITestResultParser {
 
     private void parseTestSuite(final Element suite, final Map<String, TestResult> results) {
         // TODO workaround for now
-        LocalDateTime start = LocalDateTime.parse(suite.getAttribute("timestamp").split(" ")[0],
+        LocalDateTime start = null;
+        if (suite.hasAttribute("timestamp")) {
+            start = LocalDateTime.parse(suite.getAttribute("timestamp").split(" ")[0],
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        }
         final NodeList tcs = suite.getChildNodes();
         for (int i = 0; i < tcs.getLength(); i++) {
             final Node tc = tcs.item(i);
             if (tc.getNodeName().equals("testcase")) {
                 final TestResult tr = parseTestCase((Element) tc);
                 tr.setSuite(suite.getAttribute("name"));
-                if (!((Element) tc).getAttribute("time").isBlank()) {
+                if (start != null && !((Element) tc).getAttribute("time").isBlank()) {
                     tr.setStartms(start.toInstant(ZoneOffset.UTC).toEpochMilli());
                     start = start.plus((long) (1000.0 * Float.parseFloat(((Element) tc).getAttribute("time"))), ChronoUnit.MILLIS);
                     tr.setEndms(start.toInstant(ZoneOffset.UTC).toEpochMilli());

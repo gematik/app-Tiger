@@ -4,9 +4,9 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessage;
 
 public interface IRbelMessageListener {
 
-    void triggerNewReceivedMessage(RbelElement el);
+    void triggerNewReceivedMessage(RbelMessage el);
 }
