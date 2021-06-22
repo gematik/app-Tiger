@@ -1,31 +1,10 @@
 tigerProxy:
-  forwardToProxy:
-    hostname: 192.168.230.85
-    port: 3128
-  serverRootCaCertPem: CertificateAuthorityCertificate.pem
-  serverRootCaKeyPem: PKCS8CertificateAuthorityPrivateKey.pem
-
 
 servers:
   - name: idp
     template: idp-ref
     active: true
-    version: 17.0.0-38
-
-  - name: idp
-    template: idp-ref
     source:
-      - idp-server
-    version: 0.1-SNAPSHOT
-    active: false
-
-  - name: idp
-    template: idp-rise-rtu
-    source:
-      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    active: false
-
-  - name: erzpt-default
-    template: erzpt-fd-ref
-    version: 0.17.2
-    active: false
+      - eitzenbe/test-containers
+    version: 1.1.0
+    startupTimeoutSec: 1

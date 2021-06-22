@@ -1,7 +1,4 @@
 tigerProxy:
-  forwardToProxy:
-    hostname: 192.168.110.10
-    port: 3128
   serverRootCaCertPem: CertificateAuthorityCertificate.pem
   serverRootCaKeyPem: PKCS8CertificateAuthorityPrivateKey.pem
 
@@ -11,4 +8,4 @@ servers:
     template: idp-rise-rtu
     type: externalUrl
     active: true
-
+    startupTimeoutSec: 3

@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -52,7 +53,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private final List<TigerRoute> routesList = new ArrayList<>();
 
-    private final List<Process> externalProcesses = new ArrayList<>();
+    private final Map<String, Process> externalProcesses = new HashMap<>();
 
     @SneakyThrows
     public TigerTestEnvMgr() {
@@ -196,7 +197,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         log.info("  Waiting 50% of start up time for external instance  " + server.getName() + " to come up ...");
         long startms = System.currentTimeMillis();
         try {
-            Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
+            Thread.sleep(server.getStartupTimeoutSec() * 500L);
         } catch (InterruptedException ie) {
             throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
         }
@@ -204,7 +205,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         try {
             HttpsTrustManager.saveContext();
             HttpsTrustManager.allowAllSSL();
-            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
+            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000L) {
                 var url = new URL(server.getHealthcheck());
                 URLConnection con = url.openConnection();
                 con.setConnectTimeout(1000);
@@ -258,7 +259,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         final AtomicReference<Throwable> exception = new AtomicReference<>();
         var thread = new Thread(() -> {
             try {
-                externalProcesses.add(new ProcessBuilder()
+                externalProcesses.put(server.getName(), new ProcessBuilder()
                         .command(options.toArray(String[]::new))
                         .directory(new File(server.getWorkingDir()))
                         .inheritIO()
@@ -273,9 +274,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (!SHUTDOWN_HOOK_ACTIVE) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("interrupting threads...");
-                externalProcesses.forEach(Process::destroy);
+                externalProcesses.values().forEach(Process::destroy);
                 log.info("stopping threads...");
-                externalProcesses.forEach(Process::destroyForcibly);
+                externalProcesses.values().forEach(Process::destroyForcibly);
             }));
             SHUTDOWN_HOOK_ACTIVE = true;
         }
@@ -297,7 +298,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 }
                 URL url = new URL(server.getHealthcheck());
                 URLConnection con = url.openConnection();
-                con.setConnectTimeout(1);
+                con.setConnectTimeout(1000);
                 try {
                     con.connect();
                     log.info("External jar node " + server.getName() + " is online");
@@ -308,9 +309,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     log.info("Failed to connect - " + e.getMessage());
                 }
                 Thread.sleep(1000);
-                if (!externalProcesses.get(externalProcesses.size() - 1).isAlive()) {
+                if (!externalProcesses.get(server.getName()).isAlive()) {
                     throw new TigerTestEnvException(
-                            "Process aborted with exit code " + externalProcesses.get(externalProcesses.size() - 1)
+                            "Process aborted with exit code " + externalProcesses.get(server.getName())
                                     .exitValue());
                 }
             }
@@ -364,6 +365,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             shutDownExternal(server);
         } else if (type.equalsIgnoreCase("docker")) {
             shutDownDocker(server);
+        } else if (type.equalsIgnoreCase("externalJar")) {
+            shutDownJar(server);
         } else {
             // TODO externalJar, docker compose
             throw new TigerTestEnvException("Unsupported server uri type " + type);
@@ -395,6 +398,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void shutDownDocker(final CfgServer server) {
+        log.info("Stopping docker container " + server.getName() + "...");
         dockerManager.stopContainer(server);
         removeRoute(server);
     }
@@ -403,17 +407,25 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         removeRoute(server);
     }
 
-    private void removeRoute(CfgServer server) {
-        String serverUrl = server.getName();
-        localDockerProxy.removeRoute(HTTP + serverUrl);
-        localDockerProxy.removeRoute(HTTPS + serverUrl);
-        routesList.remove(routesList.stream()
-                .filter(r -> r.getFrom().equals(HTTP + server.getName())
-                        || r.getFrom().equals(HTTPS + server.getName()))
-                .findAny()
-                .orElseThrow()
-        );
+    private void shutDownJar(final CfgServer server) {
+        Process proc = externalProcesses.get(server.getName());
+        log.info("interrupting thread for " + server.getName() + "...");
+        proc.destroy();
+        log.info("stopping thread for " + server.getName() + "...");
+        proc.destroyForcibly();
+        removeRoute(server);
     }
+
+    private void removeRoute(CfgServer server) {
+        log.info("Removing routes for " + server.getName() + "...");
+        Predicate<TigerRoute> isServerRoute = route -> route.getFrom().equals(HTTP + server.getName())
+                || route.getFrom().equals(HTTPS + server.getName());
+        routesList.stream()
+                .filter(isServerRoute)
+                .forEach(r -> localDockerProxy.removeRoute(r.getFrom()));
+        routesList.removeIf(isServerRoute);
+    }
+
 
     public List<TigerRoute> getRoutes() {
         return routesList;

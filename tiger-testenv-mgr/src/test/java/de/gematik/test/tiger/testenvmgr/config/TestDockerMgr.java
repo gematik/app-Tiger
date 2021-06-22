@@ -9,21 +9,48 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.DockerMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import java.util.List;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestDockerMgr {
 
+    private static final String TEST_IMAGE = "eitzenbe/test-containers:1.0.19";
+    private static final String TEST_IMAGE_NO_HEALTHCHECK =  "eitzenbe/test-containers:1.1.0";
+
     Configuration cfg = new Configuration();
 
+    @BeforeClass
+    public static void pullImages() {
+        final DockerMgr dmgr = new DockerMgr();
+        dmgr.pullImage(TEST_IMAGE_NO_HEALTHCHECK);
+        dmgr.pullImage(TEST_IMAGE_NO_HEALTHCHECK);
+    }
+
     @Test
-    public void testDockerMgr() {
+    public void testDockerMgrStartUpOK() {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
         srv.setType("docker");
-        srv.setSource(List.of("gstopdr1.top.local/idp/idp-server:17.0.0-38"));
-        srv.setName("idp");
+        srv.setSource(List.of(TEST_IMAGE));
+        srv.setName("testcontainer");
+        srv.setStartupTimeoutSec(15);
         srv.setProduct(CfgProductType.IDP_REF);
         dmgr.startContainer(srv, cfg, null);
+        dmgr.stopContainer(srv);
+    }
+    @Test
+    public void testDockerMgrStartUpTooShort() {
+        final DockerMgr dmgr = new DockerMgr();
+        final CfgServer srv = new CfgServer();
+        srv.setType("docker");
+        srv.setSource(List.of(TEST_IMAGE));
+        srv.setName("testcontainer");
+        srv.setStartupTimeoutSec(2);
+        srv.setProduct(CfgProductType.IDP_REF);
+        assertThatThrownBy(() -> dmgr.startContainer(srv, cfg, null))
+                .isInstanceOf(TigerTestEnvException.class)
+                .hasMessage("Startup of server testcontainer timed out after 2 seconds!");
         dmgr.stopContainer(srv);
     }
 
@@ -32,17 +59,14 @@ public class TestDockerMgr {
         // TODO ensure image with given version is available locally
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        dmgr.pullImage("gstopdr1.top.local/idp/idp-server:17.0.0-38");
         srv.setType("docker");
-        srv.setSource(List.of("gstopdr1.top.local/idp/idp-server:17.0.0-38")); // has no healtchcheck
+        srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
         srv.setName("idp");
         srv.setStartupTimeoutSec(5); // to few seconds for startup
         srv.setProduct(CfgProductType.IDP_REF);
         long startms = System.currentTimeMillis();
-        assertThatThrownBy(() -> { dmgr.startContainer(srv, cfg,null); }).isInstanceOf(TigerTestEnvException.class);
-        assertThat(System.currentTimeMillis() - startms).isLessThan(60000);
-        // 9s to get docker up and running and starting container and check no health working
-        // docker host environment -> Time elapsed: 26.062 sec
+        dmgr.startContainer(srv, cfg,null);
+        assertThat(System.currentTimeMillis() - startms).isLessThan(20000);
         dmgr.stopContainer(srv);
     }
 
@@ -51,9 +75,8 @@ public class TestDockerMgr {
         // TODO ensure image with given version is available locally
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        dmgr.pullImage("gstopdr1.top.local/idp/idp-server:17.0.0-38");
         srv.setType("docker");
-        srv.setSource(List.of("gstopdr1.top.local/idp/idp-server:17.0.0-38")); // has no healtchcheck
+        srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck
         srv.setName("idp");
         srv.setProduct(CfgProductType.IDP_REF);
         try {

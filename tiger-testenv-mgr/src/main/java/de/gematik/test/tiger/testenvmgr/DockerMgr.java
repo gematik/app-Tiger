@@ -105,11 +105,6 @@ public class DockerMgr {
             }
             container.start();
             // make startup time and intervall and url (supporting ${PORT} and regex content configurable
-            try {
-                Thread.sleep(5000);
-            } catch (final InterruptedException e) {
-                log.warn("Interrupted while waiting for startup of server " + server.getName());
-            }
             waitForHealthyStartup(server, container);
             container.getDockerClient().renameContainerCmd(container.getContainerId())
                 .withName("tiger." + server.getName()).exec();
@@ -243,7 +238,7 @@ public class DockerMgr {
                     //+ "RUST_LOG=trace /usr/bin/webclient https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration \n"
 
                     // change to working dir and execute former entrypoint/startcmd
-                    + "cd " + iiResponse.getConfig().getWorkingDir() + "\n"
+                    + (iiResponse.getConfig().getWorkingDir().isBlank() ? "" : ("cd " + iiResponse.getConfig().getWorkingDir() + "\n"))
                     + String.join(" ", entryPointCmd).replace("\t", " ")
                     + " " + String.join(" ", startCmd).replace("\t", " ") + "\n",
                 StandardCharsets.UTF_8
@@ -258,17 +253,22 @@ public class DockerMgr {
 
     private void waitForHealthyStartup(CfgServer server, GenericContainer<?> container) {
         final long startms = System.currentTimeMillis();
+        long endhalfms = server.getStartupTimeoutSec() == null ? 5000 : server.getStartupTimeoutSec()*500L;
+        try {
+            Thread.sleep(endhalfms);
+        } catch (final InterruptedException e) {
+            log.warn("Interrupted while waiting for startup of server " + server.getName());
+        }
         try {
             while (!container.isHealthy()) {
                 //noinspection BusyWait
-                Thread.sleep(1000);
-                if (server.getStartupTimeoutSec() != null && startms + server.getStartupTimeoutSec() * 1000 < System
-                    .currentTimeMillis()) {
+                Thread.sleep(500);
+                if (startms + endhalfms*2L < System.currentTimeMillis()) {
                     throw new TigerTestEnvException("Startup of server %s timed out after %d seconds!",
-                        server.getName(), server.getStartupTimeoutSec());
+                        server.getName(), (System.currentTimeMillis() - startms)/1000);
                 }
             }
-            log.info("HealthCheck OK for " + server.getName());
+            log.info("HealthCheck OK (" + (container.isHealthy() ? 1 : 0) + ") for " + server.getName());
         } catch (InterruptedException ie) {
             throw new TigerTestEnvException(
                 "Interruption signaled while waiting for server " + server.getName() + " to start up", ie);

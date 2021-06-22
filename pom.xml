@@ -11,8 +11,8 @@
     <url>https://build.top.local/source/git/Testtools/tiger</url>
 
     <organization>
-        <name>gematik GmbH</name>
-        <url>http://www.gematik.de</url>
+        <name>Gematik GmbH</name>
+        <url>https://www.gematik.de</url>
     </organization>
 
     <distributionManagement>
@@ -29,7 +29,6 @@
         <module>tiger-standalone-proxy</module>
         <module>tiger-testenv-mgr</module>
         <module>tiger-test-lib</module>
-        <module>tiger-aurora-plugin</module>
         <module>tiger-aforeporter-plugin</module>
     </modules>
 

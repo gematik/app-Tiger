@@ -166,7 +166,7 @@ templates:
     product: EPA2_FDV_REF
     type: externalJar
     source:
-      - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-fdv/2.0.0-111/epa-fdv-2.0.0-111.jar
+      - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-fdv/2.0.0-124/epa-fdv-2.0.0-124.jar
     # working directory of the java process to start
     workingDir: FdVPortable
     # options to the java call
@@ -179,5 +179,5 @@ templates:
     arguments:
       - --spring.profiles.active=instance2local
       - --aktor.rproxySGD2.use=false
-    startupTimeoutSec: 20
+    startupTimeoutSec: 30
     healthcheck: https://127.0.0.1:9107

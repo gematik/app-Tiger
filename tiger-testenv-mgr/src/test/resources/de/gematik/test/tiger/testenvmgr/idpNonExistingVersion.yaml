@@ -9,5 +9,7 @@ tigerProxy:
 servers:
   - name: idp
     template: idp-ref
+    source:
+      - eitzenbe/test-containers
     version: 200.200.200-2000
     active: true
