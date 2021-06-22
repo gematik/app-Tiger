@@ -160,7 +160,7 @@ public class TigerProxy extends AbstractTigerProxy {
                                 req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1])))
                                 .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://")),
                         (req, resp) -> {
-                            if (tigerRoute.isActivateRbelLogging()) {
+                            if (!tigerRoute.isDisableRbelLogging()) {
                                 try {
                                     triggerListener(mockServerToRbelConverter.convertRequest(req, tigerRoute.getFrom()));
                                     triggerListener(mockServerToRbelConverter.convertResponse(resp, tigerRoute.getFrom()));

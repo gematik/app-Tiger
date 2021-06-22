@@ -14,6 +14,5 @@ public class TigerRoute {
     private String id;
     private String from;
     private String to;
-    @Builder.Default
-    private boolean activateRbelLogging = true;
+    private boolean disableRbelLogging;
 }

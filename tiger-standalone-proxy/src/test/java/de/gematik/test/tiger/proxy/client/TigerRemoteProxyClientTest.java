@@ -169,8 +169,8 @@ public class TigerRemoteProxyClientTest {
         final List<TigerRoute> routes = tigerRemoteProxyClient.getRoutes();
 
         assertThat(routes)
-                .extracting("from", "to", "activateRbelLogging")
-                .contains(tuple("http://myserv.er", "http://localhost:" + mockServerClient.getPort(), true),
-                        tuple("http://tiger.proxy", "http://localhost:" + springServerPort, false));
+                .extracting("from", "to", "disableRbelLogging")
+                .contains(tuple("http://myserv.er", "http://localhost:" + mockServerClient.getPort(), false),
+                        tuple("http://tiger.proxy", "http://localhost:" + springServerPort, true));
     }
 }
