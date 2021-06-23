@@ -12,7 +12,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <!-- adapt to vesion of tiger that is available -->
+        <!-- adapt to version of tiger that is available -->
         <version.tiger>0.2.0-57</version.tiger>
         <version.serenity.core>2.3.4</version.serenity.core>
         <version.serenity.maven.plugin>2.3.4</version.serenity.maven.plugin>
