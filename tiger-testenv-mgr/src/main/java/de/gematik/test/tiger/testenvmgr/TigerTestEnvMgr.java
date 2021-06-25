@@ -199,7 +199,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         try {
             Thread.sleep(server.getStartupTimeoutSec() * 500L);
         } catch (InterruptedException ie) {
-            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+            throw new TigerTestEnvException("Interruption while waiting for external server to respond!", ie);
         }
         log.info("  Checking external instance  " + server.getName() + " is available ...");
         try {
@@ -286,7 +286,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         try {
             Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
         } catch (InterruptedException ie) {
-            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+            throw new TigerTestEnvException("Interruption while waiting for external server to respond!", ie);
         }
         try {
             HttpsTrustManager.saveContext();

@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
 import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -61,24 +62,25 @@ public class DockerMgr {
         final GenericContainer<?> container = new GenericContainer<>(imgName);
         try {
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
-            if (iiResponse.getConfig() == null) {
+            final ContainerConfig containerConfig = iiResponse.getConfig();
+            if (containerConfig == null) {
                 throw new TigerTestEnvException("Docker image '" + imageName + "' has no configuration info!");
             }
 
             if (server.isProxied()) {
-                String[] startCmd = iiResponse.getConfig().getCmd();
-                String[] entryPointCmd = iiResponse.getConfig().getEntrypoint();
+                String[] startCmd = containerConfig.getCmd();
+                String[] entryPointCmd = containerConfig.getEntrypoint();
                 if (server.getEntryPoint() != null && !server.getEntryPoint().isEmpty()) {
                     entryPointCmd = new String[]{server.getEntryPoint()};
                 }
                 // erezept hardcoded
                 if (entryPointCmd != null && entryPointCmd[0].equals("/bin/sh") && entryPointCmd[1].equals("-c")) {
-                    entryPointCmd = new String[]{"su", iiResponse.getConfig().getUser(), "-c",
+                    entryPointCmd = new String[]{"su", containerConfig.getUser(), "-c",
                         "'" + entryPointCmd[2] + "'"};
                 }
                 File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
                 final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
-                String containerScriptPath = iiResponse.getConfig().getWorkingDir() + "/" + scriptName;
+                String containerScriptPath = containerConfig.getWorkingDir() + "/" + scriptName;
                 container.withCopyFileToContainer(
                     MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC),
                     containerScriptPath);
@@ -194,7 +196,7 @@ public class DockerMgr {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                throw new TigerTestEnvException("Docker pull has been interrupted. Shutdown?", e);
             }
         }
         log.info("Docker image " + imageName + " is available locally!");
@@ -202,7 +204,8 @@ public class DockerMgr {
 
     private String createContainerStartupScript(CfgServer server, InspectImageResponse iiResponse, String[] startCmd,
         String[] entryPointCmd) {
-        if (iiResponse.getConfig() == null) {
+        final ContainerConfig containerConfig = iiResponse.getConfig();
+        if (containerConfig == null) {
             throw new TigerTestEnvException(
                 "Docker image of server '" + server.getName() + "' has no configuration info!");
         }
@@ -238,7 +241,7 @@ public class DockerMgr {
                     //+ "RUST_LOG=trace /usr/bin/webclient https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration \n"
 
                     // change to working dir and execute former entrypoint/startcmd
-                    + (iiResponse.getConfig().getWorkingDir().isBlank() ? "" : ("cd " + iiResponse.getConfig().getWorkingDir() + "\n"))
+                    + (containerConfig.getWorkingDir().isBlank() ? "" : ("cd " + containerConfig.getWorkingDir() + "\n"))
                     + String.join(" ", entryPointCmd).replace("\t", " ")
                     + " " + String.join(" ", startCmd).replace("\t", " ") + "\n",
                 StandardCharsets.UTF_8
@@ -257,7 +260,7 @@ public class DockerMgr {
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {
-            log.warn("Interrupted while waiting for startup of server " + server.getName());
+            throw new TigerTestEnvException("Interrupted while waiting for startup of server " + server.getName(), e);
         }
         try {
             while (!container.isHealthy()) {
@@ -280,7 +283,7 @@ public class DockerMgr {
             try {
                 Thread.sleep(timeout * 1000L);
             } catch (InterruptedException interruptedException) {
-                interruptedException.printStackTrace();
+                throw new TigerTestEnvException("Interruption signaled", interruptedException);
             }
             log.info("HealthCheck UNCLEAR for " + server.getName()
                 + " as no healtcheck is configured, we assume it works and continue setup!");

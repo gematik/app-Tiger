@@ -6,6 +6,8 @@ package de.gematik.test.tiger.lib;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import org.junit.Test;
 
 public class TestTigerDirector {
@@ -16,9 +18,9 @@ public class TestTigerDirector {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
         assertThatThrownBy(TigerDirector::beforeTestRun).isInstanceOf(AssertionError.class);
         assertThat(TigerDirector.isInitialized()).isFalse();
-        assertThat(TigerDirector.getTigerTestEnvMgr()).isNull();
-        assertThat(TigerDirector.getProxySettings()).isNull();
-        assertThat(TigerDirector.getRbelMessageProvider()).isNull();
+        assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
+        assertThatThrownBy(TigerDirector::getProxySettings).isInstanceOf(TigerStartupException.class);
+        assertThatThrownBy(TigerDirector::getRbelMessageProvider).isInstanceOf(TigerStartupException.class);
     }
 
     @Test public void testBeforeTestRunIGERACTIVENOTINIT() {
@@ -26,11 +28,10 @@ public class TestTigerDirector {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
         assertThat(TigerDirector.isInitialized()).isFalse();
-        assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(AssertionError.class);
-        assertThatThrownBy(TigerDirector::getProxySettings).isInstanceOf(AssertionError.class);
-        assertThatThrownBy(TigerDirector::getRbelMessageProvider).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
+        assertThatThrownBy(TigerDirector::getProxySettings).isInstanceOf(TigerStartupException.class);
+        assertThatThrownBy(TigerDirector::getRbelMessageProvider).isInstanceOf(TigerStartupException.class);
     }
-
 
     @Test
     public void testDirectorSimpleIdp() {
@@ -107,6 +108,5 @@ public class TestTigerDirector {
         return initialized;
     }
 }
-
      */
 }

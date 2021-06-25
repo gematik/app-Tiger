@@ -7,9 +7,9 @@ package de.gematik.test.tiger.lib;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OSEnvironment;
 import de.gematik.test.tiger.common.banner.Banner;
+import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -86,16 +86,12 @@ public class TigerDirector {
     }
 
     public static TigerTestEnvMgr getTigerTestEnvMgr() {
-        if (!checkIsInitialized()) {
-            return null;
-        }
+        assertThatTigerIsInitialized();
         return tigerTestEnvMgr;
     }
 
     public static void synchronizeTestCasesWithPolarion() {
-        if (!checkIsInitialized()) {
-            return;
-        }
+        assertThatTigerIsInitialized();
 
         if (OSEnvironment.getAsBoolean("TIGER_SYNC_TESTCASES")) {
             try {
@@ -118,9 +114,7 @@ public class TigerDirector {
     }
 
     public static void beforeTestThreadStart() {
-        if (!checkIsInitialized()) {
-            return;
-        }
+        assertThatTigerIsInitialized();
         if (proxiesMap.containsKey(tid())) {
             log.warn("Proxy for given thread '" + tid() + "' already initialized!");
             return;
@@ -133,22 +127,16 @@ public class TigerDirector {
     }
 
     public static void createAfoRepoort() {
-        if (!checkIsInitialized()) {
-            return;
-        }
+        assertThatTigerIsInitialized();
         // TODO create Aforeport and embedd it into serenity report
     }
 
     public static String getProxySettings() {
-        if (!checkIsInitialized()) {
-            return null;
-        }
+        assertThatTigerIsInitialized();
         return tigerTestEnvMgr.getLocalDockerProxy().getBaseUrl();
     }
     public static RbelMessageProvider getRbelMessageProvider() {
-        if (!checkIsInitialized()) {
-            return null;
-        }
+        assertThatTigerIsInitialized();
         // get instance from map with thread id as key
         return Optional.ofNullable(rbelMsgProviderMap.get(tid()))
             .orElseThrow(() -> new TigerLibraryException("Tiger has not been initialized for Thread '%s'. "
@@ -159,17 +147,15 @@ public class TigerDirector {
         return Thread.currentThread().getId();
     }
 
-    private static boolean checkIsInitialized() {
+    private static void assertThatTigerIsInitialized() {
         if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.warn("Tiger test environment has not been initialized,"
-                + "as the TIGER_ACTIVE environment variable is not set to '1'.");
-            return false;
+            throw new TigerStartupException("Tiger test environment has not been initialized,"
+                    + "as the TIGER_ACTIVE environment variable is not set to '1'.");
         }
         if (!initialized) {
-            throw new AssertionError("Tiger test environment has not been initialized. "
+            throw new TigerStartupException("Tiger test environment has not been initialized. "
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
         }
-        return initialized;
     }
 
     static void testUninitialize()  {

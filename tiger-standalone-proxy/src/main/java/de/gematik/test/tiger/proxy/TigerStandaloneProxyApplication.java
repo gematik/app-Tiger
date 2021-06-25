@@ -18,7 +18,7 @@ public class TigerStandaloneProxyApplication {
 
     private final ApplicationConfiguration applicationConfiguration;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) { //NOSONAR
         SpringApplication.run(TigerStandaloneProxyApplication.class, args);
     }
 

@@ -72,10 +72,9 @@ public class HttpsTrustManager implements X509TrustManager {
         try {
             context = SSLContext.getInstance("TLS");
             context.init(null, trustManagers, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new TigerTestEnvException("Unable to establish relaxed SSL checks", e);
         }
-
-        HttpsURLConnection.setDefaultSSLSocketFactory(context != null ? context.getSocketFactory() : null);
     }
 }

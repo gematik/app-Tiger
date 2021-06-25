@@ -37,7 +37,7 @@ public class RbelMessageProvider implements IRbelMessageListener {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                throw new TigerLibraryException("Wait for message has been interrupted. Shutdown?", e);
             }
             if (System.currentTimeMillis() - startms > timeoutms) {
                 throw new TigerLibraryException("Timeout waiting for rbel message");

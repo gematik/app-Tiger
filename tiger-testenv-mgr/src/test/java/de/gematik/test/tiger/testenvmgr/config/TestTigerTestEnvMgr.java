@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.test.tiger.testenvmgr.HttpsTrustManager;
@@ -18,11 +19,13 @@ import java.nio.file.Path;
 import java.util.List;
 
 import io.swagger.v3.oas.models.Paths;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
+@Slf4j
 public class TestTigerTestEnvMgr {
 
     @Test
@@ -71,7 +74,15 @@ public class TestTigerTestEnvMgr {
         f.mkdirs();
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/miniJar.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.setUpEnvironment();
+        try {
+            envMgr.setUpEnvironment();
+        } catch (Exception e) {
+            assertThat(e)
+                    .isInstanceOf(TigerTestEnvException.class)
+                    .hasMessageContaining("Failure while downloading jar");
+            log.warn("Could not download jar. Possibly due to execution behind a proxy? Skipping test...");
+            return;
+        }
         CfgServer srv = new CfgServer();
         srv.setName("minijar-test");
         srv.setType("externalJar");
@@ -93,6 +104,7 @@ public class TestTigerTestEnvMgr {
                 .isInstanceOf(TigerTestEnvException.class)
                 .hasMessage("Process aborted with exit code 1");
     }
+
     @Test
     public void testCreateInvalidInstanceType() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/invalidInstanceType.yaml");
