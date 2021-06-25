@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.aforeporter;
 
 import de.gematik.idp.tests.aforeport.AfoReporter;
