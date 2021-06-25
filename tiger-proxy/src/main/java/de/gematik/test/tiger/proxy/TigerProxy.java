@@ -40,15 +40,9 @@ public class TigerProxy extends AbstractTigerProxy {
     private MockServerClient mockServerClient;
     private MockServerToRbelConverter mockServerToRbelConverter;
     private Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
-    private List<TigerRemoteProxyClient> tigerRemoteProxyClients;
 
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
-        // TODO still checking why https connections from rustls are not working sometimes yielding the mentioned buggy behaviour
-        // with bad tag exception, unsure how to reproduce it best
-        // https://bugs.openjdk.java.net/browse/JDK-8221218
-        // https://forum.portswigger.net/thread/complete-proxy-failure-due-to-java-tls-bug-1e334581
-        //System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,SSLv3,TLSv1.3");
         if (configuration.getServerRootCa() != null) {
             TigerKeyAndCertificateFactoryInjector.injectIntoMockServer(configuration);
         } else {

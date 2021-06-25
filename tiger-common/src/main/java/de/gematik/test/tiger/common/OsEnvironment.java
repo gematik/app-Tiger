@@ -5,10 +5,14 @@
 package de.gematik.test.tiger.common;
 
 import java.util.Optional;
+
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class OSEnvironment {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class OsEnvironment {
 
     public static String getAsString(String name) {
         return Optional.ofNullable(System.getenv(name)).orElse(System.getProperty(name));

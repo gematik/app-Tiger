@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.pki.KeyMgr;
@@ -58,7 +58,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     @SneakyThrows
     public TigerTestEnvMgr() {
         // read configuration from file and templates from classpath resource
-        final var cfgFile = new File(OSEnvironment.getAsString(
+        final var cfgFile = new File(OsEnvironment.getAsString(
                 "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
         JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
 
@@ -199,12 +199,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         try {
             Thread.sleep(server.getStartupTimeoutSec() * 500L);
         } catch (InterruptedException ie) {
-            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+            log.warn("Interruption while waiting for external server to respond!", ie);
+            Thread.currentThread().interrupt();
         }
         log.info("  Checking external instance  " + server.getName() + " is available ...");
         try {
-            HttpsTrustManager.saveContext();
-            HttpsTrustManager.allowAllSSL();
+            InsecureRestorableTrustAllManager.saveContext();
+            InsecureRestorableTrustAllManager.allowAllSSL();
             while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000L) {
                 var url = new URL(server.getHealthcheck());
                 URLConnection con = url.openConnection();
@@ -222,7 +223,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             }
             throw new TigerTestEnvException("Timeout waiting for external server to respond!");
         } finally {
-            HttpsTrustManager.restoreContext();
+            InsecureRestorableTrustAllManager.restoreContext();
         }
     }
 
@@ -286,12 +287,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         try {
             Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
         } catch (InterruptedException ie) {
-            throw new TigerTestEnvException("Interruption while waiting for external server to respond!");
+            log.warn("Interruption while waiting for external server to respond!", ie);
+            Thread.currentThread().interrupt();
         }
         try {
-            HttpsTrustManager.saveContext();
-            HttpsTrustManager.allowAllSSL();
-            var started = false;
+            InsecureRestorableTrustAllManager.saveContext();
+            InsecureRestorableTrustAllManager.allowAllSSL();
             while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
                 if (exception.get() != null) {
                     throw new TigerTestEnvException("Unable to start external jar!", exception.get());
@@ -317,7 +318,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             }
             throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
         } finally {
-            HttpsTrustManager.restoreContext();
+            InsecureRestorableTrustAllManager.restoreContext();
         }
     }
 

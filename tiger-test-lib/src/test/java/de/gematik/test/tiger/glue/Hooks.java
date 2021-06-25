@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelMessage;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
@@ -48,7 +48,7 @@ public class Hooks {
     // TODO check if outlines get called once or multiple times and how their id looks like?
     @Before(order = 100)
     public void loadFeatureFileNResetRbelLog(final Scenario scenario) {
-        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             throw new AssertionError("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
         }
         if (!TigerDirector.isInitialized()) {
@@ -84,7 +84,7 @@ public class Hooks {
 
     @BeforeStep
     public void beforeStep(final Scenario scenario) {
-        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;
         }
@@ -97,7 +97,7 @@ public class Hooks {
 
     @AfterStep
     public void afterStep(final Scenario scenario) {
-        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;
         }
@@ -122,7 +122,7 @@ public class Hooks {
     @SneakyThrows
     @After
     public void purgeFeatureFileNSaveRbelLog(final Scenario scenario) {
-        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;
         }

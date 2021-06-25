@@ -32,7 +32,6 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -63,6 +62,7 @@ public class TestTigerProxy {
                         .from("http://backend")
                         .to("http://localhost:" + wireMockRule.port())
                         .build()))
+                .proxyLogLevel("DEBUG")
                 .build());
 
         Unirest.config().reset();
@@ -229,6 +229,26 @@ public class TestTigerProxy {
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @Test
+    public void testTigerWebEndpoing() throws UnirestException {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+                .activateRbelEndpoint(true)
+                .build());
+
+        Unirest.config().reset();
+
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/rbel").asString()
+                .getBody())
+                .contains("<html");
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+
+        assertThat(Unirest.get("http://rbel").asString()
+                .getBody())
+                .contains("<html");
     }
 
     @Test

@@ -6,15 +6,6 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.util.*;
-import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -34,10 +25,20 @@ import org.bouncycastle.util.IPAddress;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.log.model.LogEntry;
 import org.mockserver.logging.MockServerLogger;
-import org.mockserver.socket.tls.PEMToFile;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
-import org.mockserver.socket.tls.jdk.CertificateSigningRequest;
 import org.slf4j.event.Level;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.*;
+
+import static org.mockserver.socket.tls.jdk.CertificateSigningRequest.NOT_AFTER;
+import static org.mockserver.socket.tls.jdk.CertificateSigningRequest.NOT_BEFORE;
 
 public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
@@ -50,7 +51,7 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     private RbelPkiIdentity eeIdentity;
 
     public TigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
-        TigerProxyConfiguration tigerProxyConfiguration) {
+                                         TigerProxyConfiguration tigerProxyConfiguration) {
         super(mockServerLogger);
         this.mockServerLogger = mockServerLogger;
         this.caIdentity = tigerProxyConfiguration.getServerRootCa();
@@ -74,122 +75,106 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
     public void buildAndSavePrivateKeyAndX509Certificate() {
         try {
-            KeyPair keyPair = this.generateKeyPair(2048);
+            KeyPair keyPair = this.generateRsaKeyPair(2048);
             X509Certificate x509Certificate =
-                this.createCASignedCert(keyPair.getPublic(), this.caIdentity.getCertificate(),
-                    this.caIdentity.getPrivateKey(), this.caIdentity.getCertificate().getPublicKey(),
-                    ConfigurationProperties.sslCertificateDomainName(),
-                    ConfigurationProperties.sslSubjectAlternativeNameDomains(),
-                    ConfigurationProperties.sslSubjectAlternativeNameIps());
+                    this.createCertificateSignedByCa(keyPair.getPublic(), this.caIdentity.getCertificate(),
+                            this.caIdentity.getPrivateKey(), this.caIdentity.getCertificate().getPublicKey(),
+                            ConfigurationProperties.sslCertificateDomainName(),
+                            ConfigurationProperties.sslSubjectAlternativeNameDomains(),
+                            ConfigurationProperties.sslSubjectAlternativeNameIps());
 
             eeIdentity = new RbelPkiIdentity(x509Certificate, keyPair.getPrivate(), Optional.empty());
 
             if (MockServerLogger.isEnabled(Level.TRACE)) {
                 this.mockServerLogger.logEvent((new LogEntry()).setLogLevel(Level.TRACE)
-                    .setMessageFormat("created new X509{}with SAN Domain Names{}and IPs{}").setArguments(
-                        new Object[]{this.x509Certificate(),
-                            Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains()),
-                            Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps())}));
+                        .setMessageFormat("created new X509{}with SAN Domain Names{}and IPs{}").setArguments(
+                                new Object[]{this.x509Certificate(),
+                                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains()),
+                                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps())}));
             }
         } catch (Exception e) {
             this.mockServerLogger.logEvent(new LogEntry()
-                .setLogLevel(Level.ERROR)
-                .setMessageFormat("exception while generating private key and X509 certificate")
-                .setThrowable(e));
+                    .setLogLevel(Level.ERROR)
+                    .setMessageFormat("exception while generating private key and X509 certificate")
+                    .setThrowable(e));
         }
     }
 
-    private X509Certificate createCASignedCert(PublicKey publicKey, X509Certificate certificateAuthorityCert,
-        PrivateKey certificateAuthorityPrivateKey, PublicKey certificateAuthorityPublicKey, String domain,
-        String[] subjectAlternativeNameDomains, String[] subjectAlternativeNameIps) throws Exception {
-        X500Name issuer = (new X509CertificateHolder(certificateAuthorityCert.getEncoded())).getSubject();
-        X500Name subject = new X500Name("CN=" + domain + ", O=MockServer, L=London, ST=England, C=UK");
-        BigInteger serial = BigInteger.valueOf((long) (new Random()).nextInt(2147483647));
-        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial,
-            CertificateSigningRequest.NOT_BEFORE, CertificateSigningRequest.NOT_AFTER, subject, publicKey);
-        builder.addExtension(Extension.subjectKeyIdentifier, false, this.createSubjectKeyIdentifier(publicKey));
-        builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
-        List<ASN1Encodable> subjectAlternativeNames = new ArrayList();
-        String[] var13;
-        int var14;
-        int var15;
-        String subjectAlternativeNameIp;
-        if (subjectAlternativeNameDomains != null) {
-            subjectAlternativeNames.add(new GeneralName(2, domain));
-            var13 = subjectAlternativeNameDomains;
-            var14 = subjectAlternativeNameDomains.length;
+    private X509Certificate createCertificateSignedByCa(PublicKey publicKey, X509Certificate certificateAuthorityCert,
+                                                        PrivateKey certificateAuthorityPrivateKey, PublicKey certificateAuthorityPublicKey,
+                                                        String domain, String[] subjectAlternativeNameDomains,
+                                                        String[] subjectAlternativeNameIps) throws Exception {
 
-            for (var15 = 0; var15 < var14; ++var15) {
-                subjectAlternativeNameIp = var13[var15];
-                subjectAlternativeNames.add(new GeneralName(2, subjectAlternativeNameIp));
+        // signers name
+        X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
+
+        // subjects name - the same as we are self signed.
+        X500Name subject = new X500Name("CN=" + domain + ", O=MockServer, L=London, ST=England, C=UK");
+
+        // serial
+        BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE));
+
+        // create the certificate - version 3
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial, NOT_BEFORE, NOT_AFTER, subject, publicKey);
+        builder.addExtension(Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
+        builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
+
+        // subject alternative name
+        List<ASN1Encodable> subjectAlternativeNames = new ArrayList<>();
+        if (subjectAlternativeNameDomains != null) {
+            subjectAlternativeNames.add(new GeneralName(GeneralName.dNSName, domain));
+            for (String subjectAlternativeNameDomain : subjectAlternativeNameDomains) {
+                subjectAlternativeNames.add(new GeneralName(GeneralName.dNSName, subjectAlternativeNameDomain));
             }
         }
-
         if (subjectAlternativeNameIps != null) {
-            var13 = subjectAlternativeNameIps;
-            var14 = subjectAlternativeNameIps.length;
-
-            for (var15 = 0; var15 < var14; ++var15) {
-                subjectAlternativeNameIp = var13[var15];
-                if (IPAddress.isValidIPv6WithNetmask(subjectAlternativeNameIp) || IPAddress
-                    .isValidIPv6(subjectAlternativeNameIp) || IPAddress.isValidIPv4WithNetmask(subjectAlternativeNameIp)
-                    || IPAddress.isValidIPv4(subjectAlternativeNameIp)) {
-                    subjectAlternativeNames.add(new GeneralName(7, subjectAlternativeNameIp));
+            for (String subjectAlternativeNameIp : subjectAlternativeNameIps) {
+                if (IPAddress.isValidIPv6WithNetmask(subjectAlternativeNameIp)
+                        || IPAddress.isValidIPv6(subjectAlternativeNameIp)
+                        || IPAddress.isValidIPv4WithNetmask(subjectAlternativeNameIp)
+                        || IPAddress.isValidIPv4(subjectAlternativeNameIp)) {
+                    subjectAlternativeNames.add(new GeneralName(GeneralName.iPAddress, subjectAlternativeNameIp));
                 }
             }
         }
-
         if (subjectAlternativeNames.size() > 0) {
-            DERSequence subjectAlternativeNamesExtension = new DERSequence(
-                (ASN1Encodable[]) subjectAlternativeNames.toArray(new ASN1Encodable[0]));
+            DERSequence subjectAlternativeNamesExtension = new DERSequence(subjectAlternativeNames.toArray(new ASN1Encodable[0]));
             builder.addExtension(Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);
         }
+        X509Certificate signedX509Certificate = signTheCertificate(builder, certificateAuthorityPrivateKey);
 
-        X509Certificate signedX509Certificate = this.signCertificate(builder, certificateAuthorityPrivateKey);
+        // validate
         signedX509Certificate.checkValidity(new Date());
         signedX509Certificate.verify(certificateAuthorityPublicKey);
+
         return signedX509Certificate;
     }
 
-    private X509Certificate signCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey privateKey)
-        throws OperatorCreationException, CertificateException {
+    private X509Certificate signTheCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey privateKey)
+            throws OperatorCreationException, CertificateException {
         if (privateKey instanceof RSAPrivateKey) {
             ContentSigner signer = (new JcaContentSignerBuilder("SHA256WithRSAEncryption")).setProvider("BC")
-                .build(privateKey);
+                    .build(privateKey);
             return (new JcaX509CertificateConverter()).setProvider("BC").getCertificate(certificateBuilder.build(signer));
         } else {
             ContentSigner signer = (new JcaContentSignerBuilder("SHA256withECDSA")).setProvider("BC")
-                .build(privateKey);
+                    .build(privateKey);
             return (new JcaX509CertificateConverter()).setProvider("BC").getCertificate(certificateBuilder.build(signer));
         }
     }
 
-    private KeyPair generateKeyPair(int keySize) throws Exception {
+    private KeyPair generateRsaKeyPair(int keySize) throws Exception {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
         generator.initialize(keySize, new SecureRandom());
         return generator.generateKeyPair();
     }
 
-    private SubjectKeyIdentifier createSubjectKeyIdentifier(Key key) throws IOException {
-        ASN1InputStream is = new ASN1InputStream(new ByteArrayInputStream(key.getEncoded()));
-
-        SubjectKeyIdentifier var5;
-        try {
+    private SubjectKeyIdentifier createNewSubjectKeyIdentifier(Key key) throws IOException {
+        try (ASN1InputStream is = new ASN1InputStream(new ByteArrayInputStream(key.getEncoded()))) {
             ASN1Sequence seq = (ASN1Sequence) is.readObject();
             SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(seq);
-            var5 = (new BcX509ExtensionUtils()).createSubjectKeyIdentifier(info);
-        } catch (Throwable var7) {
-            try {
-                is.close();
-            } catch (Throwable var6) {
-                var7.addSuppressed(var6);
-            }
-
-            throw var7;
+            return new BcX509ExtensionUtils().createSubjectKeyIdentifier(info);
         }
-
-        is.close();
-        return var5;
     }
 
     public boolean certificateNotYetCreated() {
