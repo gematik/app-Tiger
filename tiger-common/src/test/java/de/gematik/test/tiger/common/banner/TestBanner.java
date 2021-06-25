@@ -11,7 +11,7 @@ import org.junit.Test;
 
 public class TestBanner {
     @Test
-    public void testBannerShoutOK() {
+    public void testBannerShoutOK() { //NOSONAR
         Banner.shout("TIGER Director V1.2.0", Ansi.BOLD + Ansi.GREEN);
         Banner.shout("Starting director...", Ansi.GREEN);
         Banner.shout("abcdefghijklmnopqrstuvwxyz");

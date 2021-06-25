@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.lib;
 
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
@@ -51,7 +51,7 @@ public class TigerDirector {
 
     @SneakyThrows
     public static synchronized void beforeTestRun() {
-        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.warn(Ansi.BOLD + Ansi.RED + "ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'" + Ansi.RESET);
             throw new AssertionError("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
         }
@@ -93,7 +93,7 @@ public class TigerDirector {
     public static void synchronizeTestCasesWithPolarion() {
         assertThatTigerIsInitialized();
 
-        if (OSEnvironment.getAsBoolean("TIGER_SYNC_TESTCASES")) {
+        if (OsEnvironment.getAsBoolean("TIGER_SYNC_TESTCASES")) {
             try {
                 Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
                     .getDeclaredMethod("main", String[].class);
@@ -148,7 +148,7 @@ public class TigerDirector {
     }
 
     private static void assertThatTigerIsInitialized() {
-        if (!OSEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             throw new TigerStartupException("Tiger test environment has not been initialized,"
                     + "as the TIGER_ACTIVE environment variable is not set to '1'.");
         }

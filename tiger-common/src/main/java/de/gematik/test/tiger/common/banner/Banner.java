@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.common.banner;
 
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OSEnvironment;
+import de.gematik.test.tiger.common.OsEnvironment;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,7 +33,7 @@ public class Banner {
         configs.put("Thin", new BannerConfig(6, 6, false));
         configs.put("Straight", new BannerConfig(6, 4, false));
 
-        String font = OSEnvironment.getAsString("TIGER_BANNER_FONT", "Straight");
+        String font = OsEnvironment.getAsString("TIGER_BANNER_FONT", "Straight");
         cfg = configs.get(font);
 
         asciiArt = new HashMap<>();

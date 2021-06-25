@@ -11,16 +11,16 @@ public class TestOSEnvironment {
 
     @Test
     public void getEnvAsStringPATHOK() {
-        assertThat(OSEnvironment.getAsString(System.getenv().keySet().iterator().next())).isNotBlank();
+        assertThat(OsEnvironment.getAsString(System.getenv().keySet().iterator().next())).isNotBlank();
     }
 
     @Test
     public void getEnvAsStringNotExistingWithDefaultOK() {
-        assertThat(OSEnvironment.getAsString("_______NOT____EXISTS", "DEFAULT")).isEqualTo("DEFAULT");
+        assertThat(OsEnvironment.getAsString("_______NOT____EXISTS", "DEFAULT")).isEqualTo("DEFAULT");
     }
 
     @Test
     public void getEnvAsStringExistingNotDefaultOK() {
-        assertThat(OSEnvironment.getAsString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
+        assertThat(OsEnvironment.getAsString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
     }
 }

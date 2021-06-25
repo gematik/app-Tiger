@@ -4,19 +4,20 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.DockerMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
-import java.util.List;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TestDockerMgr {
 
     private static final String TEST_IMAGE = "eitzenbe/test-containers:1.0.19";
-    private static final String TEST_IMAGE_NO_HEALTHCHECK =  "eitzenbe/test-containers:1.1.0";
+    private static final String TEST_IMAGE_NO_HEALTHCHECK = "eitzenbe/test-containers:1.1.0";
 
     Configuration cfg = new Configuration();
 
@@ -25,6 +26,8 @@ public class TestDockerMgr {
         final DockerMgr dmgr = new DockerMgr();
         dmgr.pullImage(TEST_IMAGE_NO_HEALTHCHECK);
         dmgr.pullImage(TEST_IMAGE_NO_HEALTHCHECK);
+        assertThat(dmgr.getContainers())
+                .isEmpty();
     }
 
     @Test
@@ -37,8 +40,11 @@ public class TestDockerMgr {
         srv.setStartupTimeoutSec(15);
         srv.setProduct(CfgProductType.IDP_REF);
         dmgr.startContainer(srv, cfg, null);
+        assertThat(dmgr.getContainers())
+                .hasSize(1);
         dmgr.stopContainer(srv);
     }
+
     @Test
     public void testDockerMgrStartUpTooShort() {
         final DockerMgr dmgr = new DockerMgr();
@@ -65,7 +71,7 @@ public class TestDockerMgr {
         srv.setStartupTimeoutSec(5); // to few seconds for startup
         srv.setProduct(CfgProductType.IDP_REF);
         long startms = System.currentTimeMillis();
-        dmgr.startContainer(srv, cfg,null);
+        dmgr.startContainer(srv, cfg, null);
         assertThat(System.currentTimeMillis() - startms).isLessThan(20000);
         dmgr.stopContainer(srv);
     }
@@ -80,7 +86,7 @@ public class TestDockerMgr {
         srv.setName("idp");
         srv.setProduct(CfgProductType.IDP_REF);
         try {
-            dmgr.startContainer(srv, cfg,null);
+            dmgr.startContainer(srv, cfg, null);
             dmgr.pauseContainer(srv);
             dmgr.unpauseContainer(srv);
         } finally {

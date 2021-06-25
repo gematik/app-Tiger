@@ -9,11 +9,14 @@ import de.gematik.rbellogger.data.elements.RbelHttpMessage;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class RbelMessageProvider implements IRbelMessageListener {
 
     // TODO how to make it safe for multithreaded test scenarios
@@ -37,7 +40,8 @@ public class RbelMessageProvider implements IRbelMessageListener {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                throw new TigerLibraryException("Wait for message has been interrupted. Shutdown?", e);
+                log.warn("Interruption signaled");
+                Thread.currentThread().interrupt();
             }
             if (System.currentTimeMillis() - startms > timeoutms) {
                 throw new TigerLibraryException("Timeout waiting for rbel message");

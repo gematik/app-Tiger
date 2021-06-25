@@ -7,7 +7,6 @@ package de.gematik.test.tiger.testenvmgr.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import de.gematik.test.tiger.testenvmgr.HttpsTrustManager;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 
@@ -18,17 +17,14 @@ import java.net.URLConnection;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.swagger.v3.oas.models.Paths;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 
 @Slf4j
 public class TestTigerTestEnvMgr {
 
-    @Test
+    @Test //NOSONAR
     public void testCreateShutdownEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpOnly.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
@@ -40,7 +36,7 @@ public class TestTigerTestEnvMgr {
         envMgr.shutDown(srv);
     }
 
-    @Test
+    @Test //NOSONAR
     public void testCreateExternalEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/riseIdpOnly.yaml");
         try {

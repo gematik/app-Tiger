@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -40,6 +42,7 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
 @Slf4j
+@Getter
 public class DockerMgr {
 
     @SuppressWarnings("OctalInteger")
@@ -47,7 +50,7 @@ public class DockerMgr {
 
     private static final String CLZPATH = "classpath:";
 
-    Map<String, GenericContainer<?>> containers = new HashMap<>();
+    private final Map<String, GenericContainer<?>> containers = new HashMap<>();
 
     @SuppressWarnings("unused")
     public void startContainer(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
@@ -153,7 +156,7 @@ public class DockerMgr {
             .withExposedService("epa-gateway", 8001, Wait.forHttp("/")
                 .forStatusCode(200)
                 .forStatusCode(404).withStartupTimeout(Duration.of(server.getStartupTimeoutSec(), ChronoUnit.SECONDS)))
-            .start();
+            .start(); //NOSONAR
     }
 
     private void addEnvVarsToContainer(GenericContainer<?> container, List<String> envVars) {
@@ -194,9 +197,10 @@ public class DockerMgr {
                 throw new TigerTestEnvException("Unable to pull image " + imageName + "!", cbException.get());
             }
             try {
-                Thread.sleep(1000);
+                Thread.sleep(1_000);
             } catch (InterruptedException e) {
-                throw new TigerTestEnvException("Docker pull has been interrupted. Shutdown?", e);
+                log.warn("Interruption signaled", e);
+                Thread.currentThread().interrupt();
             }
         }
         log.info("Docker image " + imageName + " is available locally!");
@@ -273,8 +277,8 @@ public class DockerMgr {
             }
             log.info("HealthCheck OK (" + (container.isHealthy() ? 1 : 0) + ") for " + server.getName());
         } catch (InterruptedException ie) {
-            throw new TigerTestEnvException(
-                "Interruption signaled while waiting for server " + server.getName() + " to start up", ie);
+            log.warn("Interruption signaled while waiting for server " + server.getName() + " to start up", ie);
+            Thread.currentThread().interrupt();
         } catch (TigerTestEnvException ttee) {
             throw ttee;
         } catch (final RuntimeException rte) {
@@ -283,7 +287,8 @@ public class DockerMgr {
             try {
                 Thread.sleep(timeout * 1000L);
             } catch (InterruptedException interruptedException) {
-                throw new TigerTestEnvException("Interruption signaled", interruptedException);
+                log.warn("Interruption signaled");
+                Thread.currentThread().interrupt();
             }
             log.info("HealthCheck UNCLEAR for " + server.getName()
                 + " as no healtcheck is configured, we assume it works and continue setup!");

@@ -43,7 +43,8 @@ public class TestRbelMessageProvider {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                Assertions.fail("Failed to wait 2 secs...", e);
+                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
             rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage2"));
         }).start();
@@ -69,7 +70,8 @@ public class TestRbelMessageProvider {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                Assertions.fail("Failed to wait 2 secs...", e);
+                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
             rmProvider.startStep(new Step("Given", Collections.emptyList()));
         }).start();
