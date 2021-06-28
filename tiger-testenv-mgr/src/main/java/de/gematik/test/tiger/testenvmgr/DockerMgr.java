@@ -151,7 +151,7 @@ public class DockerMgr {
             }
             return new File(f);
         }).toArray(File[]::new);
-        var composition = new DockerComposeContainer(composeFiles);
+        var composition = new DockerComposeContainer(composeFiles); //NOSONAR
         composition.withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)))
             .withExposedService("epa-gateway", 8001, Wait.forHttp("/")
                 .forStatusCode(200)
