@@ -18,6 +18,6 @@ public class TestTigerConfiguration {
                 .extracting(TestCfg::getTemplates)
                 .asList()
                 .extracting("name")
-                .contains("idp-ref", "idp-rise-rru", "idp-rise-rtu");
+                .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
     }
 }
