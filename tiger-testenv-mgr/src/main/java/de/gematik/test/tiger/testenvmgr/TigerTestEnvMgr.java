@@ -282,14 +282,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             SHUTDOWN_HOOK_ACTIVE = true;
         }
 
-        log.info("  Waiting 50% of start up time for external server  " + server.getName() + " to come up ...");
-        long startms = System.currentTimeMillis();
-        try {
-            Thread.sleep(server.getStartupTimeoutSec() * 1000 / 2);
-        } catch (InterruptedException ie) {
-            log.warn("Interruption while waiting for external server to respond!", ie);
-            Thread.currentThread().interrupt();
+        if (server.getHealthcheck() == null || server.getHealthcheck().equals("NONE")) {
+            log.info("Waiting " + server.getStartupTimeoutSec() + "s to get external jar online...");
+            Thread.sleep(server.getStartupTimeoutSec()*1000);
+            return;
         }
+        long startms = System.currentTimeMillis();
         try {
             InsecureRestorableTrustAllManager.saveContext();
             InsecureRestorableTrustAllManager.allowAllSSL();
@@ -323,6 +321,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void downloadJar(CfgServer server, String jarUrl, File jarFile) throws InterruptedException {
+        if (jarUrl.startsWith("local:")) {
+            throw new TigerTestEnvException("Local jar " +  jarFile.getAbsolutePath() + " not found!");
+        }
         log.info("downloading jar for external server from " + jarUrl + "...");
         var workDir = new File(server.getWorkingDir());
         if (!workDir.exists() && !workDir.mkdirs()) {

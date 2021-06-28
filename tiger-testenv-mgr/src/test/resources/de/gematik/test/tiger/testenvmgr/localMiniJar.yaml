@@ -1,0 +1,12 @@
+tigerProxy:
+
+servers:
+  - name: minijar-test-local
+    template: epa2-fdv
+    workingDir: src/test/resources
+    source:
+      - local://miniJar.jar
+    startupTimeoutSec: 1
+    healthcheck: NONE
+    arguments:
+      - test

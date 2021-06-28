@@ -4,11 +4,11 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +17,7 @@ import java.net.URLConnection;
 import java.nio.file.Path;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Slf4j
 public class TestTigerTestEnvMgr {
@@ -70,15 +68,7 @@ public class TestTigerTestEnvMgr {
         f.mkdirs();
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/miniJar.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        try {
-            envMgr.setUpEnvironment();
-        } catch (Exception e) {
-            assertThat(e)
-                    .isInstanceOf(TigerTestEnvException.class)
-                    .hasMessageContaining("Failure while downloading jar");
-            log.warn("Could not download jar. Possibly due to execution behind a proxy? Skipping test...");
-            return;
-        }
+        envMgr.setUpEnvironment();
         CfgServer srv = new CfgServer();
         srv.setName("minijar-test");
         srv.setType("externalJar");
@@ -99,6 +89,27 @@ public class TestTigerTestEnvMgr {
         assertThatThrownBy(() -> envMgr.setUpEnvironment())
                 .isInstanceOf(TigerTestEnvException.class)
                 .hasMessage("Process aborted with exit code 1");
+    }
+
+    @Test
+    public void testCreateExternalJarRelativePath() throws IOException {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/localMiniJar.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        CfgServer srv = new CfgServer();
+        srv.setName("minijar-test-local");
+        srv.setType("externalJar");
+        srv.setSource(List.of("anything......"));
+        envMgr.shutDown(srv);
+    }
+
+    @Test
+    public void testCreateExternalJarRelativePathFileNotFound() throws IOException {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/localMiniJarFileNotFound.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        assertThatThrownBy(() -> envMgr.setUpEnvironment()).isInstanceOf(TigerTestEnvException.class)
+                .hasMessageStartingWith("Local jar")
+                .hasMessageEndingWith("not found!");
     }
 
     @Test
@@ -131,6 +142,7 @@ public class TestTigerTestEnvMgr {
         envMgr.setUpEnvironment();
         Thread.sleep(2000);
     }
+
 
     // TODO check pkis set, routings set,....
 
