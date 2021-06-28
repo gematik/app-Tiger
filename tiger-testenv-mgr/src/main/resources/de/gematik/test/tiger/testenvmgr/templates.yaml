@@ -6,9 +6,6 @@ templates:
   # ----------------------------------------------------------------------------------------------------------------------
   - name: idp-ref
     product: IDP_REF
-    # where to get the server from or where to connect to,
-    # for external instances
-    # instanceUri: external:https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     type: docker
     source:
       - gstopdr1.top.local/idp/idp-server
@@ -82,7 +79,7 @@ templates:
   # RISE IDP in RRU
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: idp-rise-rru
+  - name: idp-rise-ru
     product: IDP_RISE
     type: externalUrl
     source:
@@ -92,14 +89,14 @@ templates:
     healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
-      - GEMATIK_TESTCONFIG=rise-rru
+      - GEMATIK_TESTCONFIG=rise-ru
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
   # RISE IDP in RTU
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: idp-rise-rtu
+  - name: idp-rise-tu
     product: IDP_RISE
     type: externalUrl
     source:
@@ -108,7 +105,7 @@ templates:
     healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
-      - GEMATIK_TESTCONFIG=rise-rtu
+      - GEMATIK_TESTCONFIG=rise-tu
 
   # ----------------------------------------------------------------------------------------------------------------------
   #

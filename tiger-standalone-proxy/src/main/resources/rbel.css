@@ -235,3 +235,7 @@ pre.json {
 .navbar-end .navbar-item {
     align-items: center;
 }
+
+.msglist {
+    max-width:80%;
+}

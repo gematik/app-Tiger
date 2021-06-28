@@ -45,7 +45,7 @@ public class TigerWebUiController {
 
     @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI() throws IOException {
-        String html = renderer.getEmptyPage();
+        String html = renderer.getEmptyPage().replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">");
         String navbar = nav().withClass("navbar is-dark is-fixed-bottom").with(
             div().withClass("navbar-menu").with(
                 div().withClass("navbar-start").with(
