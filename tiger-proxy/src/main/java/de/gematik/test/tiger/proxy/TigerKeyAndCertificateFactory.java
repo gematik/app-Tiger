@@ -109,10 +109,10 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
         X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
 
         // subjects name - the same as we are self signed.
-        X500Name subject = new X500Name("CN=" + domain + ", O=MockServer, L=London, ST=England, C=UK");
+        X500Name subject = new X500Name("CN=" + domain + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
 
         // serial
-        BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE));
+        BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE)); //NOSONAR
 
         // create the certificate - version 3
         X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial, NOT_BEFORE, NOT_AFTER, subject, publicKey);

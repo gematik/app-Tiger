@@ -102,9 +102,9 @@
             <version>1.81</version>
         </dependency>
         <dependency>
-            <groupId>org.mock-server</groupId>
+            <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-netty</artifactId>
-            <version>5.11.3-patched3</version>
+            <version>5.11.3</version>
         </dependency>
         <dependency>
             <groupId>com.konghq</groupId>

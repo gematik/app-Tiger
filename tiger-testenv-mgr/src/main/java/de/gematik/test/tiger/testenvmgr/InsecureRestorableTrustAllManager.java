@@ -33,7 +33,7 @@ public class InsecureRestorableTrustAllManager implements X509TrustManager {
             context.init(null,
                     new TrustManager[]{new InsecureRestorableTrustAllManager()},
                     new SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(context != null ? context.getSocketFactory() : null);
+            HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new TigerTestEnvException("Unable to establish relaxed SSL checks", e);
         }

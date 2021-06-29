@@ -37,6 +37,19 @@ public class TestTigerTestEnvMgr {
     @Test //NOSONAR
     public void testCreateExternalEnv() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/riseIdpOnly.yaml");
+        if (!setGematikProxy()) {
+            return;
+        }
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        CfgServer srv = new CfgServer();
+        srv.setName("idp");
+        srv.setType("externalUrl");
+        srv.setSource(List.of("anything......"));
+        envMgr.shutDown(srv);
+    }
+
+    private boolean setGematikProxy() {
         try {
             URL url = new URL("http://192.168.110.10:3128");
             URLConnection con = url.openConnection();
@@ -50,19 +63,16 @@ public class TestTigerTestEnvMgr {
             // else lets try without internal proxy
             e.printStackTrace();
             System.out.println("Only works with internal gematik proxy! SKIPPED");
-            return;
+            return false;
         }
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.setUpEnvironment();
-        CfgServer srv = new CfgServer();
-        srv.setName("idp");
-        srv.setType("externalUrl");
-        srv.setSource(List.of("anything......"));
-        envMgr.shutDown(srv);
+        return true;
     }
 
     @Test
     public void testCreateExternalJarEnv() throws IOException {
+        if (!setGematikProxy()) {
+            return;
+        }
         File f = new File("FdVPortable");
         FileUtils.deleteDirectory(f);
         f.mkdirs();

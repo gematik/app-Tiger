@@ -245,7 +245,7 @@ public class DockerMgr {
                     //+ "RUST_LOG=trace /usr/bin/webclient https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration \n"
 
                     // change to working dir and execute former entrypoint/startcmd
-                    + (containerConfig.getWorkingDir().isBlank() ? "" : ("cd " + containerConfig.getWorkingDir() + "\n"))
+                    + extractWorkingDirectory(containerConfig)
                     + String.join(" ", entryPointCmd).replace("\t", " ")
                     + " " + String.join(" ", startCmd).replace("\t", " ") + "\n",
                 StandardCharsets.UTF_8
@@ -258,13 +258,22 @@ public class DockerMgr {
 
     }
 
+    private String extractWorkingDirectory(ContainerConfig containerConfig) {
+        if (containerConfig.getWorkingDir() == null ||containerConfig.getWorkingDir().isBlank()) {
+            return "";
+        } else {
+            return "cd " + containerConfig.getWorkingDir() + "\n";
+        }
+    }
+
     private void waitForHealthyStartup(CfgServer server, GenericContainer<?> container) {
         final long startms = System.currentTimeMillis();
         long endhalfms = server.getStartupTimeoutSec() == null ? 5000 : server.getStartupTimeoutSec()*500L;
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {
-            throw new TigerTestEnvException("Interrupted while waiting for startup of server " + server.getName(), e);
+            log.warn("Interrupted while waiting for startup of server " + server.getName(), e);
+            Thread.currentThread().interrupt();
         }
         try {
             while (!container.isHealthy()) {
