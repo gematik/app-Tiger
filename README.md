@@ -1,4 +1,4 @@
-# Tiger v0.1
+# Tiger
 
 ![TigerLogo](doc/images/tiger2-plain.svg)
 

@@ -15,6 +15,7 @@
 <dependency>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-test-lib</artifactId>
+    <!-- replace with current version! -->
     <version>0.1-SNAPSHOT</version>
     <type>test-jar</type>
 </dependency>

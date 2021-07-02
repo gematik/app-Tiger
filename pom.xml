@@ -8,12 +8,42 @@
     <artifactId>tiger</artifactId>
     <version>0.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <url>https://build.top.local/source/git/Testtools/tiger</url>
+    <name>app-Tiger</name>
+    <description>Short project description </description>
+    <url>https://github.com/gematik/app-Tiger</url>
+
+    <scm>
+        <url>https://github.com/gematik/app-Tiger</url>
+        <connection>scm:git:git://github.com/gematik/app-Tiger.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:gematik/app-Tiger.git</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/gematik/app-Tiger/issues</url>
+    </issueManagement>
 
     <organization>
-        <name>Gematik GmbH</name>
-        <url>https://www.gematik.de</url>
+        <name>gematik GmbH</name>
+        <url>http://www.gematik.de</url>
     </organization>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>gematik</name>
+            <email>software-development@gematik.de</email>
+            <url>https://gematik.github.io/</url>
+            <organization>gematik GmbH</organization>
+            <organizationUrl>https://www.gematik.de/</organizationUrl>
+        </developer>
+    </developers>
 
     <distributionManagement>
         <site>
@@ -31,13 +61,6 @@
         <module>tiger-test-lib</module>
         <module>tiger-aforeporter-plugin</module>
     </modules>
-
-    <repositories>
-        <repository>
-            <id>gematik_nexus</id>
-            <url>https://build.top.local/nexus/content/groups/public</url>
-        </repository>
-    </repositories>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -62,6 +85,48 @@
         <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
         <sonar.language>java</sonar.language>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>external</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
