@@ -1,0 +1,14 @@
+/.idea/
+**/*.iml
+*.iml
+/target/
+/*/target/
+/tiger-proxy/dependency-reduced-pom.xml
+application.yml
+/tiger-testenv-mgr/FdVPortable/
+
+Jenkinsfile-MR-CI
+Jenkinsfile_DeployGitlab
+Jenkinsfile_InternalRelease
+Jenkinsfile_PublishToMavenCentral
+

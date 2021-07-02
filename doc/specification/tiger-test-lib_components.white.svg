@@ -1,0 +1,1577 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   contentScriptType="application/ecmascript"
+   contentStyleType="text/css"
+   height="760px"
+   preserveAspectRatio="none"
+   style="width:2377px;height:760px;"
+   version="1.1"
+   viewBox="0 0 2377 760"
+   width="2377px"
+   zoomAndPan="magnify"
+   id="svg1279">
+  <metadata
+     id="metadata1283">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs954">
+    <filter
+       height="300%"
+       id="f1n4c06u5k4yf9"
+       width="300%"
+       x="-1"
+       y="-1">
+      <feGaussianBlur
+         result="blurOut"
+         stdDeviation="2.0"
+         id="feGaussianBlur945" />
+      <feColorMatrix
+         in="blurOut"
+         result="blurOut2"
+         type="matrix"
+         values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"
+         id="feColorMatrix947" />
+      <feOffset
+         dx="4.0"
+         dy="4.0"
+         in="blurOut2"
+         result="blurOut3"
+         id="feOffset949" />
+      <feBlend
+         in="SourceGraphic"
+         in2="blurOut3"
+         mode="normal"
+         id="feBlend951" />
+    </filter>
+  </defs>
+  <rect
+     style="fill:#ffffff"
+     id="rect1285"
+     width="2420.4102"
+     height="797.80847"
+     x="-10.55923"
+     y="-5.8662391" />
+  <g
+     id="g1277">
+    <!--MD5=[cb530bc51a1172b06c9c06d2fc2779c0]
+cluster TigerTestLib-->
+    <polygon
+       fill="#FFFFFF"
+       filter="url(#f1n4c06u5k4yf9)"
+       points="16,6,109,6,116,29.6094,2224,29.6094,2224,521,16,521,16,6"
+       style="stroke:#000000;stroke-width:1.5;"
+       id="polygon956" />
+    <line
+       style="stroke:#000000;stroke-width:1.5;"
+       x1="16"
+       x2="116"
+       y1="29.6094"
+       y2="29.6094"
+       id="line958" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       font-weight="bold"
+       lengthAdjust="spacing"
+       textLength="87"
+       x="20"
+       y="22.5332"
+       id="text960">TigerTestLib</text>
+    <!--MD5=[f92115063e8dc9f632cc320845e472c3]
+entity bs-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="47.6094"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="112"
+       x="1653"
+       y="72"
+       id="rect962" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="1745"
+       y="77"
+       id="rect964" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1743"
+       y="79"
+       id="rect966" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1743"
+       y="83"
+       id="rect968" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="72"
+       x="1668"
+       y="106.5332"
+       id="text970">Basic steps</text>
+    <!--MD5=[4e80f7ba81a8abfa462becff2a903667]
+entity jsonchck-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="126.0469"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="476"
+       x="1339"
+       y="228"
+       id="rect972" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="1795"
+       y="233"
+       id="rect974" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1793"
+       y="235"
+       id="rect976" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1793"
+       y="239"
+       id="rect978" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="82"
+       x="1354"
+       y="262.5332"
+       id="text980">JsonChecker</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1340"
+       x2="1814"
+       y1="265.6094"
+       y2="265.6094"
+       id="line982" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1340"
+       x2="1814"
+       y1="267.6094"
+       y2="267.6094"
+       id="line984" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="436"
+       x="1354"
+       y="284.1426"
+       id="text986">allows to use regex based docstrings to compare received JSON data</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="383"
+       x="1354"
+       y="301.752"
+       id="text988">includes tree support allowing to assert multi level JSON data</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="282"
+       x="1354"
+       y="319.3613"
+       id="text990">supports Context and Variables in docstrings</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="0"
+       x="1358"
+       y="336.9707"
+       id="text992" />
+    <!--MD5=[8afa833ec4c139989f66f2f63b64d06b]
+entity ctxt-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="126.0469"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="357"
+       x="1850.5"
+       y="228"
+       id="rect994" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="2187.5"
+       y="233"
+       id="rect996" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="2185.5"
+       y="235"
+       id="rect998" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="2185.5"
+       y="239"
+       id="rect1000" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="48"
+       x="1865.5"
+       y="262.5332"
+       id="text1002">Context</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1851.5"
+       x2="2206.5"
+       y1="265.6094"
+       y2="265.6094"
+       id="line1004" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1851.5"
+       x2="2206.5"
+       y1="267.6094"
+       y2="267.6094"
+       id="line1006" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="317"
+       x="1865.5"
+       y="284.1426"
+       id="text1008">provides a map to store values between bdd steps</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="272"
+       x="1865.5"
+       y="301.752"
+       id="text1010">is thread safe by using the thread id as key</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="282"
+       x="1865.5"
+       y="319.3613"
+       id="text1012">supports domains to allow separation of data</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="125"
+       x="1865.5"
+       y="336.9707"
+       id="text1014">from different suites</text>
+    <!--MD5=[ae269bf73da41955bb919dcf945de0f7]
+entity var-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="90.8281"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="372"
+       x="932"
+       y="245.5"
+       id="rect1016" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="1284"
+       y="250.5"
+       id="rect1018" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1282"
+       y="252.5"
+       id="rect1020" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1282"
+       y="256.5"
+       id="rect1022" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="59"
+       x="947"
+       y="280.0332"
+       id="text1024">Variables</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="933"
+       x2="1303"
+       y1="283.1094"
+       y2="283.1094"
+       id="line1026" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="933"
+       x2="1303"
+       y1="285.1094"
+       y2="285.1094"
+       id="line1028" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="325"
+       x="947"
+       y="301.6426"
+       id="text1030">similar to Context provides a map based storage for</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="332"
+       x="947"
+       y="319.252"
+       id="text1032">variables that can be used with ${VAR.xxxxx} in steps</text>
+    <!--MD5=[41276d3e8ff88d8cf5ff14df4b777edc]
+entity rbelcli-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="90.8281"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="407"
+       x="1800.5"
+       y="50.5"
+       id="rect1034" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="2187.5"
+       y="55.5"
+       id="rect1036" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="2185.5"
+       y="57.5"
+       id="rect1038" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="2185.5"
+       y="61.5"
+       id="rect1040" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="141"
+       x="1815.5"
+       y="85.0332"
+       id="text1042">Rbel Messaging Client</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1801.5"
+       x2="2206.5"
+       y1="88.1094"
+       y2="88.1094"
+       id="line1044" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1801.5"
+       x2="2206.5"
+       y1="90.1094"
+       y2="90.1094"
+       id="line1046" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="314"
+       x="1815.5"
+       y="106.6426"
+       id="text1048">connects to the Tiger proxy and receives all traffic</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="367"
+       x="1815.5"
+       y="124.252"
+       id="text1050">provides structured data objects for request and response</text>
+    <!--MD5=[cf14c271e86610b7c92f837cd336832e]
+entity aforep-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="90.8281"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="419"
+       x="477.5"
+       y="245.5"
+       id="rect1052" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="876.5"
+       y="250.5"
+       id="rect1054" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="874.5"
+       y="252.5"
+       id="rect1056" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="874.5"
+       y="256.5"
+       id="rect1058" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="77"
+       x="492.5"
+       y="280.0332"
+       id="text1060">AfoReporter</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="478.5"
+       x2="895.5"
+       y1="283.1094"
+       y2="283.1094"
+       id="line1062" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="478.5"
+       x2="895.5"
+       y1="285.1094"
+       y2="285.1094"
+       id="line1064" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="379"
+       x="492.5"
+       y="301.6426"
+       id="text1066">parses feature files, requirements JSON and serenity results</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="241"
+       x="492.5"
+       y="319.252"
+       id="text1068">creates the afo coverage report HTML</text>
+    <!--MD5=[5f42880a694ce49d5ee1779cb11ec7cd]
+entity codepars-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="73.2188"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="387"
+       x="316.5"
+       y="432"
+       id="rect1070" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="683.5"
+       y="437"
+       id="rect1072" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="681.5"
+       y="439"
+       id="rect1074" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="681.5"
+       y="443"
+       id="rect1076" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="104"
+       x="331.5"
+       y="466.5332"
+       id="text1078">TestCodeParser</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="317.5"
+       x2="702.5"
+       y1="469.6094"
+       y2="469.6094"
+       id="line1080" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="317.5"
+       x2="702.5"
+       y1="471.6094"
+       y2="471.6094"
+       id="line1082" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="347"
+       x="331.5"
+       y="488.1426"
+       id="text1084">supports parsing BDD and Java Junit/TestNG test code</text>
+    <!--MD5=[889a7d612fa0cb721a1575b8bbb8f802]
+entity resparse-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="73.2188"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="379"
+       x="738.5"
+       y="432"
+       id="rect1086" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="1097.5"
+       y="437"
+       id="rect1088" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1095.5"
+       y="439"
+       id="rect1090" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1095.5"
+       y="443"
+       id="rect1092" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="110"
+       x="753.5"
+       y="466.5332"
+       id="text1094">TestResultParser</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="739.5"
+       x2="1116.5"
+       y1="469.6094"
+       y2="469.6094"
+       id="line1096" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="739.5"
+       x2="1116.5"
+       y1="471.6094"
+       y2="471.6094"
+       id="line1098" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="339"
+       x="753.5"
+       y="488.1426"
+       id="text1100">supports parsing Serenity JSON and JUNIT xml results</text>
+    <!--MD5=[aa0751f175995065d20e974fe7d26e49]
+entity serint-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="108.4375"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="519"
+       x="1076.5"
+       y="42"
+       id="rect1102" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="1575.5"
+       y="47"
+       id="rect1104" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1573.5"
+       y="49"
+       id="rect1106" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1573.5"
+       y="53"
+       id="rect1108" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="119"
+       x="1091.5"
+       y="76.5332"
+       id="text1110">SerenityIntegration</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1077.5"
+       x2="1594.5"
+       y1="79.6094"
+       y2="79.6094"
+       id="line1112" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="1077.5"
+       x2="1594.5"
+       y1="81.6094"
+       y2="81.6094"
+       id="line1114" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="397"
+       x="1091.5"
+       y="98.1426"
+       id="text1116">integrates the afo coverage report into serenity overview HTML</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="479"
+       x="1091.5"
+       y="115.752"
+       id="text1118">attaches the RBel messages as test evidence to scenarios in serenity report</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="278"
+       x="1091.5"
+       y="133.3613"
+       id="text1120">attaches curl calls to steps in serenity report</text>
+    <!--MD5=[f3d785899c73660e0b916d2520d252c6]
+entity banner-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="90.8281"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="412"
+       x="32"
+       y="50.5"
+       id="rect1122" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="424"
+       y="55.5"
+       id="rect1124" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="422"
+       y="57.5"
+       id="rect1126" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="422"
+       y="61.5"
+       id="rect1128" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="83"
+       x="47"
+       y="85.0332"
+       id="text1130">ASCII banner</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="33"
+       x2="443"
+       y1="88.1094"
+       y2="88.1094"
+       id="line1132" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="33"
+       x2="443"
+       y1="90.1094"
+       y2="90.1094"
+       id="line1134" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="361"
+       x="47"
+       y="106.6426"
+       id="text1136">allows to display large ascii banners in console/log output</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="372"
+       x="47"
+       y="124.252"
+       id="text1138">for ansi color compliant consoles also coloring is supported</text>
+    <!--MD5=[f4afc3478d19e15c9afc07f200d73fee]
+entity testcfg-->
+    <rect
+       fill="#FFD700"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="90.8281"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="562"
+       x="479"
+       y="50.5"
+       id="rect1140" />
+    <rect
+       fill="#FFD700"
+       height="10"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="15"
+       x="1021"
+       y="55.5"
+       id="rect1142" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1019"
+       y="57.5"
+       id="rect1144" />
+    <rect
+       fill="#FFD700"
+       height="2"
+       style="stroke:#FF8C00;stroke-width:1.5;"
+       width="4"
+       x="1019"
+       y="61.5"
+       id="rect1146" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="69"
+       x="494"
+       y="85.0332"
+       id="text1148">TestConfig</text>
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="480"
+       x2="1040"
+       y1="88.1094"
+       y2="88.1094"
+       id="line1150" />
+    <line
+       style="stroke:#FF8C00;stroke-width:1.0;"
+       x1="480"
+       x2="1040"
+       y1="90.1094"
+       y2="90.1094"
+       id="line1152" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="499"
+       x="494"
+       y="106.6426"
+       id="text1154">provides support for maintaining test configuration in property, yaml or xml files.</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="522"
+       x="494"
+       y="124.252"
+       id="text1156">manages multiple sets of config files so its easy to switch from RU to TU test config.</text>
+    <path
+       d="M102.5,229 L102.5,353.4609 L373.5,353.4609 L373.5,239 L363.5,229 L102.5,229 "
+       fill="#FBFB77"
+       filter="url(#f1n4c06u5k4yf9)"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="path1158" />
+    <path
+       d="M363.5,229 L363.5,239 L373.5,239 L363.5,229 "
+       fill="#FBFB77"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="path1160" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="250"
+       x="108.5"
+       y="247.4951"
+       id="text1162">SerenityIntegration, Rbel Messaging Client,</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="197"
+       x="108.5"
+       y="263.8467"
+       id="text1164">Context, Variables and TestConfig</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="178"
+       x="108.5"
+       y="280.1982"
+       id="text1166">are all created automatically at</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="212"
+       x="108.5"
+       y="296.5498"
+       id="text1168">initialisation time of the BDD test run</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="146"
+       x="108.5"
+       y="312.9014"
+       id="text1170">utilizing static initializers.</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="242"
+       x="108.5"
+       y="329.2529"
+       id="text1172">Behaviour can be configured via properties</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="175"
+       x="108.5"
+       y="345.6045"
+       id="text1174">files and environment variables</text>
+    <!--MD5=[c54e944a8b9f8e628ad43a9a38d2aca6]
+entity tp-->
+    <rect
+       fill="#00BFFF"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="65.2188"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="108"
+       x="2243"
+       y="63.5"
+       id="rect1176" />
+    <rect
+       fill="#00BFFF"
+       height="10"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="15"
+       x="2331"
+       y="68.5"
+       id="rect1178" />
+    <rect
+       fill="#00BFFF"
+       height="2"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="4"
+       x="2329"
+       y="70.5"
+       id="rect1180" />
+    <rect
+       fill="#00BFFF"
+       height="2"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="4"
+       x="2329"
+       y="74.5"
+       id="rect1182" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       font-style="italic"
+       lengthAdjust="spacing"
+       textLength="52"
+       x="2266"
+       y="98.0332"
+       id="text1184">«Other»</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="68"
+       x="2258"
+       y="115.6426"
+       id="text1186">TigerProxy</text>
+    <!--MD5=[75f3b4ed3caf051607f7f5a7ac472370]
+entity tem-->
+    <rect
+       fill="#00BFFF"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="65.2188"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="121"
+       x="2242.5"
+       y="258.5"
+       id="rect1188" />
+    <rect
+       fill="#00BFFF"
+       height="10"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="15"
+       x="2343.5"
+       y="263.5"
+       id="rect1190" />
+    <rect
+       fill="#00BFFF"
+       height="2"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="4"
+       x="2341.5"
+       y="265.5"
+       id="rect1192" />
+    <rect
+       fill="#00BFFF"
+       height="2"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="4"
+       x="2341.5"
+       y="269.5"
+       id="rect1194" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       font-style="italic"
+       lengthAdjust="spacing"
+       textLength="52"
+       x="2272"
+       y="293.0332"
+       id="text1196">«Other»</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="81"
+       x="2257.5"
+       y="310.6426"
+       id="text1198">TigerEnvMgr</text>
+    <!--MD5=[bc55e4ec0a579c165a2a1433c7f0e5c8]
+entity polc-->
+    <rect
+       fill="#00BFFF"
+       filter="url(#f1n4c06u5k4yf9)"
+       height="161.2656"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="451"
+       x="284.5"
+       y="585"
+       id="rect1200" />
+    <rect
+       fill="#00BFFF"
+       height="10"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="15"
+       x="715.5"
+       y="590"
+       id="rect1202" />
+    <rect
+       fill="#00BFFF"
+       height="2"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="4"
+       x="713.5"
+       y="592"
+       id="rect1204" />
+    <rect
+       fill="#00BFFF"
+       height="2"
+       style="stroke:#0000FF;stroke-width:1.5;"
+       width="4"
+       x="713.5"
+       y="596"
+       id="rect1206" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       font-style="italic"
+       lengthAdjust="spacing"
+       textLength="52"
+       x="479"
+       y="619.5332"
+       id="text1208">«Other»</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="118"
+       x="299.5"
+       y="637.1426"
+       id="text1210">PolarionConnector</text>
+    <line
+       style="stroke:#0000FF;stroke-width:1.0;"
+       x1="285.5"
+       x2="734.5"
+       y1="640.2188"
+       y2="640.2188"
+       id="line1212" />
+    <line
+       style="stroke:#0000FF;stroke-width:1.0;"
+       x1="285.5"
+       x2="734.5"
+       y1="642.2188"
+       y2="642.2188"
+       id="line1214" />
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="275"
+       x="299.5"
+       y="658.752"
+       id="text1216">parses feature files for annotated scenarios</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="309"
+       x="299.5"
+       y="676.3613"
+       id="text1218">imports those scenarios as test cases to Polarion</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="411"
+       x="299.5"
+       y="693.9707"
+       id="text1220">merging existing and creating new test cases based on internal id</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="391"
+       x="299.5"
+       y="711.5801"
+       id="text1222">TODO utilizes the test result parser and stores test run results</text>
+    <text
+       fill="#000000"
+       font-family="sans-serif"
+       font-size="14"
+       lengthAdjust="spacing"
+       textLength="313"
+       x="299.5"
+       y="729.1895"
+       id="text1224">from serenity via Aurora into a test run in Polarion</text>
+    <!--MD5=[a14d2c83a42edac3a309987f55115568]
+link aforep to codepars-->
+    <path
+       d="M641.88,336.74 C613.35,365.02 576.84,401.23 549.47,428.36 "
+       fill="none"
+       id="aforep-to-codepars"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="545.84,431.96,555.0466,428.4617,549.3898,428.4388,549.4127,422.782,545.84,431.96"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1227" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="118"
+       x="594"
+       y="398.4951"
+       id="text1229">parse test scenarios</text>
+    <!--MD5=[60137b5b52dfcebccce8b984a6216357]
+link aforep to resparse-->
+    <path
+       d="M748.13,336.51 C787.12,364.91 837.18,401.36 874.58,428.6 "
+       fill="none"
+       id="aforep-to-resparse"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="879.07,431.87,874.1476,423.3394,875.0276,428.9274,869.4396,429.8074,879.07,431.87"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1232" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="151"
+       x="837"
+       y="398.4951"
+       id="text1234">parse serenity test results</text>
+    <!--MD5=[f7873415c4c26527b481d2fe22057e0c]
+reverse link codepars to polc-->
+    <path
+       d="M510,510.35 C510,531.98 510,559.29 510,584.9 "
+       fill="none"
+       id="codepars-backto-polc"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="510,505.27,506,514.27,510,510.27,514,514.27,510,505.27"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1237" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="118"
+       x="511"
+       y="551.4951"
+       id="text1239">parse test scenarios</text>
+    <!--MD5=[06869ad1da8a39570e2d1687c93f4838]
+link serint to aforep-->
+    <path
+       d="M1157.37,150.12 C1058.49,179.53 936.78,215.72 841.94,243.92 "
+       fill="none"
+       id="serint-to-aforep"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="836.88,245.43,846.6481,246.6886,841.6711,243.9998,844.3598,239.0228,836.88,245.43"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1242" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="158"
+       x="1051"
+       y="194.4951"
+       id="text1244">trigger afo report generation</text>
+    <!--MD5=[88d3b549d9a7ee91899aaaf1bc0e91a8]
+link bs to ctxt-->
+    <path
+       d="M1739.83,120.17 C1752.92,129.73 1768.49,140.71 1783,150 C1823.53,175.95 1869.05,202.53 1909.81,225.47 "
+       fill="none"
+       id="bs-to-ctxt"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="1914.25,227.96,1908.3755,220.0549,1909.8948,225.5039,1904.4458,227.0233,1914.25,227.96"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1247" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="21"
+       x="1857"
+       y="194.4951"
+       id="text1249">use</text>
+    <!--MD5=[ceb9ff13a19e8f861708891b82f6c260]
+link bs to var-->
+    <path
+       d="M1672.19,120.07 C1654.74,130.29 1633.31,141.81 1613,150 C1488.81,200.06 1450.74,191.19 1322,228 C1304.35,233.05 1285.89,238.46 1267.58,243.92 "
+       fill="none"
+       id="bs-to-var"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="1262.42,245.46,1272.1915,246.6918,1267.2072,244.0167,1269.8823,239.0323,1262.42,245.46"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1252" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="21"
+       x="1526"
+       y="194.4951"
+       id="text1254">use</text>
+    <!--MD5=[1be4ae1cc722efbe8530d120a18e5633]
+link bs to jsonchck-->
+    <path
+       d="M1693.08,120.28 C1675.68,145.71 1647.03,187.61 1622.54,223.41 "
+       fill="none"
+       id="bs-to-jsonchck"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="1619.58,227.75,1627.9749,222.5997,1622.4126,223.6298,1621.3826,218.0675,1619.58,227.75"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1257" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="21"
+       x="1651"
+       y="194.4951"
+       id="text1259">use</text>
+    <!--MD5=[0ea7fa242bb8288ca54895a02fb82ca5]
+reverse link serint to bs-->
+    <path
+       d="M1600.96,96 C1619.97,96 1637.64,96 1652.96,96 "
+       fill="none"
+       id="serint-backto-bs"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="1595.57,96,1604.57,100,1600.57,96,1604.57,92,1595.57,96"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1262" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="21"
+       x="1613.75"
+       y="89.4951"
+       id="text1264">use</text>
+    <!--MD5=[3574a6a35fd72cd8163b74f7db0b751c]
+link bs to tem-->
+    <path
+       d="M1735,120.02 C1748.46,130.74 1765.67,142.71 1783,150 C1874.73,188.6 2133.14,187.4 2224,228 C2238.87,234.65 2253.41,244.7 2265.88,254.79 "
+       fill="none"
+       id="bs-to-tem"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="2270.03,258.21,2265.6186,249.4043,2266.1679,255.0345,2260.5377,255.5838,2270.03,258.21"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1267" />
+    <text
+       fill="#FF8C00"
+       font-family="sans-serif"
+       font-size="13"
+       lengthAdjust="spacing"
+       textLength="231"
+       x="2087"
+       y="194.4951"
+       id="text1269">create test system instances at runtime</text>
+    <!--MD5=[d46be2e279909d739cbeba724797194b]
+reverse link bs to rbelcli-->
+    <path
+       d="M1770.37,96 C1780.3,96 1790.23,96 1800.16,96 "
+       fill="none"
+       id="bs-backto-rbelcli"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="1765.18,96,1774.18,100,1770.18,96,1774.18,92,1765.18,96"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1272" />
+    <!--MD5=[02fd61bf16d2b954f65d90f663242c66]
+reverse link rbelcli to tp-->
+    <path
+       d="M2212.95,96 C2222.95,96 2232.95,96 2242.95,96 "
+       fill="none"
+       id="rbelcli-backto-tp"
+       style="stroke:#A80036;stroke-width:1.0;" />
+    <polygon
+       fill="#A80036"
+       points="2207.73,96,2216.73,100,2212.73,96,2216.73,92,2207.73,96"
+       style="stroke:#A80036;stroke-width:1.0;"
+       id="polygon1275" />
+    <!--MD5=[5f1d6a7c3e4ecf79e5cea979fcd727d9]
+link banner to testcfg-->
+    <!--MD5=[4614c2d3e68367e07db9ad2110bf4ce1]
+link banner to n1-->
+    <!--MD5=[ce32613d23ceba4344dc00a68c2841e3]
+@startuml
+skinparam component {
+    BackgroundColor Gold
+    BorderColor DarkOrange
+    BackgroundColor<<External>> LightGray
+    BorderColor<<External>> Blue
+    BackgroundColor<<Idp>> LightGreen
+    BorderColor<<Idp>> Green
+    BackgroundColor<<Other>> DeepSkyBlue
+    BorderColor<<Other>> Blue
+    BackgroundColor<<NextRelease>> LightGray
+    FontColor<<NextRelease>> Gray
+    BorderColor<<NextRelease>> Gray
+    ArrowColor<<HTTP>> DodgerBlue
+    FontColor<<HTTP>> Gray
+    ArrowFontColor DarkOrange
+    ArrowThickness 1
+}
+
+skinparam interface {
+    BorderColor<<HTTP>> DodgerBlue
+}
+
+    component TigerProxy as tp <<Other>>
+    component TigerEnvMgr as tem <<Other>>
+    component polc <<Other>> [PolarionConnector
+      ===
+      parses feature files for annotated scenarios
+      imports those scenarios as test cases to Polarion
+      merging existing and creating new test cases based on internal id
+      TODO utilizes the test result parser and stores test run results
+      from serenity via Aurora into a test run in Polarion
+    ]
+
+    package TigerTestLib {
+      component "Basic steps" as bs
+      component jsonchck [JsonChecker
+        ===
+        allows to use regex based docstrings to compare received JSON data
+        includes tree support allowing to assert multi level JSON data
+        supports Context and Variables in docstrings
+
+      ]
+      component ctxt [Context
+        ===
+        provides a map to store values between bdd steps
+        is thread safe by using the thread id as key
+        supports domains to allow separation of data
+        from different suites
+      ]
+      component var [Variables
+        ===
+        similar to Context provides a map based storage for
+        variables that can be used with ${VAR.xxxxx} in steps
+      ]
+      component rbelcli [Rbel Messaging Client
+        ===
+        connects to the Tiger proxy and receives all traffic
+        provides structured data objects for request and response
+      ]
+      component aforep [AfoReporter
+        ===
+        parses feature files, requirements JSON and serenity results
+        creates the afo coverage report HTML
+      ]
+      component codepars [TestCodeParser
+        ===
+        supports parsing BDD and Java Junit/TestNG test code
+      ]
+      component resparse [TestResultParser
+        ===
+        supports parsing Serenity JSON and JUNIT xml results
+      ]
+      component serint [SerenityIntegration
+        ===
+        integrates the afo coverage report into serenity overview HTML
+        attaches the RBel messages as test evidence to scenarios in serenity report
+        attaches curl calls to steps in serenity report
+      ]
+      component banner [ASCII banner
+              ===
+              allows to display large ascii banners in console/log output
+              for ansi color compliant consoles also coloring is supported
+            ]
+            component testcfg [TestConfig
+                    ===
+                    provides support for maintaining test configuration in property, yaml or xml files.
+                    manages multiple sets of config files so its easy to switch from RU to TU test config.
+                  ]
+
+          note as n1
+            SerenityIntegration, Rbel Messaging Client,
+            Context, Variables and TestConfig
+            are all created automatically at
+            initialisation time of the BDD test run
+            utilizing static initializers.
+            Behaviour can be configured via properties
+            files and environment variables
+          end note
+
+
+    }
+
+    aforep -down-> codepars : parse test scenarios
+    aforep -down-> resparse : parse serenity test results
+
+    polc -up-> codepars : parse test scenarios
+
+    serint -down-> aforep : trigger afo report generation
+
+    bs -down-> ctxt : use
+    bs -down-> var : use
+    bs -down-> jsonchck : use
+    bs -left-> serint : use
+
+    bs -down-> tem : create test system instances at runtime
+
+    bs <-right- rbelcli
+    tp -left-> rbelcli
+
+@enduml
+
+PlantUML version 1.2021.4(Sun Apr 04 10:49:39 CEST 2021)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: Dynamic Code Evolution 64-Bit Server VM
+Default Encoding: Cp1252
+Language: en
+Country: US
+-->
+  </g>
+  <rect
+     style="fill:#ffffff"
+     id="rect1287"
+     width="92.081436"
+     height="29.782156"
+     x="2409.8508"
+     y="762.1601" />
+</svg>

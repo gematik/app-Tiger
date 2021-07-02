@@ -1,0 +1,198 @@
+templates:
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # Latest IDP REF as local docker container
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+  - name: idp-ref
+    product: IDP_REF
+    type: docker
+    source:
+      - gstopdr1.top.local/idp/idp-server
+    version: 17.0.0-38
+    # max time to get the container up (with health check causes an error,
+    # if no health check wait at least this time before going on without error)
+    startupTimeoutSec: 60
+    # list of keys and certs used by TigerProxy/RbelLogger in unpacking the traffic data
+    pkiKeys:
+      - id: disc_sig
+        type: cert
+        pem: "MIICsTCCAligAwIBAgIHAbssqQhqOzAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMC
+  REUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtv
+  bXBvbmVudGVuLUNBIGRlciBUZWxlbWF0aWtpbmZyYXN0cnVrdHVyMSAwHgYDVQQD
+  DBdHRU0uS09NUC1DQTEwIFRFU1QtT05MWTAeFw0yMTAxMTUwMDAwMDBaFw0yNjAx
+  MTUyMzU5NTlaMEkxCzAJBgNVBAYTAkRFMSYwJAYDVQQKDB1nZW1hdGlrIFRFU1Qt
+  T05MWSAtIE5PVC1WQUxJRDESMBAGA1UEAwwJSURQIFNpZyAzMFowFAYHKoZIzj0C
+  AQYJKyQDAwIIAQEHA0IABIYZnwiGAn5QYOx43Z8MwaZLD3r/bz6BTcQO5pbeum6q
+  QzYD5dDCcriw/VNPPZCQzXQPg4StWyy5OOq9TogBEmOjge0wgeowDgYDVR0PAQH/
+  BAQDAgeAMC0GBSskCAMDBCQwIjAgMB4wHDAaMAwMCklEUC1EaWVuc3QwCgYIKoIU
+  AEwEggQwIQYDVR0gBBowGDAKBggqghQATASBSzAKBggqghQATASBIzAfBgNVHSME
+  GDAWgBQo8Pjmqch3zENF25qu1zqDrA4PqDA4BggrBgEFBQcBAQQsMCowKAYIKwYB
+  BQUHMAGGHGh0dHA6Ly9laGNhLmdlbWF0aWsuZGUvb2NzcC8wHQYDVR0OBBYEFC94
+  M9LgW44lNgoAbkPaomnLjS8/MAwGA1UdEwEB/wQCMAAwCgYIKoZIzj0EAwIDRwAw
+  RAIgCg4yZDWmyBirgxzawz/S8DJnRFKtYU/YGNlRc7+kBHcCIBuzba3GspqSmoP1
+  VwMeNNKNaLsgV8vMbDJb30aqaiX1"
+      - id: idp_enc
+        type: key
+        pem: "MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIBkuVz2ONqxyu3K+
+  VcDQOf02UoomXly1enoxElV101KQoUQDQgAEQLpJ/LpFx+6yJhsb4OvHwU1khLnv
+  iiOwYOvmf5clK7yYe6Sd82SgyZJvK23huvRgaKE6LFyYErLzRR9It1cZ7g=="
+      - id: idp_sig
+        type: cert
+        pem: "MIICsTCCAligAwIBAgIHA61I5ACUjTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMC
+  REUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtv
+  bXBvbmVudGVuLUNBIGRlciBUZWxlbWF0aWtpbmZyYXN0cnVrdHVyMSAwHgYDVQQD
+  DBdHRU0uS09NUC1DQTEwIFRFU1QtT05MWTAeFw0yMDA4MDQwMDAwMDBaFw0yNTA4
+  MDQyMzU5NTlaMEkxCzAJBgNVBAYTAkRFMSYwJAYDVQQKDB1nZW1hdGlrIFRFU1Qt
+  T05MWSAtIE5PVC1WQUxJRDESMBAGA1UEAwwJSURQIFNpZyAxMFowFAYHKoZIzj0C
+  AQYJKyQDAwIIAQEHA0IABJZQrG1NWxIB3kz/6Z2zojlkJqN3vJXZ3EZnJ6JXTXw5
+  ZDFZ5XjwWmtgfomv3VOV7qzI5ycUSJysMWDEu3mqRcajge0wgeowHQYDVR0OBBYE
+  FJ8DVLAZWT+BlojTD4MT/Na+ES8YMDgGCCsGAQUFBwEBBCwwKjAoBggrBgEFBQcw
+  AYYcaHR0cDovL2VoY2EuZ2VtYXRpay5kZS9vY3NwLzAMBgNVHRMBAf8EAjAAMCEG
+  A1UdIAQaMBgwCgYIKoIUAEwEgUswCgYIKoIUAEwEgSMwHwYDVR0jBBgwFoAUKPD4
+  5qnId8xDRduartc6g6wOD6gwLQYFKyQIAwMEJDAiMCAwHjAcMBowDAwKSURQLURp
+  ZW5zdDAKBggqghQATASCBDAOBgNVHQ8BAf8EBAMCB4AwCgYIKoZIzj0EAwIDRwAw
+  RAIgVBPhAwyX8HAVH0O0b3+VazpBAWkQNjkEVRkv+EYX1e8CIFdn4O+nivM+XVi9
+  xiKK4dW1R7MD334OpOPTFjeEhIVV"
+
+    # list of regex to be matched by the local docker proxy, in format:
+    # scheme://host:port -> scheme://host:port
+    urlMappings:
+    # environment variables sent to the docker container at startup
+    # support substitution of exported env variables from previously started servers
+    environment:
+      - GEMATIK_TESTCONFIG=default
+      - IDP_SERVER_URL=http://idp
+    # environment variables made available to other servers
+    # NG TODO change to java system properties and env vars?
+    # are not automatically imported but can be used as token ${ENVVAR}
+    # ${NAME} is replaced with server name
+    # ${PORT:XXXXX} is replaced with the external port matchign the internal port XXXXX
+    # ${PROXYHOST} is replaced with the local docker proxy host
+    # ${PROXYPORT} is replaced with the local docker proxy port
+    # for this to work the port must be exported in the docker container config
+    exports:
+      - IDP_SERVER=http://idp/.well-known/openid-configuration
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # RISE IDP in RRU
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+  - name: idp-rise-ru
+    product: IDP_RISE
+    type: externalUrl
+    source:
+      - https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
+    # version: N/A
+    startupTimeoutSec: 15
+    healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+    exports:
+      - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+      - GEMATIK_TESTCONFIG=rise-ru
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # RISE IDP in RTU
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+  - name: idp-rise-tu
+    product: IDP_RISE
+    type: externalUrl
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    startupTimeoutSec: 15
+    healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+    exports:
+      - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+      - GEMATIK_TESTCONFIG=rise-tu
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # Latest E-Rezept FD Ref as local docker container
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+  - name: erzpt-fd-ref
+    product: ERZP_FD_REF
+    type: docker
+    source:
+      - gstopdr1.top.local/erezept/ref-erx-fd-server
+    version: 0.17.2
+    startupTimeoutSec: 50
+    urlMappings:
+      # NG TODO once we support https proxying the TSL we can remove this mapping
+      - http://tsl --> https://download-ref.tsl.ti-dienste.de
+    environment:
+      - TOKEN=http://idp/.well-known/openid-configuration
+      #- TOKEN=${IDP_SERVER}
+      - TSL=http://tsl/ECC/ECC-RSA_TSL-ref.xml
+      # see workaround above - TSL=https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml
+      - http_proxy=http://${PROXYHOST}:${PROXYPORT}
+      - https_proxy=http://${PROXYHOST}:${PROXYPORT}
+      - HTTP_PROXY=http://${PROXYHOST}:${PROXYPORT}
+      - HTTPS_PROXY=http://${PROXYHOST}:${PROXYPORT}
+      - NO_PROXY=localhost,127.0.0.1,*.telematik-test
+      - no_proxy=localhost,127.0.0.1,*.telematik-test
+      - ENC_KEY=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.prv.pem
+      - ENC_CERT=c.fd.enc-erp-erpserverReferenz/c.fd.enc-erp-erpserverReferenz.pem
+      - SIG_KEY=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.prv.pem
+      - SIG_CERT=c.fd.sig-erp-erpserverReferenz/c.fd.sig-erp-erpserverReferenz.pem
+      - BNETZA=file://./Pseudo-BNetzA-VL-seq24.xml
+      # telematik-test is needed for download of ocsp pki
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # Latest EPA module as docker composition
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+  - name: epa2
+    product: EPA2_REF
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
+    startupTimeoutSec: 120
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # FdV simulator as external jar from Nexus
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+
+  - name: epa2-fdv
+    product: EPA2_FDV_REF
+    type: externalJar
+    source:
+      - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-fdv/2.0.0-124/epa-fdv-2.0.0-124.jar
+    # working directory of the java process to start
+    workingDir: FdVPortable
+    # options to the java call
+    options:
+      - -Djdk.internal.httpclient.disableHostnameVerification
+      - -Dhttp.proxyHost=${PROXYHOST}
+      - -Dhttp.proxyPort=${PROXYPORT}
+      - -Dfile.encoding=UTF-8
+    # programm arguments
+    arguments:
+      - --spring.profiles.active=instance2local
+      - --aktor.rproxySGD2.use=false
+    startupTimeoutSec: 30
+    healthcheck: https://127.0.0.1:9107
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # Konnektor simulator as external jar
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+
+  - name: kon-sim
+    product: KON_SIM
+    type: externalJar
+    source:
+      - local://konnektor-simulator-2.1.7-SNAPSHOT.jar
+    # working directory of the java process to start
+    workingDir: kon-sim
+    # options to the java call
+    startupTimeoutSec: 30
+    healthcheck: https://127.0.0.1:9106
+

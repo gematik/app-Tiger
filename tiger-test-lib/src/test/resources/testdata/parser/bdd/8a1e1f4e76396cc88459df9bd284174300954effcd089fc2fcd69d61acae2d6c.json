@@ -1,0 +1,429 @@
+{
+  "name": "GetToken Signierte Challenge - Veralteter Token code wird abgelehnt",
+  "id": "fordere-access-token-mit-einer-signierten-challenge-an;gettoken-signierte-challenge---veralteter-token-code-wird-abgelehnt",
+  "testSteps": [
+    {
+      "number": 1,
+      "description": "Given I initialize scenario from discovery document endpoint",
+      "duration": 20,
+      "startTime": "2021-03-02T17:10:37.584037900+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 2,
+          "description": "Initialize from discovery document",
+          "duration": 9,
+          "startTime": "2021-03-02T17:10:37.594038900+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1,
+          "children": [
+            {
+              "number": 3,
+              "description": "GET http://localhost:63144/auth/realms/idp/.well-known/openid-configuration\r",
+              "duration": 0,
+              "startTime": "2021-03-02T17:10:37.603036600+01:00[Europe/Berlin]",
+              "result": "SUCCESS",
+              "restQuery": {
+                "method": "GET",
+                "path": "http://localhost:63144/auth/realms/idp/.well-known/openid-configuration\r",
+                "content": "\r",
+                "contentType": "null",
+                "requestHeaders": "Accept\u003d*/*\r",
+                "requestCookies": "\r",
+                "responseHeaders": "Cache-Control: max-age\u003d300\r\nVersion: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nContent-Length: 2665\r\nDate: Tue, 02 Mar 2021 16:10:36 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+                "responseCookies": "\r",
+                "responseBody": "eyJhbGciOiJCUDI1NlIxIiwia2lkIjoiZGlzY1NpZyIsIng1YyI6WyJNSUlDc1RDQ0FsaWdBd0lCQWdJSEFic3NxUWhxT3pBS0JnZ3Foa2pPUFFRREFqQ0JoREVMTUFrR0ExVUVCaE1DUkVVeEh6QWRCZ05WQkFvTUZtZGxiV0YwYVdzZ1IyMWlTQ0JPVDFRdFZrRk1TVVF4TWpBd0JnTlZCQXNNS1V0dmJYQnZibVZ1ZEdWdUxVTkJJR1JsY2lCVVpXeGxiV0YwYVd0cGJtWnlZWE4wY25WcmRIVnlNU0F3SGdZRFZRUUREQmRIUlUwdVMwOU5VQzFEUVRFd0lGUkZVMVF0VDA1TVdUQWVGdzB5TVRBeE1UVXdNREF3TURCYUZ3MHlOakF4TVRVeU16VTVOVGxhTUVreEN6QUpCZ05WQkFZVEFrUkZNU1l3SkFZRFZRUUtEQjFuWlcxaGRHbHJJRlJGVTFRdFQwNU1XU0F0SUU1UFZDMVdRVXhKUkRFU01CQUdBMVVFQXd3SlNVUlFJRk5wWnlBek1Gb3dGQVlIS29aSXpqMENBUVlKS3lRREF3SUlBUUVIQTBJQUJJWVpud2lHQW41UVlPeDQzWjhNd2FaTEQzci9iejZCVGNRTzVwYmV1bTZxUXpZRDVkRENjcml3L1ZOUFBaQ1F6WFFQZzRTdFd5eTVPT3E5VG9nQkVtT2pnZTB3Z2Vvd0RnWURWUjBQQVFIL0JBUURBZ2VBTUMwR0JTc2tDQU1EQkNRd0lqQWdNQjR3SERBYU1Bd01Da2xFVUMxRWFXVnVjM1F3Q2dZSUtvSVVBRXdFZ2dRd0lRWURWUjBnQkJvd0dEQUtCZ2dxZ2hRQVRBU0JTekFLQmdncWdoUUFUQVNCSXpBZkJnTlZIU01FR0RBV2dCUW84UGptcWNoM3pFTkYyNXF1MXpxRHJBNFBxREE0QmdnckJnRUZCUWNCQVFRc01Db3dLQVlJS3dZQkJRVUhNQUdHSEdoMGRIQTZMeTlsYUdOaExtZGxiV0YwYVdzdVpHVXZiMk56Y0M4d0hRWURWUjBPQkJZRUZDOTRNOUxnVzQ0bE5nb0Fia1Bhb21uTGpTOC9NQXdHQTFVZEV3RUIvd1FDTUFBd0NnWUlLb1pJemowRUF3SURSd0F3UkFJZ0NnNHlaRFdteUJpcmd4emF3ei9TOERKblJGS3RZVS9ZR05sUmM3K2tCSGNDSUJ1emJhM0dzcHFTbW9QMVZ3TWVOTktOYUxzZ1Y4dk1iREpiMzBhcWFpWDEiXX0.eyJhdXRob3JpemF0aW9uX2VuZHBvaW50IjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9zaWduX3Jlc3BvbnNlIiwiYWx0ZXJuYXRpdmVfYXV0aG9yaXphdGlvbl9lbmRwb2ludCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NjMxNDQvYWx0X3Jlc3BvbnNlIiwic3NvX2VuZHBvaW50IjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9zc29fcmVzcG9uc2UiLCJwYWlyaW5nX2VuZHBvaW50IjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9wYWlyaW5nIiwidG9rZW5fZW5kcG9pbnQiOiJodHRwOi8vbG9jYWxob3N0OjYzMTQ0L3Rva2VuIiwidXJpX2Rpc2MiOiJodHRwOi8vbG9jYWxob3N0OjYzMTQ0L2Rpc2NvdmVyeURvY3VtZW50IiwiaXNzdWVyIjoiaHR0cHM6Ly9pZHAuemVudHJhbC5pZHAuc3BsaXRkbnMudGktZGllbnN0ZS5kZSIsImp3a3NfdXJpIjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9qd2tzIiwiZXhwIjoxNjE0Nzg3ODM3LCJuYmYiOjE2MTQ3MDE0MzcsImlhdCI6MTYxNDcwMTQzNywidXJpX3B1a19pZHBfZW5jIjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9pZHBFbmMvandrcy5qc29uIiwidXJpX3B1a19pZHBfc2lnIjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9pcGRTaWcvandrcy5qc29uIiwic3ViamVjdF90eXBlc19zdXBwb3J0ZWQiOlsicGFpcndpc2UiXSwiaWRfdG9rZW5fc2lnbmluZ19hbGdfdmFsdWVzX3N1cHBvcnRlZCI6WyJCUDI1NlIxIl0sInJlc3BvbnNlX3R5cGVzX3N1cHBvcnRlZCI6WyJjb2RlIl0sInNjb3Blc19zdXBwb3J0ZWQiOlsib3BlbmlkIiwiZS1yZXplcHQiXSwicmVzcG9uc2VfbW9kZXNfc3VwcG9ydGVkIjpbInF1ZXJ5Il0sImdyYW50X3R5cGVzX3N1cHBvcnRlZCI6WyJhdXRob3JpemF0aW9uX2NvZGUiXSwiYWNyX3ZhbHVlc19zdXBwb3J0ZWQiOlsidXJuOmVpZGFzOmxvYTpoaWdoIl0sInRva2VuX2VuZHBvaW50X2F1dGhfbWV0aG9kc19zdXBwb3J0ZWQiOlsibm9uZSJdfQ.hD7NqDm1S0lCY34OI0CA0tptj8Mjez15zlUugmMJrqZUdwSI8SqAFZ5NCzohWIWfEzusMIK_P1xLv-kbjt-aTQ",
+                "statusCode": 200
+              },
+              "precondition": false,
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "description": "And I retrieve public keys from URIs",
+      "duration": 13,
+      "startTime": "2021-03-02T17:10:37.606036200+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 5,
+          "description": "GET http://localhost:63144/idpEnc/jwks.json\r",
+          "duration": 0,
+          "startTime": "2021-03-02T17:10:37.612037800+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "restQuery": {
+            "method": "GET",
+            "path": "http://localhost:63144/idpEnc/jwks.json\r",
+            "content": "\r",
+            "contentType": "null",
+            "requestHeaders": "Accept\u003d*/*\r",
+            "requestCookies": "\r",
+            "responseHeaders": "Version: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nDate: Tue, 02 Mar 2021 16:10:36 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+            "responseCookies": "\r",
+            "responseBody": "{\n    \"x5c\": [\n        \"MIICsTCCAligAwIBAgIHA8OQFtdAtTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMCREUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtvbXBvbmVudGVuLUNBIGRlciBUZWxlbWF0aWtpbmZyYXN0cnVrdHVyMSAwHgYDVQQDDBdHRU0uS09NUC1DQTEwIFRFU1QtT05MWTAeFw0yMTAxMTMwMDAwMDBaFw0yNjAxMTMyMzU5NTlaMEkxCzAJBgNVBAYTAkRFMSYwJAYDVQQKDB1nZW1hdGlrIFRFU1QtT05MWSAtIE5PVC1WQUxJRDESMBAGA1UEAwwJSURQIFNpZyAyMFowFAYHKoZIzj0CAQYJKyQDAwIIAQEHA0IABEC6Sfy6RcfusiYbG+Drx8FNZIS574ojsGDr5n+XJSu8mHuknfNkoMmSbytt4br0YGihOixcmBKy80UfSLdXGe6jge0wgeowDgYDVR0PAQH/BAQDAgeAMC0GBSskCAMDBCQwIjAgMB4wHDAaMAwMCklEUC1EaWVuc3QwCgYIKoIUAEwEggQwIQYDVR0gBBowGDAKBggqghQATASBSzAKBggqghQATASBIzAfBgNVHSMEGDAWgBQo8Pjmqch3zENF25qu1zqDrA4PqDA4BggrBgEFBQcBAQQsMCowKAYIKwYBBQUHMAGGHGh0dHA6Ly9laGNhLmdlbWF0aWsuZGUvb2NzcC8wHQYDVR0OBBYEFLM7Gd6tlX+bjswtS+tVxkbTwxC0MAwGA1UdEwEB/wQCMAAwCgYIKoZIzj0EAwIDRwAwRAIgfKKll8KtEPLdaUWwF7ftbEvkIdz9KXhL4cKRyozGQjECIDxby8TX2iWfwVhfHoxmpTf+D3eCRHhmnwJWcIgm1tF0\"\n    ],\n    \"kid\": \"idpEnc\",\n    \"kty\": \"EC\",\n    \"crv\": \"BP-256\",\n    \"x\": \"QLpJ/LpFx+6yJhsb4OvHwU1khLnviiOwYOvmf5clK7w\u003d\",\n    \"y\": \"AJh7pJ3zZKDJkm8rbeG69GBooTosXJgSsvNFH0i3Vxnu\"\n}",
+            "statusCode": 200
+          },
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 6,
+          "description": "GET http://localhost:63144/ipdSig/jwks.json\r",
+          "duration": 0,
+          "startTime": "2021-03-02T17:10:37.617037800+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "restQuery": {
+            "method": "GET",
+            "path": "http://localhost:63144/ipdSig/jwks.json\r",
+            "content": "\r",
+            "contentType": "null",
+            "requestHeaders": "Accept\u003d*/*\r",
+            "requestCookies": "\r",
+            "responseHeaders": "Version: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nDate: Tue, 02 Mar 2021 16:10:36 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+            "responseCookies": "\r",
+            "responseBody": "{\n    \"x5c\": [\n        \"MIICsTCCAligAwIBAgIHA61I5ACUjTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMCREUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtvbXBvbmVudGVuLUNBIGRlciBUZWxlbWF0aWtpbmZyYXN0cnVrdHVyMSAwHgYDVQQDDBdHRU0uS09NUC1DQTEwIFRFU1QtT05MWTAeFw0yMDA4MDQwMDAwMDBaFw0yNTA4MDQyMzU5NTlaMEkxCzAJBgNVBAYTAkRFMSYwJAYDVQQKDB1nZW1hdGlrIFRFU1QtT05MWSAtIE5PVC1WQUxJRDESMBAGA1UEAwwJSURQIFNpZyAxMFowFAYHKoZIzj0CAQYJKyQDAwIIAQEHA0IABJZQrG1NWxIB3kz/6Z2zojlkJqN3vJXZ3EZnJ6JXTXw5ZDFZ5XjwWmtgfomv3VOV7qzI5ycUSJysMWDEu3mqRcajge0wgeowHQYDVR0OBBYEFJ8DVLAZWT+BlojTD4MT/Na+ES8YMDgGCCsGAQUFBwEBBCwwKjAoBggrBgEFBQcwAYYcaHR0cDovL2VoY2EuZ2VtYXRpay5kZS9vY3NwLzAMBgNVHRMBAf8EAjAAMCEGA1UdIAQaMBgwCgYIKoIUAEwEgUswCgYIKoIUAEwEgSMwHwYDVR0jBBgwFoAUKPD45qnId8xDRduartc6g6wOD6gwLQYFKyQIAwMEJDAiMCAwHjAcMBowDAwKSURQLURpZW5zdDAKBggqghQATASCBDAOBgNVHQ8BAf8EBAMCB4AwCgYIKoZIzj0EAwIDRwAwRAIgVBPhAwyX8HAVH0O0b3+VazpBAWkQNjkEVRkv+EYX1e8CIFdn4O+nivM+XVi9xiKK4dW1R7MD334OpOPTFjeEhIVV\"\n    ],\n    \"kid\": \"idpSig\",\n    \"kty\": \"EC\",\n    \"crv\": \"BP-256\",\n    \"x\": \"AJZQrG1NWxIB3kz/6Z2zojlkJqN3vJXZ3EZnJ6JXTXw5\",\n    \"y\": \"ZDFZ5XjwWmtgfomv3VOV7qzI5ycUSJysMWDEu3mqRcY\u003d\"\n}",
+            "statusCode": 200
+          },
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "description": "Given I choose code verifier \u0027drfxigjvseyirdjfg03q489rtjoiesrdjgfv3ws4e8rujgf0q3gjwe4809rdjt89fq3j48r9jw3894efrj\u0027",
+      "duration": 1,
+      "startTime": "2021-03-02T17:10:37.619037700+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 8,
+          "description": "Set code verifier: drfxigjvseyirdjfg03q489rtjoiesrdjgfv3ws4e8rujgf0q3gjwe4809rdjt89fq3j48r9jw3894efrj",
+          "duration": 0,
+          "startTime": "2021-03-02T17:10:37.620037500+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "description": "And I request a challenge with\r\n| client_id | scope | code_challenge | code_challenge_method | redirect_uri | state | nonce | response_type |\r\n| eRezeptApp | e-rezept openid | Ca3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg | S256 | http://redirect.gematik.de/erezept | xxxstatexxx | 98765 | code |",
+      "duration": 12,
+      "startTime": "2021-03-02T17:10:37.622038100+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 10,
+          "description": "Request response and assert status: http://localhost:63144/sign_response, \u003cnull\u003e, GET, {scope\u003de-rezept openid, response_type\u003dcode, code_challenge_method\u003dS256, redirect_uri\u003dhttp://redirect.gematik.de/erezept, state\u003dxxxstatexxx, nonce\u003d98765, client_id\u003deRezeptApp, code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg}, \u003cnull\u003e, HTTP STATUS NO CHECK",
+          "duration": 9,
+          "startTime": "2021-03-02T17:10:37.623038100+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1,
+          "children": [
+            {
+              "number": 11,
+              "description": "GET http://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx\u0026nonce\u003d98765\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r",
+              "duration": 0,
+              "startTime": "2021-03-02T17:10:37.632150700+01:00[Europe/Berlin]",
+              "result": "SUCCESS",
+              "restQuery": {
+                "method": "GET",
+                "path": "http://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx\u0026nonce\u003d98765\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r",
+                "content": "\r",
+                "contentType": "null",
+                "requestHeaders": "Accept\u003d*/*\r",
+                "requestCookies": "\r",
+                "responseHeaders": "Cache-Control: no-store\r\nPragma: no-cache\r\nVersion: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nDate: Tue, 02 Mar 2021 16:10:36 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+                "responseCookies": "\r",
+                "responseBody": "{\n    \"challenge\": \"eyJhbGciOiJCUDI1NlIxIiwiZXhwIjoxNjE0NzAxNjE3LCJ0eXAiOiJKV1QiLCJraWQiOiJpZHBTaWcifQ.eyJpc3MiOiJodHRwczovL2lkcC56ZW50cmFsLmlkcC5zcGxpdGRucy50aS1kaWVuc3RlLmRlIiwicmVzcG9uc2VfdHlwZSI6ImNvZGUiLCJzbmMiOiJjOHpFTVhMd3JWajg5WTJRUjdZbW1zamd5M0d5S1p6R0N2UGhuTVdYNUM0PSIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJ0b2tlbl90eXBlIjoiY2hhbGxlbmdlIiwibm9uY2UiOiI5ODc2NSIsImNsaWVudF9pZCI6ImVSZXplcHRBcHAiLCJzY29wZSI6ImUtcmV6ZXB0IG9wZW5pZCIsInN0YXRlIjoieHh4c3RhdGV4eHgiLCJyZWRpcmVjdF91cmkiOiJodHRwOi8vcmVkaXJlY3QuZ2VtYXRpay5kZS9lcmV6ZXB0IiwiZXhwIjoxNjE0NzAxNjE3LCJpYXQiOjE2MTQ3MDE0MzcsImNvZGVfY2hhbGxlbmdlIjoiQ2EzVmU4alNzQlFPQkZWcVF2THMxRS1kR1YxQlhnMkZUdnJkLVRnMTlWZyIsImp0aSI6ImIxYzZiNjJmZTE0ZWZhODYifQ.Rl9JZVF6qYRVn2qEQrdg-kBRc1-CLb2dw1vDCHt3MMGKbG2uT1Y6c3hZUIajfCJZ77EpxkoHyflPmqronnMwAg\",\n    \"user_consent\": {\n        \"requested_scopes\": {\n            \"e-rezept\": \"Zugriff auf die E-Rezept-Funktionalität.\",\n            \"openid\": \"Zugriff auf den ID-Token.\"\n        },\n        \"requested_claims\": {\n            \"organizationName\": \"Zustimmung zur Verarbeitung der Organisationszugehörigkeit\",\n            \"professionOID\": \"Zustimmung zur Verarbeitung der Rolle\",\n            \"idNummer\": \"Zustimmung zur Verarbeitung der Id (z.B. Krankenversichertennummer, Telematik-Id)\",\n            \"given_name\": \"Zustimmung zur Verarbeitung des Vornamens\",\n            \"family_name\": \"Zustimmung zur Verarbeitung des Nachnamens\"\n        }\n    }\n}",
+                "statusCode": 200
+              },
+              "reportData": [
+                {
+                  "title": "cURL",
+                  "contents": "curl -v -H \"Accept: */*\" -X GET \"http://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx\u0026nonce\u003d98765\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\" ",
+                  "isEvidence": false,
+                  "id": "report-data-fd5fb465-0452-482b-aec9-a7e99c29071d"
+                },
+                {
+                  "title": "RestAssured Log",
+                  "contents": "Request method:\tGET\r\nRequest URI:\thttp://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx\u0026nonce\u003d98765\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r\nProxy:\t\t\t\u003cnone\u003e\r\nRequest params:\t\u003cnone\u003e\r\nQuery params:\tscope\u003de-rezept openid\r\n\t\t\t\tresponse_type\u003dcode\r\n\t\t\t\tcode_challenge_method\u003dS256\r\n\t\t\t\tredirect_uri\u003dhttp://redirect.gematik.de/erezept\r\n\t\t\t\tstate\u003dxxxstatexxx\r\n\t\t\t\tnonce\u003d98765\r\n\t\t\t\tclient_id\u003deRezeptApp\r\n\t\t\t\tcode_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r\nForm params:\t\u003cnone\u003e\r\nPath params:\t\u003cnone\u003e\r\nHeaders:\t\tAccept\u003d*/*\r\nCookies:\t\t\u003cnone\u003e\r\nMultiparts:\t\t\u003cnone\u003e\r\nBody:\t\t\t\u003cnone\u003e\r\n",
+                  "isEvidence": false,
+                  "id": "report-data-66e1f72b-e9fe-4587-acae-c22c8055fe20"
+                }
+              ],
+              "precondition": false,
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "description": "And I sign the challenge with \u0027/certs/valid/80276883110000018680-C_CH_AUT_E256.p12\u0027",
+      "duration": 327,
+      "startTime": "2021-03-02T17:10:37.634149+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 13,
+          "description": "Sign challenge: /certs/valid/80276883110000018680-C_CH_AUT_E256.p12",
+          "duration": 324,
+          "startTime": "2021-03-02T17:10:37.635149500+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "description": "And I request a code token with signed challenge",
+      "duration": 40,
+      "startTime": "2021-03-02T17:10:37.962150200+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 15,
+          "description": "Request response and assert status: http://localhost:63144/sign_response, \u003cnull\u003e, POST, {signed_challenge\u003deyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZHQ00iLCJlcGsiOnsia3R5IjoiRUMiLCJ4IjoiRUhvalVXcEVJYy1KV0o4NFBRN0lpMXJCVklaYlQ3MFZLWnpVVW81ZXVHayIsInkiOiJZeUZ3Tjg0aEtNbW9wQzluUzZ4U2JiYlpnb1R2VnFtR0F6UHhjRE1SbXJnIiwiY3J2IjoiQlAtMjU2In19.AlbFUQqwHMYOUuuYp-5gQLkfMUKM0a5skM69PA4fbFjm3FDjrxOL0A.xmdkd8qUM2rkf9Ii.AP6-PSnMsDZJ1cNHF3IYP52eLCRBLSj-6bQAj8QM48LwSZo5gBooPanj6h7y_ZjooiYn1VA0LcAVgjG3zSTSlVpRuaTHhkICKXhJQieQunnYoMfWkGYtm4la8aX1Fl02HRQu78QyF2IuHMecVAmCxgKCtTOgd8nkmG7wKcmh2Kyudzwe4uOHIoE07olmYrbJs6TtUVURpTlly4nsEwB60RwWEPE_xWWYI5dcD1uYZFUxichpwtvPGsXlQSxDE1Zz3n_3qC3fapMfEE5b2niShGOPJKuJI3pgIfios_kd087gsVS73vaGK98A8U04UTJuQBQAu7Nnx_LYO3hzokHpJ4I8S3QYm1Sm6_szKTAGxHuYOhSXCAfJC3JSc3Fzh3TphGX8lDAYidMFRWgP-Eyy7SlYP2cKAAJ3tav8QOZCn3wlwbQ3OapkkLAs4c-tpuSPu4lwgiCv8Is0NRUcTd417A239hlw3312ClE-pSXPAXswG-D5sGQ71qNHqexZF_WjWSGT3Z8skeg63mfRUQmEuiyVf-goT4Qfytn03PWrL1jMa-r5QTTsGTVa8sViUubR1ExiNsCZqjiFTJ4HZaY3hPW3QQxvJyPUhuYaZo5ED9_oULgjmKKB05687HiC71UhMonKu-o9xJddPhshPPEgEy0CS-bzkyFz2C90btIFFGPItZmCnH_YiYrCZAeer9CglnjCR1dLqDJxuMahjb-8Mn53GmA49usKe21M9q99rUikY44sYPnAZWH-Q4HP7iG3xMVtx8vTxaq-cAacvGEcqlFP-dCHJqvC_uAvrIIYCmrkbt9rlSsno-nsPCacShStaTweVp7IrFmVrVWzKX3XhZYH8QskTOfCkPc5m4WpJmSitCOEvVjVdvVFfoRZkS9ExGCpqISFdB8WyM3Z6zJlU7W9eZlHKabwFfaqcOX5GSsMGY2t3pKg5YSwCnX2tV32ziTyVIrTF2xdr1w3FVpjjCWSl6jKJqRYVbARozLpjMRV3KBzhatnfDnV8rlY1m0Nixgdy5cIzaSmlUVISgZVIg7xu-HrgbN-iDtecgHDczkvzQKiZVvJHAbhkvI8ldKzdkRWMo5iFjQ2iD2XjUf2S34Do8H5YbSIrSQzYl07R-bHlFcHkhTwDeuSn2dY2KLEpydofmYNImGbBEyZMcY-VgdDqYCE8GeetS6d2Nq_DWfVL5i8gTRissAvY-1fXCgOtPnO8oEyqTdmjZjzTR_VdRl_ytWi7Dfs6Px7sed-QqXHOrRKw6CehJYQ6zOUKi6_CbfMAmDYGvnzOstUbmdjct7jFA9vpqd8nX9-DqLdSHvZcLJyQHffN35GiUQ6pPLnNY5BHdBnvonBia5wKWPKwpcNWKih8cz_a1y_ydybjRMnr8_TIw1apIVE3CqiJIjqX3klxg3cdCycw5De34OiZqdMpuoVDks3C3LR7tPz6AU-RE_py1Vz8laIc7GLHAvppQ9njFcwGXdFcwoBzb86N8LrsFk3PcpwgAcBXlOCCckvuyFeAIG_Xm_1I2GSiAbIC5ZczwxXvIa9fRGPtJbUBemx5NbXrKcbll3ragNeEpBX9MbRKNb33sOMp7NmaWlz5glins0x7voYtZ0WXDDwu9KSwQwbWcEp4gjmZ72VJrF4fQ2uSExRAj2JFtRSE5YYKj2rmi9X2l5cQ-B0KbH-fGNdFMlVvHUhEevqvJkv9epsYI1PwKcyL6YU50TRaLRpUCFFVNhZeVQwwpTo2V5ciw8NX4Ugeo0L79Sbd5y7MhgGmDXEKfze-i4alPKDnbtWLpjp5KR4WYQE36_gz9ZkJ-iWA-122NL6bhwVdeHCFr5cQwykYYpygjAwYOlisBHPGmi2h1xtevscDzRWJE_cAtb2OKRAaRhy1ZTuGz3UB81WbgIxadlvJ8t-RofQ5NasjmMvwWiLwDtXOjJDW62KG75246a5QYbLuUBY2N1O0JPTUPUUwK-O_r_oXX8vMAoHd_A-icps9kPsr0yBY2-fxB5PQWeU9BQnIFC_OvjSXA3bRnek3feVHa5Dz-yRB4pB6ahB3ZiYiIudTZIxaguH5HfvpD205Duj6CikUGB-UzolG2_UlEpyDzFXx0ku1YX08RUKExeLleXJfxncUwXX2nEIS-5VvLE9vsty9R5LZRzDhqpw1pD8aJ1f7Q46equy3mdlqt4f93TkIIMENb_aLTt-tN4iuSrnsqpsqWjAG4VB11yY_bKKjBCpVU2FBFYQt6E1F6Fd4Gv8v7i8VlzvF-8lvQcEPzFt4cWutUQyBPdm5Y1_TmBDw6HijYi0UzHnSSPepznTbiKuDzlQDcOiPraePigWRY-FIF2cCEB5_4QoTVr7yriDisF616HyEST7Z3m88IzvbxJ3d4wcFbK8XNLGyp8ccEISC08Xp6FJueI9FyWy8g8TKsFLqS--nnppteOGj3RWyNBjwDNBlrVuhCsGoHlJGhu65DCE2fJ1aIWTuGBqnsHEY1fDRxum4RjuPFjOxBIQaBSJ4tPz1THe8eGkuMEQNI7btB1MGNhCFPem5SXspkXeAfl2cUeXs-b1pBQC2bLuDYJhm_i0_SdqiFbIpkQ22GACFiZF6Nzqj2gnva-CvMf5Sls3JxxYL-HQ6SZf7_Xl7HjGtcxvcJzno6cKKsS1CO4ZTerxxoa9OmOLT40OtAeJLmJy6EHCv25XnICegGlErb25vugun1k49FtoMpqkoTiqsltVgl9KUVYaANaIS5diUzxDVyQubz7gsROzIWs_pTH3NCpAi9y8rQP2AcJMs2y9MNUdsqP2r8dwn7RT6T2ZQh0I7jhpSb-gxAkGwGqdXFEzPY6R1IgNW-LT0_H1RNuk5MSTeyU5G1_yUCIPBuwlkqpDNq6OlQcAMjxiiJvtjadl-2PtkMr77bR7T4MPGJAC2ht5dCyzuuAPwQBaDPhb0hdlmtXrqW6sNEco23TNzP--YyyMGfRVGWMhmeX0gLU1-WEVxSltp2XvQ996Z7p2B-8-QmggeuqVQvndvA-qPurI9njdEBGFPZR5S1qzHLOjdjfranzmJ0KicSby5cEi74NmM9pycE4aFeL9alInb9NYEkwFFoO8J9vxjkSNdAb6GfJg421tR-xca0lE8Za0AJlzLRVJgeGxrKs-5YpxiuXKUOgGnjDBPsatkixVzF64cKde4jM27tWlgTEif_9hPJ8-tPkmashgNTXyTAki9a--H7vN6BqeGhu_Ub4y1CieEKBXwXtkoSQaRE04RrHAgMIhoDfsw7iebSLdyIkutD65IcT-m6JeP5G3V1ymsTcH4TKD-3qkOmFCIqFl_3tf3rcN9_PHLXnESz9dE1RAr6Xb7umXkxMQcL7VTtRuV5VyFCLjv4TYU7soHxuMkYsOyh-oPGWFEMXAsS3kMxN2NKoLqqNPYk--2HRg9jt0jLoCvIwN32QR9E8sb9i0laqeXt32NrWTqjZyFRmSGpMING8NSjZZ0T04InTVTx2F84O1FkTwP5QWHyv1pMes0bePbM-Okz6zahqBgKj0nppqVm9AkxKUVQDUIs30CZMolGMBdj1PQkVDf5n6IutTVL24bBPxoTRmanL5JIGJhmvtME7SOgoUYek_080i5cCKWWp3jQcZ7Iv4ZvotTP5U2KAHs9W1y8_AICxOmVhc44yJLME.y1CGB1WfRPyKxtO8DwKd9g}, \u003cnull\u003e, HTTP STATUS NO CHECK",
+          "duration": 32,
+          "startTime": "2021-03-02T17:10:37.968148800+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1,
+          "children": [
+            {
+              "number": 16,
+              "description": "POST http://localhost:63144/sign_response\r",
+              "duration": 0,
+              "startTime": "2021-03-02T17:10:37.999148800+01:00[Europe/Berlin]",
+              "result": "SUCCESS",
+              "restQuery": {
+                "method": "POST",
+                "path": "http://localhost:63144/sign_response\r",
+                "content": "\r",
+                "contentType": "application/x-www-form-urlencoded",
+                "requestHeaders": "Accept\u003d*/*\r\n\t\t\t\tContent-Type\u003dapplication/x-www-form-urlencoded; charset\u003dUTF-8\r",
+                "requestCookies": "\r",
+                "responseHeaders": "Cache-Control: no-store\r\nPragma: no-cache\r\nVersion: 0.1-SNAPSHOT\r\nLocation: http://redirect.gematik.de/erezept/token?code\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjE0NzAxNDk3fQ..jrNul1wGOPAQJ-Xm.kIe2euGoYj1LLw_dZndvXV_wkY70uxHMb6hHF9_B10x4wjLnIzeNYiOa4nDfKHaYg-62vOkk6nu1Ixjiqo3CCgewLOjseGHEZeB1DOYVqknq5Gr6lCm9sF3bR35th1atpoELa1eWDt9urWsdS15OUFCj55858XveBj__YAsr3bCpa1u8GBUTeV1XqFumforeXoZu2ue33b54CwPN_A9kg2k0KFZez_vPA4-wVwz8mQJNkKdP946LD7sVDAF0UfyQ6uP5rc6uQosNRn7qkjnFiOrhGksDN5Satr28m9Ym1J8YJvu7GyYm7f0ELB6UQeGhJtFpNT3TNRtXHdmVl2tCM8FxyLPWkET2juEUdP-Zf7yD61iVKDIkg53Cg-pr5joeunP2OyVqDM-1SfRGPbQGgrnBZzBQC7Ja5x7W-zCzQoTfxfE9FhMpkLVWDlHS9yEdeSzhPYS7HuXEzs97tgrIG-wfRYIQI9AGHbm7mnyJ--aeuwLxbXc5Qe6VAdHR-acpL98eHhVk4NnM-wLMStO27O85wvwucBqXugk47h7fZ5M_CpWKpr25KdBss6B8HqsuCnuxKo12Jc8KKJ2xW_ZoG6u9aZI5SrHU3ipKmfSxFIRrSX07p6Foulqe3fK0bWTZ6qfdWM2yoFy_U1YsNi8pGaX7v1QzsPIGHQbRbVpMlN5odqEQXPWZEH2HHrd3l8XUsAtgFtZsvsc00cHmjhfB6xyHDHFvMjANzw46qd30gTue0p-cbHMpiRZvGtP6tYYQYyDlLK6v8asXSwl8wNvLMAOQEAkM_UKoY40ly2sWQ_uMl4SGAPauiEgEnN0wk0lhyxymeIQR0WI40xuDe8oYH4_NoD0YZ0aqj_UizWDTGIN3a3tHeAe5icFohQLdSjCX51oUvvsXzFBAg3CeyFOwPMkSKPGcUAUMsnBrO3QUGzNGJuDRtkhldzVZHcqXzV2dOKJUM0hAsrZxC26b6hc40ICq4JduJQtmTn3BquQvhglAADnxIJqs2gC8HVyQKzm6vVXoa3oTdTazkRi77Zup3QLJbe3t2RvLT_SQB8Xnzu06-JfOWnp1O9NkXP7_aKbGDtcSW7dqnuKMk2XHKz1OE0-Vq_SMLIvPPXQkQ0m-Bh5GFNKvRAI8rTdyCGIz2C8bnGz1qvxd9CMcSML1KgH08wWrOWmnHYV4Xe3N9EdkD0hNXmHWhmngzJig_B6GdnlIldAcKmzQ6PaojW01n0x-8N9uYR0Ck2lyw4VISO8t4f5v1HI5_lUp0HtRXB4LC9z6cz4jor7kTJU_dO46Fnz_AYiMxByUlWPxP-K7pRYCL-k7hDtAwlHXybKjnCWaUJ8p72DLdZ-p.xth-1wfmtT5I4eGulsIl4w\u0026ssotoken\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjE0NzQ0NjM3fQ..pNg2TyaNNm_OHv8n.BxXrqai5yd8NwHXuUF-FUYQPoP3Xc6AUc5WtHVgl8Qm3goYd0ssEKMl7RgeYxKHRE3ULnGEysu7ENil5XITEhlbq_cfPGpB0R4thX1Kj7xKB6JtzjYec179Q3W6qZXSizRsZmKlYhyU_RpVRpe0jZsAUuDilmQeupqnl3HP5f-mOvvCRALOuep-1Qu71G4asKmji9W1HFPEngZV95HW3toD5362ZTmhNdvQMf7wUTQ34xyu4MjN4bW2eIt2q-WJ2c73-XxSe9EKaMjtgoj4GqVXYaKLg9HMrIn_aQz5TfZ5rNtm7ntoYIwGwVBQv2wJJdLoPIKheG3cMA355v0WmnM9L8uZ1wwW5tFGkr_nkMjJZxDSIRkDPGbfKVBuzkvN6jO8pSqbsmxayS6Ywei6LdPTdkKloulO5Bra-sZzBWWriEfgiT_EaE4Y0WONgFRz8VwuoUy4RtdD6_Kzz2G7QRY4KPMgBf0WmCD9M82HVCVNxGB7dnYl_g5ynlSos865Tv8uu9oNUjMtgan1ErEk4EFGMJgflH3c18V5k8-_bMED9vpZXwPa4t5XTMYh3OS0huCvGXUrpzxddQumldevX8f9kWRAFkrozKQfKZNFkRY3Udd__XSOYVFonz6XfUUvHx35LWh6-Lw16Hsc1xW222FPNkNwR0ACPv_80Y-y0yF0I6bs3HNDGKqfMIyxsUDUSflMCNiXU24Nqgou1_CDz8GZS_Frin_UjpyAFKD4qRBuXGG8W7nScXSjTE2o26k0lBAIVv-EMrwNbZd-1D1bihMJBb9ix10G72Qvqx0GnU9xCjobc1Z6MfzzkFTpTlhKZKs14KHgD3uo7Vo2BBC3KpeVPKCRcx8I2n5-4juHllCnXl_2WOWeyhrAXL2LSTTcAlqKSe4F2JILbwunNbUVd9dJRg9S3t8ElcwZ_TrYLanswmpPQsBBGuFjWBjjuBrgEVizGd9oAdptSyG1ygBUzoqRuFuDWtRRudQfvBef8TkUqWrOIrKrdH80JaKAEQuwcxWZ302oPNgjezk_eqIlUQr4MSdvlvtLXsYxUsjr5jbe6-DdHXEHDtdw8gDjyOMpgOSMe-FWAcrrQvpeGa7uJgUCy8aLQByro28QnfoolgqOsVlbegxITh8SuDKWI63vtPyQTX2reQ9c29NUVrGcIDggPfKsbqF5xONeRZr4v0zYriARfffyixoaQ_Bjd0He80XlVbwQvp5qpd9gOEyhL33kGINBD59gT_dRtM2R7zv26gP527PLoeDWZxzIj4MdYZDJ5ttyqOhTHDsLU4e9t6pgyoa_EhoO8BfKDPBdY7MUrf1Z1CsUfgKpiM5x_JfIqi6Rqbdw_tkxJTvRThIjTPrmzy4wLISsAJ5Ydeq6zXkDV3SPlJL27xamJ2LxEU47f6O9CAZEpvTY_HHgjdYSxkTsF7kmgbp0N0za5co8kGnW4URHqV_01pkvY97v579yOwzxtywfV8dYPk4RbpDQKw6S_z0Hw8N5Jy5YTmYxCkRnMaTbF5exLfUeVOX5uyB-MMjlodpDf3mnfIjakUd6395dqJI4R5Nxb1GBFUt0sL7mLY06vebOyLwKHFUm3JbUEoaVIhmFO9L8Er5Zk-rtjEDTRokQ4OuVyCS0z-cO6NHj6HdU1G8ipmQ3ECqNn3-9sh9c3NEGHVQ0PoV0C0CDinRGsyKMk2vM8pexXVANaCVMYEweNT80T6RL7rKPY5eS9DJtwH8_dvXvwIBEcevEEAgTEBK7a-CZKf1U5Q-oLu7bM9sIId3_S6Y3kMDVgIAHBgUIBcbuQCKPAqn3QPROfAfk51p9xKhvh8TXQ8_Uo7Y12dZA6jQiP9HTeGF7ykCL5DUkDiEb7yLzhLBkqd19OOvtLmlb4fdcLB_ZlcG87bE4XJFsAI94LRU_Bqliz3WJGCkKpylSquCw191P8lI34Ps4NuYHMVQ0FXp4cpQWPHa18wzOECxT7K6CRoFQ0N_NxqUXuNal7tyKS5h0HuPa8MKsZjPWRUUBlaahS17eRIsJfzlO6Y43YXI_Od53EglXWQOTGm9PIASQV11Bw-Q_W_xDCbss9kJ8jYARTOAEvoMOPgPMGIe7qj5ZW5bPLyVcfaooizC2IQqZtVeLWZ2Y8PWXNIiNKy_IKGdZr0DxNJ_uDQE8JG7ndXFAOpplMMgq6oznza2I3ceumCt3w6IxgotE-DgLoN3hRoItnwXFRNyIrWf79wVoWbXb40EHbT5ub0WNbt9aDAOk-0p56Gx6nYUSkO9eqgpxcTiZmm2CgkmI-nsBjlJ59_dYBMMR6dmwTio3GcJJtkNsNIh7nWcz5-lklWhxzm37KsUPHfc-pXbY_2tiknwh1nuAhsU834qu98B-G7fBjXXpvlkRDLSctYdmqjhWMtPzS89IivUnH9Gw_gqX5qBkw9-K57ugvoPJejXzi6HyiDyuDR0u6Z0OFYuluR5ivYqqcpqX8ENG2_UlhAvhRMOCoplHnY8G2Qvtf2ThbXDSIcROXEmU1f2RYbPEUa_IQPWQ0UaKLSrDoVhWYA92cxn5l3ojYn4d65p73Fy6ZjcW5TBdou4HX0ETzLprV27OXEpmmCuxBE63LT6Z_GwCuWLeGE3gopc_bzoBJ4gnKsQERyvZEHKiSe611d1X06hGN1BngOCbMIA2TQc4pVtS5Cg6zRgpEI9WamUPh3jcs1ug9bvRkdjH4A_0ogCEbHtg7jJpOCpI3IxTWhYwliG050-Q6NE3UMv3h_TXNl2IgF8T2aq-nJxaYLlDJSYr9IwUNVEfTZw3PfoSUuN69A0ctxov1Va7Tv4XvyjvisyenzCULm54KhjSuVasyyxL4oAe4KNumunhdC3_s0xHrJj3LMZBZLFnFcpB5Y2zEAQT4DssqE4gQcLx-h1DjQa7PqRIq4GYdb9bjw91JoMffU0Y5b-QxQxq7Jba0CX8eLl2E-mdDT7ZtkmIUFQRQ0eu6EE7dlOMcvzxWiJLO4PhBkpj0IFvK1EbxM5vskth8Q8tbLeBmg-ckmdD05PZSCJ33Aj61XNYHFy4hW50fWwsIbgIB_tBrk8jvWX3nznR349IcG7GpL-kJFWzQL1TnM0HT8gLriS4gqX9gZKZHlHbGMA8AkQ.xIZ6bdXxfvxEGVCP9UYLSQ\u0026state\u003dxxxstatexxx\r\nContent-Length: 0\r\nDate: Tue, 02 Mar 2021 16:10:37 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+                "responseCookies": "\r",
+                "statusCode": 302
+              },
+              "reportData": [
+                {
+                  "title": "cURL",
+                  "contents": "curl -v -H \"Accept: */*\" -H \"Content-Type: application/x-www-form-urlencoded; charset\u003dUTF-8\"  --data \"signed_challenge\u003deyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZHQ00iLCJlcGsiOnsia3R5IjoiRUMiLCJ4IjoiRUhvalVXcEVJYy1KV0o4NFBRN0lpMXJCVklaYlQ3MFZLWnpVVW81ZXVHayIsInkiOiJZeUZ3Tjg0aEtNbW9wQzluUzZ4U2JiYlpnb1R2VnFtR0F6UHhjRE1SbXJnIiwiY3J2IjoiQlAtMjU2In19.AlbFUQqwHMYOUuuYp-5gQLkfMUKM0a5skM69PA4fbFjm3FDjrxOL0A.xmdkd8qUM2rkf9Ii.AP6-PSnMsDZJ1cNHF3IYP52eLCRBLSj-6bQAj8QM48LwSZo5gBooPanj6h7y_ZjooiYn1VA0LcAVgjG3zSTSlVpRuaTHhkICKXhJQieQunnYoMfWkGYtm4la8aX1Fl02HRQu78QyF2IuHMecVAmCxgKCtTOgd8nkmG7wKcmh2Kyudzwe4uOHIoE07olmYrbJs6TtUVURpTlly4nsEwB60RwWEPE_xWWYI5dcD1uYZFUxichpwtvPGsXlQSxDE1Zz3n_3qC3fapMfEE5b2niShGOPJKuJI3pgIfios_kd087gsVS73vaGK98A8U04UTJuQBQAu7Nnx_LYO3hzokHpJ4I8S3QYm1Sm6_szKTAGxHuYOhSXCAfJC3JSc3Fzh3TphGX8lDAYidMFRWgP-Eyy7SlYP2cKAAJ3tav8QOZCn3wlwbQ3OapkkLAs4c-tpuSPu4lwgiCv8Is0NRUcTd417A239hlw3312ClE-pSXPAXswG-D5sGQ71qNHqexZF_WjWSGT3Z8skeg63mfRUQmEuiyVf-goT4Qfytn03PWrL1jMa-r5QTTsGTVa8sViUubR1ExiNsCZqjiFTJ4HZaY3hPW3QQxvJyPUhuYaZo5ED9_oULgjmKKB05687HiC71UhMonKu-o9xJddPhshPPEgEy0CS-bzkyFz2C90btIFFGPItZmCnH_YiYrCZAeer9CglnjCR1dLqDJxuMahjb-8Mn53GmA49usKe21M9q99rUikY44sYPnAZWH-Q4HP7iG3xMVtx8vTxaq-cAacvGEcqlFP-dCHJqvC_uAvrIIYCmrkbt9rlSsno-nsPCacShStaTweVp7IrFmVrVWzKX3XhZYH8QskTOfCkPc5m4WpJmSitCOEvVjVdvVFfoRZkS9ExGCpqISFdB8WyM3Z6zJlU7W9eZlHKabwFfaqcOX5GSsMGY2t3pKg5YSwCnX2tV32ziTyVIrTF2xdr1w3FVpjjCWSl6jKJqRYVbARozLpjMRV3KBzhatnfDnV8rlY1m0Nixgdy5cIzaSmlUVISgZVIg7xu-HrgbN-iDtecgHDczkvzQKiZVvJHAbhkvI8ldKzdkRWMo5iFjQ2iD2XjUf2S34Do8H5YbSIrSQzYl07R-bHlFcHkhTwDeuSn2dY2KLEpydofmYNImGbBEyZMcY-VgdDqYCE8GeetS6d2Nq_DWfVL5i8gTRissAvY-1fXCgOtPnO8oEyqTdmjZjzTR_VdRl_ytWi7Dfs6Px7sed-QqXHOrRKw6CehJYQ6zOUKi6_CbfMAmDYGvnzOstUbmdjct7jFA9vpqd8nX9-DqLdSHvZcLJyQHffN35GiUQ6pPLnNY5BHdBnvonBia5wKWPKwpcNWKih8cz_a1y_ydybjRMnr8_TIw1apIVE3CqiJIjqX3klxg3cdCycw5De34OiZqdMpuoVDks3C3LR7tPz6AU-RE_py1Vz8laIc7GLHAvppQ9njFcwGXdFcwoBzb86N8LrsFk3PcpwgAcBXlOCCckvuyFeAIG_Xm_1I2GSiAbIC5ZczwxXvIa9fRGPtJbUBemx5NbXrKcbll3ragNeEpBX9MbRKNb33sOMp7NmaWlz5glins0x7voYtZ0WXDDwu9KSwQwbWcEp4gjmZ72VJrF4fQ2uSExRAj2JFtRSE5YYKj2rmi9X2l5cQ-B0KbH-fGNdFMlVvHUhEevqvJkv9epsYI1PwKcyL6YU50TRaLRpUCFFVNhZeVQwwpTo2V5ciw8NX4Ugeo0L79Sbd5y7MhgGmDXEKfze-i4alPKDnbtWLpjp5KR4WYQE36_gz9ZkJ-iWA-122NL6bhwVdeHCFr5cQwykYYpygjAwYOlisBHPGmi2h1xtevscDzRWJE_cAtb2OKRAaRhy1ZTuGz3UB81WbgIxadlvJ8t-RofQ5NasjmMvwWiLwDtXOjJDW62KG75246a5QYbLuUBY2N1O0JPTUPUUwK-O_r_oXX8vMAoHd_A-icps9kPsr0yBY2-fxB5PQWeU9BQnIFC_OvjSXA3bRnek3feVHa5Dz-yRB4pB6ahB3ZiYiIudTZIxaguH5HfvpD205Duj6CikUGB-UzolG2_UlEpyDzFXx0ku1YX08RUKExeLleXJfxncUwXX2nEIS-5VvLE9vsty9R5LZRzDhqpw1pD8aJ1f7Q46equy3mdlqt4f93TkIIMENb_aLTt-tN4iuSrnsqpsqWjAG4VB11yY_bKKjBCpVU2FBFYQt6E1F6Fd4Gv8v7i8VlzvF-8lvQcEPzFt4cWutUQyBPdm5Y1_TmBDw6HijYi0UzHnSSPepznTbiKuDzlQDcOiPraePigWRY-FIF2cCEB5_4QoTVr7yriDisF616HyEST7Z3m88IzvbxJ3d4wcFbK8XNLGyp8ccEISC08Xp6FJueI9FyWy8g8TKsFLqS--nnppteOGj3RWyNBjwDNBlrVuhCsGoHlJGhu65DCE2fJ1aIWTuGBqnsHEY1fDRxum4RjuPFjOxBIQaBSJ4tPz1THe8eGkuMEQNI7btB1MGNhCFPem5SXspkXeAfl2cUeXs-b1pBQC2bLuDYJhm_i0_SdqiFbIpkQ22GACFiZF6Nzqj2gnva-CvMf5Sls3JxxYL-HQ6SZf7_Xl7HjGtcxvcJzno6cKKsS1CO4ZTerxxoa9OmOLT40OtAeJLmJy6EHCv25XnICegGlErb25vugun1k49FtoMpqkoTiqsltVgl9KUVYaANaIS5diUzxDVyQubz7gsROzIWs_pTH3NCpAi9y8rQP2AcJMs2y9MNUdsqP2r8dwn7RT6T2ZQh0I7jhpSb-gxAkGwGqdXFEzPY6R1IgNW-LT0_H1RNuk5MSTeyU5G1_yUCIPBuwlkqpDNq6OlQcAMjxiiJvtjadl-2PtkMr77bR7T4MPGJAC2ht5dCyzuuAPwQBaDPhb0hdlmtXrqW6sNEco23TNzP--YyyMGfRVGWMhmeX0gLU1-WEVxSltp2XvQ996Z7p2B-8-QmggeuqVQvndvA-qPurI9njdEBGFPZR5S1qzHLOjdjfranzmJ0KicSby5cEi74NmM9pycE4aFeL9alInb9NYEkwFFoO8J9vxjkSNdAb6GfJg421tR-xca0lE8Za0AJlzLRVJgeGxrKs-5YpxiuXKUOgGnjDBPsatkixVzF64cKde4jM27tWlgTEif_9hPJ8-tPkmashgNTXyTAki9a--H7vN6BqeGhu_Ub4y1CieEKBXwXtkoSQaRE04RrHAgMIhoDfsw7iebSLdyIkutD65IcT-m6JeP5G3V1ymsTcH4TKD-3qkOmFCIqFl_3tf3rcN9_PHLXnESz9dE1RAr6Xb7umXkxMQcL7VTtRuV5VyFCLjv4TYU7soHxuMkYsOyh-oPGWFEMXAsS3kMxN2NKoLqqNPYk--2HRg9jt0jLoCvIwN32QR9E8sb9i0laqeXt32NrWTqjZyFRmSGpMING8NSjZZ0T04InTVTx2F84O1FkTwP5QWHyv1pMes0bePbM-Okz6zahqBgKj0nppqVm9AkxKUVQDUIs30CZMolGMBdj1PQkVDf5n6IutTVL24bBPxoTRmanL5JIGJhmvtME7SOgoUYek_080i5cCKWWp3jQcZ7Iv4ZvotTP5U2KAHs9W1y8_AICxOmVhc44yJLME.y1CGB1WfRPyKxtO8DwKd9g\" -X POST \"http://localhost:63144/sign_response\" ",
+                  "isEvidence": false,
+                  "id": "report-data-a861a10c-8786-444d-a79b-8f9d99706952"
+                },
+                {
+                  "title": "RestAssured Log",
+                  "contents": "Request method:\tPOST\r\nRequest URI:\thttp://localhost:63144/sign_response\r\nProxy:\t\t\t\u003cnone\u003e\r\nRequest params:\t\u003cnone\u003e\r\nQuery params:\t\u003cnone\u003e\r\nForm params:\tsigned_challenge\u003deyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZHQ00iLCJlcGsiOnsia3R5IjoiRUMiLCJ4IjoiRUhvalVXcEVJYy1KV0o4NFBRN0lpMXJCVklaYlQ3MFZLWnpVVW81ZXVHayIsInkiOiJZeUZ3Tjg0aEtNbW9wQzluUzZ4U2JiYlpnb1R2VnFtR0F6UHhjRE1SbXJnIiwiY3J2IjoiQlAtMjU2In19.AlbFUQqwHMYOUuuYp-5gQLkfMUKM0a5skM69PA4fbFjm3FDjrxOL0A.xmdkd8qUM2rkf9Ii.AP6-PSnMsDZJ1cNHF3IYP52eLCRBLSj-6bQAj8QM48LwSZo5gBooPanj6h7y_ZjooiYn1VA0LcAVgjG3zSTSlVpRuaTHhkICKXhJQieQunnYoMfWkGYtm4la8aX1Fl02HRQu78QyF2IuHMecVAmCxgKCtTOgd8nkmG7wKcmh2Kyudzwe4uOHIoE07olmYrbJs6TtUVURpTlly4nsEwB60RwWEPE_xWWYI5dcD1uYZFUxichpwtvPGsXlQSxDE1Zz3n_3qC3fapMfEE5b2niShGOPJKuJI3pgIfios_kd087gsVS73vaGK98A8U04UTJuQBQAu7Nnx_LYO3hzokHpJ4I8S3QYm1Sm6_szKTAGxHuYOhSXCAfJC3JSc3Fzh3TphGX8lDAYidMFRWgP-Eyy7SlYP2cKAAJ3tav8QOZCn3wlwbQ3OapkkLAs4c-tpuSPu4lwgiCv8Is0NRUcTd417A239hlw3312ClE-pSXPAXswG-D5sGQ71qNHqexZF_WjWSGT3Z8skeg63mfRUQmEuiyVf-goT4Qfytn03PWrL1jMa-r5QTTsGTVa8sViUubR1ExiNsCZqjiFTJ4HZaY3hPW3QQxvJyPUhuYaZo5ED9_oULgjmKKB05687HiC71UhMonKu-o9xJddPhshPPEgEy0CS-bzkyFz2C90btIFFGPItZmCnH_YiYrCZAeer9CglnjCR1dLqDJxuMahjb-8Mn53GmA49usKe21M9q99rUikY44sYPnAZWH-Q4HP7iG3xMVtx8vTxaq-cAacvGEcqlFP-dCHJqvC_uAvrIIYCmrkbt9rlSsno-nsPCacShStaTweVp7IrFmVrVWzKX3XhZYH8QskTOfCkPc5m4WpJmSitCOEvVjVdvVFfoRZkS9ExGCpqISFdB8WyM3Z6zJlU7W9eZlHKabwFfaqcOX5GSsMGY2t3pKg5YSwCnX2tV32ziTyVIrTF2xdr1w3FVpjjCWSl6jKJqRYVbARozLpjMRV3KBzhatnfDnV8rlY1m0Nixgdy5cIzaSmlUVISgZVIg7xu-HrgbN-iDtecgHDczkvzQKiZVvJHAbhkvI8ldKzdkRWMo5iFjQ2iD2XjUf2S34Do8H5YbSIrSQzYl07R-bHlFcHkhTwDeuSn2dY2KLEpydofmYNImGbBEyZMcY-VgdDqYCE8GeetS6d2Nq_DWfVL5i8gTRissAvY-1fXCgOtPnO8oEyqTdmjZjzTR_VdRl_ytWi7Dfs6Px7sed-QqXHOrRKw6CehJYQ6zOUKi6_CbfMAmDYGvnzOstUbmdjct7jFA9vpqd8nX9-DqLdSHvZcLJyQHffN35GiUQ6pPLnNY5BHdBnvonBia5wKWPKwpcNWKih8cz_a1y_ydybjRMnr8_TIw1apIVE3CqiJIjqX3klxg3cdCycw5De34OiZqdMpuoVDks3C3LR7tPz6AU-RE_py1Vz8laIc7GLHAvppQ9njFcwGXdFcwoBzb86N8LrsFk3PcpwgAcBXlOCCckvuyFeAIG_Xm_1I2GSiAbIC5ZczwxXvIa9fRGPtJbUBemx5NbXrKcbll3ragNeEpBX9MbRKNb33sOMp7NmaWlz5glins0x7voYtZ0WXDDwu9KSwQwbWcEp4gjmZ72VJrF4fQ2uSExRAj2JFtRSE5YYKj2rmi9X2l5cQ-B0KbH-fGNdFMlVvHUhEevqvJkv9epsYI1PwKcyL6YU50TRaLRpUCFFVNhZeVQwwpTo2V5ciw8NX4Ugeo0L79Sbd5y7MhgGmDXEKfze-i4alPKDnbtWLpjp5KR4WYQE36_gz9ZkJ-iWA-122NL6bhwVdeHCFr5cQwykYYpygjAwYOlisBHPGmi2h1xtevscDzRWJE_cAtb2OKRAaRhy1ZTuGz3UB81WbgIxadlvJ8t-RofQ5NasjmMvwWiLwDtXOjJDW62KG75246a5QYbLuUBY2N1O0JPTUPUUwK-O_r_oXX8vMAoHd_A-icps9kPsr0yBY2-fxB5PQWeU9BQnIFC_OvjSXA3bRnek3feVHa5Dz-yRB4pB6ahB3ZiYiIudTZIxaguH5HfvpD205Duj6CikUGB-UzolG2_UlEpyDzFXx0ku1YX08RUKExeLleXJfxncUwXX2nEIS-5VvLE9vsty9R5LZRzDhqpw1pD8aJ1f7Q46equy3mdlqt4f93TkIIMENb_aLTt-tN4iuSrnsqpsqWjAG4VB11yY_bKKjBCpVU2FBFYQt6E1F6Fd4Gv8v7i8VlzvF-8lvQcEPzFt4cWutUQyBPdm5Y1_TmBDw6HijYi0UzHnSSPepznTbiKuDzlQDcOiPraePigWRY-FIF2cCEB5_4QoTVr7yriDisF616HyEST7Z3m88IzvbxJ3d4wcFbK8XNLGyp8ccEISC08Xp6FJueI9FyWy8g8TKsFLqS--nnppteOGj3RWyNBjwDNBlrVuhCsGoHlJGhu65DCE2fJ1aIWTuGBqnsHEY1fDRxum4RjuPFjOxBIQaBSJ4tPz1THe8eGkuMEQNI7btB1MGNhCFPem5SXspkXeAfl2cUeXs-b1pBQC2bLuDYJhm_i0_SdqiFbIpkQ22GACFiZF6Nzqj2gnva-CvMf5Sls3JxxYL-HQ6SZf7_Xl7HjGtcxvcJzno6cKKsS1CO4ZTerxxoa9OmOLT40OtAeJLmJy6EHCv25XnICegGlErb25vugun1k49FtoMpqkoTiqsltVgl9KUVYaANaIS5diUzxDVyQubz7gsROzIWs_pTH3NCpAi9y8rQP2AcJMs2y9MNUdsqP2r8dwn7RT6T2ZQh0I7jhpSb-gxAkGwGqdXFEzPY6R1IgNW-LT0_H1RNuk5MSTeyU5G1_yUCIPBuwlkqpDNq6OlQcAMjxiiJvtjadl-2PtkMr77bR7T4MPGJAC2ht5dCyzuuAPwQBaDPhb0hdlmtXrqW6sNEco23TNzP--YyyMGfRVGWMhmeX0gLU1-WEVxSltp2XvQ996Z7p2B-8-QmggeuqVQvndvA-qPurI9njdEBGFPZR5S1qzHLOjdjfranzmJ0KicSby5cEi74NmM9pycE4aFeL9alInb9NYEkwFFoO8J9vxjkSNdAb6GfJg421tR-xca0lE8Za0AJlzLRVJgeGxrKs-5YpxiuXKUOgGnjDBPsatkixVzF64cKde4jM27tWlgTEif_9hPJ8-tPkmashgNTXyTAki9a--H7vN6BqeGhu_Ub4y1CieEKBXwXtkoSQaRE04RrHAgMIhoDfsw7iebSLdyIkutD65IcT-m6JeP5G3V1ymsTcH4TKD-3qkOmFCIqFl_3tf3rcN9_PHLXnESz9dE1RAr6Xb7umXkxMQcL7VTtRuV5VyFCLjv4TYU7soHxuMkYsOyh-oPGWFEMXAsS3kMxN2NKoLqqNPYk--2HRg9jt0jLoCvIwN32QR9E8sb9i0laqeXt32NrWTqjZyFRmSGpMING8NSjZZ0T04InTVTx2F84O1FkTwP5QWHyv1pMes0bePbM-Okz6zahqBgKj0nppqVm9AkxKUVQDUIs30CZMolGMBdj1PQkVDf5n6IutTVL24bBPxoTRmanL5JIGJhmvtME7SOgoUYek_080i5cCKWWp3jQcZ7Iv4ZvotTP5U2KAHs9W1y8_AICxOmVhc44yJLME.y1CGB1WfRPyKxtO8DwKd9g\r\nPath params:\t\u003cnone\u003e\r\nHeaders:\t\tAccept\u003d*/*\r\n\t\t\t\tContent-Type\u003dapplication/x-www-form-urlencoded; charset\u003dUTF-8\r\nCookies:\t\t\u003cnone\u003e\r\nMultiparts:\t\t\u003cnone\u003e\r\nBody:\t\t\t\u003cnone\u003e\r\n",
+                  "isEvidence": false,
+                  "id": "report-data-2babbd65-51b2-4b11-9be1-52d90fdb5aa0"
+                }
+              ],
+              "precondition": false,
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 17,
+      "description": "And I set the context with key REDIRECT_URI to \u0027http://redirect.gematik.de/erezept\u0027",
+      "duration": 0,
+      "startTime": "2021-03-02T17:10:38.004150500+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 18,
+      "description": "When I wait PT65S",
+      "duration": 65002,
+      "startTime": "2021-03-02T17:10:38.006150100+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 19,
+      "description": "And I request an access token",
+      "duration": 30,
+      "startTime": "2021-03-02T17:11:43.009951400+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 20,
+          "description": "Request response and assert status: http://localhost:63144/token, {Content-Type\u003dapplication/x-www-form-urlencoded}, POST, {key_verifier\u003deyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZHQ00iLCJlcGsiOnsia3R5IjoiRUMiLCJ4IjoiY1hZSkdDU3lXQ1JfbW9UUC1zWmxoajBTUlJDbHByOHFRckstRWZuaHdZZyIsInkiOiJEdFcxcGN0VXNHbk5IQVY3VGtzbEIzNVNDQTZUcTk4UWtWZ2JHamlLbW1JIiwiY3J2IjoiQlAtMjU2In19.xe-MHd1uw6mDmK-yiEafswo7PkY_yzFBHwg_UN2pIqUX1plRUXuDcA.nni8q2u33YIFoRax.wUQjFRPUeI-IVKNjMSpBsbICd0d6xG4eXlDIftMRPWlVHlBUqhWHVBd6zG53hxxe_ECCafIZ5qUS2owaUosE0yLqaZ_diACencp-beMHQjxhFcQbJ90iNy7CGjOCOQIotz3NzWeUMSFfs8mNrddm5yqDH-xlGsvHbYD46nGZBs5qG_cOIJDQn66kxsOaOM1GcN59VTC-BwsGWAOIT7KGLG8.8ScNWhW-7j0oneQsl7WHgw, code\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjE0NzAxNDk3fQ..jrNul1wGOPAQJ-Xm.kIe2euGoYj1LLw_dZndvXV_wkY70uxHMb6hHF9_B10x4wjLnIzeNYiOa4nDfKHaYg-62vOkk6nu1Ixjiqo3CCgewLOjseGHEZeB1DOYVqknq5Gr6lCm9sF3bR35th1atpoELa1eWDt9urWsdS15OUFCj55858XveBj__YAsr3bCpa1u8GBUTeV1XqFumforeXoZu2ue33b54CwPN_A9kg2k0KFZez_vPA4-wVwz8mQJNkKdP946LD7sVDAF0UfyQ6uP5rc6uQosNRn7qkjnFiOrhGksDN5Satr28m9Ym1J8YJvu7GyYm7f0ELB6UQeGhJtFpNT3TNRtXHdmVl2tCM8FxyLPWkET2juEUdP-Zf7yD61iVKDIkg53Cg-pr5joeunP2OyVqDM-1SfRGPbQGgrnBZzBQC7Ja5x7W-zCzQoTfxfE9FhMpkLVWDlHS9yEdeSzhPYS7HuXEzs97tgrIG-wfRYIQI9AGHbm7mnyJ--aeuwLxbXc5Qe6VAdHR-acpL98eHhVk4NnM-wLMStO27O85wvwucBqXugk47h7fZ5M_CpWKpr25KdBss6B8HqsuCnuxKo12Jc8KKJ2xW_ZoG6u9aZI5SrHU3ipKmfSxFIRrSX07p6Foulqe3fK0bWTZ6qfdWM2yoFy_U1YsNi8pGaX7v1QzsPIGHQbRbVpMlN5odqEQXPWZEH2HHrd3l8XUsAtgFtZsvsc00cHmjhfB6xyHDHFvMjANzw46qd30gTue0p-cbHMpiRZvGtP6tYYQYyDlLK6v8asXSwl8wNvLMAOQEAkM_UKoY40ly2sWQ_uMl4SGAPauiEgEnN0wk0lhyxymeIQR0WI40xuDe8oYH4_NoD0YZ0aqj_UizWDTGIN3a3tHeAe5icFohQLdSjCX51oUvvsXzFBAg3CeyFOwPMkSKPGcUAUMsnBrO3QUGzNGJuDRtkhldzVZHcqXzV2dOKJUM0hAsrZxC26b6hc40ICq4JduJQtmTn3BquQvhglAADnxIJqs2gC8HVyQKzm6vVXoa3oTdTazkRi77Zup3QLJbe3t2RvLT_SQB8Xnzu06-JfOWnp1O9NkXP7_aKbGDtcSW7dqnuKMk2XHKz1OE0-Vq_SMLIvPPXQkQ0m-Bh5GFNKvRAI8rTdyCGIz2C8bnGz1qvxd9CMcSML1KgH08wWrOWmnHYV4Xe3N9EdkD0hNXmHWhmngzJig_B6GdnlIldAcKmzQ6PaojW01n0x-8N9uYR0Ck2lyw4VISO8t4f5v1HI5_lUp0HtRXB4LC9z6cz4jor7kTJU_dO46Fnz_AYiMxByUlWPxP-K7pRYCL-k7hDtAwlHXybKjnCWaUJ8p72DLdZ-p.xth-1wfmtT5I4eGulsIl4w, grant_type\u003dauthorization_code, redirect_uri\u003dhttp://redirect.gematik.de/erezept, code_verifier\u003ddrfxigjvseyirdjfg03q489rtjoiesrdjgfv3ws4e8rujgf0q3gjwe4809rdjt89fq3j48r9jw3894efrj, client_id\u003deRezeptApp}, \u003cnull\u003e, HTTP STATUS NO CHECK",
+          "duration": 20,
+          "startTime": "2021-03-02T17:11:43.016943700+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1,
+          "children": [
+            {
+              "number": 21,
+              "description": "POST http://localhost:63144/token\r",
+              "duration": 0,
+              "startTime": "2021-03-02T17:11:43.037925200+01:00[Europe/Berlin]",
+              "result": "SUCCESS",
+              "restQuery": {
+                "method": "POST",
+                "path": "http://localhost:63144/token\r",
+                "content": "\r",
+                "contentType": "application/x-www-form-urlencoded",
+                "requestHeaders": "Accept\u003d*/*\r\n\t\t\t\tContent-Type\u003dapplication/x-www-form-urlencoded; charset\u003dISO-8859-1\r",
+                "requestCookies": "\r",
+                "responseHeaders": "Cache-Control: no-store\r\nPragma: no-cache\r\nVersion: 0.1-SNAPSHOT\r\nCache-Control: no-store\r\nPragma: no-cache\r\nContent-Type: application/json;charset\u003dutf-8\r\nTransfer-Encoding: chunked\r\nDate: Tue, 02 Mar 2021 16:11:43 GMT\r\nConnection: close\r",
+                "responseCookies": "\r",
+                "responseBody": "{\n    \"error\": \"invalid_grant\",\n    \"gematik_code\": 3011,\n    \"gematik_timestamp\": \"1614701503\",\n    \"gematik_uuid\": \"d21bf182-3d2b-4769-a551-72d6837c0660\",\n    \"gematik_error_text\": \"Authorization Code ist abgelaufen\"\n}",
+                "statusCode": 400
+              },
+              "reportData": [
+                {
+                  "title": "cURL",
+                  "contents": "curl -v -H \"Accept: */*\" -H \"Content-Type: application/x-www-form-urlencoded; charset\u003dISO-8859-1\"  --data \"key_verifier\u003deyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZHQ00iLCJlcGsiOnsia3R5IjoiRUMiLCJ4IjoiY1hZSkdDU3lXQ1JfbW9UUC1zWmxoajBTUlJDbHByOHFRckstRWZuaHdZZyIsInkiOiJEdFcxcGN0VXNHbk5IQVY3VGtzbEIzNVNDQTZUcTk4UWtWZ2JHamlLbW1JIiwiY3J2IjoiQlAtMjU2In19.xe-MHd1uw6mDmK-yiEafswo7PkY_yzFBHwg_UN2pIqUX1plRUXuDcA.nni8q2u33YIFoRax.wUQjFRPUeI-IVKNjMSpBsbICd0d6xG4eXlDIftMRPWlVHlBUqhWHVBd6zG53hxxe_ECCafIZ5qUS2owaUosE0yLqaZ_diACencp-beMHQjxhFcQbJ90iNy7CGjOCOQIotz3NzWeUMSFfs8mNrddm5yqDH-xlGsvHbYD46nGZBs5qG_cOIJDQn66kxsOaOM1GcN59VTC-BwsGWAOIT7KGLG8.8ScNWhW-7j0oneQsl7WHgw\u0026code\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjE0NzAxNDk3fQ..jrNul1wGOPAQJ-Xm.kIe2euGoYj1LLw_dZndvXV_wkY70uxHMb6hHF9_B10x4wjLnIzeNYiOa4nDfKHaYg-62vOkk6nu1Ixjiqo3CCgewLOjseGHEZeB1DOYVqknq5Gr6lCm9sF3bR35th1atpoELa1eWDt9urWsdS15OUFCj55858XveBj__YAsr3bCpa1u8GBUTeV1XqFumforeXoZu2ue33b54CwPN_A9kg2k0KFZez_vPA4-wVwz8mQJNkKdP946LD7sVDAF0UfyQ6uP5rc6uQosNRn7qkjnFiOrhGksDN5Satr28m9Ym1J8YJvu7GyYm7f0ELB6UQeGhJtFpNT3TNRtXHdmVl2tCM8FxyLPWkET2juEUdP-Zf7yD61iVKDIkg53Cg-pr5joeunP2OyVqDM-1SfRGPbQGgrnBZzBQC7Ja5x7W-zCzQoTfxfE9FhMpkLVWDlHS9yEdeSzhPYS7HuXEzs97tgrIG-wfRYIQI9AGHbm7mnyJ--aeuwLxbXc5Qe6VAdHR-acpL98eHhVk4NnM-wLMStO27O85wvwucBqXugk47h7fZ5M_CpWKpr25KdBss6B8HqsuCnuxKo12Jc8KKJ2xW_ZoG6u9aZI5SrHU3ipKmfSxFIRrSX07p6Foulqe3fK0bWTZ6qfdWM2yoFy_U1YsNi8pGaX7v1QzsPIGHQbRbVpMlN5odqEQXPWZEH2HHrd3l8XUsAtgFtZsvsc00cHmjhfB6xyHDHFvMjANzw46qd30gTue0p-cbHMpiRZvGtP6tYYQYyDlLK6v8asXSwl8wNvLMAOQEAkM_UKoY40ly2sWQ_uMl4SGAPauiEgEnN0wk0lhyxymeIQR0WI40xuDe8oYH4_NoD0YZ0aqj_UizWDTGIN3a3tHeAe5icFohQLdSjCX51oUvvsXzFBAg3CeyFOwPMkSKPGcUAUMsnBrO3QUGzNGJuDRtkhldzVZHcqXzV2dOKJUM0hAsrZxC26b6hc40ICq4JduJQtmTn3BquQvhglAADnxIJqs2gC8HVyQKzm6vVXoa3oTdTazkRi77Zup3QLJbe3t2RvLT_SQB8Xnzu06-JfOWnp1O9NkXP7_aKbGDtcSW7dqnuKMk2XHKz1OE0-Vq_SMLIvPPXQkQ0m-Bh5GFNKvRAI8rTdyCGIz2C8bnGz1qvxd9CMcSML1KgH08wWrOWmnHYV4Xe3N9EdkD0hNXmHWhmngzJig_B6GdnlIldAcKmzQ6PaojW01n0x-8N9uYR0Ck2lyw4VISO8t4f5v1HI5_lUp0HtRXB4LC9z6cz4jor7kTJU_dO46Fnz_AYiMxByUlWPxP-K7pRYCL-k7hDtAwlHXybKjnCWaUJ8p72DLdZ-p.xth-1wfmtT5I4eGulsIl4w\u0026grant_type\u003dauthorization_code\u0026redirect_uri\u003dhttp://redirect.gematik.de/erezept\u0026code_verifier\u003ddrfxigjvseyirdjfg03q489rtjoiesrdjgfv3ws4e8rujgf0q3gjwe4809rdjt89fq3j48r9jw3894efrj\u0026client_id\u003deRezeptApp\" -X POST \"http://localhost:63144/token\" ",
+                  "isEvidence": false,
+                  "id": "report-data-29cbf556-6598-48f5-9900-36ed8ae17b15"
+                },
+                {
+                  "title": "RestAssured Log",
+                  "contents": "Request method:\tPOST\r\nRequest URI:\thttp://localhost:63144/token\r\nProxy:\t\t\t\u003cnone\u003e\r\nRequest params:\t\u003cnone\u003e\r\nQuery params:\t\u003cnone\u003e\r\nForm params:\tkey_verifier\u003deyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZHQ00iLCJlcGsiOnsia3R5IjoiRUMiLCJ4IjoiY1hZSkdDU3lXQ1JfbW9UUC1zWmxoajBTUlJDbHByOHFRckstRWZuaHdZZyIsInkiOiJEdFcxcGN0VXNHbk5IQVY3VGtzbEIzNVNDQTZUcTk4UWtWZ2JHamlLbW1JIiwiY3J2IjoiQlAtMjU2In19.xe-MHd1uw6mDmK-yiEafswo7PkY_yzFBHwg_UN2pIqUX1plRUXuDcA.nni8q2u33YIFoRax.wUQjFRPUeI-IVKNjMSpBsbICd0d6xG4eXlDIftMRPWlVHlBUqhWHVBd6zG53hxxe_ECCafIZ5qUS2owaUosE0yLqaZ_diACencp-beMHQjxhFcQbJ90iNy7CGjOCOQIotz3NzWeUMSFfs8mNrddm5yqDH-xlGsvHbYD46nGZBs5qG_cOIJDQn66kxsOaOM1GcN59VTC-BwsGWAOIT7KGLG8.8ScNWhW-7j0oneQsl7WHgw\r\n\t\t\t\tcode\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjE0NzAxNDk3fQ..jrNul1wGOPAQJ-Xm.kIe2euGoYj1LLw_dZndvXV_wkY70uxHMb6hHF9_B10x4wjLnIzeNYiOa4nDfKHaYg-62vOkk6nu1Ixjiqo3CCgewLOjseGHEZeB1DOYVqknq5Gr6lCm9sF3bR35th1atpoELa1eWDt9urWsdS15OUFCj55858XveBj__YAsr3bCpa1u8GBUTeV1XqFumforeXoZu2ue33b54CwPN_A9kg2k0KFZez_vPA4-wVwz8mQJNkKdP946LD7sVDAF0UfyQ6uP5rc6uQosNRn7qkjnFiOrhGksDN5Satr28m9Ym1J8YJvu7GyYm7f0ELB6UQeGhJtFpNT3TNRtXHdmVl2tCM8FxyLPWkET2juEUdP-Zf7yD61iVKDIkg53Cg-pr5joeunP2OyVqDM-1SfRGPbQGgrnBZzBQC7Ja5x7W-zCzQoTfxfE9FhMpkLVWDlHS9yEdeSzhPYS7HuXEzs97tgrIG-wfRYIQI9AGHbm7mnyJ--aeuwLxbXc5Qe6VAdHR-acpL98eHhVk4NnM-wLMStO27O85wvwucBqXugk47h7fZ5M_CpWKpr25KdBss6B8HqsuCnuxKo12Jc8KKJ2xW_ZoG6u9aZI5SrHU3ipKmfSxFIRrSX07p6Foulqe3fK0bWTZ6qfdWM2yoFy_U1YsNi8pGaX7v1QzsPIGHQbRbVpMlN5odqEQXPWZEH2HHrd3l8XUsAtgFtZsvsc00cHmjhfB6xyHDHFvMjANzw46qd30gTue0p-cbHMpiRZvGtP6tYYQYyDlLK6v8asXSwl8wNvLMAOQEAkM_UKoY40ly2sWQ_uMl4SGAPauiEgEnN0wk0lhyxymeIQR0WI40xuDe8oYH4_NoD0YZ0aqj_UizWDTGIN3a3tHeAe5icFohQLdSjCX51oUvvsXzFBAg3CeyFOwPMkSKPGcUAUMsnBrO3QUGzNGJuDRtkhldzVZHcqXzV2dOKJUM0hAsrZxC26b6hc40ICq4JduJQtmTn3BquQvhglAADnxIJqs2gC8HVyQKzm6vVXoa3oTdTazkRi77Zup3QLJbe3t2RvLT_SQB8Xnzu06-JfOWnp1O9NkXP7_aKbGDtcSW7dqnuKMk2XHKz1OE0-Vq_SMLIvPPXQkQ0m-Bh5GFNKvRAI8rTdyCGIz2C8bnGz1qvxd9CMcSML1KgH08wWrOWmnHYV4Xe3N9EdkD0hNXmHWhmngzJig_B6GdnlIldAcKmzQ6PaojW01n0x-8N9uYR0Ck2lyw4VISO8t4f5v1HI5_lUp0HtRXB4LC9z6cz4jor7kTJU_dO46Fnz_AYiMxByUlWPxP-K7pRYCL-k7hDtAwlHXybKjnCWaUJ8p72DLdZ-p.xth-1wfmtT5I4eGulsIl4w\r\n\t\t\t\tgrant_type\u003dauthorization_code\r\n\t\t\t\tredirect_uri\u003dhttp://redirect.gematik.de/erezept\r\n\t\t\t\tcode_verifier\u003ddrfxigjvseyirdjfg03q489rtjoiesrdjgfv3ws4e8rujgf0q3gjwe4809rdjt89fq3j48r9jw3894efrj\r\n\t\t\t\tclient_id\u003deRezeptApp\r\nPath params:\t\u003cnone\u003e\r\nHeaders:\t\tAccept\u003d*/*\r\n\t\t\t\tContent-Type\u003dapplication/x-www-form-urlencoded; charset\u003dISO-8859-1\r\nCookies:\t\t\u003cnone\u003e\r\nMultiparts:\t\t\u003cnone\u003e\r\nBody:\t\t\t\u003cnone\u003e\r\n",
+                  "isEvidence": false,
+                  "id": "report-data-b1470e3d-f1b6-4cd0-bd71-cf501cece5e1"
+                }
+              ],
+              "precondition": false,
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 22,
+      "description": "Then the response status is 400",
+      "duration": 1,
+      "startTime": "2021-03-02T17:11:43.039960900+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 23,
+      "description": "And the JSON response should match",
+      "duration": 2,
+      "startTime": "2021-03-02T17:11:43.041958800+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 24,
+          "description": "Assert json should match in any order: {\"error\":\"invalid_grant\",\"gematik_code\":3011,\"gematik_timestamp\":\"1614701503\",\"gematik_uuid\":\"d21bf182-3d2b-4769-a551-72d6837c0660\",\"gematik_error_text\":\"Authorization Code ist abgelaufen\"},   { error:              \"invalid_grant\",\n gematik_error_text: \".*\",\n gematik_timestamp:  \"[\\\\d]*\",\n gematik_uuid:       \".*\",\n gematik_code:       \"3011\"\n  }",
+          "duration": 0,
+          "startTime": "2021-03-02T17:11:43.042961400+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    }
+  ],
+  "userStory": {
+    "id": "fordere-access-token-mit-einer-signierten-challenge-an",
+    "storyName": "Fordere Access Token mit einer signierten Challenge an",
+    "path": "file:///C:/Users/t.eitzenberger/IdeaProjects/idp-global/idp-testsuite/src/test/resources/features/coreFeatures/getTokenWithSignedChallenge.feature",
+    "narrative": "  Frontends von TI Diensten müssen vom IDP Server über ein HTTP POST an den Token Endpoint ein Access/SSO/ID Token abfragen können.",
+    "type": "feature"
+  },
+  "featureTag": {
+    "name": "Core features/Fordere Access Token mit einer signierten Challenge an",
+    "type": "feature",
+    "displayName": "Core features/Fordere Access Token mit einer signierten Challenge an"
+  },
+  "title": "GetToken Signierte Challenge - Veralteter Token code wird abgelehnt",
+  "description": "",
+  "backgroundTitle": "Initialisiere Testkontext durch Abfrage des Discovery Dokuments",
+  "backgroundDescription": "",
+  "tags": [
+    {
+      "name": "A_20315-01",
+      "type": "Afo",
+      "displayName": "A_20315-01"
+    },
+    {
+      "name": "Timeout",
+      "type": "tag",
+      "displayName": "Timeout"
+    },
+    {
+      "name": "testsuite",
+      "type": "tag",
+      "displayName": "testsuite"
+    },
+    {
+      "name": "Core features",
+      "type": "capability",
+      "displayName": "Kernfunktionalität"
+    },
+    {
+      "name": "A_20314",
+      "type": "Afo",
+      "displayName": "A_20314"
+    },
+    {
+      "name": "Todo",
+      "type": "tag",
+      "displayName": "Todo"
+    },
+    {
+      "name": "Core features/Fordere Access Token mit einer signierten Challenge an",
+      "type": "feature",
+      "displayName": "Fordere Access Token mit einer signierten Challenge an"
+    },
+    {
+      "name": "SignedChallengeFlow",
+      "type": "tag",
+      "displayName": "SignedChallengeFlow"
+    },
+    {
+      "name": "Approval",
+      "type": "tag",
+      "displayName": "Approval"
+    }
+  ],
+  "startTime": "2021-03-02T17:10:37.579038300+01:00[Europe/Berlin]",
+  "duration": 65465,
+  "projectKey": "",
+  "isManualTestingUpToDate": false,
+  "manual": false,
+  "testSource": "Cucumber",
+  "result": "SUCCESS"
+}

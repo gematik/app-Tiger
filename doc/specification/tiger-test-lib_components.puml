@@ -1,0 +1,121 @@
+@startuml
+skinparam component {
+    BackgroundColor Gold
+    BorderColor DarkOrange
+    BackgroundColor<<External>> LightGray
+    BorderColor<<External>> Blue
+    BackgroundColor<<Idp>> LightGreen
+    BorderColor<<Idp>> Green
+    BackgroundColor<<Other>> DeepSkyBlue
+    BorderColor<<Other>> Blue
+    BackgroundColor<<NextRelease>> LightGray
+    FontColor<<NextRelease>> Gray
+    BorderColor<<NextRelease>> Gray
+    ArrowColor<<HTTP>> DodgerBlue
+    FontColor<<HTTP>> Gray
+    ArrowFontColor DarkOrange
+    ArrowThickness 1
+}
+
+skinparam interface {
+    BorderColor<<HTTP>> DodgerBlue
+}
+
+    component TigerProxy as tp <<Other>>
+    component TigerEnvMgr as tem <<Other>>
+    component polc <<Other>> [PolarionConnector
+      ===
+      parses feature files for annotated scenarios
+      imports those scenarios as test cases to Polarion
+      merging existing and creating new test cases based on internal id
+      TODO utilizes the test result parser and stores test run results
+      from serenity via Aurora into a test run in Polarion
+    ]
+
+    package TigerTestLib {
+      component "Basic steps" as bs
+      component jsonchck [JsonChecker
+        ===
+        allows to use regex based docstrings to compare received JSON data
+        includes tree support allowing to assert multi level JSON data
+        supports Context and Variables in docstrings
+
+      ]
+      component ctxt [Context
+        ===
+        provides a map to store values between bdd steps
+        is thread safe by using the thread id as key
+        supports domains to allow separation of data
+        from different suites
+      ]
+      component var [Variables
+        ===
+        similar to Context provides a map based storage for
+        variables that can be used with ${VAR.xxxxx} in steps
+      ]
+      component rbelcli [Rbel Messaging Client
+        ===
+        connects to the Tiger proxy and receives all traffic
+        provides structured data objects for request and response
+      ]
+      component aforep [AfoReporter
+        ===
+        parses feature files, requirements JSON and serenity results
+        creates the afo coverage report HTML
+      ]
+      component codepars [TestCodeParser
+        ===
+        supports parsing BDD and Java Junit/TestNG test code
+      ]
+      component resparse [TestResultParser
+        ===
+        supports parsing Serenity JSON and JUNIT xml results
+      ]
+      component serint [SerenityIntegration
+        ===
+        integrates the afo coverage report into serenity overview HTML
+        attaches the RBel messages as test evidence to scenarios in serenity report
+        attaches curl calls to steps in serenity report
+      ]
+      component banner [ASCII banner
+              ===
+              allows to display large ascii banners in console/log output
+              for ansi color compliant consoles also coloring is supported
+            ]
+            component testcfg [TestConfig
+                    ===
+                    provides support for maintaining test configuration in property, yaml or xml files.
+                    manages multiple sets of config files so its easy to switch from RU to TU test config.
+                  ]
+
+          note as n1
+            SerenityIntegration, Rbel Messaging Client,
+            Context, Variables and TestConfig
+            are all created automatically at
+            initialisation time of the BDD test run
+            utilizing static initializers.
+            Behaviour can be configured via properties
+            files and environment variables
+          end note
+
+
+    }
+
+    aforep -down-> codepars : parse test scenarios
+    aforep -down-> resparse : parse serenity test results
+
+    polc -up-> codepars : parse test scenarios
+
+    serint -down-> aforep : trigger afo report generation
+
+    bs -down-> ctxt : use
+    bs -down-> var : use
+    bs -down-> jsonchck : use
+    bs -left-> serint : use
+
+    bs -down-> tem : create test system instances at runtime
+
+    bs <-right- rbelcli
+    tp -left-> rbelcli
+
+@enduml

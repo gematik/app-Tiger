@@ -1,0 +1,253 @@
+/*
+ * Copyright (c) 2021 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@media screen and (min-width: 1408px) {
+    .container:not(.is-max-desktop):not(.is-max-widescreen) {
+        max-width: 100% !important;
+    }
+}
+
+.sidebar {
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: sticky;
+    vertical-align: top;
+    max-height: 100vh;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.logo {
+    vertical-align: middle;
+    margin: 1rem;
+    margin-bottom: 0;
+}
+
+.logo img {
+    width: 320px;
+    max-width: 100%;
+    border: 3px solid #ddd;
+    border-radius: 1rem;
+    max-height: 250px;
+}
+
+.header {
+    border-bottom: 3px solid #ddd;
+    margin-bottom: 2rem;
+    padding-bottom: 0;
+    background: #eee;
+}
+
+.table, .card {
+    max-width: 100%;
+}
+
+.card {
+    background: #ddd;
+}
+
+.json-note {
+    position: relative;
+    border-radius: .4em;
+    border: 1px solid #6b999f;
+    color: #8aecf7;
+    padding: 0.3rem;
+    display: inline-block;
+    margin-left: 0.5rem;
+}
+
+pre {
+    color: #fa4 !important;
+    background-color: #444 !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+pre.json {
+    color: greenyellow !important;
+}
+pre.binary {
+    max-width: 800px;
+    padding: 0.7rem 1.5rem;
+}
+
+pre.value, pre.json, pre.value div, pre.json div {
+    word-break: break-all;
+    white-space: break-spaces;
+}
+
+pre.json {
+    word-break: break-all;
+    white-space: break-spaces;
+    color: greenyellow !important;
+}
+
+@media print {
+    .column.menu {
+        position: static !important;
+        display: block;
+        overflow-x: hidden;
+        overflow-y: auto;
+        vertical-align: top;
+        width: 100%;
+        height: auto;
+        margin-left: 5rem;
+        column-count: 3;
+    }
+
+    .columns.is-fullheight {
+        display: block !important;
+    }
+
+    pre, pre.json, pre.value {
+        color: darkred !important;
+        background-color: white !important;
+    }
+
+    .card {
+        background: white;
+    }
+
+    .page-break {
+        break-before: page;
+    }
+
+    div pre.json, div pre.value {
+        break-inside: avoid-page;
+    }
+
+    i.fa-angle-double-up, i.fa-angle-double-down, i.fa-toggle-on, i.fa-toggle-off {
+        display: none;
+    }
+}
+
+@page {
+    size: 594mm 420mm;
+}
+
+
+
+.radio-item {
+    display: inline-block;
+    position: relative;
+    padding: 0 10px;
+}
+
+.radio-item input[type='radio'] {
+    display: none;
+}
+
+.radio-item label {
+    color: #aaa;
+    font-weight: normal;
+}
+
+.radio-item label:before {
+    content: " ";
+    display: inline-block;
+    position: relative;
+    top: 5px;
+    margin: 0 5px 0 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 11px;
+    border: 2px solid #666;
+    background-color: transparent;
+}
+
+.radio-item input[type=radio]:checked + label:after {
+    border-radius: 11px;
+    border: 2px solid #469408;
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    top: 9px;
+    left: 14px;
+    color: #469408;
+    content: " ";
+    display: block;
+    background: #469408;
+}
+
+.led {
+    width: 10px;
+    height: 10px;
+    background: #666;
+    margin-right: 0.5rem;
+}
+
+.ledactive {
+    background: #469408;
+}
+
+.lederror {
+    background: #c04608;
+}
+
+.created {
+    display: none;
+}
+
+.modal-background {
+    background-color: rgba(10,10,10,.36);
+}
+
+.box.routeentry {
+    padding: 0;
+}
+
+.routeListDiv button {
+    height: 100%;
+}
+
+.navbar-item span {
+    color: #aaa;
+}
+
+#sidebar-menu, .menu + div {
+    padding-bottom: 10rem;
+}
+
+#scrollLockBtn {
+    color: #aaa;
+}
+
+@media screen and (max-width: 1023px) {
+    .navbar-menu {
+        display: flex;
+    }
+}
+
+.navbar-item, .navbar-link {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    padding-bottom: 1rem;
+}
+
+.navbar-end .navbar-item {
+    align-items: center;
+}
+
+.msglist {
+    max-width:80%;
+}

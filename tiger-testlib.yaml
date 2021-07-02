@@ -1,0 +1,25 @@
+tigerActive: true
+
+polarion:
+  testcases:
+    sync: true
+    user: user
+    password: pwd
+    host: polhost
+    project: Mainline_OPB1
+    testcaseQuery: cfInternalId:(IDP_REF_*)
+    file: testcases.json
+    fields: id,customFields.cfAfoId,title,description,type,status,assignee,attachments,author,linkedWorkItems,project,customFields.cfInternalId,customFields.cfTestCondition,customFields.cfTestExecution,customFields.cfDataVariants,customFields.cfConfiguration,customFields.cfMode,customFields.cfTestType,customFields.cfTestLevel,customFields.cfTestSteps,customFields.cfPriorityTestCase,customFields.cfTestCaseDescription,customFields.cfNegPosTF,customFields.cfProductType,customFields.cfTestCondition
+    bddFolder: src/test/resources/features
+
+  # TODO
+  results:
+    sync: true
+    user: user
+    password: pwd
+    host: polhost
+    project: Mainline_OPB1
+    testcaseQuery: cfInternalId:(IDP_REF_*)
+    file: testcases.json
+    fields: id,customFields.cfAfoId,title,description,type,status,assignee,attachments,author,linkedWorkItems,project,customFields.cfInternalId,customFields.cfTestCondition,customFields.cfTestExecution,customFields.cfDataVariants,customFields.cfConfiguration,customFields.cfMode,customFields.cfTestType,customFields.cfTestLevel,customFields.cfTestSteps,customFields.cfPriorityTestCase,customFields.cfTestCaseDescription,customFields.cfNegPosTF,customFields.cfProductType,customFields.cfTestCondition
+    resultsFolder: target/site/serenity

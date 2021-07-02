@@ -1,0 +1,47 @@
+[
+  {
+    "id": "A_20314",
+    "title": "Afo 20314",
+    "status": null,
+    "results": null,
+    "afoStatus": "NOTSET",
+    "refName": null,
+    "refURL": null
+  },
+  {
+    "id": "A_20315-01",
+    "title": "Afo 20315-01",
+    "status": null,
+    "results": null,
+    "afoStatus": "NOTSET",
+    "refName": null,
+    "refURL": null
+  },
+  {
+    "id": "GS-A_666667",
+    "title": "Deep state Afo",
+    "status": null,
+    "results": null,
+    "afoStatus": "NOTSET",
+    "refName": null,
+    "refURL": null
+  },
+  {
+    "id": "GS-A_6666671",
+    "title": "Deep state Afo Added",
+    "status": null,
+    "results": null,
+    "afoStatus": "added",
+    "refName": null,
+    "refURL": null
+  },
+  {
+    "id": "GS-A_6666672",
+    "title": "Deep state Afo Del",
+    "status": null,
+    "results": null,
+    "afoStatus": "deleted",
+    "refName": null,
+    "refURL": null
+  }
+]

@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>tiger-test-lib</artifactId>
+    <packaging>jar</packaging>
+
+    <parent>
+        <artifactId>tiger</artifactId>
+        <groupId>de.gematik.test</groupId>
+        <version>0.3.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-proxy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-testenv-mgr</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-core</artifactId>
+            <scope>test</scope>
+            <!-- Security related excludes -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jruby</groupId>
+                    <artifactId>jruby-complete</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.thoughtworks.xstream</groupId>
+                    <artifactId>xstream</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-model</artifactId>
+            <!-- Security related excludes -->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.thoughtworks.xstream</groupId>
+                    <artifactId>xstream</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-cucumber6</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-rest-assured</artifactId>
+            <version>${version.serenity.core}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>3.3.0</version>
+            <!-- serenity 2.3.4 uses version 3.3.0 -->
+        </dependency>
+
+        <dependency><!-- needed for type registry -->
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-core</artifactId>
+        </dependency>
+
+        <!-- needed for java test code parsing -->
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.16.2</version>
+        </dependency>
+
+        <!-- common helper libs -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.10</version>
+        </dependency>
+
+        <!-- for Junit 4 based driver -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+        </dependency>
+        <!-- TestNG driver is currently not supported with Serenity -->
+        <!-- Junit 5 driver is currently not supported with Tiger -->
+
+        <!-- JSON Checker -->
+        <dependency>
+            <groupId>org.skyscreamer</groupId>
+            <artifactId>jsonassert</artifactId>
+            <version>1.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.2</version>
+        </dependency>
+        <dependency>
+            <artifactId>json-unit-spring</artifactId>
+            <groupId>net.javacrumbs.json-unit</groupId>
+            <version>2.25.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik</groupId>
+            <artifactId>rbellogger</artifactId>
+            <version>${version.rbellogger}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${version.assertj}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <!-- plugins to create reusable test jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <tags>
+                        <tag>
+                            <name>testenv</name>
+                            <placement>a</placement>
+                            <head>Testenvironment Variables:</head>
+                        </tag>
+                        <tag>
+                            <name>gematik.context.out</name>
+                            <placement>a</placement>
+                            <head>Context OUT:</head>
+                        </tag>
+                        <tag>
+                            <name>gematik.context.in</name>
+                            <placement>a</placement>
+                            <head>Context INPUT:</head>
+                        </tag>
+                    </tags>
+                </configuration>
+            </plugin>
+            <!-- end create reusable test jar part -->
+
+            <!-- plugin used to generate serenity driver classes from vm template file -->
+            <plugin>
+                <groupId>com.github.temyers</groupId>
+                <artifactId>cucumber-jvm-parallel-plugin</artifactId>
+                <version>4.2.0</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
+                            <glue>
+                                <package>de.gematik.test.tiger.glue</package>
+                                <!-- add your packages here -->
+                            </glue>
+                            <plugins>
+                            </plugins>
+                            <parallelScheme>FEATURE</parallelScheme>
+
+                            <!-- deactivated as jenkins xunit plugin is not very flexible and does not work well with serenity junit xml exports
+                            see https://issues.apache.org/jira/browse/SUREFIRE-1533
+                            <plugins>
+                              <plugin>
+                                <name>junit</name>
+                                <extension>xml</extension>
+                              </plugin>
+                            </plugins>-->
+                        </configuration>
+                        <goals>
+                            <goal>generateRunners</goal>
+                        </goals>
+                        <id>generateRunners</id>
+                        <phase>generate-test-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <version>3.0.0-M5</version>
+                <executions>
+                    <execution>
+                        <id>run-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <argLine>${failsafe.jacoco.args}</argLine>
+                    <includes>
+                        <include>**/Parallel*IT.java</include>
+                        <!--<include>**/TigerBDDDriver.java</include>-->
+                    </includes>
+                    <!--<parallel>classes</parallel>
+                    <perCoreThreadCount>true</perCoreThreadCount>-->
+                    <skipITs>false</skipITs>
+                    <systemPropertyVariables>
+                        <TIGER_ACTIVE>1</TIGER_ACTIVE>
+                        <TIGER_TESTENV_CFGFILE>src/test/resources/testdata/noServersActive.yaml</TIGER_TESTENV_CFGFILE>
+                        <!--
+                        <cucumber.filter.tags>@Approval and not @OpenBug and not @WiP and not @LongRunning
+                        </cucumber.filter.tags>
+                        -->
+                    </systemPropertyVariables>
+                    <threadCount>16</threadCount>
+                    <forkCount>2</forkCount>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>net.serenity-bdd.maven.plugins</groupId>
+                <artifactId>serenity-maven-plugin</artifactId>
+                <version>${version.serenity.maven.plugin}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.serenity-bdd</groupId>
+                        <artifactId>serenity-core</artifactId>
+                        <version>${version.serenity.core}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>serenity-reports</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

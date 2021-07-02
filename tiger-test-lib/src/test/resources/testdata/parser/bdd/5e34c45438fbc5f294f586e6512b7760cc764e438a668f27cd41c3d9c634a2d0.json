@@ -1,0 +1,331 @@
+{
+  "name": "GetToken mit SSO Token - Veralteter SSO Token wird abgelehnt",
+  "id": "fordere-access-token-mittels-sso-token-an;gettoken-mit-sso-token---veralteter-sso-token-wird-abgelehnt",
+  "testSteps": [
+    {
+      "number": 1,
+      "description": "Given I initialize scenario from discovery document endpoint",
+      "duration": 18,
+      "startTime": "2021-03-02T17:10:33.491903200+01:00[Europe/Berlin]",
+      "result": "ERROR",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 2,
+          "description": "Initialize from discovery document",
+          "duration": 9,
+          "startTime": "2021-03-02T17:10:33.498903800+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1,
+          "children": [
+            {
+              "number": 3,
+              "description": "GET http://localhost:63144/auth/realms/idp/.well-known/openid-configuration\r",
+              "duration": 0,
+              "startTime": "2021-03-02T17:10:33.507903600+01:00[Europe/Berlin]",
+              "result": "SUCCESS",
+              "restQuery": {
+                "method": "GET",
+                "path": "http://localhost:63144/auth/realms/idp/.well-known/openid-configuration\r",
+                "content": "\r",
+                "contentType": "null",
+                "requestHeaders": "Accept\u003d*/*\r",
+                "requestCookies": "\r",
+                "responseHeaders": "Cache-Control: max-age\u003d300\r\nVersion: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nContent-Length: 2665\r\nDate: Tue, 02 Mar 2021 16:10:33 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+                "responseCookies": "\r",
+                "responseBody": "eyJhbGciOiJCUDI1NlIxIiwia2lkIjoiZGlzY1NpZyIsIng1YyI6WyJNSUlDc1RDQ0FsaWdBd0lCQWdJSEFic3NxUWhxT3pBS0JnZ3Foa2pPUFFRREFqQ0JoREVMTUFrR0ExVUVCaE1DUkVVeEh6QWRCZ05WQkFvTUZtZGxiV0YwYVdzZ1IyMWlTQ0JPVDFRdFZrRk1TVVF4TWpBd0JnTlZCQXNNS1V0dmJYQnZibVZ1ZEdWdUxVTkJJR1JsY2lCVVpXeGxiV0YwYVd0cGJtWnlZWE4wY25WcmRIVnlNU0F3SGdZRFZRUUREQmRIUlUwdVMwOU5VQzFEUVRFd0lGUkZVMVF0VDA1TVdUQWVGdzB5TVRBeE1UVXdNREF3TURCYUZ3MHlOakF4TVRVeU16VTVOVGxhTUVreEN6QUpCZ05WQkFZVEFrUkZNU1l3SkFZRFZRUUtEQjFuWlcxaGRHbHJJRlJGVTFRdFQwNU1XU0F0SUU1UFZDMVdRVXhKUkRFU01CQUdBMVVFQXd3SlNVUlFJRk5wWnlBek1Gb3dGQVlIS29aSXpqMENBUVlKS3lRREF3SUlBUUVIQTBJQUJJWVpud2lHQW41UVlPeDQzWjhNd2FaTEQzci9iejZCVGNRTzVwYmV1bTZxUXpZRDVkRENjcml3L1ZOUFBaQ1F6WFFQZzRTdFd5eTVPT3E5VG9nQkVtT2pnZTB3Z2Vvd0RnWURWUjBQQVFIL0JBUURBZ2VBTUMwR0JTc2tDQU1EQkNRd0lqQWdNQjR3SERBYU1Bd01Da2xFVUMxRWFXVnVjM1F3Q2dZSUtvSVVBRXdFZ2dRd0lRWURWUjBnQkJvd0dEQUtCZ2dxZ2hRQVRBU0JTekFLQmdncWdoUUFUQVNCSXpBZkJnTlZIU01FR0RBV2dCUW84UGptcWNoM3pFTkYyNXF1MXpxRHJBNFBxREE0QmdnckJnRUZCUWNCQVFRc01Db3dLQVlJS3dZQkJRVUhNQUdHSEdoMGRIQTZMeTlsYUdOaExtZGxiV0YwYVdzdVpHVXZiMk56Y0M4d0hRWURWUjBPQkJZRUZDOTRNOUxnVzQ0bE5nb0Fia1Bhb21uTGpTOC9NQXdHQTFVZEV3RUIvd1FDTUFBd0NnWUlLb1pJemowRUF3SURSd0F3UkFJZ0NnNHlaRFdteUJpcmd4emF3ei9TOERKblJGS3RZVS9ZR05sUmM3K2tCSGNDSUJ1emJhM0dzcHFTbW9QMVZ3TWVOTktOYUxzZ1Y4dk1iREpiMzBhcWFpWDEiXX0.eyJhdXRob3JpemF0aW9uX2VuZHBvaW50IjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9zaWduX3Jlc3BvbnNlIiwiYWx0ZXJuYXRpdmVfYXV0aG9yaXphdGlvbl9lbmRwb2ludCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NjMxNDQvYWx0X3Jlc3BvbnNlIiwic3NvX2VuZHBvaW50IjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9zc29fcmVzcG9uc2UiLCJwYWlyaW5nX2VuZHBvaW50IjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9wYWlyaW5nIiwidG9rZW5fZW5kcG9pbnQiOiJodHRwOi8vbG9jYWxob3N0OjYzMTQ0L3Rva2VuIiwidXJpX2Rpc2MiOiJodHRwOi8vbG9jYWxob3N0OjYzMTQ0L2Rpc2NvdmVyeURvY3VtZW50IiwiaXNzdWVyIjoiaHR0cHM6Ly9pZHAuemVudHJhbC5pZHAuc3BsaXRkbnMudGktZGllbnN0ZS5kZSIsImp3a3NfdXJpIjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9qd2tzIiwiZXhwIjoxNjE0Nzg3ODMzLCJuYmYiOjE2MTQ3MDE0MzMsImlhdCI6MTYxNDcwMTQzMywidXJpX3B1a19pZHBfZW5jIjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9pZHBFbmMvandrcy5qc29uIiwidXJpX3B1a19pZHBfc2lnIjoiaHR0cDovL2xvY2FsaG9zdDo2MzE0NC9pcGRTaWcvandrcy5qc29uIiwic3ViamVjdF90eXBlc19zdXBwb3J0ZWQiOlsicGFpcndpc2UiXSwiaWRfdG9rZW5fc2lnbmluZ19hbGdfdmFsdWVzX3N1cHBvcnRlZCI6WyJCUDI1NlIxIl0sInJlc3BvbnNlX3R5cGVzX3N1cHBvcnRlZCI6WyJjb2RlIl0sInNjb3Blc19zdXBwb3J0ZWQiOlsib3BlbmlkIiwiZS1yZXplcHQiXSwicmVzcG9uc2VfbW9kZXNfc3VwcG9ydGVkIjpbInF1ZXJ5Il0sImdyYW50X3R5cGVzX3N1cHBvcnRlZCI6WyJhdXRob3JpemF0aW9uX2NvZGUiXSwiYWNyX3ZhbHVlc19zdXBwb3J0ZWQiOlsidXJuOmVpZGFzOmxvYTpoaWdoIl0sInRva2VuX2VuZHBvaW50X2F1dGhfbWV0aG9kc19zdXBwb3J0ZWQiOlsibm9uZSJdfQ.BenlBUSx7K-aaaQvDyXAHkXpIufPkV16VO2iIQn02aJaecXDA36W6g0Yo8nADXj-eY4AQLRcxxyt9oohOmPQ0A",
+                "statusCode": 200
+              },
+              "precondition": false,
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "description": "And I retrieve public keys from URIs",
+      "duration": 13,
+      "startTime": "2021-03-02T17:10:33.510903900+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 5,
+          "description": "GET http://localhost:63144/idpEnc/jwks.json\r",
+          "duration": 0,
+          "startTime": "2021-03-02T17:10:33.516904+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "restQuery": {
+            "method": "GET",
+            "path": "http://localhost:63144/idpEnc/jwks.json\r",
+            "content": "\r",
+            "contentType": "null",
+            "requestHeaders": "Accept\u003d*/*\r",
+            "requestCookies": "\r",
+            "responseHeaders": "Version: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nDate: Tue, 02 Mar 2021 16:10:33 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+            "responseCookies": "\r",
+            "responseBody": "{\n    \"x5c\": [\n        \"MIICsTCCAligAwIBAgIHA8OQFtdAtTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMCREUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtvbXBvbmVudGVuLUNBIGRlciBUZWxlbWF0aWtpbmZyYXN0cnVrdHVyMSAwHgYDVQQDDBdHRU0uS09NUC1DQTEwIFRFU1QtT05MWTAeFw0yMTAxMTMwMDAwMDBaFw0yNjAxMTMyMzU5NTlaMEkxCzAJBgNVBAYTAkRFMSYwJAYDVQQKDB1nZW1hdGlrIFRFU1QtT05MWSAtIE5PVC1WQUxJRDESMBAGA1UEAwwJSURQIFNpZyAyMFowFAYHKoZIzj0CAQYJKyQDAwIIAQEHA0IABEC6Sfy6RcfusiYbG+Drx8FNZIS574ojsGDr5n+XJSu8mHuknfNkoMmSbytt4br0YGihOixcmBKy80UfSLdXGe6jge0wgeowDgYDVR0PAQH/BAQDAgeAMC0GBSskCAMDBCQwIjAgMB4wHDAaMAwMCklEUC1EaWVuc3QwCgYIKoIUAEwEggQwIQYDVR0gBBowGDAKBggqghQATASBSzAKBggqghQATASBIzAfBgNVHSMEGDAWgBQo8Pjmqch3zENF25qu1zqDrA4PqDA4BggrBgEFBQcBAQQsMCowKAYIKwYBBQUHMAGGHGh0dHA6Ly9laGNhLmdlbWF0aWsuZGUvb2NzcC8wHQYDVR0OBBYEFLM7Gd6tlX+bjswtS+tVxkbTwxC0MAwGA1UdEwEB/wQCMAAwCgYIKoZIzj0EAwIDRwAwRAIgfKKll8KtEPLdaUWwF7ftbEvkIdz9KXhL4cKRyozGQjECIDxby8TX2iWfwVhfHoxmpTf+D3eCRHhmnwJWcIgm1tF0\"\n    ],\n    \"kid\": \"idpEnc\",\n    \"kty\": \"EC\",\n    \"crv\": \"BP-256\",\n    \"x\": \"QLpJ/LpFx+6yJhsb4OvHwU1khLnviiOwYOvmf5clK7w\u003d\",\n    \"y\": \"AJh7pJ3zZKDJkm8rbeG69GBooTosXJgSsvNFH0i3Vxnu\"\n}",
+            "statusCode": 200
+          },
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 6,
+          "description": "GET http://localhost:63144/ipdSig/jwks.json\r",
+          "duration": 0,
+          "startTime": "2021-03-02T17:10:33.522904300+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "restQuery": {
+            "method": "GET",
+            "path": "http://localhost:63144/ipdSig/jwks.json\r",
+            "content": "\r",
+            "contentType": "null",
+            "requestHeaders": "Accept\u003d*/*\r",
+            "requestCookies": "\r",
+            "responseHeaders": "Version: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nDate: Tue, 02 Mar 2021 16:10:33 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+            "responseCookies": "\r",
+            "responseBody": "{\n    \"x5c\": [\n        \"MIICsTCCAligAwIBAgIHA61I5ACUjTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMCREUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtvbXBvbmVudGVuLUNBIGRlciBUZWxlbWF0aWtpbmZyYXN0cnVrdHVyMSAwHgYDVQQDDBdHRU0uS09NUC1DQTEwIFRFU1QtT05MWTAeFw0yMDA4MDQwMDAwMDBaFw0yNTA4MDQyMzU5NTlaMEkxCzAJBgNVBAYTAkRFMSYwJAYDVQQKDB1nZW1hdGlrIFRFU1QtT05MWSAtIE5PVC1WQUxJRDESMBAGA1UEAwwJSURQIFNpZyAxMFowFAYHKoZIzj0CAQYJKyQDAwIIAQEHA0IABJZQrG1NWxIB3kz/6Z2zojlkJqN3vJXZ3EZnJ6JXTXw5ZDFZ5XjwWmtgfomv3VOV7qzI5ycUSJysMWDEu3mqRcajge0wgeowHQYDVR0OBBYEFJ8DVLAZWT+BlojTD4MT/Na+ES8YMDgGCCsGAQUFBwEBBCwwKjAoBggrBgEFBQcwAYYcaHR0cDovL2VoY2EuZ2VtYXRpay5kZS9vY3NwLzAMBgNVHRMBAf8EAjAAMCEGA1UdIAQaMBgwCgYIKoIUAEwEgUswCgYIKoIUAEwEgSMwHwYDVR0jBBgwFoAUKPD45qnId8xDRduartc6g6wOD6gwLQYFKyQIAwMEJDAiMCAwHjAcMBowDAwKSURQLURpZW5zdDAKBggqghQATASCBDAOBgNVHQ8BAf8EBAMCB4AwCgYIKoZIzj0EAwIDRwAwRAIgVBPhAwyX8HAVH0O0b3+VazpBAWkQNjkEVRkv+EYX1e8CIFdn4O+nivM+XVi9xiKK4dW1R7MD334OpOPTFjeEhIVV\"\n    ],\n    \"kid\": \"idpSig\",\n    \"kty\": \"EC\",\n    \"crv\": \"BP-256\",\n    \"x\": \"AJZQrG1NWxIB3kz/6Z2zojlkJqN3vJXZ3EZnJ6JXTXw5\",\n    \"y\": \"ZDFZ5XjwWmtgfomv3VOV7qzI5ycUSJysMWDEu3mqRcY\u003d\"\n}",
+            "statusCode": 200
+          },
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "description": "Given I choose code verifier \u0027drfxigjvseyirdjfg03q489rtjoiesrdjgfv3ws4e8rujgf0q3gjwe4809rdjt89fq3j48r9jw3894efrj\u0027",
+      "duration": 1,
+      "startTime": "2021-03-02T17:10:33.524904100+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 8,
+          "description": "Set code verifier: drfxigjvseyirdjfg03q489rtjoiesrdjgfv3ws4e8rujgf0q3gjwe4809rdjt89fq3j48r9jw3894efrj",
+          "duration": 0,
+          "startTime": "2021-03-02T17:10:33.525904100+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "description": "And I request a challenge with\r\n| client_id | scope | code_challenge | code_challenge_method | redirect_uri | state | nonce | response_type |\r\n| eRezeptApp | e-rezept openid | Ca3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg | S256 | http://redirect.gematik.de/erezept | xxxstatexxx2a | 887711 | code |",
+      "duration": 12,
+      "startTime": "2021-03-02T17:10:33.526903500+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 10,
+          "description": "Request response and assert status: http://localhost:63144/sign_response, \u003cnull\u003e, GET, {scope\u003de-rezept openid, response_type\u003dcode, code_challenge_method\u003dS256, redirect_uri\u003dhttp://redirect.gematik.de/erezept, state\u003dxxxstatexxx2a, nonce\u003d887711, client_id\u003deRezeptApp, code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg}, \u003cnull\u003e, HTTP STATUS NO CHECK",
+          "duration": 9,
+          "startTime": "2021-03-02T17:10:33.528903800+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1,
+          "children": [
+            {
+              "number": 11,
+              "description": "GET http://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx2a\u0026nonce\u003d887711\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r",
+              "duration": 0,
+              "startTime": "2021-03-02T17:10:33.536905+01:00[Europe/Berlin]",
+              "result": "SUCCESS",
+              "restQuery": {
+                "method": "GET",
+                "path": "http://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx2a\u0026nonce\u003d887711\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r",
+                "content": "\r",
+                "contentType": "null",
+                "requestHeaders": "Accept\u003d*/*\r",
+                "requestCookies": "\r",
+                "responseHeaders": "Cache-Control: no-store\r\nPragma: no-cache\r\nVersion: 0.1-SNAPSHOT\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nDate: Tue, 02 Mar 2021 16:10:33 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+                "responseCookies": "\r",
+                "responseBody": "{\n    \"challenge\": \"eyJhbGciOiJCUDI1NlIxIiwiZXhwIjoxNjE0NzAxNjEzLCJ0eXAiOiJKV1QiLCJraWQiOiJpZHBTaWcifQ.eyJpc3MiOiJodHRwczovL2lkcC56ZW50cmFsLmlkcC5zcGxpdGRucy50aS1kaWVuc3RlLmRlIiwicmVzcG9uc2VfdHlwZSI6ImNvZGUiLCJzbmMiOiI3L1h0Tk12UUd4OWE0dkpkaGxySTlKWHBJOGZxemFzd2R4dk1sT214QkZRPSIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJ0b2tlbl90eXBlIjoiY2hhbGxlbmdlIiwibm9uY2UiOiI4ODc3MTEiLCJjbGllbnRfaWQiOiJlUmV6ZXB0QXBwIiwic2NvcGUiOiJlLXJlemVwdCBvcGVuaWQiLCJzdGF0ZSI6Inh4eHN0YXRleHh4MmEiLCJyZWRpcmVjdF91cmkiOiJodHRwOi8vcmVkaXJlY3QuZ2VtYXRpay5kZS9lcmV6ZXB0IiwiZXhwIjoxNjE0NzAxNjEzLCJpYXQiOjE2MTQ3MDE0MzMsImNvZGVfY2hhbGxlbmdlIjoiQ2EzVmU4alNzQlFPQkZWcVF2THMxRS1kR1YxQlhnMkZUdnJkLVRnMTlWZyIsImp0aSI6Ijc0MmQ0NzI0ZTc0OGM3NGYifQ.P5ECTMUsslDrWXSoKBVJpUn-2wkRtrxK8JVqE-31leMdxPv_je5cnnT9Mg4TfKLO9PBU9i1jHz98MHkXvVpI1w\",\n    \"user_consent\": {\n        \"requested_scopes\": {\n            \"e-rezept\": \"Zugriff auf die E-Rezept-Funktionalität.\",\n            \"openid\": \"Zugriff auf den ID-Token.\"\n        },\n        \"requested_claims\": {\n            \"organizationName\": \"Zustimmung zur Verarbeitung der Organisationszugehörigkeit\",\n            \"professionOID\": \"Zustimmung zur Verarbeitung der Rolle\",\n            \"idNummer\": \"Zustimmung zur Verarbeitung der Id (z.B. Krankenversichertennummer, Telematik-Id)\",\n            \"given_name\": \"Zustimmung zur Verarbeitung des Vornamens\",\n            \"family_name\": \"Zustimmung zur Verarbeitung des Nachnamens\"\n        }\n    }\n}",
+                "statusCode": 200
+              },
+              "reportData": [
+                {
+                  "title": "cURL",
+                  "contents": "curl -v -H \"Accept: */*\" -X GET \"http://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx2a\u0026nonce\u003d887711\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\" ",
+                  "isEvidence": false,
+                  "id": "report-data-ebe04dca-63c3-41f8-8a12-94886a11153c"
+                },
+                {
+                  "title": "RestAssured Log",
+                  "contents": "Request method:\tGET\r\nRequest URI:\thttp://localhost:63144/sign_response?scope\u003de-rezept%20openid\u0026response_type\u003dcode\u0026code_challenge_method\u003dS256\u0026redirect_uri\u003dhttp%3A%2F%2Fredirect.gematik.de%2Ferezept\u0026state\u003dxxxstatexxx2a\u0026nonce\u003d887711\u0026client_id\u003deRezeptApp\u0026code_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r\nProxy:\t\t\t\u003cnone\u003e\r\nRequest params:\t\u003cnone\u003e\r\nQuery params:\tscope\u003de-rezept openid\r\n\t\t\t\tresponse_type\u003dcode\r\n\t\t\t\tcode_challenge_method\u003dS256\r\n\t\t\t\tredirect_uri\u003dhttp://redirect.gematik.de/erezept\r\n\t\t\t\tstate\u003dxxxstatexxx2a\r\n\t\t\t\tnonce\u003d887711\r\n\t\t\t\tclient_id\u003deRezeptApp\r\n\t\t\t\tcode_challenge\u003dCa3Ve8jSsBQOBFVqQvLs1E-dGV1BXg2FTvrd-Tg19Vg\r\nForm params:\t\u003cnone\u003e\r\nPath params:\t\u003cnone\u003e\r\nHeaders:\t\tAccept\u003d*/*\r\nCookies:\t\t\u003cnone\u003e\r\nMultiparts:\t\t\u003cnone\u003e\r\nBody:\t\t\t\u003cnone\u003e\r\n",
+                  "isEvidence": false,
+                  "id": "report-data-e800c4ff-c60a-44e3-a767-861db6111927"
+                }
+              ],
+              "precondition": false,
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "description": "When I load SSO_TOKEN from folder \u0027old_sso_token\u0027",
+      "duration": 12,
+      "startTime": "2021-03-02T17:10:33.539443+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 13,
+      "description": "And I load SSO_TOKEN_ENCRYPTED from folder \u0027old_sso_token\u0027",
+      "duration": 2,
+      "startTime": "2021-03-02T17:10:33.552954700+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 14,
+      "description": "And I request a code token with sso token",
+      "duration": 16,
+      "startTime": "2021-03-02T17:10:33.554987700+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "children": [
+        {
+          "number": 15,
+          "description": "Request response and assert status: http://localhost:63144/sso_response, \u003cnull\u003e, POST, {unsigned_challenge\u003deyJhbGciOiJCUDI1NlIxIiwiZXhwIjoxNjE0NzAxNjEzLCJ0eXAiOiJKV1QiLCJraWQiOiJpZHBTaWcifQ.eyJpc3MiOiJodHRwczovL2lkcC56ZW50cmFsLmlkcC5zcGxpdGRucy50aS1kaWVuc3RlLmRlIiwicmVzcG9uc2VfdHlwZSI6ImNvZGUiLCJzbmMiOiI3L1h0Tk12UUd4OWE0dkpkaGxySTlKWHBJOGZxemFzd2R4dk1sT214QkZRPSIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJ0b2tlbl90eXBlIjoiY2hhbGxlbmdlIiwibm9uY2UiOiI4ODc3MTEiLCJjbGllbnRfaWQiOiJlUmV6ZXB0QXBwIiwic2NvcGUiOiJlLXJlemVwdCBvcGVuaWQiLCJzdGF0ZSI6Inh4eHN0YXRleHh4MmEiLCJyZWRpcmVjdF91cmkiOiJodHRwOi8vcmVkaXJlY3QuZ2VtYXRpay5kZS9lcmV6ZXB0IiwiZXhwIjoxNjE0NzAxNjEzLCJpYXQiOjE2MTQ3MDE0MzMsImNvZGVfY2hhbGxlbmdlIjoiQ2EzVmU4alNzQlFPQkZWcVF2THMxRS1kR1YxQlhnMkZUdnJkLVRnMTlWZyIsImp0aSI6Ijc0MmQ0NzI0ZTc0OGM3NGYifQ.P5ECTMUsslDrWXSoKBVJpUn-2wkRtrxK8JVqE-31leMdxPv_je5cnnT9Mg4TfKLO9PBU9i1jHz98MHkXvVpI1w, ssotoken\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjEyNTc3OTMzfQ..6oREzvi2uEMxDo7q.8Xb56aREbTyaYbFiLE56ann7qkYbujj8AEdF6auSNtA6O6ZUYxbyt6qe5p0xgO_BszCwGbDVYuYcpd1xhi6Qvi61kEYSAQdFt3BS5m5wQlt0XwHHAtZ_dJXfuoPh6EpSnPdmKRnFS_W7Rj1HccUwWrhdiP-hflege7UHtabxUg8JOjSLFcq9nl8t-EE9azNPv1njh0Wc_4K5_oM2pGU2M4hiR5OiQwfUN7s94j6wTpDNbB4lBW6Yud4FR9tjXkIXdhkCpMDRb7LZXKFjiX8kQ4RM5R5B5oSuWbHEVXCnORplPTOZsYKWPtBj7ZyZC588PY0Km2D6JurGnFlFIuI0Kdy_M9CFsYc7TnKBtQZCGIsGe9LefxwuujEvg-ASpRhq0ftTS9trbek4T3z-JA2eHhPavMYiTHkCQFFj5G7KxDz_ZQJdbCXnugHGZvM-_FwEsVrYOegD7e65bvmaNK9oCBzzVG6upXXl52AsJ1h8CNegBN0tNbogDiPjdZ6p3X2PwE5ZbJpDvcB9ZXRIHPIf1pWotiLOk_EIFQtxcKFKSYpiX9r2wbRKfdoiUKq3-C_5cHAi_mGMUGMvDijNQZ2gyV1bTTNj_0yL9_vvX5xqrLzgKQ0UbERQrjFPzEzDToY9gHGmqtbEToKb5r-G0UDoeuUJ26YP0kCFJWTfxexNe8eLPKEXLRTts9Ez907GmJUnBj4YjdyOr7GHXe7zNFbATkxuHuDOCikY3MoFCU0g6bzjM6lrHkvk61vZcnrQSbzqpKkWOMaP6TG69YvK3wRHufYSDwMN1qxah9fcrAmc-hWj7Wm-LAgDbpzZ4z0q9x1ZMsSFUu2eJgG6zjTTRZzFP842BA3QlHgj4Otjbn1C2EbFt6ZyqmaH6RupjPdVeqzojQkNgS1yp3Gk8Yf4-9welHcNs3QYtBgEP6TYsIq7X3SMMsH1kotR4tNKI26xM3csLdCFKnmkugjp_rw82LZCs9sbSzW1ta3w7fo_EyHl0nxSK6gdAydK2VS-UIPrh3ubVVQvBQOwZtNBp5Pp4Ktfdf81M970meAIQNM2afU_89H1igZyvvfbbzbqg689kTQICk5kmruC_9aqa7lbvSdlDPkk2j_YMc39nfdrY63ElU98A93thHmtycQpFJqzhz-QDYxJABUEY6VVF6ETszqQBmcFmoxWI6gvQjbCL1AzU4cDEa3eYQWLISb6qdL244A672lwu0Nvrts8vcASGKOq9R4357DprB7zpMSqoKXupcmikyh_e6dI_N0J9oybZTYBQO60RP7ejgMI5q_FlLQ0h6ufOEyLFFOhpwrLgRoBkm9WgQFJ9SW-hgkaeyARB0yRsCPP6AdyLZrKGYDzO64inDYM08pv64gEDtcALWiRuhq49QTB9smdBrse-7oIws8Y2f0nomdS52XQpJDZvPSxRQTw8mNN6suM4WAxUGAjUiLYrR8_GjMaxA-DV94q1LZCr2oeNSMEpAjb5YeXWt_lAwUGw2s4Nvfx0i6hjY4MnEdzpPTSICjeuTp-sb-jvMovc2zaETEkVfuA5Iits6VSTxqlQcdQeiWyiKfqNz5KQ57B_AaKMhFbyfE1Z_GGxx5mMjKQh5ap4kEQwXXHTVd-3_5XmY4PrHkUiR6pkfWbb1LIWKFRx7h4FjizlSivBKEwVIRof1LKIlCyUIXqGmmtgjPH5cjqX_pu-4R4nKohmEN-gAMkjWQGXezNxLeyuxBFWf6xtPfFqlMT7EXBswjiHIpNN3axcixGgsvbiXJskP3vCGdWnFhAOdHpObTdUO9iuo_hXjMLTsCHMxv1zb3W17YugKJLhl1CPPJ2SMh8gDJR6pXInmF3zEfVcEHtTUAT8voGglo05su7jjiJq1hyispGCzod0LtCfQNpg_Abs5NAv7toGW-xsfNDJbPR_LvqC0HmjidxE21GN7vG8NPOHm464IfJu2QS80_0RaNelhdFeI2urJwjrjy7ekcXdGrH5068TgzcAjK7oLbU9uX6CWRCyI0VeI3-LefTcpySU3BsfWrqAzMCQMeCTWjdtnSqfKhTq9cphrVMmLihQPLdPxc8QAZoMjfYpCbpyv8w4i3m3Qx0kc0ep0cit2GETiY2m--a8Kjd9VK65Ifx2dDcwb-22cKx6hqSUP6ijeNZywndj9E8wxLDorCUt-9lAK4o_RLa9K3JR2pYayEF_X7SA_SiZNe2G5l0ZrItGkMdUUIRTcIQgWjQCFBkuClE71HWvZhcklp5TTHJcpFiic7yO-rIFZ3g4aUjm7AKT8k0qqo-ero5bGZin1D2FWtncuZiSvzAr1Ad9km2-QeNWfpzx08EMVH8XjsADqGH9-koxzEersDp9FcxbHPUzawanMiDs9pOUk8EH5kjwkq1gM1M0_uhHZPAJO0XYsWAuCOwKC8Rkaz8v_TlWwostRkPLW4g-7NI0R2nvHINyhmTd4ZSWxeipKDSvt006kOAX2xVg-vD1AVgZk07QnUVcUIPg7O5i-cijn3Jk9puzGKcu2-1WdQE9SVn_ZQ9sLGrgAfTCEX_xR2Ez_K1oSjS7Ow9O8h3hEGKt-kmm2IX8-tf0WnC4utYY4IZ3ZL4whwyr3wZBxz-Jx5zFbEWQqk1hig9TFjmeGS6nyfYmgg28IYrpzK-evUzqyl5nuQ3phL--wu0_fJoOKlQeQ-ExgZwucrFeoH3iaca4-98K-SwtlUxOUBD7xILR5JlM0gFVcIIxwUwZ-E-UvU3Bl22zVFHybx9CVjqOIA0B0EU3BxYDMXeioaNjM4if4bFZMzqXdVv_LP-5BpdlVwOHZwzj0avWJ4VNtf1DcndNOLtFK6I_2x3PvS-dyNw6000TPR18tKPbjFoVGi1XjZYl3uJpfRJYPuoWYyKmniDNTYmdHcxeB1Pxy6feLmDK_7mVlIn9ON2f9j6XrWLZoPa4ozDlVu9ESt6okOPc7fuOgAtsKvY7VQtZVU99wamsrpruXuqpc1WT2EVrAWE5Qg-MV7MipC_5GNNtwukCZSLyWDBcLY2C4-Hr34yTcfealxlfr76qV_mZ515x1ckj_J3Kx_wd4DEA_bZ3cvkX2uA0zhrBBYY75kqLv6cnDk.uImsf6UXiEl5k-62JmOP4w}, \u003cnull\u003e, HTTP STATUS NO CHECK",
+          "duration": 13,
+          "startTime": "2021-03-02T17:10:33.556986800+01:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1,
+          "children": [
+            {
+              "number": 16,
+              "description": "POST http://localhost:63144/sso_response\r",
+              "duration": 0,
+              "startTime": "2021-03-02T17:10:33.569995400+01:00[Europe/Berlin]",
+              "result": "SUCCESS",
+              "restQuery": {
+                "method": "POST",
+                "path": "http://localhost:63144/sso_response\r",
+                "content": "\r",
+                "contentType": "application/x-www-form-urlencoded",
+                "requestHeaders": "Accept\u003d*/*\r\n\t\t\t\tContent-Type\u003dapplication/x-www-form-urlencoded; charset\u003dUTF-8\r",
+                "requestCookies": "\r",
+                "responseHeaders": "Cache-Control: no-store\r\nPragma: no-cache\r\nVersion: 0.1-SNAPSHOT\r\nLocation: https://idp.zentral.idp.splitdns.ti-dienste.de?error\u003daccess_denied\u0026gematik_code\u003d2040\u0026gematik_timestamp\u003d1614701433\u0026gematik_uuid\u003d4f871bfe-c587-45be-a8d3-8cfa703398f1\u0026gematik_error_text\u003dSSO_TOKEN%20nicht%20valide%2C%20bitte%20um%20neuerliche%20Authentisierung\u0026error_description\u003dSSO_TOKEN%20nicht%20valide%2C%20bitte%20um%20neuerliche%20Authentisierung\r\nContent-Length: 0\r\nDate: Tue, 02 Mar 2021 16:10:33 GMT\r\nKeep-Alive: timeout\u003d60\r\nConnection: keep-alive\r",
+                "responseCookies": "\r",
+                "statusCode": 302
+              },
+              "reportData": [
+                {
+                  "title": "cURL",
+                  "contents": "curl -v -H \"Accept: */*\" -H \"Content-Type: application/x-www-form-urlencoded; charset\u003dUTF-8\"  --data \"unsigned_challenge\u003deyJhbGciOiJCUDI1NlIxIiwiZXhwIjoxNjE0NzAxNjEzLCJ0eXAiOiJKV1QiLCJraWQiOiJpZHBTaWcifQ.eyJpc3MiOiJodHRwczovL2lkcC56ZW50cmFsLmlkcC5zcGxpdGRucy50aS1kaWVuc3RlLmRlIiwicmVzcG9uc2VfdHlwZSI6ImNvZGUiLCJzbmMiOiI3L1h0Tk12UUd4OWE0dkpkaGxySTlKWHBJOGZxemFzd2R4dk1sT214QkZRPSIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJ0b2tlbl90eXBlIjoiY2hhbGxlbmdlIiwibm9uY2UiOiI4ODc3MTEiLCJjbGllbnRfaWQiOiJlUmV6ZXB0QXBwIiwic2NvcGUiOiJlLXJlemVwdCBvcGVuaWQiLCJzdGF0ZSI6Inh4eHN0YXRleHh4MmEiLCJyZWRpcmVjdF91cmkiOiJodHRwOi8vcmVkaXJlY3QuZ2VtYXRpay5kZS9lcmV6ZXB0IiwiZXhwIjoxNjE0NzAxNjEzLCJpYXQiOjE2MTQ3MDE0MzMsImNvZGVfY2hhbGxlbmdlIjoiQ2EzVmU4alNzQlFPQkZWcVF2THMxRS1kR1YxQlhnMkZUdnJkLVRnMTlWZyIsImp0aSI6Ijc0MmQ0NzI0ZTc0OGM3NGYifQ.P5ECTMUsslDrWXSoKBVJpUn-2wkRtrxK8JVqE-31leMdxPv_je5cnnT9Mg4TfKLO9PBU9i1jHz98MHkXvVpI1w\u0026ssotoken\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjEyNTc3OTMzfQ..6oREzvi2uEMxDo7q.8Xb56aREbTyaYbFiLE56ann7qkYbujj8AEdF6auSNtA6O6ZUYxbyt6qe5p0xgO_BszCwGbDVYuYcpd1xhi6Qvi61kEYSAQdFt3BS5m5wQlt0XwHHAtZ_dJXfuoPh6EpSnPdmKRnFS_W7Rj1HccUwWrhdiP-hflege7UHtabxUg8JOjSLFcq9nl8t-EE9azNPv1njh0Wc_4K5_oM2pGU2M4hiR5OiQwfUN7s94j6wTpDNbB4lBW6Yud4FR9tjXkIXdhkCpMDRb7LZXKFjiX8kQ4RM5R5B5oSuWbHEVXCnORplPTOZsYKWPtBj7ZyZC588PY0Km2D6JurGnFlFIuI0Kdy_M9CFsYc7TnKBtQZCGIsGe9LefxwuujEvg-ASpRhq0ftTS9trbek4T3z-JA2eHhPavMYiTHkCQFFj5G7KxDz_ZQJdbCXnugHGZvM-_FwEsVrYOegD7e65bvmaNK9oCBzzVG6upXXl52AsJ1h8CNegBN0tNbogDiPjdZ6p3X2PwE5ZbJpDvcB9ZXRIHPIf1pWotiLOk_EIFQtxcKFKSYpiX9r2wbRKfdoiUKq3-C_5cHAi_mGMUGMvDijNQZ2gyV1bTTNj_0yL9_vvX5xqrLzgKQ0UbERQrjFPzEzDToY9gHGmqtbEToKb5r-G0UDoeuUJ26YP0kCFJWTfxexNe8eLPKEXLRTts9Ez907GmJUnBj4YjdyOr7GHXe7zNFbATkxuHuDOCikY3MoFCU0g6bzjM6lrHkvk61vZcnrQSbzqpKkWOMaP6TG69YvK3wRHufYSDwMN1qxah9fcrAmc-hWj7Wm-LAgDbpzZ4z0q9x1ZMsSFUu2eJgG6zjTTRZzFP842BA3QlHgj4Otjbn1C2EbFt6ZyqmaH6RupjPdVeqzojQkNgS1yp3Gk8Yf4-9welHcNs3QYtBgEP6TYsIq7X3SMMsH1kotR4tNKI26xM3csLdCFKnmkugjp_rw82LZCs9sbSzW1ta3w7fo_EyHl0nxSK6gdAydK2VS-UIPrh3ubVVQvBQOwZtNBp5Pp4Ktfdf81M970meAIQNM2afU_89H1igZyvvfbbzbqg689kTQICk5kmruC_9aqa7lbvSdlDPkk2j_YMc39nfdrY63ElU98A93thHmtycQpFJqzhz-QDYxJABUEY6VVF6ETszqQBmcFmoxWI6gvQjbCL1AzU4cDEa3eYQWLISb6qdL244A672lwu0Nvrts8vcASGKOq9R4357DprB7zpMSqoKXupcmikyh_e6dI_N0J9oybZTYBQO60RP7ejgMI5q_FlLQ0h6ufOEyLFFOhpwrLgRoBkm9WgQFJ9SW-hgkaeyARB0yRsCPP6AdyLZrKGYDzO64inDYM08pv64gEDtcALWiRuhq49QTB9smdBrse-7oIws8Y2f0nomdS52XQpJDZvPSxRQTw8mNN6suM4WAxUGAjUiLYrR8_GjMaxA-DV94q1LZCr2oeNSMEpAjb5YeXWt_lAwUGw2s4Nvfx0i6hjY4MnEdzpPTSICjeuTp-sb-jvMovc2zaETEkVfuA5Iits6VSTxqlQcdQeiWyiKfqNz5KQ57B_AaKMhFbyfE1Z_GGxx5mMjKQh5ap4kEQwXXHTVd-3_5XmY4PrHkUiR6pkfWbb1LIWKFRx7h4FjizlSivBKEwVIRof1LKIlCyUIXqGmmtgjPH5cjqX_pu-4R4nKohmEN-gAMkjWQGXezNxLeyuxBFWf6xtPfFqlMT7EXBswjiHIpNN3axcixGgsvbiXJskP3vCGdWnFhAOdHpObTdUO9iuo_hXjMLTsCHMxv1zb3W17YugKJLhl1CPPJ2SMh8gDJR6pXInmF3zEfVcEHtTUAT8voGglo05su7jjiJq1hyispGCzod0LtCfQNpg_Abs5NAv7toGW-xsfNDJbPR_LvqC0HmjidxE21GN7vG8NPOHm464IfJu2QS80_0RaNelhdFeI2urJwjrjy7ekcXdGrH5068TgzcAjK7oLbU9uX6CWRCyI0VeI3-LefTcpySU3BsfWrqAzMCQMeCTWjdtnSqfKhTq9cphrVMmLihQPLdPxc8QAZoMjfYpCbpyv8w4i3m3Qx0kc0ep0cit2GETiY2m--a8Kjd9VK65Ifx2dDcwb-22cKx6hqSUP6ijeNZywndj9E8wxLDorCUt-9lAK4o_RLa9K3JR2pYayEF_X7SA_SiZNe2G5l0ZrItGkMdUUIRTcIQgWjQCFBkuClE71HWvZhcklp5TTHJcpFiic7yO-rIFZ3g4aUjm7AKT8k0qqo-ero5bGZin1D2FWtncuZiSvzAr1Ad9km2-QeNWfpzx08EMVH8XjsADqGH9-koxzEersDp9FcxbHPUzawanMiDs9pOUk8EH5kjwkq1gM1M0_uhHZPAJO0XYsWAuCOwKC8Rkaz8v_TlWwostRkPLW4g-7NI0R2nvHINyhmTd4ZSWxeipKDSvt006kOAX2xVg-vD1AVgZk07QnUVcUIPg7O5i-cijn3Jk9puzGKcu2-1WdQE9SVn_ZQ9sLGrgAfTCEX_xR2Ez_K1oSjS7Ow9O8h3hEGKt-kmm2IX8-tf0WnC4utYY4IZ3ZL4whwyr3wZBxz-Jx5zFbEWQqk1hig9TFjmeGS6nyfYmgg28IYrpzK-evUzqyl5nuQ3phL--wu0_fJoOKlQeQ-ExgZwucrFeoH3iaca4-98K-SwtlUxOUBD7xILR5JlM0gFVcIIxwUwZ-E-UvU3Bl22zVFHybx9CVjqOIA0B0EU3BxYDMXeioaNjM4if4bFZMzqXdVv_LP-5BpdlVwOHZwzj0avWJ4VNtf1DcndNOLtFK6I_2x3PvS-dyNw6000TPR18tKPbjFoVGi1XjZYl3uJpfRJYPuoWYyKmniDNTYmdHcxeB1Pxy6feLmDK_7mVlIn9ON2f9j6XrWLZoPa4ozDlVu9ESt6okOPc7fuOgAtsKvY7VQtZVU99wamsrpruXuqpc1WT2EVrAWE5Qg-MV7MipC_5GNNtwukCZSLyWDBcLY2C4-Hr34yTcfealxlfr76qV_mZ515x1ckj_J3Kx_wd4DEA_bZ3cvkX2uA0zhrBBYY75kqLv6cnDk.uImsf6UXiEl5k-62JmOP4w\" -X POST \"http://localhost:63144/sso_response\" ",
+                  "isEvidence": false,
+                  "id": "report-data-32152fce-6123-42ed-9c8d-abd357fe6f53"
+                },
+                {
+                  "title": "RestAssured Log",
+                  "contents": "Request method:\tPOST\r\nRequest URI:\thttp://localhost:63144/sso_response\r\nProxy:\t\t\t\u003cnone\u003e\r\nRequest params:\t\u003cnone\u003e\r\nQuery params:\t\u003cnone\u003e\r\nForm params:\tunsigned_challenge\u003deyJhbGciOiJCUDI1NlIxIiwiZXhwIjoxNjE0NzAxNjEzLCJ0eXAiOiJKV1QiLCJraWQiOiJpZHBTaWcifQ.eyJpc3MiOiJodHRwczovL2lkcC56ZW50cmFsLmlkcC5zcGxpdGRucy50aS1kaWVuc3RlLmRlIiwicmVzcG9uc2VfdHlwZSI6ImNvZGUiLCJzbmMiOiI3L1h0Tk12UUd4OWE0dkpkaGxySTlKWHBJOGZxemFzd2R4dk1sT214QkZRPSIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJ0b2tlbl90eXBlIjoiY2hhbGxlbmdlIiwibm9uY2UiOiI4ODc3MTEiLCJjbGllbnRfaWQiOiJlUmV6ZXB0QXBwIiwic2NvcGUiOiJlLXJlemVwdCBvcGVuaWQiLCJzdGF0ZSI6Inh4eHN0YXRleHh4MmEiLCJyZWRpcmVjdF91cmkiOiJodHRwOi8vcmVkaXJlY3QuZ2VtYXRpay5kZS9lcmV6ZXB0IiwiZXhwIjoxNjE0NzAxNjEzLCJpYXQiOjE2MTQ3MDE0MzMsImNvZGVfY2hhbGxlbmdlIjoiQ2EzVmU4alNzQlFPQkZWcVF2THMxRS1kR1YxQlhnMkZUdnJkLVRnMTlWZyIsImp0aSI6Ijc0MmQ0NzI0ZTc0OGM3NGYifQ.P5ECTMUsslDrWXSoKBVJpUn-2wkRtrxK8JVqE-31leMdxPv_je5cnnT9Mg4TfKLO9PBU9i1jHz98MHkXvVpI1w\r\n\t\t\t\tssotoken\u003deyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiZXhwIjoxNjEyNTc3OTMzfQ..6oREzvi2uEMxDo7q.8Xb56aREbTyaYbFiLE56ann7qkYbujj8AEdF6auSNtA6O6ZUYxbyt6qe5p0xgO_BszCwGbDVYuYcpd1xhi6Qvi61kEYSAQdFt3BS5m5wQlt0XwHHAtZ_dJXfuoPh6EpSnPdmKRnFS_W7Rj1HccUwWrhdiP-hflege7UHtabxUg8JOjSLFcq9nl8t-EE9azNPv1njh0Wc_4K5_oM2pGU2M4hiR5OiQwfUN7s94j6wTpDNbB4lBW6Yud4FR9tjXkIXdhkCpMDRb7LZXKFjiX8kQ4RM5R5B5oSuWbHEVXCnORplPTOZsYKWPtBj7ZyZC588PY0Km2D6JurGnFlFIuI0Kdy_M9CFsYc7TnKBtQZCGIsGe9LefxwuujEvg-ASpRhq0ftTS9trbek4T3z-JA2eHhPavMYiTHkCQFFj5G7KxDz_ZQJdbCXnugHGZvM-_FwEsVrYOegD7e65bvmaNK9oCBzzVG6upXXl52AsJ1h8CNegBN0tNbogDiPjdZ6p3X2PwE5ZbJpDvcB9ZXRIHPIf1pWotiLOk_EIFQtxcKFKSYpiX9r2wbRKfdoiUKq3-C_5cHAi_mGMUGMvDijNQZ2gyV1bTTNj_0yL9_vvX5xqrLzgKQ0UbERQrjFPzEzDToY9gHGmqtbEToKb5r-G0UDoeuUJ26YP0kCFJWTfxexNe8eLPKEXLRTts9Ez907GmJUnBj4YjdyOr7GHXe7zNFbATkxuHuDOCikY3MoFCU0g6bzjM6lrHkvk61vZcnrQSbzqpKkWOMaP6TG69YvK3wRHufYSDwMN1qxah9fcrAmc-hWj7Wm-LAgDbpzZ4z0q9x1ZMsSFUu2eJgG6zjTTRZzFP842BA3QlHgj4Otjbn1C2EbFt6ZyqmaH6RupjPdVeqzojQkNgS1yp3Gk8Yf4-9welHcNs3QYtBgEP6TYsIq7X3SMMsH1kotR4tNKI26xM3csLdCFKnmkugjp_rw82LZCs9sbSzW1ta3w7fo_EyHl0nxSK6gdAydK2VS-UIPrh3ubVVQvBQOwZtNBp5Pp4Ktfdf81M970meAIQNM2afU_89H1igZyvvfbbzbqg689kTQICk5kmruC_9aqa7lbvSdlDPkk2j_YMc39nfdrY63ElU98A93thHmtycQpFJqzhz-QDYxJABUEY6VVF6ETszqQBmcFmoxWI6gvQjbCL1AzU4cDEa3eYQWLISb6qdL244A672lwu0Nvrts8vcASGKOq9R4357DprB7zpMSqoKXupcmikyh_e6dI_N0J9oybZTYBQO60RP7ejgMI5q_FlLQ0h6ufOEyLFFOhpwrLgRoBkm9WgQFJ9SW-hgkaeyARB0yRsCPP6AdyLZrKGYDzO64inDYM08pv64gEDtcALWiRuhq49QTB9smdBrse-7oIws8Y2f0nomdS52XQpJDZvPSxRQTw8mNN6suM4WAxUGAjUiLYrR8_GjMaxA-DV94q1LZCr2oeNSMEpAjb5YeXWt_lAwUGw2s4Nvfx0i6hjY4MnEdzpPTSICjeuTp-sb-jvMovc2zaETEkVfuA5Iits6VSTxqlQcdQeiWyiKfqNz5KQ57B_AaKMhFbyfE1Z_GGxx5mMjKQh5ap4kEQwXXHTVd-3_5XmY4PrHkUiR6pkfWbb1LIWKFRx7h4FjizlSivBKEwVIRof1LKIlCyUIXqGmmtgjPH5cjqX_pu-4R4nKohmEN-gAMkjWQGXezNxLeyuxBFWf6xtPfFqlMT7EXBswjiHIpNN3axcixGgsvbiXJskP3vCGdWnFhAOdHpObTdUO9iuo_hXjMLTsCHMxv1zb3W17YugKJLhl1CPPJ2SMh8gDJR6pXInmF3zEfVcEHtTUAT8voGglo05su7jjiJq1hyispGCzod0LtCfQNpg_Abs5NAv7toGW-xsfNDJbPR_LvqC0HmjidxE21GN7vG8NPOHm464IfJu2QS80_0RaNelhdFeI2urJwjrjy7ekcXdGrH5068TgzcAjK7oLbU9uX6CWRCyI0VeI3-LefTcpySU3BsfWrqAzMCQMeCTWjdtnSqfKhTq9cphrVMmLihQPLdPxc8QAZoMjfYpCbpyv8w4i3m3Qx0kc0ep0cit2GETiY2m--a8Kjd9VK65Ifx2dDcwb-22cKx6hqSUP6ijeNZywndj9E8wxLDorCUt-9lAK4o_RLa9K3JR2pYayEF_X7SA_SiZNe2G5l0ZrItGkMdUUIRTcIQgWjQCFBkuClE71HWvZhcklp5TTHJcpFiic7yO-rIFZ3g4aUjm7AKT8k0qqo-ero5bGZin1D2FWtncuZiSvzAr1Ad9km2-QeNWfpzx08EMVH8XjsADqGH9-koxzEersDp9FcxbHPUzawanMiDs9pOUk8EH5kjwkq1gM1M0_uhHZPAJO0XYsWAuCOwKC8Rkaz8v_TlWwostRkPLW4g-7NI0R2nvHINyhmTd4ZSWxeipKDSvt006kOAX2xVg-vD1AVgZk07QnUVcUIPg7O5i-cijn3Jk9puzGKcu2-1WdQE9SVn_ZQ9sLGrgAfTCEX_xR2Ez_K1oSjS7Ow9O8h3hEGKt-kmm2IX8-tf0WnC4utYY4IZ3ZL4whwyr3wZBxz-Jx5zFbEWQqk1hig9TFjmeGS6nyfYmgg28IYrpzK-evUzqyl5nuQ3phL--wu0_fJoOKlQeQ-ExgZwucrFeoH3iaca4-98K-SwtlUxOUBD7xILR5JlM0gFVcIIxwUwZ-E-UvU3Bl22zVFHybx9CVjqOIA0B0EU3BxYDMXeioaNjM4if4bFZMzqXdVv_LP-5BpdlVwOHZwzj0avWJ4VNtf1DcndNOLtFK6I_2x3PvS-dyNw6000TPR18tKPbjFoVGi1XjZYl3uJpfRJYPuoWYyKmniDNTYmdHcxeB1Pxy6feLmDK_7mVlIn9ON2f9j6XrWLZoPa4ozDlVu9ESt6okOPc7fuOgAtsKvY7VQtZVU99wamsrpruXuqpc1WT2EVrAWE5Qg-MV7MipC_5GNNtwukCZSLyWDBcLY2C4-Hr34yTcfealxlfr76qV_mZ515x1ckj_J3Kx_wd4DEA_bZ3cvkX2uA0zhrBBYY75kqLv6cnDk.uImsf6UXiEl5k-62JmOP4w\r\nPath params:\t\u003cnone\u003e\r\nHeaders:\t\tAccept\u003d*/*\r\n\t\t\t\tContent-Type\u003dapplication/x-www-form-urlencoded; charset\u003dUTF-8\r\nCookies:\t\t\u003cnone\u003e\r\nMultiparts:\t\t\u003cnone\u003e\r\nBody:\t\t\t\u003cnone\u003e\r\n",
+                  "isEvidence": false,
+                  "id": "report-data-641ef318-e845-4334-a9c7-295f21656382"
+                }
+              ],
+              "precondition": false,
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 17,
+      "description": "Then the response is an 302 error with gematik code 2040 and error \u0027access_denied\u0027",
+      "duration": 1,
+      "startTime": "2021-03-02T17:10:33.572954600+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    }
+  ],
+  "userStory": {
+    "id": "fordere-access-token-mittels-sso-token-an",
+    "storyName": "Fordere Access Token mittels SSO Token an",
+    "path": "file:///C:/Users/t.eitzenberger/IdeaProjects/idp-global/idp-testsuite/src/test/resources/features/coreFeatures/getTokenWithSSOToken.feature",
+    "narrative": "  Frontends von TI Diensten müssen vom IDP Server über ein HTTP POST an den Token Endpoint ein Access/SSO/ID Token abfragen können.",
+    "type": "feature"
+  },
+  "featureTag": {
+    "name": "Core features/Fordere Access Token mittels SSO Token an",
+    "type": "feature",
+    "displayName": "Core features/Fordere Access Token mittels SSO Token an"
+  },
+  "title": "GetToken mit SSO Token - Veralteter SSO Token wird abgelehnt",
+  "description": "",
+  "backgroundTitle": "Initialisiere Testkontext durch Abfrage des Discovery Dokuments",
+  "backgroundDescription": "",
+  "tags": [
+    {
+      "name": "A_20315-01",
+      "type": "Afo",
+      "displayName": "A_20315-01"
+    },
+    {
+      "name": "Timeout",
+      "type": "tag",
+      "displayName": "Timeout"
+    },
+    {
+      "name": "testsuite",
+      "type": "tag",
+      "displayName": "testsuite"
+    },
+    {
+      "name": "NotCheckingSsoTokenExactly12H",
+      "type": "Todo",
+      "displayName": "NotCheckingSsoTokenExactly12H"
+    },
+    {
+      "name": "Core features/Fordere Access Token mittels SSO Token an",
+      "type": "feature",
+      "displayName": "Fordere Access Token mittels SSO Token an"
+    },
+    {
+      "name": "Core features",
+      "type": "capability",
+      "displayName": "Kernfunktionalität"
+    },
+    {
+      "name": "Ss0TokenFlow",
+      "type": "tag",
+      "displayName": "Ss0TokenFlow"
+    },
+    {
+      "name": "Approval",
+      "type": "tag",
+      "displayName": "Approval"
+    }
+  ],
+  "startTime": "2021-03-02T17:10:33.487903700+01:00[Europe/Berlin]",
+  "duration": 88,
+  "projectKey": "",
+  "isManualTestingUpToDate": false,
+  "manual": false,
+  "testSource": "Cucumber",
+  "result": "ERROR",
+  "exception": {
+    "message": "test failure message",
+    "errorType": "Assertion"
+  }
+}
