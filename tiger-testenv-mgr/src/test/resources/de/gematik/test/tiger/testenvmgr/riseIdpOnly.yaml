@@ -5,7 +5,7 @@ tigerProxy:
 
 servers:
   - name: idp
-    template: idp-rise-rtu
+    template: idp-rise-tu
     type: externalUrl
     active: true
     startupTimeoutSec: 3

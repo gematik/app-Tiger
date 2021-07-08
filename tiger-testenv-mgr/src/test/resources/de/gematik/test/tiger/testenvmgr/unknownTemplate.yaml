@@ -7,14 +7,9 @@ tigerProxy:
 
 
 servers:
-  - name: idp
-    template: idp-rise-tu
+  - name: unknownTemplate
+    template: idp-ref-unknown-for-sure
     type: externalUrl
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    active: true
-
-  - name: erzpt-default
-    template: erzpt-fd-ref
-    version: 0.17.2
     active: true

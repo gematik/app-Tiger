@@ -14,8 +14,8 @@ servers:
     version: 0.1-SNAPSHOT
     active: false
 
-  - name: idp-rise-rtu-manual
-    template: idp-rise-rtu
+  - name: idp-rise-tu-manual
+    template: idp-rise-tu
     instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
     active: false
 

@@ -16,9 +16,7 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -71,8 +69,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     @SneakyThrows
     public TigerTestEnvMgr() {
         // read configuration from file and templates from classpath resource
-        final var cfgFile = new File(OsEnvironment.getAsString(
-            "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
+        var cfgFile = new File(OsEnvironment.getAsString(
+            "TIGER_TESTENV_CFGFILE", "tiger-testenv-" + getComputerName() + ".yaml"));
+        if (!cfgFile.exists()) {
+            log.warn("Unable to read configuration from " + cfgFile.getAbsolutePath());
+            cfgFile = new File("tiger-testenv.yaml");
+        }
         log.info("Reading configuration from " + cfgFile.getAbsolutePath() + "...");
         JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
 
@@ -158,6 +160,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             });
         } else {
             log.warn("skipping inactive server " + server.getName());
+        }
+    }
+
+    private String getComputerName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            return InetAddress.getLoopbackAddress().getHostName();
         }
     }
 

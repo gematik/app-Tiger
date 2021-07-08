@@ -9,7 +9,7 @@ templates:
     type: docker
     source:
       - gstopdr1.top.local/idp/idp-server
-    version: 17.0.0-38
+    version: 18.2.0-80
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on without error)
     startupTimeoutSec: 60

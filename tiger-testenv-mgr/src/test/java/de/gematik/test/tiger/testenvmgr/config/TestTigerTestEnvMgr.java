@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import lombok.extern.slf4j.Slf4j;
@@ -130,10 +131,16 @@ public class TestTigerTestEnvMgr {
     }
 
     @Test
-    public void testCreateNonExisitngVersion() {
+    public void testCreateNonExistingVersion() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/idpNonExistingVersion.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
+    }
+
+    @Test
+    public void testCreateUnknwonTemplate() {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/unknownTemplate.yaml");
+        assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
     }
 
 
