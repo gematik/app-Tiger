@@ -20,6 +20,7 @@ public class CfgTemplate {
     List<String> environment;
     List<String> exports;
     String healthcheck;
+    List<String> serviceHealthchecks;
     String workingDir;
     List<String> options;
     List<String> arguments;

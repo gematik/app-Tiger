@@ -126,9 +126,9 @@ services:
     <<: *command-ref
     # TIGER container_name: epa2-docv-fdv-local
     ports:
-      - "5105:6000"
       - "8105:8005"
       - "9105:9005"
+#      - "5105:6000"
     networks:
       epa2-network:
         aliases:
@@ -218,9 +218,9 @@ services:
     <<: *command-ref
     # TIGER container_name: epa2-gateway-local
     ports:
-      - "5101:6000"
       - "8101:8001"
       - "9101:9001"
+      - "5101:6000"
     networks:
       epa2-network:
         aliases:

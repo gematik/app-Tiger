@@ -151,7 +151,10 @@ templates:
     source:
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
-    startupTimeoutSec: 120
+    startupTimeoutSec: 180
+    serviceHealthchecks:
+      - http://epa-gateway:8001/
+      - http://epa-docv-fdv:8005/
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -176,7 +179,7 @@ templates:
     arguments:
       - --spring.profiles.active=instance2local
       - --aktor.rproxySGD2.use=false
-    startupTimeoutSec: 30
+    startupTimeoutSec: 60
     healthcheck: https://127.0.0.1:9107
 
   # ----------------------------------------------------------------------------------------------------------------------

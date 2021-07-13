@@ -16,6 +16,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,7 +29,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -38,6 +39,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -151,12 +153,27 @@ public class DockerMgr {
             }
             return new File(f);
         }).toArray(File[]::new);
-        var composition = new DockerComposeContainer(composeFiles); //NOSONAR
-        composition.withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)))
-            .withExposedService("epa-gateway", 8001, Wait.forHttp("/")
-                .forStatusCode(200)
-                .forStatusCode(404).withStartupTimeout(Duration.of(server.getStartupTimeoutSec(), ChronoUnit.SECONDS)))
-            .start(); //NOSONAR
+        DockerComposeContainer composition = new DockerComposeContainer(composeFiles)
+            .withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)));
+        try {
+            for (String check : server.getServiceHealthchecks()) {
+                try {
+                    URL serviceUrl = new URL(check);
+                    WaitStrategy waitStrategy = (serviceUrl.getProtocol().equals("http") ?
+                        Wait.forHttp(serviceUrl.getPath()) : Wait.forHttps(serviceUrl.getPath())).forStatusCode(200)
+                        .forStatusCode(404)
+                        .withStartupTimeout(Duration.of(server.getStartupTimeoutSec(), ChronoUnit.SECONDS));
+                    composition = composition.withExposedService(
+                        serviceUrl.getHost(), serviceUrl.getPort(), waitStrategy);
+                } catch (MalformedURLException e) {
+                    throw new TigerTestEnvException(
+                        "Invalid health check URL '" + check + "' for server " + server.getName());
+                }
+            }
+        } catch (Exception e) {
+            throw new TigerTestEnvException("Unable to start server " + server.getName());
+        }
+        composition.start(); //NOSONAR
     }
 
     private void addEnvVarsToContainer(GenericContainer<?> container, List<String> envVars) {
@@ -259,7 +276,7 @@ public class DockerMgr {
     }
 
     private String extractWorkingDirectory(ContainerConfig containerConfig) {
-        if (containerConfig.getWorkingDir() == null ||containerConfig.getWorkingDir().isBlank()) {
+        if (containerConfig.getWorkingDir() == null || containerConfig.getWorkingDir().isBlank()) {
             return "";
         } else {
             return "cd " + containerConfig.getWorkingDir() + "\n";
@@ -268,7 +285,7 @@ public class DockerMgr {
 
     private void waitForHealthyStartup(CfgServer server, GenericContainer<?> container) {
         final long startms = System.currentTimeMillis();
-        long endhalfms = server.getStartupTimeoutSec() == null ? 5000 : server.getStartupTimeoutSec()*500L;
+        long endhalfms = server.getStartupTimeoutSec() == null ? 5000 : server.getStartupTimeoutSec() * 500L;
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {
@@ -279,9 +296,9 @@ public class DockerMgr {
             while (!container.isHealthy()) {
                 //noinspection BusyWait
                 Thread.sleep(500);
-                if (startms + endhalfms*2L < System.currentTimeMillis()) {
+                if (startms + endhalfms * 2L < System.currentTimeMillis()) {
                     throw new TigerTestEnvException("Startup of server %s timed out after %d seconds!",
-                        server.getName(), (System.currentTimeMillis() - startms)/1000);
+                        server.getName(), (System.currentTimeMillis() - startms) / 1000);
                 }
             }
             log.info("HealthCheck OK (" + (container.isHealthy() ? 1 : 0) + ") for " + server.getName());
