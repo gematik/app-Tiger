@@ -153,7 +153,7 @@ public class DockerMgr {
             }
             return new File(f);
         }).toArray(File[]::new);
-        DockerComposeContainer composition = new DockerComposeContainer(composeFiles)
+        DockerComposeContainer composition = new DockerComposeContainer(composeFiles) //NOSONAR
             .withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)));
         try {
             for (String check : server.getServiceHealthchecks()) {
