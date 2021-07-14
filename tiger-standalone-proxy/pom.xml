@@ -141,6 +141,17 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>de.gematik.test.tiger.proxy.TigerStandaloneProxyApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>
