@@ -61,8 +61,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             System.exit(1);
         }
         log.info("Tiger standalone test environment UP!");
-        while(true) {
-            Thread.sleep(1000);
+        // this endless loop is on purpose to keep the testenv up and running (until aborting the process with Ctröl + C)
+        //noinspection InfiniteLoopStatement
+        while (true) { // NOSONAR
+            //noinspection BusyWait
+            Thread.sleep(1000L); // NOSONAR
         }
     }
 
@@ -311,7 +314,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         if (server.getHealthcheck() == null || server.getHealthcheck().equals("NONE")) {
             log.info("Waiting " + server.getStartupTimeoutSec() + "s to get external jar online...");
-            Thread.sleep(server.getStartupTimeoutSec() * 1000);
+            Thread.sleep(server.getStartupTimeoutSec() * 1000L);
             return;
         }
         long startms = System.currentTimeMillis();
