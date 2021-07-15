@@ -6,7 +6,6 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -16,6 +16,7 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.mock.Expectation;
+import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.ExpectationId;
 import org.mockserver.model.Header;
 import org.mockserver.model.HttpResponse;
@@ -26,6 +27,7 @@ import org.mockserver.socket.tls.NettySslContextFactory;
 import wiremock.org.eclipse.jetty.util.URIUtil;
 
 import javax.net.ssl.SSLException;
+import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -146,25 +148,7 @@ public class TigerProxy extends AbstractTigerProxy {
                 });
 
         log.info("adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
-        final Expectation[] expectations = mockServerClient.when(request()
-                .withHeader("Host", tigerRoute.getFrom().split("://")[1])
-                .withSecure(tigerRoute.getFrom().startsWith("https://")))
-                .forward(
-                        req -> forwardOverriddenRequest(
-                                req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1])))
-                                .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://")),
-                        (req, resp) -> {
-                            if (!tigerRoute.isDisableRbelLogging()) {
-                                try {
-                                    triggerListener(mockServerToRbelConverter.convertRequest(req, tigerRoute.getFrom()));
-                                    triggerListener(mockServerToRbelConverter.convertResponse(resp, tigerRoute.getFrom()));
-                                } catch (Exception e) {
-                                    log.error("RBel FAILED!", e);
-                                }
-                            }
-                            return resp;
-                        }
-                );
+        final Expectation[] expectations = buildRouteAndReturnExpectation(tigerRoute);
         if (expectations.length > 1) {
             log.warn("Unexpected number of expectations created! Got {}, expected 1", expectations.length);
         }
@@ -176,6 +160,59 @@ public class TigerProxy extends AbstractTigerProxy {
         tigerRoute.setId(expectations[0].getId());
         tigerRouteMap.put(expectations[0].getId(), tigerRoute);
         return tigerRoute;
+    }
+
+    private Expectation[] buildRouteAndReturnExpectation(TigerRoute tigerRoute) {
+        if (URIUtil.hasScheme(tigerRoute.getFrom())) {
+            return buildForwardProxyRoute(tigerRoute);
+        } else {
+            return buildReverseProxyRoute(tigerRoute);
+        }
+    }
+
+    private Expectation[] buildReverseProxyRoute(TigerRoute tigerRoute) {
+        return mockServerClient.when(request()
+                .withPath(tigerRoute.getFrom() + ".*"))
+                .forward(
+                        req -> {
+                            final URI targetUri = new URI(tigerRoute.getTo());
+                            return forwardOverriddenRequest(
+                                    req.withSocketAddress(
+                                            tigerRoute.getTo().startsWith("https://"),
+                                            targetUri.getHost(),
+                                            targetUri.getPort()
+                                    ))
+                                    .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://"))
+                                    .withPath(req.getPath().getValue().replaceFirst(tigerRoute.getFrom(), ""));
+                        },
+                        buildExpectationCallback(tigerRoute)
+                );
+    }
+
+    private Expectation[] buildForwardProxyRoute(TigerRoute tigerRoute) {
+        return mockServerClient.when(request()
+                .withHeader("Host", tigerRoute.getFrom().split("://")[1])
+                .withSecure(tigerRoute.getFrom().startsWith("https://")))
+                .forward(
+                        req -> forwardOverriddenRequest(
+                                req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1])))
+                                .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://")),
+                        buildExpectationCallback(tigerRoute)
+                );
+    }
+
+    private ExpectationForwardAndResponseCallback buildExpectationCallback(TigerRoute tigerRoute) {
+        return (req, resp) -> {
+            if (!tigerRoute.isDisableRbelLogging()) {
+                try {
+                    triggerListener(mockServerToRbelConverter.convertRequest(req, tigerRoute.getFrom()));
+                    triggerListener(mockServerToRbelConverter.convertResponse(resp, tigerRoute.getFrom()));
+                } catch (Exception e) {
+                    log.error("RBel FAILED!", e);
+                }
+            }
+            return resp;
+        };
     }
 
     @Override

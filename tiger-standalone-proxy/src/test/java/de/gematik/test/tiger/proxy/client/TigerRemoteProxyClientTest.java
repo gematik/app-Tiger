@@ -9,8 +9,8 @@ import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import kong.unirest.Config;
-import kong.unirest.UnirestInstance;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -30,9 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;

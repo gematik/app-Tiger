@@ -32,12 +32,12 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 public class TestTigerProxy {
 
@@ -293,7 +293,28 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-    //    @Test
+    @Test
+    public void implicitForwardProxy_shouldForwardReqeust() {
+        AtomicInteger callCounter = new AtomicInteger(0);
+
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+                .proxyRoutes(List.of(TigerRoute.builder()
+                        .from("/notAServer")
+                        .to("http://localhost:" + wireMockRule.port())
+                        .build()))
+                .build());
+
+        tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+
+        Unirest.config().reset();
+        // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
+
+        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/notAServer/foobar").asString();
+
+        assertThat(callCounter.get()).isEqualTo(2);
+    }
+
+//    @Test
 //      public void startProxyFor30s() {
 //        TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
 //                // .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
