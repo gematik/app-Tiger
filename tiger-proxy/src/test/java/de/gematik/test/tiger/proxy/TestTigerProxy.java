@@ -294,7 +294,7 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void implicitForwardProxy_shouldForwardReqeust() {
+    public void implicitReverseProxy_shouldForwardReqeust() {
         AtomicInteger callCounter = new AtomicInteger(0);
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
@@ -310,6 +310,27 @@ public class TestTigerProxy {
         // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
 
         Unirest.get("http://localhost:" + tigerProxy.getPort() + "/notAServer/foobar").asString();
+
+        assertThat(callCounter.get()).isEqualTo(2);
+    }
+
+    @Test
+    public void blanketRerverseProxy_shouldForwardReqeust() {
+        AtomicInteger callCounter = new AtomicInteger(0);
+
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+                .proxyRoutes(List.of(TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + wireMockRule.port())
+                        .build()))
+                .build());
+
+        tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+
+        Unirest.config().reset();
+        // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
+
+        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
 
         assertThat(callCounter.get()).isEqualTo(2);
     }
