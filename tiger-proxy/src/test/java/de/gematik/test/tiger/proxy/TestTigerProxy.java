@@ -329,7 +329,6 @@ public class TestTigerProxy {
 
         Unirest.config().reset();
         // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
-
         Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
 
         assertThat(callCounter.get()).isEqualTo(2);
