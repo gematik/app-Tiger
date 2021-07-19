@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -138,7 +140,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             } else if (type.equalsIgnoreCase("compose")) {
                 startDocker(server, configuration);
             } else if (type.equalsIgnoreCase("externalUrl")) {
-                initializeExternal(server);
+                initializeExternalUrl(server);
             } else if (type.equalsIgnoreCase("externalJar")) {
                 initializeExternalJar(server);
             } else {
@@ -214,8 +216,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     @SneakyThrows
-    public void initializeExternal(final CfgServer server) {
-        log.info(Ansi.BOLD + Ansi.GREEN + "starting external instance " + server.getName() + "..." + Ansi.RESET);
+    public void initializeExternalUrl(final CfgServer server) {
+        log.info(Ansi.BOLD + Ansi.GREEN + "starting external URL instance " + server.getName() + "..." + Ansi.RESET);
         final var uri = new URI(server.getSource().get(0));
 
         localDockerProxy.addRoute(TigerRoute.builder()
@@ -224,7 +226,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .build());
 
         loadPKIForProxy(server);
-        log.info("  Waiting 50% of start up time for external instance  " + server.getName() + " to come up ...");
+        log.info("  Waiting 50% of start up time for external URL instance  " + server.getName() + " to come up ...");
         long startms = System.currentTimeMillis();
         try {
             Thread.sleep(server.getStartupTimeoutSec() * 500L);
@@ -232,7 +234,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             log.warn("Interruption while waiting for external server to respond!", ie);
             Thread.currentThread().interrupt();
         }
-        log.info("  Checking external instance  " + server.getName() + " is available ...");
+        log.info("  Checking external URL instance  " + server.getName() + " is available ...");
         try {
             InsecureRestorableTrustAllManager.saveContext();
             InsecureRestorableTrustAllManager.allowAllSSL();
@@ -246,8 +248,19 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
                         + Ansi.RESET);
                     return;
+                } catch (ConnectException cex) {
+                    log.info("No connection...");
+                } catch (SSLHandshakeException sslhe) {
+                    log.warn("SSL handshake but server at least seems to be up!" + sslhe.getMessage());
+                    return;
+                } catch (SSLException sslex) {
+                    if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
+                        log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+                    } else {
+                        log.error("SSL Error - " + sslex.getMessage(), sslex);
+                    }
                 } catch (Exception e) {
-                    log.info("Connection failed - " + e.getMessage());
+                    log.error("Failed to connect - " + e.getMessage(), e);
                 }
                 Thread.sleep(1000);
             }
@@ -318,6 +331,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             return;
         }
         long startms = System.currentTimeMillis();
+        log.info("  Waiting 50% of start up time for external jar instance  " + server.getName() + " to come up ...");
+        try {
+            Thread.sleep(server.getStartupTimeoutSec() * 500L);
+        } catch (InterruptedException ie) {
+            log.warn("Interruption while waiting for external jar server to respond!", ie);
+            Thread.currentThread().interrupt();
+        }
         try {
             InsecureRestorableTrustAllManager.saveContext();
             InsecureRestorableTrustAllManager.allowAllSSL();
@@ -334,8 +354,19 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     log.info(
                         Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
                     return;
+                } catch (ConnectException cex) {
+                    log.info("No connection...");
+                } catch (SSLHandshakeException sslhe) {
+                    log.warn("SSL handshake but server at least seems to be up!" + sslhe.getMessage());
+                    return;
+                } catch (SSLException sslex) {
+                    if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
+                        log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+                    } else {
+                        log.error("SSL Error - " + sslex.getMessage(), sslex);
+                    }
                 } catch (Exception e) {
-                    log.info("Failed to connect - " + e.getMessage());
+                    log.error("Failed to connect - " + e.getMessage(), e);
                 }
                 Thread.sleep(1000);
                 if (!externalProcesses.get(server.getName()).isAlive()) {
