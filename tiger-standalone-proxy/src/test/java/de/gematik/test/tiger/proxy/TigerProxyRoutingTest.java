@@ -10,6 +10,7 @@ import kong.unirest.GenericType;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +57,13 @@ public class TigerProxyRoutingTest {
 
         Unirest.config().reset();
         Unirest.config().proxy("localhost", tigerProxy.getPort());
+    }
+
+    @AfterEach
+    public void reset() {
+        Unirest.config().reset();
+
+        tigerProxy.clearAllRoutes();
     }
 
     @Test
