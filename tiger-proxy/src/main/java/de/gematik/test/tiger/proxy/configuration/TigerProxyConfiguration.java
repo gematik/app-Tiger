@@ -28,6 +28,7 @@ public class TigerProxyConfiguration {
     private RbelPkiIdentity serverRootCa;
     private List<String> keyFolders;
     private boolean activateRbelEndpoint = false;
+    private boolean activateAsn1Parsing = true;
     private Integer port;
     private List<String> trafficEndpoints;
     @Builder.Default

@@ -4,100 +4,97 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.RbelMessage;
-import de.gematik.rbellogger.data.elements.*;
-import lombok.Data;
-import org.apache.http.HttpHeaders;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.Arrays;
 import org.mockserver.mappers.MockServerHttpRequestToFullHttpRequest;
-import org.mockserver.mappers.MockServerHttpResponseToFullHttpResponse;
-import org.mockserver.model.*;
-import wiremock.org.eclipse.jetty.util.URIUtil;
+import org.mockserver.model.Header;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
 
-import java.util.HashMap;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.stream.Collectors;
 
-@Data
+@RequiredArgsConstructor
 public class MockServerToRbelConverter {
 
-    private final RbelLogger rbelLogger;
+    private final RbelConverter rbelConverter;
 
-    public RbelMessage convertResponse(HttpResponse response, String protocolAndHost) {
-        final RbelHttpResponse rbelHttpResponse = (RbelHttpResponse) convertMessage(
-                RbelHttpResponse.builder()
-                        .responseCode(response.getStatusCode())
-                        .header(mapHeader(response.getHeaders()))
-                        .body(convertBody(response.getBody(), response.getHeaders()))
-                        .rawBody(response.getBodyAsRawBytes())
-                        .build()
-                        .setRawMessage(buildOriginalContent(response)));
-        final RbelMessage rbelMessage = rbelLogger.getRbelConverter().parseMessage(rbelHttpResponse,
-                URIUtil.hasScheme(protocolAndHost) ? RbelHostname.generateFromUrl(protocolAndHost) : null, null);
-        return rbelMessage;
+    public RbelElement convertResponse(HttpResponse response, String protocolAndHost) {
+        return rbelConverter
+                .parseMessage(responseToRbelMessage(response),
+                        convertUri(protocolAndHost), null);
     }
 
-    private RbelElement convertBody(Body body, Headers headers) {
-        if (body == null || body.getRawBytes() == null || body.getRawBytes().length == 0) {
-            return new RbelNullElement();
+    public RbelElement convertRequest(HttpRequest request, String protocolAndHost) {
+        return rbelConverter
+                .parseMessage(requestToRbelMessage(request),
+                        null, convertUri(protocolAndHost));
+    }
+
+    private RbelHostname convertUri(String protocolAndHost) {
+        try {
+            URI uri = new URI(protocolAndHost);
+            if (StringUtils.isEmpty(uri.getScheme())) {
+                return null;
+            } else {
+                return RbelHostname.generateFromUrl(protocolAndHost);
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
-        if (headers.getValues(HttpHeaders.CONTENT_TYPE).stream()
-                .filter(v -> v.startsWith(MediaType.APPLICATION_BINARY.toString())
-                        || v.startsWith(MediaType.APPLICATION_OCTET_STREAM.toString()))
-                .findAny().isPresent()) {
-            return convertMessage(new RbelBinaryElement(body.getRawBytes()));
-        } else {
-            return rbelLogger.getRbelConverter().convertElement(new String(body.getRawBytes()));
-        }
-    }
-
-    private RbelElement convertMessage(RbelElement input) {
-        return rbelLogger.getRbelConverter().convertElement(input);
-    }
-
-    public RbelMessage convertRequest(HttpRequest request, String protocolAndHost) {
-        final RbelHttpRequest rbelHttpRequest = (RbelHttpRequest) convertMessage(
-                RbelHttpRequest.builder()
-                        .method(request.getMethod().getValue())
-                        .path((RbelUriElement) rbelLogger.getRbelConverter().convertElement(
-                                buildOriginalRequestUri(request, protocolAndHost)))
-                        .header(mapHeader(request.getHeaders()))
-                        .body(convertBody(request.getBody(), request.getHeaders()))
-                        .rawBody(request.getBodyAsRawBytes())
-                        .build()
-                        .setRawMessage(buildOriginalContent(request)));
-
-        final RbelMessage rbelMessage = rbelLogger.getRbelConverter().parseMessage(rbelHttpRequest,
-                null, URIUtil.hasScheme(protocolAndHost) ? RbelHostname.generateFromUrl(protocolAndHost) : null);
-        return rbelMessage;
     }
 
     private String buildOriginalRequestUri(HttpRequest request, String protocolAndHost) {
-        return protocolAndHost + new MockServerHttpRequestToFullHttpRequest(null)
-                .mapMockServerRequestToNettyRequest(request)
-                .uri();
-    }
-
-    private String buildOriginalContent(HttpRequest request) {
-        return new MockServerHttpRequestToFullHttpRequest(null)
-                .mapMockServerRequestToNettyRequest(request)
-                .toString()
-                .split("\\n", 2)[1];
-    }
-
-    private String buildOriginalContent(HttpResponse response) {
-        final String str = new MockServerHttpResponseToFullHttpResponse(null)
-                .mapMockServerResponseToNettyResponse(response)
-                .toString()
-                .split("\\n", 2)[1]; // strip the intro
-        return str.substring(0, str.length() - 1); // strip the trailing ]
-    }
-
-    private RbelMultiValuedMapElement mapHeader(Headers headers) {
-        RbelMultiValuedMapElement result = new RbelMultiValuedMapElement(new HashMap<>());
-        for (Header entry : headers.getEntries()) {
-            entry.getValues().forEach(str ->
-                    result.put(entry.getName().getValue(), new RbelStringElement(str.getValue())));
+        if (protocolAndHost == null) {
+            return new MockServerHttpRequestToFullHttpRequest(null)
+                    .mapMockServerRequestToNettyRequest(request)
+                    .uri();
         }
-        return result;
+        return correctLocalToGlobalPath(protocolAndHost + new MockServerHttpRequestToFullHttpRequest(null)
+                .mapMockServerRequestToNettyRequest(request)
+                .uri());
+    }
+
+    private String correctLocalToGlobalPath(String uri) {
+        if (uri.startsWith("/")) {
+            return uri;
+        } else {
+            return "/" + uri;
+        }
+    }
+
+    private byte[] responseToRbelMessage(final HttpResponse response) {
+        byte[] httpResponseHeader = ("HTTP/1.1 " + response.getStatusCode() + " "
+                + (response.getReasonPhrase() != null ? response.getReasonPhrase() : "") + "\r\n"
+                + formatHeaderList(response.getHeaderList())
+                + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        return Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
+    }
+
+    private String formatHeaderList(List<Header> headerList) {
+        return headerList.stream().map(h -> h.getValues().stream()
+                .map(value -> h.getName().getValue() + ": " + value)
+                .collect(Collectors.joining("\n")))
+                .collect(Collectors.joining("\r\n"));
+    }
+
+    private byte[] requestToRbelMessage(final HttpRequest request) {
+        byte[] httpRequestHeader = (request.getMethod().toString() + " " + getRequestUrl(request) + " HTTP/1.1\r\n"
+                + formatHeaderList(request.getHeaderList())
+                + "\r\n\r\n").getBytes();
+
+        return Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
+    }
+
+    private String getRequestUrl(HttpRequest request) {
+        return request.getPath().getValue();
     }
 }

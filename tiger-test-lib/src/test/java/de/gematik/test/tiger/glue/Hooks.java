@@ -5,7 +5,8 @@
 package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.rbellogger.data.RbelMessage;
+
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
@@ -37,10 +38,10 @@ public class Hooks {
     private static final Map<String, Status> scenarioStatus = new HashMap<>();
 
     private static boolean rbelListenerAdded = false;
-    private static final List<RbelMessage> rbelMessages = new ArrayList<>();
+    private static final List<RbelElement> rbelMessages = new ArrayList<>();
     private static final RbelMessageProvider rbelMessageListener = new RbelMessageProvider() {
         @Override
-        public void triggerNewReceivedMessage(RbelMessage e) {
+        public void triggerNewReceivedMessage(RbelElement e) {
             rbelMessages.add(e);
         }
     };

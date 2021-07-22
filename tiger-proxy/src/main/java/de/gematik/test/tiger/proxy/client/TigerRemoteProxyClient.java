@@ -4,8 +4,8 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.RbelMessage;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
@@ -120,15 +120,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
     }
 
     private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, TracingMessage tracingMessage) {
-        byte[] messageBytes = ArrayUtils.addAll((
-                        tracingMessage.getHeader().replace("\n", "\r\n")
-                                .stripTrailing() + "\r\n\r\n")
-                        .getBytes(StandardCharsets.US_ASCII),
-                tracingMessage.getBody());
+        byte[] messageBytes = tracingMessage.getRawContent();
 
         log.info("Propagating new message {}", new String(messageBytes));
 
-        final RbelMessage rbelMessage = getRbelLogger().getRbelConverter().parseMessage(messageBytes, sender, receiver);
+        final RbelElement rbelMessage = getRbelLogger().getRbelConverter().parseMessage(messageBytes, sender, receiver);
 
         super.triggerListener(rbelMessage);
     }

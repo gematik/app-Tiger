@@ -14,6 +14,8 @@ import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import wiremock.org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,8 +47,9 @@ public class TigerRemoteProxyClientTest {
      *
      * -------------------     --------------    --------------------
      * | unirestInstance |  -> | tigerProxy | -> | mockServerClient |
-     * -------------------     -----     ----    --------------------
-     *          ?                  |     |
+     * -------------------     ------    ----    --------------------
+     *          ^                     \ /
+     *          ?                      V
      *          ----<-----<-----<--Tracing
      *
      */
@@ -100,6 +102,11 @@ public class TigerRemoteProxyClientTest {
                 new Config().proxy("localhost", tigerProxy.getPort()));
     }
 
+    @AfterEach
+    public void clearRoutes() {
+        tigerProxy.clearAllRoutes();
+    }
+
     @Test
     public void sendMessage_shouldTriggerListener() {
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
@@ -124,7 +131,7 @@ public class TigerRemoteProxyClientTest {
                 .atMost(2, TimeUnit.SECONDS)
                 .until(() -> !tigerRemoteProxyClient.getRbelLogger().getMessageHistory().isEmpty());
 
-        assertThat(tigerRemoteProxyClient.getRbelMessages().get(0).getHttpMessage().getRawBody())
+        assertThat(tigerRemoteProxyClient.getRbelMessages().get(0).findRbelPathMembers("$.body").get(0).getRawContent())
                 .isEqualTo(DigestUtils.sha256("hello"));
     }
 
@@ -173,5 +180,45 @@ public class TigerRemoteProxyClientTest {
                 .extracting("from", "to", "disableRbelLogging")
                 .contains(tuple("http://myserv.er", "http://localhost:" + mockServerClient.getPort(), false),
                         tuple("http://tiger.proxy", "http://localhost:" + springServerPort, true));
+    }
+
+    @Test
+    public void reverseProxyRoute_checkRemoteTransmission() {
+        tigerProxy.addRoute(TigerRoute.builder()
+                .from("/blub")
+                .to("http://localhost:" + mockServerClient.getPort())
+                .build());
+
+        AtomicInteger listenerCallCounter = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/blub/foo").asString()
+                .ifFailure(response -> fail("Failure from server: " + response.getBody()))
+                .getBody())
+                .isEqualTo("bar");
+
+        await()
+                .atMost(2, TimeUnit.SECONDS)
+                .until(() -> listenerCallCounter.get() > 0);
+    }
+
+    @Test
+    public void reverseProxyRootRoute_checkRemoteTransmission() {
+        tigerProxy.addRoute(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + mockServerClient.getPort())
+                .build());
+
+        AtomicInteger listenerCallCounter = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foo").asString()
+                .ifFailure(response -> fail("Failure from server: " + response.getBody()))
+                .getBody())
+                .isEqualTo("bar");
+
+        await()
+                .atMost(2, TimeUnit.SECONDS)
+                .until(() -> listenerCallCounter.get() > 0);
     }
 }

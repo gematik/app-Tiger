@@ -31,6 +31,7 @@ public class TigerProxyConfigurator {
                         .from("http://tiger.proxy")
                         .to("http://localhost:" + webServerAppCtxt.getWebServer().getPort())
                         .disableRbelLogging(true)
+                        .internalRoute(true)
                         .build());
     }
 }

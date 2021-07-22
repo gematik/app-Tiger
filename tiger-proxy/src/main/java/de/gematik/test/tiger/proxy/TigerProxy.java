@@ -13,6 +13,7 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.eclipse.jetty.util.URIUtil;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.mock.Expectation;
@@ -24,7 +25,6 @@ import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.NettySslContextFactory;
-import wiremock.org.eclipse.jetty.util.URIUtil;
 
 import javax.net.ssl.SSLException;
 import java.net.URI;
@@ -57,7 +57,7 @@ public class TigerProxy extends AbstractTigerProxy {
                 ConfigurationProperties.certificateAuthorityPrivateKey(configuration.getServerRootCaKeyPem());
             }
         }
-        mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger());
+        mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
@@ -108,6 +108,18 @@ public class TigerProxy extends AbstractTigerProxy {
                     remoteClient.setRbelLogger(getRbelLogger());
                     remoteClient.addRbelMessageListener(this::triggerListener);
                 });
+    }
+
+    private static String patchPath(String requestPath, String forwardTarget) {
+        if (StringUtils.isEmpty(forwardTarget)) {
+            return requestPath;
+        }
+        final String patchedUrl = requestPath.replaceFirst(forwardTarget, "");
+        if (patchedUrl.startsWith("/")) {
+            return patchedUrl;
+        } else {
+            return "/" + patchedUrl;
+        }
     }
 
     private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {
@@ -183,7 +195,7 @@ public class TigerProxy extends AbstractTigerProxy {
                                             targetUri.getPort()
                                     ))
                                     .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://"))
-                                    .withPath(req.getPath().getValue().replaceFirst(tigerRoute.getFrom(), ""));
+                                    .withPath(patchPath(req.getPath().getValue(), tigerRoute.getFrom()));
                         },
                         buildExpectationCallback(tigerRoute)
                 );

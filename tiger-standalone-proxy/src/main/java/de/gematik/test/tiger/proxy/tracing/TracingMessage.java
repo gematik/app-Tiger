@@ -7,6 +7,5 @@ import lombok.Data;
 @Builder
 public class TracingMessage {
 
-    private String header;
-    private byte[] body;
+    private byte[] rawContent;
 }

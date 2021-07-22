@@ -4,11 +4,12 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
-import de.gematik.rbellogger.data.RbelMessage;
-import de.gematik.rbellogger.data.elements.RbelHttpRequest;
-import de.gematik.rbellogger.data.elements.RbelHttpResponse;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.context.TestContext;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,70 +31,71 @@ public class RbelMessageValidator {
     }
 
     public RbelMessageValidator(final String testContextDomain, final String rbelMsgsContextKey,
-        final String lastRbelRequestContextKey) {
+                                final String lastRbelRequestContextKey) {
         testContext = new TestContext(testContextDomain);
         this.rbelMsgsContextKey = rbelMsgsContextKey;
         this.lastRbelRequestContextKey = lastRbelRequestContextKey;
     }
 
-    public List<RbelMessage> getRbelMessages() {
-        return ((List<RbelMessage>) testContext.getContext().get(rbelMsgsContextKey));
+    public List<RbelElement> getRbelMessages() {
+        return ((List<RbelElement>) testContext.getContext().get(rbelMsgsContextKey));
     }
 
-    public RbelHttpRequest getLastRequest() {
-        return (RbelHttpRequest) testContext.getContext().get(lastRbelRequestContextKey);
+    public RbelElement getLastRequest() {
+        return (RbelElement) testContext.getContext().get(lastRbelRequestContextKey);
     }
 
-
-    RbelHttpResponse getResponseOfRequest(final RbelHttpRequest request) {
+    public RbelElement getResponseOfRequest(final RbelElement request) {
         return getRbelMessages().stream()
-            .map(RbelMessage::getHttpMessage)
-            .filter(RbelHttpResponse.class::isInstance)
-            .map(RbelHttpResponse.class::cast)
-            .filter(res -> res.getRequest() == request)
-            .findAny()
-            .orElseThrow(() -> new AssertionError("No response found for given request"));
+                .filter(el -> el.hasFacet(RbelHttpResponseFacet.class))
+                .filter(res -> res
+                        .getFacetOrFail(RbelHttpResponseFacet.class)
+                        .getRequest() == request)
+                .findAny()
+                .orElseThrow(() -> new AssertionError("No response found for given request"));
     }
 
-    boolean getPath(final RbelHttpRequest req, final String path) {
+    public boolean getPath(final RbelElement req, final String path) {
         try {
-            return new URL(req.getPath().getBasicPath().getContent()).getPath().equals(path);
+            return new URL(req.getFacet(RbelHttpRequestFacet.class)
+                    .map(RbelHttpRequestFacet::getPath)
+                    .map(RbelElement::getRawStringContent)
+                    .orElse(""))
+                    .getPath().equals(path);
         } catch (final MalformedURLException e) {
             return false;
         }
     }
 
-    void filterRequestsAndStoreInContext(final String path, final String rbelPath, final String value) {
+    public void filterRequestsAndStoreInContext(final String path, final String rbelPath, final String value) {
         filterGivenRequestsAndStoreInContext(path, rbelPath, value, getRbelMessages());
     }
 
-    void filterGivenRequestsAndStoreInContext(final String path, final String rbelPath, final String value,
-        final List<RbelMessage> msgs) {
-        final RbelHttpRequest request = msgs.stream()
-            .map(RbelMessage::getHttpMessage)
-            .filter(RbelHttpRequest.class::isInstance)
-            .map(RbelHttpRequest.class::cast)
-            .filter(req -> getPath(req, path))
-            .filter(req ->
-                value == null || rbelPath == null ||
-                    (!new RbelPathExecutor(req, rbelPath).execute().isEmpty() &&
-                        (new RbelPathExecutor(req, rbelPath).execute().get(0).getContent().equals(value) ||
-                            new RbelPathExecutor(req, rbelPath).execute().get(0).getContent().matches(value))))
-            .findAny()
-            .orElseThrow(() ->
-                new AssertionError(
-                    "No request with path '" + path + "' and rbelPath '" + rbelPath + "' matching '" + value
-                        + "'"));
+    public void filterGivenRequestsAndStoreInContext(final String path, final String rbelPath, final String value,
+                                              final List<RbelElement> msgs) {
+        final RbelElement request = msgs.stream()
+                .filter(el -> el.hasFacet(RbelHttpRequestFacet.class))
+                .filter(req -> getPath(req, path))
+                .filter(req ->
+                        value == null || rbelPath == null ||
+                                (!new RbelPathExecutor(req, rbelPath).execute().isEmpty() &&
+                                        (new RbelPathExecutor(req, rbelPath).execute().get(0).getRawStringContent().equals(value) ||
+                                                new RbelPathExecutor(req, rbelPath).execute().get(0).getRawStringContent().matches(value))))
+                .findAny()
+                .orElseThrow(() ->
+                        new AssertionError(
+                                "No request with path '" + path + "' and rbelPath '" + rbelPath + "' matching '" + value
+                                        + "'"));
         testContext.getContext().put("rbelRequest", request);
         testContext.getContext().put("rbelResponse", getResponseOfRequest(request));
     }
 
-    void filterNextRequestAndStoreInContext(final String path, final String rbelPath, final String value) {
-        List<RbelMessage> msgs = getRbelMessages();
-        final RbelHttpRequest prevRequest = getLastRequest();
+    public void filterNextRequestAndStoreInContext(final String path, final String rbelPath, final String value) {
+        List<RbelElement> msgs = getRbelMessages();
+        final RbelElement prevRequest = getLastRequest();
         int idx = -1;
         for (var i = 0; i < msgs.size(); i++) {
-            if (msgs.get(i).getHttpMessage() == prevRequest) {
+            if (msgs.get(i) == prevRequest) {
                 idx = i;
                 break;
             }

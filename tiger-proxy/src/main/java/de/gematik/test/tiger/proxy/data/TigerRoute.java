@@ -18,5 +18,6 @@ public class TigerRoute {
     private String id;
     private String from;
     private String to;
+    private boolean internalRoute;
     private boolean disableRbelLogging;
 }
