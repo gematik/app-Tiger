@@ -66,11 +66,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         log.info("\n" + Banner.toBannerStr("Tiger standalone test environment UP!", Ansi.BOLD + Ansi.GREEN));
         waitForEnter(null);
-        log.info("interrupting threads...");
+        log.info("interrupting " + envMgr.externalProcesses.size() + " threads...");
         envMgr.externalProcesses.values().forEach(Process::destroy);
         log.info("stopping threads...");
         envMgr.externalProcesses.values().forEach(Process::destroyForcibly);
         envMgr.externalProcesses.clear();
+        System.exit(0);
     }
 
     public static void waitForEnter(String message, Object... args) {
