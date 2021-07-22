@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -14,6 +15,7 @@ import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
@@ -55,19 +57,41 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private final Map<String, Process> externalProcesses = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException {
+        TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         try {
-            TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
             envMgr.setUpEnvironment();
         } catch (Exception e) {
-            log.error("Error while starting up stand alone tiger testenv mgr!", e);
+            log.error("Error while starting up stand alone tiger testenv mgr! ABORTING...", e);
             System.exit(1);
         }
-        log.info("Tiger standalone test environment UP!");
-        // this endless loop is on purpose to keep the testenv up and running (until aborting the process with Ctröl + C)
-        //noinspection InfiniteLoopStatement
-        while (true) { // NOSONAR
-            //noinspection BusyWait
-            Thread.sleep(1000L); // NOSONAR
+        log.info("\n" + Banner.toBannerStr("Tiger standalone test environment UP!", Ansi.BOLD + Ansi.GREEN));
+        waitForEnter(null);
+        log.info("interrupting threads...");
+        envMgr.externalProcesses.values().forEach(Process::destroy);
+        log.info("stopping threads...");
+        envMgr.externalProcesses.values().forEach(Process::destroyForcibly);
+        envMgr.externalProcesses.clear();
+    }
+
+    public static void waitForEnter(String message, Object... args) {
+        Console c = System.console();
+        if (c != null) {
+            // printf-like arguments
+            if (message != null) {
+                c.format(message, args);
+            }
+            c.format("\nPress ENTER to stop TIGER standalone test environment.\n");
+            c.readLine();
+            log.info("Stopping TIGER standalone test envrioment...");
+        } else {
+            while (true) { // NOSONAR
+                //noinspection BusyWait
+                try {
+                    Thread.sleep(1000L); // NOSONAR
+                } catch (InterruptedException ie) {
+                    return;
+                }
+            }
         }
     }
 
@@ -227,18 +251,30 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         loadPKIForProxy(server);
         log.info("  Waiting 50% of start up time for external URL instance  " + server.getName() + " to come up ...");
-        long startms = System.currentTimeMillis();
-        try {
-            Thread.sleep(server.getStartupTimeoutSec() * 500L);
-        } catch (InterruptedException ie) {
-            log.warn("Interruption while waiting for external server to respond!", ie);
-            Thread.currentThread().interrupt();
+
+        if (waitForService(server, server.getStartupTimeoutSec() * 500L, true)) {
+            return;
         }
-        log.info("  Checking external URL instance  " + server.getName() + " is available ...");
+        waitForService(server, server.getStartupTimeoutSec() * 500L, false);
+    }
+
+    private boolean waitForService(CfgServer server, long timeoutms, boolean quiet)
+        throws IOException, InterruptedException {
+
+        if (server.getHealthcheck() == null || server.getHealthcheck().equals("NONE")) {
+            log.info("Waiting " + (timeoutms / 1000) + "s to get external server " + server.getName() + " online...");
+            Thread.sleep(timeoutms);
+            return true;
+        }
+
+        long startms = System.currentTimeMillis();
+        if (!quiet) {
+            log.info("  Checking external URL instance  " + server.getName() + " is available ...");
+        }
         try {
             InsecureRestorableTrustAllManager.saveContext();
             InsecureRestorableTrustAllManager.allowAllSSL();
-            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000L) {
+            while (System.currentTimeMillis() - startms < timeoutms) {
                 var url = new URL(server.getHealthcheck());
                 URLConnection con = url.openConnection();
                 con.setConnectTimeout(1000);
@@ -247,27 +283,42 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     log.info("External node " + server.getName() + " is online");
                     log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
                         + Ansi.RESET);
-                    return;
+                    return true;
                 } catch (ConnectException cex) {
-                    log.info("No connection...");
+                    if (!quiet) {
+                        log.info("No connection...");
+                    }
                 } catch (SSLHandshakeException sslhe) {
-                    log.warn("SSL handshake but server at least seems to be up!" + sslhe.getMessage());
-                    return;
+                    log.warn(Ansi.YELLOW + "SSL handshake but server at least seems to be up!" + sslhe.getMessage()
+                        + Ansi.RESET);
+                    return true;
                 } catch (SSLException sslex) {
                     if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
-                        log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+                        if (!quiet) {
+                            log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+                        }
                     } else {
-                        log.error("SSL Error - " + sslex.getMessage(), sslex);
+                        if (!quiet) {
+                            log.error("SSL Error - " + sslex.getMessage(), sslex);
+                        }
                     }
                 } catch (Exception e) {
-                    log.error("Failed to connect - " + e.getMessage(), e);
+                    if (!quiet) {
+                        log.error("Failed to connect - " + e.getMessage(), e);
+                    }
                 }
                 Thread.sleep(1000);
             }
-            throw new TigerTestEnvException("Timeout waiting for external server to respond!");
+            if (!quiet) {
+                throw new TigerTestEnvException("Timeout waiting for external server to respond!");
+            }
+        } catch (InterruptedException ie) {
+            log.warn("Interruption while waiting for external server to respond!", ie);
+            Thread.currentThread().interrupt();
         } finally {
             InsecureRestorableTrustAllManager.restoreContext();
         }
+        return false;
     }
 
     @SneakyThrows
@@ -303,11 +354,18 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         final AtomicReference<Throwable> exception = new AtomicReference<>();
         var thread = new Thread(() -> {
             try {
-                externalProcesses.put(server.getName(), new ProcessBuilder()
+                Process p = new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(server.getWorkingDir()))
                     .inheritIO()
-                    .start());
+                    .start();
+                Thread.sleep(2000);
+                if (p.isAlive()) {
+                    externalProcesses.put(server.getName(), p);
+                    log.info("Started " + server.getName());
+                } else {
+                    throw new TigerTestEnvException("External Jar startup failed");
+                }
             } catch (Throwable t) {
                 exception.set(t);
             }
@@ -317,68 +375,26 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         if (!SHUTDOWN_HOOK_ACTIVE) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("interrupting threads...");
-                externalProcesses.values().forEach(Process::destroy);
-                log.info("stopping threads...");
-                externalProcesses.values().forEach(Process::destroyForcibly);
+                if (!externalProcesses.isEmpty()) {
+                    log.info("interrupting threads...");
+                    externalProcesses.values().forEach(Process::destroy);
+                    log.info("stopping threads...");
+                    externalProcesses.values().forEach(Process::destroyForcibly);
+                }
             }));
             SHUTDOWN_HOOK_ACTIVE = true;
         }
 
-        if (server.getHealthcheck() == null || server.getHealthcheck().equals("NONE")) {
-            log.info("Waiting " + server.getStartupTimeoutSec() + "s to get external jar online...");
-            Thread.sleep(server.getStartupTimeoutSec() * 1000L);
+        if (exception.get() != null) {
+            throw new TigerTestEnvException("Unable to start external jar!", exception.get());
+        }
+        if (waitForService(server, server.getStartupTimeoutSec() * 500L, true)) {
             return;
         }
-        long startms = System.currentTimeMillis();
-        log.info("  Waiting 50% of start up time for external jar instance  " + server.getName() + " to come up ...");
-        try {
-            Thread.sleep(server.getStartupTimeoutSec() * 500L);
-        } catch (InterruptedException ie) {
-            log.warn("Interruption while waiting for external jar server to respond!", ie);
-            Thread.currentThread().interrupt();
+        if (exception.get() != null) {
+            throw new TigerTestEnvException("Unable to start external jar!", exception.get());
         }
-        try {
-            InsecureRestorableTrustAllManager.saveContext();
-            InsecureRestorableTrustAllManager.allowAllSSL();
-            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
-                if (exception.get() != null) {
-                    throw new TigerTestEnvException("Unable to start external jar!", exception.get());
-                }
-                URL url = new URL(server.getHealthcheck());
-                URLConnection con = url.openConnection();
-                con.setConnectTimeout(1000);
-                try {
-                    con.connect();
-                    log.info("External jar node " + server.getName() + " is online");
-                    log.info(
-                        Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
-                    return;
-                } catch (ConnectException cex) {
-                    log.info("No connection...");
-                } catch (SSLHandshakeException sslhe) {
-                    log.warn("SSL handshake but server at least seems to be up!" + sslhe.getMessage());
-                    return;
-                } catch (SSLException sslex) {
-                    if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
-                        log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
-                    } else {
-                        log.error("SSL Error - " + sslex.getMessage(), sslex);
-                    }
-                } catch (Exception e) {
-                    log.error("Failed to connect - " + e.getMessage(), e);
-                }
-                Thread.sleep(1000);
-                if (!externalProcesses.get(server.getName()).isAlive()) {
-                    throw new TigerTestEnvException(
-                        "Process aborted with exit code " + externalProcesses.get(server.getName())
-                            .exitValue());
-                }
-            }
-            throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
-        } finally {
-            InsecureRestorableTrustAllManager.restoreContext();
-        }
+        waitForService(server, server.getStartupTimeoutSec() * 500L, false);
     }
 
     private void downloadJar(CfgServer server, String jarUrl, File jarFile) throws InterruptedException {
@@ -472,10 +488,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void shutDownJar(final CfgServer server) {
         Process proc = externalProcesses.get(server.getName());
-        log.info("interrupting thread for " + server.getName() + "...");
-        proc.destroy();
-        log.info("stopping thread for " + server.getName() + "...");
-        proc.destroyForcibly();
+        if (proc != null) {
+            log.info("interrupting thread for " + server.getName() + "...");
+            proc.destroy();
+            log.info("stopping thread for " + server.getName() + "...");
+            proc.destroyForcibly();
+        }
         removeRoute(server);
     }
 

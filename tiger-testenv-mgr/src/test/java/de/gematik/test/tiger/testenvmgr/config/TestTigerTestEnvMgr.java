@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr.config;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -69,6 +70,7 @@ public class TestTigerTestEnvMgr {
         return true;
     }
 
+    @SneakyThrows
     @Test
     public void testCreateExternalJarEnv() throws IOException {
         if (!setGematikProxy()) {
@@ -84,6 +86,7 @@ public class TestTigerTestEnvMgr {
         srv.setName("minijar-test");
         srv.setType("externalJar");
         srv.setSource(List.of("anything......"));
+        Thread.sleep(2000);
         envMgr.shutDown(srv);
     }
 
@@ -97,9 +100,9 @@ public class TestTigerTestEnvMgr {
         f.createNewFile();
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/miniJar.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatThrownBy(() -> envMgr.setUpEnvironment())
+        assertThatThrownBy(envMgr::setUpEnvironment)
                 .isInstanceOf(TigerTestEnvException.class)
-                .hasMessage("Process aborted with exit code 1");
+                .hasMessage("Unable to start external jar!");
     }
 
     @Test
