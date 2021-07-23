@@ -11,6 +11,8 @@ import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.context.TestContext;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,14 +57,14 @@ public class RbelMessageValidator {
                 .orElseThrow(() -> new AssertionError("No response found for given request"));
     }
 
-    public boolean getPath(final RbelElement req, final String path) {
+    public boolean doesPathOfMessageMatch(final RbelElement req, final String path) {
         try {
-            return new URL(req.getFacet(RbelHttpRequestFacet.class)
+            return new URI(req.getFacet(RbelHttpRequestFacet.class)
                     .map(RbelHttpRequestFacet::getPath)
                     .map(RbelElement::getRawStringContent)
                     .orElse(""))
                     .getPath().equals(path);
-        } catch (final MalformedURLException e) {
+        } catch (final URISyntaxException e) {
             return false;
         }
     }
@@ -75,7 +77,7 @@ public class RbelMessageValidator {
                                               final List<RbelElement> msgs) {
         final RbelElement request = msgs.stream()
                 .filter(el -> el.hasFacet(RbelHttpRequestFacet.class))
-                .filter(req -> getPath(req, path))
+                .filter(req -> doesPathOfMessageMatch(req, path))
                 .filter(req ->
                         value == null || rbelPath == null ||
                                 (!new RbelPathExecutor(req, rbelPath).execute().isEmpty() &&
