@@ -26,6 +26,7 @@ public class TigerProxyConfigurator {
     public void init() {
         // you might be tempted to look for "server.port", but don't:
         // when it is zero (random free port) then it stays zero
+        log.info("Adding route for 'http://tiger.proxy'...");
         tigerProxy.addRoute(
                 TigerRoute.builder()
                         .from("http://tiger.proxy")
