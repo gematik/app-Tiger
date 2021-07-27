@@ -12,8 +12,9 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIUtils;
+import org.apache.tomcat.util.buf.UriUtil;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.eclipse.jetty.util.URIUtil;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.mock.Expectation;
@@ -25,9 +26,11 @@ import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.NettySslContextFactory;
+import org.springframework.web.util.UriUtils;
 
 import javax.net.ssl.SSLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -153,7 +156,7 @@ public class TigerProxy extends AbstractTigerProxy {
     @Override
     public TigerRoute addRoute(final TigerRoute tigerRoute) {
         tigerRouteMap.values().stream()
-                .filter(existingRoute -> URIUtil.equalsIgnoreEncodings(existingRoute.getFrom(), tigerRoute.getFrom()))
+                .filter(existingRoute -> uriEquals(existingRoute.getFrom(), tigerRoute.getFrom()))
                 .findAny()
                 .ifPresent(existingRoute -> {
                     throw new TigerProxyRouteConflictException(existingRoute);
@@ -174,8 +177,16 @@ public class TigerProxy extends AbstractTigerProxy {
         return tigerRoute;
     }
 
+    private boolean uriEquals(String value1, String value2) {
+        try {
+            return new URI(value1).equals(new URI(value2));
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
     private Expectation[] buildRouteAndReturnExpectation(TigerRoute tigerRoute) {
-        if (URIUtil.hasScheme(tigerRoute.getFrom())) {
+        if (UriUtil.hasScheme(tigerRoute.getFrom())) {
             return buildForwardProxyRoute(tigerRoute);
         } else {
             return buildReverseProxyRoute(tigerRoute);
