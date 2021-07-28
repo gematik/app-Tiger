@@ -67,13 +67,6 @@
             <artifactId>serenity-rest-assured</artifactId>
             <version>${version.serenity.core}</version>
         </dependency>
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <version>3.3.0</version>
-            <!-- serenity 2.3.4 uses version 3.3.0 -->
-        </dependency>
-
         <dependency><!-- needed for type registry -->
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-core</artifactId>

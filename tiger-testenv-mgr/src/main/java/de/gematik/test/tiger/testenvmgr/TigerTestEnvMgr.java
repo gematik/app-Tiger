@@ -421,10 +421,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         t.start();
         var progressCtr = 0;
         while (!finished.get()) {
-            if (System.currentTimeMillis() - startms > 600 * 1000) {
+            if (System.currentTimeMillis() - startms > 15 * 60 * 1000) {
                 t.interrupt();
                 t.stop();
-                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 10 minutes!");
+                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 15 minutes!");
             }
             if (exception.get() != null) {
                 throw new TigerTestEnvException("Failure while downloading jar " + jarUrl + "!", exception.get());
