@@ -18,6 +18,10 @@ public class TigerStandaloneProxyApplication {
     private final ApplicationConfiguration applicationConfiguration;
 
     public static void main(String[] args) { //NOSONAR
+        // Necessary hack to avoid mockserver activating java.util.logging - this will not work in combination
+        // with spring boot!
+        System.setProperty("java.util.logging.config.file", "SKIP_MOCKSERVER_LOG_INIT!");
+
         SpringApplication.run(TigerStandaloneProxyApplication.class, args);
     }
 

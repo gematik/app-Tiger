@@ -8,6 +8,7 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Arrays;
 import org.mockserver.mappers.MockServerHttpRequestToFullHttpRequest;
@@ -22,17 +23,22 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
+@Slf4j
 public class MockServerToRbelConverter {
 
     private final RbelConverter rbelConverter;
 
     public RbelElement convertResponse(HttpResponse response, String protocolAndHost) {
+        log.trace("Converting response {}, headers {}, body {}", response,
+            response.getHeaders(), response.getBodyAsString());
         return rbelConverter
                 .parseMessage(responseToRbelMessage(response),
                         convertUri(protocolAndHost), null);
     }
 
     public RbelElement convertRequest(HttpRequest request, String protocolAndHost) {
+        log.trace("Converting request {}, headers {}, body {}", request,
+            request.getHeaders(), request.getBodyAsString());
         return rbelConverter
                 .parseMessage(requestToRbelMessage(request),
                         null, convertUri(protocolAndHost));
@@ -48,25 +54,6 @@ public class MockServerToRbelConverter {
             }
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private String buildOriginalRequestUri(HttpRequest request, String protocolAndHost) {
-        if (protocolAndHost == null) {
-            return new MockServerHttpRequestToFullHttpRequest(null)
-                    .mapMockServerRequestToNettyRequest(request)
-                    .uri();
-        }
-        return correctLocalToGlobalPath(protocolAndHost + new MockServerHttpRequestToFullHttpRequest(null)
-                .mapMockServerRequestToNettyRequest(request)
-                .uri());
-    }
-
-    private String correctLocalToGlobalPath(String uri) {
-        if (uri.startsWith("/")) {
-            return uri;
-        } else {
-            return "/" + uri;
         }
     }
 
