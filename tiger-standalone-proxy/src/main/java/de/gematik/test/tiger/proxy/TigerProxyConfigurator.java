@@ -24,12 +24,12 @@ public class TigerProxyConfigurator {
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        // you might be tempted to look for "server.port", but don't:
-        // when it is zero (random free port) then it stays zero
         log.info("Adding route for 'http://tiger.proxy'...");
         tigerProxy.addRoute(
                 TigerRoute.builder()
                         .from("http://tiger.proxy")
+                            // you might be tempted to look for "server.port", but don't:
+                            // when it is zero (random free port) then it stays zero
                         .to("http://localhost:" + webServerAppCtxt.getWebServer().getPort())
                         .disableRbelLogging(true)
                         .internalRoute(true)
