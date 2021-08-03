@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
@@ -338,6 +339,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         List<String> options = server.getOptions().stream()
             .map(o -> TokenSubstituteHelper.substitute(o, "",
                 Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
+            .map(o -> TokenSubstituteHelper.substitute(o, "", environmentVariables))
             .collect(Collectors.toList());
         String[] paths = System.getenv("PATH").split(SystemUtils.IS_OS_WINDOWS ? ";" : ":");
         String javaProg = "java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
@@ -385,6 +387,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             }));
             SHUTDOWN_HOOK_ACTIVE = true;
         }
+        assertThat(server.getStartupTimeoutSec())
+            .withFailMessage("Startup time in sec is mandatory attribute!")
+            .isNotNull();
 
         if (exception.get() != null) {
             throw new TigerTestEnvException("Unable to start external jar!", exception.get());

@@ -37,7 +37,7 @@ public class TestTigerDirector {
     public void testDirectorSimpleIdp() {
         TigerDirector.testUninitialize();
         System.setProperty("TIGER_ACTIVE", "1");
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp2.yaml");
         TigerDirector.beforeTestRun();
 
         assertThat(TigerDirector.isInitialized()).isTrue();

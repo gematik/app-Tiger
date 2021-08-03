@@ -89,6 +89,11 @@ public class DockerMgr {
                 container.withCopyFileToContainer(
                     MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC),
                     containerScriptPath);
+                /* WEBCLIENT
+                container.withCopyFileToContainer(
+                    MountableFile.forHostPath(Path.of("webclient"), MOD_ALL_EXEC),
+                    "/usr/bin/webclient");
+                 */
                 container.withCreateContainerCmdModifier(
                     cmd -> cmd.withUser("root").withEntrypoint(containerScriptPath));
             }
@@ -259,7 +264,7 @@ public class DockerMgr {
                     //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
                     // idp-test.zentral.idp.splitdns.ti-dienste.de:443
                     // testing ca cert of proxy with rust client
-                    //+ "RUST_LOG=trace /usr/bin/webclient https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration \n"
+                    // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
 
                     // change to working dir and execute former entrypoint/startcmd
                     + extractWorkingDirectory(containerConfig)
