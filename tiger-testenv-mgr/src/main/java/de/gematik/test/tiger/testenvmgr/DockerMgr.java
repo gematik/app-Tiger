@@ -33,6 +33,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
@@ -251,27 +252,36 @@ public class DockerMgr {
             File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
             tmpScriptFolder.mkdirs();
             final var scriptName = "__tigerStart_" + server.getName() + ".sh";
+            var content = "#!/bin/sh -x\nenv\n"
+                // append proxy and other certs (for rise idp)
+                + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                + "echo \"" + risecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+
+                // testing ca cert of proxy with openssl
+                //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
+                //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
+                //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
+                // idp-test.zentral.idp.splitdns.ti-dienste.de:443
+                // testing ca cert of proxy with rust client
+                // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
+
+                // change to working dir and execute former entrypoint/startcmd
+                + extractWorkingDirectory(containerConfig)
+                + String.join(" ", entryPointCmd).replace("\t", " ")
+                + " " + String.join(" ", startCmd).replace("\t", " ") + "\n";
+
+            // workaround for host.docker.internal not being available on linux based docker
+            // see https://github.com/docker/for-linux/issues/264
+            if (SystemUtils.IS_OS_LINUX) {
+                content += "grep -q \"host.docker.internal\" /etc/hosts || echo  -e \"\\n172.17.0.1    host.docker.internal\\n\" >> /etc/hosts\n";
+
+                // TODO reactivate once we have docker 20 on maven nodes
+                //  container.withExtraHost("host.docker.internal", "host-gateway");
+            }
+
             FileUtils.writeStringToFile(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName).toFile(),
-                "#!/bin/sh -x\nenv\n"
-                    // append proxy and other certs (for rise idp)
-                    + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                    + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                    + "echo \"" + risecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-
-                    // testing ca cert of proxy with openssl
-                    //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
-                    //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
-                    //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
-                    // idp-test.zentral.idp.splitdns.ti-dienste.de:443
-                    // testing ca cert of proxy with rust client
-                    // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
-
-                    // change to working dir and execute former entrypoint/startcmd
-                    + extractWorkingDirectory(containerConfig)
-                    + String.join(" ", entryPointCmd).replace("\t", " ")
-                    + " " + String.join(" ", startCmd).replace("\t", " ") + "\n",
-                StandardCharsets.UTF_8
-            );
+                content, StandardCharsets.UTF_8);
             return scriptName;
         } catch (IOException e) {
             throw new TigerTestEnvException(
