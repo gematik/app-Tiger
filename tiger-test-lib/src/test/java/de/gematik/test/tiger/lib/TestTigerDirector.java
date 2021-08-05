@@ -6,13 +6,17 @@ package de.gematik.test.tiger.lib;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
+import de.gematik.test.tiger.testenvmgr.InsecureRestorableTrustAllManager;
+import java.net.URL;
+import java.net.URLConnection;
+import lombok.SneakyThrows;
 import org.junit.Test;
 
 public class TestTigerDirector {
 
-    @Test public void testBeforeTestRunNOTIGERACTIVE() {
+    @Test
+    public void testBeforeTestRunNOTIGERACTIVE() {
         TigerDirector.testUninitialize();
         System.setProperty("TIGER_ACTIVE", "0");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
@@ -23,7 +27,8 @@ public class TestTigerDirector {
         assertThatThrownBy(TigerDirector::getRbelMessageProvider).isInstanceOf(TigerStartupException.class);
     }
 
-    @Test public void testBeforeTestRunIGERACTIVENOTINIT() {
+    @Test
+    public void testBeforeTestRunIGERACTIVENOTINIT() {
         TigerDirector.testUninitialize();
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
@@ -43,8 +48,34 @@ public class TestTigerDirector {
         assertThat(TigerDirector.isInitialized()).isTrue();
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
         assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getBaseUrl()).startsWith("http://localhost");
+        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getBaseUrl()).startsWith(
+            "http://localhost");
         assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getRbelLogger()).isNotNull();
+    }
+
+    @SneakyThrows
+    @Test
+    public void testDirectorDisabledProxy() {
+        TigerDirector.testUninitialize();
+        System.setProperty("TIGER_ACTIVE", "1");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxydisabled.yaml");
+        TigerDirector.beforeTestRun();
+
+        System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
+
+        System.out.println("PROXY:" + System.getProperty("http.proxyHost") + " / " +  System.getProperty("https.proxyHost"));
+        System.out.println("PORTS:" + System.getProperty("http.proxyPort") + " / " +  System.getProperty("https.proxyPort"));
+
+        assertThat(TigerDirector.isInitialized()).isTrue();
+        assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
+        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy()).isNull();
+
+        InsecureRestorableTrustAllManager.saveContext();
+        InsecureRestorableTrustAllManager.allowAllSSL();
+        var url = new URL("http://idp-rise-tu-noproxy");
+        URLConnection con = url.openConnection();
+        con.setConnectTimeout(1000);
+        assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
     }
 
 /*

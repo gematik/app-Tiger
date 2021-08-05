@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.configuration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import java.util.List;
 import java.util.Map;
@@ -15,19 +16,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
+@AllArgsConstructor(onConstructor_=@JsonIgnore)
 @NoArgsConstructor
 @Builder
 public class TigerProxyConfiguration {
 
     private List<TigerRoute> proxyRoutes;
     private ForwardProxyInfo forwardToProxy;
+    @Builder.Default
     private String proxyLogLevel = "WARN";
     private String serverRootCaCertPem;
     private String serverRootCaKeyPem;
     private RbelPkiIdentity serverRootCa;
     private List<String> keyFolders;
+    @Builder.Default
     private boolean activateRbelEndpoint = false;
+    @Builder.Default
     private boolean activateAsn1Parsing = true;
     private Integer port;
     private List<String> trafficEndpoints;

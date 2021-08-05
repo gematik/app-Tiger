@@ -77,7 +77,7 @@ public class Hooks {
             System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
             TigerDirector.beforeTestRun();
         }
-        if (!rbelListenerAdded) {
+        if (!rbelListenerAdded && TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy() != null) {
             TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().addRbelMessageListener(rbelMessageListener);
             rbelListenerAdded = true;
         }
