@@ -34,7 +34,6 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-core</artifactId>
-            <scope>test</scope>
             <!-- Security related excludes -->
             <exclusions>
                 <exclusion>

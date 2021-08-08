@@ -53,9 +53,8 @@ public class TigerDirector {
     @SneakyThrows
     public static synchronized void beforeTestRun() {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
-            log.warn(
-                Ansi.BOLD + Ansi.RED + "ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'"
-                    + Ansi.RESET);
+            log.warn(Ansi.BOLD + Ansi.RED
+                + "ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'" + Ansi.RESET);
             throw new AssertionError("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
         }
 
@@ -71,7 +70,7 @@ public class TigerDirector {
         tigerTestEnvMgr.setUpEnvironment();
 
         // set proxy to local tiger proxy for test suites
-        if (tigerTestEnvMgr.getLocalDockerProxy() != null) {
+        if (tigerTestEnvMgr.getLocalDockerProxy() != null && tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
             log.info("\n" + Banner.toBannerStr("SETTING TIGER PROXY...", Ansi.BOLD + Ansi.BLUE));
             System.setProperty("http.proxyHost", "localhost");
             System.setProperty("http.proxyPort",
@@ -88,7 +87,7 @@ public class TigerDirector {
             // RestAssured.useRelaxedHTTPSValidation();
 
         } else {
-            log.info("\n" + Banner.toBannerStr("SKIPPING TIGER PROXY...", Ansi.BOLD + Ansi.RED));
+            log.info("\n" + Banner.toBannerStr("SKIPPING TIGER PROXY settings...", Ansi.BOLD + Ansi.RED));
         }
 
         initialized = true;

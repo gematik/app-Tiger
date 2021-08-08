@@ -134,7 +134,6 @@
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-core</artifactId>
                 <version>${version.serenity.core}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.serenity-bdd</groupId>

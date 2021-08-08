@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.glue;
+package de.gematik.test.tiger.hooks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,6 +10,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
+import de.gematik.test.tiger.common.context.TestContext;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
@@ -23,6 +24,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
@@ -39,10 +41,13 @@ public class Hooks {
 
     private static boolean rbelListenerAdded = false;
     private static final List<RbelElement> rbelMessages = new ArrayList<>();
+    @Getter
+    private static final List<RbelElement> validatableRbelMessages = new ArrayList<>();
     private static final RbelMessageProvider rbelMessageListener = new RbelMessageProvider() {
         @Override
         public void triggerNewReceivedMessage(RbelElement e) {
             rbelMessages.add(e);
+            validatableRbelMessages.add(e);
         }
     };
 

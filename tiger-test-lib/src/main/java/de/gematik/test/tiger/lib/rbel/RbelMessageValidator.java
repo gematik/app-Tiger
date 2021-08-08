@@ -8,7 +8,9 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-import de.gematik.test.tiger.common.context.TestContext;
+import de.gematik.test.tiger.hooks.Hooks;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -23,31 +25,17 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RbelMessageValidator {
 
-    private final TestContext testContext;
-    private final String rbelMsgsContextKey;
-    private final String lastRbelRequestContextKey;
+    @Getter
+    private RbelElement lastFilteredRequest;
+    @Getter
+    private RbelElement lastResponse;
 
     public RbelMessageValidator() {
-        this("default", "rbelmsgs", "rbelRequest");
-    }
 
-    public RbelMessageValidator(final String testContextDomain) {
-        this(testContextDomain, "rbelmsgs", "rbelRequest");
-    }
-
-    public RbelMessageValidator(final String testContextDomain, final String rbelMsgsContextKey,
-                                final String lastRbelRequestContextKey) {
-        testContext = new TestContext(testContextDomain);
-        this.rbelMsgsContextKey = rbelMsgsContextKey;
-        this.lastRbelRequestContextKey = lastRbelRequestContextKey;
     }
 
     public List<RbelElement> getRbelMessages() {
-        return ((List<RbelElement>) testContext.getContext().get(rbelMsgsContextKey));
-    }
-
-    public RbelElement getLastRequest() {
-        return (RbelElement) testContext.getContext().get(lastRbelRequestContextKey);
+        return Hooks.getValidatableRbelMessages();
     }
 
     public RbelElement getResponseOfRequest(final RbelElement request) {
@@ -80,8 +68,8 @@ public class RbelMessageValidator {
                                                      final List<RbelElement> msgs) {
 
         final RbelElement messageByDescription = findRequestByDescription(path, rbelPath, value, msgs);
-        testContext.getContext().put("rbelRequest", messageByDescription);
-        testContext.getContext().put("rbelResponse", getResponseOfRequest(messageByDescription));
+        lastFilteredRequest = messageByDescription;
+        lastResponse = getResponseOfRequest(messageByDescription);
     }
 
     private RbelElement findRequestByDescription(final String path, final String rbelPath, final String value,
@@ -143,7 +131,7 @@ public class RbelMessageValidator {
 
     public void filterNextRequestAndStoreInContext(final String path, final String rbelPath, final String value) {
         List<RbelElement> msgs = getRbelMessages();
-        final RbelElement prevRequest = getLastRequest();
+        final RbelElement prevRequest = getLastFilteredRequest();
         int idx = -1;
         for (var i = 0; i < msgs.size(); i++) {
             if (msgs.get(i) == prevRequest) {

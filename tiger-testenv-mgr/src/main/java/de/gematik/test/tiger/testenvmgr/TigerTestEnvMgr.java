@@ -134,15 +134,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             proxyConfig.setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
             proxyConfig.setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
         }
+        log.info("Starting local docker tiger proxy...");
+        localDockerProxy = new TigerProxy(configuration.getTigerProxy());
         if (configuration.isLocalProxyActive()) {
-            log.info("Starting local docker tiger proxy...");
-            localDockerProxy = new TigerProxy(configuration.getTigerProxy());
             environmentVariables = new HashMap<>(
                 Map.of("PROXYHOST", "host.docker.internal",
                     "PROXYPORT", localDockerProxy.getPort()));
         } else {
-            log.info("SKIPPING local docker tiger proxy...");
-            localDockerProxy = null;
             environmentVariables = new HashMap<>();
         }
         log.info("Tiger Testenv mgr created OK");
@@ -217,7 +215,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         for (var i = 0; i < imports.size(); i++) {
             imports.set(i, TokenSubstituteHelper.substitute(imports.get(i), "", environmentVariables));
         }
-        if (server.getUrlMappings() != null && configuration.isLocalProxyActive()) {
+        if (server.getUrlMappings() != null) {
             server.getUrlMappings().forEach(mapping -> {
                 String[] kvp = mapping.split(" --> ", 2);
                 localDockerProxy.addRoute(TigerRoute.builder()
@@ -234,7 +232,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         loadPKIForProxy(server);
         // add routes needed for each server to local docker proxy
         // ATTENTION only one route per server!
-        if (server.getPorts() != null && !server.getPorts().isEmpty() && configuration.isLocalProxyActive()) {
+        if (server.getPorts() != null && !server.getPorts().isEmpty()) {
             routesList.add(TigerRoute.builder()
                 .from("http://" + server.getName())
                 .to("http://localhost:" + server.getPorts().values().iterator().next())
@@ -251,12 +249,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     public void initializeExternalUrl(final CfgServer server) {
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external URL instance " + server.getName() + "..." + Ansi.RESET);
         final var uri = new URI(server.getSource().get(0));
-        if (configuration.isLocalProxyActive()) {
-            localDockerProxy.addRoute(TigerRoute.builder()
-                .from("http://" + server.getName())
-                .to(uri.getScheme() + "://" + uri.getHost())
-                .build());
-        }
+
+        localDockerProxy.addRoute(TigerRoute.builder()
+            .from("http://" + server.getName())
+            .to(uri.getScheme() + "://" + uri.getHost())
+            .build());
+
         loadPKIForProxy(server);
         log.info("  Waiting 50% of start up time for external URL instance  " + server.getName() + " to come up ...");
 
@@ -471,31 +469,27 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void loadPKIForProxy(final CfgServer srv) {
-        if (configuration.isLocalProxyActive()) {
-            log.info("  loading PKI resources for instance " + srv.getName() + "...");
-            srv.getPkiKeys().stream()
-                .filter(key -> key.getType().equals("cert"))
-                .forEach(key -> {
-                    log.info("Adding certificate " + key.getId());
-                    getLocalDockerProxy().addKey(
-                        key.getId(),
-                        KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
-                            + key.getPem().replace(" ", "\n")
-                            + "\n-----END CERTIFICATE-----").getPublicKey());
-                });
-            srv.getPkiKeys().stream()
-                .filter(key -> key.getType().equals("key"))
-                .forEach(key -> {
-                    log.info("Adding key " + key.getId());
-                    getLocalDockerProxy().addKey(
-                        key.getId(),
-                        KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
-                            + key.getPem().replace(" ", "\n")
-                            + "\n-----END PRIVATE KEY-----"));
-                });
-        } else {
-            log.info("SKIPPING PKI as no local proxy active...");
-        }
+        log.info("  loading PKI resources for instance " + srv.getName() + "...");
+        srv.getPkiKeys().stream()
+            .filter(key -> key.getType().equals("cert"))
+            .forEach(key -> {
+                log.info("Adding certificate " + key.getId());
+                getLocalDockerProxy().addKey(
+                    key.getId(),
+                    KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
+                        + key.getPem().replace(" ", "\n")
+                        + "\n-----END CERTIFICATE-----").getPublicKey());
+            });
+        srv.getPkiKeys().stream()
+            .filter(key -> key.getType().equals("key"))
+            .forEach(key -> {
+                log.info("Adding key " + key.getId());
+                getLocalDockerProxy().addKey(
+                    key.getId(),
+                    KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
+                        + key.getPem().replace(" ", "\n")
+                        + "\n-----END PRIVATE KEY-----"));
+            });
     }
 
     private void shutDownDocker(final CfgServer server) {
@@ -520,15 +514,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void removeRoute(CfgServer server) {
-        if (configuration.isLocalProxyActive()) {
-            log.info("Removing routes for " + server.getName() + "...");
-            Predicate<TigerRoute> isServerRoute = route -> route.getFrom().equals(HTTP + server.getName())
-                || route.getFrom().equals(HTTPS + server.getName());
-            routesList.stream()
-                .filter(isServerRoute)
-                .forEach(r -> localDockerProxy.removeRoute(r.getFrom()));
-            routesList.removeIf(isServerRoute);
-        }
+        log.info("Removing routes for " + server.getName() + "...");
+        Predicate<TigerRoute> isServerRoute = route -> route.getFrom().equals(HTTP + server.getName())
+            || route.getFrom().equals(HTTPS + server.getName());
+        routesList.stream()
+            .filter(isServerRoute)
+            .forEach(r -> localDockerProxy.removeRoute(r.getFrom()));
+        routesList.removeIf(isServerRoute);
     }
 
 

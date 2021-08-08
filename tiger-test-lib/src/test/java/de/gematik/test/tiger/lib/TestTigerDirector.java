@@ -68,7 +68,7 @@ public class TestTigerDirector {
 
         assertThat(TigerDirector.isInitialized()).isTrue();
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy()).isNull();
+        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy()).isNotNull();
 
         InsecureRestorableTrustAllManager.saveContext();
         InsecureRestorableTrustAllManager.allowAllSSL();
