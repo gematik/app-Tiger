@@ -4,16 +4,16 @@
 
 package de.gematik.test.tiger.proxy.configuration;
 
+import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
-import java.util.List;
-import java.util.Map;
-
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor(onConstructor_=@JsonIgnore)
@@ -33,6 +33,9 @@ public class TigerProxyConfiguration {
     private boolean activateRbelEndpoint = false;
     @Builder.Default
     private boolean activateAsn1Parsing = true;
+    @Builder.Default
+    private boolean activateForwardAllLogging = true;
+    private RbelFileSaveInfo fileSaveInfo;
     private Integer port;
     private List<String> trafficEndpoints;
     @Builder.Default

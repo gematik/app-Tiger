@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy.controller;
 
 import static j2html.TagCreator.*;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
@@ -19,10 +20,7 @@ import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
 import j2html.tags.ContainerTag;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -135,27 +133,23 @@ public class TigerWebUiController {
         if (el.hasFacet(RbelHttpRequestFacet.class)) {
             RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
             b = b.path(req.getPath().getRawStringContent())
-                .method(req.getMethod().getRawStringContent());
-
-            try {
-                b = b.recipient(el.getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname().toString());
-            } catch (NoSuchElementException nseex) {
-                log.error(
-                    "RbelHttpRequestFacet has no receiver hostname status! (" + el.getFacetOrFail(
-                        RbelTcpIpMessageFacet.class)
-                        + ")");
-            }
+                    .method(req.getMethod().getRawStringContent())
+                    .recipient(el.getFacet(RbelTcpIpMessageFacet.class)
+                        .map(RbelTcpIpMessageFacet::getReceiver)
+                        .filter(Objects::nonNull)
+                        .flatMap(element -> element.seekValue(RbelHostname.class))
+                        .map(RbelHostname::toString)
+                        .map(Object::toString)
+                        .orElse(""));
         } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
-            Optional<Integer> optStatus = el.getFacetOrFail(RbelHttpResponseFacet.class).getResponseCode()
-                .seekValue(Integer.class);
-            if (optStatus.isPresent()) {
-                b = b.status(optStatus.get());
-            } else {
-                log.error(
-                    "RbelHttpResponseFacet has no response status! (" + el.getFacetOrFail(RbelHttpResponseFacet.class)
-                        + ")");
-            }
-            b = b.sender(el.getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname().toString());
+            b.status(el.getFacetOrFail(RbelHttpResponseFacet.class).getResponseCode().seekValue(Integer.class).get())
+                    .sender(el.getFacet(RbelTcpIpMessageFacet.class)
+                        .map(RbelTcpIpMessageFacet::getSender)
+                        .filter(Objects::nonNull)
+                        .flatMap(element -> element.seekValue(RbelHostname.class))
+                        .map(RbelHostname::toString)
+                        .map(Object::toString)
+                        .orElse(""));
         } else {
             throw new IllegalArgumentException(
                 "We do not support meta data for non http elements (" + el.getClass().getName() + ")");

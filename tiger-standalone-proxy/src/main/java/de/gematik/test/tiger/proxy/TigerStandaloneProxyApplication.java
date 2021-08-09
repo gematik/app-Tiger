@@ -27,8 +27,8 @@ public class TigerStandaloneProxyApplication {
 
     @Bean
     public TigerProxy tigerProxy() {
-        if (applicationConfiguration.getProxy() != null) {
-            return new TigerProxy(applicationConfiguration.getProxy());
+        if (applicationConfiguration != null) {
+            return new TigerProxy(applicationConfiguration);
         } else {
             return new TigerProxy(new TigerProxyConfiguration());
         }

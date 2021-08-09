@@ -91,23 +91,25 @@ public class TigerProxy extends AbstractTigerProxy {
 
         subscribeToTrafficEndpoints(configuration);
 
-        mockServerClient.when(request()
-            .withPath(".*"), Times.unlimited(), TimeToLive.unlimited(), Integer.MIN_VALUE)
-            .forward(req -> forwardOverriddenRequest(
-                req.withSocketAddress(
-                    req.isSecure(),
-                    req.socketAddressFromHostHeader().getHostName(),
-                    req.socketAddressFromHostHeader().getPort()
-                )).getHttpRequest(),
-                (req, resp) -> {
-                    try {
-                        triggerListener(mockServerToRbelConverter.convertRequest(req, req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":" + req.getSocketAddress().getPort()));
-                        triggerListener(mockServerToRbelConverter.convertResponse(resp, req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":" + req.getSocketAddress().getPort()));
-                    } catch (Exception e) {
-                        log.error("RBel FAILED!", e);
-                    }
-                    return resp;
-                });
+        if (configuration.isActivateForwardAllLogging()) {
+            mockServerClient.when(request()
+                    .withPath(".*"), Times.unlimited(), TimeToLive.unlimited(), Integer.MIN_VALUE)
+                .forward(req -> forwardOverriddenRequest(
+                        req.withSocketAddress(
+                            req.isSecure(),
+                            req.socketAddressFromHostHeader().getHostName(),
+                            req.socketAddressFromHostHeader().getPort()
+                        )).getHttpRequest(),
+                    (req, resp) -> {
+                        try {
+                            triggerListener(mockServerToRbelConverter.convertRequest(req, req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":" + req.getSocketAddress().getPort()));
+                            triggerListener(mockServerToRbelConverter.convertResponse(resp, req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":" + req.getSocketAddress().getPort()));
+                        } catch (Exception e) {
+                            log.error("RBel FAILED!", e);
+                        }
+                        return resp;
+                    });
+        }
     }
 
     private static String patchPath(String requestPath, String forwardTarget) {
@@ -138,13 +140,13 @@ public class TigerProxy extends AbstractTigerProxy {
 
     private void addRbelTrafficEndpoint() {
         mockServerClient.when(request()
-            .withHeader("Host", "rbel"))
+                .withHeader("Host", "rbel"))
             .respond(HttpResponse.response()
                 .withHeader("content-type", "text/html; charset=utf-8")
                 .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
         mockServerClient.when(request()
-            .withHeader("Host", null)
-            .withPath("/rbel"))
+                .withHeader("Host", null)
+                .withPath("/rbel"))
             .respond(httpRequest ->
                 HttpResponse.response()
                     .withHeader("content-type", "text/html; charset=utf-8")
@@ -221,7 +223,7 @@ public class TigerProxy extends AbstractTigerProxy {
 
     private Expectation[] buildReverseProxyRoute(TigerRoute tigerRoute) {
         return mockServerClient.when(request()
-            .withPath(tigerRoute.getFrom() + ".*"))
+                .withPath(tigerRoute.getFrom() + ".*"))
             .forward(
                 req -> {
                     final URI targetUri = new URI(tigerRoute.getTo());
@@ -240,8 +242,8 @@ public class TigerProxy extends AbstractTigerProxy {
 
     private Expectation[] buildForwardProxyRoute(TigerRoute tigerRoute) {
         return mockServerClient.when(request()
-            .withHeader("Host", tigerRoute.getFrom().split("://")[1])
-            .withSecure(tigerRoute.getFrom().startsWith("https://")))
+                .withHeader("Host", tigerRoute.getFrom().split("://")[1])
+                .withSecure(tigerRoute.getFrom().startsWith("https://")))
             .forward(
                 req -> forwardOverriddenRequest(
                     req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1])))

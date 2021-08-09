@@ -5,20 +5,18 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelAsn1Converter;
-import de.gematik.rbellogger.converter.RbelConfiguration;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelAsn1Facet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import java.security.Key;
-import java.util.ArrayList;
-import java.util.List;
-
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+
+import java.security.Key;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Data
@@ -28,7 +26,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private RbelLogger rbelLogger;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
-        rbelLogger = RbelLogger.build(buildRbelLoggerConfiguration(configuration));
+        rbelLogger = buildRbelLoggerConfiguration(configuration)
+            .constructRbelLogger();
     }
 
     private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
@@ -37,6 +36,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
             configuration.getKeyFolders().stream()
                 .forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
         }
+        rbelConfiguration.setFileSaveInfo(configuration.getFileSaveInfo());
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
         return rbelConfiguration;
     }
@@ -61,13 +61,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         rbelMessageListeners.add(listener);
     }
 
-
     @Override
     public void clearAllRoutes() {
         getRoutes().stream()
-                .filter(route -> !route.isInternalRoute())
-                .map(TigerRoute::getId)
-                .forEach(this::removeRoute);
+            .filter(route -> !route.isInternalRoute())
+            .map(TigerRoute::getId)
+            .forEach(this::removeRoute);
     }
 
     @Override

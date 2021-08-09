@@ -8,6 +8,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
+import de.gematik.test.tiger.common.context.TestContext;
 import de.gematik.test.tiger.hooks.Hooks;
 import lombok.Getter;
 import lombok.Setter;

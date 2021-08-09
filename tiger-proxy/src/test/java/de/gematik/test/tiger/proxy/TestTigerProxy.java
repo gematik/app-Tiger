@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -32,12 +33,14 @@ import java.io.IOException;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 public class TestTigerProxy {
 
@@ -382,34 +385,48 @@ public class TestTigerProxy {
         assertThat(callCounter.get()).isEqualTo(2);
     }
 
-//    @Test
-//      public void startProxyFor30s() {
-//        TigerProxy tp = new TigerProxy(TigerProxyConfiguration.builder()
-//                // .forwardToProxy(new ForwardProxyInfo("192.168.230.85", 3128))
-//                .activateRbelEndpoint(true)
-//                .proxyLogLevel("TRACE")
-//                .port(6666)
-////            .forwardToProxy(new ForwardProxyInfo("192.168.110.10", 3128))
-//                .proxyRoutes(Map.of(
-//                        "http://localhost:11001", "http://frontend.titus.ti-dienste.de/",
-//                        "https://localhost:11001", "https://frontend.titus.ti-dienste.de/",
-//                        "http://frontend.titus.ti-dienste.de/", "http://frontend.titus.ti-dienste.de/",
-//                        "https://frontend.titus.ti-dienste.de/", "https://frontend.titus.ti-dienste.de/",
-//                        "https://127.0.0.1:11001", "https://gateway.epa-instanz1.titus.ti-dienste.de",
-//                        "https://localhost:9101", "https://gateway.epa-instanz1.titus.ti-dienste.de",
-//                        "https://127.0.0.1:9101", "https://gateway.epa-instanz1.titus.ti-dienste.de",
-//                        "https://localhost:9001", "https://gateway.epa-instanz1.titus.ti-dienste.de",
-//                        "https://127.0.0.1:9001", "https://gateway.epa-instanz1.titus.ti-dienste.de"
-////                "https://gateway.epa-instanz1.titus.ti-dienste.de", "https://gateway.epa-instanz1.titus.ti-dienste.de"
-//                )).proxyLogLevel("DEBUG")
-//                .serverRootCaCertPem("src/main/resources/CertificateAuthorityCertificate.pem")
-//                .serverRootCaKeyPem("src/main/resources/PKCS8CertificateAuthorityPrivateKey.pem")
-//                .build());
-//        System.out.println(tp.getBaseUrl() + " with " + tp.getPort());
-//        try {
-//            Thread.sleep(30 * 1_000 * 1_000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
+    @Test
+    public void activateFileSaving_shouldAddRouteTrafficToFile() {
+        final String filename = "target/test-log.tgr";
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + wireMockRule.port())
+                .build()))
+            .fileSaveInfo(RbelFileSaveInfo.builder()
+                .writeToFile(true)
+                .clearFileOnBoot(true)
+                .filename(filename)
+                .build())
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        Unirest.get("http://backend/foobar").asString();
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> new File(filename).exists());
+    }
+
+    @Test
+    public void activateFileSaving_shouldAddRoutelessTrafficToFile() {
+        final String filename = "target/test-log.tgr";
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .activateForwardAllLogging(true)
+            .fileSaveInfo(RbelFileSaveInfo.builder()
+                .writeToFile(true)
+                .clearFileOnBoot(true)
+                .filename(filename)
+                .build())
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        Unirest.get("http://localhost:" + wireMockRule.port() + "/foobar").asString();
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> new File(filename).exists());
+    }
 }
