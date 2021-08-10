@@ -3,7 +3,6 @@ package de.gematik.test.tiger.glue;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.lib.json.JsonChecker;
@@ -35,11 +34,37 @@ public class RBelValidatorGlue {
         }
     }
 
-    @And("TGR current JSON response matches")
-    public void currentJsonResponseMatches(final String docString) {
-        String body = rbelValidator.getLastResponse().getFacetOrFail(RbelHttpMessageFacet.class)
-            .getBody().getRawStringContent();
-        new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(body, docString, false);
+    @And("TGR current response at {string} matches as JSON")
+    public void currentResponseAtMatchesAsJson(final String rbelPath, final String docString) {
+        String jsonStr =  findElemInLastResponse(rbelPath).getRawStringContent();
+        new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(jsonStr, docString, false);
+    }
+
+    @And("TGR current response at {string} matches")
+    public void currentResponseAtMatches(final String rbelPath, final String docString) {
+        String bodyStr = findElemInLastResponse(rbelPath).getRawStringContent();
+        if (!bodyStr.equals(docString)) {
+            assertThat(bodyStr).matches(docString);
+        }
+    }
+
+    @And("TGR current response body matches")
+    public void currentResponseAtMatches(final String docString) {
+        String bodyStr = findElemInLastResponse("$.body").getRawStringContent();
+        if (!bodyStr.equals(docString)) {
+            assertThat(bodyStr).matches(docString);
+        }
+    }
+
+    private RbelElement findElemInLastResponse(final String rbelPath) {
+        try {
+            List<RbelElement> elems = rbelValidator.getLastResponse().findRbelPathMembers(rbelPath);
+            assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
+            assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
+            return elems.get(0);
+        } catch (Exception e) {
+            throw new AssertionError("Unable to find element in last response for rbel path '" + rbelPath + "'");
+        }
     }
 
     @And("TGR current response matches")
