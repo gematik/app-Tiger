@@ -58,9 +58,11 @@ public class TigerDirector {
             throw new AssertionError("ABORTING initialisation as environment variable TIGER_ACTIVE is not set to '1'");
         }
 
-        log.info("\n" + IOUtils.toString(
-            Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
-            StandardCharsets.UTF_8));
+        if (OsEnvironment.getAsString("TIGER_NOLOGO") == null) {
+            log.info("\n" + IOUtils.toString(
+                Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
+                StandardCharsets.UTF_8));
+        }
         log.info("\n" + Banner.toBannerStr("READING TEST CONFIG...", Ansi.BOLD + Ansi.BLUE));
         // String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
         // TODO read configuration including testenv var settings

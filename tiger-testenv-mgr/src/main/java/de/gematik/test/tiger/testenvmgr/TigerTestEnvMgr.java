@@ -252,7 +252,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         localDockerProxy.addRoute(TigerRoute.builder()
             .from("http://" + server.getName())
-            .to(uri.getScheme() + "://" + uri.getHost())
+            .to(uri.getScheme() + "://" + uri.getHost() + ":" + uri.getPort())
             .build());
 
         loadPKIForProxy(server);

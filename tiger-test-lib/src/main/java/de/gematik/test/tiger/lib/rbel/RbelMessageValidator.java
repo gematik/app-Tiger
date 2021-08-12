@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.lib.rbel;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
@@ -39,16 +40,6 @@ public class RbelMessageValidator {
         return Hooks.getValidatableRbelMessages();
     }
 
-    public RbelElement getResponseOfRequest(final RbelElement request) {
-        return getRbelMessages().stream()
-            .filter(el -> el.hasFacet(RbelHttpResponseFacet.class))
-            .filter(res -> res
-                .getFacetOrFail(RbelHttpResponseFacet.class)
-                .getRequest() == request)
-            .findAny()
-            .orElseThrow(() -> new AssertionError("No response found for given request"));
-    }
-
     public boolean doesPathOfMessageMatch(final RbelElement req, final String path) {
         try {
             return new URI(req.getFacet(RbelHttpRequestFacet.class)
@@ -70,7 +61,11 @@ public class RbelMessageValidator {
 
         final RbelElement messageByDescription = findRequestByDescription(path, rbelPath, value, msgs);
         lastFilteredRequest = messageByDescription;
-        lastResponse = getResponseOfRequest(messageByDescription);
+        lastResponse = msgs.stream()
+            .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
+            .filter(resp -> resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest() == lastFilteredRequest)
+            .findAny()
+            .orElseThrow();
     }
 
     private RbelElement findRequestByDescription(final String path, final String rbelPath, final String value,
