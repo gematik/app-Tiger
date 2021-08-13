@@ -27,7 +27,10 @@ public class TigerProxyConfiguration {
     private String proxyLogLevel = "WARN";
     private String serverRootCaCertPem;
     private String serverRootCaKeyPem;
+    private String serverRootCaP12File;
     private RbelPkiIdentity serverRootCa;
+    @Builder.Default
+    private String serverRootCaP12Pw = "00";
     private List<String> keyFolders;
     @Builder.Default
     private boolean activateRbelEndpoint = false;
@@ -51,5 +54,9 @@ public class TigerProxyConfiguration {
                 port, port + 1
             };
         }
+    }
+
+    public void tryToReadConfiguredServerRootFiles() {
+
     }
 }

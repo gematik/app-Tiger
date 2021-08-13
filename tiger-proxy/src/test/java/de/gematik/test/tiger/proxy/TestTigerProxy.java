@@ -24,6 +24,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 import org.mockserver.model.MediaType;
 
 import javax.net.ssl.SSLContext;
@@ -199,7 +200,7 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void customRsaCaFileInTruststore_shouldVerifyConnection() throws UnirestException, IOException {
+    public void rsaCaFileInP12File_shouldVerifyConnection() throws UnirestException, IOException {
         final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
             FileUtils.readFileToByteArray(new File("src/test/resources/selfSignedCa/rootCa.p12")), "00");
 
@@ -208,7 +209,34 @@ public class TestTigerProxy {
                 .from("https://backend")
                 .to("http://localhost:" + wireMockRule.port())
                 .build()))
-            .serverRootCa(ca)
+            .serverRootCaP12File("src/test/resources/selfSignedCa/rootCa.p12")
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        Unirest.config().verifySsl(true);
+        Unirest.config().sslContext(buildSslContextTrustingCaFile(ca.getCertificate()));
+
+        final kong.unirest.HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
+            .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+//    @Test
+//    @Disabled
+    public void eccCaFileInPrivPubFiles_shouldVerifyConnection() throws UnirestException, IOException {
+        final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
+            FileUtils.readFileToByteArray(new File("src/test/resources/gateway_ecc.p12")), "00");
+
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("https://backend")
+                .to("http://localhost:" + wireMockRule.port())
+                .build()))
+            .serverRootCaCertPem("src/test/resources/gateway_ecc.pem")
+            .serverRootCaKeyPem("src/test/resources/gateway_ecc.priv")
             .build());
 
         Unirest.config().reset();
@@ -233,7 +261,7 @@ public class TestTigerProxy {
                 .from("https://backend")
                 .to("http://localhost:" + wireMockRule.port())
                 .build()))
-            .serverRootCa(ca)
+            .serverRootCaP12File("src/test/resources/customCa.p12")
             .build());
 
         Unirest.config().reset();
