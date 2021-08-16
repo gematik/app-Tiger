@@ -16,9 +16,7 @@ import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import java.io.Console;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -84,14 +82,21 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             }
             c.format("\nPress ENTER to stop TIGER standalone test environment.\n");
             c.readLine();
-            log.info("Stopping TIGER standalone test envrioment...");
+            log.info("Stopping TIGER standalone test environment...");
         } else {
-            while (true) { // NOSONAR
-                //noinspection BusyWait
-                try {
-                    Thread.sleep(1000L); // NOSONAR
-                } catch (InterruptedException ie) {
-                    return;
+            log.warn("No Console interface found, trying System in stream...");
+            try {
+                new BufferedReader(
+                    new InputStreamReader(System.in)).readLine();
+            } catch (IOException e) {
+                log.warn("Unable to open input stream from console! You will have to use Ctrl+C and clean up the processes manually!");
+                while (true) { // NOSONAR
+                    //noinspection BusyWait
+                    try {
+                        Thread.sleep(1000L); // NOSONAR
+                    } catch (InterruptedException ie) {
+                        return;
+                    }
                 }
             }
         }

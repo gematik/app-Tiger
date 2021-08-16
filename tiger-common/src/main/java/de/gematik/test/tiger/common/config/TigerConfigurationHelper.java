@@ -110,7 +110,7 @@ public class TigerConfigurationHelper<T> {
                 String value = System
                     .getProperty(rootProps + "." + key, System.getenv(rootEnv + "_" + key.toUpperCase()));
                 if (value != null) {
-                    log.info("modifying " + rootEnv + "_" + key.toUpperCase() + ":" + obj);
+                    log.info("modifying " + rootEnv + "_" + key.toUpperCase() + ":" + obj + " with " + value);
                     json.put(key, value);
                 }
             }
@@ -160,7 +160,7 @@ public class TigerConfigurationHelper<T> {
                 log.info("checking for env " + rootEnv + "_" + i + ":" + obj);
                 String value = System.getProperty(rootProps + "." + i, System.getenv(rootEnv + "_" + i));
                 if (value != null) {
-                    log.info("modifying " + rootEnv + "_" + i + ":" + obj);
+                    log.info("modifying " + rootEnv + "_" + i + ":" + obj + " with " + value);
                     jsonArray.put(i, value);
                 }
             }
