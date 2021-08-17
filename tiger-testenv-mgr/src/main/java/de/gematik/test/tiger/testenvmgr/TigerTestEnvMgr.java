@@ -253,11 +253,15 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     @SneakyThrows
     public void initializeExternalUrl(final CfgServer server) {
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external URL instance " + server.getName() + "..." + Ansi.RESET);
-        final var uri = new URI(server.getSource().get(0));
+        final var url = new URL(server.getSource().get(0));
+        int port = url.getPort();
+        if (port == -1) {
+            port = url.getDefaultPort();
+        }
 
         localDockerProxy.addRoute(TigerRoute.builder()
             .from("http://" + server.getName())
-            .to(uri.getScheme() + "://" + uri.getHost() + ":" + uri.getPort())
+            .to(url.toURI().getScheme() + "://" + url.getHost() + ":" + port)
             .build());
 
         loadPKIForProxy(server);
