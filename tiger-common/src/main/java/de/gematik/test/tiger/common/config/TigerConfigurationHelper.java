@@ -4,8 +4,11 @@
 
 package de.gematik.test.tiger.common.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
@@ -24,16 +27,15 @@ import org.json.JSONObject;
  * #overwriteWithSysPropsAndEnvVars(String, String, JSONObject)}. Finally you can convert to your data structure config
  * class by calling {@link #jsonStringToConfig(String, Class)}.
  * <p>
- * For simple test configurations without templating you can use the instance method {@link #yamlToConfig(String,
- * String, Class)}. This method also performs the overwriting of yaml config values with env vars and system properties.
- * Due to Java Generics restrictions you will need to instantiate an instance to use this method.
+ * For simple test configurations without templating you can use the instance method {@link
+ * #yamlReadOverwriteToConfig(String, String, Class)}. This method also performs the overwriting of yaml config values
+ * with env vars and system properties. Due to Java Generics restrictions you will need to instantiate an instance to
+ * use this method.
  *
- * <p>The format of the environment variables looks like:
+ * <p>The format of the environment variables looks exemplaric like:
  * <ul>
  * <li>TIGER_TESTENV_TIGERPROXY_PROXYLOGLEVEL</li>
  * <li>TIGER_TESTENV_TIGERPROXY_PORT</li>
- * <li>TIGER_TESTENV_TIGERPROXY_PROXYROUTES_HTTPS</li>
- * <li>TIGER_TESTENV_TIGERPROXY_PROXYROUTES_HTTPS</li>
  * <li>TIGER_TESTENV_SERVERS_0_TEMPLATE</li>
  * <li>TIGER_TESTENV_SERVERS_0_STARTUPTIMEOUTSEC</li>
  * <li>...</li>
@@ -42,6 +44,12 @@ import org.json.JSONObject;
  * and then separated by "_" the hierarchy walking down all properties / path nodes being uppercase.
  * Entries in Lists are indexed by integer value.
  * <p>For <b>System properties:</b><br/>
+ * <ul>
+ *     <li>tiger.testenv.tigerProxy.proxyLogLevel</li>
+ *     <li>tiger.testenv.tigerProxy.port</li>
+ *     <li>tiger.testenv.tigerProxy.servers.0.template</li>
+ *     <li>tiger.testenv.tigerProxy.servers.0.startupTimeoutSec</li>
+ * </ul>
  * <p>
  * To use tokens such as ${TESTENV.xxxx} in the yaml file and replace it with appropriate values, first convert
  * the JSON Object to string and use the {@link de.gematik.test.tiger.common.TokenSubstituteHelper#substitute(String, String, Map)}
@@ -55,24 +63,79 @@ public class TigerConfigurationHelper<T> {
     private static final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     private static final ObjectMapper objMapper = new ObjectMapper();
 
+    /**
+     * Old method, see {@link #yamlReadOverwriteToConfig(String, String, Class)}.
+     *
+     * @param yamlPath absolute path to yaml config file
+     * @param product  name/id of product
+     * @param cfgClazz class reference for the Configuration object to be created from config yaml file.
+     * @return Configuration object
+     * @deprecated
+     */
+    public T yamlToConfig(String yamlPath, String product, Class<T> cfgClazz) {
+        return yamlReadOverwriteToConfig(yamlPath, product, cfgClazz);
+    }
+
+    /**
+     * reads given yaml file to JSON object, applies env var / system property overwrite and returns the configuration
+     * class's instance.
+     *
+     * @param yamlPath path to yaml config file
+     * @param product  name/id of product
+     * @param cfgClazz class reference for the Configuration object to be created from config yaml file.
+     * @return Configuration object
+     */
     @SneakyThrows
-    public T yamlToConfig(String yamlFile, String product, Class<T> cfgClazz) {
-        JSONObject json = yamlToJson(yamlFile);
+    public T yamlReadOverwriteToConfig(String yamlPath, String product, Class<T> cfgClazz) {
+        JSONObject json = yamlToJson(yamlPath);
         overwriteWithSysPropsAndEnvVars(product.toUpperCase(), product, json);
         return objMapper.readValue(json.toString(), cfgClazz);
     }
 
+    /**
+     * reads a given yaml file to JSON object.
+     *
+     * @param yamlPath path to yaml config file
+     * @return json object
+     */
     @SneakyThrows
-    public static JSONObject yamlToJson(String yamlFile) {
+    public static JSONObject yamlToJson(String yamlPath) {
         Object yamlCfg = yamlMapper.
-            readValue(IOUtils.toString(Path.of(yamlFile).toUri(), StandardCharsets.UTF_8), Object.class);
+            readValue(IOUtils.toString(Path.of(yamlPath).toUri(), StandardCharsets.UTF_8), Object.class);
+        return new JSONObject(objMapper.writeValueAsString(yamlCfg));
+    }
+
+    /**
+     * converts a given yaml content string to JSON object.
+     * @param yamlStr
+     * @return
+     */
+    @SneakyThrows
+    public static JSONObject yamlStringToJson(String yamlStr) {
+        Object yamlCfg = yamlMapper.readValue(yamlStr, Object.class);
         return new JSONObject(objMapper.writeValueAsString(yamlCfg));
     }
 
     @SneakyThrows
-    public static JSONObject yamlStringToJson(String yaml) {
-        Object yamlCfg = yamlMapper.readValue(yaml, Object.class);
-        return new JSONObject(objMapper.writeValueAsString(yamlCfg));
+    public static JSONObject yamlConfigReadOverwriteToJson(String yamlBaseFilename, String product) {
+        final File cfgFile = Path.of("config", product, yamlBaseFilename).toFile();
+        final String yamlStr;
+        if (cfgFile.canRead()) {
+            yamlStr = IOUtils.toString(cfgFile.toURI(), StandardCharsets.UTF_8);
+        } else {
+            InputStream is = TigerConfigurationHelper.class.getResourceAsStream(
+                "/config/" + product + "/" + yamlBaseFilename);
+            assertThat(is)
+                .withFailMessage("Configuration file '" + cfgFile.getAbsolutePath()
+                    + "' neither found in file system nor in classpath!")
+                .isNotNull();
+            try (is) {
+                yamlStr = IOUtils.toString(is, StandardCharsets.UTF_8);
+            }
+        }
+        final JSONObject json = yamlStringToJson(yamlStr);
+        overwriteWithSysPropsAndEnvVars(product.toUpperCase(), product, json);
+        return json;
     }
 
     @SneakyThrows

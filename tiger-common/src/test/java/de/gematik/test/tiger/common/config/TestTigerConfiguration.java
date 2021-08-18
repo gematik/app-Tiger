@@ -12,7 +12,7 @@ public class TestTigerConfiguration {
 
     @Test
     public void readTestEnvYaml() {
-        assertThat(new TigerConfigurationHelper<TestCfg>().yamlToConfig(
+        assertThat(new TigerConfigurationHelper<TestCfg>().yamlReadOverwriteToConfig(
                 "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml",
                 "tiger", TestCfg.class))
                 .extracting(TestCfg::getTemplates)

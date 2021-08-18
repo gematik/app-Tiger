@@ -4,33 +4,35 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-import de.gematik.test.tiger.common.context.TestContext;
 import de.gematik.test.tiger.hooks.Hooks;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.xml.transform.Source;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.xmlunit.builder.DiffBuilder;
+import org.xmlunit.builder.Input;
+import org.xmlunit.diff.Diff;
+import org.xmlunit.diff.Difference;
 
 @SuppressWarnings("unused")
 @Slf4j
 public class RbelMessageValidator {
 
     @Getter
-    private RbelElement lastFilteredRequest;
+    protected RbelElement lastFilteredRequest;
     @Getter
-    private RbelElement lastResponse;
+    protected RbelElement lastResponse;
 
     public RbelMessageValidator() {
 
@@ -42,12 +44,15 @@ public class RbelMessageValidator {
 
     public boolean doesPathOfMessageMatch(final RbelElement req, final String path) {
         try {
-            return new URI(req.getFacet(RbelHttpRequestFacet.class)
+            URI uri = new URI(req.getFacet(RbelHttpRequestFacet.class)
                 .map(RbelHttpRequestFacet::getPath)
                 .map(RbelElement::getRawStringContent)
-                .orElse(""))
-                .getPath().equals(path);
+                .orElse(""));
+            return uri.getPath().equals(path) || uri.getPath().matches(path);
         } catch (final URISyntaxException e) {
+            return false;
+        } catch (RuntimeException rte) {
+            log.error("Probable error while parsing regex!", rte);
             return false;
         }
     }
@@ -57,10 +62,9 @@ public class RbelMessageValidator {
     }
 
     public void filterGivenRequestsAndStoreInContext(final String path, final String rbelPath, final String value,
-                                                     final List<RbelElement> msgs) {
+        final List<RbelElement> msgs) {
 
-        final RbelElement messageByDescription = findRequestByDescription(path, rbelPath, value, msgs);
-        lastFilteredRequest = messageByDescription;
+        lastFilteredRequest = findRequestByDescription(path, rbelPath, value, msgs);
         lastResponse = msgs.stream()
             .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
             .filter(resp -> resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest() == lastFilteredRequest)
@@ -68,8 +72,8 @@ public class RbelMessageValidator {
             .orElseThrow();
     }
 
-    private RbelElement findRequestByDescription(final String path, final String rbelPath, final String value,
-                                                 final List<RbelElement> msgs) {
+    protected RbelElement findRequestByDescription(final String path, final String rbelPath, final String value,
+        final List<RbelElement> msgs) {
         final List<RbelElement> candidateMessages = msgs.stream()
             .filter(el -> el.hasFacet(RbelHttpRequestFacet.class))
             .filter(req -> doesPathOfMessageMatch(req, path))
@@ -88,7 +92,8 @@ public class RbelMessageValidator {
 
         if (StringUtils.isEmpty(rbelPath)) {
             if (candidateMessages.size() > 1) {
-                log.warn("Found more then one candidate message. Returning first message. This may not be deterministic!");
+                log.warn(
+                    "Found more then one candidate message. Returning first message. This may not be deterministic!");
             }
             return candidateMessages.get(0);
         }
@@ -135,6 +140,58 @@ public class RbelMessageValidator {
                 break;
             }
         }
-        filterGivenRequestsAndStoreInContext(path, rbelPath, value, new ArrayList<>(msgs.subList(idx + 2, msgs.size())));
+        filterGivenRequestsAndStoreInContext(path, rbelPath, value,
+            new ArrayList<>(msgs.subList(idx + 2, msgs.size())));
     }
+
+    public void compareXMLStructure(String test, String oracle, List<Function<DiffBuilder, DiffBuilder>> diffOptions) {
+        ArrayList<Difference> diffs = new ArrayList<>();
+        Source srcTest = Input.from(test).build();
+        Source srcOracle = Input.from(oracle).build();
+        DiffBuilder db = DiffBuilder.compare(srcOracle).withTest(srcTest);
+        for (Function<DiffBuilder, DiffBuilder> src : diffOptions) {
+            db = src.apply(db);
+        }
+        db = db.checkForSimilar();
+        Diff diff = db.build();
+        assertThat(diff.hasDifferences()).withFailMessage("XML tree mismatch!\n" + diff).isFalse();
+    }
+
+    public void compareXMLStructure(String test, String oracle) {
+        compareXMLStructure(test, oracle, Collections.emptyList());
+    }
+
+    private static final Map<String, Function<DiffBuilder, DiffBuilder>> diffOptionMap = new HashMap<>();
+
+    static {
+        diffOptionMap.put("nocomment", DiffBuilder::ignoreComments);
+        diffOptionMap.put("txtignoreempty", DiffBuilder::ignoreElementContentWhitespace);
+        diffOptionMap.put("txttrim", DiffBuilder::ignoreWhitespace);
+        diffOptionMap.put("txtnormalize", DiffBuilder::normalizeWhitespace);
+    }
+
+    @SneakyThrows
+    public void compareXMLStructure(String test, String oracle, String diffOptionCSV) {
+        final List<Function<DiffBuilder, DiffBuilder>> diffOptions = new ArrayList<>();
+        Arrays.stream(diffOptionCSV.split(","))
+            .map(String::trim)
+            .forEach(srcClassId -> {
+            assertThat(diffOptionMap).containsKey(srcClassId);
+            diffOptions.add(diffOptionMap.get(srcClassId));
+        });
+        compareXMLStructure(test, oracle, diffOptions);
+    }
+
+    public RbelElement findElemInLastResponse(final String rbelPath) {
+        try {
+            List<RbelElement> elems = lastResponse.findRbelPathMembers(rbelPath);
+            assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
+            assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
+            return elems.get(0);
+        } catch (Exception e) {
+            throw new AssertionError("Unable to find element in last response for rbel path '" + rbelPath + "'");
+        }
+    }
+
+
 }
