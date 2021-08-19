@@ -122,7 +122,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
         byte[] messageBytes = tracingMessage.getRawContent();
 
         if (messageBytes != null) {
-            log.info("Propagating new message {}", new String(messageBytes));
+            log.info("Received new message {}", new String(messageBytes));
 
             final RbelElement rbelMessage = getRbelLogger().getRbelConverter().parseMessage(messageBytes, sender, receiver);
 

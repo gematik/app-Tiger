@@ -1,6 +1,5 @@
 tigerProxy:
-  serverRootCaCertPem: CertificateAuthorityCertificate.pem
-  serverRootCaKeyPem: PKCS8CertificateAuthorityPrivateKey.pem
+  serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 localProxyActive: false
 

@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class RbelMessageValidatorTest {
 

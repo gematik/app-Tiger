@@ -13,7 +13,6 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.UriUtil;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.matchers.TimeToLive;
@@ -26,9 +25,8 @@ import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
-import org.mockserver.socket.tls.NettySslContextFactory;
+import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 
-import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -49,31 +47,25 @@ public class TigerProxy extends AbstractTigerProxy {
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
         if (configuration.getServerRootCa() != null) {
-            TigerKeyAndCertificateFactoryInjector.injectIntoMockServer(configuration);
-        } else {
-            if (StringUtils.isNotEmpty(configuration.getServerRootCaCertPem())) {
-                log.info("Changing CA to file {}", configuration.getServerRootCaCertPem());
-                ConfigurationProperties.certificateAuthorityCertificate(configuration.getServerRootCaCertPem());
-            }
-            if (StringUtils.isNotEmpty(configuration.getServerRootCaKeyPem())) {
-                log.info("Changing CA-key to file {}", configuration.getServerRootCaKeyPem());
-                ConfigurationProperties.certificateAuthorityPrivateKey(configuration.getServerRootCaKeyPem());
-            }
+            KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
+                (mockServerLogger, isServerInstance) -> {
+                    if (isServerInstance) {
+                        return new TigerKeyAndCertificateFactory(mockServerLogger,
+                            configuration.getServerRootCa(), null);
+                    } else {
+                        return new TigerKeyAndCertificateFactory(mockServerLogger,
+                            null, configuration.getForwardMutualTlsIdentity());
+                    }
+                });
         }
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
+        ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType("ANY");
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
+        ConfigurationProperties.forwardProxyPrivateKey();
 
-        NettySslContextFactory.clientSslContextBuilderFunction = sslContextBuilder -> {
-            try {
-                sslContextBuilder.sslContextProvider(new BouncyCastleJsseProvider());
-                return sslContextBuilder.build();
-            } catch (SSLException e) {
-                throw new RuntimeException(e);
-            }
-        };
         mockServer = convertProxyConfiguration(configuration)
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));

@@ -17,9 +17,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.apache.velocity.util.ClassUtils;
-import org.springframework.util.ResourceUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +36,6 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private RbelLogger rbelLogger;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
-        hydrateConfigurationWithServerRootCaFiles(configuration);
         rbelLogger = buildRbelLoggerConfiguration(configuration)
             .constructRbelLogger();
     }
@@ -85,99 +82,5 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     @Override
     public void removeRbelMessageListener(IRbelMessageListener listener) {
         rbelMessageListeners.remove(listener);
-    }
-
-    private void hydrateConfigurationWithServerRootCaFiles(TigerProxyConfiguration configuration) {
-        if (StringUtils.isNotEmpty(configuration.getServerRootCaP12File())) {
-            log.info("Loading server-CA-identity from file {} using password {}...",
-                configuration.getServerRootCaP12File(),
-                configuration.getServerRootCaP12Pw());
-            try {
-                final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
-                    loadFileOrResourceData(configuration.getServerRootCaP12File()),
-                    configuration.getServerRootCaP12Pw());
-                configuration.setServerRootCa(ca);
-            } catch (Exception e) {
-                throw new TigerProxyKeyLoadingException("Error during P12-loading from file '" +
-                    configuration.getServerRootCaP12File()
-                    + "' using password '" +
-                    configuration.getServerRootCaP12Pw()
-                    + "'", e);
-            }
-        } else if (StringUtils.isNotEmpty(configuration.getServerRootCaCertPem())) {
-            log.info("Loading server-CA-identity from cert-file {} and private-key-file {}...",
-                configuration.getServerRootCaCertPem(),
-                configuration.getServerRootCaKeyPem());
-            byte[] certificateData;
-            byte[] keyData;
-            RbelPkiIdentity rootCa;
-            try {
-                certificateData = loadFileOrResourceData(configuration.getServerRootCaCertPem());
-                keyData = loadFileOrResourceData(configuration.getServerRootCaKeyPem());
-            } catch (Exception e) {
-                throw new TigerProxyKeyLoadingException("Error during Root-CA-loading from files '" +
-                    configuration.getServerRootCaCertPem() + "' (PEM, certificate) and '" +
-                    configuration.getServerRootCaKeyPem() + "' (unencrypted PKCS8)", e);
-            }
-            try {
-                rootCa = CryptoLoader.getIdentityFromPemAndPkcs8(certificateData, keyData);
-            } catch (Exception e1) {
-                try {
-                    rootCa = CryptoLoader.getIdentityFromPemAndPkcs1(certificateData, keyData);
-                } catch (Exception e2) {
-                    throw new TigerProxyKeyLoadingException("Error during Root-CA-loading from files '" +
-                        configuration.getServerRootCaCertPem() + "' (PEM, certificate) and '" +
-                        configuration.getServerRootCaKeyPem() + "' (unencrypted PKCS8)", e2);
-                }
-            }
-            configuration.setServerRootCa(rootCa);
-        }
-    }
-
-    private byte[] loadFileOrResourceData(final String entityLocation) throws IOException {
-        if (StringUtils.isEmpty(entityLocation)) {
-            throw new IllegalArgumentException("Trying to load data from empty location! (value is '" + entityLocation + "')");
-        }
-        if (!entityLocation.startsWith("classpath:") && new File(entityLocation).exists()){
-            return FileUtils.readFileToByteArray(new File(entityLocation));
-        }
-        if (entityLocation.startsWith("classpath:")) {
-            return loadResourceData(entityLocation.replaceFirst("classpath:", ""));
-        } else {
-            return loadResourceData(entityLocation);
-        }
-    }
-
-    protected byte[] loadResourceData(String name){
-        try (InputStream rawStream = ClassUtils.getResourceAsStream( getClass(), name )){
-            return rawStream.readAllBytes();
-        } catch (IOException e) {
-            throw new TigerProxyKeyLoadingException("Error while loading resource data", e);
-        }
-    }
-
-    static List<File> getResourceFolderFiles(String folder) {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        URL url = loader.getResource(folder);
-        String path = url.getPath();
-        File file = new File(path);
-        List<File> files = new ArrayList<>();
-        if(file.isDirectory()){
-            try {
-                Files.walk(file.toPath()).filter(Files::isRegularFile).forEach(f -> files.add(f.toFile()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }else{
-            files.add(file);
-        }
-        return files;
-    }
-
-    private static class TigerProxyKeyLoadingException extends RuntimeException {
-
-        public TigerProxyKeyLoadingException(String s, Exception e) {
-            super(s, e);
-        }
     }
 }

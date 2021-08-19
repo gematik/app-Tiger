@@ -4,8 +4,10 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.rbellogger.util.RbelPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -46,15 +48,17 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    private final TigerPkiIdentity caIdentity;
     private final MockServerLogger mockServerLogger;
-    private final RbelPkiIdentity caIdentity;
-    private RbelPkiIdentity eeIdentity;
+    private TigerPkiIdentity eeIdentity;
 
+    @Builder
     public TigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
-                                         TigerProxyConfiguration tigerProxyConfiguration) {
+                                         TigerPkiIdentity caIdentity, TigerPkiIdentity eeIdentity) {
         super(mockServerLogger);
         this.mockServerLogger = mockServerLogger;
-        this.caIdentity = tigerProxyConfiguration.getServerRootCa();
+        this.caIdentity = caIdentity;
+        this.eeIdentity = eeIdentity;
     }
 
     public boolean certificateAuthorityCertificateNotYetCreated() {
@@ -62,6 +66,9 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     }
 
     public X509Certificate certificateAuthorityX509Certificate() {
+        if (caIdentity == null) {
+            return eeIdentity.getCertificateChain().get(0);
+        }
         return this.caIdentity.getCertificate();
     }
 
@@ -83,11 +90,13 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
                     ConfigurationProperties.sslSubjectAlternativeNameDomains(),
                     ConfigurationProperties.sslSubjectAlternativeNameIps());
 
-            eeIdentity = new RbelPkiIdentity(x509Certificate, keyPair.getPrivate(), Optional.empty());
+            if (eeIdentity == null) {
+                eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
+            }
 
             if (MockServerLogger.isEnabled(Level.TRACE)) {
                 this.mockServerLogger.logEvent((new LogEntry()).setLogLevel(Level.TRACE)
-                    .setMessageFormat("created new X509{}with SAN Domain Names{}and IPs{}").setArguments(
+                    .setMessageFormat("created new X509 {} with SAN Domain Names {} and IPs {}").setArguments(
                         this.x509Certificate(),
                         Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains()),
                         Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps())));

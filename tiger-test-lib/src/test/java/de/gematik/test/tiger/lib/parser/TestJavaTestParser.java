@@ -6,10 +6,11 @@ package de.gematik.test.tiger.lib.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.lib.parser.model.Testcase;
+import org.junit.Test;
+
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.Test;
 
 class TestJavaTestParser {
 

@@ -11,6 +11,7 @@ import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
@@ -135,9 +136,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (proxyConfig.getProxyRoutes() == null) {
             proxyConfig.setProxyRoutes(List.of());
         }
-        if (proxyConfig.getServerRootCaCertPem() == null) {
-            proxyConfig.setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
-            proxyConfig.setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
+        if (proxyConfig.getServerRootCa() == null) {
+            proxyConfig.setServerRootCa(new TigerPkiIdentity("CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
         log.info("Starting local docker tiger proxy...");
         localDockerProxy = new TigerProxy(configuration.getTigerProxy());

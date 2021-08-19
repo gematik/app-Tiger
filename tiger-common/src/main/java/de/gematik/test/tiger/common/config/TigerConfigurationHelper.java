@@ -6,12 +6,16 @@ package de.gematik.test.tiger.common.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
+
+import de.gematik.rbellogger.util.RbelPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
