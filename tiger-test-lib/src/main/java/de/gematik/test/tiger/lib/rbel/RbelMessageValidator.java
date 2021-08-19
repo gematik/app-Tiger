@@ -9,7 +9,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-import de.gematik.test.tiger.hooks.Hooks;
+import de.gematik.test.tiger.hooks.TigerTestHooks;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -39,7 +39,7 @@ public class RbelMessageValidator {
     }
 
     public List<RbelElement> getRbelMessages() {
-        return Hooks.getValidatableRbelMessages();
+        return TigerTestHooks.getValidatableRbelMessages();
     }
 
     public boolean doesPathOfMessageMatch(final RbelElement req, final String path) {

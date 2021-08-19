@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
@@ -27,8 +28,12 @@ import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -39,6 +44,7 @@ import static org.mockserver.model.HttpRequest.request;
 @Slf4j
 public class TigerProxy extends AbstractTigerProxy {
 
+    private final TigerPkiIdentity serverRootCa;
     private MockServer mockServer;
     private MockServerClient mockServerClient;
     private MockServerToRbelConverter mockServerToRbelConverter;
@@ -46,6 +52,16 @@ public class TigerProxy extends AbstractTigerProxy {
 
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
+
+        if (configuration.getServerRootCa() != null) {
+            serverRootCa = configuration.getServerRootCa();
+        } else {
+            serverRootCa = new TigerPkiIdentity(
+                "CertificateAuthorityCertificate.pem;" +
+                    "PKCS8CertificateAuthorityPrivateKey.pem;" +
+                    "PKCS8");
+        }
+
         if (configuration.getServerRootCa() != null) {
             KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
                 (mockServerLogger, isServerInstance) -> {
@@ -266,5 +282,42 @@ public class TigerProxy extends AbstractTigerProxy {
         log.info("Deleted route {}. Current # expectations {}",
             route,
             mockServerClient.retrieveActiveExpectations(request()).length);
+    }
+
+    public KeyStore buildTruststore() {
+        try {
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(null);
+            ks.setCertificateEntry("caCert", serverRootCa.getCertificate());
+            int chainCertCtr = 0;
+            for (X509Certificate chainCert : serverRootCa.getCertificateChain()) {
+                ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
+            }
+            return ks;
+        } catch (Exception e) {
+            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy", e);
+        }
+    }
+
+    public SSLContext buildSslContext() {
+        try {
+            TrustManagerFactory tmf = TrustManagerFactory
+                .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+
+            tmf.init(buildTruststore());
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, tmf.getTrustManagers(), null);
+
+            return sslContext;
+        } catch (Exception e) {
+            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy", e);
+        }
+    }
+
+    private class TigerProxyTrustManagerBuildingException extends RuntimeException {
+        public TigerProxyTrustManagerBuildingException(String s, Exception e) {
+            super(s, e);
+        }
     }
 }

@@ -61,7 +61,7 @@ public class RbelMessageProvider implements IRbelMessageListener {
         return Collections.unmodifiableList(messages);
     }
 
-    public void startStep(Step st) {
+    public void startStep() {
         messages.clear();
         wait = false;
     }

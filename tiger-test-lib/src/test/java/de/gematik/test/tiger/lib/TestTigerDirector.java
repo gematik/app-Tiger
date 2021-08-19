@@ -47,10 +47,10 @@ public class TestTigerDirector {
 
         assertThat(TigerDirector.isInitialized()).isTrue();
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getBaseUrl()).startsWith(
+        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
+        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getBaseUrl()).startsWith(
             "http://localhost");
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getRbelLogger()).isNotNull();
+        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getRbelLogger()).isNotNull();
     }
 
     @SneakyThrows
@@ -68,7 +68,7 @@ public class TestTigerDirector {
 
         assertThat(TigerDirector.isInitialized()).isTrue();
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy()).isNotNull();
+        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
 
         InsecureRestorableTrustAllManager.saveContext();
         InsecureRestorableTrustAllManager.allowAllSSL();

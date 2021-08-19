@@ -45,18 +45,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private static final String HTTPS = "https://";
     private static boolean SHUTDOWN_HOOK_ACTIVE = false;
     private final Configuration configuration;
-
     private final DockerMgr dockerManager;
-
-    private Map<String, Object> environmentVariables;
-
-    private final TigerProxy localDockerProxy;
-
+    private final Map<String, Object> environmentVariables;
+    private final TigerProxy localTigerProxy;
     private final List<TigerRoute> routesList = new ArrayList<>();
-
     private final Map<String, Process> externalProcesses = new HashMap<>();
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         try {
             envMgr.setUpEnvironment();
@@ -140,11 +135,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             proxyConfig.setServerRootCa(new TigerPkiIdentity("CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
         log.info("Starting local docker tiger proxy...");
-        localDockerProxy = new TigerProxy(configuration.getTigerProxy());
+        localTigerProxy = new TigerProxy(configuration.getTigerProxy());
         if (configuration.isLocalProxyActive()) {
             environmentVariables = new HashMap<>(
                 Map.of("PROXYHOST", "host.docker.internal",
-                    "PROXYPORT", localDockerProxy.getPort()));
+                    "PROXYPORT", localTigerProxy.getPort()));
         } else {
             environmentVariables = new HashMap<>();
         }
@@ -223,7 +218,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (server.getUrlMappings() != null) {
             server.getUrlMappings().forEach(mapping -> {
                 String[] kvp = mapping.split(" --> ", 2);
-                localDockerProxy.addRoute(TigerRoute.builder()
+                localTigerProxy.addRoute(TigerRoute.builder()
                     .from(kvp[0])
                     .to(kvp[1])
                     .build());
@@ -242,7 +237,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 .from("http://" + server.getName())
                 .to("http://localhost:" + server.getPorts().values().iterator().next())
                 .build());
-            localDockerProxy.addRoute(TigerRoute.builder()
+            localTigerProxy.addRoute(TigerRoute.builder()
                 .from("http://" + server.getName())
                 .to("http://localhost:" + server.getPorts().values().iterator().next())
                 .build());
@@ -259,7 +254,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             port = url.getDefaultPort();
         }
 
-        localDockerProxy.addRoute(TigerRoute.builder()
+        localTigerProxy.addRoute(TigerRoute.builder()
             .from("http://" + server.getName())
             .to(url.toURI().getScheme() + "://" + url.getHost() + ":" + port)
             .build());
@@ -353,7 +348,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .map(o -> {
                 if (configuration.isLocalProxyActive()) {
                     return TokenSubstituteHelper.substitute(o, "",
-                        Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort()));
+                        Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localTigerProxy.getPort()));
                 } else {
                     return o;
                 }
@@ -483,7 +478,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .filter(key -> key.getType().equals("cert"))
             .forEach(key -> {
                 log.info("Adding certificate " + key.getId());
-                getLocalDockerProxy().addKey(
+                getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
                         + key.getPem().replace(" ", "\n")
@@ -493,7 +488,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .filter(key -> key.getType().equals("key"))
             .forEach(key -> {
                 log.info("Adding key " + key.getId());
-                getLocalDockerProxy().addKey(
+                getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
                         + key.getPem().replace(" ", "\n")
@@ -528,7 +523,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             || route.getFrom().equals(HTTPS + server.getName());
         routesList.stream()
             .filter(isServerRoute)
-            .forEach(r -> localDockerProxy.removeRoute(r.getFrom()));
+            .forEach(r -> localTigerProxy.removeRoute(r.getFrom()));
         routesList.removeIf(isServerRoute);
     }
 

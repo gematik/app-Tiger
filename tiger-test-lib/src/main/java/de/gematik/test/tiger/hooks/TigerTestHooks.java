@@ -10,7 +10,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
-import de.gematik.test.tiger.common.context.TestContext;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
@@ -31,7 +30,7 @@ import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
 
 @Slf4j
-public class Hooks {
+public class TigerTestHooks {
 
     private static final Map<URI, Feature> uriFeatureMap = new HashMap<>();
 
@@ -82,8 +81,8 @@ public class Hooks {
             System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
             TigerDirector.beforeTestRun();
         }
-        if (!rbelListenerAdded && TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy() != null) {
-            TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().addRbelMessageListener(rbelMessageListener);
+        if (!rbelListenerAdded && TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy() != null) {
+            TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().addRbelMessageListener(rbelMessageListener);
             rbelListenerAdded = true;
         }
     }
@@ -127,7 +126,7 @@ public class Hooks {
 
     @SneakyThrows
     @After
-    public void purgeFeatureFileNSaveRbelLog(final Scenario scenario) {
+    public void purgeFeatureFileAndSaveRbelLog(final Scenario scenario) {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;

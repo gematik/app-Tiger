@@ -17,19 +17,14 @@ import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import kong.unirest.*;
-import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockserver.model.MediaType;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.IOException;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -197,10 +192,7 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void rsaCaFileInP12File_shouldVerifyConnection() throws UnirestException, IOException {
-        final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
-            FileUtils.readFileToByteArray(new File("src/test/resources/selfSignedCa/rootCa.p12")), "00");
-
+    public void rsaCaFileInP12File_shouldVerifyConnection() throws UnirestException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
@@ -212,7 +204,7 @@ public class TestTigerProxy {
         final UnirestInstance unirestInstance = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getPort())
                 .verifySsl(true)
-                .sslContext(buildSslContextTrustingCaFile(ca.getCertificate())));
+                .sslContext(tigerProxy.buildSslContext()));
 
         final kong.unirest.HttpResponse<JsonNode> response = unirestInstance.get("https://backend/foobar")
             .asJson();
@@ -237,7 +229,7 @@ public class TestTigerProxy {
         Unirest.config().reset();
         Unirest.config().proxy("localhost", tigerProxy.getPort());
         Unirest.config().verifySsl(true);
-        Unirest.config().sslContext(buildSslContextTrustingCaFile(ca.getCertificate()));
+        Unirest.config().sslContext(tigerProxy.buildSslContext());
 
         final kong.unirest.HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
             .asJson();
@@ -366,13 +358,11 @@ public class TestTigerProxy {
 
     @Test
     public void blanketRerverseProxy_shouldForwardHttpsRequest() {
-        final TigerPkiIdentity ca = new TigerPkiIdentity(
-            "src/test/resources/selfSignedCa/rootCa.p12;00");
-
         AtomicInteger callCounter = new AtomicInteger(0);
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .serverRootCa(ca)
+            .serverRootCa(new TigerPkiIdentity(
+                "src/test/resources/selfSignedCa/rootCa.p12;00"))
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
                 .to("http://localhost:" + wireMockRule.port())
@@ -385,7 +375,7 @@ public class TestTigerProxy {
         final UnirestInstance unirestWithTruststoreAndSslVerification = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getPort())
                 .verifySsl(true)
-                .sslContext(buildSslContextTrustingCaFile(ca.getCertificate())));
+                .sslContext(tigerProxy.buildSslContext()));
 
         unirestWithTruststoreAndSslVerification
             .get("https://localhost:" + tigerProxy.getPort() + "/foobar").asString();
@@ -455,26 +445,10 @@ public class TestTigerProxy {
         final UnirestInstance unirestInstance = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getPort())
                 .verifySsl(true)
-                .sslContext(buildSslContextTrustingCaFile(ca.getCertificate())));
+                .sslContext(tigerProxy.buildSslContext()));
 
         assertThat(unirestInstance.get("https://backend/foobar").asString()
             .getStatus())
             .isEqualTo(666);
-    }
-
-    @SneakyThrows
-    private SSLContext buildSslContextTrustingCaFile(X509Certificate certificate) {
-        TrustManagerFactory tmf = TrustManagerFactory
-            .getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        ks.load(null);
-        ks.setCertificateEntry("caCert", certificate);
-
-        tmf.init(ks);
-
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, tmf.getTrustManagers(), null);
-
-        return sslContext;
     }
 }

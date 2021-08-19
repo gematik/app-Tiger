@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import io.restassured.RestAssured;
+import kong.unirest.Unirest;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -72,22 +75,15 @@ public class TigerDirector {
         tigerTestEnvMgr.setUpEnvironment();
 
         // set proxy to local tiger proxy for test suites
-        if (tigerTestEnvMgr.getLocalDockerProxy() != null && tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
+        if (tigerTestEnvMgr.getLocalTigerProxy() != null && tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
             log.info("\n" + Banner.toBannerStr("SETTING TIGER PROXY...", Ansi.BOLD + Ansi.BLUE));
             System.setProperty("http.proxyHost", "localhost");
             System.setProperty("http.proxyPort",
-                "" + tigerTestEnvMgr.getLocalDockerProxy().getPort());
+                "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
             System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
             System.setProperty("https.proxyHost", "localhost");
             System.setProperty("https.proxyPort",
-                "" + tigerTestEnvMgr.getLocalDockerProxy().getPort());
-
-            // set proxy to local tigerproxy for erezept idp client
-            // Unirest.config().proxy("localhost", TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
-            // TODO fd client uses unirest and has cert issue
-            // Unirest.config().verifySsl(false);
-            // RestAssured.useRelaxedHTTPSValidation();
-
+                "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
         } else {
             log.info("\n" + Banner.toBannerStr("SKIPPING TIGER PROXY settings...", Ansi.BOLD + Ansi.RED));
         }
@@ -148,10 +144,10 @@ public class TigerDirector {
 
     public static String getProxySettings() {
         assertThatTigerIsInitialized();
-        if (tigerTestEnvMgr.getLocalDockerProxy() == null) {
+        if (tigerTestEnvMgr.getLocalTigerProxy() == null) {
             return null;
         } else {
-            return tigerTestEnvMgr.getLocalDockerProxy().getBaseUrl();
+            return tigerTestEnvMgr.getLocalTigerProxy().getBaseUrl();
         }
     }
 
