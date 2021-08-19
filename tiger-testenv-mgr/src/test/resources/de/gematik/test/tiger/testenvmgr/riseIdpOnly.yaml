@@ -3,7 +3,7 @@ tigerProxy:
 
 
 servers:
-  - name: idp
+  - name: idp10
     template: idp-rise-tu
     type: externalUrl
     active: true

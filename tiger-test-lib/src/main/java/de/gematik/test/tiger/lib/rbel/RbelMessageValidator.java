@@ -5,14 +5,18 @@
 package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
+import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.xml.transform.Source;
@@ -20,6 +24,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.builder.Input;
 import org.xmlunit.diff.Diff;
@@ -65,11 +70,21 @@ public class RbelMessageValidator {
         final List<RbelElement> msgs) {
 
         lastFilteredRequest = findRequestByDescription(path, rbelPath, value, msgs);
-        lastResponse = msgs.stream()
-            .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
-            .filter(resp -> resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest() == lastFilteredRequest)
-            .findAny()
-            .orElseThrow();
+        try {
+            await("Waiting for matching response").atMost(5, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .pollDelay(100, TimeUnit.MILLISECONDS)
+                .until(() -> msgs.stream()
+                    .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
+                    .filter(
+                        resp -> resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()
+                            == lastFilteredRequest)
+                    .peek(rbelElement -> lastResponse = rbelElement)
+                    .findAny()
+                    .isPresent());
+        } catch (ConditionTimeoutException cte) {
+            throw new TigerLibraryException("Missing response message to filtered request!", cte);
+        }
     }
 
     protected RbelElement findRequestByDescription(final String path, final String rbelPath, final String value,
@@ -176,9 +191,9 @@ public class RbelMessageValidator {
         Arrays.stream(diffOptionCSV.split(","))
             .map(String::trim)
             .forEach(srcClassId -> {
-            assertThat(diffOptionMap).containsKey(srcClassId);
-            diffOptions.add(diffOptionMap.get(srcClassId));
-        });
+                assertThat(diffOptionMap).containsKey(srcClassId);
+                diffOptions.add(diffOptionMap.get(srcClassId));
+            });
         compareXMLStructure(test, oracle, diffOptions);
     }
 

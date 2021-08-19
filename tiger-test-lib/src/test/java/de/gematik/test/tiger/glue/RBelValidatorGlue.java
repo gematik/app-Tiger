@@ -119,8 +119,22 @@ public class RBelValidatorGlue {
      *                 option
      */
     @And("TGR current response with attribute {string} matches {string}")
-    @And("TGR current response at {string} matches {string}")
     public void currentResponseMessageAttributeMatches(final String rbelPath, final String value) {
+        final String text = rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent();
+        if (!text.equals(value)) {
+            assertThat(text).matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+        }
+    }
+
+    /**
+     * assert that response of filtered request matches at given rbel path node/attribute.
+     *
+     * @param rbelPath path to node/attribute
+     * @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex
+     *                 option
+     */
+    @And("TGR current response at {string} matches {string}")
+    public void currentResponseMessageAtMatches(final String rbelPath, final String value) {
         final String text = rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent();
         if (!text.equals(value)) {
             assertThat(text).matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));

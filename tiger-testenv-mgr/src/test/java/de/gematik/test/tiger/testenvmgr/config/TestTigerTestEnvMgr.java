@@ -30,7 +30,7 @@ public class TestTigerTestEnvMgr {
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
         CfgServer srv = new CfgServer();
-        srv.setName("idp");
+        srv.setName("idp9");
         srv.setType("docker");
         srv.setSource(List.of("anything......"));
         envMgr.shutDown(srv);
@@ -45,7 +45,7 @@ public class TestTigerTestEnvMgr {
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
         CfgServer srv = new CfgServer();
-        srv.setName("idp");
+        srv.setName("idp10");
         srv.setType("externalUrl");
         srv.setSource(List.of("anything......"));
         envMgr.shutDown(srv);
