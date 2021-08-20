@@ -5,7 +5,7 @@ tigerProxy:
   serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 servers:
-  - name: idp2
+  - name: idp2-simple
     template: idp-ref
     active: true
 
