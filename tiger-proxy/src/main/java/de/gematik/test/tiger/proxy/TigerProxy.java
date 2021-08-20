@@ -65,7 +65,8 @@ public class TigerProxy extends AbstractTigerProxy {
         if (configuration.getServerRootCa() != null) {
             KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
                 (mockServerLogger, isServerInstance) -> {
-                    if (isServerInstance) {
+                    if (isServerInstance
+                        || configuration.getForwardMutualTlsIdentity() == null) {
                         return new TigerKeyAndCertificateFactory(mockServerLogger,
                             configuration.getServerRootCa(), null);
                     } else {
@@ -235,11 +236,15 @@ public class TigerProxy extends AbstractTigerProxy {
             .forward(
                 req -> {
                     final URI targetUri = new URI(tigerRoute.getTo());
+                    int port = targetUri.getPort();
+                    if (port < 0) {
+                        port = tigerRoute.getTo().startsWith("https://") ? 443 : 80;
+                    }
                     return forwardOverriddenRequest(
                         req.withSocketAddress(
                             tigerRoute.getTo().startsWith("https://"),
                             targetUri.getHost(),
-                            targetUri.getPort()
+                            port
                         ))
                         .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://"))
                         .withPath(patchPath(req.getPath().getValue(), tigerRoute.getFrom()));
