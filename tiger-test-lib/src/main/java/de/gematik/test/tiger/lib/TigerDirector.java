@@ -10,6 +10,7 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -71,6 +72,14 @@ public class TigerDirector {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", Ansi.BOLD + Ansi.BLUE));
         tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
+
+
+        TigerProxyConfiguration tpCfg = tigerTestEnvMgr.getConfiguration().getTigerProxy();
+        if (tpCfg.isSkipTrafficEndpointsSubscription()) {
+            log.info("Trying to late connect to traffic endpoints...");
+            tigerTestEnvMgr.getLocalTigerProxy().subscribeToTrafficEndpoints(tpCfg);
+        }
+
 
         // set proxy to local tiger proxy for test suites
         if (tigerTestEnvMgr.getLocalTigerProxy() != null && tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
