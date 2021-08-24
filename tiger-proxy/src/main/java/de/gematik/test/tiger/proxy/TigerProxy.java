@@ -75,13 +75,13 @@ public class TigerProxy extends AbstractTigerProxy {
                     }
                 });
         }
+
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
         ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType("ANY");
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
-        ConfigurationProperties.forwardProxyPrivateKey();
 
         mockServer = convertProxyConfiguration(configuration)
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
@@ -98,7 +98,9 @@ public class TigerProxy extends AbstractTigerProxy {
             addRbelTrafficEndpoint();
         }
 
-        subscribeToTrafficEndpoints(configuration);
+        if (!configuration.isSkipTrafficEndpointsSubscription()) {
+            subscribeToTrafficEndpoints(configuration);
+        }
 
         if (configuration.isActivateForwardAllLogging()) {
             mockServerClient.when(request()
@@ -133,10 +135,15 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    private void subscribeToTrafficEndpoints(TigerProxyConfiguration configuration) {
+    public void subscribeToTrafficEndpoints(TigerProxyConfiguration configuration) {
         Optional.of(configuration)
             .filter(Objects::nonNull)
             .map(TigerProxyConfiguration::getTrafficEndpoints)
+            .ifPresent(this::subscribeToTrafficEndpoints);
+    }
+
+    public void subscribeToTrafficEndpoints(List<String> trafficEndpointUrls) {
+        Optional.of(trafficEndpointUrls)
             .filter(Objects::nonNull)
             .stream()
             .flatMap(List::stream)

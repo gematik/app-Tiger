@@ -44,6 +44,8 @@ public class TigerProxyConfiguration {
     private boolean activateForwardAllLogging = true;
     private RbelFileSaveInfo fileSaveInfo;
     private Integer port;
+    @Builder.Default
+    private boolean skipTrafficEndpointsSubscription = false;
     private List<String> trafficEndpoints;
     @Builder.Default
     private int connectionTimeoutInSeconds = 10;
