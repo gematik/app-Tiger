@@ -121,7 +121,6 @@
         <dependency>
             <groupId>de.gematik</groupId>
             <artifactId>rbellogger</artifactId>
-            <version>${version.rbellogger}</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

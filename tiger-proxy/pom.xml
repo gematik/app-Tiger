@@ -114,7 +114,6 @@
         <dependency>
             <groupId>de.gematik</groupId>
             <artifactId>rbellogger</artifactId>
-            <version>${version.rbellogger}</version>
         </dependency>
         <dependency>
             <groupId>org.cfg4j</groupId>
