@@ -1,23 +1,14 @@
 tigerProxy:
+  proxyLogLevel: TRACE
   forwardToProxy:
-    hostname: 192.168.230.85
+    hostname: 192.168.110.10
     port: 3128
 
 servers:
   - name: idp
     template: idp-ref
     active: true
-
-  - name: idp
-    template: idp-ref
-    instanceUri: docker:idp-server
-    version: 0.1-SNAPSHOT
-    active: false
-
-  - name: idp-rise-tu-manual
-    template: idp-rise-tu
-    instanceUri: external:https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    active: false
+    startupTimeoutSec: 110
 
   - name: erzpt-default
     template: erzpt-fd-ref

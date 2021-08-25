@@ -51,7 +51,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private final List<TigerRoute> routesList = new ArrayList<>();
     private final Map<String, Process> externalProcesses = new HashMap<>();
 
+
     public static void main(String[] args) {
+
+
         TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         try {
             envMgr.setUpEnvironment();
@@ -60,7 +63,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             System.exit(1);
         }
         log.info("\n" + Banner.toBannerStr("Tiger standalone test environment UP!", Ansi.BOLD + Ansi.GREEN));
-        waitForEnter(null);
+        waitForQuit(null);
         log.info("interrupting " + envMgr.externalProcesses.size() + " threads...");
         envMgr.externalProcesses.values().forEach(Process::destroy);
         log.info("stopping threads...");
@@ -69,23 +72,32 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         System.exit(0);
     }
 
-    public static void waitForEnter(String message, Object... args) {
+    public static void waitForQuit(String message, Object... args) {
         Console c = System.console();
         if (c != null) {
             // printf-like arguments
             if (message != null) {
                 c.format(message, args);
             }
-            c.format("\nPress ENTER to stop TIGER standalone test environment.\n");
-            c.readLine();
+            c.format("\n\n\nPress 'quit' and ENTER to stop TIGER standalone test environment.\n\n\n\n\n");
+            String cmd = "";
+            while (!cmd.equals("quit")) {
+                cmd = c.readLine();
+            }
             log.info("Stopping TIGER standalone test environment...");
         } else {
             log.warn("No Console interface found, trying System in stream...");
+            log.info("\n\n\nPress 'quit' and ENTER to stop TIGER standalone test environment.\n\n\n\n\n");
             try {
-                new BufferedReader(
-                    new InputStreamReader(System.in)).readLine();
+                BufferedReader rdr = new BufferedReader(
+                    new InputStreamReader(System.in));
+                String cmd = "";
+                while (!cmd.equals("quit")) {
+                    cmd = rdr.readLine();
+                }
             } catch (IOException e) {
-                log.warn("Unable to open input stream from console! You will have to use Ctrl+C and clean up the processes manually!");
+                log.warn(
+                    "Unable to open input stream from console! You will have to use Ctrl+C and clean up the processes manually!");
                 while (true) { // NOSONAR
                     //noinspection BusyWait
                     try {
@@ -132,7 +144,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             proxyConfig.setProxyRoutes(List.of());
         }
         if (proxyConfig.getServerRootCa() == null) {
-            proxyConfig.setServerRootCa(new TigerPkiIdentity("CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
+            proxyConfig.setServerRootCa(new TigerPkiIdentity(
+                "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
         log.info("Starting local docker tiger proxy...");
         localTigerProxy = new TigerProxy(configuration.getTigerProxy());

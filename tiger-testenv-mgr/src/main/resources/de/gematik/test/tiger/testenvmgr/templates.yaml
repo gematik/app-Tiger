@@ -117,7 +117,7 @@ templates:
     type: docker
     source:
       - gstopdr1.top.local/erezept/ref-erx-fd-server
-    version: 0.17.2
+    version: 0.19.2
     startupTimeoutSec: 50
     urlMappings:
       # NG TODO once we support https proxying the TSL we can remove this mapping

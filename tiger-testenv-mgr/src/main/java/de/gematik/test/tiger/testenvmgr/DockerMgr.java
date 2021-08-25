@@ -9,6 +9,7 @@ import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
+import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
@@ -256,9 +257,25 @@ public class DockerMgr {
                 // append proxy and other certs (for rise idp)
                 + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
                 + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                + "echo \"" + risecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                + "echo \"" + risecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n";
 
-                // testing ca cert of proxy with openssl
+            // workaround for host.docker.internal not being available on linux based docker
+            // see https://github.com/docker/for-linux/issues/264
+            if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC) {
+                String hostip = OsEnvironment.getDockerHostIp();
+                log.info("patching /etc/hosts for possibly non supported symbolic host.docker.internal");
+                content += "grep -q \"host.docker.internal\" /etc/hosts || "
+                    + "echo \" \" >> /etc/hosts && echo \"" + hostip + "    host.docker.internal\" >> /etc/hosts\n";
+
+                // TODO reactivate once we have docker 20 on maven nodes
+                //  container.withExtraHost("host.docker.internal", "host-gateway");
+                content += "echo HOSTS:\ncat /etc/hosts\n";
+            } else {
+                log.info("skipping etc hosts patch...");
+            }
+
+
+            // testing ca cert of proxy with openssl
                 //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
                 //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
                 //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
@@ -267,25 +284,17 @@ public class DockerMgr {
                 // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
 
                 // change to working dir and execute former entrypoint/startcmd
-                + extractWorkingDirectory(containerConfig)
+            content += extractWorkingDirectory(containerConfig)
                 + String.join(" ", entryPointCmd).replace("\t", " ")
                 + " " + String.join(" ", startCmd).replace("\t", " ") + "\n";
 
-            // workaround for host.docker.internal not being available on linux based docker
-            // see https://github.com/docker/for-linux/issues/264
-            if (SystemUtils.IS_OS_LINUX) {
-                content += "grep -q \"host.docker.internal\" /etc/hosts || echo  -e \"\\n172.17.0.1    host.docker.internal\\n\" >> /etc/hosts\n";
-
-                // TODO reactivate once we have docker 20 on maven nodes
-                //  container.withExtraHost("host.docker.internal", "host-gateway");
-            }
 
             FileUtils.writeStringToFile(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName).toFile(),
                 content, StandardCharsets.UTF_8);
             return scriptName;
-        } catch (IOException e) {
+        } catch (IOException ioe) {
             throw new TigerTestEnvException(
-                "Failed to configure start script on container for server " + server.getName());
+                "Failed to configure start script on container for server " + server.getName(), ioe);
         }
 
     }
