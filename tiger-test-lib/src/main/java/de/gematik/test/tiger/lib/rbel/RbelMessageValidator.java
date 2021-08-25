@@ -27,6 +27,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.builder.Input;
+import org.xmlunit.diff.ComparisonResult;
+import org.xmlunit.diff.ComparisonType;
 import org.xmlunit.diff.Diff;
 import org.xmlunit.diff.Difference;
 
@@ -168,6 +170,15 @@ public class RbelMessageValidator {
             db = src.apply(db);
         }
         db = db.checkForSimilar();
+        db.withDifferenceEvaluator((comparison, outcome) -> {
+            if (outcome != ComparisonResult.EQUAL &&
+                (comparison.getType() == ComparisonType.NAMESPACE_URI
+                    || comparison.getType() == ComparisonType.NAMESPACE_PREFIX)) {
+                return ComparisonResult.SIMILAR;
+            }
+            return outcome;
+        });
+
         Diff diff = db.build();
         assertThat(diff.hasDifferences()).withFailMessage("XML tree mismatch!\n" + diff).isFalse();
     }

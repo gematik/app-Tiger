@@ -179,7 +179,7 @@ public class RBelValidatorGlue {
     public void currentResponseAtMatchesAsXML(final String rbelPath, final String XMLstr) {
         final RbelElement el = rbelValidator.findElemInLastResponse(rbelPath);
         assertThat(el.hasFacet(RbelXmlFacet.class)).withFailMessage("Node '" + rbelPath + "' is not XML").isTrue();
-        rbelValidator.compareXMLStructure(el.getFacetOrFail(RbelXmlFacet.class).toString(), XMLstr);
+        rbelValidator.compareXMLStructure(el.getFacetOrFail(RbelXmlFacet.class).getSourceElement().asXML(), XMLstr);
     }
 
     /**
@@ -203,6 +203,7 @@ public class RBelValidatorGlue {
         String diffOptionsCSV) {
         final RbelElement el = rbelValidator.findElemInLastResponse(rbelPath);
         assertThat(el.hasFacet(RbelXmlFacet.class)).withFailMessage("Node '" + rbelPath + "' is not XML").isTrue();
-        rbelValidator.compareXMLStructure(el.getFacetOrFail(RbelXmlFacet.class).toString(), XMLstr, diffOptionsCSV);
+        rbelValidator.compareXMLStructure(el.getFacetOrFail(RbelXmlFacet.class).getSourceElement().asXML(), XMLstr,
+            diffOptionsCSV);
     }
 }
