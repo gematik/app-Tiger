@@ -57,7 +57,7 @@ public class TigerProxyConfiguration {
             return null;
         } else {
             return new Integer[]{
-                port, port + 1
+                port
             };
         }
     }
