@@ -22,6 +22,7 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.ExpectationId;
 import org.mockserver.model.Header;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -265,9 +266,18 @@ public class TigerProxy extends AbstractTigerProxy {
                 .withHeader("Host", tigerRoute.getFrom().split("://")[1])
                 .withSecure(tigerRoute.getFrom().startsWith("https://")))
             .forward(
-                req -> forwardOverriddenRequest(
-                    req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1])))
-                    .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://")),
+                req -> {
+                    req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1]));
+                    if (tigerRoute.getBasicAuth() != null) {
+                        req.replaceHeader(
+                            Header.header(
+                                "Authorization",
+                                tigerRoute.getBasicAuth().toAuthorizationHeaderValue()));
+                    }
+                    return forwardOverriddenRequest(
+                        req)
+                        .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://"));
+                },
                 buildExpectationCallback(tigerRoute, tigerRoute.getFrom())
             );
     }

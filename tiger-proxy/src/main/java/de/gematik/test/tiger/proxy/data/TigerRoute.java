@@ -20,4 +20,5 @@ public class TigerRoute {
     private String to;
     private boolean internalRoute;
     private boolean disableRbelLogging;
+    private TigerBasicAuthConfiguration basicAuth;
 }

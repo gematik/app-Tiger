@@ -14,6 +14,7 @@ import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.data.TigerBasicAuthConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import kong.unirest.*;
@@ -41,6 +42,7 @@ public class TestTigerProxy {
     public WireMockRule wireMockRule = new WireMockRule(options()
         .dynamicPort()
         .dynamicHttpsPort());
+    private UnirestInstance unirestInstance;
 
     @Before
     public void setupBackendServer() {
@@ -450,5 +452,31 @@ public class TestTigerProxy {
         assertThat(unirestInstance.get("https://backend/foobar").asString()
             .getStatus())
             .isEqualTo(666);
+    }
+
+    @Test
+    public void basicAuthenticationRequiredAndConfigured_ShouldWork() {
+        wireMockRule.stubFor(get(urlEqualTo("/authenticatedPath"))
+                .withBasicAuth("user","password")
+            .willReturn(aResponse()
+                .withStatus(777)
+                .withBody("{\"foo\":\"bar\"}")));
+
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backendWithBasicAuth")
+                .to("http://localhost:" + wireMockRule.port())
+                .basicAuth(new TigerBasicAuthConfiguration("user", "password"))
+                .build()))
+            .proxyLogLevel("DEBUG")
+            .build());
+
+        unirestInstance = Unirest.spawnInstance();
+        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+
+        assertThat(unirestInstance.get("http://backend/authenticatedPath").asJson().getStatus())
+            .isEqualTo(404);
+        assertThat(unirestInstance.get("http://backendWithBasicAuth/authenticatedPath").asJson().getStatus())
+            .isEqualTo(777);
     }
 }
