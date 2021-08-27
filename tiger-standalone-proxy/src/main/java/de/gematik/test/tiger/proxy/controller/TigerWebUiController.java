@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import static j2html.TagCreator.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
@@ -18,10 +17,6 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.GetMessagesAfterDto;
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
 import j2html.tags.ContainerTag;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +27,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static j2html.TagCreator.*;
 
 @Data
 @RequiredArgsConstructor
@@ -45,7 +50,7 @@ public class TigerWebUiController {
 
     private final RbelHtmlRenderer renderer = new RbelHtmlRenderer();
 
-    @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI() throws IOException {
         String html = renderer.getEmptyPage()
             .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">");
@@ -133,23 +138,25 @@ public class TigerWebUiController {
         if (el.hasFacet(RbelHttpRequestFacet.class)) {
             RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
             b = b.path(req.getPath().getRawStringContent())
-                    .method(req.getMethod().getRawStringContent())
-                    .recipient(el.getFacet(RbelTcpIpMessageFacet.class)
-                        .map(RbelTcpIpMessageFacet::getReceiver)
-                        .filter(Objects::nonNull)
-                        .flatMap(element -> element.seekValue(RbelHostname.class))
-                        .map(RbelHostname::toString)
-                        .map(Object::toString)
-                        .orElse(""));
+                .method(req.getMethod().getRawStringContent())
+                .recipient(el.getFacet(RbelTcpIpMessageFacet.class)
+                    .map(RbelTcpIpMessageFacet::getReceiver)
+                    .filter(Objects::nonNull)
+                    .flatMap(element -> element.seekValue(RbelHostname.class))
+                    .map(RbelHostname::toString)
+                    .map(Object::toString)
+                    .orElse(""));
         } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
-            b.status(el.getFacetOrFail(RbelHttpResponseFacet.class).getResponseCode().seekValue(Integer.class).get())
-                    .sender(el.getFacet(RbelTcpIpMessageFacet.class)
-                        .map(RbelTcpIpMessageFacet::getSender)
-                        .filter(Objects::nonNull)
-                        .flatMap(element -> element.seekValue(RbelHostname.class))
-                        .map(RbelHostname::toString)
-                        .map(Object::toString)
-                        .orElse(""));
+            b.status(el.getFacetOrFail(RbelHttpResponseFacet.class)
+                    .getResponseCode().seekValue(Integer.class)
+                    .orElse(-1))
+                .sender(el.getFacet(RbelTcpIpMessageFacet.class)
+                    .map(RbelTcpIpMessageFacet::getSender)
+                    .filter(Objects::nonNull)
+                    .flatMap(element -> element.seekValue(RbelHostname.class))
+                    .map(RbelHostname::toString)
+                    .map(Object::toString)
+                    .orElse(""));
         } else {
             throw new IllegalArgumentException(
                 "We do not support meta data for non http elements (" + el.getClass().getName() + ")");
@@ -170,12 +177,12 @@ public class TigerWebUiController {
 
 
     private ContainerTag radio(final String text, final String name, final String id, String value,
-        final String clazz) {
+                               final String clazz) {
         return radio(text, name, id, value, clazz, false);
     }
 
     private ContainerTag radio(final String text, final String name, final String id, String value, final String clazz,
-        boolean checked) {
+                               boolean checked) {
         return div().withClass("radio-item").with(
             input().withType("radio").withName(name).withId(id).withValue(value).withClass(clazz)
                 .attr("checked", checked),

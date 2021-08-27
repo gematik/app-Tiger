@@ -221,12 +221,4 @@ public class TigerPkiIdentityLoader {
             super(message);
         }
     }
-
-    public static class RbelPkiMapper extends JsonDeserializer<RbelPkiIdentity> {
-
-        @Override
-        public RbelPkiIdentity deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
-            return null;
-        }
-    }
 }
