@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -140,6 +141,10 @@ public class TigerPkiIdentityLoader {
                 if (ks.isKeyEntry(alias)) {
                     result.setCertificate((X509Certificate) ks.getCertificate(alias));
                     result.setPrivateKey((PrivateKey) ks.getKey(alias, password.toCharArray()));
+                    final Certificate[] certificateChain = ks.getCertificateChain(alias);
+                    for (int i = 1; i < certificateChain.length; i++) {
+                        result.addCertificateToCertificateChain((X509Certificate) certificateChain[i]);
+                    }
                 } else {
                     result.addCertificateToCertificateChain((X509Certificate) ks.getCertificate(alias));
                 }

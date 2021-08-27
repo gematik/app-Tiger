@@ -68,4 +68,19 @@ public class TigerPkiIdentityLoaderTest {
         assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity("pkcs1;src/test/resources/rsa_pkcs1/key.pem;src/test/resources/rsa_pkcs1/cert.pem"))
             .isNotNull();
     }
+
+    @Test
+    public void loadChainFromSingleAliasP12() {
+        final TigerPkiIdentity identity = TigerPkiIdentityLoader
+            .loadRbelPkiIdentity("src/test/resources/hera.p12;00");
+
+        assertThat(identity.getCertificateChain())
+            .hasSize(1);
+        assertThat(identity.getCertificateChain().get(0))
+            .isNotEqualTo(identity.getCertificate());
+        assertThat(identity.getCertificateChain().get(0).getSubjectDN())
+            .isEqualTo(identity.getCertificateChain().get(0).getIssuerDN());
+        assertThat(identity.getCertificateChain().get(0).getSubjectDN())
+            .isEqualTo(identity.getCertificate().getIssuerDN());
+    }
 }
