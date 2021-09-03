@@ -5,12 +5,14 @@
 package de.gematik.test.tiger.proxy.configuration;
 
 import lombok.Data;
+import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties("tiger-proxy")
 @Data
+@ToString(callSuper = true)
 public class ApplicationConfiguration extends TigerProxyConfiguration {
-
+    private TigerProxyReportConfiguration report;
 }

@@ -15,10 +15,7 @@ import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,6 +24,7 @@ import java.util.List;
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
 @Builder
+@ToString
 public class TigerProxyConfiguration {
 
     private List<TigerRoute> proxyRoutes;
