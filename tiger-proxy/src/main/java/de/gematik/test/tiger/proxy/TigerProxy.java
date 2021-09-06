@@ -8,6 +8,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.configuration.TigerProxyType;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
@@ -175,7 +176,10 @@ public class TigerProxy extends AbstractTigerProxy {
             || StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())) {
             return Optional.empty();
         }
-        return Optional.of(ProxyConfiguration.proxyConfiguration(Type.HTTPS,
+        return Optional.of(ProxyConfiguration.proxyConfiguration(
+            Optional.ofNullable(configuration.getForwardToProxy().getType())
+                .map(TigerProxyType::toMockServerType)
+                .orElse(Type.HTTPS),
             configuration.getForwardToProxy().getHostname()
                 + ":"
                 + configuration.getForwardToProxy().getPort()));

@@ -107,6 +107,18 @@
             <version>5.11.4</version>
         </dependency>
         <dependency>
+            <groupId>io.github.arkinator</groupId>
+            <artifactId>mockserver-junit-rule</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
             <version>3.11.11</version>

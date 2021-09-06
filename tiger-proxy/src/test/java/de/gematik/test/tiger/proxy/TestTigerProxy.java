@@ -13,7 +13,9 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.configuration.TigerProxyType;
 import de.gematik.test.tiger.proxy.data.TigerBasicAuthConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
@@ -22,7 +24,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockserver.junit.MockServerRule;
 import org.mockserver.model.MediaType;
+import org.mockserver.model.SocketAddress;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,9 +39,13 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static org.mockserver.model.HttpRequest.request;
 
 public class TestTigerProxy {
 
+    @Rule
+    public MockServerRule mockServerRule = new MockServerRule(this);
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options()
         .dynamicPort()
@@ -52,6 +60,14 @@ public class TestTigerProxy {
                 .withStatusMessage("EVIL")
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}")));
+
+        mockServerRule.getClient().when(request())
+            .forward(
+                req -> forwardOverriddenRequest(
+                    req.withSocketAddress(
+                        "localhost", wireMockRule.port(), SocketAddress.Scheme.HTTP
+                    ))
+                    .getHttpRequest());
     }
 
     @Test
@@ -457,7 +473,7 @@ public class TestTigerProxy {
     @Test
     public void basicAuthenticationRequiredAndConfigured_ShouldWork() {
         wireMockRule.stubFor(get(urlEqualTo("/authenticatedPath"))
-                .withBasicAuth("user","password")
+            .withBasicAuth("user", "password")
             .willReturn(aResponse()
                 .withStatus(777)
                 .withBody("{\"foo\":\"bar\"}")));
@@ -478,5 +494,49 @@ public class TestTigerProxy {
             .isEqualTo(404);
         assertThat(unirestInstance.get("http://backendWithBasicAuth/authenticatedPath").asJson().getStatus())
             .isEqualTo(777);
+    }
+
+    @Test
+    public void forwardProxyRouteViaAnotherForwardProxy() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://notARealServer")
+                .build()))
+            .forwardToProxy(ForwardProxyInfo.builder()
+                .port(mockServerRule.getPort())
+                .hostname("localhost")
+                .type(TigerProxyType.HTTP)
+                .build())
+            .build());
+
+        final UnirestInstance unirestInstance = Unirest.spawnInstance();
+        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+
+        final HttpResponse<JsonNode> response = unirestInstance.get("http://backend/foobar")
+            .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+    }
+
+    @Test
+    public void reverseProxyRouteViaAnotherForwardProxy() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://notARealServer")
+                .build()))
+            .forwardToProxy(ForwardProxyInfo.builder()
+                .port(mockServerRule.getPort())
+                .hostname("localhost")
+                .type(TigerProxyType.HTTP)
+                .build())
+            .build());
+
+        final HttpResponse<JsonNode> response = Unirest.spawnInstance()
+            .get("http://localhost:" + tigerProxy.getPort() + "/foobar")
+            .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
     }
 }
