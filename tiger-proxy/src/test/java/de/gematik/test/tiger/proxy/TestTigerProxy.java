@@ -20,6 +20,7 @@ import de.gematik.test.tiger.proxy.data.TigerBasicAuthConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import kong.unirest.*;
+import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -28,8 +29,13 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.model.MediaType;
 import org.mockserver.model.SocketAddress;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -497,6 +503,55 @@ public class TestTigerProxy {
     }
 
     @Test
+    public void perRouteCertificate_shouldBePresentedOnlyForThisRoute() throws UnirestException {
+        final TigerPkiIdentity serverIdentity
+            = new TigerPkiIdentity("src/test/resources/gateway_ecc.p12;00");
+
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .serverIdentity(serverIdentity)
+            .proxyRoutes(List.of(TigerRoute.builder()
+                // aktor-gateway.gematik.de ist der DN des obigen zertifikats
+                .from("https://aktor-gateway.gematik.de")
+                .to("http://localhost:" + wireMockRule.port())
+                .build(),
+                TigerRoute.builder()
+                    .from("https://falsche-url")
+                    .to("http://localhost:" + wireMockRule.port())
+                    .build()))
+            .build());
+
+        final UnirestInstance unirestInstance = new UnirestInstance(
+            new Config().proxy("localhost", tigerProxy.getPort())
+                .verifySsl(true)
+                .sslContext(buildSslContextTrustingOnly(serverIdentity)));
+
+        assertThat(unirestInstance.get("https://aktor-gateway.gematik.de/foobar").asString()
+            .getStatus())
+            .isEqualTo(666);
+        assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())
+            .hasCauseInstanceOf(SSLPeerUnverifiedException.class);
+    }
+
+    @SneakyThrows
+    private SSLContext buildSslContextTrustingOnly(TigerPkiIdentity serverIdentity) {
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        ks.load(null);
+        ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
+        int chainCertCtr = 0;
+        for (X509Certificate chainCert : serverIdentity.getCertificateChain()) {
+            ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
+        }
+        TrustManagerFactory tmf = TrustManagerFactory
+            .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+
+        tmf.init(ks);
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, tmf.getTrustManagers(), null);
+
+        return sslContext;
+    }
+
     public void forwardProxyRouteViaAnotherForwardProxy() {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()

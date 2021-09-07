@@ -23,7 +23,6 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.ExpectationId;
 import org.mockserver.model.Header;
-import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -46,7 +45,6 @@ import static org.mockserver.model.HttpRequest.request;
 @Slf4j
 public class TigerProxy extends AbstractTigerProxy {
 
-    private final TigerPkiIdentity serverRootCa;
     private MockServer mockServer;
     private MockServerClient mockServerClient;
     private MockServerToRbelConverter mockServerToRbelConverter;
@@ -55,28 +53,18 @@ public class TigerProxy extends AbstractTigerProxy {
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
 
-        if (configuration.getServerRootCa() != null) {
-            serverRootCa = configuration.getServerRootCa();
-        } else {
-            serverRootCa = new TigerPkiIdentity(
-                "CertificateAuthorityCertificate.pem;" +
-                    "PKCS8CertificateAuthorityPrivateKey.pem;" +
-                    "PKCS8");
-        }
-
-        if (configuration.getServerRootCa() != null) {
-            KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
-                (mockServerLogger, isServerInstance) -> {
-                    if (isServerInstance
-                        || configuration.getForwardMutualTlsIdentity() == null) {
-                        return new TigerKeyAndCertificateFactory(mockServerLogger,
-                            configuration.getServerRootCa(), null);
-                    } else {
-                        return new TigerKeyAndCertificateFactory(mockServerLogger,
-                            null, configuration.getForwardMutualTlsIdentity());
-                    }
-                });
-        }
+        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
+            (mockServerLogger, isServerInstance) -> {
+                if (isServerInstance
+                    || configuration.getForwardMutualTlsIdentity() == null) {
+                    return new TigerKeyAndCertificateFactory(mockServerLogger,
+                        determineServerRootCa().orElse(null),
+                        getTigerProxyConfiguration().getServerIdentity());
+                } else {
+                    return new TigerKeyAndCertificateFactory(mockServerLogger,
+                        null, configuration.getForwardMutualTlsIdentity());
+                }
+            });
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
@@ -134,6 +122,21 @@ public class TigerProxy extends AbstractTigerProxy {
             return patchedUrl;
         } else {
             return "/" + patchedUrl;
+        }
+    }
+
+    private Optional<TigerPkiIdentity> determineServerRootCa() {
+        if (getTigerProxyConfiguration().getServerRootCa() != null) {
+            return Optional.ofNullable(getTigerProxyConfiguration().getServerRootCa());
+        } else {
+            if (getTigerProxyConfiguration().getServerIdentity() != null) {
+                return Optional.empty();
+            } else {
+                return Optional.of(new TigerPkiIdentity(
+                    "CertificateAuthorityCertificate.pem;" +
+                        "PKCS8CertificateAuthorityPrivateKey.pem;" +
+                        "PKCS8"));
+            }
         }
     }
 
@@ -221,9 +224,9 @@ public class TigerProxy extends AbstractTigerProxy {
             throw new TigerProxyConfigurationException(
                 "Error while adding route from '{}' to '{}': Got 0 new expectations");
         }
-        tigerRoute.setId(expectations[0].getId());
-        tigerRouteMap.put(expectations[0].getId(), tigerRoute);
-        return tigerRoute;
+        final TigerRoute createdTigerRoute = tigerRoute.withId(expectations[0].getId());
+        tigerRouteMap.put(expectations[0].getId(), createdTigerRoute);
+        return createdTigerRoute;
     }
 
     private boolean uriEquals(String value1, String value2) {
@@ -314,9 +317,14 @@ public class TigerProxy extends AbstractTigerProxy {
         try {
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null);
-            ks.setCertificateEntry("caCert", serverRootCa.getCertificate());
+            final TigerPkiIdentity serverIdentity = determineServerRootCa()
+                .or(() -> Optional.ofNullable(getTigerProxyConfiguration().getServerIdentity()))
+                .orElseThrow(() -> new TigerProxyTrustManagerBuildingException(
+                    "Unrecoverable state: Server-Identity null and Server-CA empty"));
+
+            ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
             int chainCertCtr = 0;
-            for (X509Certificate chainCert : serverRootCa.getCertificateChain()) {
+            for (X509Certificate chainCert : serverIdentity.getCertificateChain()) {
                 ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
             }
             return ks;
@@ -327,8 +335,7 @@ public class TigerProxy extends AbstractTigerProxy {
 
     public SSLContext buildSslContext() {
         try {
-            TrustManagerFactory tmf = TrustManagerFactory
-                .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
             tmf.init(buildTruststore());
 
@@ -344,6 +351,10 @@ public class TigerProxy extends AbstractTigerProxy {
     private class TigerProxyTrustManagerBuildingException extends RuntimeException {
         public TigerProxyTrustManagerBuildingException(String s, Exception e) {
             super(s, e);
+        }
+
+        public TigerProxyTrustManagerBuildingException(String s) {
+            super(s);
         }
     }
 }

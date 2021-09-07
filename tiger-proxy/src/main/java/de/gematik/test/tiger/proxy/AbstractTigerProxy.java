@@ -14,10 +14,7 @@ import de.gematik.test.tiger.proxy.data.TigerRoute;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import java.security.Key;
-import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +24,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
 
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
     private RbelLogger rbelLogger;
+    private final TigerProxyConfiguration tigerProxyConfiguration;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         rbelLogger = buildRbelLoggerConfiguration(configuration)
             .constructRbelLogger();
+        this.tigerProxyConfiguration = configuration;
     }
 
     private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {

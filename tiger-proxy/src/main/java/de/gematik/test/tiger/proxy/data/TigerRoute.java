@@ -4,21 +4,19 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import lombok.*;
 
 @RequiredArgsConstructor
 @Builder(toBuilder = true)
-@AllArgsConstructor
 @Data
 public class TigerRoute {
 
-    private String id;
-    private String from;
-    private String to;
-    private boolean internalRoute;
-    private boolean disableRbelLogging;
-    private TigerBasicAuthConfiguration basicAuth;
+    @With
+    private final String id;
+    private final String from;
+    private final String to;
+    private final boolean internalRoute;
+    private final boolean disableRbelLogging;
+    private final TigerBasicAuthConfiguration basicAuth;
 }
