@@ -18,10 +18,11 @@ package de.gematik.test.tiger.lib.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.lib.parser.model.TestResult;
+import org.junit.Test;
+
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.jupiter.api.Test;
 
 public class TestSerenityTestParser {
 

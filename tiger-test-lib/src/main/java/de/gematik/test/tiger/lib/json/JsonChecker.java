@@ -122,12 +122,15 @@ public class JsonChecker {
             }
 
             compareAllAttributes(json, oracle);
-
-        } catch (final NoSuchMethodError | JSONException exc) {
+        } catch (JSONException jsoex) {
+            throw new AssertionError(
+                "Failed to convert " + (oracle == null ? "oracle" : "received") + " '" + (oracle == null ? oracleStr
+                    : jsonStr) + "' to JSON", jsoex);
+        } catch (final NoSuchMethodError nsme) {
             Assertions.fail(dumpComparisonBetween(
                 "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
-                null, oracle == null ? jsonStr : oracle.toString(2),
-                json == null ? oracleStr : json.toString(2)), exc);
+                null, oracle == null ? "Oracle is null" : oracle.toString(2),
+                json == null ? "Received is null" : json.toString(2)), nsme);
         }
     }
 
@@ -205,7 +208,7 @@ public class JsonChecker {
             var jsoValue = json.get(claimName).toString();
             if (!jsoValue.equals(regex)) {
                 assertThat(jsoValue).withFailMessage(
-                    dumpComparisonAtKeyDiffer(claimName, regex, jsoValue))
+                        dumpComparisonAtKeyDiffer(claimName, regex, jsoValue))
                     .doesNotMatch(regex);
             } else {
                 Assertions.fail(dumpComparisonAtKeyDiffer(claimName, regex, jsoValue));

@@ -18,7 +18,7 @@ package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class JsonCheckerTest {
 

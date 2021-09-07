@@ -1,7 +1,7 @@
 tigerProxy:
 
 servers:
-  - name: idp
+  - name: idp9
     template: idp-ref
     active: true
     source:

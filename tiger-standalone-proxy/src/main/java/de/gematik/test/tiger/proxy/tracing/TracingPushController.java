@@ -1,15 +1,18 @@
 package de.gematik.test.tiger.proxy.tracing;
 
-import de.gematik.rbellogger.data.elements.RbelHttpMessage;
-import de.gematik.rbellogger.data.elements.RbelHttpRequest;
-import de.gematik.rbellogger.data.elements.RbelHttpResponse;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import java.nio.charset.StandardCharsets;
-import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
@@ -21,32 +24,52 @@ public class TracingPushController {
 
     @PostConstruct
     public void addWebSocketListener() {
-        tigerProxy.addRbelMessageListener(msg -> {
-            log.debug("Handling Rbel-Message!");
-            if (msg.getHttpMessage() instanceof RbelHttpRequest) {
-                log.trace("Skipping propagation of request");
-                return;
-            }
-            RbelHttpResponse rbelHttpResponse = (RbelHttpResponse) msg.getHttpMessage();
-            log.info("Propagating new request/response pair (from {} to {}, path {}, status {})",
-                    msg.getSender(), msg.getRecipient(),
-                    rbelHttpResponse.getRequest().getPath().getOriginalUrl(),
-                    rbelHttpResponse.getResponseCode());
-            template.convertAndSend("/topic/traces",
-                TigerTracingDto.builder()
-                    .uuid(msg.getUuid())
-                    .receiver(msg.getRecipient())
-                    .sender(msg.getSender())
-                    .response(mapMessage(rbelHttpResponse))
-                    .request(mapMessage(rbelHttpResponse.getRequest()))
-                    .build());
-        });
+        tigerProxy.addRbelMessageListener(msg -> propagateRbelMessageSafe(msg));
     }
 
-    private TracingMessage mapMessage(RbelHttpMessage rbelHttpMessage) {
+    private void propagateRbelMessageSafe(RbelElement msg) {
+        try {
+            propagateRbelMessage(msg);
+        } catch (RuntimeException e) {
+            log.error("Error while propagating new Rbel-Message", e);
+            throw e;
+        }
+    }
+
+    private void propagateRbelMessage(RbelElement msg) {
+        if (!msg.hasFacet(RbelHttpResponseFacet.class)
+            || !msg.hasFacet(RbelHttpMessageFacet.class)
+            || !msg.hasFacet(RbelTcpIpMessageFacet.class)) {
+            log.trace("Skipping propagation, not a response");
+            return;
+        }
+        log.debug("Handling Rbel-Message!");
+        RbelHttpResponseFacet rbelHttpResponse = msg.getFacetOrFail(RbelHttpResponseFacet.class);
+        RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
+        final RbelHostname sender = rbelTcpIpMessageFacet.getSender().seekValue(RbelHostname.class).orElse(null);
+        final RbelHostname receiver = rbelTcpIpMessageFacet.getReceiver().seekValue(RbelHostname.class).orElse(null);
+        log.info("Propagating new request/response pair (from {} to {}, path {}, status {})",
+            sender, receiver,
+            rbelHttpResponse.getRequest().getFacetOrFail(RbelHttpRequestFacet.class)
+                .getPath().getRawStringContent(),
+            rbelHttpResponse.getResponseCode().getRawStringContent());
+        template.convertAndSend("/topic/traces",
+            TigerTracingDto.builder()
+                .uuid(msg.getUuid())
+                .receiver(receiver)
+                .sender(sender)
+                .response(mapMessage(msg))
+                .request(mapMessage(rbelHttpResponse.getRequest()))
+                .build());
+    }
+
+    private TracingMessage mapMessage(RbelElement rbelHttpMessage) {
+        if (rbelHttpMessage == null) {
+            return TracingMessage.builder()
+                .build();
+        }
         return TracingMessage.builder()
-            .header(rbelHttpMessage.getRawMessage().split("\n\n",2)[0])
-            .body(rbelHttpMessage.getRawBody())
+            .rawContent(rbelHttpMessage.getRawContent())
             .build();
     }
 }

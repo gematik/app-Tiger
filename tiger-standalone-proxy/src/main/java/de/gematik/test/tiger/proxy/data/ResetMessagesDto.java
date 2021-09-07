@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.proxy.data;
 
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import org.mockserver.*;
-import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class TigerKeyAndCertificateFactoryInjector {
-
-    public static void injectIntoMockServer(TigerProxyConfiguration configuration) {
-        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
-            mockServerLogger -> new TigerKeyAndCertificateFactory(mockServerLogger, configuration));
-    }
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class ResetMessagesDto {
+    int numMsgs;
 }

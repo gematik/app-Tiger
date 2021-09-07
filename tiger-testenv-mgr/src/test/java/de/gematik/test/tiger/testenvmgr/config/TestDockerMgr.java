@@ -79,7 +79,7 @@ public class TestDockerMgr {
         final CfgServer srv = new CfgServer();
         srv.setType("docker");
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
-        srv.setName("idp");
+        srv.setName("idp5");
         srv.setStartupTimeoutSec(5); // to few seconds for startup
         srv.setProduct(CfgProductType.IDP_REF);
         long startms = System.currentTimeMillis();
@@ -95,7 +95,7 @@ public class TestDockerMgr {
         final CfgServer srv = new CfgServer();
         srv.setType("docker");
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck
-        srv.setName("idp");
+        srv.setName("idp4");
         srv.setProduct(CfgProductType.IDP_REF);
         try {
             dmgr.startContainer(srv, cfg, null);

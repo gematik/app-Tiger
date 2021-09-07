@@ -5,7 +5,7 @@ servers:
     template: epa2-fdv
     source:
       - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
-    startupTimeoutSec: 1
+    startupTimeoutSec: 5
     arguments:
       - --httpPort=9107
       - --webroot=.

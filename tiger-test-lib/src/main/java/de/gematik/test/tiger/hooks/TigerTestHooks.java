@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.glue;
+package de.gematik.test.tiger.hooks;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.rbellogger.data.RbelMessage;
+
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
@@ -34,13 +35,14 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
 
 @Slf4j
-public class Hooks {
+public class TigerTestHooks {
 
     private static final Map<URI, Feature> uriFeatureMap = new HashMap<>();
 
@@ -49,11 +51,14 @@ public class Hooks {
     private static final Map<String, Status> scenarioStatus = new HashMap<>();
 
     private static boolean rbelListenerAdded = false;
-    private static final List<RbelMessage> rbelMessages = new ArrayList<>();
+    private static final List<RbelElement> rbelMessages = new ArrayList<>();
+    @Getter
+    private static final List<RbelElement> validatableRbelMessages = new ArrayList<>();
     private static final RbelMessageProvider rbelMessageListener = new RbelMessageProvider() {
         @Override
-        public void triggerNewReceivedMessage(RbelMessage e) {
+        public void triggerNewReceivedMessage(RbelElement e) {
             rbelMessages.add(e);
+            validatableRbelMessages.add(e);
         }
     };
 
@@ -88,8 +93,8 @@ public class Hooks {
             System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
             TigerDirector.beforeTestRun();
         }
-        if (!rbelListenerAdded) {
-            TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().addRbelMessageListener(rbelMessageListener);
+        if (!rbelListenerAdded && TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy() != null) {
+            TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().addRbelMessageListener(rbelMessageListener);
             rbelListenerAdded = true;
         }
     }
@@ -133,7 +138,7 @@ public class Hooks {
 
     @SneakyThrows
     @After
-    public void purgeFeatureFileNSaveRbelLog(final Scenario scenario) {
+    public void purgeFeatureFileAndSaveRbelLog(final Scenario scenario) {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;

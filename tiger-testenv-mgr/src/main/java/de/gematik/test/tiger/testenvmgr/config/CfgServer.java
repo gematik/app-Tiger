@@ -34,6 +34,7 @@ public class CfgServer {
     private List<String> arguments = new ArrayList<>();
     private Integer startupTimeoutSec;
     private String healthcheck;
+    private List<String> serviceHealthchecks;
     private boolean active = true;
     private final List<CfgKey> pkiKeys = new ArrayList<>();
     private boolean proxied = true;

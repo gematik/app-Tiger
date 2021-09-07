@@ -2,7 +2,7 @@ tigerProxy:
 
 servers:
   - name: minijar-test-local
-    template: epa2-fdv
+    type: externalJar
     workingDir: src/test/resources
     source:
       - local://miniJar.jar

@@ -18,10 +18,9 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
-import kong.unirest.GenericType;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
+import kong.unirest.*;
 import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +44,7 @@ import static org.mockserver.model.HttpResponse.response;
 public class TigerProxyRoutingTest {
 
     private final ClientAndServer mockServerClient;
+    private UnirestInstance unirestInstance;
     @Autowired
     private TigerProxy tigerProxy;
 
@@ -66,55 +66,60 @@ public class TigerProxyRoutingTest {
                         response()
                                 .withBody("bar"));
 
-        Unirest.config().reset();
-        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance = new UnirestInstance(
+            new Config().proxy("localhost", tigerProxy.getPort()));
+    }
+
+    @AfterEach
+    public void reset() {
+        tigerProxy.clearAllRoutes();
     }
 
     @Test
     public void shouldHonorConfiguredRoutes() {
-        assertThat(Unirest.get("http://myserv.er/foo").asString().getBody())
+        assertThat(unirestInstance.get("http://myserv.er/foo").asString().getBody())
                 .isEqualTo("bar");
     }
 
     @Test
     public void addRoute_shouldWork() {
-        Unirest.put("http://tiger.proxy/route")
+        unirestInstance.put("http://tiger.proxy/route")
                 .header("Content-Type", "application/json")
                 .body("{\"from\":\"http://anderer.server\","
                         + "\"to\":\"http://localhost:" + mockServerClient.getPort() + "\"}")
                 .asEmpty()
                 .ifFailure(response -> fail("Cant reach tiger proxy"));
 
-        assertThat(Unirest.get("http://anderer.server/foo").asString().getBody())
+        assertThat(unirestInstance.get("http://anderer.server/foo").asString().getBody())
                 .isEqualTo("bar");
     }
 
     @Test
     public void deleteRoute_shouldWork() {
-        assertThat(Unirest.get("http://temp.server/foo").asEmpty().getStatus())
+        assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
                 .isEqualTo(404);
 
-        String routeId = Unirest.put("http://tiger.proxy/route")
+        String routeId = unirestInstance.put("http://tiger.proxy/route")
                 .header("Content-Type", "application/json")
                 .body("{\"from\":\"http://temp.server\","
                         + "\"to\":\"http://localhost:" + mockServerClient.getPort() + "\"}")
                 .asObject(TigerRouteDto.class)
                 .getBody().getId();
 
-        assertThat(Unirest.get("http://temp.server/foo").asEmpty().getStatus())
+        assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
                 .isEqualTo(200);
 
-        Unirest.delete("http://tiger.proxy/route/" + routeId)
+        unirestInstance.delete("http://tiger.proxy/route/" + routeId)
                 .asEmpty()
                 .ifFailure(response -> fail("Cant reach tiger proxy"));
 
-        assertThat(Unirest.get("http://temp.server/foo").asEmpty().getStatus())
+        assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
                 .isEqualTo(404);
     }
 
     @Test
     public void getRoutes_shouldGiveAllRoutes() {
-        final HttpResponse<List<TigerRouteDto>> tigerRoutesResponse = Unirest.get("http://tiger.proxy/route")
+        final HttpResponse<List<TigerRouteDto>> tigerRoutesResponse = unirestInstance.get("http://tiger.proxy/route")
                 .asObject(new GenericType<>() {
                 });
 
@@ -133,7 +138,7 @@ public class TigerProxyRoutingTest {
                 response()
                     .withBody("bar1"));
 
-        String routeId = Unirest.put("http://tiger.proxy/route")
+        String routeId = unirestInstance.put("http://tiger.proxy/route")
             .header("Content-Type", "application/json")
             .body("{\"from\":\"http://temp.server\","
                 + "\"to\":\"http://localhost:" + mockServerClient.getPort() + "\"}")

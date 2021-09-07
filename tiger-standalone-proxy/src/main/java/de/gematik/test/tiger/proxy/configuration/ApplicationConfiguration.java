@@ -16,19 +16,15 @@
 
 package de.gematik.test.tiger.proxy.configuration;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties("tiger")
+@ConfigurationProperties("tiger-proxy")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ApplicationConfiguration {
-    private TigerProxyConfiguration proxy;
+@ToString(callSuper = true)
+public class ApplicationConfiguration extends TigerProxyConfiguration {
+    private TigerProxyReportConfiguration report;
 }

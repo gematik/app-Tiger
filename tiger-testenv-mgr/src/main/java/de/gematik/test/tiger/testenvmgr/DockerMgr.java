@@ -21,6 +21,7 @@ import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
+import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
@@ -28,6 +29,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,17 +42,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -99,6 +103,11 @@ public class DockerMgr {
                 container.withCopyFileToContainer(
                     MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC),
                     containerScriptPath);
+                /* WEBCLIENT
+                container.withCopyFileToContainer(
+                    MountableFile.forHostPath(Path.of("webclient"), MOD_ALL_EXEC),
+                    "/usr/bin/webclient");
+                 */
                 container.withCreateContainerCmdModifier(
                     cmd -> cmd.withUser("root").withEntrypoint(containerScriptPath));
             }
@@ -163,12 +172,27 @@ public class DockerMgr {
             }
             return new File(f);
         }).toArray(File[]::new);
-        var composition = new DockerComposeContainer(composeFiles); //NOSONAR
-        composition.withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)))
-            .withExposedService("epa-gateway", 8001, Wait.forHttp("/")
-                .forStatusCode(200)
-                .forStatusCode(404).withStartupTimeout(Duration.of(server.getStartupTimeoutSec(), ChronoUnit.SECONDS)))
-            .start(); //NOSONAR
+        DockerComposeContainer composition = new DockerComposeContainer(composeFiles) //NOSONAR
+            .withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)));
+        try {
+            for (String check : server.getServiceHealthchecks()) {
+                try {
+                    URL serviceUrl = new URL(check);
+                    WaitStrategy waitStrategy = (serviceUrl.getProtocol().equals("http") ?
+                        Wait.forHttp(serviceUrl.getPath()) : Wait.forHttps(serviceUrl.getPath())).forStatusCode(200)
+                        .forStatusCode(404)
+                        .withStartupTimeout(Duration.of(server.getStartupTimeoutSec(), ChronoUnit.SECONDS));
+                    composition = composition.withExposedService(
+                        serviceUrl.getHost(), serviceUrl.getPort(), waitStrategy);
+                } catch (MalformedURLException e) {
+                    throw new TigerTestEnvException(
+                        "Invalid health check URL '" + check + "' for server " + server.getName());
+                }
+            }
+        } catch (Exception e) {
+            throw new TigerTestEnvException("Unable to start server " + server.getName());
+        }
+        composition.start(); //NOSONAR
     }
 
     private void addEnvVarsToContainer(GenericContainer<?> container, List<String> envVars) {
@@ -241,37 +265,54 @@ public class DockerMgr {
             File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
             tmpScriptFolder.mkdirs();
             final var scriptName = "__tigerStart_" + server.getName() + ".sh";
+            var content = "#!/bin/sh -x\nenv\n"
+                // append proxy and other certs (for rise idp)
+                + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
+                + "echo \"" + risecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n";
+
+            // workaround for host.docker.internal not being available on linux based docker
+            // see https://github.com/docker/for-linux/issues/264
+            if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC) {
+                String hostip = OsEnvironment.getDockerHostIp();
+                log.info("patching /etc/hosts for possibly non supported symbolic host.docker.internal");
+                content += "grep -q \"host.docker.internal\" /etc/hosts || "
+                    + "echo \" \" >> /etc/hosts && echo \"" + hostip + "    host.docker.internal\" >> /etc/hosts\n";
+
+                // TODO reactivate once we have docker 20 on maven nodes
+                //  container.withExtraHost("host.docker.internal", "host-gateway");
+                content += "echo HOSTS:\ncat /etc/hosts\n";
+            } else {
+                log.info("skipping etc hosts patch...");
+            }
+
+
+            // testing ca cert of proxy with openssl
+                //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
+                //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
+                //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
+                // idp-test.zentral.idp.splitdns.ti-dienste.de:443
+                // testing ca cert of proxy with rust client
+                // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
+
+                // change to working dir and execute former entrypoint/startcmd
+            content += extractWorkingDirectory(containerConfig)
+                + String.join(" ", entryPointCmd).replace("\t", " ")
+                + " " + String.join(" ", startCmd).replace("\t", " ") + "\n";
+
+
             FileUtils.writeStringToFile(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName).toFile(),
-                "#!/bin/sh -x\nenv\n"
-                    // append proxy and other certs (for rise idp)
-                    + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                    + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-                    + "echo \"" + risecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
-
-                    // testing ca cert of proxy with openssl
-                    //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
-                    //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
-                    //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
-                    // idp-test.zentral.idp.splitdns.ti-dienste.de:443
-                    // testing ca cert of proxy with rust client
-                    //+ "RUST_LOG=trace /usr/bin/webclient https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration \n"
-
-                    // change to working dir and execute former entrypoint/startcmd
-                    + extractWorkingDirectory(containerConfig)
-                    + String.join(" ", entryPointCmd).replace("\t", " ")
-                    + " " + String.join(" ", startCmd).replace("\t", " ") + "\n",
-                StandardCharsets.UTF_8
-            );
+                content, StandardCharsets.UTF_8);
             return scriptName;
-        } catch (IOException e) {
+        } catch (IOException ioe) {
             throw new TigerTestEnvException(
-                "Failed to configure start script on container for server " + server.getName());
+                "Failed to configure start script on container for server " + server.getName(), ioe);
         }
 
     }
 
     private String extractWorkingDirectory(ContainerConfig containerConfig) {
-        if (containerConfig.getWorkingDir() == null ||containerConfig.getWorkingDir().isBlank()) {
+        if (containerConfig.getWorkingDir() == null || containerConfig.getWorkingDir().isBlank()) {
             return "";
         } else {
             return "cd " + containerConfig.getWorkingDir() + "\n";
@@ -280,7 +321,7 @@ public class DockerMgr {
 
     private void waitForHealthyStartup(CfgServer server, GenericContainer<?> container) {
         final long startms = System.currentTimeMillis();
-        long endhalfms = server.getStartupTimeoutSec() == null ? 5000 : server.getStartupTimeoutSec()*500L;
+        long endhalfms = server.getStartupTimeoutSec() == null ? 5000 : server.getStartupTimeoutSec() * 500L;
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {
@@ -291,9 +332,9 @@ public class DockerMgr {
             while (!container.isHealthy()) {
                 //noinspection BusyWait
                 Thread.sleep(500);
-                if (startms + endhalfms*2L < System.currentTimeMillis()) {
+                if (startms + endhalfms * 2L < System.currentTimeMillis()) {
                     throw new TigerTestEnvException("Startup of server %s timed out after %d seconds!",
-                        server.getName(), (System.currentTimeMillis() - startms)/1000);
+                        server.getName(), (System.currentTimeMillis() - startms) / 1000);
                 }
             }
             log.info("HealthCheck OK (" + (container.isHealthy() ? 1 : 0) + ") for " + server.getName());

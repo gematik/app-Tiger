@@ -16,21 +16,21 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
+import java.io.*;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,6 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -55,36 +57,80 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private static final String HTTPS = "https://";
     private static boolean SHUTDOWN_HOOK_ACTIVE = false;
     private final Configuration configuration;
-
     private final DockerMgr dockerManager;
-
-    private Map<String, Object> environmentVariables;
-
-    private final TigerProxy localDockerProxy;
-
+    private final Map<String, Object> environmentVariables;
+    private final TigerProxy localTigerProxy;
     private final List<TigerRoute> routesList = new ArrayList<>();
-
     private final Map<String, Process> externalProcesses = new HashMap<>();
 
-    public static void main(String[] args) throws InterruptedException {
+
+    public static void main(String[] args) {
+
+
+        TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         try {
-            TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
             envMgr.setUpEnvironment();
         } catch (Exception e) {
-            log.error("Error while starting up stand alone tiger testenv mgr!", e);
+            log.error("Error while starting up stand alone tiger testenv mgr! ABORTING...", e);
             System.exit(1);
         }
-        log.info("Tiger standalone test environment UP!");
-        while(true) {
-            Thread.sleep(1000);
+        log.info("\n" + Banner.toBannerStr("Tiger standalone test environment UP!", Ansi.BOLD + Ansi.GREEN));
+        waitForQuit(null);
+        log.info("interrupting " + envMgr.externalProcesses.size() + " threads...");
+        envMgr.externalProcesses.values().forEach(Process::destroy);
+        log.info("stopping threads...");
+        envMgr.externalProcesses.values().forEach(Process::destroyForcibly);
+        envMgr.externalProcesses.clear();
+        System.exit(0);
+    }
+
+    public static void waitForQuit(String message, Object... args) {
+        Console c = System.console();
+        if (c != null) {
+            // printf-like arguments
+            if (message != null) {
+                c.format(message, args);
+            }
+            c.format("\n\n\nPress 'quit' and ENTER to stop TIGER standalone test environment.\n\n\n\n\n");
+            String cmd = "";
+            while (!cmd.equals("quit")) {
+                cmd = c.readLine();
+            }
+            log.info("Stopping TIGER standalone test environment...");
+        } else {
+            log.warn("No Console interface found, trying System in stream...");
+            log.info("\n\n\nPress 'quit' and ENTER to stop TIGER standalone test environment.\n\n\n\n\n");
+            try {
+                BufferedReader rdr = new BufferedReader(
+                    new InputStreamReader(System.in));
+                String cmd = "";
+                while (!cmd.equals("quit")) {
+                    cmd = rdr.readLine();
+                }
+            } catch (IOException e) {
+                log.warn(
+                    "Unable to open input stream from console! You will have to use Ctrl+C and clean up the processes manually!");
+                while (true) { // NOSONAR
+                    //noinspection BusyWait
+                    try {
+                        Thread.sleep(1000L); // NOSONAR
+                    } catch (InterruptedException ie) {
+                        return;
+                    }
+                }
+            }
         }
     }
 
     @SneakyThrows
     public TigerTestEnvMgr() {
         // read configuration from file and templates from classpath resource
-        final var cfgFile = new File(OsEnvironment.getAsString(
-            "TIGER_TESTENV_CFGFILE", "tiger-testenv.yaml"));
+        var cfgFile = new File(OsEnvironment.getAsString(
+            "TIGER_TESTENV_CFGFILE", "tiger-testenv-" + getComputerName() + ".yaml"));
+        if (!cfgFile.exists()) {
+            log.warn("Unable to read configuration from " + cfgFile.getAbsolutePath());
+            cfgFile = new File("tiger-testenv.yaml");
+        }
         log.info("Reading configuration from " + cfgFile.getAbsolutePath() + "...");
         JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
 
@@ -109,15 +155,19 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (proxyConfig.getProxyRoutes() == null) {
             proxyConfig.setProxyRoutes(List.of());
         }
-        if (proxyConfig.getServerRootCaCertPem() == null) {
-            proxyConfig.setServerRootCaCertPem("CertificateAuthorityCertificate.pem");
-            proxyConfig.setServerRootCaKeyPem("PKCS8CertificateAuthorityPrivateKey.pem");
+        if (proxyConfig.getServerRootCa() == null) {
+            proxyConfig.setServerRootCa(new TigerPkiIdentity(
+                "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
         log.info("Starting local docker tiger proxy...");
-        localDockerProxy = new TigerProxy(configuration.getTigerProxy());
-        environmentVariables = new HashMap<>(
-            Map.of("PROXYHOST", "host.docker.internal",
-                "PROXYPORT", localDockerProxy.getPort()));
+        localTigerProxy = new TigerProxy(configuration.getTigerProxy());
+        if (configuration.isLocalProxyActive()) {
+            environmentVariables = new HashMap<>(
+                Map.of("PROXYHOST", "host.docker.internal",
+                    "PROXYPORT", localTigerProxy.getPort()));
+        } else {
+            environmentVariables = new HashMap<>();
+        }
         log.info("Tiger Testenv mgr created OK");
     }
 
@@ -145,7 +195,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             } else if (type.equalsIgnoreCase("compose")) {
                 startDocker(server, configuration);
             } else if (type.equalsIgnoreCase("externalUrl")) {
-                initializeExternal(server);
+                initializeExternalUrl(server);
             } else if (type.equalsIgnoreCase("externalJar")) {
                 initializeExternalJar(server);
             } else {
@@ -173,6 +223,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
     }
 
+    private String getComputerName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            return InetAddress.getLoopbackAddress().getHostName();
+        }
+    }
+
     private void startDocker(final CfgServer server, Configuration configuration) {
         log.info(
             Ansi.BOLD + Ansi.GREEN + "Starting docker container for " + server.getName() + ":" + server.getSource()
@@ -185,7 +243,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (server.getUrlMappings() != null) {
             server.getUrlMappings().forEach(mapping -> {
                 String[] kvp = mapping.split(" --> ", 2);
-                localDockerProxy.addRoute(TigerRoute.builder()
+                localTigerProxy.addRoute(TigerRoute.builder()
                     .from(kvp[0])
                     .to(kvp[1])
                     .build());
@@ -204,7 +262,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 .from("http://" + server.getName())
                 .to("http://localhost:" + server.getPorts().values().iterator().next())
                 .build());
-            localDockerProxy.addRoute(TigerRoute.builder()
+            localTigerProxy.addRoute(TigerRoute.builder()
                 .from("http://" + server.getName())
                 .to("http://localhost:" + server.getPorts().values().iterator().next())
                 .build());
@@ -213,29 +271,45 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     @SneakyThrows
-    public void initializeExternal(final CfgServer server) {
-        log.info(Ansi.BOLD + Ansi.GREEN + "starting external instance " + server.getName() + "..." + Ansi.RESET);
-        final var uri = new URI(server.getSource().get(0));
+    public void initializeExternalUrl(final CfgServer server) {
+        log.info(Ansi.BOLD + Ansi.GREEN + "starting external URL instance " + server.getName() + "..." + Ansi.RESET);
+        final var url = new URL(server.getSource().get(0));
+        int port = url.getPort();
+        if (port == -1) {
+            port = url.getDefaultPort();
+        }
 
-        localDockerProxy.addRoute(TigerRoute.builder()
+        localTigerProxy.addRoute(TigerRoute.builder()
             .from("http://" + server.getName())
-            .to(uri.getScheme() + "://" + uri.getHost())
+            .to(url.toURI().getScheme() + "://" + url.getHost() + ":" + port)
             .build());
 
         loadPKIForProxy(server);
-        log.info("  Waiting 50% of start up time for external instance  " + server.getName() + " to come up ...");
-        long startms = System.currentTimeMillis();
-        try {
-            Thread.sleep(server.getStartupTimeoutSec() * 500L);
-        } catch (InterruptedException ie) {
-            log.warn("Interruption while waiting for external server to respond!", ie);
-            Thread.currentThread().interrupt();
+        log.info("  Waiting 50% of start up time for external URL instance  " + server.getName() + " to come up ...");
+
+        if (waitForService(server, server.getStartupTimeoutSec() * 500L, true)) {
+            return;
         }
-        log.info("  Checking external instance  " + server.getName() + " is available ...");
+        waitForService(server, server.getStartupTimeoutSec() * 500L, false);
+    }
+
+    private boolean waitForService(CfgServer server, long timeoutms, boolean quiet)
+        throws IOException, InterruptedException {
+
+        if (server.getHealthcheck() == null || server.getHealthcheck().equals("NONE")) {
+            log.info("Waiting " + (timeoutms / 1000) + "s to get external server " + server.getName() + " online...");
+            Thread.sleep(timeoutms);
+            return true;
+        }
+
+        long startms = System.currentTimeMillis();
+        if (!quiet) {
+            log.info("  Checking external URL instance  " + server.getName() + " is available ...");
+        }
         try {
             InsecureRestorableTrustAllManager.saveContext();
             InsecureRestorableTrustAllManager.allowAllSSL();
-            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000L) {
+            while (System.currentTimeMillis() - startms < timeoutms) {
                 var url = new URL(server.getHealthcheck());
                 URLConnection con = url.openConnection();
                 con.setConnectTimeout(1000);
@@ -244,16 +318,42 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     log.info("External node " + server.getName() + " is online");
                     log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
                         + Ansi.RESET);
-                    return;
+                    return true;
+                } catch (ConnectException cex) {
+                    if (!quiet) {
+                        log.info("No connection...");
+                    }
+                } catch (SSLHandshakeException sslhe) {
+                    log.warn(Ansi.YELLOW + "SSL handshake but server at least seems to be up!" + sslhe.getMessage()
+                        + Ansi.RESET);
+                    return true;
+                } catch (SSLException sslex) {
+                    if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
+                        if (!quiet) {
+                            log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+                        }
+                    } else {
+                        if (!quiet) {
+                            log.error("SSL Error - " + sslex.getMessage(), sslex);
+                        }
+                    }
                 } catch (Exception e) {
-                    log.info("Connection failed - " + e.getMessage());
+                    if (!quiet) {
+                        log.error("Failed to connect - " + e.getMessage(), e);
+                    }
                 }
                 Thread.sleep(1000);
             }
-            throw new TigerTestEnvException("Timeout waiting for external server to respond!");
+            if (!quiet) {
+                throw new TigerTestEnvException("Timeout waiting for external server to respond!");
+            }
+        } catch (InterruptedException ie) {
+            log.warn("Interruption while waiting for external server to respond!", ie);
+            Thread.currentThread().interrupt();
         } finally {
             InsecureRestorableTrustAllManager.restoreContext();
         }
+        return false;
     }
 
     @SneakyThrows
@@ -270,8 +370,15 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .getWorkingDir() + "..." + Ansi.RESET);
 
         List<String> options = server.getOptions().stream()
-            .map(o -> TokenSubstituteHelper.substitute(o, "",
-                Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localDockerProxy.getPort())))
+            .map(o -> {
+                if (configuration.isLocalProxyActive()) {
+                    return TokenSubstituteHelper.substitute(o, "",
+                        Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localTigerProxy.getPort()));
+                } else {
+                    return o;
+                }
+            })
+            .map(o -> TokenSubstituteHelper.substitute(o, "", environmentVariables))
             .collect(Collectors.toList());
         String[] paths = System.getenv("PATH").split(SystemUtils.IS_OS_WINDOWS ? ";" : ":");
         String javaProg = "java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
@@ -289,11 +396,18 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         final AtomicReference<Throwable> exception = new AtomicReference<>();
         var thread = new Thread(() -> {
             try {
-                externalProcesses.put(server.getName(), new ProcessBuilder()
+                Process p = new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(server.getWorkingDir()))
                     .inheritIO()
-                    .start());
+                    .start();
+                Thread.sleep(2000);
+                if (p.isAlive()) {
+                    externalProcesses.put(server.getName(), p);
+                    log.info("Started " + server.getName());
+                } else {
+                    throw new TigerTestEnvException("External Jar startup failed");
+                }
             } catch (Throwable t) {
                 exception.set(t);
             }
@@ -303,50 +417,29 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         if (!SHUTDOWN_HOOK_ACTIVE) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("interrupting threads...");
-                externalProcesses.values().forEach(Process::destroy);
-                log.info("stopping threads...");
-                externalProcesses.values().forEach(Process::destroyForcibly);
+                if (!externalProcesses.isEmpty()) {
+                    log.info("interrupting threads...");
+                    externalProcesses.values().forEach(Process::destroy);
+                    log.info("stopping threads...");
+                    externalProcesses.values().forEach(Process::destroyForcibly);
+                }
             }));
             SHUTDOWN_HOOK_ACTIVE = true;
         }
+        assertThat(server.getStartupTimeoutSec())
+            .withFailMessage("Startup time in sec is mandatory attribute!")
+            .isNotNull();
 
-        if (server.getHealthcheck() == null || server.getHealthcheck().equals("NONE")) {
-            log.info("Waiting " + server.getStartupTimeoutSec() + "s to get external jar online...");
-            Thread.sleep(server.getStartupTimeoutSec() * 1000);
+        if (exception.get() != null) {
+            throw new TigerTestEnvException("Unable to start external jar!", exception.get());
+        }
+        if (waitForService(server, server.getStartupTimeoutSec() * 500L, true)) {
             return;
         }
-        long startms = System.currentTimeMillis();
-        try {
-            InsecureRestorableTrustAllManager.saveContext();
-            InsecureRestorableTrustAllManager.allowAllSSL();
-            while (System.currentTimeMillis() - startms < server.getStartupTimeoutSec() * 1000) {
-                if (exception.get() != null) {
-                    throw new TigerTestEnvException("Unable to start external jar!", exception.get());
-                }
-                URL url = new URL(server.getHealthcheck());
-                URLConnection con = url.openConnection();
-                con.setConnectTimeout(1000);
-                try {
-                    con.connect();
-                    log.info("External jar node " + server.getName() + " is online");
-                    log.info(
-                        Ansi.BOLD + Ansi.GREEN + "External jar server Startup OK " + server.getSource() + Ansi.RESET);
-                    return;
-                } catch (Exception e) {
-                    log.info("Failed to connect - " + e.getMessage());
-                }
-                Thread.sleep(1000);
-                if (!externalProcesses.get(server.getName()).isAlive()) {
-                    throw new TigerTestEnvException(
-                        "Process aborted with exit code " + externalProcesses.get(server.getName())
-                            .exitValue());
-                }
-            }
-            throw new TigerTestEnvException("Timeout while waiting for external jar to start!");
-        } finally {
-            InsecureRestorableTrustAllManager.restoreContext();
+        if (exception.get() != null) {
+            throw new TigerTestEnvException("Unable to start external jar!", exception.get());
         }
+        waitForService(server, server.getStartupTimeoutSec() * 500L, false);
     }
 
     private void downloadJar(CfgServer server, String jarUrl, File jarFile) throws InterruptedException {
@@ -372,10 +465,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         t.start();
         var progressCtr = 0;
         while (!finished.get()) {
-            if (System.currentTimeMillis() - startms > 600 * 1000) {
+            if (System.currentTimeMillis() - startms > 15 * 60 * 1000) {
                 t.interrupt();
                 t.stop();
-                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 10 minutes!");
+                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 15 minutes!");
             }
             if (exception.get() != null) {
                 throw new TigerTestEnvException("Failure while downloading jar " + jarUrl + "!", exception.get());
@@ -410,7 +503,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .filter(key -> key.getType().equals("cert"))
             .forEach(key -> {
                 log.info("Adding certificate " + key.getId());
-                getLocalDockerProxy().addKey(
+                getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
                         + key.getPem().replace(" ", "\n")
@@ -420,7 +513,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             .filter(key -> key.getType().equals("key"))
             .forEach(key -> {
                 log.info("Adding key " + key.getId());
-                getLocalDockerProxy().addKey(
+                getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
                         + key.getPem().replace(" ", "\n")
@@ -440,10 +533,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void shutDownJar(final CfgServer server) {
         Process proc = externalProcesses.get(server.getName());
-        log.info("interrupting thread for " + server.getName() + "...");
-        proc.destroy();
-        log.info("stopping thread for " + server.getName() + "...");
-        proc.destroyForcibly();
+        if (proc != null) {
+            log.info("interrupting thread for " + server.getName() + "...");
+            proc.destroy();
+            log.info("stopping thread for " + server.getName() + "...");
+            proc.destroyForcibly();
+        }
         removeRoute(server);
     }
 
@@ -453,7 +548,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             || route.getFrom().equals(HTTPS + server.getName());
         routesList.stream()
             .filter(isServerRoute)
-            .forEach(r -> localDockerProxy.removeRoute(r.getFrom()));
+            .forEach(r -> localTigerProxy.removeRoute(r.getFrom()));
         routesList.removeIf(isServerRoute);
     }
 

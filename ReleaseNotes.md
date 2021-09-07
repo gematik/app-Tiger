@@ -1,3 +1,6 @@
+# Release 0.7.0
+mvn deploy fix
+
 # Release 0.5.0
 mvn deploy fix
 

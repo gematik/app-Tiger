@@ -22,7 +22,12 @@ let rootEl;
 let updateTimeout = 0;
 let updateHandler = null;
 let updateBtn;
+let resetBtn;
+let saveBtn;
+let uploadBtn;
+let quitBtn;
 
+let btnOpenRouteModal;
 let fieldRouteTo;
 let fieldRouteFrom;
 let btnAddRoute;
@@ -48,11 +53,17 @@ const menuResHtmlTemplate = "<a href=\"#${uuid}\" class=\"menu-label ml-5 mt-3 i
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
   updateBtn = document.getElementById("updateBtn");
+  resetBtn = document.getElementById("resetMsgs");
+  saveBtn = document.getElementById("saveMsgs");
+  uploadBtn = document.getElementById("uploadMsgs");
+  quitBtn = document.getElementById("quitProxy");
+
+  btnOpenRouteModal = document.getElementById("routeModalBtn");
   fieldRouteFrom = document.getElementById("addNewRouteFromField");
   fieldRouteTo = document.getElementById("addNewRouteToField");
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
-  ledScrollLock  = document.getElementById("scrollLockLed");
+  ledScrollLock = document.getElementById("scrollLockLed");
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -65,9 +76,18 @@ document.addEventListener('DOMContentLoaded', function () {
   enableCardToggles();
   enableCollapseExpandAll();
 
-  updateBtn.addEventListener('click',pollMessages);
+  updateBtn.addEventListener('click', pollMessages);
+  quitBtn.addEventListener('click', quitProxy);
+  resetBtn.addEventListener('click', resetMessages);
+  saveBtn.addEventListener('click', saveToLocal);
 
-  document.getElementById("routeModalBtn").addEventListener('click',
+  if (tigerProxyUploadUrl === "UNDEFINED") {
+    uploadBtn.classList.add("is-hidden");
+  } else {
+    uploadBtn.addEventListener('click', uploadReport);
+  }
+
+  btnOpenRouteModal.addEventListener('click',
       e => {
         document.getElementById("routeModalBtn").disabled = true;
         getRoutes();
@@ -90,15 +110,16 @@ document.addEventListener('DOMContentLoaded', function () {
       if (updateHandler) {
         clearInterval(updateHandler);
       }
-      if (updateTimeout != 0) {
+      if (updateTimeout !== 0) {
         updateHandler = setInterval(pollMessages, updateTimeout * 1000);
-        document.getElementById("updateBtn").disabled = true;
+        updateBtn.disabled = true;
       } else {
-        document.getElementById("updateBtn").disabled = false;
+        updateBtn.disabled = false;
       }
     })
   });
 
+  document.getElementById("update5").click();
 
   btnAddRoute.addEventListener("click", addRoute);
   fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
@@ -248,6 +269,110 @@ function pollMessages() {
   xhttp.send();
 }
 
+function resetMessages() {
+  resetBtn.disabled = true;
+  const xhttp = new XMLHttpRequest();
+  xhttp.open("GET", "/webui/resetMsgs", true);
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status === 200) {
+        const response = JSON.parse(this.responseText);
+        console.log("removed " + response.numMsgs + " messages...");
+      } else {
+        console.log("ERROR " + this.status + " " + this.responseText);
+      }
+      lastUuid = "";
+      const sidebarMenu = document.getElementById("sidebar-menu")
+      sidebarMenu.innerHTML = "";
+      const listDiv = getAll('.column')[2];
+      listDiv.innerHTML = "";
+      setTimeout(() => {
+        resetBtn.blur();
+        resetBtn.disabled = false;
+      }, 200);
+    }
+  }
+  xhttp.send();
+}
+
+function quitProxy() {
+  quitBtn.disabled = true;
+  const xhttp = new XMLHttpRequest();
+  xhttp.open("GET", "/webui/quit", true);
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status === 0) {
+        alert("Tiger proxy shut down SUCCESSfully!");
+        updateBtn.disabled = true;
+        resetBtn.disabled = true;
+        uploadBtn.disabled = true;
+        btnScrollLock.disabled = true;
+        btnOpenRouteModal.disabled = true;
+        getAll("input.updates").forEach(function (el) {
+          el.disabled = true;
+        });
+        quitBtn.blur();
+      } else {
+        console.log("ERROR " + this.status + " " + this.responseText);
+        setTimeout(() => {
+          quitBtn.blur();
+          quitBtn.disabled = false;
+        }, 200);
+      }
+    }
+  }
+  xhttp.send();
+}
+
+function uploadReport() {
+  uploadBtn.disabled = true;
+  const xhttp = new XMLHttpRequest();
+  xhttp.open("POST", "/webui/uploadReport", true);
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status === 0) {
+        alert("Tiger proxy shut down SUCCESSfully!");
+
+        uploadBtn.disabled = false;
+        uploadBtn.blur();
+      } else {
+        console.log("ERROR " + this.status + " " + this.responseText);
+        setTimeout(() => {
+          uploadBtn.blur();
+          uploadBtn.disabled = false;
+        }, 200);
+      }
+    }
+  }
+  xhttp.send( encodeURIComponent(document.querySelector("html").innerHTML));
+
+}
+
+function saveToLocal() {
+  document.querySelector(".navbar").classList.add("is-hidden");
+  const text = document.querySelector("html").innerHTML;
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+  const dateLocal = new Date(now.getTime() - offsetMs);
+  const filename = tigerProxyFilenamePattern
+  .replace("${DATE}", dateLocal.toISOString().slice(0, 10).replace(/-/g, ""))
+  .replace("${TIME}",
+      dateLocal.toISOString().slice(11, 19).replace(/[^0-9]/g, ""))
+  .replace(".zip", ".html");
+  document.querySelector(".navbar").classList.remove("is-hidden");
+  const element = document.createElement('a');
+  element.setAttribute('href', 'data:text/html;charset=utf-8,' +
+      encodeURIComponent(text));
+  element.setAttribute('download', filename);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+}
+
 function updateMessageList(json) {
   if (json.metaMsgList.length === 0) {
     return;
@@ -291,15 +416,18 @@ function updateMessageList(json) {
   if (!scrollLock) {
     const sidebar = getAll('.menu')[0];
     const msgListDiv = sidebar.nextElementSibling;
-    sidebar.children[sidebar.children.length-1].scrollIntoView({behaviour: "smooth", block: "end"});
-    msgListDiv.children[msgListDiv.children.length-1].scrollIntoView({behaviour: "smooth", block: "end"});
+    sidebar.children[sidebar.children.length - 1].scrollIntoView(
+        {behaviour: "smooth", block: "end"});
+    msgListDiv.children[msgListDiv.children.length - 1].scrollIntoView(
+        {behaviour: "smooth", block: "end"});
   }
 }
 
 function getRoutes() {
   document.getElementById("routeModalLed").classList.add("ledactive");
   document.getElementById("routeModalLed").classList.remove("lederror");
-  getAll(".routeListDiv")[0].innerHTML = "<p align=\"center\" class=\"mt-5 mb-5\"><i class=\"fas fa-spinner\"></i> Loading...</p>";
+  getAll(
+      ".routeListDiv")[0].innerHTML = "<p align=\"center\" class=\"mt-5 mb-5\"><i class=\"fas fa-spinner\"></i> Loading...</p>";
   const xhttp = new XMLHttpRequest();
   xhttp.open("GET", "/route", true);
   xhttp.onreadystatechange = function () {
@@ -309,8 +437,9 @@ function getRoutes() {
         updateRouteList(response);
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
-        getAll(".routeListDiv")[0].innerHTML = "ERROR " + this.status + " " + this.responseText;
-            document.getElementById("routeModalLed").classList.remove("ledactive");
+        getAll(".routeListDiv")[0].innerHTML = "ERROR " + this.status + " "
+            + this.responseText;
+        document.getElementById("routeModalLed").classList.remove("ledactive");
         document.getElementById("routeModalLed").classList.add("lederror");
       }
     }
@@ -320,21 +449,24 @@ function getRoutes() {
 
 function updateRouteList(json) {
   if (json.length === 0) {
-    (getAll(".routeListDiv")[0]).innerHTML="<p class='mt-5 mb-5'>No Routes configured</p>"
+    (getAll(
+        ".routeListDiv")[0]).innerHTML = "<p class='mt-5 mb-5'>No Routes configured</p>"
     return;
   }
   let html = "";
-  json.forEach(function(route) {
+  json.forEach(function (route) {
     html += "<div class='box routeentry columns'>"
         + "<div class='column is-one-fifth'>"
-        + "<button id='route-" + route.id + "' class='button delete-route is-fullwidth is-danger'>"
+        + "<button id='route-" + route.id
+        + "' class='button delete-route is-fullwidth is-danger'>"
         + "<i class=\"far fa-trash-alt\"></i>"
         + "</button></div>"
-        + "<div class='column is-four-fifths'>&rarr; " + route.from + "<br/>&larr; " + route.to + "</div></div>";
+        + "<div class='column is-four-fifths'>&rarr; " + route.from
+        + "<br/>&larr; " + route.to + "</div></div>";
   });
   getAll(".routeListDiv")[0].innerHTML = html;
-  getAll("button.delete-route").forEach(function(el) {
-    el.addEventListener("click", function(e) {
+  getAll("button.delete-route").forEach(function (el) {
+    el.addEventListener("click", function (e) {
       deleteRoute(e);
     });
   });
@@ -378,6 +510,6 @@ function addRoute() {
       getRoutes();
     }
   }
-  xhttp.send("{\"from\":\"" + fieldRouteFrom.value +"\",\n"
-      +"\"to\":\"" + fieldRouteTo.value + "\"}");
+  xhttp.send("{\"from\":\"" + fieldRouteFrom.value + "\",\n"
+      + "\"to\":\"" + fieldRouteTo.value + "\"}");
 }

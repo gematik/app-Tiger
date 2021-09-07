@@ -16,31 +16,39 @@
 
 package de.gematik.test.tiger.proxy.configuration;
 
-import de.gematik.rbellogger.util.RbelPkiIdentity;
-import java.util.List;
-import java.util.Map;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.util.List;
 
 @Data
-@AllArgsConstructor
+@AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
 @Builder
+@ToString
 public class TigerProxyConfiguration {
 
     private List<TigerRoute> proxyRoutes;
     private ForwardProxyInfo forwardToProxy;
+    @Builder.Default
     private String proxyLogLevel = "WARN";
-    private String serverRootCaCertPem;
-    private String serverRootCaKeyPem;
-    private RbelPkiIdentity serverRootCa;
+    private TigerPkiIdentity serverRootCa;
+    private TigerPkiIdentity forwardMutualTlsIdentity;
+    private TigerPkiIdentity serverIdentity;
     private List<String> keyFolders;
+    @Builder.Default
     private boolean activateRbelEndpoint = false;
+    @Builder.Default
+    private boolean activateAsn1Parsing = true;
+    @Builder.Default
+    private boolean activateForwardAllLogging = true;
+    private RbelFileSaveInfo fileSaveInfo;
     private Integer port;
+    @Builder.Default
+    private boolean skipTrafficEndpointsSubscription = false;
     private List<String> trafficEndpoints;
     @Builder.Default
     private int connectionTimeoutInSeconds = 10;
@@ -52,7 +60,7 @@ public class TigerProxyConfiguration {
             return null;
         } else {
             return new Integer[]{
-                port, port + 1
+                port
             };
         }
     }

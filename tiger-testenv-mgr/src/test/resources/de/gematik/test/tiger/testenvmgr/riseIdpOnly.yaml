@@ -1,11 +1,10 @@
 tigerProxy:
-  serverRootCaCertPem: CertificateAuthorityCertificate.pem
-  serverRootCaKeyPem: PKCS8CertificateAuthorityPrivateKey.pem
+  serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 
 servers:
-  - name: idp
-    template: idp-rise-rtu
+  - name: idp10
+    template: idp-rise-tu
     type: externalUrl
     active: true
     startupTimeoutSec: 3

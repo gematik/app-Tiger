@@ -9,7 +9,7 @@ templates:
     type: docker
     source:
       - gstopdr1.top.local/idp/idp-server
-    version: 17.0.0-38
+    version: 18.2.0-82
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on without error)
     startupTimeoutSec: 60
@@ -117,7 +117,7 @@ templates:
     type: docker
     source:
       - gstopdr1.top.local/erezept/ref-erx-fd-server
-    version: 0.17.2
+    version: 0.19.2
     startupTimeoutSec: 50
     urlMappings:
       # NG TODO once we support https proxying the TSL we can remove this mapping
@@ -151,7 +151,10 @@ templates:
     source:
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
-    startupTimeoutSec: 120
+    startupTimeoutSec: 180
+    serviceHealthchecks:
+      - http://epa-gateway:8001/
+      - http://epa-docv-fdv:8005/
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -176,7 +179,7 @@ templates:
     arguments:
       - --spring.profiles.active=instance2local
       - --aktor.rproxySGD2.use=false
-    startupTimeoutSec: 30
+    startupTimeoutSec: 60
     healthcheck: https://127.0.0.1:9107
 
   # ----------------------------------------------------------------------------------------------------------------------
