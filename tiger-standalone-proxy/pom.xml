@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-standalone-proxy</artifactId>
-    <version>0.8.0</version>
+    <version>0.8.1</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.8.0</version>
+        <version>0.8.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -150,16 +150,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
-                    <sourcepath>target/generated-sources/delombok</sourcepath>
+                    <doclint>none</doclint>
+                    <sourcepath>${project.build.directory}/delombok</sourcepath>
                 </configuration>
             </plugin>
 
