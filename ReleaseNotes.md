@@ -1,3 +1,6 @@
+# Release 0.8.0
+* Bugfix TigerRoute YAML instantiation
+
 # Release 0.7.0
 mvn deploy fix
 

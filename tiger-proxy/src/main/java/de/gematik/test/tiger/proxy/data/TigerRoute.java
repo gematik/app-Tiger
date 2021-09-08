@@ -16,19 +16,21 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.*;
 
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder(toBuilder = true)
 @Data
 public class TigerRoute {
 
     @With
-    private final String id;
-    private final String from;
-    private final String to;
-    private final boolean internalRoute;
-    private final boolean disableRbelLogging;
-    private final TigerBasicAuthConfiguration basicAuth;
+    private String id;
+    private String from;
+    private String to;
+    private boolean internalRoute;
+    private boolean disableRbelLogging;
+    private TigerBasicAuthConfiguration basicAuth;
 }
