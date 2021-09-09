@@ -103,7 +103,7 @@ public class FeatureParser {
     }
 
     private ParseMode addStepToScenario(final Scenario sc, final Step step) {
-        if (step.getKeyword().equals("Examples")) {
+        if (step.getKeyword().equals("Examples") || step.getKeyword().equals("Beispiele")) {
             if (sc instanceof ScenarioOutline) {
                 ((ScenarioOutline) sc).setExamples(step);
                 return ParseMode.EXAMPLES;
@@ -133,9 +133,12 @@ public class FeatureParser {
         final AtomicReference<Feature> feature, final AtomicReference<Scenario> child) {
         final int colon = line.indexOf(':');
         if (colon != -1) {
-            final String structName = line.substring(0, colon).replace(" ", "").replace("\t", "");
+            String structName = line.substring(0, colon).replace(" ", "").replace("\t", "");
             if (!GherkinStruct.STRUCT_NAMES.contains(structName)) {
                 return false;
+            }
+            if (GherkinStruct.STRUCT_I18N_MAP.containsKey(structName)) {
+                structName = GherkinStruct.STRUCT_I18N_MAP.get(structName);
             }
             final GherkinStruct gs = (GherkinStruct) Class
                 .forName(getClass().getPackageName() + ".model.gherkin." + structName)
