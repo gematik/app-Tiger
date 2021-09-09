@@ -1,37 +1,94 @@
-# Tiger-Proxy
+# Tiger-Standalone-Proxy
 
 A tool to give you flexible Routing from a to b and to protocol the traffic seen by the proxy.
+This version can be booted by itself, either as a jar or as a docker-container.
 
-## Standalone options
+The standalone Tiger-Proxy has two parts: A Proxy-Server (the Tiger-Proxy itself) and a 
+Spring-Boot server (which can be used to configure the proxy, to view the traffic and to
+send/receive traffic from other Tiger-Proxies). Consequently it has two ports 
+(`server.port` for the Spring-Boot server and `tigerProxy.port` for the proxy-server).
 
+## General configuration
 
-###Routes
+Configuration can be done via an 'application.yml'-file or via CLI-Options.
+See https://docs.spring.io/spring-boot/docs/1.4.1.RELEASE/reference/html/boot-features-external-config.htm
+for more details.
 
-Via `-r` or `--routes` you can specify routes for the proxy to map.
-Example: 
+## Spring-Boot server
 
-`http://not.a.real.server;http://google.com,https://gog;https://google.com`
+* The port can be configured via 'server.port'
+* Under 'http://<server>/webui' the traffic which has been routed via this proxy can be viewed (and saved, uploaded and reset)
+* Under '/tracing/info' lies a WebSocket/STOMP endpoint which propagates all received traffic. 
+This can be used to forward traffic to other tiger-proxies
+* Under '/route' resides a REST-Controller which can manage the routes. 
+See 'TigerConfigurationController.java' and 'TigerRemoteProxyClientTest.java' for additional information
 
-###Forward-Proxy
+## Tiger-Proxy
 
-To specify a forward-proxy (a proxy-server that the Tiger-proxy should query) you can do so via `--proxy`:
+The actual proxy. Can be configured to be either a forward- or a reverse-proxy.
+Let's look at a sample-configuration:
 
-`--proxy "192.168.110.10:3128"`
+```YAML
+tigerProxy:
+    port: 7777 
+    # the port under which the server will be booted
+    proxyLogLevel: TRACE
+    # logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!
+    fileSaveInfo:
+        writeToFile: true # should the cleartext http-traffic be logged to a file?
+        filename: "foobar.tgr" # customize the filename
+        clearFileOnBoot: true # default false
+    proxyRoutes:
+        - from: http://foobar # defines a forward-proxy-route from this server...
+          to: https://cryptic.backend/server/with/path # to this server
+        - from: "/blub" 
+          # reverse proxy-route. http://<tiger-proxy>/blub will be forwarded
+          to: "https://another.de/server"
+          activateRbelLogging: false 
+          # the traffic for this route will NOT be logged (default is true)
+    forwardToProxy: # can be used if the target-server (to) is behind another proxy
+        hostname: 192.168.110.10
+        port: 3128
+        type: HTTP
+    activateForwardAllLogging: false
+    # The tiger-proxy will route google.com to google.com even if no route is set.
+    # The traffic routed via this "forwardAll"-routing will be logged by default
+    # (meaning it will show up in the Rbel-Logs and be fowarded to tracing-clients)
+    # This can be deactivated via this flag
+    
+    serverRootCa: "certificate.pem;privateKey.pem;PKCS8"
+    # Can be used to define a CA-Identity to be used with TLS. The tiger-proxy will
+    # generate an identity when queried by a client that matches the configured route.
+    # If the client then in turn trusts the CA this solution will provide you with a seamless
+    # TLS experience. It however requires access to the private-key of a trusted CA.
+    serverIdentity: "certificateAndKeyAndChain.p12;Password"
+    # Alternative solution: now all incoming TLS-traffic will be handled using this identity.
+    # This might be easier but requires a certificate which is valid for the configured routes
 
-###Port
+    forwardMutualTlsIdentity: "directory/where/another/identityResides.jks;changeit;JKS"
+    # This identity will be used as a client-identity for mutual-TLS when forwarding to
+    # other servers. The information string can be
+    # "my/file/name.p12;p12password" or
+    # "p12password;my/file/name.p12" or
+    # "cert.pem;key.pkcs8" or
+    # "rsaCert.pem;rsaKey.pkcs1" or
+    # "key/store.jks;key" or
+    # "key/store.jks;key1;key2" or
+    # "key/store.jks;jks;key"
+    # 
+    # Each part can be one of:
+    # * filename
+    # * password
+    # * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
 
-To customize the port that the tiger proxy should use simple give the value via `-p` or `--port`:
+    keyFolders:
+    - .
+    # the given folders are loaded into RBel for analysis. This is only necessary to decrypt 
+    # traffic when analyzing it. It has no effect on the proxy-functions themselves.
 
-`-p 6667`
-
-## Docker-Image
-
-Run for example via 
-
-`docker run --rm -p 6666:6666 --env ROUTES="http://not.a.real.server;http://google.com" tiger-proxy:latest`
-
-Then you can query via 
-
-`curl https://gog --proxy localhost:6666 -vv --insecure`
-
-To see the current log go to `http://localhost:6666/rbel` (or, if you are using the proxy-server in your browser, simply visit http://rbel)
+    trafficEndpoints:
+      - http://another.tiger.proxy:<proxyPort>
+    # A list of upstream tiger-proxies. This proxy will try to connect to all given sources to
+    # gather traffic via the STOMP-protocol. If any of the given endpoints are not accesible the
+    # server will not boot. (fail fast, fail early)
+```
