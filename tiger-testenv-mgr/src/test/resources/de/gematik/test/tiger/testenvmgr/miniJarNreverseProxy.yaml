@@ -1,0 +1,23 @@
+tigerProxy:
+
+servers:
+  - name: minijar-test2
+    template: epa2-fdv
+    source:
+      - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
+    startupTimeoutSec: 5
+    arguments:
+      - --httpPort=9107
+      - --webroot=.
+    healthcheck: http://127.0.0.1:9107
+
+  - name: reverseproxy1
+    type: reverseProxy
+    version: 0.9.0-178
+    reverseProxyCfg:
+      serverPort: 9999
+      proxiedServer: minijar-test2
+      proxyCfg:
+        port: 10010
+
+

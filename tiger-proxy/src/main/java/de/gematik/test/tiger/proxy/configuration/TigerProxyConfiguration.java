@@ -5,6 +5,8 @@
 package de.gematik.test.tiger.proxy.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
@@ -17,6 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @ToString
+@JsonInclude(Include.NON_NULL)
 public class TigerProxyConfiguration {
 
     private List<TigerRoute> proxyRoutes;
@@ -43,6 +46,7 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private int bufferSizeInKb = 1024;
 
+    @JsonIgnore
     public Integer[] getPortAsArray() {
         if (port == null) {
             return null;

@@ -73,7 +73,6 @@ public class DockerMgr {
             if (containerConfig == null) {
                 throw new TigerTestEnvException("Docker image '" + imageName + "' has no configuration info!");
             }
-
             if (server.isProxied()) {
                 String[] startCmd = containerConfig.getCmd();
                 String[] entryPointCmd = containerConfig.getEntrypoint();
@@ -341,7 +340,7 @@ public class DockerMgr {
                 Thread.currentThread().interrupt();
             }
             log.info("HealthCheck UNCLEAR for " + server.getName()
-                + " as no healtcheck is configured, we assume it works and continue setup!");
+                + " as no healthcheck is configured, we assume it works and continue setup!");
         }
     }
 

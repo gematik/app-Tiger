@@ -4,6 +4,8 @@
 
 package de.gematik.test.tiger.proxy.data;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.*;
@@ -12,6 +14,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @Data
+@JsonInclude(Include.NON_NULL)
 public class TigerRoute {
 
     @With

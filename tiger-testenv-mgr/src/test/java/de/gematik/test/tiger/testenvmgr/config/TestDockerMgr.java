@@ -34,7 +34,7 @@ public class TestDockerMgr {
     public void testDockerMgrStartUpOK() {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        srv.setType("docker");
+        srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE));
         srv.setName("testcontainer");
         srv.setStartupTimeoutSec(15);
@@ -49,7 +49,7 @@ public class TestDockerMgr {
     public void testDockerMgrStartUpTooShort() {
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        srv.setType("docker");
+        srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE));
         srv.setName("testcontainer");
         srv.setStartupTimeoutSec(2);
@@ -65,7 +65,7 @@ public class TestDockerMgr {
         // TODO ensure image with given version is available locally
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        srv.setType("docker");
+        srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
         srv.setName("idp5");
         srv.setStartupTimeoutSec(5); // to few seconds for startup
@@ -81,7 +81,7 @@ public class TestDockerMgr {
         // TODO ensure image with given version is available locally
         final DockerMgr dmgr = new DockerMgr();
         final CfgServer srv = new CfgServer();
-        srv.setType("docker");
+        srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck
         srv.setName("idp4");
         srv.setProduct(CfgProductType.IDP_REF);
