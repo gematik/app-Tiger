@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.testenvmgr.config;
+package de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;

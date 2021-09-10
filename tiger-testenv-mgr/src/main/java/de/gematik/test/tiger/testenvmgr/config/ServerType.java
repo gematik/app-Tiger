@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum ServerType {
     DOCKER("docker"), DOCKER_COMPOSE("compose"),
     EXTERNALJAR("externalJar"), EXTERNALURL("externalUrl"),
-    REVERSEPROXY("reverseProxy");
+    TIGERPROXY("tigerProxy");
 
     private final String name;
 

@@ -18,6 +18,8 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.config.*;
+import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
+import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneServer;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -191,8 +193,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             case EXTERNALURL:
                 initializeExternalUrl(server);
                 break;
-            case REVERSEPROXY:
-                initializeReverseProxy(server, configuration);
+            case TIGERPROXY:
+                initializeTigerProxy(server, configuration);
                 break;
             case EXTERNALJAR:
                 initializeExternalJar(server);
@@ -270,8 +272,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     @SneakyThrows
-    private void initializeReverseProxy(CfgServer server, Configuration configuration) {
-        CfgReverseProxy reverseProxyCfg = server.getReverseProxyCfg();
+    private void initializeTigerProxy(CfgServer server, Configuration configuration) {
+        CfgTigerProxy reverseProxyCfg = server.getTigerProxyCfg();
 
         CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
         standaloneCfg.setServer(new CfgStandaloneServer());
@@ -285,6 +287,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (reverseProxyCfg.getProxiedServer() != null) {
             getDestinationUrlFromProxiedServer(server, configuration, reverseProxyCfg);
         }
+
+        reverseProxyCfg.getProxyCfg().getProxyRoutes().forEach(route -> {
+            route.setFrom(replaceSysPropsInString(route.getFrom()));
+            route.setTo(replaceSysPropsInString(route.getTo()));
+        });
+
         final String downloadUrl;
         final String jarFile = "tiger-standalone-proxy-" + server.getVersion() + ".jar";
         if (reverseProxyCfg.getRepo().equals("nexus")) {
@@ -304,7 +312,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 }
             }
             server.setWorkingDir(folder.getAbsolutePath());
-        }else {
+        } else {
             folder = new File(server.getWorkingDir());
         }
         server.setSource(List.of(downloadUrl));
@@ -318,12 +326,19 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         server.getArguments().add("--spring.profiles.active=" + server.getName());
 
         ObjectMapper om = new ObjectMapper(new YAMLFactory());
-        om.writeValue(Path.of(folder.getAbsolutePath(), "application-" + server.getName() + ".yaml").toFile(), standaloneCfg);
+        om.writeValue(Path.of(folder.getAbsolutePath(), "application-" + server.getName() + ".yaml").toFile(),
+            standaloneCfg);
 
         initializeExternalJar(server);
     }
 
-    private void getDestinationUrlFromProxiedServer(CfgServer server, Configuration configuration, CfgReverseProxy cfg) {
+    public String replaceSysPropsInString(String str) {
+        str = TokenSubstituteHelper.substitute(str, "",
+            Map.of("PROXYHOST", "127.0.0.1", "PROXYPORT", localTigerProxy.getPort()));
+        return TokenSubstituteHelper.substitute(str, "", environmentVariables);
+    }
+
+    private void getDestinationUrlFromProxiedServer(CfgServer server, Configuration configuration, CfgTigerProxy cfg) {
         final String destUrl;
         CfgServer proxiedServer = configuration.getServers().stream()
             .filter(srv -> srv.getName().equals(cfg.getProxiedServer()))
@@ -378,7 +393,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     @SneakyThrows
     public void initializeExternalUrl(final CfgServer server) {
         log.info(Ansi.BOLD + Ansi.GREEN + "starting external URL instance " + server.getName() + "..." + Ansi.RESET);
-        final var url = new URL(server.getSource().get(0));
+        final var url = new URL(replaceSysPropsInString(server.getSource().get(0)));
         int port = url.getPort();
         if (port == -1) {
             port = url.getDefaultPort();
@@ -509,7 +524,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         long startms = System.currentTimeMillis();
         if (!quiet) {
-            log.info("  Checking external URL instance  " + server.getName() + " is available ...");
+            log.info("  Checking " + server.getType() + " instance '" + server.getName() + "' is available ...");
         }
         try {
             InsecureRestorableTrustAllManager.saveContext();
@@ -610,7 +625,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             shutDownExternal(server);
         } else if (type == ServerType.DOCKER) {
             shutDownDocker(server);
-        } else if (type == ServerType.EXTERNALJAR || type == ServerType.REVERSEPROXY) {
+        } else if (type == ServerType.EXTERNALJAR || type == ServerType.TIGERPROXY) {
             shutDownJar(server);
         } else {
             // TODO docker compose

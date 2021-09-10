@@ -58,7 +58,7 @@ public class DockerMgr {
 
     @SuppressWarnings("unused")
     public void startContainer(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
-        var imageName = server.getSource().get(0);
+        var imageName = envmgr == null ? server.getSource().get(0) : envmgr.replaceSysPropsInString(server.getSource().get(0));
         if (server.getVersion() != null) {
             imageName += ":" + server.getVersion();
         }

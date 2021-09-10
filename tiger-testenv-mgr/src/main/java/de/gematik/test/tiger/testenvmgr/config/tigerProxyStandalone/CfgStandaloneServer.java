@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.testenvmgr.config;
+package de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone;
 
 import lombok.Data;
 

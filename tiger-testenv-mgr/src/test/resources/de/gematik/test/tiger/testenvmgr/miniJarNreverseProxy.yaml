@@ -12,9 +12,9 @@ servers:
     healthcheck: http://127.0.0.1:9107
 
   - name: reverseproxy1
-    type: reverseProxy
+    type: tigerProxy
     version: 0.9.0-178
-    reverseProxyCfg:
+    tigerProxyCfg:
       serverPort: 9999
       proxiedServer: minijar-test2
       proxyCfg:

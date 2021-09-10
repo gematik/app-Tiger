@@ -38,7 +38,7 @@ public class CfgServer {
     private final List<String> exports = new ArrayList<>();
     private Map<Integer, Integer> ports;
 
-    private CfgReverseProxy reverseProxyCfg;
+    private CfgTigerProxy tigerProxyCfg;
 
     @JsonIgnore
     private boolean started = false;

@@ -5,7 +5,7 @@ import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
 import lombok.Data;
 
 @Data
-public class CfgReverseProxy {
+public class CfgTigerProxy {
 
     /**
      * one of "nexus" or "mvn"
