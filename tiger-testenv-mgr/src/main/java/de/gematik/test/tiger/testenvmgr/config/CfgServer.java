@@ -58,7 +58,7 @@ public class CfgServer {
  * reverseProxy:
  *   (repo) nexus
  *   serverPort
- *   proxiedServer
+ *   (proxiedServer) none
  *   proxyPort
  *   (proxyProtocal) http
  *   proxyCfg

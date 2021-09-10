@@ -7,17 +7,20 @@ servers:
       - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
     startupTimeoutSec: 5
     arguments:
-      - --httpPort=9107
+      - --httpPort=9207
       - --webroot=.
-    healthcheck: http://127.0.0.1:9107
+    healthcheck: http://127.0.0.1:9207
 
-  - name: reverseproxy1
+  - name: reverseproxy2
     type: reverseProxy
     version: 0.9.0-178
     reverseProxyCfg:
       serverPort: 9999
-      proxiedServer: minijar-test2
+      #proxiedServer: minijar-test2
       proxyCfg:
-        port: 10020
+        port: 10010
+        proxyRoutes:
+          - from: /
+            to: http://127.0.0.1:9207
 
 

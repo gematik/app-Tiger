@@ -271,15 +271,65 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     @SneakyThrows
     private void initializeReverseProxy(CfgServer server, Configuration configuration) {
+        CfgReverseProxy reverseProxyCfg = server.getReverseProxyCfg();
 
-        CfgReverseProxy cfg = server.getReverseProxyCfg();
-        assertThat(cfg.getProxiedServer()).withFailMessage(
-            "Proxied server must be specified for reverse proxy '" + server.getName() + "'!").isNotBlank().isNotEmpty();
+        CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
+        standaloneCfg.setServer(new CfgStandaloneServer());
+        standaloneCfg.getServer().setPort(reverseProxyCfg.getServerPort());
+
+        standaloneCfg.setTigerProxy(reverseProxyCfg.getProxyCfg());
+        if (reverseProxyCfg.getProxyCfg().getProxyRoutes() == null) {
+            reverseProxyCfg.getProxyCfg().setProxyRoutes(new ArrayList<>());
+        }
+
+        if (reverseProxyCfg.getProxiedServer() != null) {
+            getDestinationUrlFromProxiedServer(server, configuration, reverseProxyCfg);
+        }
+        final String downloadUrl;
+        final String jarFile = "tiger-standalone-proxy-" + server.getVersion() + ".jar";
+        if (reverseProxyCfg.getRepo().equals("nexus")) {
+            downloadUrl =
+                "https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/test/tiger-standalone-proxy/"
+                    + server.getVersion() + "/" + jarFile;
+        } else {
+            downloadUrl = "https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy/"
+                + server.getVersion() + "/" + jarFile;
+        }
+        final File folder;
+        if (server.getWorkingDir() == null) {
+            folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile();
+            if (!folder.exists()) {
+                if (!folder.mkdirs()) {
+                    throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
+                }
+            }
+            server.setWorkingDir(folder.getAbsolutePath());
+        }else {
+            folder = new File(server.getWorkingDir());
+        }
+        server.setSource(List.of(downloadUrl));
+        server.setHealthcheck("http://127.0.0.1:" + reverseProxyCfg.getServerPort());
+        if (server.getStartupTimeoutSec() == null) {
+            server.setStartupTimeoutSec(20);
+        }
+        if (server.getArguments() == null) {
+            server.setArguments(new ArrayList<>());
+        }
+        server.getArguments().add("--spring.profiles.active=" + server.getName());
+
+        ObjectMapper om = new ObjectMapper(new YAMLFactory());
+        om.writeValue(Path.of(folder.getAbsolutePath(), "application-" + server.getName() + ".yaml").toFile(), standaloneCfg);
+
+        initializeExternalJar(server);
+    }
+
+    private void getDestinationUrlFromProxiedServer(CfgServer server, Configuration configuration, CfgReverseProxy cfg) {
+        final String destUrl;
         CfgServer proxiedServer = configuration.getServers().stream()
             .filter(srv -> srv.getName().equals(cfg.getProxiedServer()))
             .findAny().orElseThrow(
-                () -> new TigerTestEnvException("Proxied server '" + cfg.getProxiedServer() + "' not found in list!"));
-        final String destUrl;
+                () -> new TigerTestEnvException(
+                    "Proxied server '" + cfg.getProxiedServer() + "' not found in list!"));
         switch (proxiedServer.getType()) {
             case DOCKER:
                 if (proxiedServer.getHealthcheck() == null) {
@@ -304,7 +354,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 break;
             case EXTERNALURL:
                 assertThat(proxiedServer.getSource())
-                    .withFailMessage("To be proxied server '" + proxiedServer.getName() + "' has no sources configured")
+                    .withFailMessage(
+                        "To be proxied server '" + proxiedServer.getName() + "' has no sources configured")
                     .isNotEmpty();
                 assertThat(proxiedServer.getSource().get(0))
                     .withFailMessage(
@@ -314,56 +365,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 break;
             case DOCKER_COMPOSE:
             default:
-                throw new TigerTestEnvException("Sophisticated reverse proxy for '" + proxiedServer.getType() + "' is not supported!");
-        }
-        final String downloadUrl;
-        final String jarFile = "tiger-standalone-proxy-" + server.getVersion() + ".jar";
-        if (cfg.getRepo().equals("nexus")) {
-            downloadUrl =
-                "https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/test/tiger-standalone-proxy/"
-                    + server.getVersion() + "/" + jarFile;
-        } else {
-            downloadUrl = "https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy/"
-                + server.getVersion() + "/" + jarFile;
-        }
-        final File folder;
-        if (server.getWorkingDir() == null) {
-            folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile();
-            if (!folder.exists()) {
-                if (!folder.mkdirs()) {
-                    throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
-                }
-            }
-            server.setWorkingDir(folder.getAbsolutePath());
-        }else {
-            folder = new File(server.getWorkingDir());
-        }
-        server.setSource(List.of(downloadUrl));
-        server.setHealthcheck("http://127.0.0.1:" + cfg.getServerPort());
-        if (server.getStartupTimeoutSec() == null) {
-            server.setStartupTimeoutSec(20);
-        }
-        if (server.getArguments() == null) {
-            server.setArguments(new ArrayList<>());
-        }
-        server.getArguments().add("--spring.profiles.active=" + server.getName());
-
-        CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
-        standaloneCfg.setServer(new CfgStandaloneServer());
-        standaloneCfg.getServer().setPort(cfg.getServerPort());
-        standaloneCfg.setTigerProxy(cfg.getProxyCfg());
-        if (cfg.getProxyCfg().getProxyRoutes() == null) {
-            cfg.getProxyCfg().setProxyRoutes(new ArrayList<>());
+                throw new TigerTestEnvException(
+                    "Sophisticated reverse proxy for '" + proxiedServer.getType() + "' is not supported!");
         }
         TigerRoute tigerRoute = new TigerRoute();
         tigerRoute.setFrom("/");
         tigerRoute.setTo(destUrl);
         cfg.getProxyCfg().getProxyRoutes().add(tigerRoute);
-
-        ObjectMapper om = new ObjectMapper(new YAMLFactory());
-        om.writeValue(Path.of(folder.getAbsolutePath(), "application-" + server.getName() + ".yaml").toFile(), standaloneCfg);
-
-        initializeExternalJar(server);
     }
 
 
@@ -464,12 +472,18 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             throw new TigerTestEnvException("Unable to start external jar!", exception.get());
         }
         if (waitForService(server, server.getStartupTimeoutSec() * 500L, true)) {
+            if (exception.get() != null) {
+                throw new TigerTestEnvException("Unable to start external jar!", exception.get());
+            }
             return;
         }
         if (exception.get() != null) {
             throw new TigerTestEnvException("Unable to start external jar!", exception.get());
         }
         waitForService(server, server.getStartupTimeoutSec() * 500L, false);
+        if (exception.get() != null) {
+            throw new TigerTestEnvException("Unable to start external jar!", exception.get());
+        }
     }
 
     private String findJavaExecutable() {
@@ -587,6 +601,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     @Override
     public void shutDown(final CfgServer server) {
+        getConfiguration().getServers().stream()
+            .filter(srv -> srv.getName().equals(server.getName()))
+            .findAny()
+            .orElseThrow(() -> new TigerTestEnvException("Unknown server '" + server.getName() + "'!"));
         final ServerType type = server.getType();
         if (type == ServerType.EXTERNALURL) {
             shutDownExternal(server);
