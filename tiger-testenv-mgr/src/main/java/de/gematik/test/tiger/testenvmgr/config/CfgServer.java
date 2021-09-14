@@ -5,61 +5,62 @@
 package de.gematik.test.tiger.testenvmgr.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.gematik.test.tiger.common.config.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import lombok.Data;
 
 @Data
-public class CfgServer {
-    private String name;
+public class CfgServer extends CfgTemplate {
+
     private String template;
-    /** TODO brauchen wir das noch? */
-    private CfgProductType product;
-    private ServerType type;
-    private List<String>  source= new ArrayList<>();
-    private String version;
-    private String workingDir;
-    private List<String> options = new ArrayList<>();
-    private List<String> arguments = new ArrayList<>();
-    private Integer startupTimeoutSec;
-    private String healthcheck;
-    private List<String> serviceHealthchecks;
-    private boolean active = true;
-    private final List<CfgKey> pkiKeys = new ArrayList<>();
-    private boolean proxied = true;
-    /** For docker type to trigger OneShotSTartupStrategy
-     * @see org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy
-     */
-    private boolean oneShot = false;
-    private String entryPoint;
-    private final List<String> environment = new ArrayList<>();
-    private final List<String> urlMappings = new ArrayList<>();
-    private final List<String> exports = new ArrayList<>();
-    private Map<Integer, Integer> ports;
-
-    private CfgTigerProxy tigerProxyCfg;
-
     @JsonIgnore
     private boolean started = false;
 }
 
-/**
- * reverse proxy
- *
- * type
- * (active) true
- * name
+/* Docker
+ ** name
+ ** type
+ ** source
  * version
- * (template) none
- * (workingDir) TEMPFOLDER
+ ** (startupTimeoutSec) 20
+ ** (pkiKeys) []
+ * +(proxied) true
+ * +(oneShot) false
+ * +(entryPoint) as configured in container
+ * +(ports) used in memory only
+ ** (environment) []
+ ** (urlMappings) []
+ ** (exports) []
+ */
+
+
+/* Tiger proxy
+ ** name
+ ** type
+ * (source) nexus [ nexus, maven, specific URL ], nexus and maven will be replaced by exact download URL
+ * version
+ ** (startupTimeoutSec) 20
+ ** (pkiKeys) []
+ * (workingDir) TEMP folder
+ * (healthcheck) will be set to localhost and tiger proxies server port
  * (options) none
- * (arguments) none
- * reverseProxy:
- *   (repo) nexus
+ * (arguments) none, will be expanded with spring profile param
+ * tigerProxyCfg:
  *   serverPort
  *   (proxiedServer) none
  *   proxyPort
  *   (proxyProtocal) http
- *   proxyCfg
+ *   proxyCfg:
+ *     ff....
+ ** (environment) []
+ ** (urlMappings) []
+ ** (exports) []
  */
+
+/**
+ * name template product type source version workingDir options arguments startupTimeoutSec healthcheck
+ * serviceHealthchecks (active) true pkiKeys proxied oneShot entryPoint environment urlMappings exports ports
+ * tigerProxyCfg
+ */
+

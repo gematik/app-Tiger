@@ -1,9 +1,8 @@
 tigerProxy:
 
 servers:
-  - name: idp9
-    template: idp-ref
-    active: true
+  - name: testDocker1
+    type: docker
     source:
       - eitzenbe/test-containers
     version: 1.1.0

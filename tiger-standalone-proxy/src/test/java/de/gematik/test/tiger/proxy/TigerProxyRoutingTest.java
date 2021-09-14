@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import kong.unirest.*;
 import lombok.RequiredArgsConstructor;

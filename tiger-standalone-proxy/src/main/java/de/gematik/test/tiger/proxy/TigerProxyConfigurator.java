@@ -4,15 +4,13 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
-
-import javax.annotation.PostConstruct;
 
 @Configuration
 @RequiredArgsConstructor

@@ -4,10 +4,9 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

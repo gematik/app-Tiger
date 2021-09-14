@@ -1,0 +1,10 @@
+tigerProxy:
+
+servers:
+  - name: testReverseProxy
+    type: tigerProxy
+    version: 0.9.0-178
+    tigerProxyCfg:
+      serverPort: 9999
+      proxyCfg:
+        port: 10020

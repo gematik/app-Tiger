@@ -2,17 +2,15 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.proxy.configuration;
+package de.gematik.test.tiger.common.config.tigerProxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
-import lombok.*;
-
 import java.util.List;
+import lombok.*;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)

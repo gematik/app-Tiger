@@ -9,8 +9,8 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

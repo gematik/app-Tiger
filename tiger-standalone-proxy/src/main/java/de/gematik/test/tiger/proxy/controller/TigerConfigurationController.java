@@ -5,8 +5,7 @@
 package de.gematik.test.tiger.proxy.controller;
 
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.data.AddRouteDto;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.configuration;
 
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import lombok.Data;
 import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;

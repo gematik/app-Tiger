@@ -59,7 +59,7 @@ pipeline {
         }
         stage('Test') {
             steps {
-                mavenTest()
+                mavenTest("pom.xml", "-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=$no_proxy")
             }
         }
         stage('OwaspScan') {

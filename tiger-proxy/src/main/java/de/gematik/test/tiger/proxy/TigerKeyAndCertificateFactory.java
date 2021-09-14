@@ -5,8 +5,6 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;

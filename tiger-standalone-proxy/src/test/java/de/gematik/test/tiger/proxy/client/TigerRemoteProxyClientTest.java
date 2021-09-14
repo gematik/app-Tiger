@@ -5,8 +5,8 @@
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import kong.unirest.Config;
 import kong.unirest.Unirest;

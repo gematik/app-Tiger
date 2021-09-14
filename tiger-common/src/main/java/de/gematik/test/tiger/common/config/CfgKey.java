@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.testenvmgr.config;
+package de.gematik.test.tiger.common.config;
 
 import lombok.Data;
 

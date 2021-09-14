@@ -1,18 +1,25 @@
 tigerProxy:
+  forwardToProxy:
+    hostname: $SYSTEM
 
 servers:
-  - name: minijar-test2
+  - name: testWinstone3
     template: epa2-fdv
     source:
       - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
     startupTimeoutSec: 5
-    arguments:
-      - --httpPort=9207
-      - --webroot=.
-    healthcheck: http://127.0.0.1:9207
+    externalJarOptions:
+      workingDir: WinstoneHTTPServer
+      arguments:
+        - --httpPort=19207
+        - --webroot=.
+        - --control-port=19000
+      healthcheck: http://127.0.0.1:19207
 
   - name: reverseproxy2
     type: tigerProxy
+    source:
+      - nexus
     version: 0.9.0-178
     tigerProxyCfg:
       serverPort: 9999
@@ -21,6 +28,6 @@ servers:
         port: 10010
         proxyRoutes:
           - from: /
-            to: http://127.0.0.1:9207
+            to: http://127.0.0.1:19207
 
 

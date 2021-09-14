@@ -6,7 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 
 import java.security.Key;
 import java.util.List;

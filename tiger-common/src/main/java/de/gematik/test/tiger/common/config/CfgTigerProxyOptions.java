@@ -1,16 +1,10 @@
-package de.gematik.test.tiger.testenvmgr.config;
+package de.gematik.test.tiger.common.config;
 
-import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import lombok.Data;
 
 @Data
-public class CfgTigerProxy {
-
-    /**
-     * one of "nexus" or "mvn"
-     */
-    private String repo = "nexus";
+public class CfgTigerProxyOptions {
     private int serverPort = -1;
 
     /**
