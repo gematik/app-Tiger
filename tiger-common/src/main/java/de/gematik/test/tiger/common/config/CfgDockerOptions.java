@@ -11,13 +11,11 @@ public class CfgDockerOptions {
     private List<String> serviceHealthchecks = new ArrayList<>();
     /**
      * whether to start container with unmodified entrypoint, or whether to modify by adding pki and other stuff,
-     * rewriting the entypoint
+     * rewriting the entrypoint
      */
     private boolean proxied = true;
     /**
      * For docker type to trigger OneShotStartupStrategy
-     *
-     * @see org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy
      */
     private boolean oneShot = false;
     /**

@@ -35,6 +35,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.DockerComposeContainer;
@@ -77,7 +78,7 @@ public class DockerMgr {
             if (server.getDockerOptions().isProxied()) {
                 String[] startCmd = containerConfig.getCmd();
                 String[] entryPointCmd = containerConfig.getEntrypoint();
-                if (server.getDockerOptions().getEntryPoint() != null && !server.getDockerOptions().getEntryPoint().isEmpty()) {
+                if (StringUtils.isNotEmpty(server.getDockerOptions().getEntryPoint())) {
                     entryPointCmd = new String[]{server.getDockerOptions().getEntryPoint()};
                 }
                 // erezept hardcoded
