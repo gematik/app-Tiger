@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerBasicAuthConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
@@ -219,7 +220,8 @@ public class TigerProxy extends AbstractTigerProxy {
                 log.info("Tigerproxy has NO forward proxy configured!");
             } else {
                 log.info("Forward proxy is set to " +
-                    cfg.get().getType() + "://" + cfg.get().getProxyAddress().getHostName() + ":" + cfg.get().getProxyAddress().getPort());
+                    cfg.get().getType() + "://" + cfg.get().getProxyAddress().getHostName() + ":" + cfg.get()
+                    .getProxyAddress().getPort());
             }
         }
     }
@@ -291,6 +293,11 @@ public class TigerProxy extends AbstractTigerProxy {
                     if (port < 0) {
                         port = tigerRoute.getTo().startsWith("https://") ? 443 : 80;
                     }
+                    List<Header> headers = new ArrayList<>(List.of(new Header("Host", targetUri.getHost())));
+                    if (tigerRoute.getBasicAuth() != null) {
+                        headers.add(
+                            new Header("Authentication", tigerRoute.getBasicAuth().toAuthorizationHeaderValue()));
+                    }
                     return forwardOverriddenRequest(
                         req.withSocketAddress(
                             tigerRoute.getTo().startsWith("https://"),
@@ -298,7 +305,7 @@ public class TigerProxy extends AbstractTigerProxy {
                             port
                         ))
                         .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://"))
-                        .removeHeader("Host").withHeader("Host", targetUri.getHost())
+                        .removeHeader("Host").withHeaders(headers)
                         .withPath(patchPath(req.getPath().getValue(), tigerRoute.getFrom()));
                 },
                 buildExpectationCallback(tigerRoute, tigerRoute.getFrom())

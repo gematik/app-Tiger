@@ -81,7 +81,7 @@ public class TigerDirector {
 
         // set proxy to local tiger proxy for test suites
         if (tigerTestEnvMgr.getLocalTigerProxy() != null && tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
-            if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") == null) {
+            if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") != null) {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     Ansi.BOLD + Ansi.RED));
             } else {
