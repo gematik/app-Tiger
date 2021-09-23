@@ -13,6 +13,7 @@ import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyType;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
+import io.netty.util.internal.EmptyArrays;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.UriUtil;
@@ -22,9 +23,8 @@ import org.mockserver.matchers.TimeToLive;
 import org.mockserver.matchers.Times;
 import org.mockserver.mock.Expectation;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
-import org.mockserver.model.ExpectationId;
-import org.mockserver.model.Header;
-import org.mockserver.model.HttpResponse;
+import org.mockserver.mock.action.ExpectationForwardCallback;
+import org.mockserver.model.*;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
@@ -40,6 +40,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import static org.mockserver.model.Header.header;
+import static org.mockserver.model.HttpClassCallback.callback;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 
@@ -54,6 +56,8 @@ public class TigerProxy extends AbstractTigerProxy {
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
 
+        // TODO how can we specify cipher suites for netty?
+        //  buildSslContext();
         KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
             (mockServerLogger, isServerInstance) -> {
                 if (isServerInstance
@@ -279,37 +283,121 @@ public class TigerProxy extends AbstractTigerProxy {
         if (UriUtil.hasScheme(tigerRoute.getFrom())) {
             return buildForwardProxyRoute(tigerRoute);
         } else {
-            return buildReverseProxyRoute(tigerRoute);
+            try {
+                return buildReverseProxyRoute(tigerRoute);
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+            return null;
         }
     }
 
-    private Expectation[] buildReverseProxyRoute(TigerRoute tigerRoute) {
-        return mockServerClient.when(request()
+    private Expectation[] buildReverseProxyRoute(TigerRoute tigerRoute) throws URISyntaxException {
+        final URI targetUri = new URI(tigerRoute.getTo());
+        final int port;
+        if (targetUri.getPort() < 0) {
+            port = tigerRoute.getTo().startsWith("https://") ? 443 : 80;
+        } else {
+            port = targetUri.getPort();
+        }
+        List<Header> headers = new ArrayList<>(List.of(new Header("Host", targetUri.getHost())));
+        if (tigerRoute.getBasicAuth() != null) {
+            headers.add(
+                new Header("Authorization", tigerRoute.getBasicAuth().toAuthorizationHeaderValue()));
+        }
+        final HttpRequest req = request();
+        return mockServerClient.when(req
                 .withPath(tigerRoute.getFrom() + ".*"))
             .forward(
-                req -> {
-                    final URI targetUri = new URI(tigerRoute.getTo());
-                    int port = targetUri.getPort();
-                    if (port < 0) {
-                        port = tigerRoute.getTo().startsWith("https://") ? 443 : 80;
-                    }
-                    List<Header> headers = new ArrayList<>(List.of(new Header("Host", targetUri.getHost())));
-                    if (tigerRoute.getBasicAuth() != null) {
-                        headers.add(
-                            new Header("Authentication", tigerRoute.getBasicAuth().toAuthorizationHeaderValue()));
-                    }
-                    return forwardOverriddenRequest(
-                        req.withSocketAddress(
-                            tigerRoute.getTo().startsWith("https://"),
-                            targetUri.getHost(),
-                            port
-                        ))
-                        .getHttpRequest().withSecure(tigerRoute.getTo().startsWith("https://"))
-                        .removeHeader("Host").withHeaders(headers)
-                        .withPath(patchPath(req.getPath().getValue(), tigerRoute.getFrom()));
-                },
-                buildExpectationCallback(tigerRoute, tigerRoute.getFrom())
+                new RoutedForwardRequestExpectationForwardAndResponseCallback(tigerRoute)
+                /*new ExpectationForwardAndResponseCallback() {
+                        @Override
+                        public HttpRequest handle(HttpRequest httpRequest) {
+                            return httpRequest.withSocketAddress(
+                                    tigerRoute.getTo().startsWith("https://"),
+                                    targetUri.getHost(),
+                                    port
+                                ).withSecure(tigerRoute.getTo().startsWith("https://"))
+                                .removeHeader("Host").withHeaders(headers)
+                                .withPath(patchPath(httpRequest.getPath().getValue(), tigerRoute.getFrom()));
+                        }
+
+                         @Override
+                         public HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+                             if (!tigerRoute.isDisableRbelLogging()) {
+                                 try {
+                                     triggerListener(mockServerToRbelConverter.convertRequest(httpRequest, tigerRoute.getFrom()));
+                                     triggerListener(mockServerToRbelConverter.convertResponse(httpResponse, tigerRoute.getFrom()));
+                                 } catch (Exception e) {
+                                     log.error("RBel FAILED!", e);
+                                 }
+                             }
+                             return httpResponse;
+                         }
+                     }*/
             );
+    }
+
+    private class RoutedForwardRequestExpectationForwardAndResponseCallback implements ExpectationForwardAndResponseCallback {
+
+        private final TigerRoute route;
+        RoutedForwardRequestExpectationForwardAndResponseCallback(TigerRoute route) {
+            this.route = route;
+        }
+        @Override
+        public HttpRequest handle(HttpRequest httpRequest) throws Exception {
+            final URI targetUri = new URI(route.getTo());
+            final int port;
+            if (targetUri.getPort() < 0) {
+                port = route.getTo().startsWith("https://") ? 443 : 80;
+            } else {
+                port = targetUri.getPort();
+            }
+            List<Header> headers = new ArrayList<>(List.of(new Header("Host", targetUri.getHost())));
+            if (route.getBasicAuth() != null) {
+                headers.add(
+                    new Header("Authorization", route.getBasicAuth().toAuthorizationHeaderValue()));
+            }
+
+            return httpRequest.withSocketAddress(
+                    route.getTo().startsWith("https://"),
+                    targetUri.getHost(),
+                    port
+                ).withSecure(route.getTo().startsWith("https://"))
+                .removeHeader("Host").withHeaders(headers)
+                .withPath(patchPath(httpRequest.getPath().getValue(), route.getFrom()));
+        }
+
+        @Override
+        public HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+            if (!route.isDisableRbelLogging()) {
+                try {
+                    triggerListener(mockServerToRbelConverter.convertRequest(httpRequest, route.getFrom()));
+                    triggerListener(mockServerToRbelConverter.convertResponse(httpResponse, route.getFrom()));
+                } catch (Exception e) {
+                    log.error("RBel FAILED!", e);
+                }
+            }
+            String newBody = httpResponse.getBodyAsString()
+                .replaceAll("http[s|]*\\:\\/\\/kon.\\.e2e\\-test\\.gematik\\.solutions", "http://127.0.0.1:" + getTigerProxyConfiguration().getPort());
+            return httpResponse.withBody(newBody);
+        }
+    };
+
+    public static class TestExpectationForwardCallback implements ExpectationForwardAndResponseCallback {
+
+        @Override
+        public HttpRequest handle(HttpRequest httpRequest) {
+            return httpRequest.clone().removeHeader("Host")
+                .withHeader(header("Host", "kon1.e2e-test.gematik.solutions"))
+                .withHeader( new Header("Authentication", new TigerBasicAuthConfiguration("Konnektor1", "no2FjkGGqogu").toAuthorizationHeaderValue()))
+                .withSecure(true).withPath(patchPath(httpRequest.getPath().getValue(), "/"));
+        }
+
+        @Override
+        public HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+            return httpResponse;
+        }
     }
 
     private Expectation[] buildForwardProxyRoute(TigerRoute tigerRoute) {
@@ -318,10 +406,10 @@ public class TigerProxy extends AbstractTigerProxy {
                 .withSecure(tigerRoute.getFrom().startsWith("https://")))
             .forward(
                 req -> {
-                    req.replaceHeader(Header.header("Host", tigerRoute.getTo().split("://")[1]));
+                    req.replaceHeader(header("Host", tigerRoute.getTo().split("://")[1]));
                     if (tigerRoute.getBasicAuth() != null) {
                         req.replaceHeader(
-                            Header.header(
+                            header(
                                 "Authorization",
                                 tigerRoute.getBasicAuth().toAuthorizationHeaderValue()));
                     }
@@ -386,7 +474,15 @@ public class TigerProxy extends AbstractTigerProxy {
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, tmf.getTrustManagers(), null);
-
+            // TODO this SSLContext is NOT used by netty :(
+            List<String> suites = new ArrayList<String>(List.of(sslContext.getDefaultSSLParameters().getCipherSuites()));
+            if (!suites.contains("TLS_DHE_RSA_WITH_AES_128_CBC_SHA")) {
+                suites.add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA");
+            }
+            if (!suites.contains("TLS_DHE_RSA_WITH_AES_256_CBC_SHA")) {
+                suites.add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
+            }
+            sslContext.getDefaultSSLParameters().setCipherSuites(suites.toArray(EmptyArrays.EMPTY_STRINGS));
             return sslContext;
         } catch (Exception e) {
             throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy", e);

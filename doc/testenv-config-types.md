@@ -33,9 +33,9 @@ Attribtue in Klammern (Attribute: Wert) sind optional und haben einen Defaultwer
       (serviceHealthchecks: IGNORE for docker nodes)
       (proxied: true ) - Flag ob der Enrtypoint des zu startenden Container angepasst werden soll um TigerProxy Zertifikate in das OS des Containers einzuspielen und einen docker.host.internal Eintrag zu /etc/hosts einzufügen
       (oneShot: false ) - Flag ob eine one shot Strategie für den Health check des Containers verwendet werden soll 
-      (entryPoint: EMPTY ) wenn gesetzt überschreibt dieser Eintrag den Entrypoint des zu startenden Containers
+      (entryPoint: ein Container Kommando ) wenn gesetzt überschreibt dieser Eintrag den Entrypoint des zu startenden Containers
     
-    (pkiKeys: [] ) Liste von Zertifikaten und Schlüsseln die dem RbelLogger des lokalen Tiger proxies zur Verfügung gestellt werden sollen 
+    (pkiKeys: [] ) Liste von Zertifikaten und Schlüsseln die dem RbelLogger des lokalen Tiger proxies zur Verfügung gestellt werden sollen.
     
     (environment: [] ) Liste von Umgebungsvariablen die an den zu startenden Container weitergeleitet werden sollen. Jeder Eintrag hat die Form: KEY=VALUE
     
@@ -43,6 +43,7 @@ Attribtue in Klammern (Attribute: Wert) sind optional und haben einen Defaultwer
     
     (exports: [] ) Liste von System Properties, welche in allen folgenden Knoten gesetzt werden. Jeder Eintrag hat die Form: KEY=VALUE
 ```
+Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">hier</a>
 
 ## Tiger Proxy Knoten
 
@@ -77,6 +78,7 @@ Attribtue in Klammern (Attribute: Wert) sind optional und haben einen Defaultwer
     
     (exports: [] ) Liste von System Properties, welche in allen folgenden Knoten gesetzt werden. Jeder Eintrag hat die Form: KEY=VALUE
 ```
+Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">hier</a>
 
 ## Externe URL Knoten
 
@@ -100,6 +102,7 @@ Attribtue in Klammern (Attribute: Wert) sind optional und haben einen Defaultwer
     
     (exports: [] ) Liste von System Properties, welche in allen folgenden Knoten gesetzt werden. Jeder Eintrag hat die Form: KEY=VALUE
 ```
+Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">hier</a>
 
 ## Externer Jar Knoten
 
@@ -126,6 +129,7 @@ Attribtue in Klammern (Attribute: Wert) sind optional und haben einen Defaultwer
     
     (exports: [] ) Liste von System Properties, welche in allen folgenden Knoten gesetzt werden. Jeder Eintrag hat die Form: KEY=VALUE
 ```
+Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">hier</a>
 
 ## Docker compose Knoten
 
@@ -163,7 +167,7 @@ Externer Url Knoten:
 Externer Jar Knoten:
 * options Liste
 
-### pkiKeys Einträge
+### <a id="pkiKeys Eintraege"></a>pkiKeys Einträge
 
 Die PkiKeys Liste beinhaltet eine Liste von Zertifikaten und Schlüsseln die folgendermaßen definiert werden können:
 

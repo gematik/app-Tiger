@@ -19,14 +19,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 public class TigerPkiIdentityLoader {
 
     static {
-        // BouncyCastleJsseProvider bcJsseProv = new BouncyCastleJsseProvider();
-        // TODO Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
+        BouncyCastleJsseProvider bcJsseProv = new BouncyCastleJsseProvider();
         BouncyCastleProvider bcprov = new BouncyCastleProvider();
-        Security.insertProviderAt(bcprov, 2);
+        Security.addProvider(bcprov);
+        Security.addProvider(bcJsseProv);
     }
 
     /**
