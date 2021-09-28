@@ -67,7 +67,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
 
-        <version.rbellogger>0.11.0</version.rbellogger>
+        <version.rbellogger>0.12.0-131</version.rbellogger>
         <version.cucumber>6.10.4</version.cucumber>
         <version.serenity.core>2.4.34</version.serenity.core>
         <version.serenity.cucumber.6>2.4.34</version.serenity.cucumber.6>
