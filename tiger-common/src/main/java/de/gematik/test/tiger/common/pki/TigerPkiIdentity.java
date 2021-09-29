@@ -36,4 +36,19 @@ public class TigerPkiIdentity extends RbelPkiIdentity {
     public X509Certificate[] certificateChainAsArray() {
         return certificateChain.toArray(new X509Certificate[certificateChain.size()]);
     }
+
+    public boolean hasValidChainWithRootCa() {
+        if (getCertificate() == null) {
+            return false;
+        }
+        X509Certificate currentPosition = getCertificate();
+        for (X509Certificate nextCertificate : getCertificateChain()) {
+            if (!currentPosition.getIssuerDN().equals(nextCertificate.getSubjectDN())) {
+                return false;
+            }
+            currentPosition = nextCertificate;
+        }
+
+        return currentPosition.getSubjectDN().equals(currentPosition.getIssuerDN());
+    }
 }

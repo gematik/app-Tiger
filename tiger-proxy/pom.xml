@@ -104,12 +104,12 @@
         <dependency>
             <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-netty</artifactId>
-            <version>5.11.4</version>
+            <version>${version.mockserver}</version>
         </dependency>
         <dependency>
             <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-junit-rule</artifactId>
-            <version>5.11.4</version>
+            <version>${version.mockserver}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>

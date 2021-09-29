@@ -81,6 +81,7 @@
         <version.junit5>5.7.1</version.junit5>
         <encoding>UTF-8</encoding>
         <version.lombok>1.18.18</version.lombok>
+        <version.mockserver>5.11.6</version.mockserver>
 
         <sonar.coverage.jacoco.xmlReportPaths>${project.reporting.outputDirectory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
