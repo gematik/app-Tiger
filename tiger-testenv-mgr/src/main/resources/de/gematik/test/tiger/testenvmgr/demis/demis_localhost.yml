@@ -1,0 +1,309 @@
+# Copyright (c) 2021 gematik GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+###################################################
+# General Service Definition
+###################################################
+
+version: "3.7"
+
+###################################################
+# Definition of common settings across services
+###################################################
+
+# Common Service Properties
+x-service-setup: &service-setup-ref
+  restart: always
+
+# Common Volume Properties
+x-volume-config: &volume-setup-ref
+  volumes:
+    - demis-config-volume:/app/config:rw
+
+# Common Environment Configuration Properties
+x-env-config: &environment-config-ref
+  CONFIGURATION_PATH: /app/config
+
+# Common Environment Timezone Entry
+x-environment-timezone: &environment-timezone-ref
+  TZ: Europe/Berlin
+
+# Common Health Check Properties
+x-healthcheck-config: &healthcheck-ref
+  interval: 15s
+  timeout: 10s
+  retries: 20
+  start_period: 30s
+
+###################################################
+# Definition of services
+###################################################
+services:
+
+  # DEMIS Configuration Files - The image is terminated immediately, it serves as data container
+  demis-config-data:
+    image: gstopdr1.top.local/demis/configuration-localhost:latest
+    #image: demis-config:local
+    restart: "no"
+    <<: *volume-setup-ref
+
+  keycloak:
+    image: gstopdr1.top.local/demis/keycloak:1.0.2-configured-dev
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9081:8080"
+      - "9082:8443"
+    environment:
+      - TZ=Europe/Berlin
+      - PROXY_ADDRESS_FORWARDING=true
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=EGK13fowdOc8nO2GFWoF
+      - ROOT_LOGLEVEL=INFO
+      - KEYCLOAK_LOGLEVEL=INFO
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail http://localhost:8080/auth || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 300
+    networks:
+      demis-network:
+        aliases:
+          - demis-keycloak
+
+  postgresDemis:
+    image: gstopdr1.top.local/demis/postgres:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    environment:
+      - TZ=Europe/Berlin
+      - POSTGRES_PASSWORD=demis
+    networks:
+      demis-network:
+        aliases:
+          - demis-postgres
+    #    dns_search: .
+    restart: always
+
+  postgresui:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "9180:80"
+    environment:
+      - TZ=Europe/Berlin
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+      - PGADMIN_DEFAULT_EMAIL=user@domain.com
+    networks:
+      demis-network:
+        aliases:
+          - demis-postgres-ui
+    #    dns_search: .
+    restart: always
+
+  nginx:
+    image: gstopdr1.top.local/demis/nginx:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "7080:80"
+      - "7443:443"
+    environment:
+      <<: *environment-timezone-ref
+    depends_on:
+      - notification-api
+      - pseudonymization-service
+      - postgresDemis
+      - keycloak
+    networks:
+      demis-network:
+        aliases:
+          - demis.gematik.de
+          - demis-nginx
+    #    dns_search: .
+    restart: always
+
+  storage-service:
+    image: gstopdr1.top.local/demis/storage:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9181:8080"
+    environment:
+      <<: *environment-timezone-ref
+    depends_on:
+      - keycloak
+      - postgresDemis
+    networks:
+      demis-network:
+        aliases:
+          - demis-storage-service
+    #    dns_search: .
+    restart: always
+
+  doublette-detection-services:
+    image: gstopdr1.top.local/demis/doublette-detection:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9182:8080"
+    environment:
+      <<: *environment-timezone-ref
+    depends_on:
+      - keycloak
+      - postgresDemis
+    networks:
+      demis-network:
+        aliases:
+          - demis-doublette-detection-service
+    #    dns_search: .
+    restart: always
+
+
+  pseudonymization-service:
+    image: gstopdr1.top.local/demis/pseudonymization:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "7771:7771"
+      - "7663:7663"
+      - "6380:6380"
+      - "7665:7665"
+    environment:
+      <<: *environment-timezone-ref
+    depends_on:
+      - keycloak
+      - postgresDemis
+    networks:
+      demis-network:
+        aliases:
+          - demis-pseudonymization-service
+    #    dns_search: .
+    restart: always
+
+  notification-clearing-api:
+    image: gstopdr1.top.local/demis/notification-clearing-api:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9070:8080"
+    environment:
+      <<: *environment-timezone-ref
+    depends_on:
+      - keycloak
+      - postgresDemis
+    networks:
+      demis-network:
+        aliases:
+          - demis-notification-clearing-api
+    #    dns_search: .
+    restart: always
+
+  notification-api:
+    image: gstopdr1.top.local/demis/notification-api:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9080:8080"
+    environment:
+      <<: *environment-timezone-ref
+    depends_on:
+      - keycloak
+      - postgresDemis
+    networks:
+      demis-network:
+        aliases:
+          - demis-webservices
+    #    dns_search: .
+    restart: always
+
+  pdf-generation-service:
+    image: gstopdr1.top.local/demis/pdf-generation:1.8.2
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9074:8080"
+    depends_on:
+      - keycloak
+      - postgresDemis
+      - demis-config-data
+    networks:
+      demis-network:
+        aliases:
+          - demis-pdf-generation-service
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+
+
+  profile-server:
+    image: gstopdr1.top.local/demis/profile-server:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "8099:8080"
+    depends_on:
+      - keycloak
+      - postgresDemis
+      - demis-config-data
+    networks:
+      - demis-network
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+
+  notification-portal:
+    image: gstopdr1.top.local/demis/notification-portal:latest-local
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9041:8080"
+    depends_on:
+      - keycloak
+      - postgresDemis
+      - demis-config-data
+    networks:
+      demis-network:
+        aliases:
+          - demis-notification-portal
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+
+  notification-gateway:
+    image: gstopdr1.top.local/demis/notification-gateway:latest
+    <<: *service-setup-ref
+    <<: *volume-setup-ref
+    ports:
+      - "9042:8080"
+    depends_on:
+      - keycloak
+      - postgresDemis
+      - demis-config-data
+    networks:
+      demis-network:
+        aliases:
+          - demis-notification-gateway
+    environment:
+      <<: *environment-config-ref
+      <<: *environment-timezone-ref
+
+
+# Network definition
+networks:
+  demis-network:
+#    name: demis-network
+
+# Volume definition
+volumes:
+  demis-config-volume:

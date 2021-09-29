@@ -14,7 +14,6 @@ servers:
     type: docker
     source:
       - idp-server
-    version: 0.1-SNAPSHOT
     active: false
 
   - name: idp-rise-tu-manual

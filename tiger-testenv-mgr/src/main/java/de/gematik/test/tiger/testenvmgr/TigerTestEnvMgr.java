@@ -262,7 +262,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         assertCfgPropertySet(server, "name");
         assertCfgPropertySet(server, "type");
 
-        if (type != ServerType.EXTERNALJAR && type != ServerType.EXTERNALURL) {
+        if (type != ServerType.EXTERNALJAR && type != ServerType.EXTERNALURL && type != ServerType.DOCKER_COMPOSE) {
             assertCfgPropertySet(server, "version");
         }
 

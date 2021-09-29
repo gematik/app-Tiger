@@ -25,6 +25,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -337,7 +338,8 @@ public class TestTigerTestEnvMgr {
     }
 
 
-    //@Test
+    @Test
+    @Disabled("Only for local testing as CI tests would take too long for this test method")
     public void testCreateEpa2() throws InterruptedException {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/epa.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
@@ -345,7 +347,17 @@ public class TestTigerTestEnvMgr {
         Thread.sleep(200000);
     }
 
-    //@Test
+    @Test
+    @Disabled("Only for local testing as CI tests would take too long for this test method")
+    public void testCreateDemis() throws InterruptedException {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/testDemis.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        envMgr.setUpEnvironment();
+        Thread.sleep(20000000);
+    }
+
+    @Test
+    @Disabled("Only for local testing as CI tests would take too long for this test method")
     public void testCreateEpa2FDV() throws InterruptedException {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/epa-fdv.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();

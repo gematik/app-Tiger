@@ -132,8 +132,9 @@ public class DockerMgr {
             containers.put(server.getName(), container);
             final Map<Integer, Integer> ports = new HashMap<>();
             // TODO for now we assume ports are bound only to one other port on the docker container
-            container.getContainerInfo().getNetworkSettings().getPorts().getBindings()
-                .forEach((key, value) -> ports.put(key.getPort(), Integer.valueOf(value[0].getHostPortSpec())));
+            container.getContainerInfo().getNetworkSettings().getPorts().getBindings().entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .forEach(entry -> ports.put(entry.getKey().getPort(), Integer.valueOf(entry.getValue()[0].getHostPortSpec())));
             server.getDockerOptions().setPorts(ports);
 
 

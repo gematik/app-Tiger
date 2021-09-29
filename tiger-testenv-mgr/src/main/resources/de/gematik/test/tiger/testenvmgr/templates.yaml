@@ -156,6 +156,21 @@ templates:
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
+  # Latest DEMIS modules as docker composition
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+  - name: demis
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
+    startupTimeoutSec: 180
+    dockerOptions:
+      serviceHealthchecks:
+        - http://notification-gateway:9042
+        - http://notification-portal:9041/welcome
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
   # FdV simulator as external jar from Nexus
   #
   # ----------------------------------------------------------------------------------------------------------------------

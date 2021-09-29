@@ -12,6 +12,7 @@ import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,6 @@ public class TigerDirector {
 
     private static boolean initialized = false;
 
-    @SneakyThrows
     public static synchronized void beforeTestRun() {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.warn(Ansi.BOLD + Ansi.RED
@@ -61,9 +61,13 @@ public class TigerDirector {
         }
 
         if (OsEnvironment.getAsString("TIGER_NOLOGO") == null) {
-            log.info("\n" + IOUtils.toString(
-                Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
-                StandardCharsets.UTF_8));
+            try {
+                log.info("\n" + IOUtils.toString(
+                    Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
+                    StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new TigerStartupException("Unable to read tiger logo!");
+            }
         }
         log.info("\n" + Banner.toBannerStr("READING TEST CONFIG...", Ansi.BOLD + Ansi.BLUE));
         // String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
