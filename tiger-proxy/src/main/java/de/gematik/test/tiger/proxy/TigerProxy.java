@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerBasicAuthConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -116,6 +117,7 @@ public class TigerProxy extends AbstractTigerProxy {
                             triggerListener(mockServerToRbelConverter.convertResponse(resp,
                                 req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":"
                                     + req.getSocketAddress().getPort()));
+                            manageRbelBufferSize();
                         } catch (Exception e) {
                             log.error("RBel FAILED!", e);
                         }
@@ -428,12 +430,33 @@ public class TigerProxy extends AbstractTigerProxy {
                 try {
                     triggerListener(mockServerToRbelConverter.convertRequest(req, protocolAndHost));
                     triggerListener(mockServerToRbelConverter.convertResponse(resp, protocolAndHost));
+                    manageRbelBufferSize();
                 } catch (Exception e) {
                     log.error("RBel FAILED!", e);
                 }
             }
             return resp;
         };
+    }
+
+    private void manageRbelBufferSize() {
+        while (rbelBufferIsExceedingMaxSize()) {
+            log.info("Exceeded buffer size, dropping oldest message in history");
+            getRbelLogger().getMessageHistory().remove(0);
+        }
+    }
+
+    private boolean rbelBufferIsExceedingMaxSize() {
+        final long bufferSize = getRbelLogger().getMessageHistory().stream()
+            .map(RbelElement::getRawContent)
+            .mapToLong(ar -> ar.length)
+            .sum();
+        final boolean exceedingLimit = bufferSize > (getTigerProxyConfiguration().getRbelBufferSizeInMb() * 1024 * 1024);
+        if (exceedingLimit) {
+            log.info("Buffersize is {} Mb which exceeds the limit of {} Mb",
+                bufferSize / (1024 ^ 2), getTigerProxyConfiguration().getRbelBufferSizeInMb());
+        }
+        return exceedingLimit;
     }
 
     @Override
@@ -474,15 +497,6 @@ public class TigerProxy extends AbstractTigerProxy {
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, tmf.getTrustManagers(), null);
-            // TODO this SSLContext is NOT used by netty :(
-            List<String> suites = new ArrayList<String>(List.of(sslContext.getDefaultSSLParameters().getCipherSuites()));
-            if (!suites.contains("TLS_DHE_RSA_WITH_AES_128_CBC_SHA")) {
-                suites.add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA");
-            }
-            if (!suites.contains("TLS_DHE_RSA_WITH_AES_256_CBC_SHA")) {
-                suites.add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
-            }
-            sslContext.getDefaultSSLParameters().setCipherSuites(suites.toArray(EmptyArrays.EMPTY_STRINGS));
             return sslContext;
         } catch (Exception e) {
             throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy", e);

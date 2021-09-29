@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
@@ -13,6 +14,7 @@ import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.ReflectionUtils;
 
 import java.security.Key;
 import java.util.ArrayList;
@@ -29,6 +31,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         rbelLogger = buildRbelLoggerConfiguration(configuration)
             .constructRbelLogger();
+        if (configuration.isDisableRbelParsing()) {
+            rbelLogger.getRbelConverter().removeAllConverterPlugins();
+        }
         this.tigerProxyConfiguration = configuration;
     }
 
