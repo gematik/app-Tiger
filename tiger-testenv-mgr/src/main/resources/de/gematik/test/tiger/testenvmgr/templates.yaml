@@ -5,7 +5,6 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
   - name: idp-ref
-    product: IDP_REF
     type: docker
     source:
       - gstopdr1.top.local/idp/idp-server
@@ -80,13 +79,13 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
   - name: idp-rise-ru
-    product: IDP_RISE
     type: externalUrl
     source:
       - https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     # version: N/A
     startupTimeoutSec: 15
-    healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+    externalJarOptions:
+      healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
       - GEMATIK_TESTCONFIG=rise-ru
@@ -97,12 +96,12 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
   - name: idp-rise-tu
-    product: IDP_RISE
     type: externalUrl
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
     startupTimeoutSec: 15
-    healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+    externalJarOptions:
+      healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
       - GEMATIK_TESTCONFIG=rise-tu
@@ -113,7 +112,6 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
   - name: erzpt-fd-ref
-    product: ERZP_FD_REF
     type: docker
     source:
       - gstopdr1.top.local/erezept/ref-erx-fd-server
@@ -146,15 +144,30 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
   - name: epa2
-    product: EPA2_REF
     type: compose
     source:
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
     startupTimeoutSec: 180
-    serviceHealthchecks:
-      - http://epa-gateway:8001/
-      - http://epa-docv-fdv:8005/
+    dockerOptions:
+      serviceHealthchecks:
+        - http://epa-gateway:8001/
+        - http://epa-docv-fdv:8005/
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # Latest DEMIS modules as docker composition
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+  - name: demis
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
+    startupTimeoutSec: 180
+    dockerOptions:
+      serviceHealthchecks:
+        - http://notification-gateway:9042
+        - http://notification-portal:9041/welcome
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -163,24 +176,24 @@ templates:
   # ----------------------------------------------------------------------------------------------------------------------
 
   - name: epa2-fdv
-    product: EPA2_FDV_REF
     type: externalJar
     source:
       - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-fdv/2.0.0-124/epa-fdv-2.0.0-124.jar
-    # working directory of the java process to start
-    workingDir: FdVPortable
-    # options to the java call
-    options:
-      - -Djdk.internal.httpclient.disableHostnameVerification
-      - -Dhttp.proxyHost=${PROXYHOST}
-      - -Dhttp.proxyPort=${PROXYPORT}
-      - -Dfile.encoding=UTF-8
-    # programm arguments
-    arguments:
-      - --spring.profiles.active=instance2local
-      - --aktor.rproxySGD2.use=false
     startupTimeoutSec: 60
-    healthcheck: https://127.0.0.1:9107
+    # working directory of the java process to start
+    externalJarOptions:
+      workingDir: FdVPortable
+      # options to the java call
+      options:
+        - -Djdk.internal.httpclient.disableHostnameVerification
+        - -Dhttp.proxyHost=${PROXYHOST}
+        - -Dhttp.proxyPort=${PROXYPORT}
+        - -Dfile.encoding=UTF-8
+      # programm arguments
+      arguments:
+        - --spring.profiles.active=instance2local
+        - --aktor.rproxySGD2.use=false
+      healthcheck: https://127.0.0.1:9107
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -189,13 +202,13 @@ templates:
   # ----------------------------------------------------------------------------------------------------------------------
 
   - name: kon-sim
-    product: KON_SIM
     type: externalJar
     source:
       - local://konnektor-simulator-2.1.7-SNAPSHOT.jar
-    # working directory of the java process to start
-    workingDir: kon-sim
-    # options to the java call
     startupTimeoutSec: 30
-    healthcheck: https://127.0.0.1:9106
+    externalJarOptions:
+      # working directory of the java process to start
+      workingDir: kon-sim
+      # options to the java call
+      healthcheck: https://127.0.0.1:9106
 

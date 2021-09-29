@@ -1,0 +1,5 @@
+tigerProxy:
+
+servers:
+  - name: testDemis
+    template: demis

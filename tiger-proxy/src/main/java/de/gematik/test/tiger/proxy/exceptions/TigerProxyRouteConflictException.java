@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.proxy.exceptions;
 
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.Getter;
 
 @Getter

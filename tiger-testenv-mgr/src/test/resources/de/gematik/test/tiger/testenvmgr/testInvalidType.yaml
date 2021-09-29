@@ -1,0 +1,9 @@
+tigerProxy:
+
+servers:
+  - name: invalid
+    template: idp-ref
+    type: NOTEXISTING
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: true

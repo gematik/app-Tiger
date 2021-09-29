@@ -1,0 +1,17 @@
+tigerProxy:
+  forwardToProxy:
+    hostname: $SYSTEM
+
+servers:
+  - name: testExternalJarMVP
+    type: externalJar
+    source:
+      - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
+    startupTimeoutSec: 8
+    externalJarOptions:
+      workingDir: WinstoneHTTPServer
+      arguments:
+        - --httpPort=19307
+        - --webroot=.
+        - --control-port=19000
+      healthcheck: http://127.0.0.1:19307

@@ -27,7 +27,11 @@ import org.apache.commons.lang3.StringUtils;
 @Getter
 public class Step {
 
-    public static final List<String> KEYWORDS = List.of("When", "Given", "Then", "And", "But", "Examples");
+    public static final List<String> KEYWORDS = List.of(
+        "When", "Given", "Then", "And", "But", "Examples",
+        "Wenn", "Angenommen", "Gegeben sei", "Gegeben seien",
+        "Dann", "Und", "Aber", "Beispiele"
+    );
 
     private final String keyword;
     private final List<String> lines;
@@ -42,7 +46,7 @@ public class Step {
     }
 
     public static String getKeyword(final String line) {
-        if (line.startsWith("Example")) {
+        if (line.startsWith("Example") || line.startsWith("Beispiele")) {
             final int colon = line.indexOf(":");
             if (colon != -1) {
                 return line.substring(0, colon).replace(" ", "").replace("\t", "");

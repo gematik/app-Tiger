@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.configuration;
+package de.gematik.test.tiger.common.config.tigerProxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
-import lombok.*;
-
 import java.util.List;
+import lombok.*;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
 @Builder
 @ToString
+@JsonInclude(Include.NON_NULL)
 public class TigerProxyConfiguration {
 
     private List<TigerRoute> proxyRoutes;
@@ -53,8 +54,15 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private int connectionTimeoutInSeconds = 10;
     @Builder.Default
-    private int bufferSizeInKb = 1024;
+    private int stompClientBufferSizeInMb = 1;
+    @Builder.Default
+    private int perMessageBufferSizeInMb = 100;
+    @Builder.Default
+    private int rbelBufferSizeInMb = 1024;
+    @Builder.Default
+    private boolean disableRbelParsing = false;
 
+    @JsonIgnore
     public Integer[] getPortAsArray() {
         if (port == null) {
             return null;

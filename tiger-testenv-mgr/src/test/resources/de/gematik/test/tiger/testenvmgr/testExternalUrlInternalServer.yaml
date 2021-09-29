@@ -1,0 +1,9 @@
+tigerProxy:
+
+servers:
+  - name: testExternalJarInternalServer
+    type: externalUrl
+    source:
+      - https://build.top.local
+    externalJarOptions:
+      healthcheck: https://build.top.local

@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.proxy.data;
+package de.gematik.test.tiger.common.config.tigerProxy;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

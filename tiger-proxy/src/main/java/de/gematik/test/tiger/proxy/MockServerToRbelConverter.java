@@ -19,6 +19,9 @@ package de.gematik.test.tiger.proxy;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -42,17 +45,15 @@ public class MockServerToRbelConverter {
     public RbelElement convertResponse(HttpResponse response, String protocolAndHost) {
         log.trace("Converting response {}, headers {}, body {}", response,
             response.getHeaders(), response.getBodyAsString());
-        return rbelConverter
-            .parseMessage(responseToRbelMessage(response),
-                convertUri(protocolAndHost), null);
+        return rbelConverter.parseMessage(responseToRbelMessage(response),
+            convertUri(protocolAndHost), null);
     }
 
     public RbelElement convertRequest(HttpRequest request, String protocolAndHost) {
         log.trace("Converting request {}, headers {}, body {}", request,
             request.getHeaders(), request.getBodyAsString());
-        return rbelConverter
-            .parseMessage(requestToRbelMessage(request),
-                null, convertUri(protocolAndHost));
+        return rbelConverter.parseMessage(requestToRbelMessage(request),
+            null, convertUri(protocolAndHost));
     }
 
     private RbelHostname convertUri(String protocolAndHost) {
@@ -68,28 +69,58 @@ public class MockServerToRbelConverter {
         }
     }
 
-    private byte[] responseToRbelMessage(final HttpResponse response) {
+    private RbelElement responseToRbelMessage(final HttpResponse response) {
+        final byte[] httpMessage = responseToRawMessage(response);
+        final RbelElement element = rbelConverter.convertElement(httpMessage, null);
+        if (!element.hasFacet(RbelHttpResponseFacet.class)) {
+            element.addFacet(RbelHttpResponseFacet.builder()
+                .responseCode(RbelElement.builder()
+                    .parentNode(element)
+                    .rawContent(response.getStatusCode().toString().getBytes())
+                    .build())
+                .build());
+        }
+
+        return element;
+    }
+
+    private RbelElement requestToRbelMessage(final HttpRequest request) {
+        final byte[] httpMessage = requestToRawMessage(request);
+        final RbelElement element = rbelConverter.convertElement(httpMessage, null);
+        if (!element.hasFacet(RbelHttpRequestFacet.class)) {
+            element.addFacet(RbelHttpRequestFacet.builder()
+                .path(RbelElement.wrap(element, request.getPath().getValue()))
+                .method(RbelElement.wrap(element, request.getMethod().getValue()))
+                .build());
+        }
+
+        return element;
+    }
+
+    private byte[] requestToRawMessage(HttpRequest request) {
+        byte[] httpRequestHeader = (request.getMethod().toString() + " " + getRequestUrl(request) + " HTTP/1.1\r\n"
+            + formatHeaderList(request.getHeaderList())
+            + "\r\n\r\n").getBytes();
+
+        final byte[] httpMessage = Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
+        return httpMessage;
+    }
+
+    private byte[] responseToRawMessage(HttpResponse response) {
         byte[] httpResponseHeader = ("HTTP/1.1 " + response.getStatusCode() + " "
             + (response.getReasonPhrase() != null ? response.getReasonPhrase() : "") + "\r\n"
             + formatHeaderList(response.getHeaderList())
             + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII);
 
-        return Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
+        final byte[] httpMessage = Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
+        return httpMessage;
     }
 
     private String formatHeaderList(List<Header> headerList) {
         return headerList.stream().map(h -> h.getValues().stream()
-            .map(value -> h.getName().getValue() + ": " + value)
-            .collect(Collectors.joining("\n")))
+                .map(value -> h.getName().getValue() + ": " + value)
+                .collect(Collectors.joining("\n")))
             .collect(Collectors.joining("\r\n"));
-    }
-
-    private byte[] requestToRbelMessage(final HttpRequest request) {
-        byte[] httpRequestHeader = (request.getMethod().toString() + " " + getRequestUrl(request) + " HTTP/1.1\r\n"
-            + formatHeaderList(request.getHeaderList())
-            + "\r\n\r\n").getBytes();
-
-        return Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
     }
 
     private String getRequestUrl(HttpRequest request) {

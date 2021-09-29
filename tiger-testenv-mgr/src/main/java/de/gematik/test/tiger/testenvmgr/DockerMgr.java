@@ -19,6 +19,7 @@ package de.gematik.test.tiger.testenvmgr;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
 import de.gematik.test.tiger.common.OsEnvironment;
@@ -46,6 +47,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.DockerComposeContainer;
@@ -70,7 +72,7 @@ public class DockerMgr {
 
     @SuppressWarnings("unused")
     public void startContainer(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
-        var imageName = server.getSource().get(0);
+        var imageName = envmgr == null ? server.getSource().get(0) : envmgr.replaceSysPropsInString(server.getSource().get(0));
         if (server.getVersion() != null) {
             imageName += ":" + server.getVersion();
         }
@@ -85,12 +87,11 @@ public class DockerMgr {
             if (containerConfig == null) {
                 throw new TigerTestEnvException("Docker image '" + imageName + "' has no configuration info!");
             }
-
-            if (server.isProxied()) {
+            if (server.getDockerOptions().isProxied()) {
                 String[] startCmd = containerConfig.getCmd();
                 String[] entryPointCmd = containerConfig.getEntrypoint();
-                if (server.getEntryPoint() != null && !server.getEntryPoint().isEmpty()) {
-                    entryPointCmd = new String[]{server.getEntryPoint()};
+                if (StringUtils.isNotEmpty(server.getDockerOptions().getEntryPoint())) {
+                    entryPointCmd = new String[]{server.getDockerOptions().getEntryPoint()};
                 }
                 // erezept hardcoded
                 if (entryPointCmd != null && entryPointCmd[0].equals("/bin/sh") && entryPointCmd[1].equals("-c")) {
@@ -98,6 +99,11 @@ public class DockerMgr {
                         "'" + entryPointCmd[2] + "'"};
                 }
                 File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
+                if (!tmpScriptFolder.exists()) {
+                    if (!tmpScriptFolder.mkdirs()) {
+                        throw new TigerTestEnvException("Unable to create temp folder for modified startup script for server " + server.getName());
+                    }
+                }
                 final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
                 String containerScriptPath = containerConfig.getWorkingDir() + "/" + scriptName;
                 container.withCopyFileToContainer(
@@ -126,7 +132,8 @@ public class DockerMgr {
                             () -> new TigerTestEnvException("Unknown reference to testenv set '" + envsetName));
                     addEnvVarsToContainer(container, envVars);
                 });
-            if (server.isOneShot()) {
+
+            if (server.getDockerOptions().isOneShot()) {
                 container.withStartupCheckStrategy(new OneShotStartupCheckStrategy());
             }
             container.start();
@@ -137,9 +144,10 @@ public class DockerMgr {
             containers.put(server.getName(), container);
             final Map<Integer, Integer> ports = new HashMap<>();
             // TODO for now we assume ports are bound only to one other port on the docker container
-            container.getContainerInfo().getNetworkSettings().getPorts().getBindings()
-                .forEach((key, value) -> ports.put(key.getPort(), Integer.valueOf(value[0].getHostPortSpec())));
-            server.setPorts(ports);
+            container.getContainerInfo().getNetworkSettings().getPorts().getBindings().entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .forEach(entry -> ports.put(entry.getKey().getPort(), Integer.valueOf(entry.getValue()[0].getHostPortSpec())));
+            server.getDockerOptions().setPorts(ports);
 
 
         } catch (final DockerException de) {
@@ -147,7 +155,7 @@ public class DockerMgr {
         }
     }
 
-    public void startComposition(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
+    public void startComposition(final CfgServer server) {
         var folder = Paths.get("target", "tiger-testenv-mgr", server.getName()).toFile();
         if (!folder.exists() && !folder.mkdirs()) {
             throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
@@ -175,7 +183,7 @@ public class DockerMgr {
         DockerComposeContainer composition = new DockerComposeContainer(composeFiles) //NOSONAR
             .withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)));
         try {
-            for (String check : server.getServiceHealthchecks()) {
+            for (String check : server.getDockerOptions().getServiceHealthchecks()) {
                 try {
                     URL serviceUrl = new URL(check);
                     WaitStrategy waitStrategy = (serviceUrl.getProtocol().equals("http") ?
@@ -214,7 +222,7 @@ public class DockerMgr {
             .exec(new ResultCallback.Adapter<PullResponseItem>() {
                 @Override
                 public void onNext(PullResponseItem item) {
-                    log.debug(item.getStatus() + " " + (item.getProgress() != null ? item.getProgress() : ""));
+                    log.debug(item.getStatus() + " " + (item.getProgressDetail() != null ? item.getProgressDetail().getCurrent() : ""));
                 }
 
                 @Override
@@ -263,7 +271,9 @@ public class DockerMgr {
                 StandardCharsets.UTF_8);
 
             File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
-            tmpScriptFolder.mkdirs();
+            if (!tmpScriptFolder.exists() && !tmpScriptFolder.mkdirs()) {
+                throw new TigerTestEnvException("Unable to create script folder " + tmpScriptFolder.getAbsolutePath());
+            }
             final var scriptName = "__tigerStart_" + server.getName() + ".sh";
             var content = "#!/bin/sh -x\nenv\n"
                 // append proxy and other certs (for rise idp)
@@ -296,7 +306,7 @@ public class DockerMgr {
                 // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
 
                 // change to working dir and execute former entrypoint/startcmd
-            content += extractWorkingDirectory(containerConfig)
+            content += getContainerWorkingDirectory(containerConfig)
                 + String.join(" ", entryPointCmd).replace("\t", " ")
                 + " " + String.join(" ", startCmd).replace("\t", " ") + "\n";
 
@@ -311,7 +321,7 @@ public class DockerMgr {
 
     }
 
-    private String extractWorkingDirectory(ContainerConfig containerConfig) {
+    private String getContainerWorkingDirectory(ContainerConfig containerConfig) {
         if (containerConfig.getWorkingDir() == null || containerConfig.getWorkingDir().isBlank()) {
             return "";
         } else {
@@ -353,14 +363,18 @@ public class DockerMgr {
                 Thread.currentThread().interrupt();
             }
             log.info("HealthCheck UNCLEAR for " + server.getName()
-                + " as no healtcheck is configured, we assume it works and continue setup!");
+                + " as no healthcheck is configured, we assume it works and continue setup!");
         }
     }
 
     public void stopContainer(final CfgServer srv) {
         final GenericContainer<?> container = containers.get(srv.getName());
         if (container != null && container.getDockerClient() != null) {
-            container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
+            try {
+                container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
+            } catch (NotModifiedException nmex) {
+                log.warn("Failed to issue stop container cmd from docker client, trying test container's stop...");
+            }
             container.stop();
         }
     }

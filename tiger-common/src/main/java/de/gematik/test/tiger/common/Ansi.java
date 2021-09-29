@@ -46,4 +46,8 @@ public final class Ansi {
     public final static String BGMAGENTA = "\u001B[45m";
     public final static String BGCYAN = "\u001B[46m";
     public final static String BGWHITE = "\u001B[47m";
+
+    public static String colorize(String msg, String ansiCols) {
+        return ansiCols + msg + Ansi.RESET;
+    }
 }

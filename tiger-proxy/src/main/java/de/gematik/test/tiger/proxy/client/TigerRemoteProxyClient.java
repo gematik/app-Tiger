@@ -19,8 +19,8 @@ package de.gematik.test.tiger.proxy.client;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import kong.unirest.GenericType;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
@@ -54,13 +54,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
         this.remoteProxyUrl = remoteProxyUrl;
 
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        container.setDefaultMaxBinaryMessageBufferSize(1024 * configuration.getBufferSizeInKb());
-        container.setDefaultMaxTextMessageBufferSize(1024 * configuration.getBufferSizeInKb());
+        container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
+        container.setDefaultMaxTextMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
         WebSocketClient webSocketClient = new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
 
         tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(new MappingJackson2MessageConverter());
-        tigerProxyStompClient.setInboundMessageSizeLimit(1024 * configuration.getBufferSizeInKb());
+        tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
         final TigerStompSessionHandler tigerStompSessionHandler = new TigerStompSessionHandler(remoteProxyUrl);
         final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
             tracingWebSocketUrl, tigerStompSessionHandler);

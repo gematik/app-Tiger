@@ -17,8 +17,6 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -62,12 +60,14 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
     private final TigerPkiIdentity caIdentity;
     private final MockServerLogger mockServerLogger;
+    private final List<X509Certificate> certificateChain;
     private TigerPkiIdentity eeIdentity;
 
     @Builder
     public TigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
                                          TigerPkiIdentity caIdentity, TigerPkiIdentity eeIdentity) {
         super(mockServerLogger);
+        this.certificateChain = new ArrayList<>();
         this.mockServerLogger = mockServerLogger;
         this.caIdentity = caIdentity;
         this.eeIdentity = eeIdentity;
@@ -78,10 +78,14 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     }
 
     public X509Certificate certificateAuthorityX509Certificate() {
-        if (caIdentity == null) {
+        if (caIdentity != null) {
+            return this.caIdentity.getCertificate();
+        }
+        if (eeIdentity.getCertificateChain() != null
+            && eeIdentity.getCertificateChain().size() > 0) {
             return eeIdentity.getCertificateChain().get(0);
         }
-        return this.caIdentity.getCertificate();
+        return null;
     }
 
     public PrivateKey privateKey() {
@@ -94,16 +98,24 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
     public void buildAndSavePrivateKeyAndX509Certificate() {
         try {
-            KeyPair keyPair = this.generateRsaKeyPair(2048);
-            X509Certificate x509Certificate =
-                this.createCertificateSignedByCa(keyPair.getPublic(), this.caIdentity.getCertificate(),
-                    this.caIdentity.getPrivateKey(), this.caIdentity.getCertificate().getPublicKey(),
-                    ConfigurationProperties.sslCertificateDomainName(),
-                    ConfigurationProperties.sslSubjectAlternativeNameDomains(),
-                    ConfigurationProperties.sslSubjectAlternativeNameIps());
-
             if (eeIdentity == null) {
+                KeyPair keyPair = this.generateRsaKeyPair(2048);
+                X509Certificate x509Certificate =
+                    this.createCertificateSignedByCa(keyPair.getPublic(), this.caIdentity.getCertificate(),
+                        this.caIdentity.getPrivateKey(), this.caIdentity.getCertificate().getPublicKey(),
+                        ConfigurationProperties.sslCertificateDomainName(),
+                        ConfigurationProperties.sslSubjectAlternativeNameDomains(),
+                        ConfigurationProperties.sslSubjectAlternativeNameIps());
+
                 eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
+
+                certificateChain.add(x509Certificate);
+                certificateChain.add(caIdentity.getCertificate());
+            } else {
+                if (certificateChain.isEmpty()) {
+                    certificateChain.add(eeIdentity.getCertificate());
+                    certificateChain.addAll(eeIdentity.getCertificateChain());
+                }
             }
 
             if (MockServerLogger.isEnabled(Level.TRACE)) {
@@ -119,6 +131,11 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
                 .setMessageFormat("exception while generating private key and X509 certificate")
                 .setThrowable(e));
         }
+    }
+
+    @Override
+    public List<X509Certificate> certificateChain() {
+        return certificateChain;
     }
 
     private X509Certificate createCertificateSignedByCa(PublicKey publicKey, X509Certificate certificateAuthorityCert,

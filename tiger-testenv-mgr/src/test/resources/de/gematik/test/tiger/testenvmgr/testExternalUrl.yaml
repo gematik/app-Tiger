@@ -1,0 +1,11 @@
+tigerProxy:
+  forwardToProxy:
+    hostname: $SYSTEM
+
+servers:
+  - name: testExternalJar
+    type: externalUrl
+    source:
+      - https://www.orf.at
+    externalJarOptions:
+      healthcheck: https://www.orf.at

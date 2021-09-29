@@ -21,8 +21,8 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,12 +35,15 @@ import java.util.List;
 public abstract class AbstractTigerProxy implements ITigerProxy {
 
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
-    private RbelLogger rbelLogger;
     private final TigerProxyConfiguration tigerProxyConfiguration;
+    private RbelLogger rbelLogger;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         rbelLogger = buildRbelLoggerConfiguration(configuration)
             .constructRbelLogger();
+        if (configuration.isDisableRbelParsing()) {
+            rbelLogger.getRbelConverter().removeAllConverterPlugins();
+        }
         this.tigerProxyConfiguration = configuration;
     }
 

@@ -24,16 +24,13 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
+import de.gematik.test.tiger.common.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.configuration.ForwardProxyInfo;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyType;
-import de.gematik.test.tiger.proxy.data.TigerBasicAuthConfiguration;
-import de.gematik.test.tiger.proxy.data.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import kong.unirest.*;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,12 +38,12 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.model.MediaType;
 import org.mockserver.model.SocketAddress;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -227,6 +224,47 @@ public class TestTigerProxy {
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
     }
 
+    @SneakyThrows
+    @Test
+    public void serverCertificateChainShouldContainMultipleCertificatesIfGiven() throws UnirestException {
+        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("https://authn.aktor.epa.telematik-test")
+                .to("http://localhost:" + wireMockRule.port())
+                .build()))
+            .serverIdentity(new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
+            .build());
+
+        AtomicInteger callCounter = new AtomicInteger(0);
+        Unirest.config().reset();
+        Unirest.config().verifySsl(true);
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+        ctx.init(null, new TrustManager[]{
+                new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                        assertThat(chain).hasSize(3);
+                        callCounter.incrementAndGet();
+                    }
+
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }
+            }, new SecureRandom()
+        );
+        Unirest.config().sslContext(ctx);
+
+        Unirest.get("https://authn.aktor.epa.telematik-test/foobar").asString();
+
+        await().atMost(2, TimeUnit.SECONDS)
+            .until(() -> callCounter.get() > 0);
+    }
+
     @Test
     public void rsaCaFileInP12File_shouldVerifyConnection() throws UnirestException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
@@ -247,6 +285,14 @@ public class TestTigerProxy {
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @Test
+    public void defunctCertificate_expectException() throws UnirestException {
+        assertThatThrownBy(() -> new TigerProxy(TigerProxyConfiguration.builder()
+            .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
+            .build()))
+            .isInstanceOf(RuntimeException.class);
     }
 
     // TODO really fix this and reactivate @Test
@@ -294,7 +340,7 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void testTigerWebEndpoing() throws UnirestException {
+    public void testTigerWebEndpoint() throws UnirestException {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .activateRbelEndpoint(true)
             .build());
@@ -517,15 +563,15 @@ public class TestTigerProxy {
     @Test
     public void perRouteCertificate_shouldBePresentedOnlyForThisRoute() throws UnirestException {
         final TigerPkiIdentity serverIdentity
-            = new TigerPkiIdentity("src/test/resources/gateway_ecc.p12;00");
+            = new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .serverIdentity(serverIdentity)
             .proxyRoutes(List.of(TigerRoute.builder()
-                // aktor-gateway.gematik.de ist der DN des obigen zertifikats
-                .from("https://aktor-gateway.gematik.de")
-                .to("http://localhost:" + wireMockRule.port())
-                .build(),
+                    // aktor-gateway.gematik.de ist der DN des obigen zertifikats
+                    .from("https://authn.aktor.epa.telematik-test")
+                    .to("http://localhost:" + wireMockRule.port())
+                    .build(),
                 TigerRoute.builder()
                     .from("https://falsche-url")
                     .to("http://localhost:" + wireMockRule.port())
@@ -537,7 +583,7 @@ public class TestTigerProxy {
                 .verifySsl(true)
                 .sslContext(buildSslContextTrustingOnly(serverIdentity)));
 
-        assertThat(unirestInstance.get("https://aktor-gateway.gematik.de/foobar").asString()
+        assertThat(unirestInstance.get("https://authn.aktor.epa.telematik-test/foobar").asString()
             .getStatus())
             .isEqualTo(666);
         assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())

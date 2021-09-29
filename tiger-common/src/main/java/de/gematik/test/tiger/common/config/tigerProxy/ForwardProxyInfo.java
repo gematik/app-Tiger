@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.common.config;
+package de.gematik.test.tiger.common.config.tigerProxy;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
-public class CfgPKIKey {
-    String id;
-    String type;
-    String pem;
+@Builder
+@JsonInclude(Include.NON_NULL)
+public class ForwardProxyInfo {
+
+    private String hostname;
+    private Integer port;
+    private TigerProxyType type;
 }

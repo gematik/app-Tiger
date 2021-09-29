@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.data;
+package de.gematik.test.tiger.common.config.tigerProxy;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.*;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @Data
+@JsonInclude(Include.NON_NULL)
 public class TigerRoute {
 
     @With

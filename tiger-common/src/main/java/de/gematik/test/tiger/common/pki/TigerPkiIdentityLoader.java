@@ -1,17 +1,7 @@
 package de.gematik.test.tiger.common.pki;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
-import lombok.Getter;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -24,11 +14,20 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.Getter;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 public class TigerPkiIdentityLoader {
 
     static {
-        Security.addProvider(new BouncyCastleProvider());
+        BouncyCastleJsseProvider bcJsseProv = new BouncyCastleJsseProvider();
+        BouncyCastleProvider bcprov = new BouncyCastleProvider();
+        Security.addProvider(bcprov);
+        Security.addProvider(bcJsseProv);
     }
 
     /**

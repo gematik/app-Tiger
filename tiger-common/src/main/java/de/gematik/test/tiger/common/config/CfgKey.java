@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.configuration;
+package de.gematik.test.tiger.common.config;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
-@Builder
-public class ForwardProxyInfo {
-
-    private String hostname;
-    private Integer port;
-    private TigerProxyType type;
+public class CfgKey {
+    private String id;
+    private String pem;
+    private String type;
 }

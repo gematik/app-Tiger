@@ -22,8 +22,9 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -64,7 +65,6 @@ public class TigerDirector {
 
     private static boolean initialized = false;
 
-    @SneakyThrows
     public static synchronized void beforeTestRun() {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.warn(Ansi.BOLD + Ansi.RED
@@ -73,9 +73,13 @@ public class TigerDirector {
         }
 
         if (OsEnvironment.getAsString("TIGER_NOLOGO") == null) {
-            log.info("\n" + IOUtils.toString(
-                Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
-                StandardCharsets.UTF_8));
+            try {
+                log.info("\n" + IOUtils.toString(
+                    Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
+                    StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new TigerStartupException("Unable to read tiger logo!");
+            }
         }
         log.info("\n" + Banner.toBannerStr("READING TEST CONFIG...", Ansi.BOLD + Ansi.BLUE));
         // String cfgFile = OSEnvironment.getAsString("TIGER_CONFIG");
@@ -85,30 +89,31 @@ public class TigerDirector {
         tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
 
-
         TigerProxyConfiguration tpCfg = tigerTestEnvMgr.getConfiguration().getTigerProxy();
         if (tpCfg.isSkipTrafficEndpointsSubscription()) {
             log.info("Trying to late connect to traffic endpoints...");
             tigerTestEnvMgr.getLocalTigerProxy().subscribeToTrafficEndpoints(tpCfg);
         }
 
-
         // set proxy to local tiger proxy for test suites
         if (tigerTestEnvMgr.getLocalTigerProxy() != null && tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
-            log.info("\n" + Banner.toBannerStr("SETTING TIGER PROXY...", Ansi.BOLD + Ansi.BLUE));
-            System.setProperty("http.proxyHost", "localhost");
-            System.setProperty("http.proxyPort",
-                "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
-            System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
-            System.setProperty("https.proxyHost", "localhost");
-            System.setProperty("https.proxyPort",
-                "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
+            if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") != null) {
+                log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
+                    Ansi.BOLD + Ansi.RED));
+            } else {
+                log.info(Ansi.colorize("SETTING TIGER PROXY...", Ansi.BOLD + Ansi.BLUE));
+                System.setProperty("http.proxyHost", "localhost");
+                System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
+                System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
+                System.setProperty("https.proxyHost", "localhost");
+                System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
+            }
         } else {
-            log.info("\n" + Banner.toBannerStr("SKIPPING TIGER PROXY settings...", Ansi.BOLD + Ansi.RED));
+            log.info(Ansi.colorize("SKIPPING TIGER PROXY settings...", Ansi.BOLD + Ansi.RED));
         }
 
         initialized = true;
-        log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", Ansi.BOLD + Ansi.BLUE));
+        log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", Ansi.BOLD + Ansi.GREEN));
     }
 
     public static synchronized boolean isInitialized() {

@@ -53,14 +53,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.client.utils.URIUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @Data
 @RequiredArgsConstructor
@@ -84,6 +86,14 @@ public class TigerWebUiController implements ApplicationContextAware {
     public String getUI() throws IOException {
         String html = renderer.getEmptyPage()
             .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">");
+
+        if (applicationConfiguration.isLocalResources()) {
+            html = html
+                .replace("https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css", "/webui/css/bulma.min.css")
+                .replace("https://jenil.github.io/bulmaswatch/simplex/bulmaswatch.min.css", "/webui/css/bulmaswatch.min.css")
+                .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
+                    "/webui/css/all.min.css");
+        }
         String navbar = nav().withClass("navbar is-dark is-fixed-bottom").with(
             div().withClass("navbar-menu").with(
                 div().withClass("navbar-start").with(
@@ -162,6 +172,30 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("${UploadUrl}", applicationConfiguration.getReport().getUploadUrl());
         return html.replace("<div id=\"navbardiv\"></div>", navbar + routeModalHtml)
             .replace("</body>", configJSSnippetStr + "</body>");
+    }
+
+    @GetMapping(value = "/css/{cssfile}", produces = "text/css")
+    public String getCSS(@PathVariable("cssfile") String cssFile) throws IOException {
+        try(InputStream is = getClass().getResourceAsStream("/css/" + cssFile)) {
+            if (is == null) {
+                throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "css file " + cssFile + " not found"
+                );
+            }
+            return IOUtils.toString(is, StandardCharsets.UTF_8);
+        }
+    }
+
+    @GetMapping(value = "/webfonts/{fontfile}", produces = "text/css")
+    public ResponseEntity<byte[]> getWebFont(@PathVariable("fontfile") String fontFile) throws IOException {
+        try(InputStream is = getClass().getResourceAsStream("/webfonts/" + fontFile)) {
+            if (is == null) {
+                throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "webfont file " + fontFile + " not found"
+                );
+            }
+            return new ResponseEntity<byte[]>(IOUtils.toByteArray(is), HttpStatus.OK);
+        }
     }
 
     @GetMapping(value = "/getMsgAfter", produces = MediaType.APPLICATION_JSON_VALUE)

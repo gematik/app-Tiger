@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-proxy</artifactId>
-    <version>0.8.1</version>
+    <version>0.9.0</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.8.1</version>
+        <version>0.9.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -104,12 +104,12 @@
         <dependency>
             <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-netty</artifactId>
-            <version>5.11.4</version>
+            <version>${version.mockserver}</version>
         </dependency>
         <dependency>
             <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-junit-rule</artifactId>
-            <version>5.11.4</version>
+            <version>${version.mockserver}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
