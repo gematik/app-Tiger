@@ -56,6 +56,7 @@ public class TigerProxyRoutingTest {
 
         unirestInstance = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getPort()));
+        unirestInstance.get("");
     }
 
     @AfterEach
