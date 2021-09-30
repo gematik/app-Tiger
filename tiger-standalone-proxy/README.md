@@ -100,4 +100,8 @@ tigerProxy:
     # A list of upstream tiger-proxies. This proxy will try to connect to all given sources to
     # gather traffic via the STOMP-protocol. If any of the given endpoints are not accesible the
     # server will not boot. (fail fast, fail early)
+    trafficEndpointConfiguration:
+      name: "tigerProxy Tracing Point"
+      # the name for the traffic Endpoint. can be any string, which will be
+      # displayed at /tracingpoints
 ```

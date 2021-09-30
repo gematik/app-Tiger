@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.proxy.tracing;
 
+import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -15,22 +16,22 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 @RequiredArgsConstructor
 public class TracingEndpointConfiguration implements WebSocketMessageBrokerConfigurer {
 
-    public static final String TRACING_ENDPOINT = "/tracing";
+    private final TigerProxyConfiguration tigerProxyConfiguration;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes("/traces");
+        config.setApplicationDestinationPrefixes(tigerProxyConfiguration.getTrafficEndpointConfiguration().getStompTopic());
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         RequestUpgradeStrategy upgradeStrategy = new TomcatRequestUpgradeStrategy();
 
-        registry.addEndpoint(TRACING_ENDPOINT)
+        registry.addEndpoint(tigerProxyConfiguration.getTrafficEndpointConfiguration().getWsEndpoint())
             .withSockJS();
 
-        registry.addEndpoint(TRACING_ENDPOINT)
+        registry.addEndpoint(tigerProxyConfiguration.getTrafficEndpointConfiguration().getWsEndpoint())
             .setHandshakeHandler(new DefaultHandshakeHandler(upgradeStrategy))
             .setAllowedOrigins("*");
     }
