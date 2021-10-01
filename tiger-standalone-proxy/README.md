@@ -55,7 +55,16 @@ tigerProxy:
     # The traffic routed via this "forwardAll"-routing will be logged by default
     # (meaning it will show up in the Rbel-Logs and be fowarded to tracing-clients)
     # This can be deactivated via this flag
-    
+    rbelBufferSizeInMb: 1024 
+    # Limits the rbel-Buffer to approximately this size.
+    # Note: When Rbel-Analysis is done the size WILL vastly exceed this limit!
+    disableRbelParsing: true 
+    # Disable traffic-analysis by Rbel. This will not impeed proxy-forwarding nor
+    # the traffic-endpoints.
+    localResources: true
+    # This will share the WebUI-Resources (various CSS-files) from the tiger-proxy 
+    # locally, thus enabling usage when no internet connection exists
+
     serverRootCa: "certificate.pem;privateKey.pem;PKCS8"
     # Can be used to define a CA-Identity to be used with TLS. The tiger-proxy will
     # generate an identity when queried by a client that matches the configured route.
@@ -91,4 +100,8 @@ tigerProxy:
     # A list of upstream tiger-proxies. This proxy will try to connect to all given sources to
     # gather traffic via the STOMP-protocol. If any of the given endpoints are not accesible the
     # server will not boot. (fail fast, fail early)
+    trafficEndpointConfiguration:
+      name: "tigerProxy Tracing Point"
+      # the name for the traffic Endpoint. can be any string, which will be
+      # displayed at /tracingpoints
 ```

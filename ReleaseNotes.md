@@ -1,3 +1,8 @@
+# Release 0.10.0
+* Memory-Leak fixed
+* UI Sequence-numbers fixed
+* Manual Update-Bug fixed
+
 # Release 0.9.0
 * Longer chains are supported for Tiger-Proxy TSL-Identities
 * Chains are verified on startup

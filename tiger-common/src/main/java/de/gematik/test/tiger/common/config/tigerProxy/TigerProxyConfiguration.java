@@ -61,6 +61,8 @@ public class TigerProxyConfiguration {
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
     private boolean disableRbelParsing = false;
+    @Builder.Default
+    private TrafficEndpointConfiguration trafficEndpointConfiguration = new TrafficEndpointConfiguration();
 
     @JsonIgnore
     public Integer[] getPortAsArray() {

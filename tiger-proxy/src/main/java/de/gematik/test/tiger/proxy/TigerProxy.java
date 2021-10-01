@@ -74,13 +74,12 @@ public class TigerProxy extends AbstractTigerProxy {
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
 
-        // TODO how can we specify cipher suites for netty?
-        //  buildSslContext();
         KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory(configuration));
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
         ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType("ANY");
+        ConfigurationProperties.maxLogEntries(10);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }

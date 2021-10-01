@@ -261,12 +261,11 @@ public class TigerWebUiController implements ApplicationContextAware {
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
 
-
     private MessageMetaDataDto getMetaData(RbelElement el) {
         MessageMetaDataDto.MessageMetaDataDtoBuilder b = MessageMetaDataDto.builder();
         b = b.uuid(el.getUuid())
             .headers(extractHeadersFromMessage(el))
-            .sequenceNumber(0);
+            .sequenceNumber(getElementSequenceNumber(el));
         if (el.hasFacet(RbelHttpRequestFacet.class)) {
             RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
             b = b.path(req.getPath().getRawStringContent())
@@ -294,6 +293,12 @@ public class TigerWebUiController implements ApplicationContextAware {
                 "We do not support meta data for non http elements (" + el.getClass().getName() + ")");
         }
         return b.build();
+    }
+
+    private long getElementSequenceNumber(RbelElement rbelElement) {
+        return rbelElement.getFacet(RbelTcpIpMessageFacet.class)
+            .map(RbelTcpIpMessageFacet::getSequenceNumber)
+            .orElse(0l);
     }
 
     private List<String> extractHeadersFromMessage(RbelElement el) {

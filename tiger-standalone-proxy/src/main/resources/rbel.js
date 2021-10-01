@@ -110,11 +110,11 @@ document.addEventListener('DOMContentLoaded', function () {
       if (updateHandler) {
         clearInterval(updateHandler);
       }
-      if (updateTimeout !== 0) {
+      if (updateTimeout !== "0") {
         updateHandler = setInterval(pollMessages, updateTimeout * 1000);
         updateBtn.disabled = true;
       } else {
-        updateBtn.disabled = false;
+        updateBtn.removeAttribute("disabled");
       }
     })
   });
