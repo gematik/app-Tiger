@@ -1,0 +1,51 @@
+@startuml
+(*) --> "Starte Tiger testsuite mit mvn clean verify"
+
+--> Tiger proxy mit entsprechenden Routen oder reverse Proxies werden gestartet
+
+--> Das validation.feature wird als Test gestartet\n\
+und wartet auf die ersten Nachrichten\n\
+vom Primärsystem
+note right: Die Feature Datei wird von uns vorgegeben.\n\
+Das Projekt wird als Github Projekt mit\n\
+pom.xml, tiger-testenv.yaml, validation.feature\nveröffentlicht
+
+--> ===B1===
+--> Das Primärsystem hat den Tiger Proxy\n als Systemproxy konfiguriert\n\
+oder nutzt den Tiger proxy als Reverse Proxy\num Backendkomponenten anzusprechen
+--> Das Primärsystem durchläuft\n\
+(automatisch oder manuell) seinen Workflow
+--> Der Testdurchlauf am PS wurde abgeschlossen
+--> ===B2===
+===B1=== --> Das validation.feature überprüft die Nachrichten\n\
+sequentiell dem vorgeschriebenen Workflow folgendend\n\
+auf gültige Inhalte und Reihenfolge.
+note left: Dies inkludiert die FHIR Validierungen
+If "Alle Testschritte aus der\nFeature Datei waren erfolgreich?" then
+--> ===B2===
+--> mvn serenity:reports serenity:aggregate
+--> mvn titus:certify\n\
+Lädt die Serenity Ergebnis JSON Datei(en) hoch und\n\
+erhält ein signiertes BestätigungsPDF
+note left: ein kleines schlankes Mvn Plugin\n für den authentifizierten Upload der Ergebnisse
+--> Titus überprüft ob im hochgeladenen Ergebnis\n\
+alle erforderlichen Schritte ausgeführt wurden und\n\
+ob alle Schritte erfolgreich waren
+note left: Am Besten ihr macht das möglichst flexibel\nund NICHT hardcoded.\n\
+An die Flexibilität der BDD Lösung\nkommt ihr sicherlich nicht heran,\n\
+aber je generischer ihr das baut,\numso weniger Aufwand\nhabt ihr im Laufe der Zeit\n\
+Evt. könnt ihr ja checken ob das Ergebnis\nzum vorgegebenen feature file passt?
+If "Test erfolgreich?" then
+--> Erstelle signiertes BestättigungsPDF
+--> Der Primärsystemhersteller hat ein BestättigungsPDF\nbei sich am Rechner liegen
+--> (*)
+else
+--> Erstelle Sorry Failed PDF
+--> Der Primärsystemhersteller hat ein FehlerProtokollPDF\nbei sich am Rechner liegen
+--> (*)
+Endif
+else
+--> Der Primärsystemhersteller hat einen lokalen Serenity Fehlerbericht vorliegen
+--> (*)
+Endif
+@enduml
