@@ -29,12 +29,11 @@ import org.mockserver.model.SocketAddress;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.Security;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -499,7 +498,7 @@ public class TestTigerProxy {
     }
 
     @Test
-    public void forwardMutualTslAndTerminatingTsl_shouldUseCorrectTerminatingCa() throws UnirestException, IOException {
+    public void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException, IOException {
         final TigerPkiIdentity ca = new TigerPkiIdentity(
             "src/test/resources/selfSignedCa/rootCa.p12;00");
 
