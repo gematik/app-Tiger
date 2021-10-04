@@ -1,3 +1,10 @@
+# Release 0.11.0
+Bug fix Release
+Lokale Resources fix (routeModal.html)
+Messagelist index fixed im Webui
+WorkingDir wird automatisch angelegt
+
+
 # Release 0.10.0
 * Memory-Leak fixed
 * UI Sequence-numbers fixed

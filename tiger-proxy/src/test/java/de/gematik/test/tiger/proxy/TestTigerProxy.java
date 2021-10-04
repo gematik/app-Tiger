@@ -29,6 +29,7 @@ import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import kong.unirest.*;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.Before;
@@ -56,30 +57,40 @@ import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 
+@Slf4j
 public class TestTigerProxy {
 
     @Rule
-    public MockServerRule mockServerRule = new MockServerRule(this);
+    public MockServerRule forwardProxy = new MockServerRule(this);
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options()
+    public WireMockRule fakeBackendServer = new WireMockRule(options()
         .dynamicPort()
         .dynamicHttpsPort());
     private UnirestInstance unirestInstance;
 
     @Before
     public void setupBackendServer() {
-        wireMockRule.stubFor(get(urlEqualTo("/foobar"))
+        log.info("Started Backend-Server on ports {} and {} (https)", fakeBackendServer.port(), fakeBackendServer.httpsPort());
+        log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
+
+        fakeBackendServer.stubFor(get(urlEqualTo("/foobar"))
             .willReturn(aResponse()
                 .withStatus(666)
                 .withStatusMessage("EVIL")
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}")));
+        fakeBackendServer.stubFor(get(urlEqualTo("/deep/foobar"))
+            .willReturn(aResponse()
+                .withStatus(777)
+                .withStatusMessage("DEEPEREVIL")
+                .withHeader("foo", "bar1", "bar2")
+                .withBody("{\"foo\":\"bar\"}")));
 
-        mockServerRule.getClient().when(request())
+        forwardProxy.getClient().when(request())
             .forward(
                 req -> forwardOverriddenRequest(
                     req.withSocketAddress(
-                        "localhost", wireMockRule.port(), SocketAddress.Scheme.HTTP
+                        "localhost", fakeBackendServer.port(), SocketAddress.Scheme.HTTP
                     ))
                     .getHttpRequest());
     }
@@ -89,9 +100,8 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
-            .proxyLogLevel("DEBUG")
             .build());
 
         Unirest.config().reset();
@@ -116,19 +126,79 @@ public class TestTigerProxy {
     }
 
     @Test
+    public void forwardProxy_headersShouldBeUntouchedExceptForHost() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+
+        Unirest.get("http://backend/foobar")
+            .header("foo", "bar")
+            .header("x-forwarded-for", "someStuff")
+            .asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.foo")
+            .get().getRawStringContent())
+            .isEqualTo("bar");
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.x-forwarded-for")
+            .get().getRawStringContent())
+            .isEqualTo("someStuff");
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.Host")
+            .get().getRawStringContent())
+            .isEqualTo("localhost:" + fakeBackendServer.port());
+    }
+
+    @Test
+    public void reverseProxy_headersShouldBeUntouched() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        Unirest.config().reset();
+
+        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar")
+            .header("foo", "bar")
+            .header("x-forwarded-for", "someStuff")
+            .asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.foo")
+            .get().getRawStringContent())
+            .isEqualTo("bar");
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.x-forwarded-for")
+            .get().getRawStringContent())
+            .isEqualTo("someStuff");
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.Host")
+            .get().getRawStringContent())
+            .isEqualTo("localhost:" + fakeBackendServer.port());
+    }
+
+    @Test
     public void routeLessTraffic_shouldLogInRbel() {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://foo")
                 .to("http://bar")
                 .build()))
-            .proxyLogLevel("DEBUG")
             .build());
 
         Unirest.config().reset();
         Unirest.config().proxy("localhost", tigerProxy.getPort());
 
-        final HttpResponse<JsonNode> response = Unirest.get("http://localhost:" + wireMockRule.port() + "/foobar")
+        final HttpResponse<JsonNode> response = Unirest.get("http://localhost:" + fakeBackendServer.port() + "/foobar")
             .asJson();
 
         assertThat(response.getStatus()).isEqualTo(666);
@@ -145,14 +215,13 @@ public class TestTigerProxy {
                 .from("http://foo")
                 .to("http://bar")
                 .build()))
-            .proxyLogLevel("DEBUG")
             .build());
 
         Unirest.config().reset();
         Unirest.config().proxy("localhost", tigerProxy.getPort());
         Unirest.config().verifySsl(false);
 
-        final HttpResponse<JsonNode> response = Unirest.get("https://localhost:" + wireMockRule.httpsPort() + "/foobar")
+        final HttpResponse<JsonNode> response = Unirest.get("https://localhost:" + fakeBackendServer.httpsPort() + "/foobar")
             .asJson();
 
         assertThat(response.getStatus()).isEqualTo(666);
@@ -167,14 +236,14 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
         assertThatThrownBy(() ->
             tigerProxy.addRoute(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .isInstanceOf(TigerProxyConfigurationException.class);
     }
@@ -184,13 +253,13 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
         Unirest.config().reset();
         Unirest.config().proxy("localhost", tigerProxy.getPort());
-        wireMockRule.stubFor(get(urlEqualTo("/binary"))
+        fakeBackendServer.stubFor(get(urlEqualTo("/binary"))
             .willReturn(aResponse()
                 .withHeader("content-type", MediaType.APPLICATION_OCTET_STREAM.toString())
                 .withBody("Hallo".getBytes())));
@@ -208,7 +277,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
@@ -230,7 +299,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://authn.aktor.epa.telematik-test")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .serverIdentity(new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
             .build());
@@ -269,7 +338,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"))
             .build());
@@ -302,7 +371,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .serverRootCa(new TigerPkiIdentity("src/test/resources/customCa.p12;00"))
             .build());
@@ -324,7 +393,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("https://localhost:" + wireMockRule.httpsPort())
+                .to("https://localhost:" + fakeBackendServer.httpsPort())
                 .build()))
             .build());
 
@@ -363,7 +432,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
@@ -384,7 +453,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
@@ -404,7 +473,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/notAServer")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
@@ -415,6 +484,10 @@ public class TestTigerProxy {
         Unirest.get("http://localhost:" + tigerProxy.getPort() + "/notAServer/foobar").asString();
 
         assertThat(callCounter.get()).isEqualTo(2);
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .findRbelPathMembers("$.body.foo.content")
+            .get(0).getRawStringContent()
+        ).isEqualTo("bar");
     }
 
     @Test
@@ -424,7 +497,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
@@ -446,12 +519,11 @@ public class TestTigerProxy {
                 "src/test/resources/selfSignedCa/rootCa.p12;00"))
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
-
 
         final UnirestInstance unirestWithTruststoreAndSslVerification = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getPort())
@@ -470,7 +542,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .fileSaveInfo(RbelFileSaveInfo.builder()
                 .writeToFile(true)
@@ -502,7 +574,7 @@ public class TestTigerProxy {
 
         new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getPort()))
-            .get("http://localhost:" + wireMockRule.port() + "/foobar").asString();
+            .get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
         await()
             .atMost(2, TimeUnit.SECONDS)
@@ -517,7 +589,7 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .serverRootCa(ca)
             .forwardMutualTlsIdentity(new TigerPkiIdentity("src/test/resources/rsa.p12;00"))
@@ -535,7 +607,7 @@ public class TestTigerProxy {
 
     @Test
     public void basicAuthenticationRequiredAndConfigured_ShouldWork() {
-        wireMockRule.stubFor(get(urlEqualTo("/authenticatedPath"))
+        fakeBackendServer.stubFor(get(urlEqualTo("/authenticatedPath"))
             .withBasicAuth("user", "password")
             .willReturn(aResponse()
                 .withStatus(777)
@@ -544,10 +616,9 @@ public class TestTigerProxy {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backendWithBasicAuth")
-                .to("http://localhost:" + wireMockRule.port())
+                .to("http://localhost:" + fakeBackendServer.port())
                 .basicAuth(new TigerBasicAuthConfiguration("user", "password"))
                 .build()))
-            .proxyLogLevel("DEBUG")
             .build());
 
         unirestInstance = Unirest.spawnInstance();
@@ -569,11 +640,11 @@ public class TestTigerProxy {
             .proxyRoutes(List.of(TigerRoute.builder()
                     // aktor-gateway.gematik.de ist der DN des obigen zertifikats
                     .from("https://authn.aktor.epa.telematik-test")
-                    .to("http://localhost:" + wireMockRule.port())
+                    .to("http://localhost:" + fakeBackendServer.port())
                     .build(),
                 TigerRoute.builder()
                     .from("https://falsche-url")
-                    .to("http://localhost:" + wireMockRule.port())
+                    .to("http://localhost:" + fakeBackendServer.port())
                     .build()))
             .build());
 
@@ -616,7 +687,7 @@ public class TestTigerProxy {
                 .to("http://notARealServer")
                 .build()))
             .forwardToProxy(ForwardProxyInfo.builder()
-                .port(mockServerRule.getPort())
+                .port(forwardProxy.getPort())
                 .hostname("localhost")
                 .type(TigerProxyType.HTTP)
                 .build())
@@ -639,7 +710,7 @@ public class TestTigerProxy {
                 .to("http://notARealServer")
                 .build()))
             .forwardToProxy(ForwardProxyInfo.builder()
-                .port(mockServerRule.getPort())
+                .port(forwardProxy.getPort())
                 .hostname("localhost")
                 .type(TigerProxyType.HTTP)
                 .build())
@@ -650,5 +721,70 @@ public class TestTigerProxy {
             .asJson();
 
         assertThat(response.getStatus()).isEqualTo(666);
+    }
+
+    @Test
+    public void forwardProxyToNestedTarget_ShouldAdressCorrectly() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port() + "/deep")
+                .build()))
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+
+        assertThat(Unirest.get("http://backend/foobar").asString()
+            .getStatus())
+            .isEqualTo(777);
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.Host")
+            .get().getRawStringContent())
+            .isEqualTo("localhost:" + fakeBackendServer.port());
+    }
+
+    @Test
+    public void forwardProxyToNestedTargetWithPlainPath_ShouldAdressCorrectly() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port() + "/foobar")
+                .build()))
+            .build());
+
+        Unirest.config().reset();
+        Unirest.config().proxy("localhost", tigerProxy.getPort());
+
+        assertThat(Unirest.get("http://backend").asString()
+            .getStatus())
+            .isEqualTo(666);
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.Host")
+            .get().getRawStringContent())
+            .isEqualTo("localhost:" + fakeBackendServer.port());
+    }
+
+    @Test
+    public void reverseProxyToNestedTarget_ShouldAdressCorrectly() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port() + "/deep")
+                .build()))
+            .build());
+
+        Unirest.config().reset();
+
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString()
+            .getStatus())
+            .isEqualTo(777);
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.header.Host")
+            .get().getRawStringContent())
+            .isEqualTo("localhost:" + fakeBackendServer.port());
     }
 }
