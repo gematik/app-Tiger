@@ -197,7 +197,7 @@ templates:
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
-  # Konnektor simulator as external jar
+  # Konnektor simulator as external jar from local folder
   #
   # ----------------------------------------------------------------------------------------------------------------------
 
@@ -212,3 +212,24 @@ templates:
       # options to the java call
       healthcheck: https://127.0.0.1:9106
 
+
+  # ----------------------------------------------------------------------------------------------------------------------
+  #
+  # PS simulator as external jar from Nexus
+  #
+  # ----------------------------------------------------------------------------------------------------------------------
+
+  - name: pssim
+    type: externalJar
+    source:
+      - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-ps/2.0.5-284/epa-ps-2.0.5-284.jar
+    active: false
+    startupTimeoutSec: 30
+    externalJarOptions:
+      workingDir: PsSimPortable
+      healthcheck: http://127.0.0.1:9116
+      options:
+        - -Dspring-boot.run.profiles=ide,noevents
+        - -Dspring.profiles.active=ide,noevents
+        - -Djdk.internal.httpclient.disableHostnameVerification
+        - -Dfile.encoding=UTF-8

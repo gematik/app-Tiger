@@ -231,6 +231,27 @@ public class TestTigerTestEnvMgr {
     }
 
     @Test
+    public void testCreateExternalJarNonExistingWorkingDir() throws InterruptedException, IOException {
+        File folder = new File("NonExistingFolder");
+        if (folder.exists()) {
+            FileUtils.deleteDirectory(folder);
+        }
+        System.setProperty("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
+        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+        CfgServer srv = envMgr.getConfiguration().getServers().get(0);
+        srv.getExternalJarOptions().setWorkingDir("NonExistingFolder");
+        srv.getExternalJarOptions().setHealthcheck("NONE");
+        srv.setStartupTimeoutSec(1);
+        try {
+            envMgr.setUpEnvironment();
+        } finally {
+            shutDownWebServer(envMgr, "testExternalJarMVP");
+            FileUtils.deleteDirectory(folder);
+        }
+    }
+
+    @Test
     public void testCreateExternalJarRelativePathFileNotFound() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");

@@ -288,18 +288,20 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             server.setStartupTimeoutSec(20);
         }
 
-        // defaulting work dir to temp folder on system
+        // defaulting work dir to temp folder on system if not set in config
         if (type == ServerType.EXTERNALJAR || type == ServerType.TIGERPROXY) {
-            if (server.getExternalJarOptions().getWorkingDir() == null) {
-                File folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile();
-                log.info("Defaulting to temp folder '" + folder.getAbsolutePath() + "' as work dir for server "
+            String folder = server.getExternalJarOptions().getWorkingDir();
+            if (folder == null) {
+                folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile().getAbsolutePath();
+                log.info("Defaulting to temp folder '" + folder + "' as work dir for server "
                     + server.getName());
-                if (!folder.exists()) {
-                    if (!folder.mkdirs()) {
-                        throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
-                    }
+                server.getExternalJarOptions().setWorkingDir(folder);
+            }
+            File f = new File(folder);
+            if (!f.exists()) {
+                if (!f.mkdirs()) {
+                    throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
                 }
-                server.getExternalJarOptions().setWorkingDir(folder.getAbsolutePath());
             }
         }
 
