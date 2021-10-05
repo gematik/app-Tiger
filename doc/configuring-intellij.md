@@ -3,7 +3,7 @@
 Um aus IntelliJ Szenerien per Click starten zu können sind die Run/Debug Einstellungen wie folgt anzupassen:
 
 
-* Main class: net.serenitybdd.cucumber.cliMain
+* Main class: net.serenitybdd.cucumber.cli.Main
 * Glue:
   * de.gematik.test.tiger.glue
   * de.gematik.test.tiger.hooks
