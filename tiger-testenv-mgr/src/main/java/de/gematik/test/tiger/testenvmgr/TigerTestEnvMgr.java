@@ -152,13 +152,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             proxyConfig.setServerRootCa(new TigerPkiIdentity(
                 "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
-        log.info("Starting local docker tiger proxy...");
         localTigerProxy = new TigerProxy(configuration.getTigerProxy());
         if (configuration.isLocalProxyActive()) {
+            log.info("Starting local docker tiger proxy on port " + localTigerProxy.getPort() + "...");
             environmentVariables = new HashMap<>(
                 Map.of("PROXYHOST", "host.docker.internal",
                     "PROXYPORT", localTigerProxy.getPort()));
         } else {
+            log.info("Local docker tiger proxy deactivated");
             environmentVariables = new HashMap<>();
         }
         log.info("Tiger Testenv mgr created OK");
@@ -720,6 +721,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         long startms = System.currentTimeMillis();
         var finished = new AtomicBoolean(false);
         var exception = new AtomicReference<Exception>();
+        String totalLength;
+        try {
+            totalLength = " of " + new URL(jarUrl).openConnection().getContentLength()/1000 + " kb";
+        } catch (IOException e) {
+            totalLength = " (total size unknown)";
+        }
+
         var t = new Thread(() -> {
             try {
                 FileUtils.copyURLToFile(new URL(jarUrl), jarFile);
@@ -742,7 +750,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             Thread.sleep(500);
             progressCtr++;
             if (progressCtr == 8) {
-                log.info("downloaded jar for " + server.getName() + "  " + jarFile.length() / 1000 + " kb");
+                log.info("downloaded jar for " + server.getName() + "  " + jarFile.length() / 1000 + " kb" + totalLength);
                 progressCtr = 0;
             }
         }

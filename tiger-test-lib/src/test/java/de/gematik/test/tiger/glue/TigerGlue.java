@@ -130,10 +130,12 @@ public class TigerGlue {
     @Given("TGR I want to show {word} banner {string}")
     public void tgrIWantToShowColoredBanner(String color, String text) {
         log.info("\n" + Banner.toBannerStrWithCOLOR(text, color.toUpperCase()));
+        Banner.shout(text, color.toUpperCase());
     }
 
     @Given("TGR I want to show banner {string}")
     public void tgrIWantToShowBanner(String text) {
         log.info("\n" + Banner.toBannerStrWithCOLOR(text, "WHITE"));
+        Banner.shout(text, "WHITE");
     }
 }
