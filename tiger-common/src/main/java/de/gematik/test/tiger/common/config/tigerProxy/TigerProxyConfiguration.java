@@ -24,9 +24,8 @@ public class TigerProxyConfiguration {
     private ForwardProxyInfo forwardToProxy;
     @Builder.Default
     private String proxyLogLevel = "WARN";
-    private TigerPkiIdentity serverRootCa;
-    private TigerPkiIdentity forwardMutualTlsIdentity;
-    private TigerPkiIdentity serverIdentity;
+    @Builder.Default
+    private TigerTlsConfiguration tls = TigerTlsConfiguration.builder().build();
     private List<String> keyFolders;
     @Builder.Default
     private boolean activateRbelEndpoint = false;

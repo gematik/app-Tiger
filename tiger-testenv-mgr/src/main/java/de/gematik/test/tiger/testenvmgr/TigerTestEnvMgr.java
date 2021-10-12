@@ -148,8 +148,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (proxyConfig.getProxyRoutes() == null) {
             proxyConfig.setProxyRoutes(List.of());
         }
-        if (proxyConfig.getServerRootCa() == null) {
-            proxyConfig.setServerRootCa(new TigerPkiIdentity(
+        if (proxyConfig.getTls().getServerRootCa() == null) {
+            proxyConfig.getTls().setServerRootCa(new TigerPkiIdentity(
                 "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
         localTigerProxy = new TigerProxy(configuration.getTigerProxy());

@@ -65,30 +65,39 @@ tigerProxy:
     # This will share the WebUI-Resources (various CSS-files) from the tiger-proxy 
     # locally, thus enabling usage when no internet connection exists
 
-    serverRootCa: "certificate.pem;privateKey.pem;PKCS8"
-    # Can be used to define a CA-Identity to be used with TLS. The tiger-proxy will
-    # generate an identity when queried by a client that matches the configured route.
-    # If the client then in turn trusts the CA this solution will provide you with a seamless
-    # TLS experience. It however requires access to the private-key of a trusted CA.
-    serverIdentity: "certificateAndKeyAndChain.p12;Password"
-    # Alternative solution: now all incoming TLS-traffic will be handled using this identity.
-    # This might be easier but requires a certificate which is valid for the configured routes
-
-    forwardMutualTlsIdentity: "directory/where/another/identityResides.jks;changeit;JKS"
-    # This identity will be used as a client-identity for mutual-TLS when forwarding to
-    # other servers. The information string can be
-    # "my/file/name.p12;p12password" or
-    # "p12password;my/file/name.p12" or
-    # "cert.pem;key.pkcs8" or
-    # "rsaCert.pem;rsaKey.pkcs1" or
-    # "key/store.jks;key" or
-    # "key/store.jks;key1;key2" or
-    # "key/store.jks;jks;key"
-    # 
-    # Each part can be one of:
-    # * filename
-    # * password
-    # * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
+    tls:
+      serverRootCa: "certificate.pem;privateKey.pem;PKCS8"
+      # Can be used to define a CA-Identity to be used with TLS. The tiger-proxy will
+      # generate an identity when queried by a client that matches the configured route.
+      # If the client then in turn trusts the CA this solution will provide you with a seamless
+      # TLS experience. It however requires access to the private-key of a trusted CA.
+      serverIdentity: "certificateAndKeyAndChain.p12;Password"
+      # Alternative solution: now all incoming TLS-traffic will be handled using this identity.
+      # This might be easier but requires a certificate which is valid for the configured routes
+  
+      forwardMutualTlsIdentity: "directory/where/another/identityResides.jks;changeit;JKS"
+      # This identity will be used as a client-identity for mutual-TLS when forwarding to
+      # other servers. The information string can be
+      # "my/file/name.p12;p12password" or
+      # "p12password;my/file/name.p12" or
+      # "cert.pem;key.pkcs8" or
+      # "rsaCert.pem;rsaKey.pkcs1" or
+      # "key/store.jks;key" or
+      # "key/store.jks;key1;key2" or
+      # "key/store.jks;jks;key"
+      # 
+      # Each part can be one of:
+      # * filename
+      # * password
+      # * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
+      domainName: deep.url.of.server.de
+      # domain which will be used as the server address in the TLS-certificate
+      alternativeNames:
+        - localhost
+        - 63.54.54.43
+        - foo.bar.server.com
+      # Alternate names to be added to the TLS-certificate 
+      # (localhost and 127.0.0.1 are added by default)
 
     keyFolders:
     - .

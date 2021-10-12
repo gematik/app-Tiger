@@ -11,6 +11,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.exception.TigerProxyStartupException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +28,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private RbelLogger rbelLogger;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
+        if (configuration.getTls() == null) {
+            throw new TigerProxyStartupException("no TLS-configuration found!");
+        }
         rbelLogger = buildRbelLoggerConfiguration(configuration)
             .constructRbelLogger();
         if (configuration.isDisableRbelParsing()) {
