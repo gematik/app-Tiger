@@ -60,7 +60,7 @@ public class TigerProxy extends AbstractTigerProxy {
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
 
-        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory(configuration));
+        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
@@ -70,7 +70,7 @@ public class TigerProxy extends AbstractTigerProxy {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
 
-        mockServer = convertProxyConfiguration(configuration)
+        mockServer = convertProxyConfiguration()
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
@@ -117,8 +117,7 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    private BiFunction<MockServerLogger, Boolean, KeyAndCertificateFactory>
-    buildKeyAndCertificateFactory(TigerProxyConfiguration configuration) {
+    private BiFunction<MockServerLogger, Boolean, KeyAndCertificateFactory> buildKeyAndCertificateFactory() {
         if (getTigerProxyConfiguration().getServerIdentity() != null
             && !getTigerProxyConfiguration().getServerIdentity().hasValidChainWithRootCa()) {
             throw new TigerProxyStartupException("Configured server-identity has no valid chain!");
@@ -126,13 +125,13 @@ public class TigerProxy extends AbstractTigerProxy {
 
         return (mockServerLogger, isServerInstance) -> {
             if (isServerInstance
-                || configuration.getForwardMutualTlsIdentity() == null) {
+                || getTigerProxyConfiguration().getForwardMutualTlsIdentity() == null) {
                 return new TigerKeyAndCertificateFactory(mockServerLogger,
                     determineServerRootCa().orElse(null),
                     getTigerProxyConfiguration().getServerIdentity());
             } else {
                 return new TigerKeyAndCertificateFactory(mockServerLogger,
-                    null, configuration.getForwardMutualTlsIdentity());
+                    null, getTigerProxyConfiguration().getForwardMutualTlsIdentity());
             }
         };
     }
@@ -194,15 +193,15 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {
+    private Optional<ProxyConfiguration> convertProxyConfiguration() {
         Optional<ProxyConfiguration> cfg = Optional.empty();
         try {
-            if (configuration.getForwardToProxy() == null
-                || StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())) {
+            if (getTigerProxyConfiguration().getForwardToProxy() == null
+                || StringUtils.isEmpty(getTigerProxyConfiguration().getForwardToProxy().getHostname())) {
                 return cfg;
             }
-            if (configuration.getForwardToProxy().getHostname() != null &&
-                configuration.getForwardToProxy().getHostname().equals("$SYSTEM")) {
+            if (getTigerProxyConfiguration().getForwardToProxy().getHostname() != null &&
+                getTigerProxyConfiguration().getForwardToProxy().getHostname().equals("$SYSTEM")) {
                 if (System.getProperty("http.proxyHost") != null) {
                     cfg = Optional.of(ProxyConfiguration.proxyConfiguration(Type.HTTP,
                         System.getProperty("http.proxyHost") + ":" + System.getProperty("http.proxyPort")));
@@ -212,12 +211,12 @@ public class TigerProxy extends AbstractTigerProxy {
                 }
             } else {
                 cfg = Optional.of(ProxyConfiguration.proxyConfiguration(
-                    Optional.ofNullable(configuration.getForwardToProxy().getType())
+                    Optional.ofNullable(getTigerProxyConfiguration().getForwardToProxy().getType())
                         .map(this::toMockServerType)
                         .orElse(Type.HTTPS),
-                    configuration.getForwardToProxy().getHostname()
+                    getTigerProxyConfiguration().getForwardToProxy().getHostname()
                         + ":"
-                        + configuration.getForwardToProxy().getPort()));
+                        + getTigerProxyConfiguration().getForwardToProxy().getPort()));
             }
             return cfg;
         } finally {
@@ -463,8 +462,8 @@ public class TigerProxy extends AbstractTigerProxy {
         public HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse) {
             if (!route.isDisableRbelLogging()) {
                 try {
-                    triggerListener(mockServerToRbelConverter.convertRequest(httpRequest, route.getFrom()));
-                    triggerListener(mockServerToRbelConverter.convertResponse(httpResponse, route.getFrom()));
+                    triggerListener(mockServerToRbelConverter.convertRequest(httpRequest, route.getTo()));
+                    triggerListener(mockServerToRbelConverter.convertResponse(httpResponse, route.getTo()));
                 } catch (Exception e) {
                     log.error("RBel FAILED!", e);
                 }

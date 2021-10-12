@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -30,11 +31,12 @@ import org.mockserver.model.SocketAddress;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
-import java.security.*;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -172,6 +174,54 @@ public class TestTigerProxy {
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("localhost:" + fakeBackendServer.port());
+    }
+
+    @Test
+    public void reverseProxy_shouldGiveReceiverAndSenderInRbelMessage() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        new UnirestInstance(new Config())
+            .get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.recipient")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("localhost", fakeBackendServer.port()));
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .findElement("$.sender")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("localhost", fakeBackendServer.port()));
+    }
+
+    @Test
+    public void forwardProxy_shouldGiveReceiverAndSenderInRbelMessage() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://foo.bar")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        new UnirestInstance(new Config().proxy("localhost", tigerProxy.getPort()))
+            .get("http://foo.bar/foobar").asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.recipient")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("foo.bar", 80));
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .findElement("$.sender")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("foo.bar", 80));
     }
 
     @Test
