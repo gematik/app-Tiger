@@ -60,6 +60,7 @@
         <module>tiger-testenv-mgr</module>
         <module>tiger-test-lib</module>
         <module>tiger-aforeporter-plugin</module>
+        <module>tiger-admin</module>
     </modules>
 
     <properties>
