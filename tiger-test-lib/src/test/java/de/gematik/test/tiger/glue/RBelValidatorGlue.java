@@ -6,7 +6,9 @@ import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
-import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 import java.util.regex.Pattern;
 import org.xmlunit.builder.DiffBuilder;
 
@@ -25,14 +27,61 @@ public class RBelValidatorGlue {
     // =================================================================================================================
 
     /**
+     * Specify the amount of seconds Tiger should wait when filtering for requests / responses before reporting them as
+     * not found.
+     */
+    @Given("TGR set request wait timeout to {int} seconds")
+    public void tgrSetRequestWaitTimeout(final int waitsec) {
+        rbelValidator.getContext().getContext("tiger").put("rbel.request.timeout", waitsec);
+    }
+
+    /**
+     * clear all validatable rbel messages. This does not clear the recorded messages later on reported via the rbel log
+     * HTML page or the messages shown on web ui of tiger proxies.
+     */
+    @When("TGR clear recorded messages")
+    public void tgrClearRecordedMessages() {
+        rbelValidator.clearRBelMessages();
+    }
+
+
+    /**
+     * filter all subsequent findRequest steps for hostname. To reset set host name to empty string "".
+     *
+     * @param hostname host name (regex supported) to filter for
+     */
+    @When("TGR filter requests based on host {string}")
+    public void tgrFilterBasedOnHost(final String hostname) {
+        rbelValidator.getContext().getContext("tiger").put("rbel.request.filter.host", hostname);
+    }
+
+    /**
+     * filter all subsequent findRequest steps for method.
+     *
+     * @param method method to filter for
+     */
+    @When("TGR filter requests based on method {string}")
+    public void tgrFilterBasedOnMethod(final String method) {
+        rbelValidator.getContext().getContext("tiger").put("rbel.request.filter.method", method.toUpperCase());
+    }
+
+    /**
+     * reset filter for method for subsequent findRequest steps.
+     */
+    @When("TGR reset request method filter")
+    public void tgrResetRequestMethodFilter() {
+        rbelValidator.getContext().getContext("tiger").put("rbel.request.filter.method", null);
+    }
+
+    /**
      * find the first request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
      * instance
      *
      * @param path path to match
      */
-    @And("TGR find request to path {string}")
+    @When("TGR find request to path {string}")
     public void findRequestToPath(final String path) {
-        rbelValidator.filterRequestsAndStoreInContext(path, null, null);
+        rbelValidator.filterRequestsAndStoreInContext(path, null, null, false);
     }
 
     /**
@@ -43,10 +92,10 @@ public class RBelValidatorGlue {
      * @param rbelPath rbel path to node/attribute
      * @param value    value to match at given node/attribute
      */
-    @And("TGR find request to path {string} with {string} matching {string}")
+    @When("TGR find request to path {string} with {string} matching {string}")
     public void findRequestToPathWithCommand(
         final String path, final String rbelPath, final String value) {
-        rbelValidator.filterRequestsAndStoreInContext(path, rbelPath, value);
+        rbelValidator.filterRequestsAndStoreInContext(path, rbelPath, value, false);
     }
 
     /**
@@ -55,9 +104,9 @@ public class RBelValidatorGlue {
      *
      * @param path path to match
      */
-    @And("TGR find next request to path {string}")
+    @When("TGR find next request to path {string}")
     public void findNextRequestToPath(final String path) {
-        rbelValidator.filterNextRequestAndStoreInContext(path, null, null);
+        rbelValidator.filterRequestsAndStoreInContext(path, null, null, true);
     }
 
     /**
@@ -68,10 +117,10 @@ public class RBelValidatorGlue {
      * @param rbelPath rbel path to node/attribute
      * @param value    value to match at given node/attribute
      */
-    @And("TGR find next request to path {string} with {string} matching {string}")
+    @When("TGR find next request to path {string} with {string} matching {string}")
     public void findNextRequestToPathWithCommand(
         final String path, final String rbelPath, final String value) {
-        rbelValidator.filterNextRequestAndStoreInContext(path, rbelPath, value);
+        rbelValidator.filterRequestsAndStoreInContext(path, rbelPath, value, true);
     }
 
     /**
@@ -82,7 +131,7 @@ public class RBelValidatorGlue {
      * @param value    value to match at given node/attribute
      * @deprecated
      */
-    @And("TGR any message with attribute {string} matches {string}")
+    @When("TGR any message with attribute {string} matches {string}")
     public void findAnyMessageAttributeMatches(final String rbelPath, final String value) {
         rbelValidator.getRbelMessages().stream()
             .filter(msg -> new RbelPathExecutor(msg, rbelPath).execute()
@@ -103,12 +152,9 @@ public class RBelValidatorGlue {
      *
      * @param docString value / regex that should equal or match
      */
-    @And("TGR current response body matches")
+    @Then("TGR current response body matches")
     public void currentResponseAtMatches(final String docString) {
-        String bodyStr = rbelValidator.findElemInLastResponse("$.body").getRawStringContent();
-        if (!bodyStr.equals(docString)) {
-            assertThat(bodyStr).matches(docString);
-        }
+        currentResponseMessageAtMatches("$.body", docString);
     }
 
     /**
@@ -118,7 +164,7 @@ public class RBelValidatorGlue {
      * @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex
      *                 option
      */
-    @And("TGR current response with attribute {string} matches {string}")
+    @Then("TGR current response with attribute {string} matches {string}")
     public void currentResponseMessageAttributeMatches(final String rbelPath, final String value) {
         final String text = rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent();
         if (!text.equals(value)) {
@@ -129,11 +175,23 @@ public class RBelValidatorGlue {
     /**
      * assert that response of filtered request matches at given rbel path node/attribute.
      *
+     * @param rbelPath  path to node/attribute
+     * @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex
+     *                  option supplied as DocString
+     */
+    @Then("TGR current response at {string} matches")
+    public void currentResponseMessageAtMatchesDocString(final String rbelPath, final String docString) {
+        currentResponseMessageAtMatches(rbelPath, docString);
+    }
+
+    /**
+     * assert that response of filtered request matches at given rbel path node/attribute.
+     *
      * @param rbelPath path to node/attribute
      * @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex
      *                 option
      */
-    @And("TGR current response at {string} matches {string}")
+    @Then("TGR current response at {string} matches {string}")
     public void currentResponseMessageAtMatches(final String rbelPath, final String value) {
         final String text = rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent();
         if (!text.equals(value)) {
@@ -142,44 +200,32 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * assert that response of filtered request matches at given rbel path node/attribute.
-     *
-     * @param rbelPath  path to node/attribute
-     * @param docString value / regex that should equal or match
-     */
-    @And("TGR current response at {string} matches")
-    public void currentResponseAtMatches(final String rbelPath, final String docString) {
-        String bodyStr = rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent();
-        if (!bodyStr.equals(docString)) {
-            assertThat(bodyStr).matches(docString);
-        }
-    }
-
-    /**
-     * assert that response of filtered request matches at given rbel path node/attribute assuming its JSON
+     * assert that response of filtered request matches at given rbel path node/attribute assuming its JSON or XML
      *
      * @param rbelPath  path to node/attribute
      * @param oracleStr value / regex that should equal or match as JSON content
+     * @param mode      one of JSON|XML
      * @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
      */
-    @And("TGR current response at {string} matches as JSON")
-    public void currentResponseAtMatchesAsJson(final String rbelPath, final String oracleStr) {
-        String jsonStr = rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent();
-        new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(jsonStr, oracleStr, false);
-    }
+    @Then("TGR current response at {string} matches as {word}")
+    public void currentResponseAtMatchesAsJson(final String rbelPath, final String mode, final String oracleStr) {
+        switch (mode.toUpperCase()) {
+            case "JSON":
+                new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(
+                    rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent(),
+                    oracleStr,
+                    false);
+                break;
+            case "XML":
+                final RbelElement el = rbelValidator.findElemInLastResponse(rbelPath);
+                assertThat(el.hasFacet(RbelXmlFacet.class))
+                    .withFailMessage("Node '" + rbelPath + "' is not XML")
+                    .isTrue();
+                rbelValidator.compareXMLStructure(
+                    el.getFacetOrFail(RbelXmlFacet.class).getSourceElement().asXML(),
+                    oracleStr);
 
-    /**
-     * assert that response of filtered request matches at given rbel path node/attribute assuming its XML.
-     *
-     * @param rbelPath path to node/attribute
-     * @param XMLstr   value / regex that should equal or match as JSON content
-     * @see <a href="https://github.com/xmlunit/user-guide/wiki/DifferenceEvaluator">More on DifferenceEvaluator</a>
-     */
-    @And("TGR current response at {string} matches as XML")
-    public void currentResponseAtMatchesAsXML(final String rbelPath, final String XMLstr) {
-        final RbelElement el = rbelValidator.findElemInLastResponse(rbelPath);
-        assertThat(el.hasFacet(RbelXmlFacet.class)).withFailMessage("Node '" + rbelPath + "' is not XML").isTrue();
-        rbelValidator.compareXMLStructure(el.getFacetOrFail(RbelXmlFacet.class).getSourceElement().asXML(), XMLstr);
+        }
     }
 
     /**
@@ -198,7 +244,7 @@ public class RBelValidatorGlue {
      *                       </ul>
      * @see <a href="https://github.com/xmlunit/user-guide/wiki/DifferenceEvaluator">More on DifferenceEvaluator</a>
      */
-    @And("TGR current response at {string} matches as XML and diff options {string}")
+    @Then("TGR current response at {string} matches as XML and diff options {string}")
     public void currentResponseAtMatchesAsXMLAndDiffOptions(final String rbelPath, final String XMLstr,
         String diffOptionsCSV) {
         final RbelElement el = rbelValidator.findElemInLastResponse(rbelPath);

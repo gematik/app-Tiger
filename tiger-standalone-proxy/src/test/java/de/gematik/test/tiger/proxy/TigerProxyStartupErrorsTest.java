@@ -24,7 +24,7 @@ public class TigerProxyStartupErrorsTest {
     @Test
     public void noCertificateChainSupplied_shouldProduceError() {
         ApplicationContextRunner contextRunner = tigerProxyStandaloneContext()
-            .withPropertyValues("tigerProxy.serverIdentity=tls_cert.jks;gematik");
+            .withPropertyValues("tigerProxy.tls.serverIdentity=tls_cert.jks;gematik");
 
         contextRunner.run((context) -> {
             assertThat(context).hasFailed();

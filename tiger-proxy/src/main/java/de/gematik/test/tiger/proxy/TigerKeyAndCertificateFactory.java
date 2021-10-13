@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -48,6 +49,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.mockserver.socket.tls.jdk.CertificateSigningRequest.NOT_AFTER;
 import static org.mockserver.socket.tls.jdk.CertificateSigningRequest.NOT_BEFORE;
@@ -61,16 +64,26 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     private final TigerPkiIdentity caIdentity;
     private final MockServerLogger mockServerLogger;
     private final List<X509Certificate> certificateChain;
+    private final String serverName;
+    private final List<String> serverAlternativeNames;
     private TigerPkiIdentity eeIdentity;
+    private boolean canEeIdentityBeReset;
 
     @Builder
     public TigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
-                                         TigerPkiIdentity caIdentity, TigerPkiIdentity eeIdentity) {
+                                         TigerPkiIdentity caIdentity, TigerPkiIdentity eeIdentity,
+                                         TigerTlsConfiguration tls) {
         super(mockServerLogger);
         this.certificateChain = new ArrayList<>();
         this.mockServerLogger = mockServerLogger;
         this.caIdentity = caIdentity;
         this.eeIdentity = eeIdentity;
+        this.serverName = tls.getDomainName();
+        this.serverAlternativeNames = new ArrayList<>();
+        if (tls.getAlternativeNames() != null) {
+            serverAlternativeNames.addAll(tls.getAlternativeNames());
+        }
+        this.canEeIdentityBeReset = eeIdentity == null;
     }
 
     public boolean certificateAuthorityCertificateNotYetCreated() {
@@ -102,10 +115,7 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
                 KeyPair keyPair = this.generateRsaKeyPair(2048);
                 X509Certificate x509Certificate =
                     this.createCertificateSignedByCa(keyPair.getPublic(), this.caIdentity.getCertificate(),
-                        this.caIdentity.getPrivateKey(), this.caIdentity.getCertificate().getPublicKey(),
-                        ConfigurationProperties.sslCertificateDomainName(),
-                        ConfigurationProperties.sslSubjectAlternativeNameDomains(),
-                        ConfigurationProperties.sslSubjectAlternativeNameIps());
+                        this.caIdentity.getPrivateKey(), this.caIdentity.getCertificate().getPublicKey());
 
                 eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
 
@@ -139,53 +149,38 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     }
 
     private X509Certificate createCertificateSignedByCa(PublicKey publicKey, X509Certificate certificateAuthorityCert,
-                                                        PrivateKey certificateAuthorityPrivateKey, PublicKey certificateAuthorityPublicKey,
-                                                        String domain, String[] subjectAlternativeNameDomains,
-                                                        String[] subjectAlternativeNameIps) throws Exception {
-
-        // signers name
+                                                        PrivateKey certificateAuthorityPrivateKey,
+                                                        PublicKey certificateAuthorityPublicKey) throws Exception {
         X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
+        X500Name subject = new X500Name("CN=" + serverName + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
 
-        // subjects name - the same as we are self signed.
-        X500Name subject = new X500Name("CN=" + domain + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
-
-        // serial
         BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE)); //NOSONAR
 
-        // create the certificate - version 3
         X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial, NOT_BEFORE, NOT_AFTER, subject, publicKey);
         builder.addExtension(Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
         builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
 
-        // subject alternative name
-        List<ASN1Encodable> subjectAlternativeNames = new ArrayList<>();
-        if (subjectAlternativeNameDomains != null) {
-            subjectAlternativeNames.add(new GeneralName(GeneralName.dNSName, domain));
-            for (String subjectAlternativeNameDomain : subjectAlternativeNameDomains) {
-                subjectAlternativeNames.add(new GeneralName(GeneralName.dNSName, subjectAlternativeNameDomain));
-            }
-        }
-        if (subjectAlternativeNameIps != null) {
-            for (String subjectAlternativeNameIp : subjectAlternativeNameIps) {
-                if (IPAddress.isValidIPv6WithNetmask(subjectAlternativeNameIp)
-                    || IPAddress.isValidIPv6(subjectAlternativeNameIp)
-                    || IPAddress.isValidIPv4WithNetmask(subjectAlternativeNameIp)
-                    || IPAddress.isValidIPv4(subjectAlternativeNameIp)) {
-                    subjectAlternativeNames.add(new GeneralName(GeneralName.iPAddress, subjectAlternativeNameIp));
-                }
-            }
-        }
-        if (subjectAlternativeNames.size() > 0) {
-            DERSequence subjectAlternativeNamesExtension = new DERSequence(subjectAlternativeNames.toArray(new ASN1Encodable[0]));
+        if (serverAlternativeNames.size() > 0) {
+            DERSequence subjectAlternativeNamesExtension = new DERSequence(
+                Stream.concat(serverAlternativeNames.stream(), Stream.of(serverName))
+                    .distinct()
+                    .map(this::mapAlternativeNameToAsn1Encodable)
+                    .toArray(ASN1Encodable[]::new));
             builder.addExtension(Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);
         }
-        X509Certificate signedX509Certificate = signTheCertificate(builder, certificateAuthorityPrivateKey);
 
-        // validate
-        signedX509Certificate.checkValidity(new Date());
-        signedX509Certificate.verify(certificateAuthorityPublicKey);
+        return signTheCertificate(builder, certificateAuthorityPrivateKey);
+    }
 
-        return signedX509Certificate;
+    private ASN1Encodable mapAlternativeNameToAsn1Encodable(String alternativeName) {
+        if (IPAddress.isValidIPv6WithNetmask(alternativeName)
+            || IPAddress.isValidIPv6(alternativeName)
+            || IPAddress.isValidIPv4WithNetmask(alternativeName)
+            || IPAddress.isValidIPv4(alternativeName)) {
+            return new GeneralName(GeneralName.iPAddress, alternativeName);
+        } else {
+            return new GeneralName(GeneralName.dNSName, alternativeName);
+        }
     }
 
     private X509Certificate signTheCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey privateKey)
@@ -217,5 +212,15 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
     public boolean certificateNotYetCreated() {
         return eeIdentity == null;
+    }
+
+    public void resetEeCertificate() {
+        if (canEeIdentityBeReset) {
+            eeIdentity = null;
+        }
+    }
+
+    public void addAlternativeName(String host) {
+        serverAlternativeNames.add(host);
     }
 }

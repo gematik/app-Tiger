@@ -21,6 +21,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyType;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.exception.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
@@ -64,6 +65,7 @@ import static org.mockserver.model.HttpRequest.request;
 @Slf4j
 public class TigerProxy extends AbstractTigerProxy {
 
+    private final List<TigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
     private MockServer mockServer;
     private MockServerClient mockServerClient;
     private MockServerToRbelConverter mockServerToRbelConverter;
@@ -72,7 +74,7 @@ public class TigerProxy extends AbstractTigerProxy {
     public TigerProxy(TigerProxyConfiguration configuration) {
         super(configuration);
 
-        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory(configuration));
+        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
@@ -82,7 +84,7 @@ public class TigerProxy extends AbstractTigerProxy {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
 
-        mockServer = convertProxyConfiguration(configuration)
+        mockServer = convertProxyConfiguration()
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
@@ -129,31 +131,37 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    private BiFunction<MockServerLogger, Boolean, KeyAndCertificateFactory>
-    buildKeyAndCertificateFactory(TigerProxyConfiguration configuration) {
-        if (getTigerProxyConfiguration().getServerIdentity() != null
-            && !getTigerProxyConfiguration().getServerIdentity().hasValidChainWithRootCa()) {
+    private BiFunction<MockServerLogger, Boolean, KeyAndCertificateFactory> buildKeyAndCertificateFactory() {
+        if (getTigerProxyConfiguration().getTls().getServerIdentity() != null
+            && !getTigerProxyConfiguration().getTls().getServerIdentity().hasValidChainWithRootCa()) {
             throw new TigerProxyStartupException("Configured server-identity has no valid chain!");
         }
 
         return (mockServerLogger, isServerInstance) -> {
             if (isServerInstance
-                || configuration.getForwardMutualTlsIdentity() == null) {
-                return new TigerKeyAndCertificateFactory(mockServerLogger,
+                || getTigerProxyConfiguration().getTls() == null
+                || getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity() == null) {
+                final TigerKeyAndCertificateFactory factory = new TigerKeyAndCertificateFactory(mockServerLogger,
                     determineServerRootCa().orElse(null),
-                    getTigerProxyConfiguration().getServerIdentity());
+                    getTigerProxyConfiguration().getTls().getServerIdentity(),
+                    getTigerProxyConfiguration().getTls());
+                if (isServerInstance) {
+                    tlsFactories.add(factory);
+                }
+                return factory;
             } else {
                 return new TigerKeyAndCertificateFactory(mockServerLogger,
-                    null, configuration.getForwardMutualTlsIdentity());
+                    null, getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity(),
+                    getTigerProxyConfiguration().getTls());
             }
         };
     }
 
     private Optional<TigerPkiIdentity> determineServerRootCa() {
-        if (getTigerProxyConfiguration().getServerRootCa() != null) {
-            return Optional.ofNullable(getTigerProxyConfiguration().getServerRootCa());
+        if (getTigerProxyConfiguration().getTls().getServerRootCa() != null) {
+            return Optional.ofNullable(getTigerProxyConfiguration().getTls().getServerRootCa());
         } else {
-            if (getTigerProxyConfiguration().getServerIdentity() != null) {
+            if (getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
                 return Optional.empty();
             } else {
                 return Optional.of(new TigerPkiIdentity(
@@ -206,15 +214,15 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    private Optional<ProxyConfiguration> convertProxyConfiguration(TigerProxyConfiguration configuration) {
+    private Optional<ProxyConfiguration> convertProxyConfiguration() {
         Optional<ProxyConfiguration> cfg = Optional.empty();
         try {
-            if (configuration.getForwardToProxy() == null
-                || StringUtils.isEmpty(configuration.getForwardToProxy().getHostname())) {
+            if (getTigerProxyConfiguration().getForwardToProxy() == null
+                || StringUtils.isEmpty(getTigerProxyConfiguration().getForwardToProxy().getHostname())) {
                 return cfg;
             }
-            if (configuration.getForwardToProxy().getHostname() != null &&
-                configuration.getForwardToProxy().getHostname().equals("$SYSTEM")) {
+            if (getTigerProxyConfiguration().getForwardToProxy().getHostname() != null &&
+                getTigerProxyConfiguration().getForwardToProxy().getHostname().equals("$SYSTEM")) {
                 if (System.getProperty("http.proxyHost") != null) {
                     cfg = Optional.of(ProxyConfiguration.proxyConfiguration(Type.HTTP,
                         System.getProperty("http.proxyHost") + ":" + System.getProperty("http.proxyPort")));
@@ -224,12 +232,12 @@ public class TigerProxy extends AbstractTigerProxy {
                 }
             } else {
                 cfg = Optional.of(ProxyConfiguration.proxyConfiguration(
-                    Optional.ofNullable(configuration.getForwardToProxy().getType())
+                    Optional.ofNullable(getTigerProxyConfiguration().getForwardToProxy().getType())
                         .map(this::toMockServerType)
                         .orElse(Type.HTTPS),
-                    configuration.getForwardToProxy().getHostname()
+                    getTigerProxyConfiguration().getForwardToProxy().getHostname()
                         + ":"
-                        + configuration.getForwardToProxy().getPort()));
+                        + getTigerProxyConfiguration().getForwardToProxy().getPort()));
             }
             return cfg;
         } finally {
@@ -319,6 +327,7 @@ public class TigerProxy extends AbstractTigerProxy {
         } else {
             port = targetUri.getPort();
         }
+        addAlternativeName(new URI(tigerRoute.getFrom()).getHost());
         return mockServerClient.when(request()
                 .withHeader("Host", tigerRoute.getFrom().split("://")[1])
                 .withSecure(tigerRoute.getFrom().startsWith("https://")))
@@ -341,6 +350,21 @@ public class TigerProxy extends AbstractTigerProxy {
                 },
                 buildExpectationCallback(tigerRoute, tigerRoute.getFrom())
             );
+    }
+
+    private void addAlternativeName(String host) {
+        List<String> newAlternativeNames = new ArrayList<>();
+        if (getTigerProxyConfiguration().getTls() != null
+            && getTigerProxyConfiguration().getTls().getAlternativeNames() != null) {
+            newAlternativeNames.addAll(getTigerProxyConfiguration().getTls().getAlternativeNames());
+        }
+        newAlternativeNames.add(host);
+        getTigerProxyConfiguration().getTls().setAlternativeNames(newAlternativeNames);
+
+        for (TigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
+            tlsFactory.addAlternativeName(host);
+            tlsFactory.resetEeCertificate();
+        }
     }
 
     private ExpectationForwardAndResponseCallback buildExpectationCallback(TigerRoute tigerRoute,
@@ -394,7 +418,9 @@ public class TigerProxy extends AbstractTigerProxy {
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null);
             final TigerPkiIdentity serverIdentity = determineServerRootCa()
-                .or(() -> Optional.ofNullable(getTigerProxyConfiguration().getServerIdentity()))
+                .or(() -> Optional.ofNullable(getTigerProxyConfiguration().getTls())
+                    .map(TigerTlsConfiguration::getServerIdentity)
+                    .filter(Objects::nonNull))
                 .orElseThrow(() -> new TigerProxyTrustManagerBuildingException(
                     "Unrecoverable state: Server-Identity null and Server-CA empty"));
 
@@ -475,8 +501,8 @@ public class TigerProxy extends AbstractTigerProxy {
         public HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse) {
             if (!route.isDisableRbelLogging()) {
                 try {
-                    triggerListener(mockServerToRbelConverter.convertRequest(httpRequest, route.getFrom()));
-                    triggerListener(mockServerToRbelConverter.convertResponse(httpResponse, route.getFrom()));
+                    triggerListener(mockServerToRbelConverter.convertRequest(httpRequest, route.getTo()));
+                    triggerListener(mockServerToRbelConverter.convertResponse(httpResponse, route.getTo()));
                 } catch (Exception e) {
                     log.error("RBel FAILED!", e);
                 }

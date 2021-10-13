@@ -2,8 +2,7 @@ tigerProxy:
   forwardToProxy:
     hostname: 192.168.230.85
     port: 3128
-  serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
-
+  tls.serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 servers:
   - name: idp3

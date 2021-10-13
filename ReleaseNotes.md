@@ -1,3 +1,9 @@
+# Release 0.12.0
+* Bugfix tiger-proxy: ASN1.Encodable parsing
+* Extended TLS-configuration (now supports custom domain-names, useful for a reverse-proxy-setup)
+* TLS-properties moved to tigerProxy.tls (will give error on startup if missused)
+* Reverse-proxy-routes give the target-server as receiver/sender
+
 # Release 0.11.0
 Bug fix Release
 Lokale Resources fix (routeModal.html)

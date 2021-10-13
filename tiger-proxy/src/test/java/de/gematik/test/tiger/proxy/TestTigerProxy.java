@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -187,6 +188,92 @@ public class TestTigerProxy {
     }
 
     @Test
+    public void reverseProxy_shouldGiveReceiverAndSenderInRbelMessage() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        new UnirestInstance(new Config())
+            .get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.recipient")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("localhost", fakeBackendServer.port()));
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .findElement("$.sender")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("localhost", fakeBackendServer.port()));
+    }
+
+    @Test
+    public void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate() throws NoSuchAlgorithmException, KeyManagementException {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .tls(TigerTlsConfiguration.builder()
+                .domainName("muahaha")
+                .build())
+            .build());
+
+        AtomicBoolean verifyWasCalledSuccesfully = new AtomicBoolean(false);
+        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+        ctx.init(null, new TrustManager[]{
+                new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                        assertThat(chain[0].getSubjectDN().getName())
+                            .contains("muahaha");
+                        verifyWasCalledSuccesfully.set(true);
+                    }
+
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }
+            }, new SecureRandom()
+        );
+        new UnirestInstance(new Config()
+            .sslContext(ctx))
+            .get("https://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+
+        assertThat(verifyWasCalledSuccesfully).isTrue();
+    }
+
+    @Test
+    public void forwardProxy_shouldGiveReceiverAndSenderInRbelMessage() {
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://foo.bar")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        new UnirestInstance(new Config().proxy("localhost", tigerProxy.getPort()))
+            .get("http://foo.bar/foobar").asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.recipient")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("foo.bar", 80));
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .findElement("$.sender")
+            .flatMap(RbelElement::seekValue))
+            .get()
+            .isEqualTo(new RbelHostname("foo.bar", 80));
+    }
+
+    @Test
     public void routeLessTraffic_shouldLogInRbel() {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
@@ -301,7 +388,9 @@ public class TestTigerProxy {
                 .from("https://authn.aktor.epa.telematik-test")
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
-            .serverIdentity(new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
+            .tls(TigerTlsConfiguration.builder()
+                .serverIdentity(new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
+                .build())
             .build());
 
         AtomicInteger callCounter = new AtomicInteger(0);
@@ -340,7 +429,9 @@ public class TestTigerProxy {
                 .from("https://backend")
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
-            .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"))
+            .tls(TigerTlsConfiguration.builder()
+                .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"))
+                .build())
             .build());
 
         final UnirestInstance unirestInstance = new UnirestInstance(
@@ -358,7 +449,9 @@ public class TestTigerProxy {
     @Test
     public void defunctCertificate_expectException() throws UnirestException {
         assertThatThrownBy(() -> new TigerProxy(TigerProxyConfiguration.builder()
-            .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
+            .tls(TigerTlsConfiguration.builder()
+                .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
+                .build())
             .build()))
             .isInstanceOf(RuntimeException.class);
     }
@@ -373,7 +466,9 @@ public class TestTigerProxy {
                 .from("https://backend")
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
-            .serverRootCa(new TigerPkiIdentity("src/test/resources/customCa.p12;00"))
+            .tls(TigerTlsConfiguration.builder()
+                .serverRootCa(new TigerPkiIdentity("src/test/resources/customCa.p12;00"))
+                .build())
             .build());
 
         Unirest.config().reset();
@@ -515,8 +610,10 @@ public class TestTigerProxy {
         AtomicInteger callCounter = new AtomicInteger(0);
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .serverRootCa(new TigerPkiIdentity(
-                "src/test/resources/selfSignedCa/rootCa.p12;00"))
+            .tls(TigerTlsConfiguration.builder()
+                .serverRootCa(new TigerPkiIdentity(
+                    "src/test/resources/selfSignedCa/rootCa.p12;00"))
+                .build())
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
                 .to("http://localhost:" + fakeBackendServer.port())
@@ -591,8 +688,10 @@ public class TestTigerProxy {
                 .from("https://backend")
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
-            .serverRootCa(ca)
-            .forwardMutualTlsIdentity(new TigerPkiIdentity("src/test/resources/rsa.p12;00"))
+            .tls(TigerTlsConfiguration.builder()
+                .serverRootCa(ca)
+                .forwardMutualTlsIdentity(new TigerPkiIdentity("src/test/resources/rsa.p12;00"))
+                .build())
             .build());
 
         final UnirestInstance unirestInstance = new UnirestInstance(
@@ -636,7 +735,9 @@ public class TestTigerProxy {
             = new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .serverIdentity(serverIdentity)
+            .tls(TigerTlsConfiguration.builder()
+                .serverIdentity(serverIdentity)
+                .build())
             .proxyRoutes(List.of(TigerRoute.builder()
                     // aktor-gateway.gematik.de ist der DN des obigen zertifikats
                     .from("https://authn.aktor.epa.telematik-test")
