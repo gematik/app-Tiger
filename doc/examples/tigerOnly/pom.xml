@@ -12,12 +12,16 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <!-- adapt to version of tiger that is available -->
-        <version.tiger>0.2.0-57</version.tiger>
-        <version.serenity.core>2.3.4</version.serenity.core>
-        <version.serenity.maven.plugin>2.3.4</version.serenity.maven.plugin>
+        <!-- an eine verfügbare Version des Tigers anpassen -->
+        <!-- Entweder von maven central:
+          https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
+          oder vom gematik internen Nexus
+          https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
+        -->
+        <version.tiger>0.12.0</version.tiger>
+        <version.serenity.core>2.4.34</version.serenity.core>
+        <version.serenity.maven.plugin>2.4.34</version.serenity.maven.plugin>
     </properties>
-
 
     <dependencies>
         <dependency>
@@ -25,21 +29,61 @@
             <artifactId>tiger-test-lib</artifactId>
             <version>${version.tiger}</version>
             <type>test-jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>de.gematik</groupId>
+                    <artifactId>rbelLogger</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
             <version>${version.tiger}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>de.gematik</groupId>
+                    <artifactId>rbelLogger</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>5.7.1</version>
+            <version>5.7.2</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- OPTIONAL plugin um JUnit4 Testtreiberklassen automatisiert aus einem Tempate zu erstellen -->
+            <!-- Unterstützt NUR ENGLISCHE Gherkin Schlüsselwörter! -->
+            <plugin>
+                <groupId>com.github.temyers</groupId>
+                <artifactId>cucumber-jvm-parallel-plugin</artifactId>
+                <version>4.2.0</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
+                            <glue>
+                                <package>de.gematik.test.tiger.hooks</package>
+                                <package>de.gematik.test.tiger.glue</package>
+                                <!-- add your packages here -->
+                            </glue>
+                            <packageName>tiger.integration.YOURPROJECTNAMEHERE</packageName>
+                            <parallelScheme>FEATURE</parallelScheme>
+                        </configuration>
+                        <goals>
+                            <goal>generateRunners</goal>
+                        </goals>
+                        <id>generateRunners</id>
+                        <phase>generate-test-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- startet die Tests durch Aufruf der JUnit4 Testtreiberklassen -->
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -52,15 +96,25 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/Parallel*IT.java</include>
+                                <!-- Diesen Ausdruck an die im Projekt verwendete Bezeichnung der Treiberklassen anpassen -->
+                            </includes>
+                            <environmentVariables>
+                                <TIGER_ACTIVE>1</TIGER_ACTIVE>
+                                <!-- Dieses Umgebungsvariable triggert die Hooks der Tiger Test Lib um die Testumgebung hochzufahren -->
+                                <!-- und die Tiger Proxies zu aktivieren -->
+                            </environmentVariables>
+                            <skipITs>false</skipITs>
+                            <forkMode>once</forkMode>
+                            <!-- Um eine verspätete Ausgabe der Logs aus externen Jar Knoten zu verhindern -->
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <includes>
-                        <include>**/JunitBDDDriver.java</include>
-                    </includes>
-                    <skipITs>false</skipITs>
-                </configuration>
             </plugin>
+
+            <!-- Erstellt aus den Testergebnissen einen SerenityBDD Testbericht -->
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
                 <artifactId>serenity-maven-plugin</artifactId>
@@ -78,6 +132,7 @@
                         <phase>post-integration-test</phase>
                         <goals>
                             <goal>reports</goal>
+                            <goal>aggregate</goal>
                         </goals>
                     </execution>
                 </executions>

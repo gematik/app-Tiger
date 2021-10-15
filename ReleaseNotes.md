@@ -1,3 +1,8 @@
+# Release 0.13.0
+* Modifications added to tiger-proxy (Documentation still outstanding)
+* Fixed binary-transmission bug
+* Documentation added
+
 # Release 0.12.0
 * Bugfix tiger-proxy: ASN1.Encodable parsing
 * Extended TLS-configuration (now supports custom domain-names, useful for a reverse-proxy-setup)

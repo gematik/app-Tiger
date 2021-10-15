@@ -69,7 +69,7 @@ public class MockServerToRbelConverter {
         }
     }
 
-    private RbelElement responseToRbelMessage(final HttpResponse response) {
+    public RbelElement responseToRbelMessage(final HttpResponse response) {
         final byte[] httpMessage = responseToRawMessage(response);
         final RbelElement element = rbelConverter.convertElement(httpMessage, null);
         if (!element.hasFacet(RbelHttpResponseFacet.class)) {
@@ -84,7 +84,7 @@ public class MockServerToRbelConverter {
         return element;
     }
 
-    private RbelElement requestToRbelMessage(final HttpRequest request) {
+    public RbelElement requestToRbelMessage(final HttpRequest request) {
         final byte[] httpMessage = requestToRawMessage(request);
         final RbelElement element = rbelConverter.convertElement(httpMessage, null);
         if (!element.hasFacet(RbelHttpRequestFacet.class)) {
@@ -119,7 +119,7 @@ public class MockServerToRbelConverter {
     private String formatHeaderList(List<Header> headerList) {
         return headerList.stream().map(h -> h.getValues().stream()
                 .map(value -> h.getName().getValue() + ": " + value)
-                .collect(Collectors.joining("\n")))
+                .collect(Collectors.joining("\r\n")))
             .collect(Collectors.joining("\r\n"));
     }
 

@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>YML page</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/webjars/bootstrap/5.1.1/css/bootstrap.min.css}" rel="stylesheet">
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/script.js}"></script>
+</head>
+<body>
+<div>
+    <table class="table table-responsive table-bordered">
+        <thead>
+        <th scope="col" class="text-center col-lg-3">YML</th>
+        <th scope="col" class="text-center col-xl-9">Server Ansicht</th>
+        <!--            <th class="text-center col-lg-2">Topologie</th>-->
+        </thead>
+        <tbody>
+        <tr>
+            <td>
+                <button type="button" class="btn">
+                    <img th:src="@{/images/add-file.png}"/>
+                </button>
+                <button type="button" class="btn">
+                    <img th:src="@{/images/edit-file.png}"/>
+                </button>
+                <button type="button" class="btn">
+                    <img th:src="@{/images/open-file.png}"/>
+                </button>
+                <button type="button" class="btn">
+                    <img th:src="@{/images/save-file.png}"/>
+                </button>
+                <button type="button" class="btn">
+                    <img th:src="@{/images/add-server.png}"/>
+                </button>
+                <button type="button" class="btn">
+                    <img th:src="@{/images/go-back.png}"/>
+                </button>
+            </td>
+            <td class="text-center">
+                <strong><p th:text="${filename}"/></strong>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="col-xs-1">
+                    <button type="button" class="btn server-button">
+                        <img th:src="@{/images/server.png}"/>
+                        dockerServer
+                    </button>
+                </div>
+                <div class="col-xs-1">
+                    <button type="button" class="btn server-button">
+                        <img th:src="@{/images/server.png}"/>
+                        externalJarServer
+                    </button>
+                </div>
+                <div class="col-xs-1">
+                    <button type="button" class="btn server-button">
+                        <img th:src="@{/images/server.png}"/>
+                        tigerProxyServer
+                    </button>
+                </div>
+                <div class="col-xs-1">
+                    <button type="button" class="btn server-button">
+                        <img th:src="@{/images/server.png}"/>
+                        externalUrlServer
+                    </button>
+                </div>
+                <div class="col-xs-1">
+                    <button id="pom" type="button" class="btn server-button">
+                        <img th:src="@{/images/server.png}"/>
+                        composeServer
+                    </button>
+                </div>
+            </td>
+            <td>
+                <div id="formular" th:insert="modals/formularModal :: formularModal"></div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
