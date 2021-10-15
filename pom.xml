@@ -68,7 +68,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
 
-        <version.rbellogger>0.14.0</version.rbellogger>
+        <version.rbellogger>0.15.0</version.rbellogger>
         <version.cucumber>6.10.4</version.cucumber>
         <version.serenity.core>2.4.34</version.serenity.core>
         <version.serenity.cucumber.6>2.4.34</version.serenity.cucumber.6>
@@ -80,7 +80,6 @@
         <version.slf4j>1.7.30</version.slf4j>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.7.1</version.junit5>
-        <encoding>UTF-8</encoding>
         <version.lombok>1.18.18</version.lombok>
         <version.mockserver>5.11.6</version.mockserver>
 
