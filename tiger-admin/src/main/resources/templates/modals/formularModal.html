@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!-- Modal -->
+<div th:fragment="formularModal">
+
+    <table class="table">
+        <td>
+            <form>
+                <div class="form-group row">
+                    <label for="name" class="col-sm-2 col-form-label label-centered">Name:</label>
+                    <div class="col-sm-3">
+                        <input type="name" readonly class="form-control text-center" th:value="server1" id="name">
+                    </div>
+                </div>
+                <br>
+                <div class="form-group row">
+                    <label for="type" class="col-sm-2 col-form-label label-centered">Type:</label>
+                    <div class="col-sm-3">
+                        <input type="type" readonly class="form-control text-center" th:value="docker" id="type">
+                    </div>
+                </div>
+            </form>
+        </td>
+        <td>
+            <form>
+                <div class="form-group row">
+                    <label for="source" class="col-sm-2 col-form-label label-centered">Source:</label>
+                    <div class="col-sm-3">
+                        <input type="text" readonly class="form-control text-center" th:value="source" id="source">
+                    </div>
+                </div>
+                <br>
+                <div class="form-group row">
+                    <label for="dockerOptions" class="col-sm-2 col-form-label label-centered">Docker Options:</label>
+                    <div class="col-sm-3">
+                        <input type="text" readonly class="form-control text-center" th:value="options"
+                               id="dockerOptions">
+                    </div>
+                </div>
+            </form>
+        </td>
+    </table>
+</div>
+</body>
+</html>
