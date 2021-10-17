@@ -5,6 +5,8 @@
 package de.gematik.test.tiger.testenvmgr;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import de.gematik.test.tiger.common.Ansi;
@@ -30,7 +32,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.json.JSONObject;
 
 @Slf4j
@@ -103,14 +108,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 }
             } catch (IOException e) {
                 log.warn(
-                    "Unable to open input stream from console! You will have to use Ctrl+C and clean up the processes manually!");
-                while (true) { // NOSONAR
-                    try {
-                        Thread.sleep(1000L); // NOSONAR
-                    } catch (InterruptedException ie) {
-                        return;
-                    }
-                }
+                    "Unable to open input stream from console! Running for max. 24 hours."
+                        + "You will have to use Ctrl+C and clean up the processes manually!");
+                await().atMost(24, TimeUnit.HOURS).pollDelay(1, TimeUnit.SECONDS).until(() -> false);
             }
         }
     }
@@ -330,7 +330,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             throw new TigerTestEnvException("Server " + propName + " must be set and must not be NULL!");
         }
         if (value instanceof List) {
-            List<Object> l = (List) value;
+            List<?> l = (List<?>) value;
             if (l.isEmpty() ||
                 l.get(0) == null) {
                 throw new TigerTestEnvException(
@@ -374,12 +374,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         // ATTENTION only one route per server!
         if (server.getDockerOptions().getPorts() != null && !server.getDockerOptions().getPorts().isEmpty()) {
             routesList.add(TigerRoute.builder()
-                .from("http://" + server.getName())
-                .to("http://localhost:" + server.getDockerOptions().getPorts().values().iterator().next())
+                .from(HTTP + server.getName())
+                .to(HTTP + "localhost:" + server.getDockerOptions().getPorts().values().iterator().next())
                 .build());
             localTigerProxy.addRoute(TigerRoute.builder()
-                .from("http://" + server.getName())
-                .to("http://localhost:" + server.getDockerOptions().getPorts().values().iterator().next())
+                .from(HTTP + server.getName())
+                .to(HTTP + "localhost:" + server.getDockerOptions().getPorts().values().iterator().next())
                 .build());
         }
         log.info(Ansi.colorize(
@@ -432,6 +432,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         server.getExternalJarOptions().getArguments().add("--spring.profiles.active=" + server.getName());
 
         ObjectMapper om = new ObjectMapper(new YAMLFactory());
+        om.setSerializationInclusion(Include.NON_NULL);
         om.writeValue(Path.of(folder.getAbsolutePath(), "application-" + server.getName() + ".yaml").toFile(),
             standaloneCfg);
 
@@ -607,7 +608,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     log.info("Process exited already " + server.getName());
                 } else {
                     log.info("Unclear process state" + proc);
-                    log.info("Output from cmd: " + IOUtils.toString(proc.get().getInputStream(), StandardCharsets.UTF_8));
+                    log.info(
+                        "Output from cmd: " + IOUtils.toString(proc.get().getInputStream(), StandardCharsets.UTF_8));
                 }
             } else {
                 if (throwing == null) {
@@ -628,7 +630,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             port = url.getDefaultPort();
         }
         localTigerProxy.addRoute(TigerRoute.builder()
-            .from("http://" + server.getName())
+            .from(HTTP + server.getName())
             .to(url.toURI().getScheme() + "://" + url.getHost() + ":" + port)
             .build());
     }
@@ -655,56 +657,54 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             return true;
         }
 
-        long startms = System.currentTimeMillis();
         if (!quiet) {
             log.info("  Checking " + server.getType() + " instance '" + server.getName() + "' is available ...");
         }
         try {
             InsecureRestorableTrustAllManager.saveContext();
             InsecureRestorableTrustAllManager.allowAllSSL();
-            while (System.currentTimeMillis() - startms < timeoutms) {
-                var url = new URL(server.getExternalJarOptions().getHealthcheck());
-                URLConnection con = url.openConnection();
-                con.setConnectTimeout(1000);
-                try {
-                    con.connect();
-                    log.info("External node " + server.getName() + " is online");
-                    log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
-                        + Ansi.RESET);
-                    return true;
-                } catch (ConnectException | SocketTimeoutException cex) {
-                    if (!quiet) {
-                        log.info("No connection...");
-                    }
-                } catch (SSLHandshakeException sslhe) {
-                    log.warn(Ansi.YELLOW + "SSL handshake but server at least seems to be up!" + sslhe.getMessage()
-                        + Ansi.RESET);
-                    return true;
-                } catch (SSLException sslex) {
-                    if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
+            var url = new URL(server.getExternalJarOptions().getHealthcheck());
+            await().atMost(timeoutms, TimeUnit.MILLISECONDS)
+                .pollDelay(1, TimeUnit.SECONDS)
+                .until(() -> {
+                    URLConnection con = url.openConnection();
+                    con.setConnectTimeout(1000);
+                    try {
+                        con.connect();
+                        log.info("External node " + server.getName() + " is online");
+                        log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
+                            + Ansi.RESET);
+                        return true;
+                    } catch (ConnectException | SocketTimeoutException cex) {
                         if (!quiet) {
-                            log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+                            log.info("No connection...");
                         }
-                    } else {
+                    } catch (SSLHandshakeException sslhe) {
+                        log.warn(Ansi.YELLOW + "SSL handshake but server at least seems to be up!" + sslhe.getMessage()
+                            + Ansi.RESET);
+                        return true;
+                    } catch (SSLException sslex) {
+                        if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
+                            if (!quiet) {
+                                log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+                            }
+                        } else {
+                            if (!quiet) {
+                                log.error("SSL Error - " + sslex.getMessage(), sslex);
+                            }
+                        }
+                    } catch (Exception e) {
                         if (!quiet) {
-                            log.error("SSL Error - " + sslex.getMessage(), sslex);
+                            log.error("Failed to connect - " + e.getMessage(), e);
                         }
                     }
-                } catch (Exception e) {
-                    if (!quiet) {
-                        log.error("Failed to connect - " + e.getMessage(), e);
-                    }
-                }
-                Thread.sleep(1000);
-            }
+                    return false;
+                });
+        } catch (ConditionTimeoutException cte) {
             if (!quiet) {
                 throw new TigerTestEnvException("Timeout waiting for external server to respond at '"
                     + server.getExternalJarOptions().getHealthcheck() + "'!");
             }
-        } catch (InterruptedException ie) {
-            log.warn("Interruption while waiting for external server to respond at '"
-                + server.getExternalJarOptions().getHealthcheck() + "'!", ie);
-            Thread.currentThread().interrupt();
         } finally {
             InsecureRestorableTrustAllManager.restoreContext();
         }
@@ -712,18 +712,17 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
 
-    private void downloadJar(CfgServer server, String jarUrl, File jarFile) throws InterruptedException {
+    private void downloadJar(CfgServer server, String jarUrl, File jarFile) {
         log.info("downloading jar for external server from " + jarUrl + "...");
         var workDir = new File(server.getExternalJarOptions().getWorkingDir());
         if (!workDir.exists() && !workDir.mkdirs()) {
             throw new TigerTestEnvException("Unable to create working directory " + workDir.getAbsolutePath());
         }
-        long startms = System.currentTimeMillis();
         var finished = new AtomicBoolean(false);
         var exception = new AtomicReference<Exception>();
         String totalLength;
         try {
-            totalLength = " of " + new URL(jarUrl).openConnection().getContentLength()/1000 + " kb";
+            totalLength = " of " + new URL(jarUrl).openConnection().getContentLength() / 1000 + " kb";
         } catch (IOException e) {
             totalLength = " (total size unknown)";
         }
@@ -736,24 +735,32 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 exception.set(ioe);
             }
         });
+
         t.start();
-        var progressCtr = 0;
-        while (!finished.get()) {
-            if (System.currentTimeMillis() - startms > 15 * 60 * 1000) {
-                t.interrupt();
-                t.stop();
-                throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 15 minutes!");
-            }
-            if (exception.get() != null) {
-                throw new TigerTestEnvException("Failure while downloading jar " + jarUrl + "!", exception.get());
-            }
-            Thread.sleep(500);
-            progressCtr++;
-            if (progressCtr == 8) {
-                log.info("downloaded jar for " + server.getName() + "  " + jarFile.length() / 1000 + " kb" + totalLength);
-                progressCtr = 0;
-            }
+        AtomicInteger progressCtr = new AtomicInteger();
+        try {
+            String finalTotalLength = totalLength;
+            await().atMost(15, TimeUnit.MINUTES)
+                .pollDelay(500, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    progressCtr.getAndIncrement();
+                    if (progressCtr.get() == 8) {
+                        log.info(
+                            "downloaded jar for " + server.getName() + "  " + jarFile.length() / 1000 + " kb"
+                                + finalTotalLength);
+                        progressCtr.set(0);
+                    }
+                    if (exception.get() != null) {
+                        throw new TigerTestEnvException("Failure while downloading jar " + jarUrl + "!",
+                            exception.get());
+                    }
+
+                    return finished.get();
+                });
+        } catch (ConditionTimeoutException cte) {
+            throw new TigerTestEnvException("Download of " + jarUrl + " took longer then 15 minutes!");
         }
+
     }
 
     @Override
