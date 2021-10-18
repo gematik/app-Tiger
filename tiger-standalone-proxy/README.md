@@ -46,6 +46,30 @@ tigerProxy:
           to: "https://another.de/server"
           activateRbelLogging: false 
           # the traffic for this route will NOT be logged (default is true)
+
+    modifications:
+    # a list of modifications that will be applied to every proxied request and response
+      - condition: "isRequest"
+        # a condition that needs to be fullfilled for the modification to be applied (JEXL grammar)
+        targetElement: "$.header.user-agent"
+        # which element should be targeted?
+        replaceWith: "modified user-agent"
+        # the replacement string to be filled in. 
+        # This modification will replace the entire "user-agent" in all requests
+      - condition: "isResponse && $.responseCode == 200"
+        targetElement: "$.body"
+        name: "body replacement modification"
+        # The name of this modification. This can be used to identify, alter or remove this modification
+        replaceWith: "{\"another\":{\"node\":{\"path\":\"correctValue\"}}}"
+        # This will replace the body of every 200 response completely with the given json-string
+        # (This ignores the existing body. For example this could be an XML-body. Content-Type-headers
+        # will NOT be set accordingly)
+      - targetElement: "$.body"
+        regexFilter: "ErrorSeverityType:((Error)|(Warning))"
+        # The given regex will be used to target only parts of targeted element.
+        replaceWith: "ErrorSeverityType:Error"
+        # this modification has no condition, so it will be applied to every request and every response
+
     forwardToProxy: # can be used if the target-server (to) is behind another proxy
         hostname: 192.168.110.10
         port: 3128

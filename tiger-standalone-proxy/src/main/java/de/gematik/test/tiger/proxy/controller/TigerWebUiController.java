@@ -207,7 +207,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);
         if (start < msgs.size()) {
-            log.info("returning msgs > " + start + " of total " + msgs.size());
+            log.debug("returning msgs > " + start + " of total " + msgs.size());
             List<RbelElement> retMsgs = msgs.subList(start + 1, end);
             result.setHtmlMsgList(retMsgs.stream()
                 .map(msg -> new RbelHtmlRenderingToolkit(renderer)

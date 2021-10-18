@@ -4,8 +4,8 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
