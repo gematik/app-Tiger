@@ -1,21 +1,12 @@
-.label-centered {
-    margin-left: 25%;
-}
-
-thead {
-    background-color: #054A29;
-    color: white;
-}
-
-tbody {
-    background-color: #d1bc8a;
-}
-
 .btn:hover {
-    background-color: #795644;
+    background-color: #989898;
 }
 
-#formular {
-    display: none;
+.centered {
+    margin: auto;
+}
+
+.align {
+    text-align: right;
 }
 

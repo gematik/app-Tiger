@@ -7,44 +7,45 @@
 <body>
 <!-- Modal -->
 <div th:fragment="formularModal">
-
-    <table class="table">
-        <td>
-            <form>
-                <div class="form-group row">
-                    <label for="name" class="col-sm-2 col-form-label label-centered">Name:</label>
-                    <div class="col-sm-3">
-                        <input type="name" readonly class="form-control text-center" th:value="server1" id="name">
-                    </div>
+    <div class="container">
+        <div class="align">
+            <button type="button" class="btn">
+                <i class="fas fa-undo fa-lg"></i>
+            </button>
+            <button type="button" class="btn">
+                <i class="fas fa-edit fa-lg"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label for="name" class="col-form-label label-centered">Name:</label>
+                <div class="col">
+                    <input type="name" readonly class="form-control text-center" th:value="server1" id="name">
                 </div>
-                <br>
-                <div class="form-group row">
-                    <label for="type" class="col-sm-2 col-form-label label-centered">Type:</label>
-                    <div class="col-sm-3">
-                        <input type="type" readonly class="form-control text-center" th:value="docker" id="type">
-                    </div>
+            </div>
+            <div class="col">
+                <label for="name" class="col-form-label label-centered">Source:</label>
+                <div class="col">
+                    <input type="text" readonly class="form-control text-center" th:value="source1" id="source">
                 </div>
-            </form>
-        </td>
-        <td>
-            <form>
-                <div class="form-group row">
-                    <label for="source" class="col-sm-2 col-form-label label-centered">Source:</label>
-                    <div class="col-sm-3">
-                        <input type="text" readonly class="form-control text-center" th:value="source" id="source">
-                    </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label for="name" class="col-form-label label-centered">Type:</label>
+                <div class="col">
+                    <input type="text" readonly class="form-control text-center" th:value="type1" id="type">
                 </div>
-                <br>
-                <div class="form-group row">
-                    <label for="dockerOptions" class="col-sm-2 col-form-label label-centered">Docker Options:</label>
-                    <div class="col-sm-3">
-                        <input type="text" readonly class="form-control text-center" th:value="options"
-                               id="dockerOptions">
-                    </div>
+            </div>
+            <div class="col">
+                <label for="name" class=" col-form-label label-centered">Docker options:</label>
+                <div class="col">
+                    <input type="text" readonly class="form-control text-center" th:value="dockeroption1"
+                           id="dockerOptions">
                 </div>
-            </form>
-        </td>
-    </table>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>
