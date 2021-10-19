@@ -30,6 +30,7 @@ Feature: smoke test scenarios
     # Encountered ill-formatted path: ""
     And I switch to manual update mode
     And I update message list
+    And I wait 2 seconds
     Then I see the updated message list
 
   Scenario: Add an incorrect route
@@ -41,6 +42,7 @@ Feature: smoke test scenarios
 
     When I switch to manual update mode
     And I update message list
+    And I wait 2 seconds
     Then I don't see a message entry for this route
 
   Scenario: Save message list
@@ -48,6 +50,7 @@ Feature: smoke test scenarios
 
     When I switch to manual update mode
     And I update message list
+    And I wait 2 seconds
     Then I see the updated message list
 
     When I click on the Save button
