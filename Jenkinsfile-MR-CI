@@ -13,7 +13,7 @@ pipeline {
         disableConcurrentBuilds()
         buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')
     }
-    agent { label 'Docker-Maven' }
+    agent { label 'Docker-Maven-LATEST' }
 
     tools {
         maven 'Default'
@@ -59,7 +59,7 @@ pipeline {
         }
         stage('Test') {
             steps {
-                mavenTest("pom.xml", "-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttps.proxyHost=$PROXY_HOST -Dhttps.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=$no_proxy")
+                mavenVerify()
             }
         }
         stage('OwaspScan') {
@@ -105,6 +105,19 @@ pipeline {
             steps {
                 gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID)
             }
+        }
+    }
+    post {
+        always {
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-standalone-proxy/target/site/serenity/**/*', fingerprint: false
+            publishHTML (target: [
+                allowMissing: false,
+                alwaysLinkToLastBuild: false,
+                keepAll: true,
+                reportDir: 'tiger-standalone-proxy/target/site/serenity',
+                reportFiles: 'index.html',
+                reportName: "Proxy Standalone UI Report"
+            ])
         }
     }
 }

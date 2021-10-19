@@ -41,7 +41,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -76,6 +78,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">");
 
         if (applicationConfiguration.isLocalResources()) {
+            log.info("Running with local resources...");
             html = html
                 .replace("https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css", "/webui/css/bulma.min.css")
                 .replace("https://jenil.github.io/bulmaswatch/simplex/bulmaswatch.min.css", "/webui/css/bulmaswatch.min.css")
@@ -234,10 +237,19 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     @GetMapping(value = "/quit", produces = MediaType.APPLICATION_JSON_VALUE)
-    public void quitProxy() {
+    public void quitProxy(@RequestParam(name = "noSystemExit", required = false) final String noSystemExit) {
         log.info("shutting down tiger standalone proxy at port " + tigerProxy.getPort() + "...");
-        ((ConfigurableApplicationContext) applicationContext).close();
-        System.exit(0);
+        tigerProxy.clearAllRoutes();
+        tigerProxy.shutdown();
+        log.info("shutting down tiger standalone proxy ui...");
+        //((ConfigurableApplicationContext) applicationContext).close();
+        int exitCode = SpringApplication.exit(applicationContext);
+        if (exitCode != 0) {
+            log.warn("Exit of tiger proxy ui not successful - exit code: " + exitCode);
+        }
+        if (StringUtils.isEmpty(noSystemExit)) {
+            System.exit(0);
+        }
     }
 
     @PostMapping(value = "/uploadReport", produces = MediaType.APPLICATION_JSON_VALUE)

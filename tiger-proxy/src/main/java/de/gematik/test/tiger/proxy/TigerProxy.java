@@ -96,8 +96,8 @@ public class TigerProxy extends AbstractTigerProxy {
             int counter = 0;
             for (RbelModificationDescription modification : configuration.getModifications()) {
                 if (modification.getName() == null) {
-                    getRbelLogger().getRbelModifier().addModification(modification
-                        .withName("TigerModification #" + counter++));
+                    modification.setName("TigerModification #" + counter++);
+                    getRbelLogger().getRbelModifier().addModification(modification);
                 } else {
                     getRbelLogger().getRbelModifier().addModification(modification);
                 }
@@ -412,5 +412,10 @@ public class TigerProxy extends AbstractTigerProxy {
         public TigerProxyTrustManagerBuildingException(String s) {
             super(s);
         }
+    }
+
+    public void shutdown() {
+        mockServerClient.stop();
+        mockServer.stop();
     }
 }
