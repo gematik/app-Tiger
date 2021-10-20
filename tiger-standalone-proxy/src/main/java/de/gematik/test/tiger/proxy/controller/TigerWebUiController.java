@@ -29,10 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -211,7 +208,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         result.setLastMsgUuid(lastMsgUuid);
         if (start < msgs.size()) {
             log.debug("returning msgs > " + start + " of total " + msgs.size());
-            List<RbelElement> retMsgs = msgs.subList(start + 1, end);
+            List<RbelElement> retMsgs = new ArrayList<>(msgs.subList(start + 1, end));
             result.setHtmlMsgList(retMsgs.stream()
                 .map(msg -> new RbelHtmlRenderingToolkit(renderer)
                     .convert(msg, Optional.empty()).render())

@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TigerProxySteps {
 
-    private static final String XPATH_RES_BODY = "//div[contains(@class, 'card full-width')";
+    private static final String XPATH_RES_BODY = "div[contains(@class, 'card full-width')";
     private static final String XPATH_REQUEST = "//div[@id='sidebar-menu']//div[contains(@class, 'menu-label')]";
     private static final String XPATH_RESPONSE = "//div[@id='sidebar-menu']//a[contains(@class, 'menu-label')]";
     private static final String CSS_ROUTESBLOCK = "#routeModalDialog > div.modal-content > article > div.message-body > div.routeListDiv.box";
@@ -265,8 +265,8 @@ public class TigerProxySteps {
         assertElemTextMatches(XPATH_RESPONSE + "/span[text()='" + idx + "']/..", idx + "\nRESPONSE");
 
         WebElement resBody = mainPage.getDriver().findElement(By.xpath(
-            XPATH_RES_BODY + " and contains(.//span, " + "'" + idx + "'" + ") and contains(.//span, " + "'" + statusCode
-                + "'" + ") and contains(.//span, " + "'" + resBodyMessage + "'" + ") ]"));
+            "//" + XPATH_RES_BODY + "]//span[text()='" + idx + "']//ancestor::"+XPATH_RES_BODY + "]//h1[text()='" + statusCode
+                + "']//ancestor::"+XPATH_RES_BODY + "]//pre[@class='json' and contains(text(), '" + resBodyMessage + "')]"));
         Assert.assertTrue("The response body with given parameters is displayed on the page", resBody.isDisplayed());
     }
 
