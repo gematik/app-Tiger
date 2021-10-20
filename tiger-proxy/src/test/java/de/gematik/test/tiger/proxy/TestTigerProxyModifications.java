@@ -10,15 +10,18 @@ import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
+import org.springframework.web.util.UriUtils;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 public class TestTigerProxyModifications extends AbstractTigerProxyTest {
-
     @Test
     public void replaceStuffForForwardRoute() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -174,5 +177,62 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
         assertThat(body).isEqualTo(binaryMessageContent);
     }
 
+    @Test
+    public void forwardProxyWithModifiedQueryParameters() {
+        String specialCaseParameter = "blub" + RandomStringUtils.randomPrint(300);
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .modifications(List.of(
+                RbelModificationDescription.builder()
+                    .targetElement("$.path.schmoo.value")
+                    .replaceWith(specialCaseParameter)
+                    .build(),
+                RbelModificationDescription.builder()
+                    .targetElement("$.path.[?(content=~'.*bar1')].value")
+                    .replaceWith("bar3")
+                    .build()
+            ))
+            .build());
+
+        proxyRest.get("http://backend/foobar?foo=bar1&foo=bar2&schmoo").asString();
+
+        assertThat(getLastRequest().getQueryParams())
+            .containsOnlyKeys("foo", "schmoo");
+        assertThat(getLastRequest().getQueryParams().get("foo").values())
+            .containsExactly("bar3", "bar2");
+        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+            .containsExactly(specialCaseParameter);
+    }
+
+    @Test
+    public void reverseProxyWithQueryParameters() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .modifications(List.of(
+                RbelModificationDescription.builder()
+                    .targetElement("$.path.schmoo.value")
+                    .replaceWith("loo")
+                    .build(),
+                RbelModificationDescription.builder()
+                    .targetElement("$.path.[?(content=~'.*bar1')].value")
+                    .replaceWith("bar3")
+                    .build()))
+            .build());
+
+        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
+
+        assertThat(getLastRequest().getQueryParams())
+            .containsOnlyKeys("foo", "schmoo");
+        assertThat(getLastRequest().getQueryParams().get("foo").values())
+            .containsExactly("bar3", "bar2");
+        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+            .containsExactly("loo");
+    }
     //TODO test with response status code (not only number)
 }

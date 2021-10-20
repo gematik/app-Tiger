@@ -1,12 +1,15 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelUriFacet;
+import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
+import org.mockserver.model.Parameters;
 
 import static org.mockserver.model.Header.header;
 
@@ -28,8 +31,29 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             request = request.replaceHeader(header(modifiedHeader.getKey().orElseThrow(),
                 modifiedHeader.getRawStringContent()));
         }
-        request.withPath(modifiedRequest.findElement("$.path").get().getRawStringContent());
+        final RbelUriFacet uriFacet = modifiedRequest.findElement("$.path").get().getFacetOrFail(RbelUriFacet.class);
+        request.withPath(uriFacet.getBasicPathString());
+        clearExistingQueryParameters(request);
+        addAllQueryParametersFromRbelMessage(request, uriFacet);
         request.withMethod(modifiedRequest.findElement("$.method").get().getRawStringContent());
+    }
+
+    private void addAllQueryParametersFromRbelMessage(HttpRequest request, RbelUriFacet uriFacet) {
+        for (RbelElement queryElement : uriFacet.getQueryParameters()) {
+            final RbelUriParameterFacet parameterFacet = queryElement.getFacetOrFail(RbelUriParameterFacet.class);
+            request.withQueryStringParameter(
+                parameterFacet.getKeyAsString(),
+                parameterFacet.getValue().getRawStringContent());
+        }
+    }
+
+    private void clearExistingQueryParameters(HttpRequest request) {
+        final Parameters queryStringParameters = request.getQueryStringParameters();
+        if (queryStringParameters == null) {
+            return;
+        }
+        queryStringParameters.getEntries().stream()
+            .forEach(parameter -> queryStringParameters.remove(parameter.getName()));
     }
 
     public void applyModifications(HttpResponse response) {
