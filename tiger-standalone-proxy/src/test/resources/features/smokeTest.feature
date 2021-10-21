@@ -25,9 +25,6 @@ Feature: smoke test scenarios
 
     When I send successful request to "http://nevereverexists__.XXX/test1.html"
     And I send successful request to "http://nevereverexists__.XXX/test2.html"
-    # TODO JULIAN when using root path an exception is thrown in rbel!
-    # RbelHttpRequestConverter::consumeElement
-    # Encountered ill-formatted path: ""
     And I switch to manual update mode
     And I update message list
     And I wait 2 seconds
