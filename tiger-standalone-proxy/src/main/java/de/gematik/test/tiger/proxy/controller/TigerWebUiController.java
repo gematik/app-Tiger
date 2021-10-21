@@ -192,7 +192,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         @RequestParam(name = "maxMsgs", required = false) final Integer maxMsgs) {
         log.debug("requesting messages since " + lastMsgUuid + " (max. " + maxMsgs + ")");
 
-        List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory();
+        List<RbelElement> msgs = new ArrayList<>(tigerProxy.getRbelLogger().getMessageHistory());
         int start = lastMsgUuid == null || lastMsgUuid.isBlank() ?
             -1 :
             (int) msgs.stream()
@@ -239,7 +239,6 @@ public class TigerWebUiController implements ApplicationContextAware {
         tigerProxy.clearAllRoutes();
         tigerProxy.shutdown();
         log.info("shutting down tiger standalone proxy ui...");
-        //((ConfigurableApplicationContext) applicationContext).close();
         int exitCode = SpringApplication.exit(applicationContext);
         if (exitCode != 0) {
             log.warn("Exit of tiger proxy ui not successful - exit code: " + exitCode);
