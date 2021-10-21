@@ -6,14 +6,26 @@ package de.gematik.test.tiger.common.pki;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.bouncycastle.openssl.PEMException;
 import org.junit.Test;
 
 public class TestKeyMgr {
+
+    final String prkPkcs8 = "-----BEGIN PRIVATE KEY-----\n" +
+        "MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIAeOzpSQT8a/mQDM\n" +
+        "7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx\n" +
+        "9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==\n" +
+        "-----END PRIVATE KEY-----\n";
 
     final String puKPem = "-----BEGIN PUBLIC KEY-----\n"
         + "MFowFAYHKoZIzj0CAQYJKyQDAwIIAQEHA0IABEC6Sfy6RcfusiYbG+Drx8FNZIS5\n"
@@ -80,4 +92,9 @@ public class TestKeyMgr {
         assertThat(k).isInstanceOf(PrivateKey.class);
     }
 
+    @Test
+    public void readKeyPairFromEcdsaPkcs8Pem() {
+        assertThat(KeyMgr.readEcdsaKeypairFromPkcs8Pem(prKPem.getBytes(StandardCharsets.UTF_8)))
+            .isNotNull();
+    }
 }

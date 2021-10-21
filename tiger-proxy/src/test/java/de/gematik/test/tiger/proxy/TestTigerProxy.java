@@ -5,15 +5,20 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
+import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.tigerProxy.*;
+import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import kong.unirest.*;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.jose4j.jws.JsonWebSignature;
 import org.junit.Test;
 import org.mockserver.model.MediaType;
 
@@ -21,6 +26,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
+import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -494,6 +500,35 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("localhost:" + fakeBackendServer.port());
+    }
+
+    @SneakyThrows
+    @Test
+    //gemSpec_Krypt, A_21888
+    public void tigerProxyShouldHaveFixedVauKeyLoaded() {
+        BrainpoolCurves.init();
+        final Key key = KeyMgr.readKeyFromPem(FileUtils.readFileToString(new File("src/test/resources/fixVauKey.pem")));
+
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setKey(key);
+        jws.setPayload("foobar");
+        jws.setAlgorithmHeaderValue("BP256R1");
+        final String jwsSerialized = jws.getCompactSerialization();
+
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port() + "/foobar")
+                .build()))
+            .build());
+
+        proxyRest.get("http://backend?jws=" + jwsSerialized)
+            .asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.path.jws.value.signature.isValid")
+            .get().seekValue(Boolean.class).get())
+            .isTrue();
     }
 
     @Test

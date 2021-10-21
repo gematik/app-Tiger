@@ -12,6 +12,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.Arrays;
 import org.mockserver.model.*;
 

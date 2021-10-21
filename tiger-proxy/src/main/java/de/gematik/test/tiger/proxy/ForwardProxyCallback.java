@@ -45,7 +45,8 @@ public class ForwardProxyCallback extends AbstractTigerRouteCallback {
         return forwardOverriddenRequest(req)
             .getHttpRequest()
             .withPath(path)
-            .withSecure(getTigerRoute().getTo().startsWith("https://"));
+            .withSecure(getTigerRoute().getTo().startsWith("https://"))
+            .withQueryStringParameters(req.getQueryStringParameters());
     }
 
     @Override
