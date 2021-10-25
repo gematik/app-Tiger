@@ -11,22 +11,15 @@
 }
 
 .box {
-    border: 1px solid black;
+    border: 1px solid #d3d3d3;
+    box-shadow: 2px 2px grey;
     background-color: white;
     border-radius: .5em;
     padding: 5px;
     cursor: move;
 }
 
-.my-row {
-    border: 1px solid black;
-}
-
-.my-col {
-    border: 1px solid black;
-}
-
-.my-container {
+.row-style {
     border: 1px solid black;
 }
 
@@ -35,25 +28,26 @@
 }
 
 .context-menu-icon--fa5 {
-    color: black !important;
+    color: #444 !important;
 }
 
 i {
-    color: black !important;
+    color: #444 !important;
 }
 
 .content {
     padding: 5px 0px 10px 0px;
     display: none;
     overflow: hidden;
-    border: 1px solid black;
+    border: 1px solid #d3d3d3;
 }
 
 .collapsible {
     cursor: pointer;
     padding: 18px;
     width: 100%;
-    border: 1px solid black;
+    border: 1px solid #d3d3d3;
+    box-shadow: 2px 2px grey;
     text-align: left;
     background-color: white !important;
     border-radius: .5em;
@@ -64,6 +58,10 @@ i {
     gap: 20px;
     padding-top: 20px;
     padding-bottom: 30px;
+}
+
+.server-list-item {
+    margin: 10px
 }
 
 

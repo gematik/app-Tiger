@@ -19,7 +19,7 @@
 </head>
 <body>
 <div class="container">
-    <div class="row my-row">
+    <div class="row row-style">
         <div class="col-sm-3 col-md-3 text-center">
             <strong>YML</strong>
         </div>
@@ -27,18 +27,18 @@
             <strong><p th:text="${filename}"/></strong>
         </div>
     </div>
-    <div class="row my-row">
+    <div class="row row-style">
         <div class="col-sm-3 col-md-3 text-center">
-            <button type="button" class="btn" title="New YML">
+            <button type="button" id="new-env-btn" class="btn" title="New Testenvironment">
                 <i class="fas fa-file fa-lg"></i>
             </button>
-            <button type="button" class="btn" title="Upload YML file">
-                <i class="fas fa-upload fa-lg"></i>
+            <button type="button" id="open-file-btn" class="btn" title="Open YML file">
+                <i class="fas fa-folder-open fa-lg"></i>
             </button>
-            <button type="button" class="btn" title="Download YML file">
-                <i class="fas fa-download fa-lg"></i>
+            <button type="button" id="save-file-btn" class="btn" title="Save YML file">
+                <i class="fas fa-save fa-lg"></i>
             </button>
-            <button type="button" class="btn" title="Add a server">
+            <button type="button" id="add-server-btn" class="btn" title="Add a server">
                 <i class="fas fa-plus-circle fa-lg"></i>
                 <span>Add a server</span>
             </button>
@@ -46,20 +46,20 @@
     </div>
     <div class="row">
         <div class="col-sm-2 col-md-2">
-            <div class="container server-container" id="sortable">
-                <div class="box text-center">
+            <div class="container sidebar server-container" id="sortable">
+                <div id="sidebar_Server1" class="box text-center">
                     Server1
                     <span class="context-menu-one btn btn-neutral">
                     <i class="fas fa-ellipsis-v"></i>
                 </span>
                 </div>
-                <div class="box text-center">
+                <div id="sidebar_Server2" class="box text-center">
                     Server2
                     <span class="context-menu-one btn btn-neutral">
                     <i class="fas fa-ellipsis-v"></i>
                 </span>
                 </div>
-                <div class="box text-center">
+                <div id="sidebar_Server3" class="box text-center">
                     Server3
                     <span class="context-menu-one btn btn-neutral">
                     <i class="fas fa-ellipsis-v"></i>
@@ -68,50 +68,50 @@
             </div>
         </div>
         <div class="col-sm-8 col-md-8">
-            <div class="container server-container col-sm-6 col-md-6 centered">
-                <button type="button" class="collapsible">
-                    <i class="fas fa-server fa-lg"></i>
-                    <span>&nbsp;&nbsp;Server1&nbsp&nbsp</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="content">
-                    <div id="modal1 formular" th:insert="modals/formularModal :: formularModal"></div>
+            <div class="container server-content server-container col-sm-6 col-md-6 centered">
+                <div id="content_Server1">
+                    <button type="button" class="collapsible">
+                        <i class="fas fa-server fa-lg"></i>
+                        <span class="server-list-item">Server1</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="content">
+                        <div id="modal1 formular" th:insert="modals/formularModal :: formularModal"></div>
+                    </div>
                 </div>
-                <button type="button" class="collapsible">
-                    <i class="fas fa-server fa-lg"></i>
-                    <span>&nbsp;&nbsp;Server2&nbsp&nbsp</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="content">
-                    <div id="modal2 formular" th:insert="modals/formularModal :: formularModal"></div>
+                <div id="content_Server2">
+                    <button type="button" class="collapsible">
+                        <i class="fas fa-server fa-lg"></i>
+                        <span class="server-list-item">Server2</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="content">
+                        <div id="modal2 formular" th:insert="modals/formularModal :: formularModal"></div>
+                    </div>
                 </div>
-                <button type="button" class="collapsible">
-                    <i class="fas fa-server fa-lg"></i>
-                    <span>&nbsp;&nbsp;Server3&nbsp&nbsp</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="content">
-                    <div id="modal3 formular" th:insert="modals/formularModal :: formularModal"></div>
+                <div id="content_Server3">
+                    <button type="button" class="collapsible">
+                        <i class="fas fa-server fa-lg"></i>
+                        <span class="server-list-item">Server3</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="content">
+                        <div id="modal3 formular" th:insert="modals/formularModal :: formularModal"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <script>
-    var coll = document.getElementsByClassName("collapsible");
-    var i;
-
-    for (i = 0; i < coll.length; i++) {
-        coll[i].addEventListener("click", function () {
-            this.classList.toggle("active");
-            var content = this.nextElementSibling;
-            if (content.style.display === "block") {
-                content.style.display = "none";
-            } else {
-                content.style.display = "block";
-            }
+    var collList = $(".collapsible");
+    $.each(collList, (i, coll) => {
+        $(coll).on("click", function (evt) {
+            $(coll).toggleClass("active");
+            var content = coll.nextElementSibling;
+            $(content).toggle();
         });
-    }
+    });
 </script>
 </body>
 </html>
