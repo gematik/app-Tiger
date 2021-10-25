@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.openqa.selenium.By;
@@ -59,7 +60,9 @@ public class TigerProxySteps {
     public TigerProxySteps() {
         downloadFolder = Path.of(System.getProperty("user.home", "."), "Downloads").toFile();
         if (!downloadFolder.exists()) {
-            downloadFolder.mkdirs();
+            if (!downloadFolder.mkdirs()) {
+                throw new RuntimeException("Unable to create folder '" + downloadFolder.getAbsolutePath() + "'");
+            }
         }
         RestAssured.proxy("127.0.0.1", 6666);
     }
@@ -135,27 +138,32 @@ public class TigerProxySteps {
     }
 
     public File assertReportDownloaded() throws InterruptedException {
-        for (int second = 0; ; second++) {
-            Thread.sleep(3000);
-            if (second > 3) {
-                Assert.fail("Timeout with report download");
-            }
-            try {
-                List<File> fileList = Arrays.asList(downloadFolder.listFiles());
-                List<File> updatedFileList = fileList
-                    .stream()
-                    .filter(file -> file.getName().contains(FILESUBSTRING))
-                    .collect(Collectors.toList());
-                Assert.assertEquals(updatedFileList.size(), 1);
-                Assert.assertTrue("Report is contained within the Download folder",
-                    updatedFileList.toString().contains(FILESUBSTRING));
-
-                return updatedFileList.get(0);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        final AtomicReference<File> downloadedReport = new AtomicReference<>();
+        try {
+            await().atMost(10, TimeUnit.SECONDS).pollDelay(1, TimeUnit.SECONDS)
+                .until(() -> {
+                    try {
+                        assertThat(downloadFolder.listFiles())
+                            .withFailMessage("Invalid download folder " + downloadFolder.getAbsolutePath()).isNotNull();
+                        List<File> reportFiles = Arrays.stream(downloadFolder.listFiles())
+                            .filter(file -> file.getName().contains(FILESUBSTRING))
+                            .collect(Collectors.toList());
+                        if (reportFiles.size() < 1) {
+                            return false;
+                        }
+                        if (reportFiles.size() > 1) {
+                            log.warn("Found more than 1 report (" + reportFiles.size() + ") taking first!");
+                        }
+                        downloadedReport.set(reportFiles.get(0));
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                });
+        } catch (ConditionTimeoutException cte) {
+            throw new AssertionError("Timed out after 10s trying to find downloaded report");
         }
+        return downloadedReport.get();
     }
 
     public String openReport() throws IOException, InterruptedException {
@@ -163,7 +171,7 @@ public class TigerProxySteps {
     }
 
     public void assertSeeMessageList() throws IOException, InterruptedException {
-        Assert.assertTrue(openReport().replace("\n", "").matches(".*\\/test1.*\\/test2.*content-length: 36.*"));
+        Assert.assertTrue(openReport().replace("\n", "").matches(".*/test1.*/test2.*content-length: 36.*"));
     }
 
     public void clickOnResetButton() {
@@ -187,9 +195,10 @@ public class TigerProxySteps {
     }
 
     public void assertRequestsFail(String testUrl1) {
-        Response response = null;
         try {
-            response = RestAssured.get(testUrl1).andReturn();
+            Response response = RestAssured.get(testUrl1).andReturn();
+            assertThat(response).withFailMessage("Response is NULL!").isNotNull();
+            assertThat(response.getStatusCode()).isNotEqualTo(200);
         } catch (Exception cex) {
             log.warn("CEX Class " + cex.getClass().getName());
             if (cex instanceof ConnectException) {
@@ -199,14 +208,11 @@ public class TigerProxySteps {
             throw new AssertionError("Unexpected exception while checking for request failure " + cex, cex);
 
         }
-        assertThat(response).withFailMessage("Response is nULL!").isNotNull();
-        assertThat(response.getStatusCode()).isNotEqualTo(200);
     }
 
     public void assertRequestTimesOut(String testUrl1) {
-        Response response = null;
         try {
-            response = RestAssured.get(testUrl1).andReturn();
+            RestAssured.get(testUrl1).andReturn();
         } catch (Exception cex) {
             log.warn("CEX Class " + cex.getClass().getName());
             if (cex instanceof ConnectException) {
@@ -343,7 +349,7 @@ public class TigerProxySteps {
                 } else if (proc.get().exitValue() == 0) {
                     log.info("Web server process exited already ");
                 } else {
-                    log.info("Unclear process state" + proc);
+                    log.warn("Unclear process state" + proc);
                     log.info(
                         "Output from cmd: " + IOUtils.toString(proc.get().getInputStream(), StandardCharsets.UTF_8));
                 }

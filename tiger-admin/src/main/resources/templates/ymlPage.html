@@ -8,8 +8,14 @@
     <link th:href="@{/webjars/font-awesome/5.15.4/css/all.css}" rel="stylesheet">
     <link th:href="@{/webjars/bootstrap/5.1.1/css/bootstrap.min.css}" rel="stylesheet">
     <script th:src="@{/webjars/bootstrap/5.1.1/js/bootstrap.bundle.js}"></script>
-    <script type="text/javascript" th:src="@{/js/script.js}"></script>
     <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <script type="text/javascript" th:src="@{/js/script.js}"></script>
+    <script type="text/javascript"
+            src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
 </head>
 <body>
 <div class="container">
@@ -21,71 +27,91 @@
             <strong><p th:text="${filename}"/></strong>
         </div>
     </div>
-    <div class="row">
+    <div class="row my-row">
         <div class="col-sm-3 col-md-3 text-center">
-            <button type="button" class="btn">
+            <button type="button" class="btn" title="New YML">
                 <i class="fas fa-file fa-lg"></i>
             </button>
-            <button type="button" class="btn">
+            <button type="button" class="btn" title="Upload YML file">
                 <i class="fas fa-upload fa-lg"></i>
             </button>
-            <button type="button" class="btn">
+            <button type="button" class="btn" title="Download YML file">
                 <i class="fas fa-download fa-lg"></i>
             </button>
+            <button type="button" class="btn" title="Add a server">
+                <i class="fas fa-plus-circle fa-lg"></i>
+                <span>Add a server</span>
+            </button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2 col-md-2">
+            <div class="container server-container" id="sortable">
+                <div class="box text-center">
+                    Server1
+                    <span class="context-menu-one btn btn-neutral">
+                    <i class="fas fa-ellipsis-v"></i>
+                </span>
+                </div>
+                <div class="box text-center">
+                    Server2
+                    <span class="context-menu-one btn btn-neutral">
+                    <i class="fas fa-ellipsis-v"></i>
+                </span>
+                </div>
+                <div class="box text-center">
+                    Server3
+                    <span class="context-menu-one btn btn-neutral">
+                    <i class="fas fa-ellipsis-v"></i>
+                </span>
+                </div>
+            </div>
         </div>
         <div class="col-sm-8 col-md-8">
-            <div class="align">
-                <button type="button" class="btn">
-                    <i class="fas fa-plus-circle fa-lg"></i>
-                    <span>Add a server</span>
+            <div class="container server-container col-sm-6 col-md-6 centered">
+                <button type="button" class="collapsible">
+                    <i class="fas fa-server fa-lg"></i>
+                    <span>&nbsp;&nbsp;Server1&nbsp&nbsp</span>
+                    <i class="fas fa-chevron-down"></i>
                 </button>
-            </div>
-            <div class="accordion" id="serverAccordion">
-                <div class="accordion-item col-sm-6 col-md-6 centered">
-                    <h2 class="accordion-header" id="headingOne">
-                        <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
-                                data-bs-target="#collapseOne">
-                            <i class="fas fa-server fa-lg"></i>
-                            <span>&nbsp;&nbsp;Server1</span>
-                        </button>
-                    </h2>
-                    <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#serverAccordion">
-                        <div class="card-body">
-                            <div id="modal1 formular" th:insert="modals/formularModal :: formularModal"></div>
-                        </div>
-                    </div>
+                <div class="content">
+                    <div id="modal1 formular" th:insert="modals/formularModal :: formularModal"></div>
                 </div>
-                <div class="accordion-item col-sm-6 col-md-6 centered">
-                    <h2 class="accordion-header" id="headingTwo">
-                        <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
-                                data-bs-target="#collapseTwo">
-                            <i class="fas fa-server fa-lg"></i>
-                            &nbsp;&nbsp;Server2
-                        </button>
-                    </h2>
-                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#serverAccordion">
-                        <div class="card-body">
-                            <div id="modal2 formular" th:insert="modals/formularModal :: formularModal"></div>
-                        </div>
-                    </div>
+                <button type="button" class="collapsible">
+                    <i class="fas fa-server fa-lg"></i>
+                    <span>&nbsp;&nbsp;Server2&nbsp&nbsp</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="content">
+                    <div id="modal2 formular" th:insert="modals/formularModal :: formularModal"></div>
                 </div>
-                <div class="accordion-item col-sm-6 col-md-6 centered">
-                    <h2 class="accordion-header" id="headingThree">
-                        <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
-                                data-bs-target="#collapseThree">
-                            <i class="fas fa-server fa-lg"></i>
-                            &nbsp;&nbsp;Server3
-                        </button>
-                    </h2>
-                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#serverAccordion">
-                        <div class="card-body">
-                            <div id="modal3 formular" th:insert="modals/formularModal :: formularModal"></div>
-                        </div>
-                    </div>
+                <button type="button" class="collapsible">
+                    <i class="fas fa-server fa-lg"></i>
+                    <span>&nbsp;&nbsp;Server3&nbsp&nbsp</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="content">
+                    <div id="modal3 formular" th:insert="modals/formularModal :: formularModal"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script>
+    var coll = document.getElementsByClassName("collapsible");
+    var i;
+
+    for (i = 0; i < coll.length; i++) {
+        coll[i].addEventListener("click", function () {
+            this.classList.toggle("active");
+            var content = this.nextElementSibling;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+            } else {
+                content.style.display = "block";
+            }
+        });
+    }
+</script>
 </body>
 </html>

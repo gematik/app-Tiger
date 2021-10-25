@@ -6,18 +6,18 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import java.util.List;
+import java.util.Map;
 
 public interface ITigerTestEnvMgr {
 
     Configuration getConfiguration();
 
-    List<CfgServer> getTestEnvironment();
+    Map<String, CfgServer> getTestEnvironment();
 
     void setUpEnvironment();
 
-    void start(final CfgServer srv, final Configuration cfg);
+    void start(final String serverId, final CfgServer srv, final Configuration cfg);
 
-    void shutDown(final CfgServer srv);
+    void shutDown(final String serverId);
 
 }

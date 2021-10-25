@@ -60,7 +60,7 @@ public class KeyMgr {
     public static KeyPair readEcdsaKeypairFromPkcs8Pem(byte[] pemContent) {
         try (final ByteArrayInputStream in = new ByteArrayInputStream(pemContent);
              final InputStreamReader inputStreamReader = new InputStreamReader(in);
-             final PemReader pemReader = new PemReader(inputStreamReader);) {
+             final PemReader pemReader = new PemReader(inputStreamReader)) {
             KeyFactory factory = KeyFactory.getInstance("ECDSA", BOUNCY_CASTLE_PROVIDER);
             PemObject pemObject = pemReader.readPemObject();
             byte[] content = pemObject.getContent();

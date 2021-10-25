@@ -4,7 +4,7 @@ templates:
   # Latest IDP REF as local docker container
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: idp-ref
+  - templateName: idp-ref
     type: docker
     source:
       - gstopdr1.top.local/idp/idp-server
@@ -78,7 +78,7 @@ templates:
   # RISE IDP in RRU
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: idp-rise-ru
+  - templateName: idp-rise-ru
     type: externalUrl
     source:
       - https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
@@ -95,7 +95,7 @@ templates:
   # RISE IDP in RTU
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: idp-rise-tu
+  - templateName: idp-rise-tu
     type: externalUrl
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
@@ -111,7 +111,7 @@ templates:
   # Latest E-Rezept FD Ref as local docker container
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: erzpt-fd-ref
+  - templateName: erzpt-fd-ref
     type: docker
     source:
       - gstopdr1.top.local/erezept/ref-erx-fd-server
@@ -143,7 +143,7 @@ templates:
   # Latest EPA module as docker composition
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: epa2
+  - templateName: epa2
     type: compose
     source:
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
@@ -159,7 +159,7 @@ templates:
   # Latest DEMIS modules as docker composition
   #
   # ----------------------------------------------------------------------------------------------------------------------
-  - name: demis
+  - templateName: demis
     type: compose
     source:
       - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
@@ -175,7 +175,7 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
 
-  - name: epa2-fdv
+  - templateName: epa2-fdv
     type: externalJar
     source:
       - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-fdv/2.0.0-124/epa-fdv-2.0.0-124.jar
@@ -201,7 +201,7 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
 
-  - name: kon-sim
+  - templateName: kon-sim
     type: externalJar
     source:
       - local://konnektor-simulator-2.1.7-SNAPSHOT.jar
@@ -219,7 +219,7 @@ templates:
   #
   # ----------------------------------------------------------------------------------------------------------------------
 
-  - name: pssim
+  - templateName: pssim
     type: externalJar
     source:
       - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-ps/2.0.5-284/epa-ps-2.0.5-284.jar

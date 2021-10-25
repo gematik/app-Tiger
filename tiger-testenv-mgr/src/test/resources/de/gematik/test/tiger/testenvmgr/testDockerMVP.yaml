@@ -1,7 +1,8 @@
 tigerProxy:
 
 servers:
-  - name: testDocker1
+  testDockerMVP:
+    hostname: testDocker1
     type: docker
     source:
       - eitzenbe/test-containers

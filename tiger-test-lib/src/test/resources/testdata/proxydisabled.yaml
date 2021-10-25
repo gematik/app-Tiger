@@ -5,7 +5,7 @@ tigerProxy:
 localProxyActive: false
 
 servers:
-  - name: idp-rise-tu-noproxy
+  idp-rise-tu-noproxy:
     template: idp-rise-tu
     type: externalUrl
     startupTimeoutSec: 2

@@ -2,4 +2,5 @@ tigerProxy:
 
 servers:
   testDemis:
+    hostname: testDemis
     template: demis

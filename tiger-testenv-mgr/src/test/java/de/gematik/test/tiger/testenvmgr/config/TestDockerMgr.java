@@ -7,7 +7,6 @@ package de.gematik.test.tiger.testenvmgr.config;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.testenvmgr.DockerMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
-import org.junit.BeforeClass;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,7 +38,7 @@ public class TestDockerMgr {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE));
-        srv.setName("testcontainer");
+        srv.setHostname("testcontainer");
         srv.setStartupTimeoutSec(15);
         dmgr.startContainer(srv, cfg, null);
         assertThat(dmgr.getContainers())
@@ -53,7 +52,7 @@ public class TestDockerMgr {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE));
-        srv.setName("testcontainer");
+        srv.setHostname("testcontainer");
         srv.setStartupTimeoutSec(2);
         try {
             assertThatThrownBy(() -> dmgr.startContainer(srv, cfg, null))
@@ -72,7 +71,7 @@ public class TestDockerMgr {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
-        srv.setName("idp5");
+        srv.setHostname("idp5");
         srv.setStartupTimeoutSec(5); // to few seconds for startup
         long startms = System.currentTimeMillis();
         try {
@@ -90,7 +89,7 @@ public class TestDockerMgr {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck
-        srv.setName("idp4");
+        srv.setHostname("idp4");
         try {
             dmgr.startContainer(srv, cfg, null);
             dmgr.pauseContainer(srv);

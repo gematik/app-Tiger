@@ -80,12 +80,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <artifactId>lombok</artifactId>
-            <groupId>org.projectlombok</groupId>
-            <version>1.18.16</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <artifactId>spring-boot-starter-test</artifactId>
             <exclusions>
                 <exclusion>
@@ -99,7 +93,7 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>3.0.0</version>
+            <version>4.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -120,13 +114,13 @@
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>5.7.2</version>
+            <version>${version.junit5}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.6.0</version>
+            <version>2.11.4</version>
         </dependency>
         <dependency>
             <groupId>io.github.arkinator</groupId>
@@ -177,24 +171,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber6</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <artifactId>serenity-rest-assured</artifactId>
             <groupId>net.serenity-bdd</groupId>
             <scope>test</scope>
             <version>${version.serenity.core}</version>
         </dependency>
-
-<!--        <dependency>
-            <groupId>com.konghq</groupId>
-            <artifactId>unirest-java</artifactId>
-            <version>3.11.11</version>
-            <scope>test</scope>
-        </dependency>
--->
     </dependencies>
 
     <build>

@@ -1,5 +1,5 @@
 .btn:hover {
-    background-color: #989898;
+    background-color: #ededed;
 }
 
 .centered {
@@ -9,4 +9,64 @@
 .align {
     text-align: right;
 }
+
+.box {
+    border: 1px solid black;
+    background-color: white;
+    border-radius: .5em;
+    padding: 5px;
+    cursor: move;
+}
+
+.my-row {
+    border: 1px solid black;
+}
+
+.my-col {
+    border: 1px solid black;
+}
+
+.my-container {
+    border: 1px solid black;
+}
+
+.context-menu-hover {
+    background-color: #ededed !important;
+}
+
+.context-menu-icon--fa5 {
+    color: black !important;
+}
+
+i {
+    color: black !important;
+}
+
+.content {
+    padding: 5px 0px 10px 0px;
+    display: none;
+    overflow: hidden;
+    border: 1px solid black;
+}
+
+.collapsible {
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: 1px solid black;
+    text-align: left;
+    background-color: white !important;
+    border-radius: .5em;
+}
+
+.server-container {
+    display: grid;
+    gap: 20px;
+    padding-top: 20px;
+    padding-bottom: 30px;
+}
+
+
+
+
 

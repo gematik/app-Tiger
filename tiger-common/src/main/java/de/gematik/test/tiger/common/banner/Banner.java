@@ -13,7 +13,7 @@ import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-// TODO support german umlauts
+// TODO TGR-171 support german umlauts
 
 public class Banner {
 
@@ -22,16 +22,16 @@ public class Banner {
 
     private static Map<Character, List<String>> asciiArt = null;
 
-    private static final Map<String, BannerConfig> configs = new HashMap<>();
+    private static final Map<String, BannerFontMetrics> configs = new HashMap<>();
 
-    private static BannerConfig cfg;
+    private static BannerFontMetrics cfg;
 
     @SneakyThrows
     private static void initialize() {
-        configs.put("Spliff", new BannerConfig(9, 5, true));
-        configs.put("Doom", new BannerConfig(12, 8, true));
-        configs.put("Thin", new BannerConfig(6, 6, false));
-        configs.put("Straight", new BannerConfig(6, 4, false));
+        configs.put("Spliff", new BannerFontMetrics(9, 5, true));
+        configs.put("Doom", new BannerFontMetrics(12, 8, true));
+        configs.put("Thin", new BannerFontMetrics(6, 6, false));
+        configs.put("Straight", new BannerFontMetrics(6, 4, false));
 
         String font = OsEnvironment.getAsString("TIGER_BANNER_FONT", "Straight");
         cfg = configs.get(font);

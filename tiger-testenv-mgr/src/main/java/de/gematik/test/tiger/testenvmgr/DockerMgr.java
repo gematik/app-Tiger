@@ -89,7 +89,7 @@ public class DockerMgr {
                 File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
                 if (!tmpScriptFolder.exists()) {
                     if (!tmpScriptFolder.mkdirs()) {
-                        throw new TigerTestEnvException("Unable to create temp folder for modified startup script for server " + server.getName());
+                        throw new TigerTestEnvException("Unable to create temp folder for modified startup script for server " + server.getHostname());
                     }
                 }
                 final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
@@ -128,8 +128,8 @@ public class DockerMgr {
             // make startup time and intervall and url (supporting ${PORT} and regex content configurable
             waitForHealthyStartup(server, container);
             container.getDockerClient().renameContainerCmd(container.getContainerId())
-                .withName("tiger." + server.getName()).exec();
-            containers.put(server.getName(), container);
+                .withName("tiger." + server.getHostname()).exec();
+            containers.put(server.getHostname(), container);
             final Map<Integer, Integer> ports = new HashMap<>();
             // TODO for now we assume ports are bound only to one other port on the docker container
             container.getContainerInfo().getNetworkSettings().getPorts().getBindings().entrySet().stream()
@@ -139,12 +139,12 @@ public class DockerMgr {
 
 
         } catch (final DockerException de) {
-            throw new TigerTestEnvException("Failed to start container for server " + server.getName(), de);
+            throw new TigerTestEnvException("Failed to start container for server " + server.getHostname(), de);
         }
     }
 
     public void startComposition(final CfgServer server) {
-        var folder = Paths.get("target", "tiger-testenv-mgr", server.getName()).toFile();
+        var folder = Paths.get("target", "tiger-testenv-mgr", server.getHostname()).toFile();
         if (!folder.exists() && !folder.mkdirs()) {
             throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
         }
@@ -182,11 +182,11 @@ public class DockerMgr {
                         serviceUrl.getHost(), serviceUrl.getPort(), waitStrategy);
                 } catch (MalformedURLException e) {
                     throw new TigerTestEnvException(
-                        "Invalid health check URL '" + check + "' for server " + server.getName());
+                        "Invalid health check URL '" + check + "' for server " + server.getHostname());
                 }
             }
         } catch (Exception e) {
-            throw new TigerTestEnvException("Unable to start server " + server.getName());
+            throw new TigerTestEnvException("Unable to start server " + server.getHostname());
         }
         composition.start(); //NOSONAR
     }
@@ -243,7 +243,7 @@ public class DockerMgr {
         final ContainerConfig containerConfig = iiResponse.getConfig();
         if (containerConfig == null) {
             throw new TigerTestEnvException(
-                "Docker image of server '" + server.getName() + "' has no configuration info!");
+                "Docker image of server '" + server.getHostname() + "' has no configuration info!");
         }
         startCmd = startCmd == null ? new String[0] : startCmd;
         entryPointCmd = entryPointCmd == null ? new String[0] : entryPointCmd;
@@ -262,7 +262,7 @@ public class DockerMgr {
             if (!tmpScriptFolder.exists() && !tmpScriptFolder.mkdirs()) {
                 throw new TigerTestEnvException("Unable to create script folder " + tmpScriptFolder.getAbsolutePath());
             }
-            final var scriptName = "__tigerStart_" + server.getName() + ".sh";
+            final var scriptName = "__tigerStart_" + server.getHostname() + ".sh";
             var content = "#!/bin/sh -x\nenv\n"
                 // append proxy and other certs (for rise idp)
                 + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
@@ -304,7 +304,7 @@ public class DockerMgr {
             return scriptName;
         } catch (IOException ioe) {
             throw new TigerTestEnvException(
-                "Failed to configure start script on container for server " + server.getName(), ioe);
+                "Failed to configure start script on container for server " + server.getHostname(), ioe);
         }
 
     }
@@ -323,7 +323,7 @@ public class DockerMgr {
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {
-            log.warn("Interrupted while waiting for startup of server " + server.getName(), e);
+            log.warn("Interrupted while waiting for startup of server " + server.getHostname(), e);
             Thread.currentThread().interrupt();
         }
         try {
@@ -332,12 +332,12 @@ public class DockerMgr {
                 Thread.sleep(500);
                 if (startms + endhalfms * 2L < System.currentTimeMillis()) {
                     throw new TigerTestEnvException("Startup of server %s timed out after %d seconds!",
-                        server.getName(), (System.currentTimeMillis() - startms) / 1000);
+                        server.getHostname(), (System.currentTimeMillis() - startms) / 1000);
                 }
             }
-            log.info("HealthCheck OK (" + (container.isHealthy() ? 1 : 0) + ") for " + server.getName());
+            log.info("HealthCheck OK (" + (container.isHealthy() ? 1 : 0) + ") for " + server.getHostname());
         } catch (InterruptedException ie) {
-            log.warn("Interruption signaled while waiting for server " + server.getName() + " to start up", ie);
+            log.warn("Interruption signaled while waiting for server " + server.getHostname() + " to start up", ie);
             Thread.currentThread().interrupt();
         } catch (TigerTestEnvException ttee) {
             throw ttee;
@@ -350,13 +350,13 @@ public class DockerMgr {
                 log.warn("Interruption signaled");
                 Thread.currentThread().interrupt();
             }
-            log.info("HealthCheck UNCLEAR for " + server.getName()
+            log.warn("HealthCheck UNCLEAR for " + server.getHostname()
                 + " as no healthcheck is configured, we assume it works and continue setup!");
         }
     }
 
     public void stopContainer(final CfgServer srv) {
-        final GenericContainer<?> container = containers.get(srv.getName());
+        final GenericContainer<?> container = containers.get(srv.getHostname());
         if (container != null && container.getDockerClient() != null) {
             try {
                 container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
@@ -369,13 +369,13 @@ public class DockerMgr {
 
     @SuppressWarnings("unused")
     public void pauseContainer(final CfgServer srv) {
-        final GenericContainer<?> container = containers.get(srv.getName());
+        final GenericContainer<?> container = containers.get(srv.getHostname());
         container.getDockerClient().pauseContainerCmd(container.getContainerId()).exec();
     }
 
     @SuppressWarnings("unused")
     public void unpauseContainer(final CfgServer srv) {
-        final GenericContainer<?> container = containers.get(srv.getName());
+        final GenericContainer<?> container = containers.get(srv.getHostname());
         container.getDockerClient().unpauseContainerCmd(container.getContainerId()).exec();
     }
 }

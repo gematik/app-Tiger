@@ -4,16 +4,16 @@
 
 package de.gematik.test.tiger.lib.proxy;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.lib.TigerLibraryException;
-import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import org.awaitility.core.ConditionTimeoutException;
 
 @Slf4j
 public class RbelMessageProvider implements IRbelMessageListener {
@@ -34,17 +34,11 @@ public class RbelMessageProvider implements IRbelMessageListener {
 
     public void waitForMessage() {
         wait = true;
-        long startms = System.currentTimeMillis();
-        while (wait) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                log.warn("Interruption signaled");
-                Thread.currentThread().interrupt();
-            }
-            if (System.currentTimeMillis() - startms > timeoutms) {
-                throw new TigerLibraryException("Timeout waiting for rbel message");
-            }
+        try  {
+            await().atMost(timeoutms, TimeUnit.MILLISECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
+                .until(() -> !wait);
+        } catch (ConditionTimeoutException cte) {
+            throw new TigerLibraryException("Timeout waiting for rbel message", cte);
         }
     }
 

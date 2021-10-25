@@ -1,0 +1,17 @@
+tigerProxy:
+
+servers:
+  # this key is duplicated on purpose to assert that our tiger configuration helper class bails out if duplicate keys
+  # are detected
+  serverDouble:
+    hostname: unknownTemplate1
+    type: externalUrl
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: true
+  serverDouble:
+    hostname: unknownTemplate2
+    type: externalJar
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: false

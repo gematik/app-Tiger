@@ -86,7 +86,7 @@ public class TestContextProviders {
         ctxt.putString("key1", "value1");
         ctxt.assertRegexMatches("key2", "$DOESNOTEXIST");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key1", "$DOESNOTEXIST"))
-            .hasMessage("\nExpecting:\n  <{\"key1\"=\"value1\"}>\nnot to contain key:\n  <\"key1\">".replace("\n", NL));
+            .hasMessage("\nExpecting actual:\n  {\"key1\"=\"value1\"}\nnot to contain key:\n  \"key1\"".replace("\n", NL));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class TestContextProviders {
         ctxt.assertRegexMatches("key1", ".*");
         ctxt.assertRegexMatches("key1", "v.*1");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key1", "[\\d]*"))
-            .hasMessage("\nExpecting:\n \"value1\"\nto match pattern:\n \"[\\d]*\"".replace("\n", NL));
+            .hasMessage("\nExpecting actual:\n  \"value1\"\nto match pattern:\n  \"[\\d]*\"".replace("\n", NL));
     }
 
     @Test
@@ -109,8 +109,8 @@ public class TestContextProviders {
             .containsEntry("mkey2", 2)
             .hasSize(2);
         assertThatThrownBy(() -> ctxt.getObjectMapCopy("key1"))
-            .hasMessage(("\nExpecting:\n  <\"value1\">\nto be an instance of:\n  <java.util.Map>\n"
-                + "but was instance of:\n  <java.lang.String>").replace("\n", NL));
+            .hasMessage(("\nExpecting actual:\n  \"value1\"\nto be an instance of:\n  java.util.Map\n"
+                + "but was instance of:\n  java.lang.String").replace("\n", NL));
     }
 
     @Test
@@ -120,7 +120,7 @@ public class TestContextProviders {
         assertThat(ctxt.getContext()).containsKey("key1");
         ctxt.setDomain("test007a");
         assertThatThrownBy(() -> ctxt.remove("key1"))
-            .hasMessage("\nExpecting:\n <{}>\nto contain key:\n <\"key1\">".replace("\n", NL));
+            .hasMessage("\nExpecting actual:\n  {}\nto contain key:\n  \"key1\"".replace("\n", NL));
         ctxt.setDomain("test007");
         assertThat(ctxt.getContext()).containsKey("key1");
         ctxt.remove("key1");

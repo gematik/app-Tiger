@@ -18,7 +18,7 @@ public class TestTigerConfiguration {
                 "tiger", TestCfg.class))
                 .extracting(TestCfg::getTemplates)
                 .asList()
-                .extracting("name")
+                .extracting("templateName")
                 .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
     }
 }

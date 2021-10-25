@@ -9,7 +9,7 @@ import lombok.Data;
 
 @AllArgsConstructor
 @Data
-public class BannerConfig {
+public class BannerFontMetrics {
     private int width;
     private int height;
     private boolean upperCaseOnly;

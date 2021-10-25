@@ -41,7 +41,7 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
-            <version>1.6.0</version>
+            <version>1.8.1</version>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
@@ -50,14 +50,14 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.19.0</version>
+            <version>${version.assertj}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.10</version>
+            <version>3.12.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -66,12 +66,12 @@
         <dependency>
             <artifactId>jose4j</artifactId>
             <groupId>org.bitbucket.b_c</groupId>
-            <version>0.7.2</version>
+            <version>0.7.9</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-jexl3</artifactId>
-            <version>3.1</version>
+            <version>3.2.1</version>
         </dependency>
         <dependency>
             <artifactId>commons-io</artifactId>
@@ -94,6 +94,16 @@
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
             <version>2.27.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -105,6 +115,16 @@
             <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-netty</artifactId>
             <version>${version.mockserver}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.arkinator</groupId>
@@ -121,16 +141,11 @@
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
-            <version>3.11.11</version>
+            <version>3.13.0</version>
         </dependency>
         <dependency>
             <groupId>de.gematik</groupId>
             <artifactId>rbellogger</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.cfg4j</groupId>
-            <artifactId>cfg4j-core</artifactId>
-            <version>4.4.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -140,7 +155,7 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>3.0.0</version>
+            <version>4.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

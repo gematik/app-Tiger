@@ -1,7 +1,8 @@
 tigerProxy:
 
 servers:
-  - name: testExternalJarInternalServer
+  testExternalUrlInternalServer:
+    hostname: testExternalJarInternalServer
     type: externalUrl
     source:
       - https://build.top.local
