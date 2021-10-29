@@ -61,6 +61,7 @@
         <module>tiger-test-lib</module>
         <module>tiger-aforeporter-plugin</module>
         <module>tiger-admin</module>
+        <module>tiger-driver-generator-maven-plugin</module>
     </modules>
 
     <properties>

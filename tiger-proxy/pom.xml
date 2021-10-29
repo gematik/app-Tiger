@@ -141,7 +141,7 @@
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
-            <version>3.13.0</version>
+            <version>3.11.11</version>
         </dependency>
         <dependency>
             <groupId>de.gematik</groupId>
