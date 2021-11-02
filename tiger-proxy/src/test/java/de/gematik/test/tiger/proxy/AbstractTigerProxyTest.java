@@ -7,6 +7,7 @@ package de.gematik.test.tiger.proxy;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.matching.RequestPattern;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
@@ -75,7 +76,7 @@ public abstract class AbstractTigerProxyTest {
                     ))
                     .getHttpRequest());
 
-        RbelJexlExecutor.activateJexlDebugging();
+        RbelOptions.activateJexlDebugging();
         Unirest.config().reset();
     }
 

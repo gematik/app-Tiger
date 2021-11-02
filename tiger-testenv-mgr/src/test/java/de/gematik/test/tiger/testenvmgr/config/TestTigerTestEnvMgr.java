@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
@@ -32,11 +33,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @Slf4j
 public class TestTigerTestEnvMgr {
+
     @BeforeAll
     public static void proxySettings() {
         // TODO check whether to remove once the Jenkinsfile has been merged to master
         if (System.getenv("PROXY_HOST") != null) {
-            log.info( "Applying Jenkins proxy env vars! " +
+            log.info("Applying Jenkins proxy env vars! " +
                 System.getenv("PROXY_HOST") + ":" + System.getenv("PROXY_PORT"));
             System.setProperty("http.proxyHost", System.getenv("PROXY_HOST"));
             System.setProperty("http.proxyPort", System.getenv("PROXY_PORT"));
@@ -48,9 +50,9 @@ public class TestTigerTestEnvMgr {
     @BeforeEach
     public void printName(TestInfo testInfo) {
         if (testInfo.getTestMethod().isPresent()) {
-            log.info(Ansi.colorize("Starting " + testInfo.getTestMethod().get().getName(), Ansi.BOLD + Ansi.GREEN));
+            log.info(Ansi.colorize("Starting " + testInfo.getTestMethod().get().getName(), RbelAnsiColors.GREEN_BOLD));
         } else {
-            log.warn(Ansi.colorize("Starting UNKNOWN step", Ansi.BOLD + Ansi.GREEN));
+            log.warn(Ansi.colorize("Starting UNKNOWN step", RbelAnsiColors.GREEN_BOLD));
         }
     }
 
@@ -65,7 +67,7 @@ public class TestTigerTestEnvMgr {
     public void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop)
         throws InvocationTargetException, IllegalAccessException {
         System.setProperty("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile +".yaml");
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml");
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
@@ -95,7 +97,8 @@ public class TestTigerTestEnvMgr {
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
         srv.getTigerProxyCfg().setServerPort(-1);
-        assertThatThrownBy(() -> envMgr.checkCfgProperties("testTigerProxy", srv)).isInstanceOf(TigerTestEnvException.class);
+        assertThatThrownBy(() -> envMgr.checkCfgProperties("testTigerProxy", srv)).isInstanceOf(
+            TigerTestEnvException.class);
     }
 
     @Test
@@ -203,7 +206,7 @@ public class TestTigerTestEnvMgr {
         File f = new File("WinstoneHTTPServer");
         FileUtils.deleteDirectory(f);
         if (!f.mkdirs()) {
-          throw new RuntimeException("Unable to create folder '" + f.getAbsolutePath() + "'");
+            throw new RuntimeException("Unable to create folder '" + f.getAbsolutePath() + "'");
         }
         f = Path.of("WinstoneHTTPServer", "download").toFile();
         if (!f.createNewFile()) {
@@ -379,7 +382,8 @@ public class TestTigerTestEnvMgr {
     @Test
     @Disabled("Only for local testing as CI tests would take too long for this test method")
     public void testCreateDemis() throws InterruptedException {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/testDemis.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDemis.yaml");
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         envMgr.setUpEnvironment();
         Thread.sleep(20000000);

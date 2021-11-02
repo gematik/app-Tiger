@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -89,7 +90,6 @@ public class TigerTestHooks {
     public void beforeStep(final Scenario scenario) {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
-            return;
         }
     }
 
@@ -119,7 +119,7 @@ public class TigerTestHooks {
         }
         scenarioStepsMap.remove(scenario.getId());
 
-         switch (scenario.getStatus()) {
+        switch (scenario.getStatus()) {
             case PASSED:
                 scPassed++;
                 break;
@@ -144,7 +144,7 @@ public class TigerTestHooks {
         final int dataVariantIdx = processedScenarios.get(scenarioId).size();
         processedScenarios.get(scenarioId).add(scenario);
 
-        var rbelRenderer =  new RbelHtmlRenderer();
+        var rbelRenderer = new RbelHtmlRenderer();
         rbelRenderer.setSubTitle(
             "<p><b>" + scenario.getName() + "</b>&nbsp&nbsp;<u>" + (dataVariantIdx + 1) + "</u></p>"
                 + "<p><i>" + scenario.getUri() + "</i></p>");

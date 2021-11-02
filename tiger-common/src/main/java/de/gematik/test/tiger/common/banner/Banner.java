@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.common.banner;
 
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import java.nio.charset.StandardCharsets;
@@ -60,34 +61,26 @@ public class Banner {
     }
 
     public static String toBannerStr(String msg, String ansiColors) {
-        return ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
+        return ansiColors + StringUtils.repeat('=', 100) + RbelAnsiColors.RESET + "\n"
             + toBannerLines(msg).stream()
-            .map(line -> ansiColors + line + Ansi.RESET)
+            .map(line -> Ansi.colorize(line, ansiColors))
             .collect(Collectors.joining("\n"))
-            + "\n" + ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
+            + "\n" + Ansi.colorize(StringUtils.repeat('=', 100), ansiColors);
     }
 
-    public static String toTextStr(String msg, String ansiColor) {
-        try {
-            final String ansiColors = (String) Ansi.class.getDeclaredField(ansiColor.toUpperCase()).get(null);
-            return ansiColors + msg + Ansi.RESET;
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new AssertionError("Unknown color name '" + ansiColor + "'!", e);
-        }
+    public static String toTextStr(String msg, String colorName) {
+        final String ansiColors = RbelAnsiColors.valueOf(colorName.toLowerCase()).toString();
+        return Ansi.colorize(msg, ansiColors);
     }
 
     public static String toBannerStrWithCOLOR(String msg, String colorName) {
-        try {
-            final String ansiColors = (String) Ansi.class.getDeclaredField(colorName).get(null);
+        final String ansiColors = RbelAnsiColors.seekColor(colorName.toLowerCase()).toString();
 
-            return ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
-                + toBannerLines(msg).stream()
-                .map(line -> ansiColors + line + Ansi.RESET)
-                .collect(Collectors.joining("\n"))
-                + "\n" + ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new AssertionError("Unknown color name '" + colorName + "'!", e);
-        }
+        return Ansi.colorize(StringUtils.repeat('=', 100),ansiColors) + "\n"
+            + toBannerLines(msg).stream()
+            .map(line -> Ansi.colorize(line,ansiColors))
+            .collect(Collectors.joining("\n"))
+            + "\n" + Ansi.colorize( StringUtils.repeat('=', 100) , ansiColors);
     }
 
     private static List<String> toBannerLines(String msg) {
@@ -110,11 +103,11 @@ public class Banner {
     }
 
     public static void shout(String msg) {
-        shout(msg, Ansi.BOLD + Ansi.YELLOW);
+        shout(msg, RbelAnsiColors.YELLOW_BOLD.toString());
     }
 
     public static void shout(String msg, String ansiColors) {
-        toBannerLines(msg).forEach(line -> System.out.println(ansiColors + line + Ansi.RESET));
+        toBannerLines(msg).forEach(line -> System.out.println(Ansi.colorize(line, ansiColors)));
     }
 }
 

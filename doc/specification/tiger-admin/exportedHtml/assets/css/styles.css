@@ -1,0 +1,101 @@
+fieldset {
+  border: 1px solid lightgray;
+  padding: 1rem;
+  margin: 1rem;
+  padding-top: 0.5rem;
+}
+
+fieldset.subset {
+  margin-top: 0;
+}
+
+input:hover, select:hover {
+  color: steelblue;
+  background: #eaeaff;
+}
+
+span.input-group-text:hover, li.list-group-item:hover {
+  background: #eaeaff;
+}
+
+span.fieldset-summary {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.input-group, .form-check {
+  margin-top: 0.5rem !important;
+}
+
+.btn-group-vertical button {
+  margin-bottom: 0.25rem !important;
+}
+
+.input-group-text {
+  flex: 0 0 auto;
+  width: 30%;
+}
+
+.labels-col-5 .input-group-text {
+  flex: 0 0 auto;
+  width: 50%;
+}
+
+.labels-col-4 .input-group-text {
+  flex: 0 0 auto;
+  width: 40%;
+}
+
+.labels-col-3 .input-group-text {
+  flex: 0 0 auto;
+  width: 30%;
+}
+
+.labels-col-2 .input-group-text {
+  flex: 0 0 auto;
+  width: 20%;
+}
+
+.list-group {
+  background: #f0f0f0;
+  border: 1px solid lightgray;
+  min-height: 10rem;
+  overflow-y: auto;
+}
+
+.nav-tabs .nav-item > .nav-link.active {
+  background: #eaeaff;
+}
+
+fieldset .list-group .list-group-item > span {
+  width: 85%;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.topcol {
+  /*background: yellow;*/
+  padding-left: 0;
+  padding-right: 1px;
+}
+
+.text.summary {
+  color: #4682b4;
+  vertical-align: middle;
+}
+
+.draghandle {
+  font-size: 1.5rem;
+  margin-right: 0.25rem;
+  cursor: move;
+  color: lightsteelblue;
+  vertical-align: middle;
+}
+
+.list-group-item {
+  padding-left: 0.5rem;
+}
+

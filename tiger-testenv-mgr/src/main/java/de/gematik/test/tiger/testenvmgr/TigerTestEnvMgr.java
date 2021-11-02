@@ -9,6 +9,7 @@ import static org.awaitility.Awaitility.await;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
@@ -70,7 +71,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             log.error("Error while starting up stand alone tiger testenv mgr! ABORTING...", e);
             System.exit(1);
         }
-        log.info("\n" + Banner.toBannerStr("Tiger standalone test environment UP!", Ansi.BOLD + Ansi.GREEN));
+        log.info(
+            "\n" + Banner.toBannerStr("Tiger standalone test environment UP!", RbelAnsiColors.GREEN_BOLD.toString()));
         waitForQuit(null, "TIGER standalone test environment");
         log.info("interrupting " + envMgr.externalProcesses.size() + " threads...");
         envMgr.externalProcesses.values().forEach(Process::destroy);
@@ -169,7 +171,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     public void setUpEnvironment() {
         log.info("starting set up of test environment...");
         configuration.getServers().forEach((key, value) -> start(key, value, configuration));
-        log.info(Ansi.colorize("finished set up test environment OK", Ansi.BOLD + Ansi.GREEN));
+        log.info(Ansi.colorize("finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
     }
 
     @Override
@@ -271,8 +273,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         assertCfgPropertySet(server, "type");
 
-
-
         if (type != ServerType.EXTERNALJAR && type != ServerType.EXTERNALURL && type != ServerType.DOCKER_COMPOSE) {
             assertCfgPropertySet(server, "version");
         }
@@ -369,9 +369,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void startDocker(final CfgServer server, Configuration configuration) {
-        log.info(Ansi.colorize(
-            "Starting docker container for " + server.getHostname() + ":" + server.getSource().get(0),
-            Ansi.BOLD + Ansi.GREEN));
+        log.info(
+            Ansi.colorize("Starting docker container for " + server.getHostname() + ":" + server.getSource().get(0),
+                RbelAnsiColors.GREEN_BOLD));
 
         if (server.getType() == ServerType.DOCKER) {
             dockerManager.startContainer(server, configuration, this);
@@ -391,9 +391,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 .to(HTTP + "localhost:" + server.getDockerOptions().getPorts().values().iterator().next())
                 .build());
         }
-        log.info(Ansi.colorize(
-            "Docker container Startup for " + server.getHostname() + " : " + server.getSource().get(0) + " OK",
-            Ansi.BOLD + Ansi.GREEN));
+        log.info(Ansi.colorize("Docker container Startup for " + server.getHostname() +
+            " : " + server.getSource().get(0) + " OK", RbelAnsiColors.GREEN_BOLD));
     }
 
     @SneakyThrows
@@ -510,7 +509,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     @SneakyThrows
     public void initializeExternalUrl(final CfgServer server) {
         log.info(
-            Ansi.colorize("starting external URL instance " + server.getHostname() + "...", Ansi.BOLD + Ansi.GREEN));
+            Ansi.colorize("starting external URL instance " + server.getHostname() + "...", RbelAnsiColors.GREEN_BOLD));
         final var url = new URL(replaceSysPropsInString(server.getSource().get(0)));
         addServerToLocalProxyRouteMap(server, url);
 
@@ -526,8 +525,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     public void initializeExternalJar(final CfgServer server)
         throws RuntimeException, InterruptedException, IOException, URISyntaxException {
 
-        log.info(Ansi.colorize("starting external jar instance " + server.getHostname() + " in folder " + server
-            .getExternalJarOptions().getWorkingDir() + "...", Ansi.BOLD + Ansi.GREEN));
+        log.info(Ansi.colorize(
+            "starting external jar instance " + server.getHostname() + " in folder " + server
+            .getExternalJarOptions().getWorkingDir() + "...", RbelAnsiColors.GREEN_BOLD));
 
         log.info("preparing check for external jar location...");
         var jarUrl = server.getSource().get(0);
@@ -686,16 +686,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     try {
                         con.connect();
                         log.info("External node " + server.getHostname() + " is online");
-                        log.info(Ansi.BOLD + Ansi.GREEN + "External server Startup OK " + server.getSource().get(0)
-                            + Ansi.RESET);
+                        log.info(Ansi.colorize("External server Startup OK " + server.getSource().get(0) , RbelAnsiColors.GREEN_BOLD));
                         return true;
                     } catch (ConnectException | SocketTimeoutException cex) {
                         if (!quiet) {
                             log.info("No connection...");
                         }
                     } catch (SSLHandshakeException sslhe) {
-                        log.warn(Ansi.YELLOW + "SSL handshake but server at least seems to be up!" + sslhe.getMessage()
-                            + Ansi.RESET);
+                        log.warn(Ansi.colorize("SSL handshake but server at least seems to be up!" + sslhe.getMessage() , RbelAnsiColors.YELLOW_BOLD));
                         return true;
                     } catch (SSLException sslex) {
                         if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
@@ -755,7 +753,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         try {
             String finalTotalLength = totalLength;
             final int pollDelayms = 500;
-            final int cyclesFor10Secs = 10_000/pollDelayms;
+            final int cyclesFor10Secs = 10_000 / pollDelayms;
             await().atMost(15, TimeUnit.MINUTES)
                 .pollDelay(pollDelayms, TimeUnit.MILLISECONDS)
                 .until(() -> {

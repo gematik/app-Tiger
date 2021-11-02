@@ -5,6 +5,8 @@
 ### Neues
 
 * TGR-173 Die TGR BDD Testschritte stehen nun auch auf Deutsch zur Verfügung
+* TGR-131 Der RbelPath Executor unterstützt nun einen Debug Modus um bei fehlerhaften RbelPath Ausdrücken 
+  die Fehlersuche zu erleichtern. [Mehr Details...](doc/testlib-config.md)
 * TGR-133 Release des mvn plugins um die Generierung der Treiberklassen für die Serenity tests auch in nicht englischer
   Sprache zu unterstützen. [Mehr Details...](tiger-driver-generator-maven-plugin/README.md)
 * TGR-165 EPA VAU Schlüssel ist fest im Tiger Proxy hinterlegt
@@ -26,7 +28,7 @@
 ### Fehlerbehebungen
 
 * TGR-159 Null TLS attribute in tiger-testenv.yml führten zu Startabbruch
-* TGR-166 Concurrent Modification Exceptions traten im Bereich Tiger Proxy Nachrichten
+* TGR-166 Concurrent Modification Exceptions traten im Bereich Tiger Proxy Nachrichten auf
 
 ### Migrationsdetails
 

@@ -14,6 +14,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
+import java.nio.charset.StandardCharsets;
 import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

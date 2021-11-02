@@ -2,7 +2,6 @@ package de.gematik.test.tiger.proxy.steps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.pages.MainPage;
 import io.restassured.RestAssured;
