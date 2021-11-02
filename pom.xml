@@ -6,11 +6,12 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.13.0</version>
+    <version>0.14.0</version>
     <packaging>pom</packaging>
     <name>app-Tiger</name>
     <description>Short project description </description>
     <url>https://github.com/gematik/app-Tiger</url>
+
 
     <scm>
         <url>https://github.com/gematik/app-Tiger</url>
@@ -61,6 +62,7 @@
         <module>tiger-test-lib</module>
         <module>tiger-aforeporter-plugin</module>
         <module>tiger-admin</module>
+        <module>tiger-driver-generator-maven-plugin</module>
     </modules>
 
     <properties>
@@ -68,19 +70,18 @@
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
 
-        <version.rbellogger>0.15.0</version.rbellogger>
+        <version.rbellogger>0.17.0</version.rbellogger>
         <version.cucumber>6.10.4</version.cucumber>
         <version.serenity.core>2.4.34</version.serenity.core>
         <version.serenity.cucumber.6>2.4.34</version.serenity.cucumber.6>
         <version.serenity.maven.plugin>2.4.34</version.serenity.maven.plugin>
         <version.junit4>4.13.2</version.junit4>
-        <version.junit5>5.7.1</version.junit5>
-        <version.assertj>3.18.1</version.assertj>
-        <version.jackson>2.11.2</version.jackson>
-        <version.slf4j>1.7.30</version.slf4j>
+        <version.junit5>5.8.1</version.junit5>
+        <version.assertj>3.21.0</version.assertj>
+        <version.jackson>2.11.3</version.jackson>
+        <version.slf4j>1.7.32</version.slf4j>
         <version.junit4>4.13.2</version.junit4>
-        <version.junit5>5.7.1</version.junit5>
-        <version.lombok>1.18.18</version.lombok>
+        <version.lombok>1.18.22</version.lombok>
         <version.mockserver>5.11.6</version.mockserver>
 
         <sonar.coverage.jacoco.xmlReportPaths>${project.reporting.outputDirectory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -182,11 +183,6 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
 
@@ -371,6 +367,37 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.9.1</version>
+            </plugin>
+
+            <plugin>
+                <groupId>net.serenity-bdd.maven.plugins</groupId>
+                <artifactId>serenity-maven-plugin</artifactId>
+                <version>${version.serenity.maven.plugin}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.serenity-bdd</groupId>
+                        <artifactId>serenity-core</artifactId>
+                        <version>${version.serenity.core}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>net.serenity-bdd</groupId>
+                        <artifactId>serenity-single-page-report</artifactId>
+                        <version>2.3.33</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <reports>single-page-html</reports>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>serenity-reports</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>aggregate</goal>
+                            <goal>reports</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -1,7 +1,8 @@
 tigerProxy:
 
 servers:
-  - name: testReverseProxy
+  testTigerProxy:
+    hostname: testReverseProxy
     type: tigerProxy
     version: 0.9.0-178
     tigerProxyCfg:

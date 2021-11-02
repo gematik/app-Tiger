@@ -6,6 +6,7 @@
 /tiger-proxy/dependency-reduced-pom.xml
 application.yml
 /tiger-testenv-mgr/FdVPortable/
+/depstree.txt
 
 Jenkinsfile-MR-CI
 Jenkinsfile_DeployGitlab

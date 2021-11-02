@@ -5,22 +5,24 @@ tigerProxy:
   tls.serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 servers:
-  - name: idp
+  idp-ref:
+    hostname: idp
     template: idp-ref
     active: false
 
-  - name: idp
+  idp-ref-snapshot:
+    hostname: idp
     template: idp-ref
     version: 0.1-SNAPSHOT
     active: false
 
-  - name: idp-rise-tu-manual
+  idp-rise-tu-manual:
     template: idp-rise-tu
     type: externalUrl
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
     active: true
 
-  - name: erzpt-default
+  erzpt-default:
     template: erzpt-fd-ref
     active: false

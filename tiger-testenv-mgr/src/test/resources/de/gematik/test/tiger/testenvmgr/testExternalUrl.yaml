@@ -3,7 +3,8 @@ tigerProxy:
     hostname: $SYSTEM
 
 servers:
-  - name: testExternalJar
+  testExternalUrl:
+    hostname: testExternalUrl
     type: externalUrl
     source:
       - https://www.orf.at

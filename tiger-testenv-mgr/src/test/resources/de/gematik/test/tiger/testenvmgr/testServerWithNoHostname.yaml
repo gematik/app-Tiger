@@ -1,0 +1,9 @@
+tigerProxy:
+
+servers:
+  testServerWithNoHostname:
+    type: externalUrl
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: true
+    startupTimeoutSec: 1

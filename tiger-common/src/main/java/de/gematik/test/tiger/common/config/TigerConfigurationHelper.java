@@ -17,43 +17,48 @@
 package de.gematik.test.tiger.common.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Map;
-
-import de.gematik.rbellogger.util.RbelPkiIdentity;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader;
-import lombok.SneakyThrows;
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.nodes.MappingNode;
+import org.yaml.snakeyaml.nodes.ScalarNode;
+import org.yaml.snakeyaml.parser.ParserException;
 
 /**
- * This helper class helps managing test suite configuration based on yaml config files.
+ * This helper class helps to manage test suite configuration based on yaml config files.
  * <p>
  * First step is to use {@link #yamlToJson(String)} to create a JSON representation of the yaml config file. Now you can
- * optionally apply a template by calling {@link #applyTemplate(JSONArray, String, JSONArray, String)}. Then you can
+ * optionally apply a template by calling {@link #applyTemplate(JSONObject, String, JSONArray, String)}. Then you can
  * overwrite yaml config values with env vars or system properties by calling {@link
- * #overwriteWithSysPropsAndEnvVars(String, String, JSONObject)}. Finally you can convert to your data structure config
+ * #overwriteWithSysPropsAndEnvVars(String, String, JSONObject)}. Finally, you can convert to your data structure config
  * class by calling {@link #jsonStringToConfig(String, Class)}.
  * <p>
  * For simple test configurations without templating you can use the instance method {@link
  * #yamlReadOverwriteToConfig(String, String, Class)}. This method also performs the overwriting of yaml config values
  * with env vars and system properties. Due to Java Generics restrictions you will need to instantiate an instance to
- * use this method.
+ * use this method. XXXSERVERIDXXX is a placeholder here for the server id of the server you want to modify. With
+ * version 0.15.0 of Tiger we switched from server list to server map. More details can be found in {@link
+ * /doc/testenv-config-types.md}.
  *
  * <p>The format of the environment variables looks exemplaric like:
  * <ul>
  * <li>TIGER_TESTENV_TIGERPROXY_PROXYLOGLEVEL</li>
  * <li>TIGER_TESTENV_TIGERPROXY_PORT</li>
- * <li>TIGER_TESTENV_SERVERS_0_TEMPLATE</li>
- * <li>TIGER_TESTENV_SERVERS_0_STARTUPTIMEOUTSEC</li>
+ * <li>TIGER_TESTENV_SERVERS_XXXSERVERID0XXX_TEMPLATE</li>
+ * <li>TIGER_TESTENV_SERVERS_XXXSERVERID0XXX_STARTUPTIMEOUTSEC</li>
  * <li>...</li>
  * </ul></p>
  * <p>For <b>Envrionmental variables:</b><br/>TIGER is the product name passed in as parameter to {@link #overwriteWithSysPropsAndEnvVars(String, String, JSONObject)}
@@ -63,8 +68,8 @@ import org.json.JSONObject;
  * <ul>
  *     <li>tiger.testenv.tigerProxy.proxyLogLevel</li>
  *     <li>tiger.testenv.tigerProxy.port</li>
- *     <li>tiger.testenv.tigerProxy.servers.0.template</li>
- *     <li>tiger.testenv.tigerProxy.servers.0.startupTimeoutSec</li>
+ *     <li>tiger.testenv.tigerProxy.servers.XXXserveridXXX.template</li>
+ *     <li>tiger.testenv.tigerProxy.servers.XXXserveridXXX.startupTimeoutSec</li>
  * </ul>
  * <p>
  * To use tokens such as ${TESTENV.xxxx} in the yaml file and replace it with appropriate values, first convert
@@ -74,10 +79,44 @@ import org.json.JSONObject;
  * @param <T>
  */
 @Slf4j
+@SuppressWarnings("unused")
 public class TigerConfigurationHelper<T> {
 
-    private static final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     private static final ObjectMapper objMapper = new ObjectMapper();
+
+    /**
+     * A specialized {@link Constructor} that checks for duplicate keys.
+     */
+    private static class DuplicateMapKeysForbiddenConstructor extends SafeConstructor {
+
+        @Override
+        protected Map<Object, Object> constructMapping(MappingNode node) {
+            try {
+                List<String> keys = node.getValue().stream().map(v -> ((ScalarNode) v.getKeyNode()).getValue()).collect(
+                    Collectors.toList());
+                Set<String> duplicates = findDuplicates(keys);
+                if (!duplicates.isEmpty()) {
+                    throw new TigerConfigurationException(
+                        "Duplicate keys in yaml file ('" + String.join(",", duplicates) + "')!");
+                }
+            } catch (Exception e) {
+                throw new TigerConfigurationException("Duplicate keys in yaml file!", e);
+            }
+            try {
+                return super.constructMapping(node);
+            } catch (IllegalStateException e) {
+                throw new ParserException("while parsing MappingNode",
+                    node.getStartMark(), e.getMessage(), node.getEndMark());
+            }
+        }
+
+        private <T> Set<T> findDuplicates(Collection<T> collection) {
+            Set<T> uniques = new HashSet<>();
+            return collection.stream()
+                .filter(e -> !uniques.add(e))
+                .collect(Collectors.toSet());
+        }
+    }
 
     /**
      * Old method, see {@link #yamlReadOverwriteToConfig(String, String, Class)}.
@@ -101,11 +140,14 @@ public class TigerConfigurationHelper<T> {
      * @param cfgClazz class reference for the Configuration object to be created from config yaml file.
      * @return Configuration object
      */
-    @SneakyThrows
     public T yamlReadOverwriteToConfig(String yamlPath, String product, Class<T> cfgClazz) {
-        JSONObject json = yamlToJson(yamlPath);
-        overwriteWithSysPropsAndEnvVars(product.toUpperCase(), product, json);
-        return objMapper.readValue(json.toString(), cfgClazz);
+        try {
+            JSONObject json = yamlToJson(yamlPath);
+            overwriteWithSysPropsAndEnvVars(product.toUpperCase(), product, json);
+            return objMapper.readValue(json.toString(), cfgClazz);
+        } catch (JsonProcessingException e) {
+            throw new TigerConfigurationException("Unable to convert YAML content to JSON!", e);
+        }
     }
 
     /**
@@ -114,39 +156,50 @@ public class TigerConfigurationHelper<T> {
      * @param yamlPath path to yaml config file
      * @return json object
      */
-    @SneakyThrows
     public static JSONObject yamlToJson(String yamlPath) {
-        Object yamlCfg = yamlMapper.
-            readValue(IOUtils.toString(Path.of(yamlPath).toUri(), StandardCharsets.UTF_8), Object.class);
-        return new JSONObject(objMapper.writeValueAsString(yamlCfg));
+        Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
+        try {
+            Map<String, Object> map = yaml.load(IOUtils.toString(Path.of(yamlPath).toUri(), StandardCharsets.UTF_8));
+            return new JSONObject(map);
+        } catch (IOException e) {
+            throw new TigerConfigurationException("Unable to read YAML file '" + yamlPath + "'!", e);
+        }
     }
 
     /**
      * converts a given yaml content string to JSON object.
-     * @param yamlStr
-     * @return
+     *
+     * @param yamlStr YAML content
+     * @return JSON object representing the yaml content
      */
-    @SneakyThrows
     public static JSONObject yamlStringToJson(String yamlStr) {
-        Object yamlCfg = yamlMapper.readValue(yamlStr, Object.class);
-        return new JSONObject(objMapper.writeValueAsString(yamlCfg));
+        Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
+        Map<String, Object> map = yaml.load(yamlStr);
+        return new JSONObject(map);
     }
 
-    @SneakyThrows
     public static JSONObject yamlConfigReadOverwriteToJson(String yamlBaseFilename, String product) {
         final File cfgFile = Path.of("config", product, yamlBaseFilename).toFile();
         final String yamlStr;
         if (cfgFile.canRead()) {
-            yamlStr = IOUtils.toString(cfgFile.toURI(), StandardCharsets.UTF_8);
+
+            try {
+                yamlStr = IOUtils.toString(cfgFile.toURI(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new TigerConfigurationException("Failed to read YAML file " + cfgFile.getAbsolutePath() + "!", e);
+            }
         } else {
-            InputStream is = TigerConfigurationHelper.class.getResourceAsStream(
-                "/config/" + product + "/" + yamlBaseFilename);
-            assertThat(is)
-                .withFailMessage("Configuration file '" + cfgFile.getAbsolutePath()
-                    + "' neither found in file system nor in classpath!")
-                .isNotNull();
-            try (is) {
+            try (InputStream is = TigerConfigurationHelper.class.getResourceAsStream(
+                "/config/" + product + "/" + yamlBaseFilename)) {
+                assertThat(is)
+                    .withFailMessage("Configuration file '" + cfgFile.getAbsolutePath()
+                        + "' neither found in file system nor in classpath!")
+                    .isNotNull();
+                //noinspection ConstantConditions
                 yamlStr = IOUtils.toString(is, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new TigerConfigurationException(
+                    "Failed to read YAML from class path '/config/" + product + "/" + yamlBaseFilename + "' !", e);
             }
         }
         final JSONObject json = yamlStringToJson(yamlStr);
@@ -154,24 +207,36 @@ public class TigerConfigurationHelper<T> {
         return json;
     }
 
-    @SneakyThrows
     public T jsonToConfig(String jsonFile, Class<T> cfgClazz) {
-        return objMapper.readValue(IOUtils.toString(Path.of(jsonFile).toUri(), StandardCharsets.UTF_8), cfgClazz);
+        try {
+            return objMapper.readValue(IOUtils.toString(Path.of(jsonFile).toUri(), StandardCharsets.UTF_8), cfgClazz);
+        } catch (IOException e) {
+            throw new TigerConfigurationException(
+                "Failed to convert given JSON file '" + jsonFile +
+                    "' to config object of class " + cfgClazz.getName() + "!", e);
+        }
     }
 
-    @SneakyThrows
     public T jsonStringToConfig(String jsonStr, Class<T> cfgClazz) {
-        return objMapper.readValue(jsonStr, cfgClazz);
+        try {
+            return objMapper.readValue(jsonStr, cfgClazz);
+        } catch (JsonProcessingException e) {
+            throw new TigerConfigurationException(
+                "Failed to convert given JSON string to config object of class " + cfgClazz.getName() + "!", e);
+        }
     }
 
-    @SneakyThrows
     public static String toJson(Object cfg) {
-        return objMapper.writerWithDefaultPrettyPrinter().writeValueAsString(cfg);
+        try {
+            return objMapper.writerWithDefaultPrettyPrinter().writeValueAsString(cfg);
+        } catch (JsonProcessingException e) {
+            throw new TigerConfigurationException("Failed to convert given object to JSON!", e);
+        }
     }
 
-    @SneakyThrows
     public static String toYaml(Object cfg) {
-        return yamlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(cfg);
+        Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
+        return yaml.dump(cfg);
     }
 
 
@@ -196,36 +261,51 @@ public class TigerConfigurationHelper<T> {
         });
     }
 
-    @SneakyThrows
     public static void applyTemplate(JSONArray cfgArray, String templateKey, JSONArray templates,
         String templateIdKey) {
         for (var i = 0; i < cfgArray.length(); i++) {
             var json = cfgArray.getJSONObject(i);
             if (json.has(templateKey)) {
-                var templateId = json.getString(templateKey);
-                boolean foundTemplate = false;
-                for (var j = 0; j < templates.length(); j++) {
-                    var jsonTemplate = templates.getJSONObject(j);
-                    if (jsonTemplate.getString(templateIdKey).equals(templateId)) {
-                        jsonTemplate.keySet().stream()
-                            .filter(key -> jsonTemplate.get(key) != null)
-                            .filter(key -> jsonTemplate.get(key) instanceof JSONArray)
-                            .filter(key -> !jsonTemplate.getJSONArray(key).isEmpty())
-                            .filter(key -> !json.has(key) || json.get(key) == null || json.getJSONArray(key).isEmpty())
-                            .forEach(key -> json.put(key, new JSONArray(jsonTemplate.getJSONArray(key))));
-                        jsonTemplate.keySet().stream()
-                            .filter(key -> jsonTemplate.get(key) != null)
-                            .filter(key -> !(jsonTemplate.get(key) instanceof JSONArray))
-                            .filter(key -> !json.has(key) || json.get(key) == null)
-                            .forEach(key -> json.put(key, jsonTemplate.get(key)));
-                        foundTemplate = true;
-                    }
-                }
-                if (!foundTemplate) {
-                    throw new TigerConfigurationException("Unable to locate template '" + templateId + "'");
-                }
+                lookupAndApplyTemplate(json, templateKey, templates, templateIdKey);
             }
         }
+    }
+
+    public static void applyTemplate(JSONObject cfgMap, String templateKey, JSONArray templates,
+        String templateIdKey) {
+        for (String objectKey : cfgMap.keySet()) {
+            var json = cfgMap.getJSONObject(objectKey);
+            if (json.has(templateKey)) {
+                lookupAndApplyTemplate(json, templateKey, templates, templateIdKey);
+            }
+        }
+    }
+
+    private static void lookupAndApplyTemplate(JSONObject json, String templateKey, JSONArray templates,
+        String templateIdKey) {
+        var templateId = json.getString(templateKey);
+        boolean foundTemplate = false;
+        for (var j = 0; j < templates.length(); j++) {
+            var jsonTemplate = templates.getJSONObject(j);
+            if (jsonTemplate.getString(templateIdKey).equals(templateId)) {
+                jsonTemplate.keySet().stream()
+                    .filter(key -> jsonTemplate.get(key) != null)
+                    .filter(key -> jsonTemplate.get(key) instanceof JSONArray)
+                    .filter(key -> !jsonTemplate.getJSONArray(key).isEmpty())
+                    .filter(key -> !json.has(key) || json.get(key) == null || json.getJSONArray(key).isEmpty())
+                    .forEach(key -> json.put(key, new JSONArray(jsonTemplate.getJSONArray(key))));
+                jsonTemplate.keySet().stream()
+                    .filter(key -> jsonTemplate.get(key) != null)
+                    .filter(key -> !(jsonTemplate.get(key) instanceof JSONArray))
+                    .filter(key -> !json.has(key) || json.get(key) == null)
+                    .forEach(key -> json.put(key, jsonTemplate.get(key)));
+                foundTemplate = true;
+            }
+        }
+        if (!foundTemplate) {
+            throw new TigerConfigurationException("Unable to locate template '" + templateId + "'");
+        }
+
     }
 
     private static void overwriteWithSysPropsAndEnvVars(String rootEnv, String rootProps, JSONArray jsonArray) {

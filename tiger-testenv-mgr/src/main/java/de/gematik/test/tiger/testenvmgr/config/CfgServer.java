@@ -17,14 +17,13 @@
 package de.gematik.test.tiger.testenvmgr.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.gematik.test.tiger.common.config.*;
-import java.util.ArrayList;
-import java.util.List;
+import de.gematik.test.tiger.common.config.CfgTemplate;
 import lombok.Data;
 
 @Data
 public class CfgServer extends CfgTemplate {
 
+    private String hostname;
     private String template;
     @JsonIgnore
     private boolean started = false;

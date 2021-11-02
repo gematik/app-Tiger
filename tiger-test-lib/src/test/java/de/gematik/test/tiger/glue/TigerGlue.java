@@ -19,6 +19,10 @@ package de.gematik.test.tiger.glue;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.context.TestContext;
 import de.gematik.test.tiger.common.context.TestVariables;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import io.cucumber.java.de.Dann;
+import io.cucumber.java.de.Gegebensei;
+import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -41,7 +45,8 @@ public class TigerGlue {
      *               values.
      * @see TestVariables#substituteVariables(String)
      */
-    @Given("TGR I set context domain to {string}")
+    @Gegebensei("TGR Kontextdomaine auf {string} setzen")
+    @Given("TGR set context domain to {string}")
     public void ctxtISetContextDomainTo(final String domain) {
         ctxt.setDomain(vars.substituteVariables(domain));
     }
@@ -54,7 +59,8 @@ public class TigerGlue {
      * @param value value for the context entry with given key
      * @see TestVariables#substituteVariables(String)
      */
-    @When("TGR I set context entry {string} to {string}")
+    @Wenn("TGR Kontexteintrag {string} auf {string} setzen")
+    @When("TGR set context entry {string} to {string}")
     public void ctxtISetContextEntryTo(final String key, final String value) {
         ctxt.putString(vars.substituteVariables(key), vars.substituteVariables(value));
     }
@@ -75,6 +81,7 @@ public class TigerGlue {
      * @param regex regular expression (or equals string) to compare the value of the entry to
      * @see TestVariables#substituteVariables(String)
      */
+    @Dann("TGR prüfe Kontexteintrag {string} stimmt überein mit {string}")
     @Then("TGR assert context entry {string} matches {string}")
     public void ctxtAssertContextEntryMatches(final String key, final String regex) {
         ctxt.assertRegexMatches(vars.substituteVariables(key), vars.substituteVariables(regex));
@@ -87,7 +94,8 @@ public class TigerGlue {
      *               values.
      * @see TestVariables#substituteVariables(String)
      */
-    @Given("TGR I set variables domain to {string}")
+    @Gegebensei("TGR Variablendomaine auf {string} setzen")
+    @Given("TGR set variables domain to {string}")
     public void ctxtISetVariablesDomainTo(final String domain) {
         vars.setDomain(vars.substituteVariables(domain));
     }
@@ -100,7 +108,8 @@ public class TigerGlue {
      * @param value value for the variable with given key
      * @see TestVariables#substituteVariables(String)
      */
-    @When("TGR I set variable {string} to {string}")
+    @Wenn("TGR Variable {string} auf {string} setzen")
+    @When("TGR set variable {string} to {string}")
     public void ctxtISetVariablesEntryTo(final String key, final String value) {
         vars.putString(vars.substituteVariables(key), vars.substituteVariables(value));
     }
@@ -121,6 +130,7 @@ public class TigerGlue {
      * @param regex regular expression (or equals string) to compare the value of the entry to
      * @see TestVariables#substituteVariables(String)
      */
+    @Dann("TGR prüfe Variable {string} stimmt überein mit {string}")
     @Then("TGR assert variable {string} matches {string}")
     public void ctxtAssertVariablesEntryMatches(final String key, final String regex) {
         vars.assertRegexMatches(vars.substituteVariables(key), vars.substituteVariables(regex));
@@ -134,18 +144,33 @@ public class TigerGlue {
      *
      * @param propFileName  name of the properties file
      */
+    @Dann("TGR prüfe Kontexteinträge stimmen mit Datei {string} überein")
     @Then("TGR assert context matches file {string}")
     public void ctxtAssertVariablesEntryMatches(final String propFileName) {
         ctxt.assertPropFileMatches(propFileName);
     }
 
-    @Given("TGR I want to show {word} banner {string}")
-    public void tgrIWantToShowColoredBanner(String color, String text) {
+    @Gegebensei("TGR zeige {word} Banner {string}")
+    @Given("TGR show {word} banner {string}")
+    public void tgrShowColoredBanner(String color, String text) {
         log.info("\n" + Banner.toBannerStrWithCOLOR(text, color.toUpperCase()));
     }
 
-    @Given("TGR I want to show banner {string}")
+    @Gegebensei("TGR zeige {word} Text {string}")
+    @Given("TGR show {word} text {string}")
+    public void tgrShowColoredText(String color, String text) {
+        log.info("\n" + Banner.toTextStr(text, color.toUpperCase()));
+    }
+
+    @Gegebensei("TGR zeige Banner {string}")
+    @Given("TGR show banner {string}")
     public void tgrIWantToShowBanner(String text) {
         log.info("\n" + Banner.toBannerStrWithCOLOR(text, "WHITE"));
+    }
+
+    @When("TGR wait for user abort")
+    @Wenn("TGR warte auf Abbruch")
+    public void tgrWaitForUserAbort() {
+        TigerTestEnvMgr.waitForQuit(null, "Tiger Testsuite");
     }
 }

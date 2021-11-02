@@ -19,21 +19,20 @@ package de.gematik.test.tiger.proxy;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.Arrays;
-import org.mockserver.model.Header;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
+import org.mockserver.model.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -124,6 +123,23 @@ public class MockServerToRbelConverter {
     }
 
     private String getRequestUrl(HttpRequest request) {
-        return request.getPath().getValue();
+        StringJoiner pathToQueryJoiner = new StringJoiner("?");
+        pathToQueryJoiner.add(request.getPath().getValue());
+
+        if (request.getQueryStringParameters() != null
+            && request.getQueryStringParameters().getEntries() != null) {
+            StringJoiner queryParameterJoiner = new StringJoiner("&");
+            for (Parameter param : request.getQueryStringParameters().getEntries()) {
+                for (NottableString value : param.getValues()) {
+                    StringJoiner parameterJoiner = new StringJoiner("=");
+                    parameterJoiner.add(param.getName().toString());
+                    parameterJoiner.add(value.toString());
+                    queryParameterJoiner.add(parameterJoiner.toString());
+                }
+            }
+            pathToQueryJoiner.add(queryParameterJoiner.toString());
+        }
+
+        return pathToQueryJoiner.toString();
     }
 }

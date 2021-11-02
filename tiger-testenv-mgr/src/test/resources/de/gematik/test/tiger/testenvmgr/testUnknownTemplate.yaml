@@ -6,7 +6,8 @@ tigerProxy:
 
 
 servers:
-  - name: unknownTemplate
+  unknownTemplate:
+    hostname: unknownTemplate
     template: idp-ref-unknown-for-sure
     type: externalUrl
     source:

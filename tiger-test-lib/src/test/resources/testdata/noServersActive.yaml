@@ -1,23 +1,26 @@
 tigerProxy:
   forwardToProxy:
-    hostname: 192.168.230.85
+    hostname: 192.168.110.10
     port: 3128
   tls.serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 servers:
-  - name: idp
+  idp-ref:
+    hostname: idp
     template: idp-ref
     active: false
 
-  - name: idp
+  idp-ref-snapshot:
+    hostname: idp
     template: idp-ref
     version: 0.1-SNAPSHOT
     active: false
 
-  - name: idp-rise-tu-manual
+  idp-rise-tu-manual:
+    hostname: idp
     template: idp-rise-tu
     active: false
 
-  - name: erzpt-default
+  erzpt-default:
     template: erzpt-fd-ref
     active: false

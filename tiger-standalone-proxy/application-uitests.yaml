@@ -1,0 +1,9 @@
+# used for developing the ui tests so that you can run the tiger proxy via Intellij and debug the ui tests
+
+server:
+  port: 8080
+
+tigerProxy:
+  port: 6666
+  activateRbelEndpoint: true
+  localResources: true

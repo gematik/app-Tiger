@@ -17,6 +17,9 @@
 package de.gematik.test.tiger.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.matching.RequestPattern;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
@@ -38,6 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 
@@ -59,20 +63,20 @@ public abstract class AbstractTigerProxyTest {
         log.info("Started Backend-Server on ports {} and {} (https)", fakeBackendServer.port(), fakeBackendServer.httpsPort());
         log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
 
-        fakeBackendServer.stubFor(get(urlEqualTo("/foobar"))
+        fakeBackendServer.stubFor(get(urlPathEqualTo("/foobar"))
             .willReturn(aResponse()
                 .withStatus(666)
                 .withStatusMessage("EVIL")
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}")));
-        fakeBackendServer.stubFor(get(urlEqualTo("/deep/foobar"))
+        fakeBackendServer.stubFor(get(urlPathEqualTo("/deep/foobar"))
             .willReturn(aResponse()
                 .withStatus(777)
                 .withStatusMessage("DEEPEREVIL")
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}")));
         ThreadLocalRandom.current().nextBytes(binaryMessageContent);
-        fakeBackendServer.stubFor(post(urlEqualTo("/foobar"))
+        fakeBackendServer.stubFor(post(urlPathEqualTo("/foobar"))
             .willReturn(aResponse()
                 .withBody(binaryMessageContent)));
 
@@ -84,7 +88,7 @@ public abstract class AbstractTigerProxyTest {
                     ))
                     .getHttpRequest());
 
-        RbelJexlExecutor.activateJexlDebugging();
+        RbelOptions.activateJexlDebugging();
         Unirest.config().reset();
     }
 
@@ -95,5 +99,14 @@ public abstract class AbstractTigerProxyTest {
         proxyRest.config()
             .proxy("localhost", tigerProxy.getPort())
             .sslContext(tigerProxy.buildSslContext());
+    }
+
+    public LoggedRequest getLastRequest() {
+        final List<LoggedRequest> loggedRequests = fakeBackendServer.findRequestsMatching(RequestPattern.everything())
+            .getRequests();
+        if (loggedRequests.isEmpty()) {
+            fail("No requests were logged!");
+        }
+        return loggedRequests.get(loggedRequests.size() - 1);
     }
 }

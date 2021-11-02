@@ -21,14 +21,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import lombok.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import lombok.*;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)

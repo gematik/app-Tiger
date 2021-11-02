@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -47,7 +48,6 @@ public class TigerTestHooks {
     private static final Map<URI, Feature> uriFeatureMap = new HashMap<>();
 
     private static final Map<String, List<Step>> scenarioStepsMap = new HashMap<>();
-    private static final Map<String, Integer> scenarioStepsIdxMap = new HashMap<>();
     private static final Map<String, Status> scenarioStatus = new HashMap<>();
 
     private static boolean rbelListenerAdded = false;
@@ -86,7 +86,6 @@ public class TigerTestHooks {
             scenarioStepsMap.get(scenario.getId()).addAll(0, feature.getBackground().getSteps());
         }
 
-        scenarioStepsIdxMap.put(scenario.getId(), 0);
         rbelMessages.clear();
         if (!TigerDirector.isInitialized()) {
             System.setProperty("TIGER_ACTIVE", "1");
@@ -103,13 +102,7 @@ public class TigerTestHooks {
     public void beforeStep(final Scenario scenario) {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
-            return;
         }
-        final int idx = scenarioStepsIdxMap.get(scenario.getId());
-        log.info(Ansi.GREEN + Ansi.BOLD +
-            "Executing step " + String.join("\r\n", scenarioStepsMap.get(scenario.getId()).get(idx).getLines())
-            + Ansi.RESET
-        );
     }
 
     @AfterStep
@@ -118,23 +111,16 @@ public class TigerTestHooks {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
             return;
         }
-        final int idx = scenarioStepsIdxMap.get(scenario.getId());
         if (scenario.isFailed()) {
             if (!scenarioStatus.containsKey(scenario.getId())) {
                 scenarioStatus.put(scenario.getId(), scenario.getStatus());
-                log.info(Ansi.RED + Ansi.BOLD +
-                    "Failed @ step " + String.join("\r\n", scenarioStepsMap.get(scenario.getId()).get(idx).getLines())
-                    + Ansi.RESET
-                );
             }
         }
-        scenarioStepsIdxMap.put(scenario.getId(), idx + 1);
     }
 
     private static final Map<String, List<Scenario>> processedScenarios = new HashMap<>();
     private static int scPassed = 0;
     private static int scFailed = 0;
-
 
     @SneakyThrows
     @After
@@ -145,7 +131,7 @@ public class TigerTestHooks {
         }
         scenarioStepsMap.remove(scenario.getId());
 
-         switch (scenario.getStatus()) {
+        switch (scenario.getStatus()) {
             case PASSED:
                 scPassed++;
                 break;
@@ -170,7 +156,7 @@ public class TigerTestHooks {
         final int dataVariantIdx = processedScenarios.get(scenarioId).size();
         processedScenarios.get(scenarioId).add(scenario);
 
-        var rbelRenderer =  new RbelHtmlRenderer();
+        var rbelRenderer = new RbelHtmlRenderer();
         rbelRenderer.setSubTitle(
             "<p><b>" + scenario.getName() + "</b>&nbsp&nbsp;<u>" + (dataVariantIdx + 1) + "</u></p>"
                 + "<p><i>" + scenario.getUri() + "</i></p>");

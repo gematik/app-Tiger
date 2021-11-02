@@ -61,11 +61,7 @@ public class Scenario extends GherkinStruct {
         } else {
             json.put(JSON.STATUS, "In Bearbeitung");
         }
-        if (hasTag("@Negative")) {
-            json.put(JSON.NEGATIVE_TF, true);
-        } else {
-            json.put(JSON.NEGATIVE_TF, false);
-        }
+        json.put(JSON.NEGATIVE_TF, hasTag("@Negative"));
         if (hasTag("@PRIO")) {
             json.put(JSON.PRIO, Integer.parseInt(getTag("@PRIO").getParameter()));
         }
@@ -109,8 +105,8 @@ public class Scenario extends GherkinStruct {
     }
 
     protected void addStep(final Step step, final String header, final StringBuilder sb) {
-        sb.append("<pre>" + header);
-        step.getLines().stream().forEach(
+        sb.append("<pre>").append(header);
+        step.getLines().forEach(
             line -> sb.append("    ")
                 .append(line.replace("<", "&lt;").replace(">", "&gt;"))
                 .append("<br/>")

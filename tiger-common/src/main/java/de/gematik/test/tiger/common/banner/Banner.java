@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.common.banner;
 
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +26,7 @@ import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-// TODO support german umlauts
+// TODO TGR-171 support german umlauts
 
 public class Banner {
 
@@ -34,16 +35,16 @@ public class Banner {
 
     private static Map<Character, List<String>> asciiArt = null;
 
-    private static final Map<String, BannerConfig> configs = new HashMap<>();
+    private static final Map<String, BannerFontMetrics> configs = new HashMap<>();
 
-    private static BannerConfig cfg;
+    private static BannerFontMetrics cfg;
 
     @SneakyThrows
     private static void initialize() {
-        configs.put("Spliff", new BannerConfig(9, 5, true));
-        configs.put("Doom", new BannerConfig(12, 8, true));
-        configs.put("Thin", new BannerConfig(6, 6, false));
-        configs.put("Straight", new BannerConfig(6, 4, false));
+        configs.put("Spliff", new BannerFontMetrics(9, 5, true));
+        configs.put("Doom", new BannerFontMetrics(12, 8, true));
+        configs.put("Thin", new BannerFontMetrics(6, 6, false));
+        configs.put("Straight", new BannerFontMetrics(6, 4, false));
 
         String font = OsEnvironment.getAsString("TIGER_BANNER_FONT", "Straight");
         cfg = configs.get(font);
@@ -51,7 +52,7 @@ public class Banner {
         asciiArt = new HashMap<>();
         List<String> lines = IOUtils
             .readLines(Objects.requireNonNull(Banner.class.getResourceAsStream(
-                "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
+                    "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
                 StandardCharsets.UTF_8);
         for (int ascii = ' '; ascii < 'ü'; ascii++) {
             List<String> linesForChar = new ArrayList<>();
@@ -72,25 +73,26 @@ public class Banner {
     }
 
     public static String toBannerStr(String msg, String ansiColors) {
-        return ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
+        return ansiColors + StringUtils.repeat('=', 100) + RbelAnsiColors.RESET + "\n"
             + toBannerLines(msg).stream()
-            .map(line -> ansiColors + line + Ansi.RESET)
+            .map(line -> Ansi.colorize(line, ansiColors))
             .collect(Collectors.joining("\n"))
-            + "\n" + ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
+            + "\n" + Ansi.colorize(StringUtils.repeat('=', 100), ansiColors);
+    }
+
+    public static String toTextStr(String msg, String colorName) {
+        final String ansiColors = RbelAnsiColors.valueOf(colorName.toLowerCase()).toString();
+        return Ansi.colorize(msg, ansiColors);
     }
 
     public static String toBannerStrWithCOLOR(String msg, String colorName) {
-        try {
-            final String ansiColors = (String) Ansi.class.getDeclaredField(colorName).get(null);
+        final String ansiColors = RbelAnsiColors.seekColor(colorName.toLowerCase()).toString();
 
-            return ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET + "\n"
-                + toBannerLines(msg).stream()
-                .map(line -> ansiColors + line + Ansi.RESET)
-                .collect(Collectors.joining("\n"))
-                + "\n" + ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new AssertionError("Unknown color name '" + colorName + "'!", e);
-        }
+        return Ansi.colorize(StringUtils.repeat('=', 100),ansiColors) + "\n"
+            + toBannerLines(msg).stream()
+            .map(line -> Ansi.colorize(line,ansiColors))
+            .collect(Collectors.joining("\n"))
+            + "\n" + Ansi.colorize( StringUtils.repeat('=', 100) , ansiColors);
     }
 
     private static List<String> toBannerLines(String msg) {
@@ -113,11 +115,11 @@ public class Banner {
     }
 
     public static void shout(String msg) {
-        shout(msg, Ansi.BOLD + Ansi.YELLOW);
+        shout(msg, RbelAnsiColors.YELLOW_BOLD.toString());
     }
 
     public static void shout(String msg, String ansiColors) {
-        toBannerLines(msg).forEach(line -> System.out.println(ansiColors + line + Ansi.RESET));
+        toBannerLines(msg).forEach(line -> System.out.println(Ansi.colorize(line, ansiColors)));
     }
 }
 

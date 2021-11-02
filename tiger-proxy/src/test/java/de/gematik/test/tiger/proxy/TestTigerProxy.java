@@ -17,28 +17,32 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
+import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.util.CryptoLoader;
-import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.config.tigerProxy.*;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
+import java.nio.charset.StandardCharsets;
 import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.jose4j.jws.JsonWebSignature;
 import org.junit.Test;
 import org.mockserver.model.MediaType;
 
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
-import java.io.IOException;
-import java.security.*;
+import java.security.Key;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -511,6 +515,35 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo("localhost:" + fakeBackendServer.port());
     }
 
+    @SneakyThrows
+    @Test
+    //gemSpec_Krypt, A_21888
+    public void tigerProxyShouldHaveFixedVauKeyLoaded() {
+        BrainpoolCurves.init();
+        final Key key = KeyMgr.readKeyFromPem(FileUtils.readFileToString(new File("src/test/resources/fixVauKey.pem")));
+
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setKey(key);
+        jws.setPayload("foobar");
+        jws.setAlgorithmHeaderValue("BP256R1");
+        final String jwsSerialized = jws.getCompactSerialization();
+
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port() + "/foobar")
+                .build()))
+            .build());
+
+        proxyRest.get("http://backend?jws=" + jwsSerialized)
+            .asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .findElement("$.path.jws.value.signature.isValid")
+            .get().seekValue(Boolean.class).get())
+            .isTrue();
+    }
+
     @Test
     public void reverseProxyToNestedTarget_ShouldAdressCorrectly() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -528,5 +561,43 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("localhost:" + fakeBackendServer.port());
+    }
+
+    @Test
+    public void forwardProxyWithQueryParameters() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        proxyRest.get("http://backend/foobar?foo=bar1&foo=bar2&schmoo").asString();
+
+        assertThat(getLastRequest().getQueryParams())
+            .containsOnlyKeys("foo", "schmoo");
+        assertThat(getLastRequest().getQueryParams().get("foo").values())
+            .containsExactly("bar1", "bar2");
+        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+            .containsExactly("");
+    }
+
+    @Test
+    public void reverseProxyWithQueryParameters() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
+
+        assertThat(getLastRequest().getQueryParams())
+            .containsOnlyKeys("foo", "schmoo");
+        assertThat(getLastRequest().getQueryParams().get("foo").values())
+            .containsExactly("bar1", "bar2");
+        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+            .containsExactly("");
     }
 }

@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-standalone-proxy</artifactId>
-    <version>0.13.0</version>
+    <version>0.14.0</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.13.0</version>
+        <version>0.14.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,6 +19,12 @@
         <java.version>11</java.version>
         <spring-native.version>0.9.1</spring-native.version>
         <jacoco.skip>true</jacoco.skip>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <serenity.version>2.4.34</serenity.version>
+        <serenity.maven.version>2.4.34</serenity.maven.version>
+        <serenity.cucumber6.version>2.4.34</serenity.cucumber6.version>
+        <cucumber6.version>6.10.4</cucumber6.version>
     </properties>
 
     <dependencyManagement>
@@ -34,6 +40,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>30.1.1-jre</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -68,12 +80,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <artifactId>lombok</artifactId>
-            <groupId>org.projectlombok</groupId>
-            <version>1.18.16</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <artifactId>spring-boot-starter-test</artifactId>
             <exclusions>
                 <exclusion>
@@ -87,7 +93,7 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>3.0.0</version>
+            <version>4.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -104,10 +110,17 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- serenity needs vintage as its still based upon junit4 -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${version.junit5}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.6.0</version>
+            <version>2.11.4</version>
         </dependency>
         <dependency>
             <groupId>io.github.arkinator</groupId>
@@ -120,6 +133,48 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-core</artifactId>
+            <version>${serenity.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.cucumber</groupId>
+                    <artifactId>cucumber-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-screenplay</artifactId>
+            <version>${serenity.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.cucumber</groupId>
+                    <artifactId>cucumber-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-cucumber6</artifactId>
+            <version>${serenity.cucumber6.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${cucumber6.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>serenity-rest-assured</artifactId>
+            <groupId>net.serenity-bdd</groupId>
+            <scope>test</scope>
+            <version>${version.serenity.core}</version>
         </dependency>
     </dependencies>
 
@@ -175,10 +230,135 @@
                             <goal>repackage</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>pre-integration-test</id>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>--spring.profiles.active=uitests</arguments>
+                        </configuration>
+                    </execution>
+                    <!-- not needed as test case quits proxy via UI
+                    <execution>
+                        <id>post-integration-test</id>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                    -->
                 </executions>
                 <configuration>
+                    <fork>false</fork>
+                    <classifier>exec</classifier>
                     <mainClass>de.gematik.test.tiger.proxy.TigerStandaloneProxyApplication</mainClass>
                 </configuration>
+            </plugin>
+
+            <!-- plugin used to generate serenity driver classes from vm template file -->
+            <plugin>
+                <groupId>com.github.temyers</groupId>
+                <artifactId>cucumber-jvm-parallel-plugin</artifactId>
+                <version>4.2.0</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
+                            <glue>
+                                <package>de.gematik.test.tiger.glue</package>
+                                <package>de.gematik.test.tiger.hooks</package>
+                                <package>de.gematik.test.tiger.proxy.glue</package>
+                                <!-- add your packages here -->
+                            </glue>
+                            <plugins>
+                            </plugins>
+                            <parallelScheme>FEATURE</parallelScheme>
+
+                            <!-- deactivated as jenkins xunit plugin is not very flexible and does not work well with serenity junit xml exports
+                            see https://issues.apache.org/jira/browse/SUREFIRE-1533
+                            <plugins>
+                              <plugin>
+                                <name>junit</name>
+                                <extension>xml</extension>
+                              </plugin>
+                            </plugins>-->
+                        </configuration>
+                        <goals>
+                            <goal>generateRunners</goal>
+                        </goals>
+                        <id>generateRunners</id>
+                        <phase>generate-test-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <version>3.0.0-M5</version>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <version>3.0.0-M5</version>
+                <executions>
+                    <execution>
+                        <id>run-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <argLine>${failsafe.jacoco.args}</argLine>
+                    <includes>
+                        <include>**/Parallel*IT.java</include>
+                    </includes>
+                    <skipITs>false</skipITs>
+                    <systemPropertyVariables>
+                        <!--<cucumber.filter.tags>not @QuitApp
+                        </cucumber.filter.tags>
+                        -->
+                    </systemPropertyVariables>
+                    <forkCount>1</forkCount>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>net.serenity-bdd.maven.plugins</groupId>
+                <artifactId>serenity-maven-plugin</artifactId>
+                <version>${version.serenity.maven.plugin}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.serenity-bdd</groupId>
+                        <artifactId>serenity-core</artifactId>
+                        <version>${version.serenity.core}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>net.serenity-bdd</groupId>
+                        <artifactId>serenity-single-page-report</artifactId>
+                        <version>2.3.33</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <reports>single-page-html</reports>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>serenity-reports</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>aggregate</goal>
+                            <goal>reports</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

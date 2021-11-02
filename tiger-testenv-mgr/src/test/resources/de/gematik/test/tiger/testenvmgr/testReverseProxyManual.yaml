@@ -3,7 +3,8 @@ tigerProxy:
     hostname: $SYSTEM
 
 servers:
-  - name: testWinstone3
+  testWinstone3:
+    hostname: testWinstone3
     template: epa2-fdv
     source:
       - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
@@ -16,7 +17,8 @@ servers:
         - --control-port=19000
       healthcheck: http://127.0.0.1:19207
 
-  - name: reverseproxy2
+  reverseproxy2:
+    hostname: reverseproxy2
     type: tigerProxy
     source:
       - nexus

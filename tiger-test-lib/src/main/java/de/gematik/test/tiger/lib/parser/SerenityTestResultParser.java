@@ -69,7 +69,7 @@ public class SerenityTestResultParser implements ITestResultParser {
             if (jso.has("tags")) {
                 final JSONArray tags = jso.getJSONArray("tags");
                 tr.setPolarionID(IntStream.range(0, tags.length())
-                        .mapToObj(i -> tags.getJSONObject(i))
+                        .mapToObj(tags::getJSONObject)
                         .filter(tag -> Objects.equals(tag.getString("type"), "TCID"))
                         .map(tag -> tag.getString("name"))
                         .findAny().orElse(null));

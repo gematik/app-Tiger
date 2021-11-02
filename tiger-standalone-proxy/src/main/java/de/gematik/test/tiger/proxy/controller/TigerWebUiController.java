@@ -41,10 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -53,7 +50,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -88,6 +87,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">");
 
         if (applicationConfiguration.isLocalResources()) {
+            log.info("Running with local resources...");
             html = html
                 .replace("https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css", "/webui/css/bulma.min.css")
                 .replace("https://jenil.github.io/bulmaswatch/simplex/bulmaswatch.min.css", "/webui/css/bulmaswatch.min.css")
@@ -204,7 +204,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         @RequestParam(name = "maxMsgs", required = false) final Integer maxMsgs) {
         log.debug("requesting messages since " + lastMsgUuid + " (max. " + maxMsgs + ")");
 
-        List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory();
+        List<RbelElement> msgs = new ArrayList<>(tigerProxy.getRbelLogger().getMessageHistory());
         int start = lastMsgUuid == null || lastMsgUuid.isBlank() ?
             -1 :
             (int) msgs.stream()
@@ -219,8 +219,8 @@ public class TigerWebUiController implements ApplicationContextAware {
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);
         if (start < msgs.size()) {
-            log.info("returning msgs > " + start + " of total " + msgs.size());
-            List<RbelElement> retMsgs = msgs.subList(start + 1, end);
+            log.debug("returning msgs > " + start + " of total " + msgs.size());
+            List<RbelElement> retMsgs = new ArrayList<>(msgs.subList(start + 1, end));
             result.setHtmlMsgList(retMsgs.stream()
                 .map(msg -> new RbelHtmlRenderingToolkit(renderer)
                     .convert(msg, Optional.empty()).render())
@@ -246,10 +246,18 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     @GetMapping(value = "/quit", produces = MediaType.APPLICATION_JSON_VALUE)
-    public void quitProxy() {
+    public void quitProxy(@RequestParam(name = "noSystemExit", required = false) final String noSystemExit) {
         log.info("shutting down tiger standalone proxy at port " + tigerProxy.getPort() + "...");
-        ((ConfigurableApplicationContext) applicationContext).close();
-        System.exit(0);
+        tigerProxy.clearAllRoutes();
+        tigerProxy.shutdown();
+        log.info("shutting down tiger standalone proxy ui...");
+        int exitCode = SpringApplication.exit(applicationContext);
+        if (exitCode != 0) {
+            log.warn("Exit of tiger proxy ui not successful - exit code: " + exitCode);
+        }
+        if (StringUtils.isEmpty(noSystemExit)) {
+            System.exit(0);
+        }
     }
 
     @PostMapping(value = "/uploadReport", produces = MediaType.APPLICATION_JSON_VALUE)

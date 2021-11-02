@@ -16,19 +16,26 @@
 
 package de.gematik.test.tiger.common.pki;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.NotImplementedException;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
 public class KeyMgr {
 
@@ -60,5 +67,26 @@ public class KeyMgr {
         var pemParser = new PEMParser(new StringReader(pem));
         var converter = new JcaPEMKeyConverter();
         return converter.getPrivateKey(PrivateKeyInfo.getInstance(pemParser.readObject()));
+    }
+
+    public static KeyPair readEcdsaKeypairFromPkcs8Pem(byte[] pemContent) {
+        try (final ByteArrayInputStream in = new ByteArrayInputStream(pemContent);
+             final InputStreamReader inputStreamReader = new InputStreamReader(in);
+             final PemReader pemReader = new PemReader(inputStreamReader)) {
+            KeyFactory factory = KeyFactory.getInstance("ECDSA", BOUNCY_CASTLE_PROVIDER);
+            PemObject pemObject = pemReader.readPemObject();
+            byte[] content = pemObject.getContent();
+            PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(content);
+            final BCECPrivateKey privateKey = (BCECPrivateKey) factory.generatePrivate(privKeySpec);
+            KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", BOUNCY_CASTLE_PROVIDER);
+
+            ECParameterSpec ecSpec = privateKey.getParameters();
+            ECPoint Q = ecSpec.getG().multiply(privateKey.getD());
+
+            ECPublicKeySpec pubSpec = new ECPublicKeySpec(Q, ecSpec);
+            return new KeyPair(keyFactory.generatePublic(pubSpec), privateKey);
+        } catch (final NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

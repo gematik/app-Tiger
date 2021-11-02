@@ -36,6 +36,8 @@ let btnScrollLock;
 let ledScrollLock;
 let scrollLock = false;
 
+let testQuitParam = '';
+
 const menuReqHtmlTemplate = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"menu-label mb-1 has-text-link\"><span\n"
@@ -284,7 +286,7 @@ function resetMessages() {
       lastUuid = "";
       const sidebarMenu = document.getElementById("sidebar-menu")
       sidebarMenu.innerHTML = "";
-      const listDiv = getAll('.column')[2];
+      const listDiv = getAll('.msglist')[0];
       listDiv.innerHTML = "";
       setTimeout(() => {
         resetBtn.blur();
@@ -298,7 +300,7 @@ function resetMessages() {
 function quitProxy() {
   quitBtn.disabled = true;
   const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/webui/quit", true);
+  xhttp.open("GET", "/webui/quit" +  testQuitParam, true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 0) {
@@ -378,7 +380,7 @@ function updateMessageList(json) {
     return;
   }
   let i = 0;
-  const listDiv = getAll('.column')[2];
+  const listDiv = getAll('.msglist')[0];
   while (i < json.htmlMsgList.length) {
     const req = json.metaMsgList[i];
     if (req.path) {
@@ -512,4 +514,8 @@ function addRoute() {
   }
   xhttp.send("{\"from\":\"" + fieldRouteFrom.value + "\",\n"
       + "\"to\":\"" + fieldRouteTo.value + "\"}");
+}
+
+function testActivateNoSystemExitOnQuit() {
+  testQuitParam='?noSystemExit=true';
 }

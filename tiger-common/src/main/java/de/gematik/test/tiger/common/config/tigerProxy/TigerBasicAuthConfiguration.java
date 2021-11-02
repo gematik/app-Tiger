@@ -1,13 +1,11 @@
 package de.gematik.test.tiger.common.config.tigerProxy;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 @RequiredArgsConstructor
 @Builder(toBuilder = true)

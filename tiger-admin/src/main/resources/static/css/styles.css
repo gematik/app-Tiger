@@ -1,21 +1,70 @@
-.label-centered {
-    margin-left: 25%;
-}
-
-thead {
-    background-color: #054A29;
-    color: white;
-}
-
-tbody {
-    background-color: #d1bc8a;
-}
-
 .btn:hover {
-    background-color: #795644;
+    background-color: #ededed;
 }
 
-#formular {
-    display: none;
+.centered {
+    margin: auto;
 }
+
+.align {
+    text-align: right;
+}
+
+.box {
+    border: 1px solid #d3d3d3;
+    box-shadow: 2px 2px grey;
+    background-color: white;
+    border-radius: .5em;
+    padding: 5px;
+    cursor: move;
+}
+
+.row-style {
+    border: 1px solid black;
+}
+
+.context-menu-hover {
+    background-color: #ededed !important;
+}
+
+.context-menu-icon--fa5 {
+    color: #444 !important;
+}
+
+i {
+    color: #444 !important;
+}
+
+.content {
+    padding: 5px 0px 10px 0px;
+    display: none;
+    overflow: hidden;
+    border: 1px solid #d3d3d3;
+}
+
+.collapsible {
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: 1px solid #d3d3d3;
+    box-shadow: 2px 2px grey;
+    text-align: left;
+    background-color: white !important;
+    border-radius: .5em;
+}
+
+.server-container {
+    display: grid;
+    gap: 20px;
+    padding-top: 20px;
+    padding-bottom: 30px;
+}
+
+.server-list-item {
+    margin: 10px
+}
+
+
+
+
 

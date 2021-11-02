@@ -1,7 +1,5 @@
 package de.gematik.test.tiger.common;
 
-import java.net.SocketException;
-
 public class TigerOsException extends RuntimeException {
 
     public TigerOsException(String s) {

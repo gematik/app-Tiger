@@ -10,17 +10,19 @@ Die folgenden Typen werden derzeit unterstützt:
 * externalUrl
 * compose
 
-Um nach dem Studium dieser Seite konkrete Beispiele einzusehen, verwenden Sie am Besten das [templates.yaml](../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml),
+Um nach dem Studium dieser Seite konkrete Beispiele einzusehen, verwenden Sie am besten das [templates.yaml](../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml),
 welches eine Liste von einfach zu verwendenden Knoten zur Verfügung stellt. 
 
 ## Docker Knoten
 
-Um einen Docker Container zu instantieren muss folgende Konfiguration angegeben werden:
+Um einen Docker Container zu instantiieren muss folgende Konfiguration angegeben werden:
 
-Attribtue in Klammern (Attribute: Wert) sind optional und haben einen Defaultwert, oder sind für diesen Knotentyp nicht relevant
+Attribute in Klammern (Attribute: Wert) sind optional und haben einen Defaultwert, oder sind für diesen Knotentyp nicht relevant
 
-```
-  - name: dockerNode1
+```yaml
+    (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
+     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+
     type: docker
     
     source:
@@ -47,8 +49,10 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
 
 ## Tiger Proxy Knoten
 
-```
-  - name: tigerProxyNode1
+```yaml
+    (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
+     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+
     type: tigerProxy
     
     (source: 
@@ -82,8 +86,10 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
 
 ## Externe URL Knoten
 
-```
-  - name: erxternalUrlNode1
+```yaml
+    (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
+     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+
     type: externalUrl
     
     source:
@@ -106,8 +112,10 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
 
 ## Externer Jar Knoten
 
-```
-  - name: erxternalJarNode1
+```yaml
+    (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
+     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+
     type: externalJar
     
     source:
@@ -133,22 +141,41 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
 
 ## Docker compose Knoten
 
-Der Docker compose Knoten ist sehr speziell und derzeit nur für die EPA2 Module des EPA Fachdienstes verfügbar.
-Als Nächstes ist Unterstützung für das Demis Meldeportal in der Planung.
+Der Docker compose Knoten ist sehr speziell und derzeit nur für die EPA2 Module des EPA Fachdienstes 
+und für das Demis Meldeportal in einer ersten Version verfügbar.
 
-```
-  - name: epa
+```yaml
     template: epa2
-    serviceHealthchecks: sind entsprechend den konfigureirten Ports anzupassen
-      - http://epa-gateway:8001/
-      - http://epa-docv-fdv:8005/
+    # mit folgenden im template vordefinierten Werten
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
+    startupTimeoutSec: 180
+    dockerOptions:
+      serviceHealthchecks:
+        - http://epa-gateway:8001/
+        - http://epa-docv-fdv:8005/
+```
+
+```yaml
+    template: demis
+    # mit folgenden im template vordefinierten Werten
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
+    startupTimeoutSec: 180
+    dockerOptions:
+      serviceHealthchecks:
+        - http://notification-gateway:9042
+        - http://notification-portal:9041/welcome
 ```
 
 ## Weitere Informationen
 
 ### Token- / Variablenersetzung
 
-Einträge in der exports Liste eines Knoten werden geparsed und folgende Tokens werden ersetzt:
+Einträge in der exports Liste eines Knotens werden geparst und folgende Tokens werden ersetzt:
 * ${PORT:xxxx} to be replaced with the port on the docker host interface
 * ${NAME} to be replaced with the name of the node
 
@@ -169,7 +196,7 @@ Externer Jar Knoten:
 
 ### <a id="pkiKeys Eintraege"></a>pkiKeys Einträge
 
-Die PkiKeys Liste beinhaltet eine Liste von Zertifikaten und Schlüsseln die folgendermaßen definiert werden können:
+Die PkiKeys Liste beinhaltet eine Liste von Zertifikaten und Schlüsseln, die folgendermaßen definiert werden können:
 
 ```
   pkiKeys:

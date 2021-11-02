@@ -55,6 +55,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
@@ -64,6 +65,7 @@ import static org.mockserver.model.HttpRequest.request;
 public class TigerProxy extends AbstractTigerProxy {
 
     private final List<TigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
+    private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
     private final MockServer mockServer;
     private final MockServerClient mockServerClient;
     @Getter
@@ -108,8 +110,8 @@ public class TigerProxy extends AbstractTigerProxy {
             int counter = 0;
             for (RbelModificationDescription modification : configuration.getModifications()) {
                 if (modification.getName() == null) {
-                    getRbelLogger().getRbelModifier().addModification(modification
-                        .withName("TigerModification #" + counter++));
+                    modification.setName("TigerModification #" + counter++);
+                    getRbelLogger().getRbelModifier().addModification(modification);
                 } else {
                     getRbelLogger().getRbelModifier().addModification(modification);
                 }
@@ -413,6 +415,20 @@ public class TigerProxy extends AbstractTigerProxy {
         } catch (Exception e) {
             throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy", e);
         }
+    }
+
+    public void propagateException(Throwable exception) {
+        exceptionListeners.stream()
+            .forEach(consumer -> consumer.accept(exception));
+    }
+
+    public void addNewExceptionConsumer(Consumer<Throwable> newConsumer) {
+        exceptionListeners.add(newConsumer);
+    }
+
+    public void shutdown() {
+        mockServerClient.stop();
+        mockServer.stop();
     }
 
     private class TigerProxyTrustManagerBuildingException extends RuntimeException {

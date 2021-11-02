@@ -23,7 +23,7 @@ import lombok.Data;
 @Data
 public class CfgTemplate {
 
-    private String name;
+    private String templateName;
     private ServerType type;
     private List<String> source = new ArrayList<>();
     private String version;

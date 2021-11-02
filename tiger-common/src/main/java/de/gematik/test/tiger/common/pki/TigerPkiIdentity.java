@@ -33,10 +33,6 @@ public class TigerPkiIdentity extends RbelPkiIdentity {
         return this;
     }
 
-    public X509Certificate[] certificateChainAsArray() {
-        return certificateChain.toArray(new X509Certificate[certificateChain.size()]);
-    }
-
     public boolean hasValidChainWithRootCa() {
         if (getCertificate() == null) {
             return false;
