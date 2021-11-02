@@ -31,7 +31,7 @@ public class ForwardProxyCallback extends AbstractTigerRouteCallback {
     }
 
     @Override
-    public HttpRequest handle(HttpRequest req) {
+    public HttpRequest handleRequest(HttpRequest req) {
         applyModifications(req);
         req.replaceHeader(header("Host", targetUri.getHost() + ":" + port));
         if (getTigerRoute().getBasicAuth() != null) {
@@ -50,7 +50,7 @@ public class ForwardProxyCallback extends AbstractTigerRouteCallback {
     }
 
     @Override
-    public HttpResponse handle(HttpRequest req, HttpResponse resp) {
+    public HttpResponse handleResponse(HttpRequest req, HttpResponse resp) {
         applyModifications(resp);
         if (!getTigerRoute().isDisableRbelLogging()) {
             try {

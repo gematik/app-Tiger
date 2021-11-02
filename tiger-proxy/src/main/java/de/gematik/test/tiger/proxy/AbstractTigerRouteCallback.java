@@ -6,6 +6,8 @@ import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -15,6 +17,7 @@ import static org.mockserver.model.Header.header;
 
 @RequiredArgsConstructor
 @Data
+@Slf4j
 public abstract class AbstractTigerRouteCallback implements ExpectationForwardAndResponseCallback {
 
     private final TigerProxy tigerProxy;
@@ -69,4 +72,36 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         }
         response.withStatusCode(Integer.parseInt(modifiedResponse.findElement("$.responseCode").get().getRawStringContent()));
     }
+
+    @Override
+    public final HttpRequest handle(HttpRequest req) {
+        try {
+            return handleRequest(req);
+        } catch (RuntimeException e) {
+            propagateExceptionMessageSafe(e);
+            throw e;
+        }
+    }
+
+    private void propagateExceptionMessageSafe(RuntimeException exception) {
+        try {
+            tigerProxy.propagateException(exception);
+        } catch (Exception handlingException) {
+            log.warn("While propagating an exception another error occured (ignoring):", handlingException);
+        }
+    }
+
+    protected abstract HttpRequest handleRequest(HttpRequest req);
+
+    @Override
+    public final HttpResponse handle(HttpRequest req, HttpResponse resp) {
+        try {
+            return handleResponse(req, resp);
+        } catch (RuntimeException e) {
+            propagateExceptionMessageSafe(e);
+            throw e;
+        }
+    }
+
+    protected abstract HttpResponse handleResponse(HttpRequest req, HttpResponse resp);
 }

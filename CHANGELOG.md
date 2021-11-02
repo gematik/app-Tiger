@@ -12,6 +12,8 @@
 * TGR-165 EPA VAU Schlüssel ist fest im Tiger Proxy hinterlegt
 * TGR-168 Proxy modifications unterstützt nun auch Query Parameter modifications
 * TGR-112 Dokumentation für Modifications Feature [Mehr Details...](tiger-standalone-proxy/README.md)
+* TGR-63  Exceptions, die in einem Upstream Tiger-Proxy auftreten werden über die WS-Schnittstelle an downstream Proxies
+  kommuniziert.
 
 ### Änderungen
 

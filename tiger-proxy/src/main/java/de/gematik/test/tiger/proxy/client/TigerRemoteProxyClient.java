@@ -10,12 +10,14 @@ import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
 import kong.unirest.Unirest;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -33,8 +35,12 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 @Slf4j
 public class TigerRemoteProxyClient extends AbstractTigerProxy {
 
+    public static final String WS_TRACING = "/topic/traces";
+    public static final String WS_ERRORS = "/topic/errors";
     private final String remoteProxyUrl;
     private final WebSocketStompClient tigerProxyStompClient;
+    @Getter
+    private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
 
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
@@ -143,7 +149,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
         public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
             log.info("Connecting to tracing point {}", remoteProxyUrl);
 
-            stompSession.subscribe("/topic/traces", new StompFrameHandler() {
+            stompSession.subscribe(WS_TRACING, new StompFrameHandler() {
                     @Override
                     public Type getPayloadType(StompHeaders stompHeaders) {
                         return TigerTracingDto.class;
@@ -161,6 +167,24 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
                     }
                 }
             );
+
+            stompSession.subscribe(WS_ERRORS, new StompFrameHandler() {
+                    @Override
+                    public Type getPayloadType(StompHeaders stompHeaders) {
+                        return TigerExceptionDto.class;
+                    }
+
+                    @Override
+                    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
+                        if (frameContent instanceof TigerExceptionDto) {
+                            final TigerExceptionDto exceptionDto = (TigerExceptionDto) frameContent;
+                            log.warn("Received remote exception: ({}) {}: {} ",
+                                exceptionDto.getClassName(), exceptionDto.getMessage(), exceptionDto.getStacktrace());
+                            receivedRemoteExceptions.add(exceptionDto);
+                        }
+                    }
+                }
+            );
         }
 
         @Override
@@ -174,6 +198,12 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
         public void handleTransportError(StompSession session, Throwable exception) {
             log.error("handle transport Error TigerRemoteProxy: {}", exception);
             throw new TigerRemoteProxyClientException(exception);
+        }
+    }
+
+    private class TigerReceivedRemoteException extends RuntimeException {
+        public TigerReceivedRemoteException(String message) {
+            super(message);
         }
     }
 }

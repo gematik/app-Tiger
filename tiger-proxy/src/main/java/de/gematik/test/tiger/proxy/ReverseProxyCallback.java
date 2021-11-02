@@ -29,7 +29,7 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
     }
 
     @Override
-    public HttpRequest handle(HttpRequest httpRequest) {
+    public HttpRequest handleRequest(HttpRequest httpRequest) {
         applyModifications(httpRequest);
         final HttpRequest request = httpRequest.withSocketAddress(
                 getTigerRoute().getTo().startsWith("https://"),
@@ -60,7 +60,7 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
     }
 
     @Override
-    public HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse) {
+    public HttpResponse handleResponse(HttpRequest httpRequest, HttpResponse httpResponse) {
         applyModifications(httpResponse);
         if (!getTigerRoute().isDisableRbelLogging()) {
             try {

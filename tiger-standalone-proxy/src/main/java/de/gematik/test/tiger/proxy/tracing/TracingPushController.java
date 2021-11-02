@@ -7,8 +7,13 @@ import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.client.TigerExceptionDto;
+import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
+import de.gematik.test.tiger.proxy.client.TigerTracingDto;
+import de.gematik.test.tiger.proxy.client.TracingMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +30,16 @@ public class TracingPushController {
     @PostConstruct
     public void addWebSocketListener() {
         tigerProxy.addRbelMessageListener(msg -> propagateRbelMessageSafe(msg));
+        tigerProxy.addNewExceptionConsumer(exc -> propagateExceptionSafe(exc));
+    }
+
+    private void propagateExceptionSafe(Throwable exc) {
+        try {
+            propagateException(exc);
+        } catch (RuntimeException e) {
+            log.error("Error while propagating Exception", e);
+            throw e;
+        }
     }
 
     private void propagateRbelMessageSafe(RbelElement msg) {
@@ -53,7 +68,7 @@ public class TracingPushController {
             rbelHttpResponse.getRequest().getFacetOrFail(RbelHttpRequestFacet.class)
                 .getPath().getRawStringContent(),
             rbelHttpResponse.getResponseCode().getRawStringContent());
-        template.convertAndSend("/topic/traces",
+        template.convertAndSend(TigerRemoteProxyClient.WS_TRACING,
             TigerTracingDto.builder()
                 .uuid(msg.getUuid())
                 .receiver(receiver)
@@ -61,6 +76,16 @@ public class TracingPushController {
                 .response(mapMessage(msg))
                 .request(mapMessage(rbelHttpResponse.getRequest()))
                 .build());
+    }
+
+    private void propagateException(Throwable exception) {
+        template.convertAndSend(TigerRemoteProxyClient.WS_ERRORS,
+            TigerExceptionDto.builder()
+                .className(exception.getClass().getName())
+                .message(exception.getMessage())
+                .stacktrace(ExceptionUtils.getStackTrace(exception))
+                .build()
+        );
     }
 
     private TracingMessage mapMessage(RbelElement rbelHttpMessage) {
