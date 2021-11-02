@@ -4,6 +4,7 @@
 
 ### Neues
 
+* TGR-173 Die TGR BDD Testschritte stehen nun auch auf Deutsch zur Verfügung
 * TGR-133 Release des mvn plugins um die Generierung der Treiberklassen für die Serenity tests auch in nicht englischer
   Sprache zu unterstützen. [Mehr Details...](tiger-driver-generator-maven-plugin/README.md)
 * TGR-165 EPA VAU Schlüssel ist fest im Tiger Proxy hinterlegt
@@ -16,14 +17,16 @@
   Sollte 'hostname' nicht definiert werden, wird es auf den Keywert des Mapeintrages gesetzt. Diese Änderung bedeutet, dass zwar der Hostname bei mehreren
   Servereinträgen identisch sein kann, allerdings muss der Keywert **eindeutig** sein.
   Details zu der Migration befinden sich weiter unten.
-
-
+* 
 ### Entfernt
+
+* TGR-173 Die Ausgabe der Testschritte erfolgt nun nicht mehr über Tiger, sondern kann im [serenity.properties](https://serenity-bdd.github.io/theserenitybook/latest/serenity-system-properties.html)  
+  über serenity.logging=VERBOSE aktiviert werden.
 
 ### Fehlerbehebungen
 
 * TGR-159 Null TLS attribute in tiger-testenv.yml führten zu Startabbruch
-* TGR-166 Concurrent Modification Exceptions traten im Bereich Tiger Proxy Nachrichten auf
+* TGR-166 Concurrent Modification Exceptions traten im Bereich Tiger Proxy Nachrichten
 
 ### Migrationsdetails
 

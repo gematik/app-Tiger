@@ -39,7 +39,7 @@ public class Banner {
         asciiArt = new HashMap<>();
         List<String> lines = IOUtils
             .readLines(Objects.requireNonNull(Banner.class.getResourceAsStream(
-                "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
+                    "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
                 StandardCharsets.UTF_8);
         for (int ascii = ' '; ascii < 'ü'; ascii++) {
             List<String> linesForChar = new ArrayList<>();
@@ -65,6 +65,15 @@ public class Banner {
             .map(line -> ansiColors + line + Ansi.RESET)
             .collect(Collectors.joining("\n"))
             + "\n" + ansiColors + StringUtils.repeat('=', 100) + Ansi.RESET;
+    }
+
+    public static String toTextStr(String msg, String ansiColor) {
+        try {
+            final String ansiColors = (String) Ansi.class.getDeclaredField(ansiColor.toUpperCase()).get(null);
+            return ansiColors + msg + Ansi.RESET;
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new AssertionError("Unknown color name '" + ansiColor + "'!", e);
+        }
     }
 
     public static String toBannerStrWithCOLOR(String msg, String colorName) {
