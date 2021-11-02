@@ -4,9 +4,9 @@
 
 package de.gematik.test.tiger.proxy.client;
 
-import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import kong.unirest.Config;
 import kong.unirest.Unirest;
@@ -19,6 +19,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -150,6 +152,32 @@ public class TigerRemoteProxyClientTest {
         await()
             .atMost(2, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "/foo, /foo/bar",
+        "/foo/bar, /foo",
+        "/foo/robots.txt, /foo",
+        "/foo, /foo",
+        "/foo, /foo/robots.txt",
+        "http://foo/bar, http://foo/",
+        "http://foo/, http://foo/bar",
+        "http://foo/, http://foo",
+        "http://foo, http://foo/",
+        "http://foo/, http://foo/",
+        "https://foo, http://foo"
+    })
+  public void addTwoCompetingRoutes_secondOneShouldFail(String firstRoute, String secondRoute) {
+        tigerRemoteProxyClient.addRoute(TigerRoute.builder()
+            .from(firstRoute)
+            .to("http://localhost:" + mockServerClient.getPort())
+            .build()).getId();
+
+        assertThatThrownBy(() -> tigerRemoteProxyClient.addRoute(TigerRoute.builder()
+            .from(secondRoute)
+            .to("http://localhost:" + mockServerClient.getPort())
+            .build()).getId()).isInstanceOf(RuntimeException.class);
     }
 
     @Test
