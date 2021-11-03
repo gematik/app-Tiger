@@ -14,7 +14,7 @@ input:hover, select:hover {
   background: #eaeaff;
 }
 
-span.input-group-text:hover, li.list-group-item:hover {
+span.input-group-text:hover, li.list-group-item:not(.active):hover {
   background: #eaeaff;
 }
 
@@ -24,6 +24,7 @@ span.fieldset-summary {
   text-overflow: ellipsis;
   display: inline-block;
   max-width: 100%;
+  vertical-align: middle;
 }
 
 .input-group, .form-check {
@@ -64,6 +65,7 @@ span.fieldset-summary {
   border: 1px solid lightgray;
   min-height: 10rem;
   overflow-y: auto;
+  max-height: 14rem;
 }
 
 .nav-tabs .nav-item > .nav-link.active {
@@ -97,5 +99,7 @@ fieldset .list-group .list-group-item > span {
 
 .list-group-item {
   padding-left: 0.5rem;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
