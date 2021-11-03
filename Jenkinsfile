@@ -75,13 +75,13 @@ pipeline {
         stage('GitLab-Update-Snapshot') {
             when { branch BRANCH }
             steps {
-                gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID, POM_PATH_PRODUCT)
+                gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID, POM_PATH)
             }
         }
     }
     post {
         always {
-            sendEMailNotification(getIdpEMailList())
+            sendEMailNotification(getTigerEMailList())
             showJUnitAsXUnitResult()
             archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-standalone-proxy/target/site/serenity/**/*', fingerprint: false
             publishHTML (target: [

@@ -47,11 +47,14 @@
     </developers>
 
     <distributionManagement>
-        <site>
-            <id>${project.artifactId}</id>
-            <name>${project.name}</name>
-            <url>${project.url}</url>
-        </site>
+        <repository>
+            <id>releases</id>
+            <url>${releaseDeploymentRepository}</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>${snapshotDeploymentRepository}</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <modules>
