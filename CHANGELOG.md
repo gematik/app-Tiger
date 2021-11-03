@@ -8,6 +8,7 @@
 
 ### Bugfixes
 * TGR-41  Competing routes are now correctly identified and refused when adding
+* TGR-179 TGR Step "show color text" failed with unknown color name
 
 ## Release 0.14.0
 
