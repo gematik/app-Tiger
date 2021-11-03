@@ -3,8 +3,22 @@ $(function () {
         selector: '.context-menu-one',
         trigger: 'left',
         callback: function (key, options) {
-            var m = "clicked: " + key;
-            window.console && console.log(m) || alert(m);
+            var serverIndex = $(this).closest('div').attr("id").substr("sidebar_".length);
+
+            switch (key) {
+                case "start":
+                    break;
+                case "restart":
+                    break;
+                case "stop":
+                    break;
+                case "delete":
+                    $(this).closest('div').remove();
+                    $("#content_" + serverIndex).remove();
+                    break;
+                case "logs":
+                    break;
+            }
         },
         items: {
             "start": {name: "Start", icon: "fas fa-play"},

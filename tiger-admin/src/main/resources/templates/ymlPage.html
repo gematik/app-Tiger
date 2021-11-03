@@ -29,23 +29,27 @@
     </div>
     <div class="row row-style">
         <div class="col-sm-3 col-md-3 text-center">
-            <button type="button" id="new-env-btn" class="btn" title="New Testenvironment">
-                <i class="fas fa-file fa-lg"></i>
-            </button>
-            <button type="button" id="open-file-btn" class="btn" title="Open YML file">
-                <i class="fas fa-folder-open fa-lg"></i>
-            </button>
-            <button type="button" id="save-file-btn" class="btn" title="Save YML file">
-                <i class="fas fa-save fa-lg"></i>
-            </button>
-            <button type="button" id="add-server-btn" class="btn" title="Add a server">
-                <i class="fas fa-plus-circle fa-lg"></i>
-                <span>Add a server</span>
-            </button>
+            <form id="openYaml">
+                <button type="button" id="new-env-btn" class="btn" title="New Testenvironment">
+                    <i class="fas fa-file fa-lg"></i>
+                </button>
+                <input type="file" name="fileName" id="file" style="display:none;" accept=".yml,.yaml"/>
+                <button type="button" id="open-file-btn" class="btn" title="Open YML file"
+                        onclick=$("#file").click()>
+                    <i class="fas fa-folder-open fa-lg"></i>
+                </button>
+                <button type="button" id="save-file-btn" class="btn" title="Save YML file">
+                    <i class="fas fa-save fa-lg"></i>
+                </button>
+                <button type="button" id="add-server-btn" class="btn" title="Add a server">
+                    <i class="fas fa-plus-circle fa-lg"></i>
+                    <span>Add a server</span>
+                </button>
+            </form>
         </div>
     </div>
     <div class="row">
-        <div class="col-sm-2 col-md-2">
+        <div class="col-sm-3 col-md-3">
             <div class="container sidebar server-container" id="sortable">
                 <div id="sidebar_Server1" class="box text-center">
                     Server1
@@ -67,7 +71,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-8 col-md-8">
+        <div class="col-sm-9 col-md-9">
             <div class="container server-content server-container col-sm-6 col-md-6 centered">
                 <div id="content_Server1">
                     <button type="button" class="collapsible">
@@ -104,6 +108,34 @@
     </div>
 </div>
 <script>
+
+    $(document).ready(function () {
+        $("#file").on("change", openYamlFile);
+    });
+
+    function openYamlFile() {
+        $.ajax({
+            url: "/openYamlFile",
+            type: "POST",
+            data: new FormData($("#openYaml")[0]),
+            enctype: 'multipart/form-data',
+            processData: false,
+            contentType: false,
+            cache: false,
+            dataType: 'json',
+            success: function (res) {
+                parseFile(res)
+            },
+            error: function () {
+                alert("There was an error")
+            }
+        });
+    }
+
+    function parseFile(yamlContents) {
+        console.log(yamlContents)
+    }
+
     var collList = $(".collapsible");
     $.each(collList, (i, coll) => {
         $(coll).on("click", function (evt) {
