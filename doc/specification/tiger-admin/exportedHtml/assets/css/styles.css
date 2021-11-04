@@ -69,17 +69,20 @@ span.fieldset-summary {
 }
 
 .nav-tabs .nav-item > .nav-link.active {
-  background: #eaeaff;
+  background: #0d6efd;
+  color: white;
+  border-radius: 0.25rem;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 fieldset .list-group .list-group-item > span {
-  width: 85%;
-  display: inline-block;
+  width: 100%;
+  display: table-cell;
   vertical-align: middle;
 }
 
 .topcol {
-  /*background: yellow;*/
   padding-left: 0;
   padding-right: 1px;
 }
@@ -95,11 +98,29 @@ fieldset .list-group .list-group-item > span {
   cursor: move;
   color: lightsteelblue;
   vertical-align: middle;
+  display: table-cell;
 }
 
 .list-group-item {
   padding-left: 0.5rem;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+.really-small {
+  font-size: 70%;
+}
+
+.subset-below {
+  margin-left: 0;
+}
+
+.server-formular {
+  box-shadow: 2px 2px 8px -3px var(--bs-gray-700);
+  margin-bottom: 1.5rem;
+}
+
+.server-formular > .row {
+  margin-left: 0;
 }
 
