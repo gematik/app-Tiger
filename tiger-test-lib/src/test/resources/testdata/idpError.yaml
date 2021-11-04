@@ -1,0 +1,51 @@
+tigerProxy:
+  forwardToProxy:
+    hostname: 192.168.110.10
+    port: 3128
+
+servers:
+  idp:
+    type: externalJar
+    externalJarOptions:
+      healthcheck:
+        http://127.0.0.1:10000
+      arguments:
+        - --server.port=10000
+      workingDir: ../idp-server/target
+    source:
+      - local://idp-server-19.1.0-SNAPSHOT.jar
+    startupTimeoutSec: 20
+    active: true
+
+  idp-sektoral:
+    type: externalJar
+    externalJarOptions:
+      healthcheck:
+        http://127.0.0.1:11000
+      arguments:
+        - --server.port=11000
+      workingDir: ../idp-sektoral/target
+    source:
+      - local://idp-sektoral-19.1.0-SNAPSHOT.jar
+    startupTimeoutSec: 20
+    active: true
+
+  idp2:
+    type: externalUrl
+    externalJarOptions:
+      healthcheck:
+        http://127.0.0.1:${PORT_IDP_SERVER}/auth/realms/idp/.well-known/openid-configuration
+    source:
+      - http://127.0.0.1:${PORT_IDP_SERVER}
+    startupTimeoutSec: 10
+    active: false
+
+  idp-sektoral2:
+    type: externalUrl
+    source:
+      - http://127.0.0.1:${PORT_IDP_SEKTORAL}
+    startupTimeoutSec: 10
+    active: false
+    externalJarOptions:
+      healthcheck:
+        http://127.0.0.1:${PORT_IDP_SEKTORAL}/auth/realms/idp/.well-known/openid-configuration"
