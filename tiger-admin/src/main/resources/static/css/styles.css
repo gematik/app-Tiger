@@ -31,10 +31,6 @@
     color: #444 !important;
 }
 
-i {
-    color: #444 !important;
-}
-
 .content {
     padding: 5px 0px 10px 0px;
     display: none;
@@ -67,4 +63,146 @@ i {
 
 
 
+
+
+
+
+/* ----------------------------------------------------------------------------- */
+/* ET modificatiosn ONLY ;) */
+
+.container {
+    min-width: 100%;
+}
+
+fieldset {
+    border: 1px solid lightgray;
+    padding: 1rem;
+    margin: 1rem;
+    padding-top: 0.5rem;
+}
+
+fieldset.subset {
+    margin-top: 0;
+}
+
+input:hover, select:hover {
+    color: steelblue;
+    background: #eaeaff;
+}
+
+span.input-group-text:hover, li.list-group-item:not(.active):hover {
+    background: #eaeaff;
+}
+
+span.fieldset-summary {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: middle;
+}
+
+.input-group, .form-check {
+    margin-top: 0.5rem !important;
+}
+
+.btn-group-vertical button {
+    margin-bottom: 0.25rem !important;
+}
+
+.input-group-text {
+    flex: 0 0 auto;
+    width: 30%;
+}
+
+.labels-col-5 .input-group-text {
+    flex: 0 0 auto;
+    width: 50%;
+}
+
+.labels-col-4 .input-group-text {
+    flex: 0 0 auto;
+    width: 40%;
+}
+
+.labels-col-3 .input-group-text {
+    flex: 0 0 auto;
+    width: 30%;
+}
+
+.labels-col-2 .input-group-text {
+    flex: 0 0 auto;
+    width: 20%;
+}
+
+.list-group {
+    background: #f0f0f0;
+    border: 1px solid lightgray;
+    min-height: 10rem;
+    overflow-y: auto;
+    max-height: 14rem;
+}
+
+.nav-tabs .nav-item > .nav-link.active {
+    background: #0d6efd;
+    color: white;
+    border-radius: 0.25rem;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+fieldset .list-group .list-group-item > span {
+    width: 100%;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.topcol {
+    padding-left: 0;
+    padding-right: 1px;
+}
+
+.text.summary {
+    color: #4682b4;
+    vertical-align: middle;
+}
+
+.draghandle {
+    font-size: 1.5rem;
+    padding-right: 0.25rem;
+    cursor: move;
+    color: lightsteelblue;
+    vertical-align: middle;
+    display: table-cell;
+}
+
+i.collapse-icon {
+    color: steelblue;
+}
+
+
+
+.list-group-item {
+    padding-left: 0.5rem;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.really-small {
+    font-size: 70%;
+}
+
+.subset-below {
+    margin-left: 0;
+}
+
+.server-formular {
+    box-shadow: 2px 2px 8px -3px var(--bs-gray-700);
+    margin-bottom: 1.5rem;
+}
+
+.server-formular > .row {
+    margin-left: 0;
+}
 
