@@ -1,0 +1,12 @@
+{
+  "webdriver": [
+    {
+      "driver": "targetValue",
+      "autodownload": false
+    },
+    {
+      "another": "object",
+      "key": 4321432
+    }
+  ]
+}
