@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class FeatureParser {
 
@@ -80,7 +81,7 @@ public class FeatureParser {
                     description.append(line).append("\n");
                 }
             } else {
-                child.get().setDescription(description.toString());
+                child.get().setDescription(StringUtils.removeEnd(description.toString(), "\n"));
                 description.setLength(0);
                 step = Step.fromLine(line);
                 moderef.set(addStepToScenario(child.get(), step));
