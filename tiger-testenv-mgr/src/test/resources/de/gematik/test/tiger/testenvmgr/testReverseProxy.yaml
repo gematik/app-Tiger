@@ -6,6 +6,7 @@ servers:
   testWinstone2:
     hostname: testWinstone2
     template: epa2-fdv
+    type: externalJar
     source:
       - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
     startupTimeoutSec: 5

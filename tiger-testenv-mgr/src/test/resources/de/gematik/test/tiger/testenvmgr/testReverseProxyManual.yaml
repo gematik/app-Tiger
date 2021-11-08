@@ -5,6 +5,7 @@ tigerProxy:
 servers:
   testWinstone3:
     hostname: testWinstone3
+    type: externalJar
     template: epa2-fdv
     source:
       - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download
