@@ -73,7 +73,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         log.info(
             "\n" + Banner.toBannerStr("Tiger standalone test environment UP!", RbelAnsiColors.GREEN_BOLD.toString()));
-        waitForQuit(null, "TIGER standalone test environment");
+        waitForQuit("TIGER standalone test environment");
         log.info("interrupting " + envMgr.externalProcesses.size() + " threads...");
         envMgr.externalProcesses.values().forEach(Process::destroy);
         log.info("stopping threads...");
@@ -82,22 +82,18 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         System.exit(0);
     }
 
-    public static void waitForQuit(String message, String appName, Object... args) {
+    public static void waitForQuit(String appName) {
         Console c = System.console();
         if (c != null) {
-            // printf-like arguments
-            if (message != null) {
-                c.format(message, args);
-            }
-            c.format("\n\n\nPress 'quit' and ENTER to stop " + appName +".\n\n\n\n\n");
+            c.format("\n\n\nPress 'quit' and ENTER to stop " + appName + ".\n\n\n\n\n");
             String cmd = "";
             while (!cmd.equals("quit")) {
                 cmd = c.readLine();
             }
-            log.info("Stopping " + appName +"...");
+            log.info("Stopping " + appName + "...");
         } else {
             log.warn("No Console interface found, trying System in stream...");
-            log.info("\n\n\nPress 'quit' and ENTER to stop " + appName +".\n\n\n\n\n");
+            log.info("\n\n\nPress 'quit' and ENTER to stop " + appName + ".\n\n\n\n\n");
             try {
                 BufferedReader rdr = new BufferedReader(
                     new InputStreamReader(System.in));
@@ -107,8 +103,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                 }
             } catch (IOException e) {
                 log.warn(
-                    "Unable to open input stream from console! Running for max. 24 hours."
-                        + "You will have to use Ctrl+C and clean up the processes manually!");
+                    "Unable to open input stream from console! Running " + appName + " for max. 24 hours."
+                        + "You will have to use Ctrl+C and eventually clean up the processes manually!");
                 await().atMost(24, TimeUnit.HOURS).pollDelay(1, TimeUnit.SECONDS).until(() -> false);
             }
         }
@@ -527,7 +523,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         log.info(Ansi.colorize(
             "starting external jar instance " + server.getHostname() + " in folder " + server
-            .getExternalJarOptions().getWorkingDir() + "...", RbelAnsiColors.GREEN_BOLD));
+                .getExternalJarOptions().getWorkingDir() + "...", RbelAnsiColors.GREEN_BOLD));
 
         log.info("preparing check for external jar location...");
         var jarUrl = server.getSource().get(0);
@@ -686,14 +682,16 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
                     try {
                         con.connect();
                         log.info("External node " + server.getHostname() + " is online");
-                        log.info(Ansi.colorize("External server Startup OK " + server.getSource().get(0) , RbelAnsiColors.GREEN_BOLD));
+                        log.info(Ansi.colorize("External server Startup OK " + server.getSource().get(0),
+                            RbelAnsiColors.GREEN_BOLD));
                         return true;
                     } catch (ConnectException | SocketTimeoutException cex) {
                         if (!quiet) {
                             log.info("No connection...");
                         }
                     } catch (SSLHandshakeException sslhe) {
-                        log.warn(Ansi.colorize("SSL handshake but server at least seems to be up!" + sslhe.getMessage() , RbelAnsiColors.YELLOW_BOLD));
+                        log.warn(Ansi.colorize("SSL handshake but server at least seems to be up!" + sslhe.getMessage(),
+                            RbelAnsiColors.YELLOW_BOLD));
                         return true;
                     } catch (SSLException sslex) {
                         if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {

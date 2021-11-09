@@ -12,6 +12,9 @@ import lombok.*;
 @ToString
 @JsonInclude(Include.NON_NULL)
 public class TigerLibConfig {
+
+    @Builder.Default
+    public boolean activateMonitorUI = false;
     @Builder.Default
     private boolean rbelPathDebugging = false;
     @Builder.Default

@@ -7,6 +7,7 @@ package de.gematik.test.tiger.glue;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.context.TestContext;
 import de.gematik.test.tiger.common.context.TestVariables;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
@@ -159,6 +160,6 @@ public class TigerGlue {
     @When("TGR wait for user abort")
     @Wenn("TGR warte auf Abbruch")
     public void tgrWaitForUserAbort() {
-        TigerTestEnvMgr.waitForQuit(null, "Tiger Testsuite");
+        TigerDirector.waitForQuit();
     }
 }

@@ -12,9 +12,13 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
+import de.gematik.test.tiger.lib.monitor.MonitorUI;
+import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import io.restassured.RestAssured;
+import java.awt.HeadlessException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -24,8 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -55,6 +57,8 @@ public class TigerDirector {
 
     private static TigerTestEnvMgr tigerTestEnvMgr;
 
+    private static Optional<MonitorUI> optionalMonitorUI = null;
+
     private static boolean initialized = false;
 
     public static synchronized void beforeTestRun() {
@@ -81,7 +85,8 @@ public class TigerDirector {
         }
         TigerLibConfig config;
         if (cfgFile.exists()) {
-            config = new TigerConfigurationHelper<TigerLibConfig>().yamlReadOverwriteToConfig(cfgFile.getAbsolutePath(), "TIGER_LIB", TigerLibConfig.class);
+            config = new TigerConfigurationHelper<TigerLibConfig>().yamlReadOverwriteToConfig(cfgFile.getAbsolutePath(),
+                "TIGER_LIB", TigerLibConfig.class);
         } else {
             log.warn("No Tiger configuration file found (tiger.yaml, tiger.yml)! Continuing with default values");
             config = new TigerLibConfig();
@@ -96,6 +101,13 @@ public class TigerDirector {
             RbelOptions.activateAnsiColors();
         } else {
             RbelOptions.deactivateAnsiColors();
+        }
+        if (config.activateMonitorUI) {
+            try {
+                optionalMonitorUI =  MonitorUI.getMonitor();
+            } catch (HeadlessException hex) {
+                log.error("Unable to start Monitor UI on a headless server!", hex);
+            }
         }
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
         tigerTestEnvMgr = new TigerTestEnvMgr();
@@ -215,6 +227,16 @@ public class TigerDirector {
         return Thread.currentThread().getId();
     }
 
+    public static void waitForQuit() {
+        optionalMonitorUI.ifPresentOrElse(
+            (monitor) -> monitor.waitForQuit("Tiger Testsuite"),
+            () -> TigerTestEnvMgr.waitForQuit("Tiger Testsuite"));
+    }
+
+    public static void updateStepInMonitor(Step step)  {
+        optionalMonitorUI.ifPresent((monitor) -> monitor.updateStep(step));
+    }
+
     private static void assertThatTigerIsInitialized() {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             throw new TigerStartupException("Tiger test environment has not been initialized,"
@@ -240,6 +262,7 @@ public class TigerDirector {
     }
 
     private static class TigerSerenityRestException extends RuntimeException {
+
         public TigerSerenityRestException(String s, Exception e) {
             super(s, e);
         }

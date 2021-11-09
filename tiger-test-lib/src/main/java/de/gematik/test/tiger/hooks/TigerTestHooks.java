@@ -8,8 +8,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
@@ -36,6 +34,7 @@ public class TigerTestHooks {
     private static final Map<URI, Feature> uriFeatureMap = new HashMap<>();
 
     private static final Map<String, List<Step>> scenarioStepsMap = new HashMap<>();
+    private static int currentStepIndex;
     private static final Map<String, Status> scenarioStatus = new HashMap<>();
 
     private static boolean rbelListenerAdded = false;
@@ -73,6 +72,7 @@ public class TigerTestHooks {
         if (feature.getBackground() != null) {
             scenarioStepsMap.get(scenario.getId()).addAll(0, feature.getBackground().getSteps());
         }
+        currentStepIndex = 0;
 
         rbelMessages.clear();
         if (!TigerDirector.isInitialized()) {
@@ -91,6 +91,11 @@ public class TigerTestHooks {
         if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
             log.error("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
         }
+
+        final Step currentStep = scenarioStepsMap.get(scenario.getId()).get(currentStepIndex);
+        log.info("CurrentStep: " + String.join("\n", currentStep.getLines()));
+        TigerDirector.updateStepInMonitor(currentStep);
+        currentStepIndex++;
     }
 
     @AfterStep
