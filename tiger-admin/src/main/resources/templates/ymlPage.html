@@ -8,6 +8,7 @@
   <script th:src="@{/webjars/jquery-ui/1.13.0/jquery-ui.min.js}"></script>
   <link th:href="@{/webjars/font-awesome/5.15.4/css/all.css}" rel="stylesheet">
   <link th:href="@{/webjars/bootstrap/5.1.1/css/bootstrap.min.css}" rel="stylesheet">
+  <link th:href="@{/css/custom-sandstone.css}" rel="stylesheet">
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
   <link th:href="@{/css/styles.css}" rel="stylesheet">
@@ -19,46 +20,75 @@
 </head>
 <body>
 <div class="container-fluid">
-  <div class="row row-style">
-    <div class="col-sm-3 col-md-3 text-center">
-      <strong>YML</strong>
-    </div>
-    <div class="col-sm-9 col-md-9 text-center">
-      <strong><p th:text="${filename}"/></strong>
-    </div>
-  </div>
-  <div class="row row-style">
-    <div class="col-sm-3 col-md-3 text-center">
-      <form id="openYaml">
-        <button type="button" id="new-env-btn" class="btn" title="New Testenvironment">
-          <i class="fas fa-file fa-lg"></i>
-        </button>
-        <input type="file" name="fileName" id="file" style="display:none;" accept=".yml,.yaml"/>
-        <button type="button" id="open-file-btn" class="btn" title="Open YML file"
-                onclick=$("#file").click()>
-          <i class="fas fa-folder-open fa-lg"></i>
-        </button>
-        <button type="button" id="save-file-btn" class="btn" title="Save YML file">
-          <i class="fas fa-save fa-lg"></i>
-        </button>
-        <button type="button" id="add-server-btn" class="btn" title="Add a server">
-          <i class="fas fa-plus-circle fa-lg"></i>
-          <span>Add a server</span>
-        </button>
-      </form>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-sm-3 col-md-3">
-      <div class="container sidebar server-container" id="sortable">
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-secondary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><img class="tiger-logo" src="img/tiger2-plain.svg"></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Testenvironment</a>
+            <div class="dropdown-menu">
+              <a class="dropdown-item btn-new-testenv" href="#">Neu</a>
+              <a class="dropdown-item btn-open-testenv" href="#">Öffnen...</a>
+              <a class="dropdown-item disabled" href="#">Speichern</a>
+              <a class="dropdown-item disabled" href="#">Speichern unter...</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item disabled" href="#">Separated link</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link disabled" href="#">Über Tiger</a>
+          </li>
+        </ul>
+        <!--
+        <form class="d-flex">
+          <input class="form-control me-sm-2" type="text" placeholder="Search">
+          <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+        </form>
+        -->
       </div>
     </div>
-    <div class="col-sm-9 col-md-9">
-      <div class="server-content server-container centered">
-        <form id="node1" class="server-formular">
+  </nav>
+  <div class="row top-margin">
+    <div class="col-sm-3 col-md-3 sidebar-col">
+      <div class="row d-none">
+        <div class="col-12">
+          <form id="openYaml">
+            <button type="button" class="btn btn-new-testenv text-primary" title="New Testenvironment">
+              <i class="fas fa-file fa-lg"></i>
+            </button>
+            <input type="file" name="fileName" id="file" style="display:none;" accept=".yml,.yaml"/>
+            <button type="button" class="btn btn-open-testenv text-primary" title="Open YML file">
+              <i class="fas fa-folder-open fa-lg"></i>
+            </button>
+            <button type="button" id="save-file-btn" class="btn text-success" title="Save YML file">
+              <i class="fas fa-save fa-lg"></i>
+            </button>
+            <button type="button" id="add-server-btn" class="btn text-success" title="Add a server">
+              <i class="fas fa-plus-circle fa-lg"></i>
+              <span>Add a server</span>
+            </button>
+          </form>
+        </div>
+      </div>
+      <div class="row box-config-file server-label ">
+        <div class="col-4 text-right">
+          <strong>Testenv:</strong>
+        </div>
+        <div class="col-8">
+          <strong></strong>
+        </div>
 
-        </form>
+      </div>
+      <div class="container sidebar server-container" id="sortable">
+      </div>
+    </div>
+    <div class="col-sm-9 col-md-9 offset-3">
+      <div class="server-content server-container centered">
       </div>
     </div>
   </div>
@@ -192,7 +222,7 @@
               <div class="input-group"><span class="input-group-text">Working directory</span><input
                   class="form-control" type="text" placeholder="resorts to temp folder if empty"
                   name=".externalJarOptions.workingDir">
-                <button class="btn btn-info" type="button">Browse...</button>
+                <button class="btn btn-secondary" type="button">Browse...</button>
               </div>
               <div class="input-group">
                 <span class="input-group-text">Health check URL</span>
@@ -715,6 +745,7 @@
   </div>
 </section>
 
+<!-- https://github.com/Script47/bs5-utils -->
 <script type="text/javascript" th:src="@{/js/bs5util.js}"></script>
 <script type="text/javascript" th:src="@{/js/menu.js}"></script>
 <script type="text/javascript" th:src="@{/js/formular.js}"></script>

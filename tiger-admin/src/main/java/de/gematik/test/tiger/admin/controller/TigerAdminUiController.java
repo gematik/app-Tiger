@@ -28,8 +28,7 @@ public class TigerAdminUiController {
     }
 
     @GetMapping("/yml-page")
-    public String getYmlPage(@RequestParam(name = "filename", defaultValue = "ERezept") String filename, Model model) {
-        model.addAttribute("filename", filename);
+    public String getYmlPage() {
         return "ymlPage";
     }
 

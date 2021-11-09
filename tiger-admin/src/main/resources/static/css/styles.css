@@ -1,61 +1,43 @@
-.centered {
-    margin: auto;
+body {
+    padding-top: 5rem;
 }
 
-.align {
-    text-align: right;
+.box, .box-config-file {
+    border: 1px solid #6b8ab8;
+    background-color: #b5cae6;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-radius: 0 0 1rem 0;
 }
 
-.box {
-    border: 1px solid #d3d3d3;
-    box-shadow: 2px 2px grey;
-    background-color: white;
-    border-radius: .5em;
-    padding: 5px;
-    cursor: move;
+.box > div, .box > div > i {
+    display: inline-block;
+    color: #6b8ab8;
 }
 
-.row-style {
-    border: 1px solid black;
+.server-label {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    line-break: anywhere;
 }
 
 .context-menu-hover {
-    background-color: #ededed !important;
-}
-
-.context-menu-icon--fa5 {
-    color: #444 !important;
+    background-color: #a8c1e6 !important;
 }
 
 .content {
-    padding: 5px 0px 10px 0px;
+    padding: 1rem 0 2rem 0;
     display: none;
     overflow: hidden;
     border: 1px solid #d3d3d3;
 }
 
-.collapsible {
-    cursor: pointer;
-    padding: 18px;
-    width: 100%;
-    border: 1px solid #d3d3d3;
-    box-shadow: 2px 2px grey;
-    text-align: left;
-    background-color: white !important;
-    border-radius: .5em;
-}
-
 .server-container {
     display: grid;
-    gap: 20px;
-    padding-top: 20px;
-    padding-bottom: 30px;
+    gap: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }
-
-.server-list-item {
-    margin: 10px
-}
-
 
 
 
@@ -79,11 +61,17 @@ fieldset.subset {
 
 input:hover, select:hover {
     color: steelblue;
-    background: #eaeaff;
+    background-color: #a8c1e6;
 }
 
-span.input-group-text:hover, li.list-group-item:not(.active):hover {
-    background: #eaeaff;
+li.list-group-item:not(.active):hover {
+    background: #a8c1e6;
+}
+
+.list-group-item.active {
+    color: #084298;
+    background-color: #8ca9d4; /*#cfe2ff;*/
+    border-color: #6b8ab8; /*#b6d4fe;*/
 }
 
 span.fieldset-summary {
@@ -136,9 +124,14 @@ span.fieldset-summary {
     max-height: 14rem;
 }
 
+.nav-tabs .nav-item > .nav-link {
+    text-decoration: none;
+}
+
 .nav-tabs .nav-item > .nav-link.active {
-    background: #0d6efd;
-    color: white;
+    color: #0d6efd;
+    font-weight: bolder;
+    border-color: #8ca9d4;
     border-radius: 0.25rem;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
@@ -208,15 +201,24 @@ i.collapse-icon {
 }
 
 .btn-advanced.active {
-    color: darkred;
+    color: #d9534f;
 }
 
 .advanced * {
-    color: darkred;
+    color: #d9534f;
 }
 
 .editing {
-    border: 4px solid white;
+    border: 2px solid white;
     padding: 0.25rem;
-    background: cadetblue;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+}
+
+.sidebar-col {
+    position: fixed;
+}
+
+.tiger-logo {
+    width: 2rem;
 }

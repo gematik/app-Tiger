@@ -35,6 +35,8 @@
 // and i use it somewhere else too so reinvestigate
 // TODO LOPRIO use gutters for label alignment - not sure this really helps in our situation
 //  are gutter smore for padding?
+// TODO after implementing start/stop of servers color sidebar box elements to show state of server
+// TODO click on sidebar box scrolls element into view but heading is hidden by fixed top navbar
 
 const dollarTokens = /\${([\w|.]+)}/g
 
@@ -92,12 +94,13 @@ $.fn.initFormular = function (serverKey, serverData) {
             } else {
               const sidebarHandle = $('#sidebar_server_' + oldServerKey);
               sidebarHandle.attr('id', 'sidebar_server_' + newServerKey);
-              sidebarHandle.find('.server_label').text(newServerKey);
+              sidebarHandle.find('.server-label').text(newServerKey);
               const srvContentHandle = $('#content_server_' + oldServerKey);
               srvContentHandle.attr('id', 'content_server_' + newServerKey);
               currEnvironment[newServerKey] = currEnvironment[oldServerKey];
               delete currEnvironment[oldServerKey];
-              updateServerLists(Object.keys(currEnvironment), oldServerKey, newServerKey);
+              updateServerLists(Object.keys(currEnvironment), oldServerKey,
+                  newServerKey);
             }
           }
         }
@@ -355,7 +358,8 @@ $.fn.showTabLink = function (tabName, flag) {
 }
 
 // for form.server-formular
-$.fn.updateServerList = function (serverList, replacedSelection, optNewSelection) {
+$.fn.updateServerList = function (serverList, replacedSelection,
+    optNewSelection) {
   checkTag('updateServerList', this, 'FORM');
   checkClass('updateServerList', this, 'server-formular');
   let html = "";
@@ -701,52 +705,54 @@ function abortOtherEditing() {
 // for multiple span in .list-group-item
 $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
   checkTag('addClickNKeyCallbacks2ListItem', this, 'SPAN')
-  if (editable) {
-    this.off('click');
-    this.off('keydown');
-    this.click((ev) => {
-      if ($(this).attr('contentEditable') !== 'true') {
-        $(this).data('originalContent', $(this).html());
-        $(this).attr('contentEditable', 'true');
-        abortOtherEditing();
-        $(this).addClass('editing');
-        $(this).parent().focus();
-        $(this).parents('.list-group').find('.active').removeClass('active');
-        $(this).parent().addClass('active');
-        $(this).focus();
-        const btnDel = $(this).parents('fieldset').find('.btn-list-delete');
-        btnDel.attr('disabled', false);
-        btnDel.removeClass('disabled');
-      }
-      this.keydown((ev) => {
-        return handleEnterEscOnEditableContent($(this), ev);
+  this.each(function () {
+    if (editable) {
+      $(this).off('click');
+      $(this).off('keydown');
+      $(this).click((ev) => {
+        if ($(this).attr('contentEditable') !== 'true') {
+          $(this).data('originalContent', $(this).html());
+          $(this).attr('contentEditable', 'true');
+          abortOtherEditing();
+          $(this).addClass('editing');
+          $(this).parent().focus();
+          $(this).parents('.list-group').find('.active').removeClass('active');
+          $(this).parent().addClass('active');
+          $(this).focus();
+          const btnDel = $(this).parents('fieldset').find('.btn-list-delete');
+          btnDel.attr('disabled', false);
+          btnDel.removeClass('disabled');
+        }
+        $(this).keydown((ev) => {
+          return handleEnterEscOnEditableContent($(this), ev);
+        });
+        ev.preventDefault();
+        return false;
       });
-      ev.preventDefault();
-      return false;
-    });
-  }
-
-  const listItem = this.parent();
-  listItem.click(() => {
-    const fieldSet = listItem.parents('fieldset');
-    const curActive = listItem.parents('.list-group').find('.active');
-    curActive.removeClass('active');
-    listItem.addClass('active');
-    const section = fieldSet.attr("section");
-    const btnDel = fieldSet.find('.btn-list-delete');
-    btnDel.attr("disabled", false);
-    btnDel.removeClass("disabled");
-    // for complex lists also populate the edit fieldset
-    if (!editable) {
-      // reset all fields as currently we receive yaml struct without null attributes
-      fieldSet.find('input[name][type!="checkbox"]').val('');
-      fieldSet.find('input[name][type="checkbox"]').prop('checked', false);
-      fieldSet.find('select[name]').val('');
-      let data = listItem.data("listdata");
-      for (const field in data) {
-        fieldSet.setObjectFieldInForm(data, field, section);
-      }
     }
+
+    const listItem = $(this).parent();
+    listItem.click(() => {
+      const fieldSet = listItem.parents('fieldset');
+      const curActive = listItem.parents('.list-group').find('.active');
+      curActive.removeClass('active');
+      listItem.addClass('active');
+      const section = fieldSet.attr("section");
+      const btnDel = fieldSet.find('.btn-list-delete');
+      btnDel.attr("disabled", false);
+      btnDel.removeClass("disabled");
+      // for complex lists also populate the edit fieldset
+      if (!editable) {
+        // reset all fields as currently we receive yaml struct without null attributes
+        fieldSet.find('input[name][type!="checkbox"]').val('');
+        fieldSet.find('input[name][type="checkbox"]').prop('checked', false);
+        fieldSet.find('select[name]').val('');
+        let data = listItem.data("listdata");
+        for (const field in data) {
+          fieldSet.setObjectFieldInForm(data, field, section);
+        }
+      }
+    });
   });
 }
 
