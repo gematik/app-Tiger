@@ -19,9 +19,42 @@ function openYamlFile() {
     success: function (res) {
       currEnvironment = res;
       populateServersFromYaml(res);
+      $('.cfg-file-label').text($('#file').val().replace(/C:\\fakepath\\/i, ''));
     },
-    error: function () {
-      alert("There was an error")
+    error: function (xhr) {
+      bs5Utils.Modal.show({
+        type: 'danger',
+        title: `Error`,
+        content:
+            '<div>Leider konnten wir ihre YAML Konfiguration nicht laden!</div>' +
+            '<hr class="dropdown-divider" style="display: none;">' +
+            '<small><div class="detailedMessage" style="display: none"></div></small>',
+        buttons: [
+          {
+            text: 'Advanced details',
+            class: 'btn btn-sm btn-info',
+            handler: (ev) => {
+             const detMsg = $(ev.target).parents('.modal-dialog').find('.detailedMessage');
+             const divider = $(ev.target).parents('.modal-dialog').find('.dropdown-divider');
+             detMsg.text(xhr.responseText);
+             if($('.btn.btn-sm.btn-info').text() ==='Close'){
+               divider.hide();
+               detMsg.hide();
+               $('.btn.btn-sm.btn-info').text('Advanced details');
+             }else{
+               divider.show();
+               detMsg.show();
+               $('.btn.btn-sm.btn-info').text('Close');
+             }
+            }
+          },
+        ],
+        centered: true,
+        dismissible: true,
+        backdrop: 'static',
+        keyboard: false,
+        focus: false
+      });
     }
   });
 }

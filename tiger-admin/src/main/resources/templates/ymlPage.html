@@ -13,7 +13,7 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
   <link th:href="@{/css/styles.css}" rel="stylesheet">
 
-  <script th:src="@{/webjars/bootstrap/5.1.1/js/bootstrap.bundle.js}"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
 
@@ -23,14 +23,16 @@
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-secondary">
     <div class="container-fluid">
       <a class="navbar-brand" href="#"><img class="tiger-logo" src="img/tiger2-plain.svg"></a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02"
+              aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse">
         <ul class="navbar-nav me-auto">
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Testenvironment</a>
+            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true"
+               aria-expanded="false">Testenvironment</a>
             <div class="dropdown-menu">
               <a class="dropdown-item btn-new-testenv" href="#">Neu</a>
               <a class="dropdown-item btn-open-testenv" href="#">Öffnen...</a>
@@ -68,21 +70,25 @@
             <button type="button" id="save-file-btn" class="btn text-success" title="Save YML file">
               <i class="fas fa-save fa-lg"></i>
             </button>
-            <button type="button" id="add-server-btn" class="btn text-success" title="Add a server">
-              <i class="fas fa-plus-circle fa-lg"></i>
-              <span>Add a server</span>
-            </button>
           </form>
         </div>
       </div>
-      <div class="row box-config-file server-label ">
+      <div class="row bg-primary text-white box-config-file server-label ">
         <div class="col-4 text-right">
           <strong>Testenv:</strong>
         </div>
         <div class="col-8">
-          <strong></strong>
+          <strong class="cfg-file-label"></strong>
         </div>
-
+      </div>
+      <div class="row">
+        <div class="sidebar-toolbar border-primary btn-group-horizontal btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
+             role="group">
+          <button type="button" id="add-server-btn" class="disabled btn text-success" title="Add server">
+            <i class="fas fa-plus-circle fa-lg"></i>
+            <span>Add server</span>
+          </button>
+        </div>
       </div>
       <div class="container sidebar server-container" id="sortable">
       </div>
@@ -732,19 +738,32 @@
       </div>
     </div>
   </div>
+  <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
+    <!-- Position it -->
+    <div style="position: absolute; top: 0; right: 0;">
 
-  <div class="toast" id="template-toast" role="alert" aria-live="assertive" aria-atomic="true">
+  <div class="toast" id="error-message" role="alert" aria-live="assertive" aria-atomic="true"  data-autohide="false">
     <div class="toast-header">
       <i></i>
-      <strong class="me-auto">Bootstrap</strong>
+      <strong class="me-auto">Error</strong>
       <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
     <div class="toast-body">
-      Hello, world! This is a toast message.
+      Leider konnten wir ihre YAML Konfiguration nicht laden!
+    </div>
+    <button id='toggle'>Advanced Details
+      <!--      <i id="collapse-icon" class="fas fa-angle-down" style="margin-left:1rem;"></i>-->
+    </button>
+
+    <div id="detailedMessage" style="display: none"></div>
+      </div>
     </div>
   </div>
 </section>
 
+
+<script th:src="@{/webjars/bootstrap/5.1.1/js/bootstrap.min.js}"></script>
+<script th:src="@{/webjars/popper.js/2.9.3/umd/popper.min.js}"></script>
 <!-- https://github.com/Script47/bs5-utils -->
 <script type="text/javascript" th:src="@{/js/bs5util.js}"></script>
 <script type="text/javascript" th:src="@{/js/menu.js}"></script>

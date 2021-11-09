@@ -18,9 +18,8 @@
 //  fieldset and depending on the type copy it to the server formular
 
 // ONGOING refactor js code
-// DONE when updating server list make sure to keep selected items
-// DONE make serverkey heading editable
-// DONE more clearly mark editableactive content
+// TODO add new testenv (and ask before deleting existing env if any)
+// TODO before opening ask to save existing env if any
 // TODO: clarify pkiKeys / PkiIdentity struct - can we use simple strings here? YES implement csv based values
 // TODO: EDIT complex list entries
 // TODO: readonly management for fieldsets of complex lists

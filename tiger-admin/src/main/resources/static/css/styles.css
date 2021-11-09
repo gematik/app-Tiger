@@ -7,12 +7,22 @@ body {
     background-color: #b5cae6;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
-    border-radius: 0 0 1rem 0;
+    border-radius: 0;
+}
+
+.box-config-file {
+    border-radius: 1rem 1rem 0 0;
 }
 
 .box > div, .box > div > i {
     display: inline-block;
     color: #6b8ab8;
+}
+
+.sidebar-toolbar {
+    border-radius: 0 0 1rem 1rem;
+    border-width: 1px;
+    border-style: solid;
 }
 
 .server-label {
@@ -221,4 +231,8 @@ i.collapse-icon {
 
 .tiger-logo {
     width: 2rem;
+}
+
+.toast-container {
+    z-index:32000;
 }
