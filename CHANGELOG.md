@@ -1,5 +1,16 @@
 # Changelog Tiger Testplattform
 
+## Release 0.15.0
+
+### Features
+
+### Breaking Changes
+
+### Bugfixes
+* TGR-183 German keyword "Gegeben sei" was not correctly detected by FeatureParser
+* TGR-41  Competing routes are now correctly identified and refused when adding
+* TGR-179 TGR Step "show color text" failed with unknown color name
+
 ## Release 0.14.0
 
 ### Neues

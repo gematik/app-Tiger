@@ -70,7 +70,7 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
       serverPort: xxxx - Port an dem die Weboberfläche verfügbar ist
       (proxiedServer: node name ) Wenn gesetzt wird der Proxy als reverse Proxy konfiguriert und die Routen im proxyCfg so eingetragen, dass der Verkehr zum gegebenen Knoten weitergeleitet wird 
       (proxyPort: RANDOM ) Port zu dem Proxy Anfragen geschickt werden sollen. Wenn nicht gesetzt wird ein zufälliger Port verwendet. 
-      (proxyProtocal: http )
+      (proxyProtocol: http )
       proxyCfg:
         **TODO** Siehe Konfiguration eines Tigerproxy
    

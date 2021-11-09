@@ -81,7 +81,7 @@ public class Banner {
     }
 
     public static String toTextStr(String msg, String colorName) {
-        final String ansiColors = RbelAnsiColors.valueOf(colorName.toLowerCase()).toString();
+        final String ansiColors = RbelAnsiColors.seekColor(colorName.toLowerCase()).toString();
         return Ansi.colorize(msg, ansiColors);
     }
 

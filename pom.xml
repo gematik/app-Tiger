@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.14.0</version>
+    <version>0.15.0</version>
     <packaging>pom</packaging>
     <name>app-Tiger</name>
     <description>Short project description </description>
@@ -47,11 +47,14 @@
     </developers>
 
     <distributionManagement>
-        <site>
-            <id>${project.artifactId}</id>
-            <name>${project.name}</name>
-            <url>${project.url}</url>
-        </site>
+        <repository>
+            <id>releases</id>
+            <url>${releaseDeploymentRepository}</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>${snapshotDeploymentRepository}</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <modules>

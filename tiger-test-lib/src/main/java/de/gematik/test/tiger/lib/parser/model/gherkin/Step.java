@@ -52,6 +52,17 @@ public class Step {
                 return line.substring(0, colon).replace(" ", "").replace("\t", "");
             }
         }
-        return StringUtils.substringBefore(line, " ");
+        return extractSingleOrMultiWordKeyword(line);
+    }
+
+    private static String extractSingleOrMultiWordKeyword(String line) {
+        String firstWord = StringUtils.substringBefore(line, " ");
+        if (firstWord.equals("Gegeben")) {
+            final int space = line.indexOf(' ', firstWord.length()+1);
+            if (space != -1) {
+                return firstWord + line.substring(firstWord.length(), space);
+            }
+        }
+        return firstWord;
     }
 }

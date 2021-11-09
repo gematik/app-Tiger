@@ -10,7 +10,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.14.0</version>
+        <version>0.15.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -138,6 +138,12 @@
             <artifactId>rest-assured</artifactId>
             <version>4.3.3</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-lambda</artifactId>
+            <version>1.2.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

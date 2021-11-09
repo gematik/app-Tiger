@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import javax.xml.transform.Source;
 import lombok.Getter;
@@ -193,7 +194,7 @@ public class RbelMessageValidator {
             return uri.getPath().equals(path) || uri.getPath().matches(path);
         } catch (final URISyntaxException e) {
             return false;
-        } catch (RuntimeException rte) {
+        } catch (PatternSyntaxException rte) {
             log.error("Probable error while parsing regex!", rte);
             return false;
         }

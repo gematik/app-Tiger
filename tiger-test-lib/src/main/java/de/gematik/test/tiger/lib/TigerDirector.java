@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -133,9 +135,25 @@ public class TigerDirector {
         } else {
             log.info(Ansi.colorize("SKIPPING TIGER PROXY settings...", RbelAnsiColors.RED_BOLD));
         }
+        setupSerenityRest();
 
         initialized = true;
         log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
+    }
+
+    private static void setupSerenityRest() {
+        RestAssured.filters((requestSpec, responseSpec, ctx) -> {
+            try {
+                log.trace("Sending Request "
+                    + requestSpec.getMethod() + " " + requestSpec.getURI()
+                    + " via proxy " + requestSpec.getProxySpecification());
+                return ctx.next(requestSpec, responseSpec);
+            } catch (Exception e) {
+                throw new TigerSerenityRestException("Error while retrieving "
+                    + requestSpec.getMethod() + " " + requestSpec.getURI()
+                    + " via proxy " + requestSpec.getProxySpecification(), e);
+            }
+        });
     }
 
     public static synchronized boolean isInitialized() {
@@ -231,5 +249,11 @@ public class TigerDirector {
         System.clearProperty("http.proxyPort");
         System.clearProperty("https.proxyPort");
 
+    }
+
+    private static class TigerSerenityRestException extends RuntimeException {
+        public TigerSerenityRestException(String s, Exception e) {
+            super(s, e);
+        }
     }
 }

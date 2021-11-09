@@ -16,13 +16,24 @@
 
 package de.gematik.test.tiger.lib;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import de.gematik.test.tiger.common.config.CfgTemplate;
+import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.testenvmgr.InsecureRestorableTrustAllManager;
+
+import java.io.File;
 import java.net.URL;
 import java.net.URLConnection;
+
+import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
 import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 public class TestTigerDirector {
@@ -93,6 +104,21 @@ public class TestTigerDirector {
         URLConnection con = url.openConnection();
         con.setConnectTimeout(1000);
         assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
+    }
+
+
+    @Test
+    public void checkComplexKeyOverriding() throws Exception {
+        final Configuration config = withEnvironmentVariable(
+                "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
+            .execute(() ->
+                new TigerConfigurationHelper<Configuration>()
+                .yamlReadOverwriteToConfig("src/test/resources/testdata/idpError.yaml", "TIGER_TESTENV", Configuration.class));
+
+        assertThat(config.getServers().get("idp")
+            .getExternalJarOptions()
+            .getArguments().get(0))
+            .isEqualTo("foobar");
     }
 
 /*

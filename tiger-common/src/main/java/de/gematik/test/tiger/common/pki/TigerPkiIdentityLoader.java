@@ -122,8 +122,7 @@ public class TigerPkiIdentityLoader {
 
     private static Optional<StoreType> guessStoreType(List<String> informationSplits) {
         return informationSplits.stream()
-            .filter(part -> part.contains("."))
-            .map(part -> part.split("\\.", 2)[1])
+            .flatMap(part -> Stream.of(part.split("\\.")))
             .map(StoreType::findStoreTypeForString)
             .filter(Optional::isPresent)
             .map(Optional::get)

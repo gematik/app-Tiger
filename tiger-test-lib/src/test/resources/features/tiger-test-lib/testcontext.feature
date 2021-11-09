@@ -24,7 +24,8 @@ Feature: Provide a test context to testsuites to maintain data between steps
 
     Scenario: Banner text
       Given TGR show banner "TEST BANNER 1.0"
-      Given TGR show YELLOW banner "TEST BANNER 2.0"
+      And TGR show YELLOW banner "TEST BANNER 2.0"
+      And TGR zeige grünen Text "Grüner Text"
 
   Scenario: Check German umlauts
     Given TGR set context domain to "test003"

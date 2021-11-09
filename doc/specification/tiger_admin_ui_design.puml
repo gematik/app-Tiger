@@ -1,0 +1,95 @@
+@startuml
+set namespaceSeparator $$
+
+class form.server-formular
+
+
+class tab
+
+package fieldsets {
+    class fieldset
+    class fieldset.collapsable {
+          section
+          summarypattern
+    }
+    note right of fieldset.collapsable: section is a fully\nqualified path\nto yaml\nobject/list attribute\n\n\
+summarypattern display information\nwhen fieldset is collapsed
+
+    class fieldset.editableList
+    class fieldset.subset
+    class fieldset.subset-below
+    class fieldset.complex-list
+
+    class legend
+}
+
+package groups {
+    class button-group
+    class button
+
+    class list-group {
+        name
+        summarypattern
+    }
+    note left of "list-group":name fully qualified path\nto list yaml attribute\n\n\
+summarypattern used for\nitem label generation\non complex lists only
+
+}
+
+
+package inputfields {
+
+    interface simple-inputfield {
+        name
+    }
+    note right of "simple-inputfield":name is a fully\nqualified path\nto simple yaml\nattribute
+
+    class input {
+        type
+        val()
+    }
+    class input.checkbox {
+        type = 'checkbox'
+        checked
+        prop("checked")
+    }
+
+    class select {
+        val()
+    }
+
+    class list-group-item {
+        text()
+        data("listdata")
+    }
+}
+
+
+input -up-|> "simple-inputfield"
+input.checkbox -up-|> "simple-inputfield"
+select -up-|> "simple-inputfield"
+
+"fieldset.collapsable" -up-|> fieldset
+"fieldset.editableList" -up-|> fieldset.collapsable
+"fieldset.complex-list" -up-|> "fieldset.editableList"
+"fieldset.subset" -up-|> fieldset
+"fieldset.subset-below" -up-|> "fieldset.subset"
+
+"form.server-formular" *-- fieldset
+"form.server-formular" *-- tab
+tab *-- fieldset
+
+
+"fieldset.editableList" "1" *-down- "1" "list-group" : contains
+"fieldset.editableList" *---- "button-group"
+"button-group" *-- "button"
+"list-group" *-right---- "list-group-item"
+
+"list-group" -[hidden]left- "button-group"
+
+fieldset *-right---- "simple-inputfield"
+"fieldset.collapsable" *-- legend
+
+"fieldset.complex-list" *-left- "fieldset.subset"
+
+@enduml

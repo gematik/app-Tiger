@@ -12,18 +12,317 @@
 </head>
 
 <body class="d-lg-flex flex-grow-1 flex-fill justify-content-lg-start align-items-lg-start">
-    <div class="row flex-fill justify-content-start align-items-stretch">
-        <div class="col-5 col-lg-3 flex-fill ms-auto topcol">
-            <h1 class="text-break text-white bg-primary border-primary shadow" style="padding: 1rem;border-radius: 1rem;border-top-left-radius: 0;border-top-right-radius: 0;border-bottom-right-radius: 1rem;border-bottom-left-radius: 0;"><span>EPA_Tiger_Proxy<i class="fas fa-pencil-alt" style="margin-left:1rem;"></i></span></h1>
-            <div class="row align-items-stretch">
-                <div class="col-12 topcol">
-                    <form>
+    <div class="container">
+        <div class="row flex-fill server-formular d-none" id="formdata-server1">
+            <div class="col-5 col-lg-3 flex-fill ms-auto topcol">
+                <form>
+                    <h1 class="text-break text-white bg-primary border-primary shadow" style="padding: 1rem;border-radius: 1rem;border-top-left-radius: 0;border-top-right-radius: 0;border-bottom-right-radius: 1rem;border-bottom-left-radius: 0;"><span>EPA_Tiger_Proxy<i class="fas fa-pencil-alt" style="margin-left:1rem;"></i></span></h1>
+                    <div class="row align-items-stretch">
+                        <div class="col-12 topcol">
+                            <form>
+                                <fieldset section="node-settings" summarypattern="<b>${hostname}</b>&amp;nbsp;(${type}, ${template}, ${startupTimeoutSec} sec)">
+                                    <legend>Node settings</legend>
+                                    <div class="input-group"><span class="input-group-text">Server Type</span><input class="form-control" type="text" readonly="" name="type" value="Docker"></div>
+                                    <div class="input-group"><span class="input-group-text">Hostname</span><input class="form-control col-8" type="text" name="hostname"></div>
+                                    <div class="input-group"><span class="input-group-text">Template</span><select class="form-select" name="template">
+                                            <option value="null" selected="">----</option>
+                                            <option value="template1">template1</option>
+                                            <option value="template2">template2</option>
+                                            <option value="template3">template3</option>
+                                        </select></div>
+                                    <div class="input-group"><span class="flex-fill input-group-text">Startup Timeout (sec)</span><input class="form-control" type="number" name="startupTimeoutSec"></div>
+                                </fieldset>
+                                <fieldset class="editableList" section="source" summarypattern="${source}:${version}">
+                                    <legend>Source</legend>
+                                    <div class="row">
+                                        <div class="col align-items-stretch">
+                                            <ul class="list-group" name="source"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        </div>
+                                    </div>
+                                    <div class="input-group" style="margin-top: 1rem;"><span class="input-group-text col-3">Version</span><input class="form-control" type="text" name="version"></div>
+                                </fieldset>
+                            </form>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-7 col-lg-6 flex-fill align-self-stretch order-last mx-auto topcol tabbedpanel">
+                <div>
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation" tab="dockerOptions"><a class="nav-link" role="tab" data-bs-toggle="tab">Docker</a></li>
+                        <li class="nav-item" role="presentation" tab="externalJarOptions"><a class="nav-link" role="tab" data-bs-toggle="tab">External</a></li>
+                        <li class="nav-item" role="presentation" tab="tigerProxy"><a class="nav-link active" role="tab" data-bs-toggle="tab">TigerProxy</a></li>
+                        <li class="nav-item" role="presentation" tab="pkiKeys"><a class="nav-link link-secondary" role="tab" data-bs-toggle="tab">PKI</a></li>
+                        <li class="nav-item" role="presentation" tab="environment"><a class="nav-link link-secondary" role="tab" data-bs-toggle="tab">Environment</a></li>
+                        <li class="nav-item" role="presentation" tab="urlMappings"><a class="nav-link link-secondary" role="tab" data-bs-toggle="tab">URL Mappings</a></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade dockerOptions" role="tabpanel">
+                            <fieldset section=".dockerOptions.dockerSettings" summarypattern="${.dockerOptions.proxied}, ${.dockerOptions.oneShot}  -  ${.dockerOptions.entryPoint}">
+                                <legend>Docker settings</legend>
+                                <div class="input-group" style="margin-bottom: 2rem;"><span class="input-group-text">Entry Point cmd</span><input class="form-control" type="text" name=".dockerOptions.entryPoint"></div>
+                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".dockerOptions.proxied"><label class="form-check-label">Proxied container (add Tigerproxy certs to OS)</label></div>
+                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".dockerOptions.oneShot"><label class="form-check-label">One shot health check strategy</label></div>
+                            </fieldset>
+                            <fieldset class="editableList start-collapsed" section=".dockerOptions.serviceHealthchecks" summarypattern="${.dockerOptions.serviceHealthchecks}">
+                                <legend>Service Healthchecks</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name=".dockerOptions.serviceHealthchecks"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="tab-pane fade externalJarOptions" role="tabpanel" id="tab-2" section=".externalJarOptions">
+                            <fieldset class="labels-col-2" summarypattern="${.externalJarOptions.workingDir}  -  ${.externalJarOptions.healthcheck}" section=".externalJarOptions.externalSettings">
+                                <legend>External Settings</legend>
+                                <div class="input-group"><span class="input-group-text">Working directory</span><input class="form-control" type="text" placeholder="resorts to temp folder if empty" name=".externalJarOptions.workingDir"><button class="btn btn-info" type="button">Browse...</button></div>
+                                <div class="input-group"><span class="input-group-text">Health check URL</span><input class="form-control" type="url" name=".externalJarOptions.healthcheck"></div>
+                            </fieldset>
+                            <fieldset class="editableList start-collapsed" section=".externalJarOptions.options" summarypattern="${.externalJarOptions.options}">
+                                <legend>Options</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name=".externalJarOptions.options"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                            <fieldset class="editableList start-collapsed" section=".externalJarOptions.arguments" summarypattern="${.externalJarOptions.arguments}">
+                                <legend>Arguments</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name=".externalJarOptions.arguments"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="tab-pane fade tigerProxy" role="tabpanel" id="tab-3">
+                            <div class="proxyCfg">
+                                <fieldset class="labels-col-4" section=".tigerProxyCfg" summarypattern="Proxied ${.tigerProxyCfg.proxiedServer} @ ${.tigerProxyCfg.proxyProtocol}://localhost:${.tigerProxyCfg.proxyPort}<br/>WebUI http://localhost:${.tigerProxyCfg.serverPort}/webui<br/>Loglevel ${.tigerProxyCfg.proxyCfg.proxyLogLevel}<br/>Rbel Endpoint ${.tigerProxyCfg.proxyCfg.activateRbelEndpoint}, ASN1 parsing ${.tigerProxyCfg.proxyCfg.activateAsn1Parsing},<br/>Log traffic even without routes ${.tigerProxyCfg.proxyCfg.activateForwardAllLogging}, Parse Rbel ${.tigerProxyCfg.proxyCfg.disableRbelParsing}">
+                                    <legend>Tiger Proxy settings</legend>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="input-group"><span class="input-group-text">Proxy Port</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyPort"></div>
+                                            <div class="input-group"><span class="input-group-text">Proxy Protocol</span><select class="form-select" name=".tigerProxyCfg.proxyProtocol">
+                                                    <option value="http">HTTP</option>
+                                                    <option value="https">HTTPS</option>
+                                                </select></div>
+                                            <div class="input-group"><span class="input-group-text">Log level</span><select class="form-select" name=".tigerProxyCfg.proxyCfg.proxyLogLevel">
+                                                    <option value="WARN" selected="">WARN</option>
+                                                    <option value="INFO">INFO</option>
+                                                    <option value="TRACE">TRACE</option>
+                                                </select></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="input-group"><span class="input-group-text">Server Port</span><input class="form-control" type="number" name=".tigerProxyCfg.serverPort"></div>
+                                            <div class="input-group"><span class="input-group-text">Proxied Server</span><select class="form-select" name=".tigerProxyCfg.proxiedServer">
+                                                    <option value="EPA_Docker" selected="">EPA Docker</option>
+                                                    <option value="IDP_RISE_in_RU">IDP RISE in RU</option>
+                                                    <option value="ERp_IBM_in_TU">ERp IBM in TU</option>
+                                                </select></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.activateRbelEndpoint"><label class="form-check-label">Rbel Endpoint User interface - http://rbel</label></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.activateAsn1Parsing"><label class="form-check-label">Parse ASN1 structures</label></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.activateForwardAllLogging"><label class="form-check-label">Log traffic even without routes</label></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.disableRbelParsing"><label class="form-check-label">Parse Rbel</label></div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <form>
+                                    <fieldset class="labels-col-4 forwardToProxy start-collapsed" section=".tigerProxyCfg.proxyCfg.forwardToProxy" summarypattern="${.tigerProxyCfg.proxyCfg.forwardToProxy.type}://${.tigerProxyCfg.proxyCfg.forwardToProxy.hostname}:${.tigerProxyCfg.proxyCfg.forwardToProxy.port}">
+                                        <legend>Forward Proxy</legend>
+                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="enableForwardProxy"><label class="form-check-label">Activate forward proxy</label></div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="input-group"><span class="input-group-text">Hostname</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.forwardToProxy.hostname" placeholder="Your company proxy"></div>
+                                                <div class="input-group"><span class="input-group-text">Proxy Protocol</span><select class="form-select" name=".tigerProxyCfg.proxyCfg.forwardToProxy.type">
+                                                        <option value="http">HTTP</option>
+                                                        <option value="https">HTTPS</option>
+                                                    </select></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="input-group"><span class="input-group-text">Port</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.forwardToProxy.port" placeholder="Your company proxy port"></div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </form>
+                                <fieldset class="complex-list" section=".tigerProxyCfg.proxyCfg.proxyRoutes" summarypattern="${.tigerProxyCfg.proxyCfg.proxyRoutes}">
+                                    <legend>Routes</legend>
+                                    <div class="row">
+                                        <div class="col align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes" summarypattern="${id}: [${basicAuth.username} ${basicAuth.password}] ${from} -> ${to}"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <fieldset class="subset-below">
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">Id</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.id"></div>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">From</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.from"></div>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">To</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.to"></div>
+                                                    </div>
+                                                    <div class="col-6"><label class="form-label">Authentication</label>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">Username</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.username"></div>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">Password</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.password"></div>
+                                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"><label class="form-check-label">Internal route</label></div>
+                                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging"><label class="form-check-label">Rbel Logging</label></div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="labels-col-3 editableList start-collapsed" section=".tigerProxyCfg.proxyCfg.trafficEndpoints" summarypattern="Endpoints: <br/>${.tigerProxyCfg.proxyCfg.trafficEndpoints}<br/>Timeout ${.tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds}<br/>Buffers in Mb ${.tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.rbelBufferSizeInMb}<br/>Skip subscription at startup ${.tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription}">
+                                    <legend>Traffic Endpoints</legend>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription"><label class="form-check-label">Skip traffic endpoint subscription at startup</label></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="input-group"><span class="flex-fill input-group-text">Connection Timeout (sec)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds"></div>
+                                            <div class="input-group"><span class="flex-fill input-group-text">Stomp Client Buffer (Mb)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb"></div>
+                                            <div class="input-group"><span class="flex-fill input-group-text">Message Buffer (Mb)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb"></div>
+                                            <div class="input-group"><span class="flex-fill input-group-text">Rbel Buffer (Mb)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.rbelBufferSizeInMb"></div>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-top: 1rem;">
+                                        <div class="col align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.trafficEndpoints"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="labels-col-3 start-collapsed complex-list" section=".tigerProxyCfg.proxyCfg.modifications" summarypattern="${.tigerProxyCfg.proxyCfg.modifications}">
+                                    <legend>Modifications</legend>
+                                    <div class="row">
+                                        <div class="col-3 align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications" summarypattern="${name} ${condition}"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
+                                        </div>
+                                        <div class="col">
+                                            <fieldset class="subset">
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Name</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.name"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Condition</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.condition"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Target Element</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.targetElement"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Replace With</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.replaceWith"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Regex Filter</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.regexFilter"></div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="editableList tls start-collapsed" section=".tigerProxyCfg.proxyCfg.tls" summarypattern="${.tigerProxyCfg.proxyCfg.tls.domainName}<br/>RootCa ${.tigerProxyCfg.proxyCfg.tls.serverRootCa}<br/>Mutual TLS Identity ${.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity}<br/>Server Identity ${.tigerProxyCfg.proxyCfg.tls.serverIdentity}<br/>Additional Names<br/> ${.tigerProxyCfg.proxyCfg.tls.alternativeNames}">
+                                    <legend>TLS Configuration</legend>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="input-group"><span class="input-group-text">Server Root Ca</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa"></div>
+                                            <div class="input-group"><span class="input-group-text">Forward Mutual TLS Identity</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity"></div>
+                                            <div class="input-group"><span class="input-group-text">Server Identity</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity"></div>
+                                            <div class="input-group"><span class="input-group-text">Domain Name</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.domainName"></div>
+                                        </div>
+                                    </div><label class="form-label" style="margin-top: 1rem;">Alternative Names</label>
+                                    <div class="row">
+                                        <div class="col align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.alternativeNames"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade pkiKeys" role="tabpanel" id="tab-4">
+                            <fieldset class="complex-list" section="pkiKeys" summarypattern="${pkiKeys}">
+                                <legend>PKI Keys</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="pkiKeys"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
+                                    </div>
+                                    <div class="col">
+                                        <fieldset class="subset">
+                                            <div class="input-group input-group-sm"><span class="input-group-text">Id</span><input class="form-control" type="text"></div>
+                                            <div class="input-group input-group-sm"><span class="input-group-text">Pem</span><input class="form-control" type="text"></div>
+                                            <div class="input-group input-group-sm"><span class="input-group-text">Type</span><input class="form-control" type="text"></div>
+                                        </fieldset>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="tab-pane fade environment" role="tabpanel" id="tab-5">
+                            <fieldset class="editableList" section="environment" summarypattern="${environment}">
+                                <legend>Environment variables for server</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="environment"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                            <fieldset class="always-shown editableList" section="exports" summarypattern="${exports}">
+                                <legend>Exported system properties</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="exports"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="tab-pane fade urlMappings" role="tabpanel" id="tab-6">
+                            <fieldset class="editableList" summarypattern="${urlMappings}" section="urlMappings">
+                                <legend>URL Mappings for local Tiger Proxy</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="urlMappings"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row flex-fill server-formular" id="template">
+            <div class="col-5 col-lg-3 flex-fill ms-auto topcol">
+                <h1 class="text-break text-white bg-primary border-primary shadow" style="padding: 1rem;border-radius: 1rem;border-top-left-radius: 0;border-top-right-radius: 0;border-bottom-right-radius: 1rem;border-bottom-left-radius: 0;"><span class="serverKey"></span><i class="fas fa-pencil-alt" style="margin-left:1rem;"></i></h1>
+                <div class="row align-items-stretch">
+                    <div class="col-12 topcol">
                         <fieldset section="node-settings" summarypattern="<b>${hostname}</b>&amp;nbsp;(${type}, ${template}, ${startupTimeoutSec} sec)">
                             <legend>Node settings</legend>
                             <div class="input-group"><span class="input-group-text">Server Type</span><input class="form-control" type="text" readonly="" name="type" value="Docker"></div>
                             <div class="input-group"><span class="input-group-text">Hostname</span><input class="form-control col-8" type="text" name="hostname"></div>
                             <div class="input-group"><span class="input-group-text">Template</span><select class="form-select" name="template">
-                                    <option value="template1" selected="">template1</option>
+                                    <option value="null" selected="">----</option>
+                                    <option value="template1">template1</option>
                                     <option value="template2">template2</option>
                                     <option value="template3">template3</option>
                                 </select></div>
@@ -33,324 +332,275 @@
                             <legend>Source</legend>
                             <div class="row">
                                 <div class="col align-items-stretch">
-                                    <ul class="list-group" name="source">
-                                        <li class="list-group-item"><span>NOT SET</span></li>
-                                    </ul>
+                                    <ul class="list-group" name="source"></ul>
                                 </div>
                                 <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
                                 </div>
                             </div>
                             <div class="input-group" style="margin-top: 1rem;"><span class="input-group-text col-3">Version</span><input class="form-control" type="text" name="version"></div>
                         </fieldset>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-7 col-lg-6 flex-fill align-self-stretch order-last mx-auto topcol">
-            <div>
-                <ul class="nav nav-tabs" role="tablist">
-                    <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-1">Docker</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-2">External</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" href="#tab-3">TigerProxy</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link link-secondary" role="tab" data-bs-toggle="tab" href="#tab-4">PKI</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link link-secondary" role="tab" data-bs-toggle="tab" href="#tab-5">Environment</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link link-secondary" role="tab" data-bs-toggle="tab" href="#tab-6">URL Mappings</a></li>
-                </ul>
-                <div class="tab-content">
-                    <div class="tab-pane fade" role="tabpanel" id="tab-1">
-                        <form style="margin-top: 2rem;">
-                            <fieldset>
+            <div class="col-7 col-lg-6 flex-fill align-self-stretch order-last mx-auto topcol tabbedpanel">
+                <div>
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation" tab="dockerOptions"><a class="nav-link" role="tab" data-bs-toggle="tab">Docker</a></li>
+                        <li class="nav-item" role="presentation" tab="externalJarOptions"><a class="nav-link" role="tab" data-bs-toggle="tab">External</a></li>
+                        <li class="nav-item" role="presentation" tab="tigerProxy"><a class="nav-link active" role="tab" data-bs-toggle="tab">TigerProxy</a></li>
+                        <li class="nav-item" role="presentation" tab="pkiKeys"><a class="nav-link" role="tab" data-bs-toggle="tab">PKI</a></li>
+                        <li class="nav-item" role="presentation" tab="environment"><a class="nav-link" role="tab" data-bs-toggle="tab">Environment</a></li>
+                        <li class="nav-item" role="presentation" tab="urlMappings"><a class="nav-link" role="tab" data-bs-toggle="tab">URL Mappings</a></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade dockerOptions" role="tabpanel">
+                            <fieldset section=".dockerOptions.dockerSettings" summarypattern="${.dockerOptions.entryPoint}<br/>Proxied ${.dockerOptions.proxied}<br/>Oneshot ${.dockerOptions.oneShot}">
                                 <legend>Docker settings</legend>
-                                <div class="input-group" style="margin-bottom: 2rem;"><span class="input-group-text">Entry Point cmd</span><input class="form-control" type="text"></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-1"><label class="form-check-label" for="formCheck-1">Proxied container (add Tigerproxy certs to OS)</label></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-2"><label class="form-check-label" for="formCheck-1">One shot health check strategy</label></div>
+                                <div class="input-group" style="margin-bottom: 2rem;"><span class="input-group-text">Entry Point cmd</span><input class="form-control" type="text" name=".dockerOptions.entryPoint"></div>
+                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".dockerOptions.proxied"><label class="form-check-label">Proxied container (add Tigerproxy certs to OS)</label></div>
+                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".dockerOptions.oneShot"><label class="form-check-label">One shot health check strategy</label></div>
                             </fieldset>
-                            <fieldset class="editableList" section="serviceHealthchecks">
+                            <fieldset class="editableList start-collapsed" section=".dockerOptions.serviceHealthchecks" summarypattern="${.dockerOptions.serviceHealthchecks}">
                                 <legend>Service Healthchecks</legend>
                                 <div class="row">
                                     <div class="col align-items-stretch">
-                                        <ul class="list-group" name="serviceHealthchecks">
-                                            <li class="list-group-item"><span>List Group Item 1</span></li>
-                                            <li class="list-group-item"><span>List Group Item 2</span></li>
-                                            <li class="list-group-item"><span>List Group Item 3</span></li>
-                                        </ul>
+                                        <ul class="list-group" name=".dockerOptions.serviceHealthchecks"></ul>
                                     </div>
                                     <div class="col-auto">
-                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
                                     </div>
                                 </div>
                             </fieldset>
-                        </form>
-                    </div>
-                    <div class="tab-pane fade" role="tabpanel" id="tab-2">
-                        <form style="margin-top: 2rem;">
-                            <fieldset class="labels-col-2">
+                        </div>
+                        <div class="tab-pane fade externalJarOptions" role="tabpanel" id="tab-11" section=".externalJarOptions">
+                            <fieldset class="labels-col-2" summarypattern="${.externalJarOptions.workingDir}  -  ${.externalJarOptions.healthcheck}" section=".externalJarOptions.externalSettings">
                                 <legend>External Settings</legend>
-                                <div class="input-group"><span class="input-group-text">Working directory</span><input class="form-control" type="text" placeholder="resorts to temp folder if empty" name="workingDir"><button class="btn btn-info" type="button">Browse...</button></div>
-                                <div class="input-group"><span class="input-group-text">Health check URL</span><input class="form-control" type="url"></div>
+                                <div class="input-group"><span class="input-group-text">Working directory</span><input class="form-control" type="text" placeholder="resorts to temp folder if empty" name=".externalJarOptions.workingDir"><button class="btn btn-info" type="button">Browse...</button></div>
+                                <div class="input-group"><span class="input-group-text">Health check URL</span><input class="form-control" type="url" name=".externalJarOptions.healthcheck"></div>
                             </fieldset>
-                            <fieldset class="editableList" section="options">
+                            <fieldset class="editableList start-collapsed" section=".externalJarOptions.options" summarypattern="${.externalJarOptions.options}">
                                 <legend>Options</legend>
                                 <div class="row">
                                     <div class="col align-items-stretch">
-                                        <ul class="list-group" name="options">
-                                            <li class="list-group-item"><span>List Group Item 1</span></li>
-                                            <li class="list-group-item"><span>List Group Item 2</span></li>
-                                            <li class="list-group-item"><span>List Group Item 3</span></li>
-                                        </ul>
+                                        <ul class="list-group" name=".externalJarOptions.options"></ul>
                                     </div>
                                     <div class="col-auto">
-                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
                                     </div>
                                 </div>
                             </fieldset>
-                            <fieldset class="editableList" section="arguments">
+                            <fieldset class="editableList start-collapsed" section=".externalJarOptions.arguments" summarypattern="${.externalJarOptions.arguments}">
                                 <legend>Arguments</legend>
                                 <div class="row">
                                     <div class="col align-items-stretch">
-                                        <ul class="list-group" name="arguments">
-                                            <li class="list-group-item"><span>List Group Item 1</span></li>
-                                            <li class="list-group-item"><span>List Group Item 2</span></li>
-                                            <li class="list-group-item"><span>List Group Item 3</span></li>
-                                        </ul>
+                                        <ul class="list-group" name=".externalJarOptions.arguments"></ul>
                                     </div>
                                     <div class="col-auto">
-                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
                                     </div>
                                 </div>
                             </fieldset>
-                        </form>
-                    </div>
-                    <div class="tab-pane fade show active" role="tabpanel" id="tab-3">
-                        <fieldset class="labels-col-4" section="tigerProxyCfg">
-                            <legend>Tiger Proxy settings</legend>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="input-group"><span class="input-group-text">Proxy Port</span><input class="form-control" type="number" name="port"></div>
-                                    <div class="input-group"><span class="input-group-text">Proxy Protocol</span><select class="form-select" name="proxyProtocol">
-                                            <option value="http" selected="">HTTP</option>
-                                            <option value="https">HTTPS</option>
-                                        </select></div>
-                                    <div class="input-group"><span class="input-group-text">Log level</span><select class="form-select" name="logLevel">
-                                            <option value="WARN" selected="">WARN</option>
-                                            <option value="INFO">INFO</option>
-                                            <option value="TRACE">TRACE</option>
-                                        </select></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="input-group"><span class="input-group-text">Server Port</span><input class="form-control" type="number" name="serverPort"></div>
-                                    <div class="input-group"><span class="input-group-text">Proxied Server</span><select class="form-select" name="proxiedServer">
-                                            <option value="1" selected="">EPA Docker</option>
-                                            <option value="13">IDP RISE in RU</option>
-                                            <option value="14">ERp IBM in TU</option>
-                                        </select></div>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-3"><label class="form-check-label" for="formCheck-3">Rbel Endpoint User interface - http://rbel</label></div>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-4"><label class="form-check-label" for="formCheck-4">Parse ASN1 structures</label></div>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-5"><label class="form-check-label" for="formCheck-5">Log traffic even without routes</label></div>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-7"><label class="form-check-label" for="formCheck-7">Parse Rbel</label></div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset class="labels-col-4" section="forwardToProxy" summarypattern="${type}://${hostname}:${port}">
-                            <legend>Forward Proxy</legend>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="chkForwardProxy" name="enableForwardProxy"><label class="form-check-label">Activate forward proxy</label></div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="input-group"><span class="input-group-text">Hostname</span><input class="form-control" type="text" name="hostname" placeholder="Your company proxy"></div>
-                                    <div class="input-group"><span class="input-group-text">Proxy Protocol</span><select class="form-select" name="type">
-                                            <option value="http" selected="">HTTP</option>
-                                            <option value="https">HTTPS</option>
-                                        </select></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="input-group"><span class="input-group-text">Port</span><input class="form-control" type="number" name="port" placeholder="Your company proxy port"></div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <legend>Routes</legend>
-                            <div class="row">
-                                <div class="col-4 align-items-stretch">
-                                    <ul class="list-group">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
-                                </div>
-                                <div class="col">
-                                    <fieldset class="subset">
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Id</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">From</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">To</span><input class="form-control" type="text"></div><label class="form-label" style="margin-top: 1rem;">Authentication</label>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Username</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Password</span><input class="form-control" type="text"></div>
-                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-6"><label class="form-check-label" for="formCheck-3">Internal route</label></div>
-                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-8"><label class="form-check-label" for="formCheck-3">Rbel Logging</label></div>
+                        </div>
+                        <div class="tab-pane fade tigerProxy" role="tabpanel" id="tab-12">
+                            <div class="proxyCfg">
+                                <fieldset class="labels-col-4" section=".tigerProxyCfg" summarypattern="Proxied ${.tigerProxyCfg.proxiedServer} @ ${.tigerProxyCfg.proxyProtocol}://localhost:${.tigerProxyCfg.proxyPort}<br/>WebUI http://localhost:${.tigerProxyCfg.serverPort}/webui<br/>Loglevel ${.tigerProxyCfg.proxyCfg.proxyLogLevel}<br/>Rbel Endpoint ${.tigerProxyCfg.proxyCfg.activateRbelEndpoint}, ASN1 parsing ${.tigerProxyCfg.proxyCfg.activateAsn1Parsing},<br/>Log traffic even without routes ${.tigerProxyCfg.proxyCfg.activateForwardAllLogging}, Parse Rbel ${.tigerProxyCfg.proxyCfg.disableRbelParsing}">
+                                    <legend>Tiger Proxy settings</legend>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="input-group"><span class="input-group-text">Proxy Port</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyPort"></div>
+                                            <div class="input-group"><span class="input-group-text">Proxy Protocol</span><select class="form-select" name=".tigerProxyCfg.proxyProtocol">
+                                                    <option value="http">HTTP</option>
+                                                    <option value="https">HTTPS</option>
+                                                </select></div>
+                                            <div class="input-group"><span class="input-group-text">Log level</span><select class="form-select" name=".tigerProxyCfg.proxyCfg.proxyLogLevel">
+                                                    <option value="WARN" selected="">WARN</option>
+                                                    <option value="INFO">INFO</option>
+                                                    <option value="TRACE">TRACE</option>
+                                                </select></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="input-group"><span class="input-group-text">Server Port</span><input class="form-control" type="number" name=".tigerProxyCfg.serverPort"></div>
+                                            <div class="input-group"><span class="input-group-text">Proxied Server</span><select class="form-select" name=".tigerProxyCfg.proxiedServer">
+                                                    <option value="EPA_Docker" selected="">EPA Docker</option>
+                                                    <option value="IDP_RISE_in_RU">IDP RISE in RU</option>
+                                                    <option value="ERp_IBM_in_TU">ERp IBM in TU</option>
+                                                </select></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.activateRbelEndpoint"><label class="form-check-label">Rbel Endpoint User interface - http://rbel</label></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.activateAsn1Parsing"><label class="form-check-label">Parse ASN1 structures</label></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.activateForwardAllLogging"><label class="form-check-label">Log traffic even without routes</label></div>
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.disableRbelParsing"><label class="form-check-label">Parse Rbel</label></div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <form>
+                                    <fieldset class="labels-col-4 forwardToProxy start-collapsed" section=".tigerProxyCfg.proxyCfg.forwardToProxy" summarypattern="${.tigerProxyCfg.proxyCfg.forwardToProxy.type}://${.tigerProxyCfg.proxyCfg.forwardToProxy.hostname}:${.tigerProxyCfg.proxyCfg.forwardToProxy.port}">
+                                        <legend>Forward Proxy</legend>
+                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="enableForwardProxy"><label class="form-check-label">Activate forward proxy</label></div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="input-group"><span class="input-group-text">Hostname</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.forwardToProxy.hostname" placeholder="Your company proxy"></div>
+                                                <div class="input-group"><span class="input-group-text">Proxy Protocol</span><select class="form-select" name=".tigerProxyCfg.proxyCfg.forwardToProxy.type">
+                                                        <option value="http">HTTP</option>
+                                                        <option value="https">HTTPS</option>
+                                                    </select></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="input-group"><span class="input-group-text">Port</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.forwardToProxy.port" placeholder="Your company proxy port"></div>
+                                            </div>
+                                        </div>
                                     </fieldset>
-                                </div>
+                                </form>
+                                <fieldset class="complex-list" section=".tigerProxyCfg.proxyCfg.proxyRoutes" summarypattern="${.tigerProxyCfg.proxyCfg.proxyRoutes}">
+                                    <legend>Routes</legend>
+                                    <div class="row">
+                                        <div class="col align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes" summarypattern="${id}: [${basicAuth.username} ${basicAuth.password}] ${from} -> ${to}"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <fieldset class="subset-below">
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">Id</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.id"></div>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">From</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.from"></div>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">To</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.to"></div>
+                                                    </div>
+                                                    <div class="col-6"><label class="form-label">Authentication</label>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">Username</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.username"></div>
+                                                        <div class="input-group input-group-sm"><span class="input-group-text">Password</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.password"></div>
+                                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"><label class="form-check-label">Internal route</label></div>
+                                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging"><label class="form-check-label">Rbel Logging</label></div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="labels-col-3 editableList start-collapsed" section=".tigerProxyCfg.proxyCfg.trafficEndpoints" summarypattern="Endpoints: <br/>${.tigerProxyCfg.proxyCfg.trafficEndpoints}<br/>Timeout ${.tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds}<br/>Buffers in Mb ${.tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.rbelBufferSizeInMb}<br/>Skip subscription at startup ${.tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription}">
+                                    <legend>Traffic Endpoints</legend>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name=".tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription"><label class="form-check-label">Skip traffic endpoint subscription at startup</label></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="input-group"><span class="flex-fill input-group-text">Connection Timeout (sec)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds"></div>
+                                            <div class="input-group"><span class="flex-fill input-group-text">Stomp Client Buffer (Mb)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb"></div>
+                                            <div class="input-group"><span class="flex-fill input-group-text">Message Buffer (Mb)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb"></div>
+                                            <div class="input-group"><span class="flex-fill input-group-text">Rbel Buffer (Mb)</span><input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.rbelBufferSizeInMb"></div>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-top: 1rem;">
+                                        <div class="col align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.trafficEndpoints"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="labels-col-3 start-collapsed complex-list" section=".tigerProxyCfg.proxyCfg.modifications" summarypattern="${.tigerProxyCfg.proxyCfg.modifications}">
+                                    <legend>Modifications</legend>
+                                    <div class="row">
+                                        <div class="col-3 align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications" summarypattern="${name} ${condition}"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
+                                        </div>
+                                        <div class="col">
+                                            <fieldset class="subset">
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Name</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.name"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Condition</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.condition"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Target Element</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.targetElement"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Replace With</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.replaceWith"></div>
+                                                <div class="input-group input-group-sm"><span class="input-group-text">Regex Filter</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.regexFilter"></div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="editableList tls start-collapsed" section=".tigerProxyCfg.proxyCfg.tls" summarypattern="${.tigerProxyCfg.proxyCfg.tls.domainName}<br/>RootCa ${.tigerProxyCfg.proxyCfg.tls.serverRootCa}<br/>Mutual TLS Identity ${.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity}<br/>Server Identity ${.tigerProxyCfg.proxyCfg.tls.serverIdentity}<br/>Additional Names<br/> ${.tigerProxyCfg.proxyCfg.tls.alternativeNames}">
+                                    <legend>TLS Configuration</legend>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="input-group"><span class="input-group-text">Server Root Ca</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa"></div>
+                                            <div class="input-group"><span class="input-group-text">Forward Mutual TLS Identity</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity"></div>
+                                            <div class="input-group"><span class="input-group-text">Server Identity</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity"></div>
+                                            <div class="input-group"><span class="input-group-text">Domain Name</span><input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.domainName"></div>
+                                        </div>
+                                    </div><label class="form-label" style="margin-top: 1rem;">Alternative Names</label>
+                                    <div class="row">
+                                        <div class="col align-items-stretch">
+                                            <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.alternativeNames"></ul>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                        </div>
+                                    </div>
+                                </fieldset>
                             </div>
-                        </fieldset>
-                        <fieldset class="labels-col-3 editableList">
-                            <legend>Traffic Endpoints</legend>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-11"><label class="form-check-label" for="formCheck-3">Skip traffic endpoint subscription on startup</label></div>
+                        </div>
+                        <div class="tab-pane fade pkiKeys" role="tabpanel" id="tab-13">
+                            <fieldset class="complex-list" section="pkiKeys" summarypattern="${pkiKeys}">
+                                <legend>PKI Keys</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="pkiKeys"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
+                                    </div>
+                                    <div class="col">
+                                        <fieldset class="subset">
+                                            <div class="input-group input-group-sm"><span class="input-group-text">Id</span><input class="form-control" type="text"></div>
+                                            <div class="input-group input-group-sm"><span class="input-group-text">Pem</span><input class="form-control" type="text"></div>
+                                            <div class="input-group input-group-sm"><span class="input-group-text">Type</span><input class="form-control" type="text"></div>
+                                        </fieldset>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="input-group"><span class="flex-fill input-group-text">Connection Timeout (sec)</span><input class="form-control" type="number"></div>
-                                    <div class="input-group"><span class="flex-fill input-group-text">Stomp Client Buffer (Mb)</span><input class="form-control" type="number"></div>
-                                    <div class="input-group"><span class="flex-fill input-group-text">Message Buffer (Mb)</span><input class="form-control" type="number"></div>
-                                    <div class="input-group"><span class="flex-fill input-group-text">Rbel Buffer (Mb)</span><input class="form-control" type="number"></div>
+                            </fieldset>
+                        </div>
+                        <div class="tab-pane fade environment" role="tabpanel" id="tab-14">
+                            <fieldset class="editableList" section="environment" summarypattern="${environment}">
+                                <legend>Environment variables for server</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="environment"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="row" style="margin-top: 1rem;">
-                                <div class="col align-items-stretch">
-                                    <ul class="list-group">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
+                            </fieldset>
+                            <fieldset class="always-shown editableList" section="exports" summarypattern="${exports}">
+                                <legend>Exported system properties</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="exports"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
                                 </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                            </fieldset>
+                        </div>
+                        <div class="tab-pane fade urlMappings" role="tabpanel" id="tab-15">
+                            <fieldset class="editableList" summarypattern="${urlMappings}" section="urlMappings">
+                                <legend>URL Mappings for local Tiger Proxy</legend>
+                                <div class="row">
+                                    <div class="col align-items-stretch">
+                                        <ul class="list-group" name="urlMappings"></ul>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success btn-list-add" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger btn-list-delete" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
+                                    </div>
                                 </div>
-                            </div>
-                        </fieldset>
-                        <fieldset class="labels-col-3">
-                            <legend>Modifications</legend>
-                            <div class="row">
-                                <div class="col-3 align-items-stretch">
-                                    <ul class="list-group">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch" type="button"><i class="fas fa-check"></i>&nbsp;Apply</button></div>
-                                </div>
-                                <div class="col">
-                                    <fieldset class="subset">
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Name</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Condition</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Target Element</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Replace With</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Regex Filter</span><input class="form-control" type="text"></div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset class="editableList">
-                            <legend>TLS Configuration</legend>
-                            <div class="row">
-                                <div class="col">
-                                    <div class="input-group"><span class="input-group-text">Server Root Ca</span><input class="form-control" type="text"></div>
-                                    <div class="input-group"><span class="input-group-text">Forward Mutual TLS Identity</span><input class="form-control" type="text"></div>
-                                    <div class="input-group"><span class="input-group-text">Server Identity</span><input class="form-control" type="text"></div>
-                                    <div class="input-group"><span class="input-group-text">Domain Name</span><input class="form-control" type="text"></div>
-                                </div>
-                            </div><label class="form-label" style="margin-top: 1rem;">Alternative Names</label>
-                            <div class="row">
-                                <div class="col align-items-stretch">
-                                    <ul class="list-group">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button"><i class="fas fa-plus-circle"></i>&nbsp;Add</button><button class="btn btn-danger" type="button"><i class="far fa-trash-alt"></i>&nbsp;Delete</button></div>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
-                    <div class="tab-pane fade" role="tabpanel" id="tab-4">
-                        <fieldset>
-                            <legend>PKI Keys</legend>
-                            <div class="row">
-                                <div class="col align-items-stretch">
-                                    <ul class="list-group">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button">Add</button><button class="btn btn-danger" type="button">Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch" type="button">Apply</button></div>
-                                </div>
-                                <div class="col">
-                                    <fieldset class="subset">
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Id</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Pem</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Type</span><input class="form-control" type="text"></div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
-                    <div class="tab-pane fade" role="tabpanel" id="tab-5">
-                        <fieldset class="editableList" section="environment">
-                            <legend>Environment variables for server</legend>
-                            <div class="row">
-                                <div class="col align-items-stretch">
-                                    <ul class="list-group" name="environment">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button">Add</button><button class="btn btn-danger" type="button">Delete</button></div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset class="always-shown editableList" section="exports">
-                            <legend>Exported system properties</legend>
-                            <div class="row">
-                                <div class="col align-items-stretch">
-                                    <ul class="list-group" name="exports">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button">Add</button><button class="btn btn-danger" type="button">Delete</button></div>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
-                    <div class="tab-pane fade" role="tabpanel" id="tab-6">
-                        <fieldset class="collapsible">
-                            <legend>URL Mappings for local Tiger Proxy</legend>
-                            <div class="row">
-                                <div class="col align-items-stretch">
-                                    <ul class="list-group">
-                                        <li class="list-group-item"><span>List Group Item 1</span></li>
-                                        <li class="list-group-item"><span>List Group Item 2</span></li>
-                                        <li class="list-group-item"><span>List Group Item 3</span></li>
-                                    </ul>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start" role="group"><button class="btn btn-success" type="button">Add</button><button class="btn btn-danger" type="button">Delete</button><button class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch" type="button">Apply</button></div>
-                                </div>
-                                <div class="col">
-                                    <fieldset class="subset">
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Id</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">From</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">To</span><input class="form-control" type="text"></div><label class="form-label" style="margin-top: 1rem;">Authentication</label>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Username</span><input class="form-control" type="text"></div>
-                                        <div class="input-group input-group-sm"><span class="input-group-text">Password</span><input class="form-control" type="text"></div>
-                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-9"><label class="form-check-label" for="formCheck-3">Internal route</label></div>
-                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="formCheck-10"><label class="form-check-label" for="formCheck-3">Rbel Logging</label></div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        </fieldset>
+                            </fieldset>
+                        </div>
                     </div>
                 </div>
             </div>

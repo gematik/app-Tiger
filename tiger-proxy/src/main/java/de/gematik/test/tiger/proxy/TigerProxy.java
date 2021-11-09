@@ -31,6 +31,7 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
@@ -284,7 +285,9 @@ public class TigerProxy extends AbstractTigerProxy {
     @Override
     public TigerRoute addRoute(final TigerRoute tigerRoute) {
         tigerRouteMap.values().stream()
-            .filter(existingRoute -> uriEquals(existingRoute.getFrom(), tigerRoute.getFrom()))
+            .filter(existingRoute ->
+                uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
+            || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom()))
             .findAny()
             .ifPresent(existingRoute -> {
                 throw new TigerProxyRouteConflictException(existingRoute);
@@ -310,6 +313,18 @@ public class TigerProxy extends AbstractTigerProxy {
     private boolean uriEquals(String value1, String value2) {
         try {
             return new URI(value1).equals(new URI(value2));
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    private boolean uriTwoIsBelowUriOne(String value1, String value2) {
+        try {
+            final URI uri1 = new URI(value1);
+            final URI uri2WithUri1Scheme = new URIBuilder(value2)
+                .setScheme(uri1.getScheme()).build();
+            return !new URI(value1)
+                .relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
         } catch (URISyntaxException e) {
             return false;
         }
