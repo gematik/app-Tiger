@@ -48,6 +48,7 @@ $(document).ready(function () {
     start: function (e, ui) {
       $(this).attr('data-previndex', ui.item.index());
     },
+    handle: 'i',
     update: function (e, ui) {
       var newIndex = ui.item.index();
       var oldIndex = $(this).attr('data-previndex');
@@ -62,18 +63,15 @@ $(document).ready(function () {
         $("#content_" + serverId).insertBefore(
             $(".server-content").children()[newIndex]);
       }
+      $("#content_" + serverId)[0].scrollIntoView();
     }
   });
 
   // top menu
 
-  $("#file").on("change", openYamlFile);
-
-  // TODO  what is this for?
-
-  $(".collapsible").on("click", function (evt) {
-    $(this).toggleClass("active");
-    $(this.nextElementSibling).toggle();
+  $('.btn-open-testenv').click(function() {
+    $("#file").click();
   });
+  $("#file").on("change", openYamlFile);
 
 });

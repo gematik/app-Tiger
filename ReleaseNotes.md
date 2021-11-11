@@ -1,3 +1,6 @@
+# Release 0.16.0
+Siehe Changelog
+
 # Release 0.15.0
 siehe Changelog
 

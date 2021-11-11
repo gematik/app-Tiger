@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.15.0</version>
+    <version>0.16.0</version>
     <packaging>pom</packaging>
     <name>app-Tiger</name>
     <description>Short project description </description>

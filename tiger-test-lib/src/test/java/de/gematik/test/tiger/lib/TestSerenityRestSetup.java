@@ -16,20 +16,21 @@
 
 package de.gematik.test.tiger.lib;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import java.net.URI;
+import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
 import org.junit.Test;
 import org.springframework.util.SocketUtils;
 
-import java.net.URI;
-
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-
+@Slf4j
 public class TestSerenityRestSetup {
 
     @Test
     public void useNonExistentProxy_ExceptionMessageShouldContainRequestInformation() throws Exception {
         withEnvironmentVariable("TIGER_ACTIVE", "1")
+            .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")
             .execute(() -> TigerDirector.beforeTestRun());
 
         final String proxy = "http://localhost:" + SocketUtils.findAvailableTcpPort();

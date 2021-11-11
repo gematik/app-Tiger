@@ -3,6 +3,7 @@
 ## Release 0.15.0
 
 ### Features
+* TGR-186 First version of an UI test run monitor, displaying all banner and text messages to guide manual testers.
 
 ### Breaking Changes
 
