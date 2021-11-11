@@ -57,7 +57,7 @@ public class TigerDirector {
 
     private static TigerTestEnvMgr tigerTestEnvMgr;
 
-    private static Optional<MonitorUI> optionalMonitorUI = null;
+    private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
 
     private static boolean initialized = false;
 
