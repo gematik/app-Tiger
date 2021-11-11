@@ -1,7 +1,3 @@
-server:
-  port: 8080
-
 tigerProxy:
-  port: 6666
   activateRbelEndpoint: true
   localResources: true

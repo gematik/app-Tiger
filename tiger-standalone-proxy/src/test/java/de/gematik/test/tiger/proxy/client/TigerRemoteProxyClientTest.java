@@ -79,6 +79,13 @@ public class TigerRemoteProxyClientTest {
                 TigerProxyConfiguration.builder()
                     .proxyLogLevel("WARN")
                     .build());
+            mockServerClient.when(request().withPath("/foo"))
+                .respond(httpRequest -> response().withBody("bar"));
+
+            mockServerClient.when(request().withPath("/echo"))
+                .respond(httpRequest -> response()
+                    .withHeaders(httpRequest.getHeaders())
+                    .withBody(httpRequest.getBodyAsRawBytes()));
         }
 
         try {
@@ -93,14 +100,6 @@ public class TigerRemoteProxyClientTest {
                 .to("http://localhost:" + mockServerClient.getPort())
                 .build());
         }
-
-        mockServerClient.when(request().withPath("/foo"))
-            .respond(httpRequest -> response().withBody("bar"));
-
-        mockServerClient.when(request().withPath("/echo"))
-            .respond(httpRequest -> response()
-                .withHeaders(httpRequest.getHeaders())
-                .withBody(httpRequest.getBodyAsRawBytes()));
 
         unirestInstance = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getPort()));

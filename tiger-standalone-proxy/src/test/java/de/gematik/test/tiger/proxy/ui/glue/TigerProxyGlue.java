@@ -1,39 +1,28 @@
-package de.gematik.test.tiger.proxy.glue;
+package de.gematik.test.tiger.proxy.ui.glue;
 
-import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.proxy.TigerStandaloneProxyApplication;
-import de.gematik.test.tiger.proxy.steps.TigerProxySteps;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
+import de.gematik.test.tiger.proxy.ui.MockServerPlugin;
+import de.gematik.test.tiger.proxy.ui.steps.TigerProxySteps;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.thucydides.core.annotations.Steps;
 import org.awaitility.core.ConditionTimeoutException;
 import org.openqa.selenium.NoAlertPresentException;
 import org.springframework.boot.SpringApplication;
 
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import static org.awaitility.Awaitility.await;
+
 @Slf4j
 public class TigerProxyGlue {
 
     @Steps
     TigerProxySteps steps = new TigerProxySteps();
-
-    @Before
-    public void before() throws IOException {
-        log.info("Starting dummy HTTP server...");
-        steps.startWebServer();
-    }
-
-    @After
-    public void after() {
-        log.info("Stopping dummy HTTP server...");
-        steps.stopWebServer();
-    }
 
     public TigerProxyGlue() {
     }
@@ -65,7 +54,12 @@ public class TigerProxyGlue {
 
     @When("I add a new route from {string} to {string}")
     public void iAddNewRoute(String from, String to) {
-        steps.addNewRoute(from, to);
+        steps.addNewRoute(patchPath(from), patchPath(to));
+    }
+
+    private String patchPath(String uri) {
+        return uri
+            .replace("${serverport}", MockServerPlugin.getMockServerPort());
     }
 
     @And("I close the route dialog")
@@ -75,7 +69,7 @@ public class TigerProxyGlue {
 
     @Then("I see the new route from {string} to {string}")
     public void assertSeeNewRoute(String from, String to) {
-        steps.assertSeeNewRoute(from, to);
+        steps.assertSeeNewRoute(patchPath(from), patchPath(to));
     }
 
     @When("I send successful request to {string}")
@@ -162,7 +156,7 @@ public class TigerProxyGlue {
     @And("I wait {int} seconds")
     public void iWaitSeconds(int waitsec) {
         log.info("waiting for " + waitsec + " seconds...");
-        try  {
+        try {
             await().atMost(waitsec, TimeUnit.SECONDS).until(() -> false);
         } catch (ConditionTimeoutException ignored) {
 
@@ -173,17 +167,17 @@ public class TigerProxyGlue {
     public void iQuitTheTigerProxyViaUI() {
         steps.clickOnQuit();
         await().atMost(30, TimeUnit.SECONDS).until(() -> {
-           try {
-               steps.assertRequestTimesOut("http://127.0.0.1:8080/webui");
-               return true;
-           } catch (Exception e) {
-               return false;
-           }
+            try {
+                steps.assertRequestTimesOut("http://127.0.0.1:8080/webui");
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         });
     }
 
     @Then("The request to {string} times out")
     public void theRequestToTimesOut(String url) {
-       steps.assertRequestTimesOut(url);
+        steps.assertRequestTimesOut(url);
     }
 }

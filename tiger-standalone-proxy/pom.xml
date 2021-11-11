@@ -148,6 +148,12 @@
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-spring</artifactId>
+            <version>${serenity.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-screenplay</artifactId>
             <version>${serenity.version}</version>
             <scope>test</scope>
@@ -230,103 +236,9 @@
                             <goal>repackage</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>pre-integration-test</id>
-                        <goals>
-                            <goal>start</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>--spring.profiles.active=uitests</arguments>
-                        </configuration>
-                    </execution>
-                    <!-- not needed as test case quits proxy via UI
-                    <execution>
-                        <id>post-integration-test</id>
-                        <goals>
-                            <goal>stop</goal>
-                        </goals>
-                    </execution>
-                    -->
                 </executions>
                 <configuration>
-                    <fork>false</fork>
-                    <classifier>exec</classifier>
                     <mainClass>de.gematik.test.tiger.proxy.TigerStandaloneProxyApplication</mainClass>
-                </configuration>
-            </plugin>
-
-            <!-- plugin used to generate serenity driver classes from vm template file -->
-            <plugin>
-                <groupId>com.github.temyers</groupId>
-                <artifactId>cucumber-jvm-parallel-plugin</artifactId>
-                <version>4.2.0</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
-                            <glue>
-                                <package>de.gematik.test.tiger.glue</package>
-                                <package>de.gematik.test.tiger.hooks</package>
-                                <package>de.gematik.test.tiger.proxy.glue</package>
-                                <!-- add your packages here -->
-                            </glue>
-                            <plugins>
-                            </plugins>
-                            <parallelScheme>FEATURE</parallelScheme>
-
-                            <!-- deactivated as jenkins xunit plugin is not very flexible and does not work well with serenity junit xml exports
-                            see https://issues.apache.org/jira/browse/SUREFIRE-1533
-                            <plugins>
-                              <plugin>
-                                <name>junit</name>
-                                <extension>xml</extension>
-                              </plugin>
-                            </plugins>-->
-                        </configuration>
-                        <goals>
-                            <goal>generateRunners</goal>
-                        </goals>
-                        <id>generateRunners</id>
-                        <phase>generate-test-sources</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-                <groupId>org.apache.maven.plugins</groupId>
-                <version>3.0.0-M5</version>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <groupId>org.apache.maven.plugins</groupId>
-                <version>3.0.0-M5</version>
-                <executions>
-                    <execution>
-                        <id>run-tests</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <argLine>${failsafe.jacoco.args}</argLine>
-                    <includes>
-                        <include>**/Parallel*IT.java</include>
-                    </includes>
-                    <skipITs>false</skipITs>
-                    <systemPropertyVariables>
-                        <!--<cucumber.filter.tags>not @QuitApp
-                        </cucumber.filter.tags>
-                        -->
-                    </systemPropertyVariables>
-                    <forkCount>1</forkCount>
                 </configuration>
             </plugin>
 

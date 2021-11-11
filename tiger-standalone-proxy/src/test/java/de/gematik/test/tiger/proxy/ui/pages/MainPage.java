@@ -1,11 +1,13 @@
-package de.gematik.test.tiger.proxy.pages;
+package de.gematik.test.tiger.proxy.ui.pages;
 
-import java.time.temporal.ChronoUnit;
+
+import de.gematik.test.tiger.proxy.ui.UiTest;
+
 import java.util.concurrent.TimeUnit;
 
 public class MainPage extends BasePage {
     public MainPage() {
-        super("http://127.0.0.1:8080/webui");
+        super("http://127.0.0.1:" + UiTest.getAdminPort() + "/webui");
         getDriver().manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
     }
 

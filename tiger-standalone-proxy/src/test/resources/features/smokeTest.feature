@@ -13,14 +13,14 @@ Feature: smoke test scenarios
     Given The request to "http://nevereverexists__.XXX/test1.html" fail
 
     When I click on the Routes button
-    And I add a new route from "http://nevereverexists__.XXX" to "http://127.0.0.1:10000"
+    And I add a new route from "http://nevereverexists__.XXX" to "http://127.0.0.1:${serverport}"
     And I wait 2 seconds
-    Then I see the new route from "http://nevereverexists__.XXX" to "http://127.0.0.1:10000"
+    Then I see the new route from "http://nevereverexists__.XXX" to "http://127.0.0.1:${serverport}"
     And I close the route dialog
 
   Scenario: Check added route is working
     Given I click on the Routes button
-    Then I see the new route from "http://nevereverexists__.XXX" to "http://127.0.0.1:10000"
+    Then I see the new route from "http://nevereverexists__.XXX" to "http://127.0.0.1:${serverport}"
     And I close the route dialog
 
     When I send successful request to "http://nevereverexists__.XXX/test1.html"

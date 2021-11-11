@@ -83,7 +83,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         }
     }
 
-    private void propagateExceptionMessageSafe(RuntimeException exception) {
+    public void propagateExceptionMessageSafe(Exception exception) {
         try {
             tigerProxy.propagateException(exception);
         } catch (Exception handlingException) {

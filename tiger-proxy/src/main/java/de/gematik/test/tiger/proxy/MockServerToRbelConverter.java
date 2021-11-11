@@ -29,18 +29,28 @@ public class MockServerToRbelConverter {
 
     private final RbelConverter rbelConverter;
 
-    public RbelElement convertResponse(HttpResponse response, String protocolAndHost) {
+    public RbelElement convertResponse(HttpResponse response, String serverProtocolAndHost, SocketAddress clientAddress) {
         log.trace("Converting response {}, headers {}, body {}", response,
             response.getHeaders(), response.getBodyAsString());
         return rbelConverter.parseMessage(responseToRbelMessage(response),
-            convertUri(protocolAndHost), null);
+            convertUri(serverProtocolAndHost), convertSocketAdress(clientAddress));
     }
 
     public RbelElement convertRequest(HttpRequest request, String protocolAndHost) {
         log.trace("Converting request {}, headers {}, body {}", request,
             request.getHeaders(), request.getBodyAsString());
         return rbelConverter.parseMessage(requestToRbelMessage(request),
-            null, convertUri(protocolAndHost));
+            convertSocketAdress(request.getClientAddress()), convertUri(protocolAndHost));
+    }
+
+    private RbelHostname convertSocketAdress(SocketAddress clientAddress) {
+        if (clientAddress == null) {
+            return null;
+        }
+        return RbelHostname.builder()
+            .hostname(clientAddress.getHost())
+            .port(clientAddress.getPort())
+            .build();
     }
 
     private RbelHostname convertUri(String protocolAndHost) {

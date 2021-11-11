@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class TestSerenityDriverGeneratorMavenPlugin {
     @Test

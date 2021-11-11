@@ -57,9 +57,10 @@ public class ForwardProxyCallback extends AbstractTigerRouteCallback {
                 getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
                     .convertRequest(req, getTigerRoute().getFrom()));
                 getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
-                    .convertResponse(resp, getTigerRoute().getFrom()));
+                    .convertResponse(resp, getTigerRoute().getFrom(), req.getClientAddress()));
                 getTigerProxy().manageRbelBufferSize();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
+                propagateExceptionMessageSafe(e);
                 log.error("RBel FAILED!", e);
             }
         }

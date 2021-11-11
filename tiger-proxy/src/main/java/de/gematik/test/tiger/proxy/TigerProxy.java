@@ -123,7 +123,7 @@ public class TigerProxy extends AbstractTigerProxy {
                                     + req.getSocketAddress().getPort()));
                             triggerListener(mockServerToRbelConverter.convertResponse(resp,
                                 req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":"
-                                    + req.getSocketAddress().getPort()));
+                                    + req.getSocketAddress().getPort(), req.getClientAddress()));
                             manageRbelBufferSize();
                         } catch (Exception e) {
                             log.error("RBel FAILED!", e);

@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.proxy.pages;
+package de.gematik.test.tiger.proxy.ui.pages;
 
 
 import lombok.Getter;
