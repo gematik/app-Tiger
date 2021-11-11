@@ -31,8 +31,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.fail;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -131,21 +133,23 @@ public class TigerProxyRoutingTest {
                 .contains("http://tiger.proxy", "http://myserv.er");
     }
 
-    //@Test
-    public void testRouteUI() throws InterruptedException {
+//    @Test
+    public void testRouteUI() {
         mockServerClient.when(request()
             .withPath("/foo1"))
             .respond(httpRequest ->
                 response()
                     .withBody("bar1"));
 
-        String routeId = unirestInstance.put("http://tiger.proxy/route")
+        unirestInstance.put("http://tiger.proxy/route")
             .header("Content-Type", "application/json")
             .body("{\"from\":\"http://temp.server\","
                 + "\"to\":\"http://localhost:" + mockServerClient.getPort() + "\"}")
             .asObject(TigerRouteDto.class)
             .getBody().getId();
 
-        Thread.sleep(20000000000L);
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> false);
     }
 }

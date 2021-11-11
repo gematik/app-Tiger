@@ -1,9 +1,16 @@
 # Changelog Tiger Testplattform
 
+## Release 0.16.0
+
+## Features
+* TGR-136 Client-Adressen werden nun in Rbel-Nachrichten korrekt gesetzt
+
 ## Release 0.15.0
 
 ### Features
+* TGR-136 Client-Adressen werden nun in Rbel-Nachrichten korrekt gesetzt
 * TGR-186 First version of an UI test run monitor, displaying all banner and text messages to guide manual testers.
+* TGR-136 Client-Adressen werden nun in Rbel-Nachrichten korrekt gesetzt
 
 ### Breaking Changes
 

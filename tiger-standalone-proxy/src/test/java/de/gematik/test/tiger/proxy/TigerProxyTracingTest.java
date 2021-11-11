@@ -34,6 +34,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +49,7 @@ import static org.mockserver.model.HttpResponse.response;
 @RequiredArgsConstructor
 public class TigerProxyTracingTest {
 
+    private static final Duration DEFAULT_WAIT_TIME = Duration.of(10, ChronoUnit.SECONDS);
     private final ClientAndServer mockServerClient;
     private UnirestInstance unirestInstance;
     @Autowired
@@ -84,6 +87,7 @@ public class TigerProxyTracingTest {
     @AfterEach
     public void reset() {
         tigerProxy.clearAllRoutes();
+        tigerProxy.getRbelLogger().getRbelConverter().getPostConversionListeners().clear();
         receivingTigerProxy.getRbelMessages().clear();
     }
 
@@ -95,13 +99,13 @@ public class TigerProxyTracingTest {
         assertThat(unirestInstance.get("http://myserv.er/foo").asString().getBody())
             .isEqualTo("bar");
 
-        await().atMost(2, TimeUnit.SECONDS)
+        await().atMost(DEFAULT_WAIT_TIME)
             .until(() -> !receivingTigerProxy.getRbelMessages().isEmpty());
     }
 
     @Test
     public void provokeServerSidedException_clientShouldThrowExceptionAsWell() {
-        tigerProxy.getRbelLogger().getRbelConverter().addConverter((el, cv) -> {
+        tigerProxy.getRbelLogger().getRbelConverter().addPostConversionListener((el, cv) -> {
             if (el.hasFacet(RbelHttpResponseFacet.class)) {
                 throw new RuntimeException("blub");
             }
@@ -109,7 +113,7 @@ public class TigerProxyTracingTest {
 
         unirestInstance.get("http://myserv.er/foo").asString().getBody();
 
-        await().atMost(2, TimeUnit.SECONDS)
+        await().atMost(DEFAULT_WAIT_TIME)
             .until(() -> !receivingTigerProxy.getReceivedRemoteExceptions().isEmpty());
     }
 }

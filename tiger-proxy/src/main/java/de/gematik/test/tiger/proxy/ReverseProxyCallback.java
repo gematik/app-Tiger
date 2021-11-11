@@ -67,8 +67,9 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
                 getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
                     .convertRequest(httpRequest, getTigerRoute().getTo()));
                 getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
-                    .convertResponse(httpResponse, getTigerRoute().getTo()));
-            } catch (Exception e) {
+                    .convertResponse(httpResponse, getTigerRoute().getTo(), httpRequest.getClientAddress()));
+            } catch (RuntimeException e) {
+                propagateExceptionMessageSafe(e);
                 log.error("RBel FAILED!", e);
             }
         }

@@ -1,10 +1,12 @@
 package de.gematik.test.tiger.admin.controller;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.testcontainers.shaded.com.github.dockerjava.core.MediaType;
@@ -17,23 +19,24 @@ import static org.hamcrest.Matchers.not;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@RunWith(SpringRunner.class)
 public class TigerAdminUiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void testGetStartPage() throws Exception {
+    public void testGetStartPage() throws Exception {
         this.mockMvc.perform(get("/start")).andExpect(status().isOk());
     }
 
     @Test
-    void testGetYmlPage() throws Exception {
+    public void testGetYmlPage() throws Exception {
         this.mockMvc.perform(get("/yml-page")).andExpect(status().isOk());
     }
 
     @Test
-    void testOpenYamlFile() throws Exception {
+    public void testOpenYamlFile() throws Exception {
         String yamlContent = "tigerProxy:\n" +
                 "  forwardToProxy:\n" +
                 "    hostname: $SYSTEM\n" +
@@ -58,7 +61,7 @@ public class TigerAdminUiControllerTest {
     }
 
     @Test
-    void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
+    public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
         String yamlContent = "tigerProxy:\n" +
                 "\n" +
                 "servers:\n" +

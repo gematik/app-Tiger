@@ -1,28 +1,14 @@
-package de.gematik.test.tiger.proxy.steps;
+package de.gematik.test.tiger.proxy.ui.steps;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.proxy.pages.MainPage;
+import de.gematik.test.tiger.proxy.ui.UiTest;
+import de.gematik.test.tiger.proxy.ui.pages.MainPage;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
-import java.net.ConnectException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import kong.unirest.Config;
-import kong.unirest.HttpResponse;
-import kong.unirest.UnirestInstance;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.Assert;
-import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -33,14 +19,20 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @Slf4j
 public class TigerProxySteps {
@@ -51,10 +43,9 @@ public class TigerProxySteps {
     private static final String CSS_ROUTESBLOCK = "#routeModalDialog > div.modal-content > article > div.message-body > div.routeListDiv.box";
 
     private static final String FILESUBSTRING = "tiger-report";
-
+    final File downloadFolder;
     MainPage mainPage = new MainPage();
     Actions action = new Actions(mainPage.getDriver());
-    final File downloadFolder;
 
     public TigerProxySteps() {
         downloadFolder = Path.of(System.getProperty("user.home", "."), "Downloads").toFile();
@@ -63,7 +54,7 @@ public class TigerProxySteps {
                 throw new RuntimeException("Unable to create folder '" + downloadFolder.getAbsolutePath() + "'");
             }
         }
-        RestAssured.proxy("127.0.0.1", 6666);
+        RestAssured.proxy("127.0.0.1", UiTest.getProxyPort());
     }
 
     @SneakyThrows
@@ -170,7 +161,8 @@ public class TigerProxySteps {
     }
 
     public void assertSeeMessageList() throws IOException, InterruptedException {
-        Assert.assertTrue(openReport().replace("\n", "").matches(".*/test1.*/test2.*content-length: 36.*"));
+        assertThat(openReport())
+            .contains("test1", "test2", "content-length: 36");
     }
 
     public void clickOnResetButton() {
@@ -270,8 +262,8 @@ public class TigerProxySteps {
         assertElemTextMatches(XPATH_RESPONSE + "/span[text()='" + idx + "']/..", idx + "\nRESPONSE");
 
         WebElement resBody = mainPage.getDriver().findElement(By.xpath(
-            "//" + XPATH_RES_BODY + "]//span[text()='" + idx + "']//ancestor::"+XPATH_RES_BODY + "]//h1[text()='" + statusCode
-                + "']//ancestor::"+XPATH_RES_BODY + "]//pre[@class='json' and contains(text(), '" + resBodyMessage + "')]"));
+            "//" + XPATH_RES_BODY + "]//span[text()='" + idx + "']//ancestor::" + XPATH_RES_BODY + "]//h1[text()='" + statusCode
+                + "']//ancestor::" + XPATH_RES_BODY + "]//pre[@class='json' and contains(text(), '" + resBodyMessage + "')]"));
         Assert.assertTrue("The response body with given parameters is displayed on the page", resBody.isDisplayed());
     }
 
@@ -295,93 +287,6 @@ public class TigerProxySteps {
     public void actionHelper(String locatorStr) {
         WebElement el = mainPage.elemX(locatorStr);
         action.moveToElement(el).click().perform();
-    }
-
-    final AtomicReference<Process> proc = new AtomicReference<>();
-
-    public void startWebServer() throws IOException {
-//        - --control-port=19000
-
-        if (proc.get() != null)  {
-            stopWebServer();
-        }
-
-        var webRoot = Paths.get("src", "test", "resources", "testdata", "webroot").toFile();
-        log.info("creating cmd line...");
-        List<String> options = new ArrayList<>();
-        options.add(findJavaExecutable());
-        options.add("-jar");
-        options.add("winstone.jar");
-        options.add("--httpPort=10000");
-        options.add("--webroot=" + webRoot.getAbsolutePath());
-        RuntimeException throwing = null;
-        try {
-            final AtomicReference<Throwable> exception = new AtomicReference<>();
-            var thread = new Thread(() -> {
-                Process p = null;
-                try {
-                    p = new ProcessBuilder()
-                        .command(options.toArray(String[]::new))
-                        .directory(Paths.get("src", "test", "resources", "testdata").toFile())
-                        .inheritIO()
-                        .start();
-                } catch (Throwable t) {
-                    log.error("Failed to start process", t);
-                    exception.set(t);
-                }
-                proc.set(p);
-                log.info("Process set in atomic var " + p);
-            });
-            thread.start();
-
-            await().atMost(10, TimeUnit.SECONDS).pollDelay(200, TimeUnit.MILLISECONDS)
-                .until(() -> proc.get() != null || exception.get() != null);
-
-            if (exception.get() != null) {
-                throwing = new RuntimeException("Unable to start web server!", exception.get());
-            }
-        } finally {
-            log.info("proc: " + proc.get());
-            if (proc.get() != null) {
-                if (proc.get().isAlive()) {
-                    log.info("Started web server");
-                } else if (proc.get().exitValue() == 0) {
-                    log.info("Web server process exited already ");
-                } else {
-                    log.warn("Unclear process state" + proc);
-                    log.info(
-                        "Output from cmd: " + IOUtils.toString(proc.get().getInputStream(), StandardCharsets.UTF_8));
-                }
-            } else {
-                if (throwing == null) {
-                    throwing = new RuntimeException("External Jar startup failed");
-                } else {
-                    throwing = new RuntimeException("External Jar startup failed", throwing);
-                }
-            }
-        }
-        if (throwing != null) {
-            throw throwing;
-        }
-    }
-
-    private String findJavaExecutable() {
-        String[] paths = System.getenv("PATH").split(SystemUtils.IS_OS_WINDOWS ? ";" : ":");
-        String javaProg = "java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
-        return Arrays.stream(paths)
-            .map(path -> Path.of(path, javaProg).toFile())
-            .filter(file -> file.exists() && file.canExecute())
-            .map(File::getAbsolutePath)
-            .findAny()
-            .orElseThrow(() -> new RuntimeException("Unable to find executable java program in PATH"));
-    }
-
-    public void stopWebServer() {
-        if (proc.get() != null) {
-            proc.get().destroy();
-            proc.get().destroyForcibly();
-            proc.set(null);
-        }
     }
 }
 
