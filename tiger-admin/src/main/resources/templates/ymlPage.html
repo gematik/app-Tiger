@@ -20,7 +20,7 @@
 </head>
 <body>
 <div class="container-fluid">
-  <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-secondary">
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-gradient-dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="#"><img class="tiger-logo" src="img/tiger2-plain.svg"></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02"
@@ -36,8 +36,8 @@
             <div class="dropdown-menu">
               <a class="dropdown-item btn-new-testenv" href="#">Neu</a>
               <a class="dropdown-item btn-open-testenv" href="#">Öffnen...</a>
-              <a class="dropdown-item disabled" href="#">Speichern</a>
-              <a class="dropdown-item disabled" href="#">Speichern unter...</a>
+              <a class="dropdown-item btn-save_testenv disabled" href="#">Speichern</a>
+              <a class="dropdown-item btn-save_as_testenv disabled" href="#">Speichern unter...</a>
               <div class="dropdown-divider"></div>
               <a class="dropdown-item disabled" href="#">Separated link</a>
             </div>
@@ -60,16 +60,7 @@
       <div class="row d-none">
         <div class="col-12">
           <form id="openYaml">
-            <button type="button" class="btn btn-new-testenv text-primary" title="New Testenvironment">
-              <i class="fas fa-file fa-lg"></i>
-            </button>
             <input type="file" name="fileName" id="file" style="display:none;" accept=".yml,.yaml"/>
-            <button type="button" class="btn btn-open-testenv text-primary" title="Open YML file">
-              <i class="fas fa-folder-open fa-lg"></i>
-            </button>
-            <button type="button" id="save-file-btn" class="btn text-success" title="Save YML file">
-              <i class="fas fa-save fa-lg"></i>
-            </button>
           </form>
         </div>
       </div>
@@ -82,11 +73,16 @@
         </div>
       </div>
       <div class="row">
-        <div class="sidebar-toolbar border-primary btn-group-horizontal btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
-             role="group">
-          <button type="button" id="add-server-btn" class="disabled btn text-success" title="Add server">
+        <div
+            class="sidebar-toolbar border-primary btn-group-horizontal btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
+            role="group">
+          <button type="button" class="btn text-success btn-add-server" title="Add server">
             <i class="fas fa-plus-circle fa-lg"></i>
-            <span>Add server</span>
+            <span>Add</span>
+          </button>
+          <button type="button" class="hidden btn text-success btn-save-testenv" title="Add server">
+            <i class="fas fa-save fa-lg"></i>
+            <span>Save</span>
           </button>
         </div>
       </div>
@@ -101,6 +97,61 @@
 </div>
 
 <section id="html-templates" class="d-none">
+  <div class="card welcome-card d-none" id="template-welcome-card">
+    <div class="card-body">
+      <section class="highlight-clean">
+        <div class="container">
+          <div class="intro">
+            <img class="float-end mb-4 ml-4 p-1 border border-primary rounded" th:src="@{/img/tiger2-plain.svg}" width="160">
+            <h2 class="text-center mb-3">Tiger Administration GUI</h2>
+            <p class="text-justify">
+              Tiger is an agile test platform developed by a Team at Gematik GmbH.</p>
+            <p>Our main values/goals for Tiger are</p>
+            <p>
+            <ul>
+              <li>Perform automated IOP tests more efficiently</li>
+              <li>Set up test environments more efficiently</li>
+              <li>Perform analysis of test failures more efficiently</li>
+              <li>Reuse cases/steps from existing test suites</li>
+            </ul>
+            </p>
+            <p>This site allows you to specify / compose a new test environment based upon
+            </p>
+            <ul>
+              <li>docker images or</li>
+              <li>compose scripts,</li>
+              <li>external Jar files or even</li>
+              <li>server nodes being accessible via an external URL.</li>
+            </ul>
+            </p>
+            <p class="text-justify">
+              To learn more about the different types of nodes Tiger supports please checkout
+              <a href="https://build.top.local/source/git/Testtools/tiger/-/blob/master/doc/testenv-config-types.md"
+                 target="tiger_gitlab">
+                this help document
+              </a>,
+              before using this UI.
+            </p>
+            <p class="text-justify">
+              To ease your job we have also prepared some default nodes (AKA templates) that are (re)used throughout the company.
+              Whether it is a local E-Rezept reference FD or the RISE IDP server in the RU/TU...
+              All of these templates can easily be added to your test environment with a few clicks.
+            </p>
+            <p class="text-justify">
+              So either start right away by adding a server to your empty test environment or browse through
+              and modify existing YAML test environment configuration files.
+            </p>
+          </div>
+          <div class="buttons text-center" style="clear: both;">
+            <button class="btn btn-outline-success btn-lg btn-add-server" type="button">Add a server ...</button>
+            <button class="btn btn-outline-primary btn-lg btn-open-testenv" type="button">Open Test environment file ...</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+
   <div class="row flex-fill server-formular d-none" id="template-server-formular">
     <!-- left column with heading and general settings/source -->
     <div class="col-5 flex-fill topcol">
@@ -624,7 +675,7 @@
                 <span class="fieldset-summary fs-6"></span></legend>
               <div class="row">
                 <div class="col align-items-stretch">
-                  <ul class="list-group" name="pkiKeys"></ul>
+                  <ul class="list-group" name=".pkiKeys" summarypattern="${id}: ${pem} (${type})"></ul>
                 </div>
                 <div class="col-auto">
                   <div class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
@@ -646,15 +697,15 @@
                   <fieldset class="subset">
                     <div class="input-group input-group-sm">
                       <span class="input-group-text">Id</span>
-                      <input class="form-control" type="text">
+                      <input class="form-control" name="pkiKeys.id" type="text">
                     </div>
                     <div class="input-group input-group-sm">
                       <span class="input-group-text">Pem</span>
-                      <input class="form-control" type="text">
+                      <input class="form-control" name="pkiKeys.pem" type="text">
                     </div>
                     <div class="input-group input-group-sm">
                       <span class="input-group-text">Type</span>
-                      <input class="form-control" type="text">
+                      <input class="form-control" name="pkiKeys.type" type="text">
                     </div>
                   </fieldset>
                 </div>
@@ -742,20 +793,20 @@
     <!-- Position it -->
     <div style="position: absolute; top: 0; right: 0;">
 
-  <div class="toast" id="error-message" role="alert" aria-live="assertive" aria-atomic="true"  data-autohide="false">
-    <div class="toast-header">
-      <i></i>
-      <strong class="me-auto">Error</strong>
-      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
-    <div class="toast-body">
-      Leider konnten wir ihre YAML Konfiguration nicht laden!
-    </div>
-    <button id='toggle'>Advanced Details
-      <!--      <i id="collapse-icon" class="fas fa-angle-down" style="margin-left:1rem;"></i>-->
-    </button>
+      <div class="toast" id="error-message" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
+        <div class="toast-header">
+          <i></i>
+          <strong class="me-auto">Error</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+          Leider konnten wir ihre YAML Konfiguration nicht laden!
+        </div>
+        <button id='toggle'>Advanced Details
+          <!--      <i id="collapse-icon" class="fas fa-angle-down" style="margin-left:1rem;"></i>-->
+        </button>
 
-    <div id="detailedMessage" style="display: none"></div>
+        <div id="detailedMessage" style="display: none"></div>
       </div>
     </div>
   </div>

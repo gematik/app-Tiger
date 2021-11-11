@@ -6,6 +6,7 @@
 let bs5Utils;
 
 $(document).ready(function () {
+
   bs5Utils = new Bs5Utils();
   Bs5Utils.defaults.toasts.position = 'top-center';
   //Bs5Utils.defaults.toasts.container = 'toast-container';
@@ -17,30 +18,37 @@ $(document).ready(function () {
     selector: '.context-menu-one',
     trigger: 'left',
     callback: function (key, options) {
-      var serverIndex = $(this).closest('div').attr("id").substr(
-          "sidebar_".length);
+      const sidebarItem = $(this).parents('.sidebar-item');
+      const serverIndex = sidebarItem.attr("id").substr("sidebar_".length);
 
       switch (key) {
         case "start":
-          break;
         case "restart":
-          break;
         case "stop":
+          bs5Utils.Snack.show('danger',
+              'TODO eature ' + key + ' NOT implemented so far!',
+              delay = 5000, dismissible = true);
           break;
         case "delete":
-          $(this).closest('div').remove();
+          sidebarItem.remove();
           $("#content_" + serverIndex).remove();
+          bs5Utils.Snack.show('warning',
+              'Server "' + serverIndex + '" removed!',
+              delay = 5000, dismissible = true);
           break;
-        case "logs":
-          break;
+          /*
+          case "logs":
+            break;
+           */
       }
     },
     items: {
-      "start": {name: "Start", icon: "fas fa-play"},
-      "restart": {name: "Restart", icon: "fas fa-undo"},
-      "stop": {name: "Stop", icon: "fas fa-stop"},
-      "delete": {name: "Delete", icon: "fas fa-trash-alt"},
-      "logs": {name: "Logs", icon: "fas fa-terminal"},
+      "start": {name: "Start", icon: "fas text-success fa-play"},
+      "restart": {name: "Restart", icon: "fas text-success fa-undo"},
+      "stop": {name: "Stop", icon: "fas text-warning fa-stop"},
+      "delete": {name: "Delete", icon: "fas text-danger fa-trash-alt"},
+      /* TODO logging is way to go
+          "logs": {name: "Logs", icon: "fas fa-terminal"},*/
     }
   });
 
@@ -69,9 +77,35 @@ $(document).ready(function () {
 
   // top menu
 
-  $('.btn-open-testenv').click(function() {
-    $("#file").click();
+  $('.btn-open-testenv').click(function () {
+    if (unsavedModifications) {
+      confirmNoDefault('Unsaved Modifications',
+          'Do you really want to discard current changes?',
+          function () {
+            $('#file').click()
+          });
+    } else {
+      $('#file').click();
+    }
   });
+
+  $('.btn-new-testenv').click(function () {
+    if (unsavedModifications) {
+      confirmNoDefault('Unsaved Modifications',
+          'Do you really want to discard current changes?',
+          function () {
+            populateServersFromYaml({});
+            notifyChangesToTestenvData(false);
+          });
+    } else {
+      populateServersFromYaml({});
+      notifyChangesToTestenvData(false);
+    }
+  });
+
   $("#file").on("change", openYamlFile);
+
+  // show welcome
+  showWelcomeCard();
 
 });

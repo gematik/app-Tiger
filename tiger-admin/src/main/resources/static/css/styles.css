@@ -1,5 +1,5 @@
 body {
-    padding-top: 5rem;
+    padding-top: 4.5rem;
 }
 
 .box, .box-config-file {
@@ -23,6 +23,7 @@ body {
     border-radius: 0 0 1rem 1rem;
     border-width: 1px;
     border-style: solid;
+    padding: 0.5rem 0;
 }
 
 .server-label {
@@ -45,7 +46,6 @@ body {
 .server-container {
     display: grid;
     gap: 1rem;
-    padding-top: 1rem;
     padding-bottom: 1rem;
 }
 
@@ -214,7 +214,8 @@ i.collapse-icon {
     color: #d9534f;
 }
 
-.advanced * {
+.advanced .input-group *, .advanced legend, .advanced .form-switch *,
+.advanced.input-group *, .advanced.form-switch * {
     color: #d9534f;
 }
 
@@ -229,10 +230,36 @@ i.collapse-icon {
     position: fixed;
 }
 
+.sidebar {
+    margin-top: 1rem;
+}
+
+.server-icon {
+    padding-right: 1rem;
+}
+
 .tiger-logo {
     width: 2rem;
 }
 
 .toast-container {
     z-index:32000;
+}
+
+.welcome-card {
+    margin: 0 1rem;
+}
+
+.highlight-clean .intro {
+    font-size:1rem;
+    margin: 2rem auto 2rem;
+}
+
+.hidden {
+    display: none;
+}
+
+.modal-error.detailedMessage {
+    font-family: monospace;
+    line-break: anywhere;
 }

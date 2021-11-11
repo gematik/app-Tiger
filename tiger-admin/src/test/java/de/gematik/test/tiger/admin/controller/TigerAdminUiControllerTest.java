@@ -1,25 +1,22 @@
 package de.gematik.test.tiger.admin.controller;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.testcontainers.shaded.com.github.dockerjava.core.MediaType;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.not;
-
 @SpringBootTest
 @AutoConfigureMockMvc
-@RunWith(SpringRunner.class)
 public class TigerAdminUiControllerTest {
 
     @Autowired
@@ -27,16 +24,12 @@ public class TigerAdminUiControllerTest {
 
     @Test
     public void testGetStartPage() throws Exception {
-        this.mockMvc.perform(get("/start")).andExpect(status().isOk());
-    }
-
-    @Test
-    public void testGetYmlPage() throws Exception {
-        this.mockMvc.perform(get("/yml-page")).andExpect(status().isOk());
+        this.mockMvc.perform(get("/")).andExpect(status().isOk());
     }
 
     @Test
     public void testOpenYamlFile() throws Exception {
+        //language=yaml
         String yamlContent = "tigerProxy:\n" +
                 "  forwardToProxy:\n" +
                 "    hostname: $SYSTEM\n" +
@@ -57,14 +50,13 @@ public class TigerAdminUiControllerTest {
                         .param("fileName", "fileName"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON.getMediaType()));
-
     }
 
     @Test
     public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
-        String yamlContent = "tigerProxy:\n" +
-                "\n" +
-                "servers:\n" +
+        //language=yaml
+        String yamlContent =
+            "servers:\n" +
                 "  testInvalidType:\n" +
                 "    hostname: invalid\n" +
                 "    template: idp-ref\n" +
@@ -79,8 +71,11 @@ public class TigerAdminUiControllerTest {
                         .file(yamlFile)
                         .param("fileName", "fileName"))
                 .andExpect(status().isInternalServerError())
-                .andExpect(content().string(containsString("Cannot deserialize value of type")))
-                .andExpect(content().string(not(containsString("nested exception is"))))
-                .andExpect(content().string(not(containsString("(through reference chain:"))));
+            .andExpect(jsonPath("$.mainCause").value(containsString("Failed to convert given JSON string to config object of class de.gematik.test.tiger.testenvmgr.config.Configuration!")))
+            .andExpect(jsonPath("$.causes").value(hasSize(1)))
+            .andExpect(jsonPath("$.causes[0]").value(containsString("Cannot deserialize value of type `de.gematik.test.tiger.common.config.ServerType` from String \"NOTEXISTING\": not one of the values accepted for Enum class: [externalJar, compose, externalUrl, tigerProxy, docker]\n"
+                + " at [Source: (String)\"{\"servers\":{\"testInvalidType\":{\"template\":\"idp-ref\",\"active\":true,\"hostname\":\"invalid\",\"source\":[\"https://idp-test.zentral.idp.splitdns.ti-dienste.de/\"],\"type\":\"NOTEXISTING\"}}}\"; line: 1, column: 161] (through reference chain: de.gematik.test.tiger.testenvmgr.config.Configuration[\"servers\"]->java.util.LinkedHashMap[\"testInvalidType\"]->de.gematik.test.tiger.testenvmgr.config.CfgServer[\"type\"])")))
+        ;
+
     }
 }

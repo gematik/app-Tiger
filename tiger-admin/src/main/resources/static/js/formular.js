@@ -4,27 +4,39 @@
 //
 // ----------------------------------------------------------------------------
 
-// TODO default structure via backend -> Yana, Julian
-// TODO add server -> Yana, wizard or deluxe dropdown based, choose between the types,
-//  templates and use cases, each one has a sophisticated explanation
-//  visualized besides the entry
-// ONGOING bootstrap sass -> Yana
+/* DONE
+welcome page, new testenv, type icons
+new testenv fixed
+introduced unsavedmodification flag
+handle save icon on toolbar accordingly
+make sure callbacks are registered for welcome section buttons
+on rename of serverkey type icon gets removed!
+raise flag only if list edit really changes value
+on add new testenv ask before deleting existing env if any unsaved
+before opening ask to save existing env if any unsaved
+moved exception parsing to browser and introduced general error modal
+*/
+
+/* before commit
+*/
+
+
+// TODO recheck modification detection on complex lists once default values are implemented
+// as of now the yaml from the server does only ocntain attributes which have a value (null are not added)
+// so in routes if id is not set its not forwarded at all in the serverYaml struct
+// so the mod detection always barks when unactivating it until you applied the settings once
+
+// TODO fix all test data configs (demis no type et all....)
+
+// TODO how to mark settings that are defined in template/overridden
+
+// TODO save to file
 
 // New tasks -> Yana/Anne
-// TODO get all templates via backend
-// TODO change sidebar blocks to have a handle for dragndrop and when only clicking
-//  on it scroll to server formular
 // TODO make source fieldset type specific, add extra template for this
 //  fieldset and depending on the type copy it to the server formular
 
 // ONGOING refactor js code
-// TODO add new testenv (and ask before deleting existing env if any)
-// TODO before opening ask to save existing env if any
-// TODO: clarify pkiKeys / PkiIdentity struct - can we use simple strings here? YES implement csv based values
-// TODO: EDIT complex list entries
-// TODO: readonly management for fieldsets of complex lists
-// TODO template support (depends on default structure and templates via backend)
-// TODO how to mark settings that are defined in template/overridden
 // TODO help section probably visualized beneath the side bar showing help text to each hovering input
 // or do we do hovering tooltip?
 
@@ -182,27 +194,41 @@ $.fn.initFormular = function (serverKey, serverData) {
         // start editing
         listGroup.find('.active > span').click();
       });
+
   this.find('fieldset.complex-list .btn-list-add').click(
       function () {
         const fieldSet = $(this).parents('fieldset');
+        fieldSet.enableSubSetFields(true);
         const listGroup = fieldSet.find(".list-group");
 
         const activeItem = listGroup.find('.active');
+        if (activeItem.length) {
+          const origData = activeItem.data("listdata");
+          const newData = fieldSet.getNewDataFromSubsetFieldset(false);
+          if (!objectDeepEquals(origData, newData)) {
+            bs5Utils.Snack.show('warning', 'Aborting other editing',
+                delay = 5000, dismissible = true);
+          }
+        }
         listGroup.find('.active').removeClass('active');
-        let newItem = $(getListItem("", true));
+        let newItem = $(getListItem("", true, true));
 
         if (activeItem.length === 0) {
           listGroup.prepend(newItem);
         } else {
           newItem.insertAfter(activeItem);
         }
-        fieldSet.updateDataAndLabelForActiveItem(true);
 
-        // TODO respect default value attributes
         const editFieldSet = fieldSet.find('fieldset');
-        editFieldSet.find("*[name][type!='checkbox']").val('');
-        editFieldSet.find("*[name][type='checkbox']").prop('checked',
-            false);
+        if (activeItem.length) {
+          // if no active item dont skip entered data as its not very user friendly
+          fieldSet.updateDataAndLabelForActiveItem(true);
+          // TODO respect default value attributes
+          editFieldSet.find("*[name][type!='checkbox']").val('');
+          editFieldSet.find("*[name][type='checkbox']").prop('checked',
+              false);
+        }
+
         // start editing
         editFieldSet.find("*[name]:first").focus();
         fieldSet.find(".btn-list-apply").tgrEnabled(true);
@@ -217,7 +243,6 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.find('fieldset .btn-list-apply').click(function () {
     const fieldSet = $(this).parents('fieldset');
     fieldSet.updateDataAndLabelForActiveItem(false);
-    $(this).tgrEnabled(false);
   });
 
   //
@@ -611,9 +636,9 @@ $.fn.extend({
           }
           pathCursor = pathCursor[node];
         });
-        return pathCursor || "&nbsp;";
+        return pathCursor || " ";
       } else {
-        return data[g1] || "&nbsp;";
+        return data[g1] || " ";
       }
     });
   },
@@ -623,7 +648,7 @@ $.fn.extend({
     checkSingle('setObjectFieldInForm', this);
     if (typeof data[field] === "object" && data[field] !== null) {
       for (const child in data[field]) {
-        this.setObjectFieldInForm((data[field]), child, path + "." + field);
+        this.setObjectFieldInForm(data[field], child, path + "." + field);
       }
     } else {
       const inputField = this.find("*[name='" + path + "." + field + "']");
@@ -680,6 +705,15 @@ $.fn.extend({
       }
       $(this).attr('class', clz);
     });
+  },
+  enableSubSetFields: function(state) {
+    checkTag('enableSubSetFields', this, 'FIELDSET');
+    this.find('fieldset.subset input').tgrEnabled(state);
+    this.find('fieldset.subset select').tgrEnabled(state);
+    this.find('fieldset.subset .form-switch').tgrEnabled(state);
+    this.find('fieldset.subset-below input').tgrEnabled(state);
+    this.find('fieldset.subset-below select').tgrEnabled(state);
+    this.find('fieldset.subset-below .form-switch').tgrEnabled(state);
   }
 
 });
@@ -718,9 +752,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
           $(this).parents('.list-group').find('.active').removeClass('active');
           $(this).parent().addClass('active');
           $(this).focus();
-          const btnDel = $(this).parents('fieldset').find('.btn-list-delete');
-          btnDel.attr('disabled', false);
-          btnDel.removeClass('disabled');
+          $(this).parents('fieldset').find('.btn-list-delete').tgrEnabled(true);
         }
         $(this).keydown((ev) => {
           return handleEnterEscOnEditableContent($(this), ev);
@@ -732,8 +764,26 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
 
     const listItem = $(this).parent();
     listItem.click(() => {
+      if (listItem.hasClass('active')) {
+        return true;
+      }
+
       const fieldSet = listItem.parents('fieldset');
       const curActive = listItem.parents('.list-group').find('.active');
+
+      fieldSet.enableSubSetFields(true);
+
+      if (!editable) {
+        const origData = curActive.data("listdata");
+        if (origData) {
+          const newData = fieldSet.getNewDataFromSubsetFieldset(false);
+          if (!objectDeepEquals(origData, newData)) {
+            bs5Utils.Snack.show('warning', 'Aborting other editing',
+                delay = 5000, dismissible = true);
+          }
+        }
+      }
+
       curActive.removeClass('active');
       listItem.addClass('active');
       const section = fieldSet.attr("section");
@@ -750,6 +800,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
         for (const field in data) {
           fieldSet.setObjectFieldInForm(data, field, section);
         }
+        $(this).parents('fieldset').find('.btn-list-apply').tgrEnabled(true);
       }
     });
   });
@@ -759,6 +810,9 @@ function handleEnterEscOnEditableContent($elem, ev) {
   if (ev.keyCode === 13 || ev.keyCode === 27) {
     if (ev.keyCode === 27) {
       $elem.html($elem.data('originalContent'));
+    } else {
+      notifyChangesToTestenvData(
+          $elem.data('originalContent') !== $elem.html());
     }
     $elem.removeClass('editing');
     $elem.attr('contentEditable', 'false');
@@ -782,23 +836,51 @@ function getListItem(text, active, reallySmall) {
 // for single fieldset TODO
 $.fn.updateDataAndLabelForActiveItem = function (emptyValues) {
   checkTag('updateDataAndLabelForActiveItem', this, 'FIELDSET');
+  const listGroup = this.find('.list-group');
+  let elem = listGroup.find(".list-group-item.active");
+  const fieldSet = this.find('fieldset.subset');
+  const data = this.getNewDataFromSubsetFieldset(emptyValues)
+  if (emptyValues) {
+    let notEmpty = false;
+    $.each(fieldSet.find("*[name]"), function () {
+      const value = fieldSet.getValue($(this).attr('name'));
+      if (value) {
+        notEmpty = true;
+      }
+    });
+    if (notEmpty) {
+      bs5Utils.Snack.show('warning', 'Aborting other editing',
+          delay = 5000, dismissible = true);
+    }
+  }
+  elem.replaceWith(
+      getListItem(
+          $('<div/>').text(listGroup.generateListItemLabel(data)).html(),
+          true, true
+      )
+  );
+  elem = listGroup.find(".list-group-item.active");
+  elem.data("listdata", data);
+  elem.find('span:first').addClickNKeyCallbacks2ListItem(false);
+}
+
+$.fn.getNewDataFromSubsetFieldset = function (emptyValues) {
+  checkTag('getNewDataFromSubsetFieldset', this, 'FIELDSET');
+
   const section = this.attr("section");
   const listGroup = this.find('.list-group');
   let elem = listGroup.find(".list-group-item.active");
   let data = elem.data("listdata");
-
-  // read input from fields into data() struct and update list item value
+  // read input from fields into data() struct
+  let clonedData;
   if (!data) {
-    data = {};
+    clonedData = {};
+  } else {
+    clonedData = {...data};
   }
-  this.find('fieldset').find("*[name]").setValueInData(section, data,
+  this.find('fieldset').find("*[name]").setValueInData(section, clonedData,
       emptyValues);
-  elem.replaceWith(
-      getListItem(listGroup.generateListItemLabel(data), true, true));
-
-  elem = listGroup.find(".list-group-item.active");
-  elem.data("listdata", data);
-  elem.find('span:first').addClickNKeyCallbacks2ListItem(false);
+  return clonedData;
 }
 
 // for single .server-formular TODO
@@ -820,8 +902,10 @@ $.fn.populateForm = function (serverData, path) {
       let editable = false;
       if (typeof value[0] === 'object') {
         $.each(value, function (idx, item) {
-          listHtml += getListItem(elem.generateListItemLabel(item), false,
-              true);
+          listHtml += getListItem(
+              $('<div/>').text(
+                  elem.generateListItemLabel(item), false, true)
+              .html(), false, true);
         });
         elem.html(listHtml);
         $.each(value, function (idx, itemData) {
@@ -831,7 +915,7 @@ $.fn.populateForm = function (serverData, path) {
         const fieldSet = elem.parents('fieldset');
         editable = fieldSet.hasClass('editableList');
         $.each(value, function (idx, item) {
-          listHtml += getListItem(item, false);
+          listHtml += getListItem(item, false, !editable);
         });
         elem.html(listHtml);
       }
@@ -846,4 +930,25 @@ $.fn.populateForm = function (serverData, path) {
     }
     elem.setValue(serverData[field]);
   }
+
+  this.find('fieldset:not(.subset):not(subset-below)').enableSubSetFields(false);
+
+}
+
+function objectDeepEquals(obj1, obj2) {
+  let props1 = Object.getOwnPropertyNames(obj1);
+  let props2 = Object.getOwnPropertyNames(obj2);
+  if (props1.length !== props2.length) {
+    return false;
+  }
+  for (let i = 0; i < props1.length; i++) {
+    let prop = props1[i];
+    let bothAreObjects = typeof (obj1[prop]) === 'object'
+        && typeof (obj2[prop]) === 'object';
+    if ((!bothAreObjects && (obj1[prop] !== obj2[prop]))
+        || (bothAreObjects && !objectDeepEquals(obj1[prop], obj2[prop]))) {
+      return false;
+    }
+  }
+  return true;
 }

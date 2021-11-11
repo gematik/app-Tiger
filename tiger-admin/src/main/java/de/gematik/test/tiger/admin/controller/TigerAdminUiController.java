@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.admin.controller;
 
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +23,8 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class TigerAdminUiController {
 
-    @GetMapping("/start")
+    @GetMapping("/")
     public String getStartPage() {
-        return "startPage";
-    }
-
-    @GetMapping("/yml-page")
-    public String getYmlPage() {
         return "ymlPage";
     }
 
@@ -41,7 +37,7 @@ public class TigerAdminUiController {
         JSONObject jsonCfg = TigerConfigurationHelper.yamlStringToJson(yamlString);
 
         Configuration configuration = new TigerConfigurationHelper<Configuration>()
-                .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
+            .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
 
         return TigerConfigurationHelper.toJson(configuration.getServers());
     }

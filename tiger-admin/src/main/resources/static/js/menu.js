@@ -1,5 +1,7 @@
 let currEnvironment;
 
+let unsavedModifications = false;
+
 // =============================================================================
 //
 // menu.js
@@ -19,44 +21,21 @@ function openYamlFile() {
     success: function (res) {
       currEnvironment = res;
       populateServersFromYaml(res);
-      $('.cfg-file-label').text($('#file').val().replace(/C:\\fakepath\\/i, ''));
+      $('.cfg-file-label').text(
+          $('#file').val().replace(/C:\\fakepath\\/i, ''));
     },
     error: function (xhr) {
-      bs5Utils.Modal.show({
-        type: 'danger',
-        title: `Error`,
-        content:
-            '<div>Leider konnten wir ihre YAML Konfiguration nicht laden!</div>' +
-            '<hr class="dropdown-divider" style="display: none;">' +
-            '<small><div class="detailedMessage" style="display: none"></div></small>',
-        buttons: [
-          {
-            text: 'Advanced details',
-            class: 'btn btn-sm btn-info',
-            handler: (ev) => {
-             const detMsg = $(ev.target).parents('.modal-dialog').find('.detailedMessage');
-             const divider = $(ev.target).parents('.modal-dialog').find('.dropdown-divider');
-             detMsg.text(xhr.responseText);
-             if($('.btn.btn-sm.btn-info').text() ==='Close'){
-               divider.hide();
-               detMsg.hide();
-               $('.btn.btn-sm.btn-info').text('Advanced details');
-             }else{
-               divider.show();
-               detMsg.show();
-               $('.btn.btn-sm.btn-info').text('Close');
-             }
-            }
-          },
-        ],
-        centered: true,
-        dismissible: true,
-        backdrop: 'static',
-        keyboard: false,
-        focus: false
-      });
+      showError('We are sorry, but we were unable to load your configuration file!', xhr.responseJSON);
     }
   });
+}
+
+const serverIcons = {
+  docker: "fab fa-docker",
+  compose: "text-primary fab fa-docker",
+  tigerProxy: "fas fa-project-diagram",
+  externalJar: "fas fa-rocket",
+  externalUrl: "fas fa-external-link-alt"
 }
 
 function populateServersFromYaml(testEnvYaml) {
@@ -67,9 +46,12 @@ function populateServersFromYaml(testEnvYaml) {
   for (serverKey in testEnvYaml) {
     // create sidebar entry
     $('.container.sidebar.server-container').append(
-        '<div id="sidebar_server_' + serverKey + '" class="box sidebar-item row">'
+        '<div id="sidebar_server_' + serverKey
+        + '" class="box sidebar-item row">'
         + '<div class="col-1"><i class="fas fa-grip-lines draghandle"></i></div>'
-        + '<div class="col-10 server-label">' + serverKey + '</div>'
+        + '<div class="col-10"><i class="server-icon '
+        + serverIcons[testEnvYaml[serverKey].type]
+        + '"></i><span class="server-label">' + serverKey + '</span></div>'
         + '<div class="col-1 context-menu-one btn btn-neutral"> <i class="fas fa-ellipsis-v"></i> </div> </div>');
 
     // create server content form tag
@@ -79,18 +61,110 @@ function populateServersFromYaml(testEnvYaml) {
     $('#content_server_' + serverKey).initFormular(serverKey,
         testEnvYaml[serverKey]);
 
+    $('*[name]').change(function () {
+      notifyChangesToTestenvData(true);
+    });
+
     // update proxied select field in all formulars
     updateServerLists(Object.keys(testEnvYaml));
 
     $('#sidebar_server_' + serverKey + ' .server-label').click(function (ev) {
-        const formid = $(this).parents('.sidebar-item').attr('id').replace('sidebar_server_', 'content_server_');
+          const formid = $(this).parents('.sidebar-item').attr('id').replace(
+              'sidebar_server_', 'content_server_');
           $('#' + formid + ' h1')[0].scrollIntoView(true);
         }
     );
   }
+  if (!serverContent.children().length) {
+    showWelcomeCard();
+  }
+  notifyChangesToTestenvData(false);
 }
 
-updateServerLists = function (serverList, replacedSelection, optNewSelection) {
-  $('form.server-formular').updateServerList(serverList, replacedSelection, optNewSelection);
+function notifyChangesToTestenvData(flag) {
+  unsavedModifications = flag;
+  if (flag) {
+    $('.btn.btn-save-testenv').fadeIn();
+    $('.btn-save-testenv').removeClass('disabled');
+  } else {
+    $('.btn.btn-save-testenv').fadeOut();
+    $('.btn-save-testenv').addClass('disabled');
+  }
 }
 
+function showWelcomeCard() {
+  $('.server-content').html($('#template-welcome-card').html());
+  $('.server-content .btn-open-testenv').click(function () {
+    if (unsavedModifications) {
+      bs5Utils.Snack.show('danger',
+          'TODO ASk whether to discard changes',
+          delay = 5000, dismissible = true);
+    }
+    $("#file").click();
+  });
+  // TODO add addserver cb
+}
+
+function updateServerLists(serverList, replacedSelection, optNewSelection) {
+  $('form.server-formular').updateServerList(serverList, replacedSelection,
+      optNewSelection);
+}
+
+function confirmNoDefault(title, content, yesfunc) {
+  bs5Utils.Modal.show({
+    title: title,
+    content:
+        '<div>' + content + '</div>',
+    buttons: [
+      {
+        text: 'Yes', class: 'btn btn-sm btn-danger',
+        handler: (ev) => {
+          $(ev.target).parents('.modal.show').modal('hide')
+          yesfunc(ev);
+        }
+      },
+      {text: 'No', class: 'btn btn-sm btn-primary', type: 'dismiss'},
+    ],
+    centered: true, dismissible: true, backdrop: 'static', keyboard: true,
+    focus: false, type: 'danger'
+  });
+}
+
+function showError(errMessage, errorCauses) {
+  let details = '<b>' + errorCauses.mainCause + '</b><br/>';
+  errorCauses.causes.forEach(function(cause) {
+    details += '\n<br/>Caused by: ' + cause;
+  });
+  bs5Utils.Modal.show({
+    title: `Error`,
+    content:
+        '<div>' + errMessage + '</div>'
+        + '<hr class="dropdown-divider" style="display: none;">'
+        + '<small><div class="modal-error detailedMessage hidden"></div></small>',
+    buttons: [
+      {
+        text: 'Advanced details',
+        class: 'btn btn-sm btn-info',
+        handler: (ev) => {
+          const detMsg = $(ev.target).parents('.modal-dialog').find(
+              '.detailedMessage');
+          const divider = $(ev.target).parents('.modal-dialog').find(
+              '.dropdown-divider');
+          detMsg.html(details);
+          if ($('.btn.btn-sm.btn-info').text() === 'Hide Details') {
+            divider.hide();
+            detMsg.hide();
+            $('.btn.btn-sm.btn-info').text('Advanced details');
+          } else {
+            divider.show();
+            detMsg.show();
+            $('.btn.btn-sm.btn-info').text('Hide Details');
+          }
+        }
+      },
+      { text: 'Close', class: 'btn btn-sm btn-primary', type: 'dismiss' }
+    ],
+    centered: true, dismissible: true, backdrop: 'static', keyboard: true,
+    focus: false, type: 'danger'
+  });
+}

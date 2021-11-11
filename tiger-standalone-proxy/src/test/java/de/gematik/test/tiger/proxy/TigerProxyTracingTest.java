@@ -20,6 +20,7 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
@@ -35,6 +36,7 @@ import static org.mockserver.model.HttpResponse.response;
 @ExtendWith(MockServerExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RequiredArgsConstructor
+@DirtiesContext
 public class TigerProxyTracingTest {
 
     private static final Duration DEFAULT_WAIT_TIME = Duration.of(10, ChronoUnit.SECONDS);
