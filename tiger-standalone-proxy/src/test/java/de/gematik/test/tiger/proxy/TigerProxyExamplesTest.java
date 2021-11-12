@@ -5,7 +5,7 @@ import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
@@ -240,7 +240,7 @@ public class TigerProxyExamplesTest {
                 .to("http://localhost:" + mockServerClient.getPort())
                 .build()))
             .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerPkiIdentity("../tiger-proxy/src/test/resources/customCa.p12;00"))
+                .serverRootCa(new TigerConfigurationPkiIdentity("../tiger-proxy/src/test/resources/customCa.p12;00"))
                 .build())
             .build());
 

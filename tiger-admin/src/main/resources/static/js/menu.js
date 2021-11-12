@@ -96,9 +96,7 @@ function showWelcomeCard() {
   $('.server-content').html($('#template-welcome-card').html());
   $('.server-content .btn-open-testenv').click(function () {
     if (unsavedModifications) {
-      bs5Utils.Snack.show('danger',
-          'TODO ASk whether to discard changes',
-          delay = 5000, dismissible = true);
+      danger( 'TODO ASk whether to discard changes');
     }
     $("#file").click();
   });
@@ -151,14 +149,15 @@ function showError(errMessage, errorCauses) {
           const divider = $(ev.target).parents('.modal-dialog').find(
               '.dropdown-divider');
           detMsg.html(details);
-          if ($('.btn.btn-sm.btn-info').text() === 'Hide Details') {
+          const btn = $('.btn.btn-sm.btn-info');
+          if (btn.text() === 'Hide Details') {
             divider.hide();
             detMsg.hide();
-            $('.btn.btn-sm.btn-info').text('Advanced details');
+            btn.text('Advanced details');
           } else {
             divider.show();
             detMsg.show();
-            $('.btn.btn-sm.btn-info').text('Hide Details');
+            btn.text('Hide Details');
           }
         }
       },
@@ -167,4 +166,26 @@ function showError(errMessage, errorCauses) {
     centered: true, dismissible: true, backdrop: 'static', keyboard: true,
     focus: false, type: 'danger'
   });
+}
+
+
+function warn(text, delay, dismissible) {
+  snack(text, 'warning', delay, dismissible);
+}
+
+function danger(text, delay, dismissible) {
+  snack(text, 'danger', delay, dismissible);
+}
+
+function snack(text, type, delay, dismissible) {
+  if (!type) {
+    type = 'warning'
+  }
+  if (!delay) {
+    delay = bs5UtilsDelay5Sec;
+  }
+  if (!dismissible && dismissible !== false) {
+    dismissible = bs5UtilsDismissible;
+  }
+  bs5Utils.Snack.show(type, text, delay, dismissible);
 }

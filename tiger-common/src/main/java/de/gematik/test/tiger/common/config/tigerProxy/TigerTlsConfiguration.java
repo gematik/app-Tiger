@@ -1,6 +1,6 @@
 package de.gematik.test.tiger.common.config.tigerProxy;
 
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +14,9 @@ import java.util.List;
 @Builder
 public class TigerTlsConfiguration {
 
-    private TigerPkiIdentity serverRootCa;
-    private TigerPkiIdentity forwardMutualTlsIdentity;
-    private TigerPkiIdentity serverIdentity;
+    private TigerConfigurationPkiIdentity serverRootCa;
+    private TigerConfigurationPkiIdentity forwardMutualTlsIdentity;
+    private TigerConfigurationPkiIdentity serverIdentity;
     @Builder.Default
     private String domainName = "localhost";
     @Builder.Default

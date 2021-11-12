@@ -1,5 +1,6 @@
 <!DOCTYPE HTML>
-<html xmlns:th="http://www.thymeleaf.org">
+<!--suppress HtmlFormInputWithoutLabel -->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -22,7 +23,7 @@
 <div class="container-fluid">
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-gradient-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#"><img class="tiger-logo" src="img/tiger2-plain.svg"></a>
+      <a class="navbar-brand" href="#"><img class="tiger-logo" alt="Tiger logo" src="img/tiger2-plain.svg"></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02"
               aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -102,19 +103,17 @@
       <section class="highlight-clean">
         <div class="container">
           <div class="intro">
-            <img class="float-end mb-4 ml-4 p-1 border border-primary rounded" th:src="@{/img/tiger2-plain.svg}" width="160">
+            <img alt="Tiger logo" class="float-end mb-4 ml-4 p-1 border border-primary rounded" th:src="@{/img/tiger2-plain.svg}" width="160">
             <h2 class="text-center mb-3">Tiger Administration GUI</h2>
             <p class="text-justify">
               Tiger is an agile test platform developed by a Team at Gematik GmbH.</p>
             <p>Our main values/goals for Tiger are</p>
-            <p>
             <ul>
               <li>Perform automated IOP tests more efficiently</li>
               <li>Set up test environments more efficiently</li>
               <li>Perform analysis of test failures more efficiently</li>
               <li>Reuse cases/steps from existing test suites</li>
             </ul>
-            </p>
             <p>This site allows you to specify / compose a new test environment based upon
             </p>
             <ul>
@@ -123,7 +122,6 @@
               <li>external Jar files or even</li>
               <li>server nodes being accessible via an external URL.</li>
             </ul>
-            </p>
             <p class="text-justify">
               To learn more about the different types of nodes Tiger supports please checkout
               <a href="https://build.top.local/source/git/Testtools/tiger/-/blob/master/doc/testenv-config-types.md"
@@ -156,7 +154,7 @@
     <!-- left column with heading and general settings/source -->
     <div class="col-5 flex-fill topcol">
       <h1 class="text-break text-white bg-primary border-primary shadow"
-          style="padding: 1rem;border-radius: 1rem;border-top-left-radius: 0;border-top-right-radius: 0;border-bottom-right-radius: 1rem;border-bottom-left-radius: 0;">
+          style="padding: 1rem;border-radius: 0 0 1rem 0;">
         <span class="server-key"></span>
         <i class="server-formular-collapse-icon fas fa-angle-down"></i>
         <i class="fas fa-toolbox btn-advanced global"></i>
@@ -177,7 +175,7 @@
             </div>
             <div class="input-group">
               <span class="input-group-text">Hostname</span>
-              <input class="form-control col-8" type="text" name="hostname">
+              <input class="form-control" type="text" name="hostname">
             </div>
             <div class="input-group"><span class="input-group-text">Template</span>
               <select class="form-select" name="template">
@@ -462,209 +460,207 @@
                   </div>
                 </div>
               </fieldset>
-              <group>
-                <fieldset class="labels-col-4 forwardToProxy advanced start-collapsed"
-                          section=".tigerProxyCfg.proxyCfg.forwardToProxy"
-                          summarypattern="${.tigerProxyCfg.proxyCfg.forwardToProxy.type}://${.tigerProxyCfg.proxyCfg.forwardToProxy.hostname}:${.tigerProxyCfg.proxyCfg.forwardToProxy.port}">
-                  <legend>
-                    Forward Proxy
-                    <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
-                    <span class="fieldset-summary fs-6"></span>
-                  </legend>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" name="enableForwardProxy">
-                    <label class="form-check-label">Activate forward proxy</label>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="input-group">
-                        <span class="input-group-text">Hostname</span>
-                        <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.forwardToProxy.hostname"
-                               placeholder="Your company proxy">
-                      </div>
-                      <div class="input-group">
-                        <span class="input-group-text">Proxy Protocol</span>
-                        <select class="form-select" name=".tigerProxyCfg.proxyCfg.forwardToProxy.type">
-                          <option value="http">HTTP</option>
-                          <option value="https">HTTPS</option>
-                        </select>
-                      </div>
+              <fieldset class="labels-col-4 forwardToProxy advanced start-collapsed"
+                        section=".tigerProxyCfg.proxyCfg.forwardToProxy"
+                        summarypattern="${.tigerProxyCfg.proxyCfg.forwardToProxy.type}://${.tigerProxyCfg.proxyCfg.forwardToProxy.hostname}:${.tigerProxyCfg.proxyCfg.forwardToProxy.port}">
+                <legend>
+                  Forward Proxy
+                  <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
+                  <span class="fieldset-summary fs-6"></span>
+                </legend>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" name="enableForwardProxy">
+                  <label class="form-check-label">Activate forward proxy</label>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="input-group">
+                      <span class="input-group-text">Hostname</span>
+                      <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.forwardToProxy.hostname"
+                             placeholder="Your company proxy">
                     </div>
-                    <div class="col-md-6">
-                      <div class="input-group">
-                        <span class="input-group-text">Port</span>
-                        <input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.forwardToProxy.port"
-                               placeholder="Your company proxy port">
-                      </div>
+                    <div class="input-group">
+                      <span class="input-group-text">Proxy Protocol</span>
+                      <select class="form-select" name=".tigerProxyCfg.proxyCfg.forwardToProxy.type">
+                        <option value="http">HTTP</option>
+                        <option value="https">HTTPS</option>
+                      </select>
                     </div>
                   </div>
-                </fieldset>
-                <fieldset class="labels-col-3 editableList advanced start-collapsed"
-                          section=".tigerProxyCfg.proxyCfg.trafficEndpoints"
-                          summarypattern="Endpoints: <br/>${.tigerProxyCfg.proxyCfg.trafficEndpoints}<br/>Timeout ${.tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds}<br/>Buffers in Mb ${.tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.rbelBufferSizeInMb}<br/>Skip subscription at startup ${.tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription}">
-                  <legend>
-                    Traffic Endpoints
-                    <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
-                    <span class="fieldset-summary fs-6"></span>
-                  </legend>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox"
-                               name=".tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription">
-                        <label class="form-check-label">Skip traffic endpoint subscription at startup</label>
-                      </div>
+                  <div class="col-md-6">
+                    <div class="input-group">
+                      <span class="input-group-text">Port</span>
+                      <input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.forwardToProxy.port"
+                             placeholder="Your company proxy port">
                     </div>
-                    <div class="col-md-6">
-                      <div class="input-group">
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset class="labels-col-3 editableList advanced start-collapsed"
+                        section=".tigerProxyCfg.proxyCfg.trafficEndpoints"
+                        summarypattern="Endpoints: <br/>${.tigerProxyCfg.proxyCfg.trafficEndpoints}<br/>Timeout ${.tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds}<br/>Buffers in Mb ${.tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb}, ${.tigerProxyCfg.proxyCfg.rbelBufferSizeInMb}<br/>Skip subscription at startup ${.tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription}">
+                <legend>
+                  Traffic Endpoints
+                  <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
+                  <span class="fieldset-summary fs-6"></span>
+                </legend>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox"
+                             name=".tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription">
+                      <label class="form-check-label">Skip traffic endpoint subscription at startup</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="input-group">
                         <span class="flex-fill input-group-text">
                           Connection Timeout (sec)
                         </span>
-                        <input class="form-control" type="number"
-                               name=".tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds">
-                      </div>
-                      <div class="input-group">
-                        <span class="flex-fill input-group-text">Stomp Client Buffer (Mb)</span>
-                        <input class="form-control" type="number"
-                               name=".tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb">
-                      </div>
-                      <div class="input-group">
-                        <span class="flex-fill input-group-text">Message Buffer (Mb)</span>
-                        <input class="form-control" type="number"
-                               name=".tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb">
-                      </div>
-                      <div class="input-group">
-                        <span class="flex-fill input-group-text">Rbel Buffer (Mb)</span>
-                        <input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.rbelBufferSizeInMb">
-                      </div>
+                      <input class="form-control" type="number"
+                             name=".tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds">
+                    </div>
+                    <div class="input-group">
+                      <span class="flex-fill input-group-text">Stomp Client Buffer (Mb)</span>
+                      <input class="form-control" type="number"
+                             name=".tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb">
+                    </div>
+                    <div class="input-group">
+                      <span class="flex-fill input-group-text">Message Buffer (Mb)</span>
+                      <input class="form-control" type="number"
+                             name=".tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb">
+                    </div>
+                    <div class="input-group">
+                      <span class="flex-fill input-group-text">Rbel Buffer (Mb)</span>
+                      <input class="form-control" type="number" name=".tigerProxyCfg.proxyCfg.rbelBufferSizeInMb">
                     </div>
                   </div>
-                  <div class="row" style="margin-top: 1rem;">
-                    <div class="col align-items-stretch">
-                      <ul class="list-group" name=".tigerProxyCfg.proxyCfg.trafficEndpoints"></ul>
-                    </div>
-                    <div class="col-auto">
-                      <div
-                          class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
-                          role="group">
-                        <button class="btn btn-success btn-list-add" type="button">
-                          <i class="fas fa-plus-circle"></i>&nbsp;Add
-                        </button>
-                        <button class="btn btn-danger btn-list-delete" type="button">
-                          <i class="far fa-trash-alt"></i>&nbsp;Delete
-                        </button>
-                      </div>
+                </div>
+                <div class="row" style="margin-top: 1rem;">
+                  <div class="col align-items-stretch">
+                    <ul class="list-group" name=".tigerProxyCfg.proxyCfg.trafficEndpoints"></ul>
+                  </div>
+                  <div class="col-auto">
+                    <div
+                        class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
+                        role="group">
+                      <button class="btn btn-success btn-list-add" type="button">
+                        <i class="fas fa-plus-circle"></i>&nbsp;Add
+                      </button>
+                      <button class="btn btn-danger btn-list-delete" type="button">
+                        <i class="far fa-trash-alt"></i>&nbsp;Delete
+                      </button>
                     </div>
                   </div>
-                </fieldset>
-                <fieldset class="labels-col-3 start-collapsed advanced  complex-list"
-                          section=".tigerProxyCfg.proxyCfg.modifications"
-                          summarypattern="${.tigerProxyCfg.proxyCfg.modifications}">
-                  <legend>
-                    Modifications
-                    <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
-                    <span class="fieldset-summary fs-6"></span>
-                  </legend>
-                  <div class="row">
-                    <div class="col-3 align-items-stretch">
-                      <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications"
-                          summarypattern="${name} ${condition}"></ul>
-                    </div>
-                    <div class="col-auto">
-                      <div
-                          class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
-                          role="group">
-                        <button class="btn btn-success btn-list-add" type="button">
-                          <i class="fas fa-plus-circle"></i>&nbsp;Add
-                        </button>
-                        <button class="btn btn-danger btn-list-delete" type="button">
-                          <i class="far fa-trash-alt"></i>&nbsp;Delete
-                        </button>
-                        <button
-                            class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply"
-                            type="button">
-                          <i class="fas fa-check"></i>&nbsp;Apply
-                        </button>
-                      </div>
-                    </div>
-                    <div class="col">
-                      <fieldset class="subset">
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text">Name</span>
-                          <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.name">
-                        </div>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text">Condition</span>
-                          <input class="form-control" type="text"
-                                 name=".tigerProxyCfg.proxyCfg.modifications.condition">
-                        </div>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text">Target Element</span>
-                          <input class="form-control" type="text"
-                                 name=".tigerProxyCfg.proxyCfg.modifications.targetElement">
-                        </div>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text">Replace With</span>
-                          <input class="form-control" type="text"
-                                 name=".tigerProxyCfg.proxyCfg.modifications.replaceWith">
-                        </div>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text">Regex Filter</span>
-                          <input class="form-control" type="text"
-                                 name=".tigerProxyCfg.proxyCfg.modifications.regexFilter">
-                        </div>
-                      </fieldset>
+                </div>
+              </fieldset>
+              <fieldset class="labels-col-3 start-collapsed advanced  complex-list"
+                        section=".tigerProxyCfg.proxyCfg.modifications"
+                        summarypattern="${.tigerProxyCfg.proxyCfg.modifications}">
+                <legend>
+                  Modifications
+                  <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
+                  <span class="fieldset-summary fs-6"></span>
+                </legend>
+                <div class="row">
+                  <div class="col-3 align-items-stretch">
+                    <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications"
+                        summarypattern="${name} ${condition}"></ul>
+                  </div>
+                  <div class="col-auto">
+                    <div
+                        class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
+                        role="group">
+                      <button class="btn btn-success btn-list-add" type="button">
+                        <i class="fas fa-plus-circle"></i>&nbsp;Add
+                      </button>
+                      <button class="btn btn-danger btn-list-delete" type="button">
+                        <i class="far fa-trash-alt"></i>&nbsp;Delete
+                      </button>
+                      <button
+                          class="btn btn-success flex-column flex-grow-1 flex-fill justify-content-evenly align-items-stretch align-content-stretch align-self-stretch btn-list-apply"
+                          type="button">
+                        <i class="fas fa-check"></i>&nbsp;Apply
+                      </button>
                     </div>
                   </div>
-                </fieldset>
-                <fieldset class="editableList advanced tls start-collapsed" section=".tigerProxyCfg.proxyCfg.tls"
-                          summarypattern="${.tigerProxyCfg.proxyCfg.tls.domainName}<br/>RootCa ${.tigerProxyCfg.proxyCfg.tls.serverRootCa}<br/>Mutual TLS Identity ${.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity}<br/>Server Identity ${.tigerProxyCfg.proxyCfg.tls.serverIdentity}<br/>Additional Names<br/> ${.tigerProxyCfg.proxyCfg.tls.alternativeNames}">
-                  <legend>
-                    TLS Configuration
-                    <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
-                    <span class="fieldset-summary fs-6"></span>
-                  </legend>
-                  <div class="row">
-                    <div class="col">
-                      <div class="input-group">
-                        <span class="input-group-text">Server Root Ca</span>
-                        <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa">
+                  <div class="col">
+                    <fieldset class="subset">
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text">Name</span>
+                        <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.modifications.name">
                       </div>
-                      <div class="input-group">
-                        <span class="input-group-text">Forward Mutual TLS Identity</span>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text">Condition</span>
                         <input class="form-control" type="text"
-                               name=".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity">
+                               name=".tigerProxyCfg.proxyCfg.modifications.condition">
                       </div>
-                      <div class="input-group">
-                        <span class="input-group-text">Server Identity</span>
-                        <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity">
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text">Target Element</span>
+                        <input class="form-control" type="text"
+                               name=".tigerProxyCfg.proxyCfg.modifications.targetElement">
                       </div>
-                      <div class="input-group">
-                        <span class="input-group-text">Domain Name</span>
-                        <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.domainName">
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text">Replace With</span>
+                        <input class="form-control" type="text"
+                               name=".tigerProxyCfg.proxyCfg.modifications.replaceWith">
                       </div>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text">Regex Filter</span>
+                        <input class="form-control" type="text"
+                               name=".tigerProxyCfg.proxyCfg.modifications.regexFilter">
+                      </div>
+                    </fieldset>
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset class="editableList advanced tls start-collapsed" section=".tigerProxyCfg.proxyCfg.tls"
+                        summarypattern="${.tigerProxyCfg.proxyCfg.tls.domainName}<br/>RootCa ${.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation}<br/>Mutual TLS Identity ${.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation}<br/>Server Identity ${.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation}<br/>Additional Names<br/> ${.tigerProxyCfg.proxyCfg.tls.alternativeNames}">
+                <legend>
+                  TLS Configuration
+                  <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
+                  <span class="fieldset-summary fs-6"></span>
+                </legend>
+                <div class="row">
+                  <div class="col">
+                    <div class="input-group">
+                      <span class="input-group-text">Server Root Ca</span>
+                      <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation">
+                    </div>
+                    <div class="input-group">
+                      <span class="input-group-text">Forward Mutual TLS Identity</span>
+                      <input class="form-control" type="text"
+                             name=".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation">
+                    </div>
+                    <div class="input-group">
+                      <span class="input-group-text">Server Identity</span>
+                      <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation">
+                    </div>
+                    <div class="input-group">
+                      <span class="input-group-text">Domain Name</span>
+                      <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.domainName">
                     </div>
                   </div>
-                  <label class="form-label" style="margin-top: 1rem;">Alternative Names</label>
-                  <div class="row">
-                    <div class="col align-items-stretch">
-                      <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.alternativeNames"></ul>
-                    </div>
-                    <div class="col-auto">
-                      <div
-                          class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
-                          role="group">
-                        <button class="btn btn-success btn-list-add" type="button">
-                          <i class="fas fa-plus-circle"></i>&nbsp;Add
-                        </button>
-                        <button class="btn btn-danger btn-list-delete" type="button">
-                          <i class="far fa-trash-alt"></i>&nbsp;Delete
-                        </button>
-                      </div>
+                </div>
+                <label class="form-label" style="margin-top: 1rem;">Alternative Names</label>
+                <div class="row">
+                  <div class="col align-items-stretch">
+                    <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.alternativeNames"></ul>
+                  </div>
+                  <div class="col-auto">
+                    <div
+                        class="btn-group-vertical btn-group-sm d-lg-flex flex-grow-1 flex-fill justify-content-lg-start"
+                        role="group">
+                      <button class="btn btn-success btn-list-add" type="button">
+                        <i class="fas fa-plus-circle"></i>&nbsp;Add
+                      </button>
+                      <button class="btn btn-danger btn-list-delete" type="button">
+                        <i class="far fa-trash-alt"></i>&nbsp;Delete
+                      </button>
                     </div>
                   </div>
-                </fieldset>
-              </group>
+                </div>
+              </fieldset>
             </div>
           </div>
           <div class="tab-pane fade pkiKeys" role="tabpanel" id="tab-13">

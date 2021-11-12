@@ -5,6 +5,10 @@
 // =============================================================================
 let bs5Utils;
 
+const bs5UtilsDismissible = true;
+const bs5UtilsDelay5Sec = 5000;
+const bs5UtilsDelay10Sec = 10000;
+
 $(document).ready(function () {
 
   bs5Utils = new Bs5Utils();
@@ -17,7 +21,7 @@ $(document).ready(function () {
   $.contextMenu({
     selector: '.context-menu-one',
     trigger: 'left',
-    callback: function (key, options) {
+    callback: function (key/*, options*/) {
       const sidebarItem = $(this).parents('.sidebar-item');
       const serverIndex = sidebarItem.attr("id").substr("sidebar_".length);
 
@@ -25,16 +29,12 @@ $(document).ready(function () {
         case "start":
         case "restart":
         case "stop":
-          bs5Utils.Snack.show('danger',
-              'TODO eature ' + key + ' NOT implemented so far!',
-              delay = 5000, dismissible = true);
+          danger('TODO eature ' + key + ' NOT implemented so far!');
           break;
         case "delete":
           sidebarItem.remove();
           $("#content_" + serverIndex).remove();
-          bs5Utils.Snack.show('warning',
-              'Server "' + serverIndex + '" removed!',
-              delay = 5000, dismissible = true);
+          warn('Server "' + serverIndex + '" removed!');
           break;
           /*
           case "logs":
@@ -58,20 +58,18 @@ $(document).ready(function () {
     },
     handle: 'i',
     update: function (e, ui) {
-      var newIndex = ui.item.index();
-      var oldIndex = $(this).attr('data-previndex');
+      const newIndex = ui.item.index();
+      const oldIndex = $(this).attr('data-previndex');
+      const serverId = $(ui.item).attr("id").substr("sidebar_".length);
+      const content = $("#content_" + serverId);
+
       $(this).removeAttr('data-previndex');
-
-      var serverId = $(ui.item).attr("id").substr("sidebar_".length);
-
       if (newIndex > oldIndex) {
-        $("#content_" + serverId).insertAfter(
-            $(".server-content").children()[newIndex]);
+        content.insertAfter($(".server-content").children()[newIndex]);
       } else {
-        $("#content_" + serverId).insertBefore(
-            $(".server-content").children()[newIndex]);
+        content.insertBefore($(".server-content").children()[newIndex]);
       }
-      $("#content_" + serverId)[0].scrollIntoView();
+      content[0].scrollIntoView();
     }
   });
 

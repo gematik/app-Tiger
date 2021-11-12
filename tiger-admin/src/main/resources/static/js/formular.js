@@ -20,6 +20,7 @@ moved exception parsing to browser and introduced general error modal
 /* before commit
 */
 
+// TODO support textarea for larger input data (PKI I here ya!)
 
 // TODO recheck modification detection on complex lists once default values are implemented
 // as of now the yaml from the server does only ocntain attributes which have a value (null are not added)
@@ -98,9 +99,7 @@ $.fn.initFormular = function (serverKey, serverData) {
           const oldServerKey = $(this).data('originalContent');
           if (newServerKey !== oldServerKey) {
             if (Object.keys(currEnvironment).indexOf(newServerKey) !== -1) {
-              bs5Utils.Snack.show('danger',
-                  'Server key "' + newServerKey + '" already used!',
-                  delay = 10000, dismissible = true);
+              danger('Server key "' + newServerKey + '" already used!');
               ev.keyCode = 27;
             } else {
               const sidebarHandle = $('#sidebar_server_' + oldServerKey);
@@ -206,8 +205,7 @@ $.fn.initFormular = function (serverKey, serverData) {
           const origData = activeItem.data("listdata");
           const newData = fieldSet.getNewDataFromSubsetFieldset(false);
           if (!objectDeepEquals(origData, newData)) {
-            bs5Utils.Snack.show('warning', 'Aborting other editing',
-                delay = 5000, dismissible = true);
+            warn( 'Aborting other editing');
           }
         }
         listGroup.find('.active').removeClass('active');
@@ -723,11 +721,11 @@ $.fn.extend({
 //
 
 function abortOtherEditing() {
-  if ($('.editing').length) {
-    bs5Utils.Snack.show('warning', 'Aborting other editing',
-        delay = 5000, dismissible = true);
+  const editing = $('.editing');
+  if (editing.length) {
+    warn( 'Aborting other editing');
   }
-  $.each($('.editing'), function () {
+  $.each(editing, function () {
     handleEnterEscOnEditableContent($(this), {
       keyCode: 27, preventDefault: function () {
       }
@@ -778,8 +776,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
         if (origData) {
           const newData = fieldSet.getNewDataFromSubsetFieldset(false);
           if (!objectDeepEquals(origData, newData)) {
-            bs5Utils.Snack.show('warning', 'Aborting other editing',
-                delay = 5000, dismissible = true);
+           warn('Aborting other editing');
           }
         }
       }
@@ -849,8 +846,7 @@ $.fn.updateDataAndLabelForActiveItem = function (emptyValues) {
       }
     });
     if (notEmpty) {
-      bs5Utils.Snack.show('warning', 'Aborting other editing',
-          delay = 5000, dismissible = true);
+      warn( 'Aborting other editing');
     }
   }
   elem.replaceWith(
