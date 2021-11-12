@@ -1,5 +1,5 @@
 let currEnvironment;
-
+let currTemplates;
 let unsavedModifications = false;
 
 // =============================================================================
@@ -25,7 +25,9 @@ function openYamlFile() {
           $('#file').val().replace(/C:\\fakepath\\/i, ''));
     },
     error: function (xhr) {
-      showError('We are sorry, but we were unable to load your configuration file!', xhr.responseJSON);
+      showError(
+          'We are sorry, but we were unable to load your configuration file!',
+          xhr.responseJSON);
     }
   });
 }
@@ -58,7 +60,9 @@ function populateServersFromYaml(testEnvYaml) {
     serverContent.append('<form id="content_server_' + serverKey
         + '" class="col server-formular"></form>')
     // init formular with data
-    $('#content_server_' + serverKey).initFormular(serverKey,
+    const formular = $('#content_server_' + serverKey);
+
+    formular.initFormular(serverKey,
         testEnvYaml[serverKey]);
 
     $('*[name]').change(function () {
@@ -68,7 +72,7 @@ function populateServersFromYaml(testEnvYaml) {
     // update proxied select field in all formulars
     updateServerLists(Object.keys(testEnvYaml));
 
-    $('#sidebar_server_' + serverKey + ' .server-label').click(function (ev) {
+    formular.find('.server-label').click(function () {
           const formid = $(this).parents('.sidebar-item').attr('id').replace(
               'sidebar_server_', 'content_server_');
           $('#' + formid + ' h1')[0].scrollIntoView(true);
@@ -96,7 +100,7 @@ function showWelcomeCard() {
   $('.server-content').html($('#template-welcome-card').html());
   $('.server-content .btn-open-testenv').click(function () {
     if (unsavedModifications) {
-      danger( 'TODO ASk whether to discard changes');
+      danger('TODO ASk whether to discard changes');
     }
     $("#file").click();
   });
@@ -130,7 +134,7 @@ function confirmNoDefault(title, content, yesfunc) {
 
 function showError(errMessage, errorCauses) {
   let details = '<b>' + errorCauses.mainCause + '</b><br/>';
-  errorCauses.causes.forEach(function(cause) {
+  errorCauses.causes.forEach(function (cause) {
     details += '\n<br/>Caused by: ' + cause;
   });
   bs5Utils.Modal.show({
@@ -161,13 +165,12 @@ function showError(errMessage, errorCauses) {
           }
         }
       },
-      { text: 'Close', class: 'btn btn-sm btn-primary', type: 'dismiss' }
+      {text: 'Close', class: 'btn btn-sm btn-primary', type: 'dismiss'}
     ],
     centered: true, dismissible: true, backdrop: 'static', keyboard: true,
     focus: false, type: 'danger'
   });
 }
-
 
 function warn(text, delay, dismissible) {
   snack(text, 'warning', delay, dismissible);

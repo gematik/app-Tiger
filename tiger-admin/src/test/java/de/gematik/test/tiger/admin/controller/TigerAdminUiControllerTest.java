@@ -2,6 +2,7 @@ package de.gematik.test.tiger.admin.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -68,14 +69,24 @@ public class TigerAdminUiControllerTest {
         MockMultipartFile yamlFile = new MockMultipartFile("fileName", "fileName.yaml", "application/json", yamlContent.getBytes());
 
         this.mockMvc.perform(MockMvcRequestBuilders.multipart("/openYamlFile")
-                        .file(yamlFile)
-                        .param("fileName", "fileName"))
-                .andExpect(status().isInternalServerError())
+                .file(yamlFile)
+                .param("fileName", "fileName"))
+            .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.mainCause").value(containsString("Failed to convert given JSON string to config object of class de.gematik.test.tiger.testenvmgr.config.Configuration!")))
             .andExpect(jsonPath("$.causes").value(hasSize(1)))
             .andExpect(jsonPath("$.causes[0]").value(containsString("Cannot deserialize value of type `de.gematik.test.tiger.common.config.ServerType` from String \"NOTEXISTING\": not one of the values accepted for Enum class: [externalJar, compose, externalUrl, tigerProxy, docker]\n"
-                + " at [Source: (String)\"{\"servers\":{\"testInvalidType\":{\"template\":\"idp-ref\",\"active\":true,\"hostname\":\"invalid\",\"source\":[\"https://idp-test.zentral.idp.splitdns.ti-dienste.de/\"],\"type\":\"NOTEXISTING\"}}}\"; line: 1, column: 161] (through reference chain: de.gematik.test.tiger.testenvmgr.config.Configuration[\"servers\"]->java.util.LinkedHashMap[\"testInvalidType\"]->de.gematik.test.tiger.testenvmgr.config.CfgServer[\"type\"])")))
-        ;
+                + " at [Source: (String)\"{\"servers\":{\"testInvalidType\":{\"template\":\"idp-ref\",\"active\":true,\"hostname\":\"invalid\","
+                + "\"source\":[\"https://idp-test.zentral.idp.splitdns.ti-dienste.de/\"],\"type\":\"NOTEXISTING\"}}}\"; line: 1, column: 161] "
+                + "(through reference chain: de.gematik.test.tiger.testenvmgr.config.Configuration[\"servers\"]->"
+                + "java.util.LinkedHashMap[\"testInvalidType\"]->de.gematik.test.tiger.testenvmgr.config.CfgServer[\"type\"])")));
+    }
 
+    @Test
+    public void testGetServerTemplates() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/getTemplates"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.templates").value(hasSize(9)))
+            .andExpect(jsonPath("$.templates[0].templateName").value(is("idp-ref")))
+            .andExpect(jsonPath("$.templates[8].templateName").value(is("pssim")));
     }
 }

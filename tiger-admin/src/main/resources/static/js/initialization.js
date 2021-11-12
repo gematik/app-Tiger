@@ -106,4 +106,19 @@ $(document).ready(function () {
   // show welcome
   showWelcomeCard();
 
+
+  $.ajax({
+    url: "/getTemplates",
+    type: "GET",
+    dataType: 'json',
+    success: function (res) {
+      currTemplates = res;
+      snack('Templates loaded', 'success', 1000);
+    },
+    error: function (xhr) {
+      $('body *').tgrEnabled(false);
+      showError('We are sorry, but we were unable to load the server templates!'
+          + '<p>The admin UI is NOT usable!</p><p><b>Please reload the page</b></p>', xhr.responseJSON);
+    }
+  });
 });

@@ -77,6 +77,9 @@ $.fn.initFormular = function (serverKey, serverData) {
   // collapse all fieldsets that should be collapsed on start
   this.find('fieldset.start-collapsed > legend').tgrToggleCollapse();
 
+  this.populateTemplateList();
+  this.find('select[name="template"]').val(serverData.template);
+
   this.find('.advanced').hide();
 
   //
@@ -115,7 +118,7 @@ $.fn.initFormular = function (serverKey, serverData) {
           }
         }
         $(this).off('paste');
-        return handleEnterEscOnEditableContent($(this), ev);
+        return $(this).handleEnterEscOnEditableContent(ev);
       });
       $(this).on('paste', function (ev) {
         // TODO check to insert only the text part and NO tags!
@@ -133,6 +136,7 @@ $.fn.initFormular = function (serverKey, serverData) {
     $(this).toggleCollapseIcon();
   });
 
+  // advanced fields and fieldsets
   this.find('.btn-advanced.global').click(function () {
     const formular = $(this).parents('.server-formular');
     if ($(this).hasClass('active')) {
@@ -144,7 +148,6 @@ $.fn.initFormular = function (serverKey, serverData) {
       formular.find('.advanced').fadeIn(600);
       $(this).addClass('active');
       $.each(formular.find('fieldset'), function () {
-        // TODO if fieldset is collapsed and contains advanced fields uncollapse
         if ($(this).find('i.collapse-icon').isCollapsed() &&
             $(this).find('.advanced').length) {
           $(this).find('legend').tgrToggleCollapse();
@@ -205,7 +208,7 @@ $.fn.initFormular = function (serverKey, serverData) {
           const origData = activeItem.data("listdata");
           const newData = fieldSet.getNewDataFromSubsetFieldset(false);
           if (!objectDeepEquals(origData, newData)) {
-            warn( 'Aborting other editing');
+            warn('Aborting other editing');
           }
         }
         listGroup.find('.active').removeClass('active');
@@ -265,19 +268,17 @@ $.fn.initFormular = function (serverKey, serverData) {
 
   // set forwardToProxy flag depending on hostname and port being set
   const forwardToProxySection = '.tigerProxyCfg.proxyCfg.forwardToProxy.';
-  this.find('*[name="enableForwardProxy"]').prop(
-      'checked',
-      this.find(
-          '*[name="' + forwardToProxySection + 'hostname"]').val() &&
-      this.find(
-          '*[name="' + forwardToProxySection + 'port"]').val()
+  this.find('*[name="enableForwardProxy"]').prop('checked',
+      this.find('*[name="' + forwardToProxySection + 'hostname"]').val() &&
+      this.find('*[name="' + forwardToProxySection + 'port"]').val()
   )
 
+  // set summary for initially collapsed fieldsets
   this.find('fieldset.start-collapsed > legend').setSummaryFor();
 
   //
   // as nav tabs are based on href links we need to work around as we have multiple formulars
-  // on the page, so its betetr to do the switching manually by jquery callback on the nav-item
+  // on the page, so its better to do the switching manually by jquery callback on the nav-item
   this.find('.nav-tabs > .nav-item').click(function (ev) {
     if (!$(this).find('.nav-link').attr('disabled')) {
       $(this).parents('form.server-formular').showTab($(this).attr('tab'));
@@ -398,7 +399,6 @@ $.fn.updateServerList = function (serverList, replacedSelection,
   }
   select.val(selected);
 }
-
 // ----------------------------------------------------------------------------
 //
 // formular.js INTERNAL
@@ -460,12 +460,205 @@ $.fn.selectText = function () {
 };
 
 $.fn.extend({
-// for single fieldset
+  // for multiple any
+  tgrEnabled: function (enabled) {
+    return this.each(function () {
+      $(this).attr('disabled', !enabled);
+      if (enabled) {
+        $(this).removeClass('disabled');
+      } else {
+        $(this).addClass('disabled');
+      }
+    });
+  },
+
+  // for single .server-formular
+  populateForm: function (serverData, path) {
+    checkTag('populateForm', this, 'FORM');
+    checkClass('populateForm', this, 'server-formular');
+    checkSingle('populateForm', this);
+
+    for (const field in serverData) {
+      const value = serverData[field];
+      if (value != null && typeof value === 'object' && !Array.isArray(
+          value)) {
+        this.populateForm(value, path + "." + field);
+        continue;
+      }
+      const nameStr = path + (path.length === 0 ? "" : ".") + field;
+      let listHtml = '';
+      if (Array.isArray(value)) {
+        const elem = this.find('.list-group[name="' + nameStr + '"]');
+        let editable = false;
+        if (typeof value[0] === 'object') {
+          $.each(value, function (idx, item) {
+            listHtml += getListItem(
+                $('<div/>').text(
+                    elem.generateListItemLabel(item), false, true)
+                .html(), false, true);
+          });
+          elem.html(listHtml);
+          $.each(value, function (idx, itemData) {
+            $(elem.children()[idx]).data("listdata", itemData);
+          });
+        } else {
+          const fieldSet = elem.parents('fieldset');
+          editable = fieldSet.hasClass('editableList');
+          $.each(value, function (idx, item) {
+            listHtml += getListItem(item, false, !editable);
+          });
+          elem.html(listHtml);
+        }
+        elem.find(".list-group-item > span").addClickNKeyCallbacks2ListItem(
+            editable);
+        continue;
+      }
+      const elem = this.find('*[name="' + nameStr + '"]');
+      if (elem.length === 0) {
+        console.error("UNKNOWN ELEM for " + path + " -> " + field);
+        continue;
+      }
+      elem.setValue(serverData[field]);
+    }
+
+    this.find('fieldset:not(.subset):not(subset-below)').enableSubSetFields(
+        false);
+
+  },
+  // for single form.server-formular
+  populateTemplateList: function () {
+    checkTag('populateTemplateList', this, 'FORM');
+    checkClass('populateTemplateList', this, 'server-formular');
+    let html = "";
+    $.each(currTemplates.templates, (idx, template) => {
+      html += '<option value="' + template.templateName + '">'
+          + template.templateName.replace("_", " ")
+          + '</option>';
+    });
+    const select = $(this).find('select[name="template"]');
+    let selected = select.val();
+    select.children().remove();
+    select.prepend(html);
+    select.val(selected);
+  },
+
+  // for single fieldset
+  generateSummary: function () {
+    checkTag('generateSummary', this, 'FIELDSET');
+    const summaryPattern = this.attr("summaryPattern");
+    return '<span class="text summary fs-6">' + summaryPattern.replace(
+        dollarTokens,
+        (m, g1) => this.getValue(g1) || "&nbsp;") + '</span>';
+  },
+  // for single fieldset
+  getValue: function (name) {
+    checkTag('getValue', this, 'FIELDSET');
+    checkSingle('getValue', this);
+    const elem = this.find("*[name='" + name + "']");
+    let str;
+    if (elem.prop("tagName") === 'UL') {
+      str = this.getListValue(name);
+      return str;
+    } else if (elem.attr("type") === 'checkbox') {
+      return elem.prop('checked') ? 'ON' : 'OFF';
+    } else {
+      str = this.find("*[name='" + name + "']").val();
+      return $('<span>').text(str).html();
+    }
+  },
+  // for single fieldset
   isChecked: function (name) {
     checkTag('isChecked', this, 'FIELDSET');
     const elem = this.find("*[name='" + name + "']");
     checkSingle('isChecked', elem);
     return elem.prop("checked");
+  },
+  // for single fieldset
+  getListValue: function (name) {
+    checkTag('getListValue', this, 'FIELDSET');
+    checkSingle('getListValue', this);
+    const lis = this.find("ul[name='" + name + "'] > li");
+    let csv = "";
+    $.each(lis, function (idx, el) {
+      csv += $('<span>').text($(el).text()).html() + ",<br/>";
+    });
+    if (csv === "") {
+      return "No entries";
+    }
+    return csv.substr(0, csv.length - ",<br/>".length);
+  },
+  // for single fieldset
+  setObjectFieldInForm: function (data, field, path) {
+    checkTag('setObjectFieldInForm', this, 'FIELDSET')
+    checkSingle('setObjectFieldInForm', this);
+    if (typeof data[field] === "object" && data[field] !== null) {
+      for (const child in data[field]) {
+        this.setObjectFieldInForm(data[field], child, path + "." + field);
+      }
+    } else {
+      const inputField = this.find("*[name='" + path + "." + field + "']");
+      checkSingle('setObjectFieldInForm -> input field', inputField);
+      inputField.setValue(data[field]);
+    }
+  },
+  // for single fieldset
+  enableSubSetFields: function (state) {
+    checkTag('enableSubSetFields', this, 'FIELDSET');
+    this.find('fieldset.subset input').tgrEnabled(state);
+    this.find('fieldset.subset select').tgrEnabled(state);
+    this.find('fieldset.subset .form-switch').tgrEnabled(state);
+    this.find('fieldset.subset-below input').tgrEnabled(state);
+    this.find('fieldset.subset-below select').tgrEnabled(state);
+    this.find('fieldset.subset-below .form-switch').tgrEnabled(state);
+  },
+  // for single fieldset
+  updateDataAndLabelForActiveItem: function (emptyValues) {
+    checkTag('updateDataAndLabelForActiveItem', this, 'FIELDSET');
+    checkSingle('updateDataAndLabelForActiveItem', this);
+    const listGroup = this.find('.list-group');
+    let elem = listGroup.find(".list-group-item.active");
+    const fieldSet = this.find('fieldset.subset');
+    const data = this.getNewDataFromSubsetFieldset(emptyValues)
+    if (emptyValues) {
+      let notEmpty = false;
+      $.each(fieldSet.find("*[name]"), function () {
+        const value = fieldSet.getValue($(this).attr('name'));
+        if (value) {
+          notEmpty = true;
+        }
+      });
+      if (notEmpty) {
+        warn('Aborting other editing');
+      }
+    }
+    elem.replaceWith(
+        getListItem(
+            $('<div/>').text(listGroup.generateListItemLabel(data)).html(),
+            true, true
+        )
+    );
+    elem = listGroup.find(".list-group-item.active");
+    elem.data("listdata", data);
+    elem.find('span:first').addClickNKeyCallbacks2ListItem(false);
+  },
+  // for single fieldset
+  getNewDataFromSubsetFieldset: function (emptyValues) {
+    checkTag('getNewDataFromSubsetFieldset', this, 'FIELDSET');
+    checkSingle('getNewDataFromSubsetFieldset', this);
+    const section = this.attr("section");
+    const listGroup = this.find('.list-group');
+    let elem = listGroup.find(".list-group-item.active");
+    let data = elem.data("listdata");
+    // read input from fields into data() struct
+    let clonedData;
+    if (!data) {
+      clonedData = {};
+    } else {
+      clonedData = {...data};
+    }
+    this.find('fieldset').find("*[name]").setValueInData(section, clonedData,
+        emptyValues);
+    return clonedData;
   },
 
   // for multiple legends
@@ -489,28 +682,57 @@ $.fn.extend({
       $(this).setSummaryFor();
     });
   },
-  // for multiple any
-  tgrEnabled: function (enabled) {
+  // for multiple legend
+  setSummaryFor: function () {
+    checkTag('setSummaryFor', this, 'LEGEND');
     return this.each(function () {
-      $(this).attr('disabled', !enabled);
-      if (enabled) {
-        $(this).removeClass('disabled');
+      const fieldSet = $(this).parent();
+      const fsName = fieldSet.attr("section");
+      const summarySpan = fieldSet.find("span.fieldset-summary");
+      const collapsed = $(this).find('i.collapse-icon').isCollapsed();
+      if (collapsed) {
+        switch (fsName) {
+          case "source":
+            summarySpan.html(fieldSet.generateSummary());
+            break;
+          case ".tigerProxyCfg.proxyCfg.forwardToProxy":
+            if (fieldSet.isChecked("enableForwardProxy")) {
+              summarySpan.html(fieldSet.generateSummary());
+            } else {
+              summarySpan.html(
+                  '<span class="text summary fs-6">DISABLED</span>');
+            }
+            break;
+          default:
+            summarySpan.html(fieldSet.generateSummary());
+            break;
+        }
       } else {
-        $(this).addClass('disabled');
+        summarySpan.text("");
       }
     });
   },
-  // for single or none i
-  isCollapsed: function () {
-    if (!this.length) {
-      return false;
-    }
-    checkSingle('isCollapsed', this);
-    checkTag('isCollapsed', this, 'I');
-    const findState = /(.*)(-down|-right)(.*)/;
-    const clz = this.attr('class');
-    const result = clz.match(findState);
-    return result[2] === '-right';
+
+  // for single .list-group
+  generateListItemLabel: function (data) {
+    checkClass('generateListItemLabel', this, 'list-group');
+    checkSingle('generateListItemLabel', this);
+    const summaryPattern = this.attr("summaryPattern");
+    return summaryPattern.replace(dollarTokens, (m, g1) => {
+      if (g1.indexOf('.') !== -1) {
+        const path = g1.split('.');
+        let pathCursor = data;
+        $.each(path, function (idx, node) {
+          if (!pathCursor) {
+            return false;
+          }
+          pathCursor = pathCursor[node];
+        });
+        return pathCursor || " ";
+      } else {
+        return data[g1] || " ";
+      }
+    });
   },
   // for multiple input or select
   setValue: function (value) {
@@ -552,108 +774,6 @@ $.fn.extend({
       }
     });
   },
-  // for multiple legend
-  setSummaryFor: function () {
-    checkTag('setSummaryFor', this, 'LEGEND');
-    return this.each(function () {
-      const fieldSet = $(this).parent();
-      const fsName = fieldSet.attr("section");
-      const summarySpan = fieldSet.find("span.fieldset-summary");
-      const collapsed = $(this).find('i.collapse-icon').isCollapsed();
-      if (collapsed) {
-        switch (fsName) {
-          case "source":
-            summarySpan.html(fieldSet.generateSummary());
-            break;
-          case ".tigerProxyCfg.proxyCfg.forwardToProxy":
-            if (fieldSet.isChecked("enableForwardProxy")) {
-              summarySpan.html(fieldSet.generateSummary());
-            } else {
-              summarySpan.html(
-                  '<span class="text summary fs-6">DISABLED</span>');
-            }
-            break;
-          default:
-            summarySpan.html(fieldSet.generateSummary());
-            break;
-        }
-      } else {
-        summarySpan.text("");
-      }
-    });
-  },
-  // for fieldset
-  generateSummary: function () {
-    checkTag('generateSummary', this, 'FIELDSET');
-    const summaryPattern = this.attr("summaryPattern");
-    return '<span class="text summary fs-6">' + summaryPattern.replace(
-        dollarTokens,
-        (m, g1) => this.getValue(g1) || "&nbsp;") + '</span>';
-  },
-  // for single fieldset
-  getValue: function (name) {
-    checkTag('getValue', this, 'FIELDSET');
-    checkSingle('getValue', this);
-    const elem = this.find("*[name='" + name + "']");
-    let str;
-    if (elem.prop("tagName") === 'UL') {
-      str = this.getListValue(name);
-      return str;
-    } else if (elem.attr("type") === 'checkbox') {
-      return elem.prop('checked') ? 'ON' : 'OFF';
-    } else {
-      str = this.find("*[name='" + name + "']").val();
-      return $('<span>').text(str).html();
-    }
-  },
-  getListValue: function (name) {
-    checkTag('getListValue', this, 'FIELDSET');
-    checkSingle('getListValue', this);
-    const lis = this.find("ul[name='" + name + "'] > li");
-    let csv = "";
-    $.each(lis, function (idx, el) {
-      csv += $('<span>').text($(el).text()).html() + ",<br/>";
-    });
-    if (csv === "") {
-      return "No entries";
-    }
-    return csv.substr(0, csv.length - ",<br/>".length);
-  },
-  // for single .list-group
-  generateListItemLabel: function (data) {
-    checkClass('generateListItemLabel', this, 'list-group');
-    checkSingle('generateListItemLabel', this);
-    const summaryPattern = this.attr("summaryPattern");
-    return summaryPattern.replace(dollarTokens, (m, g1) => {
-      if (g1.indexOf('.') !== -1) {
-        const path = g1.split('.');
-        let pathCursor = data;
-        $.each(path, function (idx, node) {
-          if (!pathCursor) {
-            return false;
-          }
-          pathCursor = pathCursor[node];
-        });
-        return pathCursor || " ";
-      } else {
-        return data[g1] || " ";
-      }
-    });
-  },
-  // for single fieldset
-  setObjectFieldInForm: function (data, field, path) {
-    checkTag('setObjectFieldInForm', this, 'FIELDSET')
-    checkSingle('setObjectFieldInForm', this);
-    if (typeof data[field] === "object" && data[field] !== null) {
-      for (const child in data[field]) {
-        this.setObjectFieldInForm(data[field], child, path + "." + field);
-      }
-    } else {
-      const inputField = this.find("*[name='" + path + "." + field + "']");
-      checkSingle('setObjectFieldInForm -> input field', inputField);
-      inputField.setValue(data[field]);
-    }
-  },
   // for multiple input fields
   setValueInData: function (section, data, emptyValues) {
     checkInputField('setValueInData', this);
@@ -687,7 +807,29 @@ $.fn.extend({
 
     });
   },
-  // for multiple i
+
+  // for editing elem
+  handleEnterEscOnEditableContent: function (ev) {
+    checkClass('handleEnterEscOnEditableContent', this, 'editing');
+    if (ev.keyCode === 13 || ev.keyCode === 27) {
+      if (ev.keyCode === 27) {
+        this.html(this.data('originalContent'));
+      } else {
+        notifyChangesToTestenvData(
+            this.data('originalContent') !== this.html());
+      }
+      this.removeClass('editing');
+      this.attr('contentEditable', 'false');
+      this.parent().blur();
+      this.blur();
+      this.off('keydown');
+      ev.preventDefault();
+      return false;
+    }
+    return true;
+  },
+
+// for multiple i
   toggleCollapseIcon: function (state) {
     checkTag('toggleCollapseIcon', this, 'I');
     return this.each(function () {
@@ -704,16 +846,18 @@ $.fn.extend({
       $(this).attr('class', clz);
     });
   },
-  enableSubSetFields: function(state) {
-    checkTag('enableSubSetFields', this, 'FIELDSET');
-    this.find('fieldset.subset input').tgrEnabled(state);
-    this.find('fieldset.subset select').tgrEnabled(state);
-    this.find('fieldset.subset .form-switch').tgrEnabled(state);
-    this.find('fieldset.subset-below input').tgrEnabled(state);
-    this.find('fieldset.subset-below select').tgrEnabled(state);
-    this.find('fieldset.subset-below .form-switch').tgrEnabled(state);
-  }
-
+  // for single or none i
+  isCollapsed: function () {
+    if (!this.length) {
+      return false;
+    }
+    checkSingle('isCollapsed', this);
+    checkTag('isCollapsed', this, 'I');
+    const findState = /(.*)(-down|-right)(.*)/;
+    const clz = this.attr('class');
+    const result = clz.match(findState);
+    return result[2] === '-right';
+  },
 });
 
 //
@@ -723,10 +867,10 @@ $.fn.extend({
 function abortOtherEditing() {
   const editing = $('.editing');
   if (editing.length) {
-    warn( 'Aborting other editing');
+    warn('Aborting other editing');
   }
   $.each(editing, function () {
-    handleEnterEscOnEditableContent($(this), {
+    $(this).handleEnterEscOnEditableContent({
       keyCode: 27, preventDefault: function () {
       }
     });
@@ -753,7 +897,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
           $(this).parents('fieldset').find('.btn-list-delete').tgrEnabled(true);
         }
         $(this).keydown((ev) => {
-          return handleEnterEscOnEditableContent($(this), ev);
+          return $(this).handleEnterEscOnEditableContent(ev);
         });
         ev.preventDefault();
         return false;
@@ -776,7 +920,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
         if (origData) {
           const newData = fieldSet.getNewDataFromSubsetFieldset(false);
           if (!objectDeepEquals(origData, newData)) {
-           warn('Aborting other editing');
+            warn('Aborting other editing');
           }
         }
       }
@@ -803,132 +947,12 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
   });
 }
 
-function handleEnterEscOnEditableContent($elem, ev) {
-  if (ev.keyCode === 13 || ev.keyCode === 27) {
-    if (ev.keyCode === 27) {
-      $elem.html($elem.data('originalContent'));
-    } else {
-      notifyChangesToTestenvData(
-          $elem.data('originalContent') !== $elem.html());
-    }
-    $elem.removeClass('editing');
-    $elem.attr('contentEditable', 'false');
-    $elem.parent().blur();
-    $elem.blur();
-    $elem.off('keydown');
-    ev.preventDefault();
-    return false;
-  }
-  return true;
-}
-
 function getListItem(text, active, reallySmall) {
   return '<li class="list-group-item ' + (active ? 'active ' : '') +
       (reallySmall ? 'really-small' : '') + '">'
       + '<i class="fas fa-grip-lines draghandle"></i><span><span>' + text
       + '</span></span>'
       + '</li>'
-}
-
-// for single fieldset TODO
-$.fn.updateDataAndLabelForActiveItem = function (emptyValues) {
-  checkTag('updateDataAndLabelForActiveItem', this, 'FIELDSET');
-  const listGroup = this.find('.list-group');
-  let elem = listGroup.find(".list-group-item.active");
-  const fieldSet = this.find('fieldset.subset');
-  const data = this.getNewDataFromSubsetFieldset(emptyValues)
-  if (emptyValues) {
-    let notEmpty = false;
-    $.each(fieldSet.find("*[name]"), function () {
-      const value = fieldSet.getValue($(this).attr('name'));
-      if (value) {
-        notEmpty = true;
-      }
-    });
-    if (notEmpty) {
-      warn( 'Aborting other editing');
-    }
-  }
-  elem.replaceWith(
-      getListItem(
-          $('<div/>').text(listGroup.generateListItemLabel(data)).html(),
-          true, true
-      )
-  );
-  elem = listGroup.find(".list-group-item.active");
-  elem.data("listdata", data);
-  elem.find('span:first').addClickNKeyCallbacks2ListItem(false);
-}
-
-$.fn.getNewDataFromSubsetFieldset = function (emptyValues) {
-  checkTag('getNewDataFromSubsetFieldset', this, 'FIELDSET');
-
-  const section = this.attr("section");
-  const listGroup = this.find('.list-group');
-  let elem = listGroup.find(".list-group-item.active");
-  let data = elem.data("listdata");
-  // read input from fields into data() struct
-  let clonedData;
-  if (!data) {
-    clonedData = {};
-  } else {
-    clonedData = {...data};
-  }
-  this.find('fieldset').find("*[name]").setValueInData(section, clonedData,
-      emptyValues);
-  return clonedData;
-}
-
-// for single .server-formular TODO
-$.fn.populateForm = function (serverData, path) {
-  checkTag('populateForm', this, 'FORM');
-  checkClass('populateForm', this, 'server-formular');
-
-  for (const field in serverData) {
-    const value = serverData[field];
-    if (value != null && typeof value === 'object' && !Array.isArray(
-        value)) {
-      this.populateForm(value, path + "." + field);
-      continue;
-    }
-    const nameStr = path + (path.length === 0 ? "" : ".") + field;
-    let listHtml = '';
-    if (Array.isArray(value)) {
-      const elem = this.find('.list-group[name="' + nameStr + '"]');
-      let editable = false;
-      if (typeof value[0] === 'object') {
-        $.each(value, function (idx, item) {
-          listHtml += getListItem(
-              $('<div/>').text(
-                  elem.generateListItemLabel(item), false, true)
-              .html(), false, true);
-        });
-        elem.html(listHtml);
-        $.each(value, function (idx, itemData) {
-          $(elem.children()[idx]).data("listdata", itemData);
-        });
-      } else {
-        const fieldSet = elem.parents('fieldset');
-        editable = fieldSet.hasClass('editableList');
-        $.each(value, function (idx, item) {
-          listHtml += getListItem(item, false, !editable);
-        });
-        elem.html(listHtml);
-      }
-      elem.find(".list-group-item > span").addClickNKeyCallbacks2ListItem(
-          editable);
-      continue;
-    }
-    const elem = this.find('*[name="' + nameStr + '"]');
-    if (elem.length === 0) {
-      console.error("UNKNOWN ELEM for " + path + " -> " + field);
-      continue;
-    }
-    elem.setValue(serverData[field]);
-  }
-
-  this.find('fieldset:not(.subset):not(subset-below)').enableSubSetFields(false);
-
 }
 
 function objectDeepEquals(obj1, obj2) {
