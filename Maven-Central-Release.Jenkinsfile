@@ -39,7 +39,7 @@ pipeline {
 
         stage('Publish to MavenCentral') {
             steps {
-                sh "mvn deploy -DskipTests -Pexternal -DautoReleaseAfterClose=true"
+                mavenDeploy("pom.xml", "-Pexternal")
             }
         }
     }

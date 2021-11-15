@@ -1,16 +1,16 @@
-@Library('gematik-jenkins-shared-library@master') _
+@Library('gematik-jenkins-shared-library') _
 
-def REPO_URL = 'https://build.top.local/source/git/Testtools/tiger.git'
+def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'																   
+def REPO_URL = createGitUrl('git/Testtools/tiger')
 def BRANCH = 'master'
 def JIRA_PROJECT_ID = 'TGR'
 def GITLAB_PROJECT_ID = '644'
 def TITLE_TEXT = 'Release'
 def GROUP_ID_PATH = "de/gematik/test"
 def GROUP_ID = "de.gematik.test"
-def ARTIFACT_ID = 'tiger-common'
-def ARTIFACT_IDs = 'tiger,tiger-common,tiger-proxy,tiger-test-lib'
-def PACKAGING = "jar"
-
+def ARTIFACT_ID = 'tiger-standalone-proxy'
+def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-bdd-driver-generator-maven-plugin,tiger-standalone-proxy,tiger-proxy,tiger-testenv-mgr,tiger-test-lib'
+def POM_PATH = 'pom.xml'						
 
 pipeline {
     options {
@@ -26,26 +26,26 @@ pipeline {
 
     parameters {
         string(name: 'NEW_VERSION', defaultValue: '', description: 'Bitte die nächste Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
+        choice(name: 'DRY_RUN', choices: ['NO', 'YES'], description: 'Execute the preparing steps but do not push anything.')
     }
 
     stages {
         stage('Initialise') {
             steps {
                 checkVersion(NEW_VERSION) // Eingabe erfolgt über Benutzerinteraktion beim Start des Jobs
-                gitSetIdentity()
             }
         }
 
         stage('Checkout') {
             steps {
-                git branch: BRANCH,
+                git branch: BRANCH, credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
                         url: REPO_URL
             }
         }
 
         stage('Environment') {
             environment {
-                LATEST = nexusGetLatestVersionByGAVR(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID, PACKAGING).trim()
+                LATEST = nexusGetLatestVersionByGAVR(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID).trim()
                 TAG_NAME = 'Release/ReleaseBuild'
             }
             stages {
@@ -93,5 +93,18 @@ pipeline {
             }
         }
     }
+    post {
+            success {
+               build job: 'Tiger-GitHub-Release',
+               parameters: [
+            string(name: 'TAGNAME', value: String.valueOf("R${RELEASE_VERSION}")),
+            string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
+            text(name: 'COMMIT_MESSAGE', value: String.valueOf("Release ${RELEASE_VERSION}")),
+            text(name: 'RELEASE_NOTES', value: String.valueOf("Siehe Changelog")),
+            string(name: 'SUBSEQUENT_JOB', value: String.valueOf("Tiger-Maven-Central-Release")),
+            string(name: 'DRY_RUN', value: String.valueOf(params.DRY_RUN)),
+          ]
+            }
+        }		  
 }
 
