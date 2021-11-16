@@ -76,7 +76,7 @@ pipeline {
         stage('GitLab-Update-Snapshot') {
             when { branch BRANCH }
             steps {
-                gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID, POM_PATH)
+                gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID, POM_PATH_PRODUCT)
             }
         }
     }
