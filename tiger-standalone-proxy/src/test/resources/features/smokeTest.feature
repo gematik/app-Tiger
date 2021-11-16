@@ -7,7 +7,7 @@ Feature: smoke test scenarios
   Scenario: Delete existing route
     When I click on the Routes button
     And I remove the existing route there
-    Then The route from "http://tiger.proxy" to "http://localhost:8080" is deleted
+    Then The route from "http://tiger.proxy" to "http://localhost:${serverport}" is deleted
 
   Scenario: Add a route
     Given The request to "http://nevereverexists__.XXX/test1.html" fail
@@ -67,7 +67,7 @@ Feature: smoke test scenarios
 
     When I quit the tiger proxy via UI
     And I wait 5 seconds
-    Then The request to "http://127.0.0.1:8080/webui" times out
+    Then The request to "http://127.0.0.1:${serverport}/webui" times out
     And The request to "http://nevereverexists__.XXX/test1.html" times out
 
 

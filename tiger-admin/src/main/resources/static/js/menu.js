@@ -1,5 +1,8 @@
 let currEnvironment;
 let currTemplates;
+let currFolder = '.';
+let fsSeparator = '';
+let currFile = '';
 let unsavedModifications = false;
 
 // =============================================================================
@@ -8,28 +11,39 @@ let unsavedModifications = false;
 //
 //
 // =============================================================================
-function openYamlFile() {
+function openYamlFile(path, separator, cfgfile) {
   $.ajax({
     url: "/openYamlFile",
-    type: "POST",
-    data: new FormData($("#openYaml")[0]),
-    enctype: 'multipart/form-data',
-    processData: false,
-    contentType: false,
-    cache: false,
+    contentType: "application/json",
+    data: { cfgfile: path + separator + cfgfile },
+    type: "GET",
     dataType: 'json',
     success: function (res) {
       currEnvironment = res;
       populateServersFromYaml(res);
-      $('.cfg-file-label').text(
-          $('#file').val().replace(/C:\\fakepath\\/i, ''));
+      setYamlFileName(cfgfile, path);
+      $('.btn-save-as-testenv').tgrEnabled(true);
+      $('.btn-save-testenv').tgrEnabled(true);
     },
     error: function (xhr) {
       showError(
-          'We are sorry, but we were unable to load your configuration file!',
+          'We are sorry, but we were unable '
+          + 'to load your configuration file \'' + cfgfile + '\'!',
           xhr.responseJSON);
     }
   });
+}
+
+function setYamlFileName(cfgfile, path) {
+  $('.cfg-file-label').text(cfgfile);
+  document.title = "Tiger Admin - " + path + fsSeparator + cfgfile;
+  currFile = cfgfile;
+  currFolder = path;
+}
+
+function saveYamlFile() {
+  // TODO get values from formulars into json struct and send to server together with file/path info
+  showError("Unable to save file - NOT implemented!");
 }
 
 const serverIcons = {
@@ -72,10 +86,8 @@ function populateServersFromYaml(testEnvYaml) {
     // update proxied select field in all formulars
     updateServerLists(Object.keys(testEnvYaml));
 
-    formular.find('.server-label').click(function () {
-          const formid = $(this).parents('.sidebar-item').attr('id').replace(
-              'sidebar_server_', 'content_server_');
-          $('#' + formid + ' h1')[0].scrollIntoView(true);
+    $('#sidebar_server_' + serverKey + ' .server-label').click(function () {
+          formular.find('h1')[0].scrollIntoView(true);
         }
     );
   }
@@ -100,9 +112,14 @@ function showWelcomeCard() {
   $('.server-content').html($('#template-welcome-card').html());
   $('.server-content .btn-open-testenv').click(function () {
     if (unsavedModifications) {
-      danger('TODO ASk whether to discard changes');
+      confirmNoDefault('Unsaved Modifications',
+          'Do you really want to discard current changes?',
+          function () {
+            openFileOpenDialog(openYamlFile);
+          });
+    } else {
+      openFileOpenDialog(openYamlFile);
     }
-    $("#file").click();
   });
   // TODO add addserver cb
 }
@@ -191,4 +208,102 @@ function snack(text, type, delay, dismissible) {
     dismissible = bs5UtilsDismissible;
   }
   bs5Utils.Snack.show(type, text, delay, dismissible);
+}
+
+function openFileOpenDialog(okfunc) {
+  const filedlg = $('#file-navigation-modal');
+  filedlg.find('.modal-title').text("Open file ...");
+  filedlg.find(".btn-filenav-ok").hide();
+  filedlg.find('.file-navigation-save').hide();
+  filedlg.find('.btn-filenav-cancel').click(function() {
+    filedlg.modal('hide');
+  });
+  filedlg.modal('show');
+  navigateIntoFolder(currFolder, okfunc, true, 'open');
+}
+
+function openFileSaveAsDialog(okfunc) {
+  const filedlg = $('#file-navigation-modal');
+  filedlg.find('.modal-title').text("Save file as ...");
+  filedlg.find(".btn-filenav-ok").text("Save as");
+  filedlg.find(".btn-filenav-ok").show();
+  filedlg.find('.file-navigation-save').show();
+  filedlg.find('.file-navigation-save input').val(currFile);
+  filedlg.find('.btn-filenav-cancel').click(function() {
+    filedlg.modal('hide');
+  });
+  filedlg.modal('show');
+  navigateIntoFolder(currFolder, okfunc, true, 'save');
+  filedlg.find('.btn-filenav-ok').click(function() {
+    // get cfgfile from input field together with currentFolder and separator
+    console.log("Saving to file '" + currFolder + fsSeparator + filedlg.find('.file-navigation-save input').val());
+    notifyChangesToTestenvData(false);
+    setYamlFileName(filedlg.find('.file-navigation-save input').val(), currFolder);
+    filedlg.modal('hide');
+  });
+}
+
+
+function navigateIntoFolder(folder, okfunc, addroots, mode) {
+  const filedlg = $('#file-navigation-modal');
+  $.ajax({
+    url: "/navigator/folder",
+    contentType: "application/json",
+    data: { current: folder },
+    type: "GET",
+    dataType: 'json',
+    success: function (res) {
+      fsSeparator = res.separator;
+      let htmlstr = '';
+      res.folders.forEach(function (folder) {
+        htmlstr += '<div class="folder text-primary"><i class="far fa-folder icon-right"></i>'
+            + folder + '</div>\n';
+      });
+      res.cfgfiles.forEach(function (cfgfile) {
+        htmlstr += '<div class="cfgfile text-success"><i class="far fa-file-alt icon-right"></i>'
+            + cfgfile + '</div>\n';
+      });
+      const filepathInput = filedlg.find('.filepath input');
+      filepathInput.val(res.current);
+      if (res.current.length < 4) {
+        filepathInput.css({ direction: 'ltr'})
+      } else {
+        filepathInput.css({ direction: 'rtl'})
+      }
+      currFolder = res.current;
+      filedlg.find('.modal-body').html(htmlstr);
+      filedlg.find('.folder').click(function () {
+        navigateIntoFolder(currFolder + res.separator + $(this).text(), okfunc, false, mode);
+      });
+      filedlg.find('.cfgfile').click(function () {
+        if (mode === 'open') {
+          okfunc(currFolder, res.separator, $(this).text());
+          filedlg.modal('hide');
+        }else {
+          $('.file-navigation-save input').val($(this).text());
+        }
+      });
+      if (addroots) {
+        if (res.roots.length === 1 && !res.roots[0]) {
+          console.log("info no filesystem roots, disabling drive button...");
+          $('#dropdown-rootfs').parent().hide();
+        } else {
+          htmlstr = '';
+          res.roots.forEach(function (rootfs) {
+            htmlstr += '<li><a class="dropdown-item rootfs-item" href="#">'
+                + rootfs + '</a></li>\n';
+          });
+          const fsListRootsList = $('.fs-list-roots-list')
+          fsListRootsList.children().remove();
+          fsListRootsList.prepend(htmlstr);
+          fsListRootsList.find('li a').on('click', function() {
+            navigateIntoFolder($(this).text(), okfunc, false, mode);
+          });
+        }
+      }
+    },
+    error: function (xhr) {
+      showError('Unable to access Folder/File!', xhr.responseJSON);
+    }
+  });
 }

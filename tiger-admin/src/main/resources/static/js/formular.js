@@ -20,6 +20,7 @@ moved exception parsing to browser and introduced general error modal
 /* before commit
 */
 
+
 // TODO support textarea for larger input data (PKI I here ya!)
 
 // TODO recheck modification detection on complex lists once default values are implemented
@@ -64,6 +65,7 @@ $.fn.initFormular = function (serverKey, serverData) {
   $(this).html(
       '<div class="row">' + $('#template-server-formular').html() + '</div>');
   $(this).find('.server-key').text(serverKey);
+  $(this).find('.server-icon').addClass(serverIcons[serverData.type]);
 
   // default settings
   if (!serverData.source) { // at least one empty line for source as we have

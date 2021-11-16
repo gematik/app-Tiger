@@ -49,7 +49,7 @@ public class TigerProxyGlue {
 
     @Then("The route from {string} to {string} is deleted")
     public void assertRouteDeleted(String deletedFrom, String deletedTo) {
-        steps.assertRouteDeleted(deletedFrom, deletedTo);
+        steps.assertRouteDeleted(patchPath(deletedFrom), patchPath(deletedTo));
     }
 
     @When("I add a new route from {string} to {string}")
@@ -178,6 +178,6 @@ public class TigerProxyGlue {
 
     @Then("The request to {string} times out")
     public void theRequestToTimesOut(String url) {
-        steps.assertRequestTimesOut(url);
+        steps.assertRequestTimesOut(patchPath(url));
     }
 }

@@ -33,7 +33,7 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 @Slf4j
-public class TigerRemoteProxyClient extends AbstractTigerProxy {
+public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCloseable {
 
     public static final String WS_TRACING = "/topic/traces";
     public static final String WS_ERRORS = "/topic/errors";
@@ -138,6 +138,15 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy {
         } else {
             log.warn("Received message with content 'null'. Skipping parsing...");
         }
+    }
+
+    public void unsubscribe() {
+        tigerProxyStompClient.stop();
+    }
+
+    @Override
+    public void close() {
+        unsubscribe();
     }
 
     @RequiredArgsConstructor

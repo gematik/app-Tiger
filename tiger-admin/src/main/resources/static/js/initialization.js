@@ -7,13 +7,11 @@ let bs5Utils;
 
 const bs5UtilsDismissible = true;
 const bs5UtilsDelay5Sec = 5000;
-const bs5UtilsDelay10Sec = 10000;
 
 $(document).ready(function () {
 
   bs5Utils = new Bs5Utils();
   Bs5Utils.defaults.toasts.position = 'top-center';
-  //Bs5Utils.defaults.toasts.container = 'toast-container';
   Bs5Utils.defaults.toasts.stacking = true;
 
   // sidebar
@@ -29,7 +27,7 @@ $(document).ready(function () {
         case "start":
         case "restart":
         case "stop":
-          danger('TODO eature ' + key + ' NOT implemented so far!');
+          danger('TODO feature ' + key + ' NOT implemented so far!');
           break;
         case "delete":
           sidebarItem.remove();
@@ -80,12 +78,18 @@ $(document).ready(function () {
       confirmNoDefault('Unsaved Modifications',
           'Do you really want to discard current changes?',
           function () {
-            $('#file').click()
+            openFileOpenDialog(openYamlFile);
           });
     } else {
-      $('#file').click();
+      openFileOpenDialog(openYamlFile);
     }
   });
+
+
+  $('.btn-save-as-testenv').click(function () {
+    openFileSaveAsDialog(saveYamlFile)
+  });
+
 
   $('.btn-new-testenv').click(function () {
     if (unsavedModifications) {
@@ -100,8 +104,6 @@ $(document).ready(function () {
       notifyChangesToTestenvData(false);
     }
   });
-
-  $("#file").on("change", openYamlFile);
 
   // show welcome
   showWelcomeCard();

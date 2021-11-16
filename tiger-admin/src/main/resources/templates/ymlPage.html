@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>YML page</title>
+  <title>Tiger Admin</title>
   <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
   <script th:src="@{/webjars/jquery-ui/1.13.0/jquery-ui.min.js}"></script>
   <link th:href="@{/webjars/font-awesome/5.15.4/css/all.css}" rel="stylesheet">
@@ -23,7 +23,7 @@
 <div class="container-fluid">
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-gradient-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#"><img class="tiger-logo" alt="Tiger logo" src="img/tiger2-plain.svg"></a>
+      <a class="navbar-brand" href="#"><img class="tiger-logo" alt="Tiger logo" src="/img/tiger2-plain.svg"></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02"
               aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -35,16 +35,18 @@
             <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true"
                aria-expanded="false">Testenvironment</a>
             <div class="dropdown-menu">
-              <a class="dropdown-item btn-new-testenv" href="#">Neu</a>
-              <a class="dropdown-item btn-open-testenv" href="#">Öffnen...</a>
-              <a class="dropdown-item btn-save_testenv disabled" href="#">Speichern</a>
-              <a class="dropdown-item btn-save_as_testenv disabled" href="#">Speichern unter...</a>
+              <a class="dropdown-item btn-new-testenv" href="#">New</a>
+              <a class="dropdown-item btn-open-testenv" href="#">Open...</a>
+              <a class="dropdown-item btn-save-testenv disabled" href="#">Save</a>
+              <a class="dropdown-item btn-save-as-testenv disabled" href="#">Save as...</a>
+              <!--
               <div class="dropdown-divider"></div>
               <a class="dropdown-item disabled" href="#">Separated link</a>
+              -->
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link disabled" href="#">Über Tiger</a>
+            <a class="nav-link" href="https://github.com/gematik/app-Tiger" target="github">About Tiger</a>
           </li>
         </ul>
         <!--
@@ -66,10 +68,10 @@
         </div>
       </div>
       <div class="row bg-primary text-white box-config-file server-label ">
-        <div class="col-4 text-right">
-          <strong>Testenv:</strong>
+        <div class="col-2 text-right">
+          <strong>File:</strong>
         </div>
-        <div class="col-8">
+        <div class="col-10">
           <strong class="cfg-file-label"></strong>
         </div>
       </div>
@@ -103,7 +105,8 @@
       <section class="highlight-clean">
         <div class="container">
           <div class="intro">
-            <img alt="Tiger logo" class="float-end mb-4 ml-4 p-1 border border-primary rounded" th:src="@{/img/tiger2-plain.svg}" width="160">
+            <img alt="Tiger logo" class="float-end mb-4 ml-4 p-1 border border-primary rounded"
+                 src="/img/tiger2-plain.svg" width="160">
             <h2 class="text-center mb-3">Tiger Administration GUI</h2>
             <p class="text-justify">
               Tiger is an agile test platform developed by a Team at Gematik GmbH.</p>
@@ -131,7 +134,8 @@
               before using this UI.
             </p>
             <p class="text-justify">
-              To ease your job we have also prepared some default nodes (AKA templates) that are (re)used throughout the company.
+              To ease your job we have also prepared some default nodes (AKA templates) that are (re)used throughout the
+              company.
               Whether it is a local E-Rezept reference FD or the RISE IDP server in the RU/TU...
               All of these templates can easily be added to your test environment with a few clicks.
             </p>
@@ -142,19 +146,20 @@
           </div>
           <div class="buttons text-center" style="clear: both;">
             <button class="btn btn-outline-success btn-lg btn-add-server" type="button">Add a server ...</button>
-            <button class="btn btn-outline-primary btn-lg btn-open-testenv" type="button">Open Test environment file ...</button>
+            <button class="btn btn-outline-primary btn-lg btn-open-testenv" type="button">Open Test environment file
+              ...
+            </button>
           </div>
         </div>
       </section>
     </div>
   </div>
-
-
   <div class="row flex-fill server-formular d-none" id="template-server-formular">
     <!-- left column with heading and general settings/source -->
     <div class="col-5 flex-fill topcol">
       <h1 class="text-break text-white bg-primary border-primary shadow"
           style="padding: 1rem;border-radius: 0 0 1rem 0;">
+        <i class="server-icon"></i>
         <span class="server-key"></span>
         <i class="server-formular-collapse-icon fas fa-angle-down"></i>
         <i class="fas fa-toolbox btn-advanced global"></i>
@@ -625,7 +630,8 @@
                   <div class="col">
                     <div class="input-group">
                       <span class="input-group-text">Server Root Ca</span>
-                      <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation">
+                      <input class="form-control" type="text"
+                             name=".tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation">
                     </div>
                     <div class="input-group">
                       <span class="input-group-text">Forward Mutual TLS Identity</span>
@@ -634,7 +640,8 @@
                     </div>
                     <div class="input-group">
                       <span class="input-group-text">Server Identity</span>
-                      <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation">
+                      <input class="form-control" type="text"
+                             name=".tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation">
                     </div>
                     <div class="input-group">
                       <span class="input-group-text">Domain Name</span>
@@ -785,32 +792,47 @@
       </div>
     </div>
   </div>
-  <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
-    <!-- Position it -->
-    <div style="position: absolute; top: 0; right: 0;">
+</section>
 
-      <div class="toast" id="error-message" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
-        <div class="toast-header">
-          <i></i>
-          <strong class="me-auto">Error</strong>
-          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+<section id="unique-modals">
+  <div class="modal fade" id="file-navigation-modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">File navigation</h5>
         </div>
-        <div class="toast-body">
-          Leider konnten wir ihre YAML Konfiguration nicht laden!
+        <div class="input-group filepath">
+          <span class="input-group-text col-1">Path</span>
+          <input class="form-control" name="file-navigation-path" type="text">
         </div>
-        <button id='toggle'>Advanced Details
-          <!--      <i id="collapse-icon" class="fas fa-angle-down" style="margin-left:1rem;"></i>-->
-        </button>
-
-        <div id="detailedMessage" style="display: none"></div>
+        <div class="modal-body">
+          Loading file list...
+        </div>
+        <div class="input-group file-navigation-save">
+          <span class="input-group-text">Save as:</span>
+          <input class="form-control" name="file-navigation-save" type="text">
+        </div>
+        <div class="modal-footer">
+          <div class="dropup">
+            <button class="btn btn-info dropdown-toggle" type="button" id="dropdown-rootfs" data-bs-toggle="dropdown" aria-expanded="false">
+              Drives
+            </button>
+            <ul class="dropdown-menu fs-list-roots-list" aria-labelledby="dropdown-rootfs">
+            </ul>
+          </div>
+          <button type="button" class="btn btn-secondary btn-filenav-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary btn-filenav-ok">Ok</button>
+        </div>
       </div>
     </div>
   </div>
+
+
 </section>
 
 
-<script th:src="@{/webjars/bootstrap/5.1.1/js/bootstrap.min.js}"></script>
-<script th:src="@{/webjars/popper.js/2.9.3/umd/popper.min.js}"></script>
+<script th:src="@{/webjars/bootstrap/5.1.1/js/bootstrap.bundle.min.js}"></script>
+<!--<script th:src="@{/webjars/popper.js/2.9.3/umd/popper.min.js}"></script>-->
 <!-- https://github.com/Script47/bs5-utils -->
 <script type="text/javascript" th:src="@{/js/bs5util.js}"></script>
 <script type="text/javascript" th:src="@{/js/menu.js}"></script>

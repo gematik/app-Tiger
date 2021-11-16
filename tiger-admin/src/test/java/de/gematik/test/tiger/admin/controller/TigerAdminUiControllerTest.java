@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.io.File;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,47 +32,21 @@ public class TigerAdminUiControllerTest {
 
     @Test
     public void testOpenYamlFile() throws Exception {
-        //language=yaml
-        String yamlContent = "tigerProxy:\n" +
-                "  forwardToProxy:\n" +
-                "    hostname: $SYSTEM\n" +
-                "\n" +
-                "servers:\n" +
-                "  testExternalJar:\n" +
-                "    hostname: testExternalJar\n" +
-                "    type: externalJar\n" +
-                "    source:\n" +
-                "      - https://sourceforge.net/projects/winstone/files/winstone/v0.9.10/winstone-0.9.10.jar/download\n" +
-                "    externalJarOptions:\n" +
-                "      healthcheck: http://127.0.0.1:9107\n";
-
-        MockMultipartFile yamlFile = new MockMultipartFile("fileName", "fileName.yaml", "application/json", yamlContent.getBytes());
-
-        this.mockMvc.perform(MockMvcRequestBuilders.multipart("/openYamlFile")
-                        .file(yamlFile)
-                        .param("fileName", "fileName"))
+        String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test", "tiger", "testenvmgr").toFile().toString();
+        this.mockMvc.perform(get("/openYamlFile")
+                        .param("cfgfile",   relPath + File.separator + "testAdminUI.yaml"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON.getMediaType()));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON.getMediaType()))
+            .andExpect(jsonPath("$.reverseproxy2.type").value(is("tigerProxy")))
+            .andExpect(jsonPath("$.testWinstone3.type").value(is("externalJar")));
     }
 
     @Test
     public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
-        //language=yaml
-        String yamlContent =
-            "servers:\n" +
-                "  testInvalidType:\n" +
-                "    hostname: invalid\n" +
-                "    template: idp-ref\n" +
-                "    type: NOTEXISTING\n" +
-                "    source:\n" +
-                "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/\n" +
-                "    active: true";
 
-        MockMultipartFile yamlFile = new MockMultipartFile("fileName", "fileName.yaml", "application/json", yamlContent.getBytes());
-
-        this.mockMvc.perform(MockMvcRequestBuilders.multipart("/openYamlFile")
-                .file(yamlFile)
-                .param("fileName", "fileName"))
+        String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test", "tiger", "testenvmgr").toFile().toString();
+        this.mockMvc.perform(get("/openYamlFile")
+            .param("cfgfile",   relPath + File.separator + "testInvalidType.yaml"))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.mainCause").value(containsString("Failed to convert given JSON string to config object of class de.gematik.test.tiger.testenvmgr.config.Configuration!")))
             .andExpect(jsonPath("$.causes").value(hasSize(1)))

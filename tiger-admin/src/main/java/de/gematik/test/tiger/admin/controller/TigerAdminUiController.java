@@ -5,8 +5,12 @@ import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -28,11 +32,10 @@ public class TigerAdminUiController {
         return "ymlPage";
     }
 
-    @PostMapping(value = "/openYamlFile", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/openYamlFile", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String openYamlFile(@RequestParam("fileName") MultipartFile file) throws IOException {
-        ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
-        String yamlString = IOUtils.toString(stream, StandardCharsets.UTF_8);
+    public String openYamlFile(@RequestParam("cfgfile") String file) throws IOException {
+        String yamlString = IOUtils.toString(new File(file).toURI(), StandardCharsets.UTF_8);
 
         JSONObject jsonCfg = TigerConfigurationHelper.yamlStringToJson(yamlString);
 
@@ -53,7 +56,6 @@ public class TigerAdminUiController {
         } catch (Exception e) {
             throw new TigerConfigurationException("Unable to read templates from classpath resources!", e);
         }
-
     }
 }
 

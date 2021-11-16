@@ -61,7 +61,7 @@ public class MockServerPlugin implements EventListener {
         });
 
         publisher.registerHandlerFor(TestRunFinished.class, event -> {
-            log.info("Starting dummy HTTP server...");
+            log.info("Stopping dummy HTTP server...");
             stopWebServer();
         });
     }

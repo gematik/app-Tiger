@@ -50,19 +50,13 @@ body {
 }
 
 
-
-
-
-
-
 /* ----------------------------------------------------------------------------- */
 /* ET modificatiosn ONLY ;) */
 
 fieldset {
     border: 1px solid lightgray;
-    padding: 1rem;
     margin: 1rem;
-    padding-top: 0.5rem;
+    padding: 0.5rem 1rem 1rem;
 }
 
 fieldset.subset {
@@ -142,9 +136,7 @@ span.fieldset-summary {
     color: #0d6efd;
     font-weight: bolder;
     border-color: #8ca9d4;
-    border-radius: 0.25rem;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    border-radius: 0.25rem 0.25rem 0 0;
 }
 
 fieldset .list-group .list-group-item > span {
@@ -155,7 +147,6 @@ fieldset .list-group .list-group-item > span {
 
 .topcol {
     padding-left: 0;
-    padding-right: 1px;
 }
 
 .text.summary {
@@ -173,7 +164,7 @@ fieldset .list-group .list-group-item > span {
 }
 
 i.server-formular-collapse-icon {
-    margin-left:1rem;
+    margin-left: 1rem;
 }
 
 i.collapse-icon {
@@ -207,16 +198,17 @@ i.collapse-icon {
 .btn-advanced {
     float: right;
     font-size: 50%;
-    color: lightgray;
+    color: var(--secondary);
+    cursor: pointer;
 }
 
 .btn-advanced.active {
-    color: #d9534f;
+    color: var(--danger);
 }
 
 .advanced .input-group *, .advanced legend, .advanced .form-switch *,
 .advanced.input-group *, .advanced.form-switch * {
-    color: #d9534f;
+    color: var(--danger);
 }
 
 .editing {
@@ -235,7 +227,9 @@ i.collapse-icon {
 }
 
 .server-icon {
-    padding-right: 1rem;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+    font-size: 1.5rem;
 }
 
 .tiger-logo {
@@ -243,7 +237,7 @@ i.collapse-icon {
 }
 
 .toast-container {
-    z-index:32000;
+    z-index: 32000;
 }
 
 .welcome-card {
@@ -251,7 +245,7 @@ i.collapse-icon {
 }
 
 .highlight-clean .intro {
-    font-size:1rem;
+    font-size: 1rem;
     margin: 2rem auto 2rem;
 }
 
@@ -262,4 +256,48 @@ i.collapse-icon {
 .modal-error.detailedMessage {
     font-family: monospace;
     line-break: anywhere;
+}
+
+
+.icon-right {
+    margin-right: 0.5rem;
+}
+
+
+/* file navigation dialog styles */
+
+.filepath input {
+    direction: rtl;
+    text-align: left;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.modal-dialog {
+    margin: auto;
+    max-width: 800px;
+}
+
+.modal-content {
+    height: 600px;
+}
+
+.modal-body {
+    height: 500px;
+    overflow-y: auto;
+}
+
+.modal-content .cfgfile, .modal-content .folder {
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+}
+
+.modal-content .cfgfile:hover, .modal-content .folder:hover {
+    background: var(--success);
+    color: white !important;
+}
+
+.modal-content .folder:hover {
+    background: var(--primary);
+    color: white !important;
 }
