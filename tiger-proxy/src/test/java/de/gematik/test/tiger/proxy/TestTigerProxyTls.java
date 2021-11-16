@@ -299,4 +299,25 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
         return sslContext;
     }
+
+    @Test
+    public void configureServerTslSuites() {
+        final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .tls(TigerTlsConfiguration.builder()
+                .serverSslSuites(List.of(configuredSslSuite))
+                .build())
+            .build());
+
+        SSLContext ctx = tigerProxy.buildSslContext();
+        new UnirestInstance(new Config()
+            .sslContext(ctx)
+            .proxy("localhost", tigerProxy.getPort()))
+            .get("https://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+
+        assertThat(ctx.getClientSessionContext()
+            .getSession(ctx.getClientSessionContext().getIds().nextElement())
+            .getCipherSuite())
+            .isEqualTo(configuredSslSuite);
+    }
 }
