@@ -2,9 +2,14 @@ body {
     padding-top: 4.5rem;
 }
 
+inlinepre {
+    white-space: pre;
+    font-family: "Courier New", monospace;
+    display: inline;
+}
+
 .box, .box-config-file {
-    border: 1px solid #6b8ab8;
-    background-color: #b5cae6;
+    border: 1px solid var(--primary);
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     border-radius: 0;
@@ -14,9 +19,13 @@ body {
     border-radius: 1rem 1rem 0 0;
 }
 
+.box-config-file > div{
+    min-height: 1rem;
+}
+
 .box > div, .box > div > i {
     display: inline-block;
-    color: #6b8ab8;
+    color: var(--primary);
 }
 
 .sidebar-toolbar {
@@ -26,27 +35,43 @@ body {
     padding: 0.5rem 0;
 }
 
+.sidebar-item {
+    box-shadow: 5px 5px 8px -5px var(--success);
+    border-radius: 0.75rem;
+    padding: 1rem 0;
+    border: 3px solid var(--success);
+}
+
+.sidebar-item:hover {
+    background: var(--success);
+}
+
+.sidebar-local-proxy {
+    box-shadow: 5px 5px 8px -5px var(--bs-gray-600);
+    border-radius: 0.75rem;
+    padding: 1rem 0;
+    border: 3px solid var(--bs-gray-700);
+}
+
+.sidebar-local-proxy:hover {
+    background: var(--bs-gray-500);
+}
+
+
 .server-label {
     text-overflow: ellipsis;
     overflow: hidden;
     line-break: anywhere;
 }
 
-.context-menu-hover {
-    background-color: #a8c1e6 !important;
-}
-
-.content {
-    padding: 1rem 0 2rem 0;
-    display: none;
-    overflow: hidden;
-    border: 1px solid #d3d3d3;
-}
-
 .server-container {
     display: grid;
     gap: 1rem;
     padding-bottom: 1rem;
+}
+
+.server-content {
+    margin-left: 1rem;
 }
 
 
@@ -60,22 +85,26 @@ fieldset {
 }
 
 fieldset.subset {
-    margin-top: 0;
+    margin-top: 1rem;
+}
+
+legend {
+    color: var(--secondary);
 }
 
 input:hover, select:hover {
-    color: steelblue;
-    background-color: #a8c1e6;
+    border: 3px solid var(--success);
 }
 
-li.list-group-item:not(.active):hover {
-    background: #a8c1e6;
+.list-group-item * {
+    border: 3px solid transparent;
+    border-right-width: 0;
+    border-left-width: 0;
 }
 
-.list-group-item.active {
-    color: #084298;
-    background-color: #8ca9d4; /*#cfe2ff;*/
-    border-color: #6b8ab8; /*#b6d4fe;*/
+.list-group-item:hover {
+    border-color: var(--success);
+    border-width: 3px 0;
 }
 
 span.fieldset-summary {
@@ -89,6 +118,7 @@ span.fieldset-summary {
 
 .input-group, .form-check {
     margin-top: 0.5rem !important;
+    margin-left: 1rem;
 }
 
 .btn-group-vertical button {
@@ -98,6 +128,7 @@ span.fieldset-summary {
 .input-group-text {
     flex: 0 0 auto;
     width: 30%;
+    margin-right: 1rem;
 }
 
 .labels-col-5 .input-group-text {
@@ -120,7 +151,7 @@ span.fieldset-summary {
     width: 20%;
 }
 
-.list-group {
+.list-group:not(.list-server-types) {
     background: #f0f0f0;
     border: 1px solid lightgray;
     min-height: 10rem;
@@ -143,10 +174,17 @@ fieldset .list-group .list-group-item > span {
     width: 100%;
     display: table-cell;
     vertical-align: middle;
+    line-break: anywhere;
 }
 
 .topcol {
     padding-left: 0;
+}
+
+
+.testenv-sidebar-header {
+    margin-left: 15px;
+    margin-right: 15px;
 }
 
 .text.summary {
@@ -165,11 +203,13 @@ fieldset .list-group .list-group-item > span {
 
 i.server-formular-collapse-icon {
     margin-left: 1rem;
+    cursor: pointer;
 }
 
 i.collapse-icon {
     color: steelblue;
     margin-left: 1rem;
+    cursor: pointer;
 }
 
 .list-group-item {
@@ -187,14 +227,21 @@ i.collapse-icon {
 }
 
 .server-formular {
-    box-shadow: 2px 2px 8px -3px var(--bs-gray-700);
-    margin-bottom: 1.5rem;
+    border-top: 1rem solid var(--primary);
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    box-shadow: 2px 2px 8px -3px var(--primary);
+    margin-bottom: 0.5rem;
+    padding-left: 0;
 }
 
 .server-formular > .row {
     margin-left: 0;
 }
 
+.tabbedpanel {
+    margin-top: 0.75rem;
+}
 .btn-advanced {
     float: right;
     font-size: 50%;
@@ -220,6 +267,8 @@ i.collapse-icon {
 
 .sidebar-col {
     position: fixed;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .sidebar {
@@ -278,11 +327,11 @@ i.collapse-icon {
     max-width: 800px;
 }
 
-.modal-content {
+#file-navigation-modal .modal-content {
     height: 600px;
 }
 
-.modal-body {
+#file-navigation-modal .modal-body {
     height: 500px;
     overflow-y: auto;
 }
@@ -300,4 +349,64 @@ i.collapse-icon {
 .modal-content .folder:hover {
     background: var(--primary);
     color: white !important;
+}
+
+
+/* add server modal */
+
+#add-server-modal .modal-dialog {
+    max-width: 1024px;
+    height: 800px;
+}
+
+.list-server-types.list-group .list-group-item.active {
+    background: var(--success);
+    color: var(--white) !important;
+    border-color: var(--success);
+}
+
+
+
+.fade {
+    transition: all 0.2s ease-in-out;
+}
+
+
+
+
+
+.input-group {
+    margin: 1rem 0;
+}
+
+.input-group-text {
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+
+.form-control, .form-select{
+    border: 3px solid lightsteelblue;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem;
+}
+
+.form-control.disabled, .form-select.disabled {
+    border: 3px solid var(--light);
+    background: var(--light);
+}
+
+.col.form-text {
+    color: var(--gray);
+    text-align: justify;
+}
+
+ul.nav-tabs {
+    border: 0;
+}
+
+div.local_proxy_info {
+    padding: 1.5rem;
+    color: var(--bs-gray-600);
+    text-align: justify;
 }

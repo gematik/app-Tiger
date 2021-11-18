@@ -42,7 +42,7 @@ public class TigerAdminUiController {
         Configuration configuration = new TigerConfigurationHelper<Configuration>()
             .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
 
-        return TigerConfigurationHelper.toJson(configuration.getServers());
+        return TigerConfigurationHelper.toJson(configuration);
     }
 
     @GetMapping(value = "/getTemplates", produces = MediaType.APPLICATION_JSON_VALUE)

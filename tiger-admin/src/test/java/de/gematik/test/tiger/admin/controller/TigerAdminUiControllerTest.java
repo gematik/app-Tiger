@@ -37,8 +37,10 @@ public class TigerAdminUiControllerTest {
                         .param("cfgfile",   relPath + File.separator + "testAdminUI.yaml"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON.getMediaType()))
-            .andExpect(jsonPath("$.reverseproxy2.type").value(is("tigerProxy")))
-            .andExpect(jsonPath("$.testWinstone3.type").value(is("externalJar")));
+            .andExpect(jsonPath("$.tigerProxy.forwardToProxy.hostname").value(is("$SYSTEM")))
+            .andExpect(jsonPath("$.servers.reverseproxy2.type").value(is("tigerProxy")))
+            .andExpect(jsonPath("$.servers.reverseproxy2.type").value(is("tigerProxy")))
+            .andExpect(jsonPath("$.servers.testWinstone3.type").value(is("externalJar")));
     }
 
     @Test

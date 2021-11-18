@@ -20,9 +20,7 @@ moved exception parsing to browser and introduced general error modal
 /* before commit
 */
 
-
 // TODO support textarea for larger input data (PKI I here ya!)
-
 // TODO recheck modification detection on complex lists once default values are implemented
 // as of now the yaml from the server does only ocntain attributes which have a value (null are not added)
 // so in routes if id is not set its not forwarded at all in the serverYaml struct
@@ -34,11 +32,11 @@ moved exception parsing to browser and introduced general error modal
 
 // TODO save to file
 
-// New tasks -> Yana/Anne
+// TODO regex based validation pattern TGR-204
+
 // TODO make source fieldset type specific, add extra template for this
 //  fieldset and depending on the type copy it to the server formular
 
-// ONGOING refactor js code
 // TODO help section probably visualized beneath the side bar showing help text to each hovering input
 // or do we do hovering tooltip?
 
@@ -48,8 +46,6 @@ moved exception parsing to browser and introduced general error modal
 // and i use it somewhere else too so reinvestigate
 // TODO LOPRIO use gutters for label alignment - not sure this really helps in our situation
 //  are gutter smore for padding?
-// TODO after implementing start/stop of servers color sidebar box elements to show state of server
-// TODO click on sidebar box scrolls element into view but heading is hidden by fixed top navbar
 
 const dollarTokens = /\${([\w|.]+)}/g
 
@@ -61,11 +57,14 @@ const dollarTokens = /\${([\w|.]+)}/g
 $.fn.initFormular = function (serverKey, serverData) {
   checkTag('initFormular', this, 'FORM');
 
+  $('.testenv-sidebar-header').fadeIn(500);
+
   // add copy of template to form and set heading
   $(this).html(
       '<div class="row">' + $('#template-server-formular').html() + '</div>');
   $(this).find('.server-key').text(serverKey);
   $(this).find('.server-icon').addClass(serverIcons[serverData.type]);
+  $(this).find('.server-icon').attr('title', serverData.type);
 
   // default settings
   if (!serverData.source) { // at least one empty line for source as we have
@@ -79,17 +78,25 @@ $.fn.initFormular = function (serverKey, serverData) {
   // collapse all fieldsets that should be collapsed on start
   this.find('fieldset.start-collapsed > legend').tgrToggleCollapse();
 
+  this.find(".server-formular-collapse-icon").attr('title', 'Fold/Unfold');
+  this.find(".collapse-icon").attr('title', 'Fold/Unfold');
+
   this.populateTemplateList();
   this.find('select[name="template"]').val(serverData.template);
 
   this.find('.advanced').hide();
+  this.find(".btn-advanced").attr('title', 'Show advanced settings');
 
   //
   // callbacks
   //
 
   // edit heading
-  this.find(".server-key").click(function () {
+  this.find(".server-key").click(function (ev) {
+    if ($(this).text() === 'local_proxy') {
+      ev.preventDefault();
+      return false;
+    }
     const editable = $(this).attr("contentEditable");
     if (editable !== 'true') {
       $(this).data("originalContent", $(this).html());
@@ -99,6 +106,20 @@ $.fn.initFormular = function (serverKey, serverData) {
       $(this).focus();
       $(this).keydown((ev) => {
         if (ev.keyCode === 13) {
+          const text = $(this).text();
+          if (text.indexOf(' ') !== -1) {
+            snack(
+                'No SPACES allowed in server key!<br/>Replacing spaces with underscores!',
+                'warning');
+            $(this).text(text.replace(' ', '_'));
+          } else if (text === 'local_proxy') {
+            snack(
+                '<p>Sorry \'local_proxy\' is reserved for the test suite\'s local tiger proxy!</p>'
+                +
+                '<p>Please choose another name!</p>',
+                'warning');
+            return false;
+          }
           const newServerKey = $(this).text();
           $(this).html(newServerKey);
           const oldServerKey = $(this).data('originalContent');
@@ -133,8 +154,8 @@ $.fn.initFormular = function (serverKey, serverData) {
     $(this).tgrToggleCollapse();
   });
   this.find('.server-formular-collapse-icon').click(function () {
-    $(this).parent().siblings().toggle();
-    $(this).parent().parent().siblings().toggle();
+    $(this).parent().siblings(':not(.hidden)').toggle();
+    $(this).parent().parent().siblings(':not(.hidden)').toggle();
     $(this).toggleCollapseIcon();
   });
 
@@ -147,7 +168,7 @@ $.fn.initFormular = function (serverKey, serverData) {
       $(this).removeClass('active');
     } else {
       formular.find('.btn-advanced').addClass('active');
-      formular.find('.advanced').fadeIn(600);
+      formular.find('.advanced:not(.hidden)').fadeIn(600);
       $(this).addClass('active');
       $.each(formular.find('fieldset'), function () {
         if ($(this).find('i.collapse-icon').isCollapsed() &&
@@ -163,7 +184,7 @@ $.fn.initFormular = function (serverKey, serverData) {
     if ($(this).parent().find('.collapse-icon').isCollapsed()) {
       return false;
     }
-    $(this).parents('fieldset').find('.advanced').fadeToggle(600);
+    $(this).parents('fieldset').find('.advanced:not(.hidden)').fadeToggle(600);
     $(this).toggleClass('active');
     return false;
   });
@@ -180,6 +201,12 @@ $.fn.initFormular = function (serverKey, serverData) {
         $(item).addClickNKeyCallbacks2ListItem(true);
       });
 
+  // add buttons to lists
+  $(this).find('fieldset.complex-list > .row > .col-list-btns').html(
+      $('#template-list-all-buttons').html());
+  $(this).find('fieldset.editableList > .row > .col-list-btns').html(
+      $('#template-list-add-delete-buttons').html());
+
   // list button callbacks
   this.find('fieldset.editableList .btn-list-add').click(
       function () {
@@ -187,9 +214,9 @@ $.fn.initFormular = function (serverKey, serverData) {
         listGroup.find('.active').removeClass('active');
         const activeItem = listGroup.find('.active');
         if (activeItem.length === 0) {
-          listGroup.prepend(getListItem("", true));
+          listGroup.prepend(getListItem("", true, false));
         } else {
-          $(getListItem("", true)).insertAfter(activeItem);
+          $(getListItem("", true, false)).insertAfter(activeItem);
         }
         $.each(listGroup.find('.list-group-item > span'),
             function (idx, item) {
@@ -214,7 +241,7 @@ $.fn.initFormular = function (serverKey, serverData) {
           }
         }
         listGroup.find('.active').removeClass('active');
-        let newItem = $(getListItem("", true, true));
+        let newItem = $(getListItem("", true, false));
 
         if (activeItem.length === 0) {
           listGroup.prepend(newItem);
@@ -270,9 +297,12 @@ $.fn.initFormular = function (serverKey, serverData) {
 
   // set forwardToProxy flag depending on hostname and port being set
   const forwardToProxySection = '.tigerProxyCfg.proxyCfg.forwardToProxy.';
+  const proxyHostname = this.find(
+      '*[name="' + forwardToProxySection + 'hostname"]').val();
   this.find('*[name="enableForwardProxy"]').prop('checked',
-      this.find('*[name="' + forwardToProxySection + 'hostname"]').val() &&
-      this.find('*[name="' + forwardToProxySection + 'port"]').val()
+      (proxyHostname && this.find(
+          '*[name="' + forwardToProxySection + 'port"]').val()) ||
+      (proxyHostname === '$SYSTEM' && serverData.type === 'localProxy')
   )
 
   // set summary for initially collapsed fieldsets
@@ -288,12 +318,6 @@ $.fn.initFormular = function (serverKey, serverData) {
     ev.preventDefault();
     return false;
   });
-
-  function makeSourceListSingleLineEdit(serverFormular) {
-    serverFormular.find('fieldset[section="source"]').find('button').hide()
-    serverFormular.find('fieldset[section="source"] .list-group').css(
-        {minHeight: '2.5rem'})
-  }
 
   //
   // type specific UI adaptations
@@ -311,41 +335,82 @@ $.fn.initFormular = function (serverKey, serverData) {
 
   this.find('.btn-advanced.global').hide();
 
+  const source = this.find('fieldset[section="source"]').getValue("source");
+  const version = this.find('fieldset[section="source"]').getValue("version");
+
   // adapt source field according to type (single line for docker, tigerproxy,
   // externalJar, externalUrl, only for docker compose its a list)
   // show version only for tigerProxy and docker
+  // noinspection FallThroughInSwitchStatementJS
   switch (serverData.type) {
     case 'compose':
-      const fieldSet =
-          this.find(
-              'fieldset[section=".dockerOptions.serviceHealthchecks"]');
+      const fieldSet = this.find(
+          'fieldset[section=".dockerOptions.serviceHealthchecks"]');
       fieldSet.fadeIn();
       fieldSet.find('legend').click();
-      this.find('fieldset[section=".dockerOptions.dockerSettings"]').hide();
+      this.find('fieldset[section=".dockerOptions.dockerSettings"]').addClass(
+          'hidden');
       this.showTabLink('dockerOptions', true);
       this.showTab('dockerOptions');
       break;
     case 'docker':
-      this.find('*[name="version"]').parent().show();
-      makeSourceListSingleLineEdit(this);
       this.showTabLink('dockerOptions', true);
       this.showTab('dockerOptions');
+      this.find('.btn-advanced.global').show();
+
+      this.find('fieldset[section="source"]').replaceWith($("#template-source-single").prop('outerHTML'));
+      this.find('*[name="source"]').setValue(source);
       break;
-    case 'externalJar':
     case 'externalUrl':
+      this.find('fieldset[section=".externalJarOptions.options"]').addClass(
+          'hidden');
+      this.find('fieldset[section=".externalJarOptions.arguments"]').addClass(
+          'hidden');
+      this.find(
+          'input[name=".externalJarOptions.workingDir"]').parent().addClass(
+          'hidden');
+      this.find('fieldset[section="environment"]').addClass('hidden');
+
+    case 'externalJar':
       this.showTabLink('externalJarOptions', true);
-      makeSourceListSingleLineEdit(this);
       this.showTab('externalJarOptions');
+
+      this.find('fieldset[section="source"]').replaceWith($("#template-source-single").prop('outerHTML'));
+      this.find('*[name="source"]').setValue(source);
+      this.find('*[name="version"]').parent().hide();
+      break;
+
       break;
     case 'tigerProxy':
       this.find('*[name="version"]').parent().show();
-      makeSourceListSingleLineEdit(this);
       this.showTabLink('externalJarOptions', true);
       this.showTabLink('tigerProxy', true);
       this.showTab('tigerProxy');
       this.find('.btn-advanced.global').show();
+      this.find('fieldset[section="source"]').replaceWith($("#template-source-select").prop('outerHTML'));
+      this.find('*[name="source"]').setValue(source);
       break;
+    case 'localProxy':
+      this.showTabLink('tigerProxy', true);
+      this.showTab('tigerProxy');
+      this.find('.btn-advanced.global').show();
+      this.showTabLink('pkiKeys', false);
+      this.showTabLink('environment', false);
+      this.showTabLink('urlMappings', false);
+      this.find('input[name=".tigerProxyCfg.serverPort"]').parent().addClass(
+          'hidden');
+      this.find(
+          'select[name=".tigerProxyCfg.proxiedServer"]').parent().addClass(
+          'hidden');
+      this.find('input[name="version"]').parent().addClass('hidden');
+      this.find('fieldset[section="node-settings"]').addClass('hidden');
+      this.find('fieldset[section="source"]').addClass('hidden');
+      this.find('div.local_proxy_info').removeClass('hidden');
+      break;
+
   }
+  this.find('*[name="version"]').setValue(version);
+
 }
 
 // for multiple form.server-formular
@@ -495,9 +560,8 @@ $.fn.extend({
         if (typeof value[0] === 'object') {
           $.each(value, function (idx, item) {
             listHtml += getListItem(
-                $('<div/>').text(
-                    elem.generateListItemLabel(item), false, true)
-                .html(), false, true);
+                $('<div/>').text(elem.generateListItemLabel(item)).html(),
+                false, false);
           });
           elem.html(listHtml);
           $.each(value, function (idx, itemData) {
@@ -507,7 +571,7 @@ $.fn.extend({
           const fieldSet = elem.parents('fieldset');
           editable = fieldSet.hasClass('editableList');
           $.each(value, function (idx, item) {
-            listHtml += getListItem(item, false, !editable);
+            listHtml += getListItem(item, false, false);
           });
           elem.html(listHtml);
         }
@@ -636,7 +700,7 @@ $.fn.extend({
     elem.replaceWith(
         getListItem(
             $('<div/>').text(listGroup.generateListItemLabel(data)).html(),
-            true, true
+            true, false
         )
     );
     elem = listGroup.find(".list-group-item.active");
@@ -670,14 +734,14 @@ $.fn.extend({
       const collIcon = $(this).find('i.collapse-icon');
       const btnAdvanced = $(this).parents('fieldset').find('.btn-advanced');
       if (collIcon.isCollapsed()) {
-        $(this).siblings(':not(.advanced)').fadeIn();
+        $(this).siblings(':not(.advanced):not(.hidden)').fadeIn();
         if (!$(this).parents('fieldset').find('.btn-advanced').hasClass(
             "active")) {
           $(this).parent().find('.advanced').hide();
         }
       } else {
         btnAdvanced.removeClass('active');
-        $(this).siblings().fadeOut();
+        $(this).siblings(':not(.hidden)').fadeOut();
         $(this).parent().find('.advanced').fadeOut();
       }
       collIcon.toggleCollapseIcon();
@@ -810,9 +874,15 @@ $.fn.extend({
     });
   },
 
-  // for editing elem
+  // for single editing elem
   handleEnterEscOnEditableContent: function (ev) {
-    checkClass('handleEnterEscOnEditableContent', this, 'editing');
+    checkSingle('handleEnterEscOnEditableContent', this)
+    if (!$(this).hasClass('editing')) {
+      console.log(
+          "WARN Used handleEnterEscOnEditableContent on non .editing element "
+          + $(this).attr('class'));
+      return;
+    }
     if (ev.keyCode === 13 || ev.keyCode === 27) {
       if (ev.keyCode === 27) {
         this.html(this.data('originalContent'));
@@ -885,8 +955,8 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
   this.each(function () {
     if (editable) {
       $(this).off('click');
-      $(this).off('keydown');
       $(this).click((ev) => {
+        $(this).off('keydown');
         if ($(this).attr('contentEditable') !== 'true') {
           $(this).data('originalContent', $(this).html());
           $(this).attr('contentEditable', 'true');
@@ -952,7 +1022,9 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
 function getListItem(text, active, reallySmall) {
   return '<li class="list-group-item ' + (active ? 'active ' : '') +
       (reallySmall ? 'really-small' : '') + '">'
-      + '<i class="fas fa-grip-lines draghandle"></i><span><span>' + text
+      // TODO why <span><span> ??
+      + '<i title="Click to rearrange item in list" class="fas fa-grip-lines draghandle"></i><span><span>'
+      + text
       + '</span></span>'
       + '</li>'
 }
