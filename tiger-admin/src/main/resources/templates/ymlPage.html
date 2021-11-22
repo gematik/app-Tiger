@@ -172,28 +172,26 @@
           <span class="fieldset-summary fs-6"></span>
           <i class="fas fa-toolbox btn-advanced"></i>
         </legend>
-        <!-- not shown as the icon in the heading says it all -->
-        <div class="input-group hidden">
-          <input class="form-control disabled" type="text" disabled name="type" value="Docker">
-        </div>
-        <div class="input-group hidden">
-          <input class="form-control disabled" type="text" disabled name="type" value="Docker">
+        <!-- not shown as both values are dealt with in the heading -->
+        <div class="hidden">
+          <input name="type">
+          <input name="key">
         </div>
 
         <div class="input-group">
           <span class="input-group-text">Hostname</span>
           <input class="form-control" type="text" name="hostname"
-                 title="Specify the name under which this server node is present to the test suite. If empty defaults to the server key.">
+                 title="Hostname under which this server node is presented to the test suite. If empty defaults to the server key.">
         </div>
         <div class="input-group">
           <span class="input-group-text">Template</span>
-          <select class="form-select" name="template"
-                  title="Select a template to apply to this node. Only templates matching your type are available.">
-            <option value="null" selected="">----</option>
-            <option value="template1">template1</option>
-            <option value="template2">template2</option>
-            <option value="template3">template3</option>
-          </select></div>
+          <input class="form-control disabled" disabled readonly type="text" name="template"
+                 title="The template this node is based upon.">
+          <button title="Reset node to initial template values" class="btn btn-reset-template btn-outline-warning hidden"
+                  type="button">
+            <i class="fas fa-redo-alt"></i>
+          </button>
+        </div>
         <div class="input-group advanced">
           <span class="flex-fill input-group-text">Startup Timeout (sec)</span>
           <input class="form-control" type="number" name="startupTimeoutSec"
@@ -291,7 +289,8 @@
               </legend>
               <div class="input-group advanced" style="margin-bottom: 2rem;">
                 <span class="input-group-text">Entry Point cmd</span>
-                <input class="form-control" type="text" name=".dockerOptions.entryPoint">
+                <input class="form-control" type="text" name=".dockerOptions.entryPoint"
+                       title="Overwrite the entry point cmd for this docker image.">
               </div>
               <div class="form-check form-switch" style="clear:both;">
                 <input class="form-check-input" type="checkbox" name=".dockerOptions.proxied">
@@ -299,9 +298,9 @@
               </div>
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name=".dockerOptions.oneShot">
-                <label class="form-check-label">One shot health check strategy</label></div>
+                <label class="form-check-label">Apply One shot health check strategy</label></div>
             </fieldset>
-            <fieldset class="editableList start-collapsed" section=".dockerOptions.serviceHealthchecks"
+            <fieldset class="editableList" section=".dockerOptions.serviceHealthchecks"
                       summarypattern="${.dockerOptions.serviceHealthchecks}">
               <legend>Service Healthchecks<i class="collapse-icon fas fa-angle-down"></i>&nbsp;<span
                   class="fieldset-summary fs-6"></span>
@@ -330,15 +329,16 @@
                   class="fieldset-summary fs-6"></span></legend>
               <div class="input-group">
                 <span class="input-group-text">Working directory</span>
-                <input class="form-control" type="text" placeholder="resorts to temp folder if empty"
-                       name=".externalJarOptions.workingDir">
+                <input class="form-control" type="text" name=".externalJarOptions.workingDir"
+                       title="Folder from which to start the node's Jar archive. Resorts to temp folder if empty">
                 <!--
                 <button class="btn btn-secondary" type="button">Browse...</button>
                 -->
               </div>
               <div class="input-group">
                 <span class="input-group-text">Health check URL</span>
-                <input class="form-control" type="url" name=".externalJarOptions.healthcheck">
+                <input class="form-control" type="url" name=".externalJarOptions.healthcheck"
+                       title="URL to be used to check for successfully started node">
               </div>
             </fieldset>
             <fieldset class="editableList start-collapsed" section=".externalJarOptions.options"
@@ -390,18 +390,21 @@
                   <div class="col-md-6">
                     <div class="input-group">
                       <span class="input-group-text">Proxy Port</span>
-                      <input class="form-control" type="number" name=".tigerProxyCfg.proxyPort">
+                      <input class="form-control" type="number" name=".tigerProxyCfg.proxyPort"
+                             title="Port on which the Tiger proxy is listening">
                     </div>
                     <div class="input-group advanced">
                       <span class="input-group-text">Proxy Protocol</span>
-                      <select class="form-select" name=".tigerProxyCfg.proxyProtocol">
+                      <select class="form-select" name=".tigerProxyCfg.proxyProtocol"
+                              title="Which protocol the proxy is using. Normally HTTP is fine.">
                         <option value="http">HTTP</option>
                         <option value="https">HTTPS</option>
                       </select>
                     </div>
                     <div class="input-group advanced">
                       <span class="input-group-text">Log level</span>
-                      <select class="form-select" name=".tigerProxyCfg.proxyCfg.proxyLogLevel">
+                      <select class="form-select" name=".tigerProxyCfg.proxyCfg.proxyLogLevel"
+                              title="Log level of the proxy. WARN is fint, TRACE produces a LOT of logs.">
                         <option value="WARN" selected="">WARN</option>
                         <option value="INFO">INFO</option>
                         <option value="TRACE">TRACE</option>
@@ -411,15 +414,14 @@
                   <div class="col-md-6">
                     <div class="input-group">
                       <span class="input-group-text">Proxied Server</span>
-                      <select class="form-select" name=".tigerProxyCfg.proxiedServer">
-                        <option value="EPA_Docker" selected="">EPA Docker</option>
-                        <option value="IDP_RISE_in_RU">IDP RISE in RU</option>
-                        <option value="ERp_IBM_in_TU">ERp IBM in TU</option>
+                      <select class="form-select" name=".tigerProxyCfg.proxiedServer"
+                              title="Choose another node that will be reverse proxied by this tiger proxy.">
                       </select>
                     </div>
                     <div class="input-group advanced">
                       <span class="input-group-text">Server Port</span>
-                      <input class="form-control" type="number" name=".tigerProxyCfg.serverPort">
+                      <input class="form-control" type="number" name=".tigerProxyCfg.serverPort"
+                             title="Port the web ui and traffic endpoint is running on.">
                     </div>
                   </div>
                 </div>
@@ -428,11 +430,11 @@
                     <div class="form-check form-switch advanced">
                       <input class="form-check-input" type="checkbox"
                              name=".tigerProxyCfg.proxyCfg.disableRbelParsing">
-                      <label class="form-check-label">Parse Rbel</label></div>
+                      <label class="form-check-label">Parse Traffic via RbelLogger</label></div>
                     <div class="form-check form-switch advanced">
                       <input class="form-check-input" type="checkbox"
                              name=".tigerProxyCfg.proxyCfg.activateRbelEndpoint">
-                      <label class="form-check-label">Rbel Endpoint User interface</label>
+                      <label class="form-check-label">Activate RbelLogger user interface</label>
                     </div>
                   </div>
                   <div class="col">
@@ -465,39 +467,44 @@
                 <div class="row">
                   <div class="col align-items-stretch">
                     <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes"
-                        summarypattern="${id}: [${basicAuth.username} ${basicAuth.password}] ${from} -> ${to}"></ul>
+                        summarypattern="${id}: [${basicAuth.username} ${basicAuth.password}] ${from} &#8611; ${to}"></ul>
                   </div>
                   <div class="col-auto col-list-btns">
                   </div>
                 </div>
                 <div class="row">
                   <div class="col">
-                    <fieldset class="subset-below">
+                    <fieldset class="subset subset-below">
                       <div class="row">
                         <div class="col">
                           <div class="input-group input-group">
                             <span class="input-group-text">Id</span>
-                            <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.id">
+                            <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.id"
+                                   title="Unique id of this routing.">
                           </div>
                           <div class="input-group input-group">
                             <span class="input-group-text">From</span>
-                            <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.from">
+                            <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.from"
+                                   title="scheme://host:port the client wants to reach. Using '/' means catch all (reverse proxy).">
                           </div>
                           <div class="input-group input-group">
                             <span class="input-group-text">To</span>
-                            <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.to">
+                            <input class="form-control" type="text" name=".tigerProxyCfg.proxyCfg.proxyRoutes.to"
+                                   title="scheme://host:port the server will redirect the client request to.">
                           </div>
                         </div>
                         <div class="col-6"><label class="form-label">Authentication</label>
                           <div class="input-group input-group">
                             <span class="input-group-text">Username</span>
                             <input class="form-control" type="text"
-                                   name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.username">
+                                   name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.username"
+                                   title="User name for basic authentication credentials for this route. Leave empty if no authenticationis required.">
                           </div>
                           <div class="input-group input-group">
                             <span class="input-group-text">Password</span>
                             <input class="form-control" type="text"
-                                   name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.password">
+                                   name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.password"
+                                   title="Password for basic authentication credentials for this route.">
                           </div>
                         </div>
                         <div class="row">
@@ -512,7 +519,8 @@
                             <div class="form-check form-switch advanced">
                               <input class="form-check-input" type="checkbox"
                                      name=".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging">
-                              <label class="form-check-label">Rbel Logging</label>
+                              <label class="form-check-label">Deactivate RbelLogger</label>
+                              <!-- TODO rephrase and redefine property to be activating -->
                             </div>
                           </div>
                         </div>
@@ -740,23 +748,28 @@
                   <fieldset class="subset subset-below">
                     <div class="row">
                       <div class="col">
-                        <div class="input-group input-group-sm">
+                        <div class="input-group input-group">
                           <span class="input-group-text">Id</span>
                           <input class="form-control" name="pkiKeys.id" type="text">
                         </div>
                       </div>
                       <div class="col">
-                        <div class="input-group input-group-sm">
+                        <div class="input-group input-group">
                           <span class="input-group-text">Type</span>
-                          <input class="form-control" name="pkiKeys.type" type="text">
+                          <select class="form-select" name="pkiKeys.type"
+                                  title="Select the type of the PKI item">
+                            <option value="cert">Certificate</option>
+                            <option value="key">Key</option>
+                          </select>
                         </div>
                       </div>
                     </div>
                     <div class="row">
                       <div class="col">
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text">Pem</span>
-                          <input class="form-control" name="pkiKeys.pem" type="text">
+                        <div class="input-group input-group">
+                          <span class="input-group-text" style="width:15%;">Pem</span>
+                          <textarea class="form-control" rows="6" name="pkiKeys.pem">
+                          </textarea>
                         </div>
                       </div>
                     </div>
@@ -822,7 +835,7 @@
               <div class="row mb-3">
                 <div class="col form-text">
                   Here you can specify routes for the local tiger proxy to be activated if this node is active.
-                  Please provide it in the format http(s)://host:port <b>-&gt;</b> http(s)://newhost:newport
+                  Please provide it in the format http(s)://host:port <b>--&gt;</b> http(s)://newhost:newport
                 </div>
               </div>
               <div class="row">
@@ -892,9 +905,7 @@
       <span class="fieldset-summary fs-6"></span>
     </legend>
     <div class="input-group">
-      <span class="input-group-text">Source</span>
-      <input class="form-control" type="text" name="source"
-             title="Source for this node">
+      <textarea class="form-control" rows="3" name="source" title="Source for this node"></textarea>
     </div>
     <div class="input-group" style="margin-top: 1rem;">
       <span class="input-group-text">Version</span>
@@ -913,8 +924,8 @@
       <span class="input-group-text">Source</span>
       <select class="form-select" name="source"
               title="Select the source from where to download the tiger proxy">
-        <option value="template1" selected>nexus</option>
-        <option value="template2">maven</option>
+        <option value="nexus" selected>nexus</option>
+        <option value="maven">maven</option>
       </select></div>
     <div class="input-group" style="margin-top: 1rem;">
       <span class="input-group-text">Version</span>

@@ -32,13 +32,13 @@ public class TigerAdminUiControllerTest {
 
     @Test
     public void testOpenYamlFile() throws Exception {
-        String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test", "tiger", "testenvmgr").toFile().toString();
+        String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test",
+            "tiger", "testenvmgr").toFile().toString();
         this.mockMvc.perform(get("/openYamlFile")
-                        .param("cfgfile",   relPath + File.separator + "testAdminUI.yaml"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON.getMediaType()))
+                .param("cfgfile", relPath + File.separator + "testAdminUI.yaml"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON.getMediaType()))
             .andExpect(jsonPath("$.tigerProxy.forwardToProxy.hostname").value(is("$SYSTEM")))
-            .andExpect(jsonPath("$.servers.reverseproxy2.type").value(is("tigerProxy")))
             .andExpect(jsonPath("$.servers.reverseproxy2.type").value(is("tigerProxy")))
             .andExpect(jsonPath("$.servers.testWinstone3.type").value(is("externalJar")));
     }
@@ -46,17 +46,18 @@ public class TigerAdminUiControllerTest {
     @Test
     public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
 
-        String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test", "tiger", "testenvmgr").toFile().toString();
+        String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test",
+            "tiger", "testenvmgr").toFile().toString();
         this.mockMvc.perform(get("/openYamlFile")
-            .param("cfgfile",   relPath + File.separator + "testInvalidType.yaml"))
+                .param("cfgfile", relPath + File.separator + "testInvalidType.yaml"))
             .andExpect(status().isInternalServerError())
-            .andExpect(jsonPath("$.mainCause").value(containsString("Failed to convert given JSON string to config object of class de.gematik.test.tiger.testenvmgr.config.Configuration!")))
+            .andExpect(jsonPath("$.mainCause").value(containsString(
+                "Failed to convert given JSON string to config object of class de.gematik.test.tiger.testenvmgr.config.Configuration!")))
             .andExpect(jsonPath("$.causes").value(hasSize(1)))
-            .andExpect(jsonPath("$.causes[0]").value(containsString("Cannot deserialize value of type `de.gematik.test.tiger.common.config.ServerType` from String \"NOTEXISTING\": not one of the values accepted for Enum class: [externalJar, compose, externalUrl, tigerProxy, docker]\n"
-                + " at [Source: (String)\"{\"servers\":{\"testInvalidType\":{\"template\":\"idp-ref\",\"active\":true,\"hostname\":\"invalid\","
-                + "\"source\":[\"https://idp-test.zentral.idp.splitdns.ti-dienste.de/\"],\"type\":\"NOTEXISTING\"}}}\"; line: 1, column: 161] "
-                + "(through reference chain: de.gematik.test.tiger.testenvmgr.config.Configuration[\"servers\"]->"
-                + "java.util.LinkedHashMap[\"testInvalidType\"]->de.gematik.test.tiger.testenvmgr.config.CfgServer[\"type\"])")));
+            .andExpect(jsonPath("$.causes[0]").value(containsString(
+                "Cannot deserialize value of type `de.gematik.test.tiger.common.config.ServerType` from String \"NOTEXISTING\": ")))
+            .andExpect(jsonPath("$.causes[0]").value(containsString(
+                "not one of the values accepted for Enum class: [externalJar, compose, externalUrl, tigerProxy, docker]")));
     }
 
     @Test

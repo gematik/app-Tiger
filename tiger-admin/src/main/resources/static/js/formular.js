@@ -17,10 +17,10 @@ before opening ask to save existing env if any unsaved
 moved exception parsing to browser and introduced general error modal
 */
 
-/* before commit
-*/
+// TODO add ssl suites list group to tls config
 
-// TODO support textarea for larger input data (PKI I here ya!)
+// TODO mv apply btn to subset fieldset
+
 // TODO recheck modification detection on complex lists once default values are implemented
 // as of now the yaml from the server does only ocntain attributes which have a value (null are not added)
 // so in routes if id is not set its not forwarded at all in the serverYaml struct
@@ -34,9 +34,6 @@ moved exception parsing to browser and introduced general error modal
 
 // TODO regex based validation pattern TGR-204
 
-// TODO make source fieldset type specific, add extra template for this
-//  fieldset and depending on the type copy it to the server formular
-
 // TODO help section probably visualized beneath the side bar showing help text to each hovering input
 // or do we do hovering tooltip?
 
@@ -44,8 +41,7 @@ moved exception parsing to browser and introduced general error modal
 // section is only needed for special handling of summary text, if general behaviour is ok with summarypattern,
 // then no need for section attribute
 // and i use it somewhere else too so reinvestigate
-// TODO LOPRIO use gutters for label alignment - not sure this really helps in our situation
-//  are gutter smore for padding?
+// TODO LOPRIO get label size/alignment optimized
 
 const dollarTokens = /\${([\w|.]+)}/g
 
@@ -67,10 +63,6 @@ $.fn.initFormular = function (serverKey, serverData) {
   $(this).find('.server-icon').attr('title', serverData.type);
 
   // default settings
-  if (!serverData.source) { // at least one empty line for source as we have
-    // types where no add btn is visible
-    serverData.source = [''];
-  }
   if (!serverData.hostname) { // if hostname not set default to serverKey
     this.find('*[name="hostname"]').val(serverKey);
   }
@@ -125,7 +117,7 @@ $.fn.initFormular = function (serverKey, serverData) {
           const oldServerKey = $(this).data('originalContent');
           if (newServerKey !== oldServerKey) {
             if (Object.keys(currEnvironment).indexOf(newServerKey) !== -1) {
-              danger('Server key "' + newServerKey + '" already used!');
+              danger(`Server key "${newServerKey}" already used!`);
               ev.keyCode = 27;
             } else {
               const sidebarHandle = $('#sidebar_server_' + oldServerKey);
@@ -178,7 +170,6 @@ $.fn.initFormular = function (serverKey, serverData) {
       })
     }
   });
-
   this.find('.btn-advanced:not(.global)').click(function (ev) {
     ev.preventDefault();
     if ($(this).parent().find('.collapse-icon').isCollapsed()) {
@@ -214,9 +205,9 @@ $.fn.initFormular = function (serverKey, serverData) {
         listGroup.find('.active').removeClass('active');
         const activeItem = listGroup.find('.active');
         if (activeItem.length === 0) {
-          listGroup.prepend(getListItem("", true, false));
+          listGroup.prepend(getListItem("", true));
         } else {
-          $(getListItem("", true, false)).insertAfter(activeItem);
+          $(getListItem("", true)).insertAfter(activeItem);
         }
         $.each(listGroup.find('.list-group-item > span'),
             function (idx, item) {
@@ -241,7 +232,7 @@ $.fn.initFormular = function (serverKey, serverData) {
           }
         }
         listGroup.find('.active').removeClass('active');
-        let newItem = $(getListItem("", true, false));
+        let newItem = $(getListItem("", true));
 
         if (activeItem.length === 0) {
           listGroup.prepend(newItem);
@@ -285,6 +276,31 @@ $.fn.initFormular = function (serverKey, serverData) {
     return false;
   });
 
+  // callback for template reset
+  this.find('.btn-reset-template').click(function () {
+    const formular = $(this).parents('form.server-formular');
+    const tmplName = formular.find(
+        'fieldset[section="node-settings"]').find(
+        '*[name="template"]').getValue();
+    formular.populateForm({...getTemplate(tmplName)}, '', true);
+    formular.find('legend').setSummaryFor();
+
+    $.each(formular.find('fieldset.complex-list fieldset.subset'), function () {
+      const fieldSet = $(this);
+      fieldSet.find('input[name][type!="checkbox"]').val('');
+      fieldSet.find('input[name][type="checkbox"]').prop('checked', false);
+      fieldSet.find('textarea[name]').val('');
+      fieldSet.find('select[name]').val('');
+      const listItem = fieldSet.find('.list-group-item.active');
+      if (listItem.length) {
+        let data = listItem.data("listdata");
+        for (const field in data) {
+          fieldSet.setObjectFieldInForm(data, field, section);
+        }
+      }
+    });
+  });
+
   //
   // initial state of buttons
   //
@@ -293,7 +309,30 @@ $.fn.initFormular = function (serverKey, serverData) {
   // disable submit generally and especially on enter key of single input field sections
   this.submit(false);
 
-  this.populateForm(serverData, "");
+  // deal with source input field special treatment
+  // adapt source field according to type (single line for docker, tigerproxy,
+  // externalJar, externalUrl, only for docker compose its a list)
+  const sourceFieldType = {
+    docker: '#template-source-single',
+    externalUrl: '#template-source-single',
+    externalJar: '#template-source-single',
+    tigerProxy: '#template-source-select',
+  }
+  switch (serverData.type) {
+    case 'compose':
+      // empty on purpose as for compose we use the editable list already present
+      break;
+    case 'localProxy':
+      this.showFieldset('source', false);
+      this.find('div.local_proxy_info').removeClass('hidden');
+      break;
+    default:
+      this.find('fieldset[section="source"]').replaceWith(
+          $(sourceFieldType[serverData.type]).prop('outerHTML'));
+      this.find('fieldset[section="source"]')[0].removeAttribute('id');
+  }
+
+  this.populateForm(serverData, "", false);
 
   // set forwardToProxy flag depending on hostname and port being set
   const forwardToProxySection = '.tigerProxyCfg.proxyCfg.forwardToProxy.';
@@ -301,7 +340,7 @@ $.fn.initFormular = function (serverKey, serverData) {
       '*[name="' + forwardToProxySection + 'hostname"]').val();
   this.find('*[name="enableForwardProxy"]').prop('checked',
       (proxyHostname && this.find(
-          '*[name="' + forwardToProxySection + 'port"]').val()) ||
+          `*[name="${forwardToProxySection}port"]`).val()) ||
       (proxyHostname === '$SYSTEM' && serverData.type === 'localProxy')
   )
 
@@ -323,94 +362,62 @@ $.fn.initFormular = function (serverKey, serverData) {
   // type specific UI adaptations
   //
   // default hide service healthchecks
-  this.find('fieldset[section=".dockerOptions.serviceHealthchecks"]').hide()
-  // default hide version
-  this.find('*[name="version"]').parent().hide();
+  this.showFieldset('.dockerOptions.serviceHealthchecks',
+      serverData.type === 'compose');
+
+  // show template only if set
+  this.showInputGroup('template', serverData.template);
+
+  // show version only for tigerProxy and docker
+  this.showInputGroup('version',
+      ['tigerProxy', 'docker'].includes(serverData.type));
 
   // default hide all but pki, env, urlmappings
   this.find('.nav-tabs .nav-link').hide();
-  this.showTabLink('pkiKeys', true);
-  this.showTabLink('environment', true);
-  this.showTabLink('urlMappings', true);
+  this.showTabLink('pkiKeys', serverData.type !== 'localProxy');
+  this.showTabLink('environment', serverData.type !== 'localProxy');
+  this.showTabLink('urlMappings', serverData.type !== 'localProxy');
 
-  this.find('.btn-advanced.global').hide();
+  // show default tab for each type
+  const defaultTabs = {
+    docker: 'dockerOptions',
+    compose: 'dockerOptions',
+    externalUrl: 'externalJarOptions',
+    externalJar: 'externalJarOptions',
+    tigerProxy: 'tigerProxy',
+    localProxy: 'tigerProxy'
+  }
+  this.showTab(defaultTabs[serverData.type]);
+  this.showTabLink(defaultTabs[serverData.type], true);
+  this.showTabLink('externalJarOptions',
+      defaultTabs[serverData.type] === 'externalJarOptions' ||
+      serverData.type === 'tigerProxy');
 
-  const source = this.find('fieldset[section="source"]').getValue("source");
-  const version = this.find('fieldset[section="source"]').getValue("version");
+  // show advanced global button for some
+  if (['docker', 'tigerProxy', 'localProxy'].includes(serverData.type)) {
+    this.find('.btn-advanced.global').show();
+  } else {
+    this.find('.btn-advanced.global').hide();
+  }
 
-  // adapt source field according to type (single line for docker, tigerproxy,
-  // externalJar, externalUrl, only for docker compose its a list)
-  // show version only for tigerProxy and docker
-  // noinspection FallThroughInSwitchStatementJS
   switch (serverData.type) {
     case 'compose':
-      const fieldSet = this.find(
-          'fieldset[section=".dockerOptions.serviceHealthchecks"]');
-      fieldSet.fadeIn();
-      fieldSet.find('legend').click();
-      this.find('fieldset[section=".dockerOptions.dockerSettings"]').addClass(
-          'hidden');
-      this.showTabLink('dockerOptions', true);
-      this.showTab('dockerOptions');
-      break;
-    case 'docker':
-      this.showTabLink('dockerOptions', true);
-      this.showTab('dockerOptions');
-      this.find('.btn-advanced.global').show();
-
-      this.find('fieldset[section="source"]').replaceWith($("#template-source-single").prop('outerHTML'));
-      this.find('*[name="source"]').setValue(source);
+      this.showFieldset('.dockerOptions.dockerSettings', false);
       break;
     case 'externalUrl':
-      this.find('fieldset[section=".externalJarOptions.options"]').addClass(
-          'hidden');
-      this.find('fieldset[section=".externalJarOptions.arguments"]').addClass(
-          'hidden');
-      this.find(
-          'input[name=".externalJarOptions.workingDir"]').parent().addClass(
-          'hidden');
-      this.find('fieldset[section="environment"]').addClass('hidden');
-
-    case 'externalJar':
-      this.showTabLink('externalJarOptions', true);
-      this.showTab('externalJarOptions');
-
-      this.find('fieldset[section="source"]').replaceWith($("#template-source-single").prop('outerHTML'));
-      this.find('*[name="source"]').setValue(source);
-      this.find('*[name="version"]').parent().hide();
-      break;
-
-      break;
-    case 'tigerProxy':
-      this.find('*[name="version"]').parent().show();
-      this.showTabLink('externalJarOptions', true);
-      this.showTabLink('tigerProxy', true);
-      this.showTab('tigerProxy');
-      this.find('.btn-advanced.global').show();
-      this.find('fieldset[section="source"]').replaceWith($("#template-source-select").prop('outerHTML'));
-      this.find('*[name="source"]').setValue(source);
+      this.showFieldset('.externalJarOptions.options', false);
+      this.showFieldset('.externalJarOptions.arguments', false);
+      this.showFieldset('environment', false);
+      this.showInputGroup('.externalJarOptions.workingDir', false);
       break;
     case 'localProxy':
-      this.showTabLink('tigerProxy', true);
-      this.showTab('tigerProxy');
-      this.find('.btn-advanced.global').show();
-      this.showTabLink('pkiKeys', false);
-      this.showTabLink('environment', false);
-      this.showTabLink('urlMappings', false);
-      this.find('input[name=".tigerProxyCfg.serverPort"]').parent().addClass(
-          'hidden');
-      this.find(
-          'select[name=".tigerProxyCfg.proxiedServer"]').parent().addClass(
-          'hidden');
-      this.find('input[name="version"]').parent().addClass('hidden');
-      this.find('fieldset[section="node-settings"]').addClass('hidden');
-      this.find('fieldset[section="source"]').addClass('hidden');
+      this.showFieldset('node-settings', false);
+      this.showFieldset('source', false);
+      this.showInputGroup('.tigerProxyCfg.serverPort', false);
+      this.showInputGroup('.tigerProxyCfg.proxiedServer', false);
       this.find('div.local_proxy_info').removeClass('hidden');
       break;
-
   }
-  this.find('*[name="version"]').setValue(version);
-
 }
 
 // for multiple form.server-formular
@@ -423,9 +430,8 @@ $.fn.showTab = function (tabName) {
     tabs.removeClass('active');
     tabs.removeClass('show');
     tabs.hide();
-    $(this).find(
-        '.nav-tabs .nav-item[tab="' + tabName + '"] > .nav-link').addClass(
-        'active');
+    $(this).find(`.nav-tabs .nav-item[tab="${tabName}"] > .nav-link`)
+    .addClass('active');
     const tab = $(this).find('.' + tabName);
     tab.addClass('active');
     tab.show();
@@ -434,15 +440,38 @@ $.fn.showTab = function (tabName) {
 }
 
 $.fn.showTabLink = function (tabName, flag) {
-  checkTag('showTab', this, 'FORM');
-  checkClass('showTab', this, 'server-formular');
+  checkTag('showTabLink', this, 'FORM');
+  checkClass('showTabLink', this, 'server-formular');
+  this.each(function () {
+    const tab = $(this).find(`.nav-tabs .nav-item[tab="${tabName}"] .nav-link`);
+    if (flag) {
+      tab.show();
+    } else {
+      tab.hide();
+    }
+  });
+}
+
+$.fn.showFieldset = function (section, flag) {
+  checkTag('showhideFieldsetTab', this, 'FORM');
+  checkClass('hideFieldset', this, 'server-formular');
   this.each(function () {
     if (flag) {
-      $(this).find('.nav-tabs .nav-item[tab="' + tabName + '"] .nav-link')
-      .show();
+      $(this).find(`fieldset[section="${section}"]`).removeClass('hidden');
     } else {
-      $(this).find('.nav-tabs .nav-item[tab="' + tabName + '"] .nav-link')
-      .hide();
+      $(this).find(`fieldset[section="${section}"]`).addClass('hidden');
+    }
+  });
+}
+
+$.fn.showInputGroup = function (name, flag) {
+  checkTag('hideInputGroup', this, 'FORM');
+  checkClass('hideInputGroup', this, 'server-formular');
+  this.each(function () {
+    if (flag) {
+      $(this).find(`*[name="${name}"]`).parent().removeClass('hidden');
+    } else {
+      $(this).find(`*[name="${name}"]`).parent().addClass('hidden');
     }
   });
 }
@@ -453,9 +482,8 @@ $.fn.updateServerList = function (serverList, replacedSelection,
   checkTag('updateServerList', this, 'FORM');
   checkClass('updateServerList', this, 'server-formular');
   let html = "";
-  $.each(serverList, (idx, server) => {
-    html += '<option value="' + server + '">' + server.replace("_", " ")
-        + '</option>';
+  serverList.filter(key => key !== 'local_proxy').forEach(key => {
+    html += `<option value="${key}">${key}</option>`;
   });
   const select = $(this).find('select[name=".tigerProxyCfg.proxiedServer"]');
   let selected = select.val();
@@ -466,6 +494,7 @@ $.fn.updateServerList = function (serverList, replacedSelection,
   }
   select.val(selected);
 }
+
 // ----------------------------------------------------------------------------
 //
 // formular.js INTERNAL
@@ -483,18 +512,18 @@ function checkSingle(method, $elem) {
 function checkTag(method, $elem, tagName) {
   $.each($elem, (idx, item) => {
     if (item.tagName !== tagName) {
-      throw new Error(method + ' is only for ' + tagName + ' items! (used on '
-          + item.tagName + ')');
+      throw new Error(
+          `${method} is only for ${tagName} items! (used on ${item.tagName})`);
     }
   });
 }
 
 function checkInputField(method, $elem) {
   $.each($elem, (idx, item) => {
-    if (item.tagName !== 'INPUT' && item.tagName !== 'SELECT' &&
+    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(item.tagName) &&
         $(item).attr('class').indexOf('list-group') === -1) {
-      throw new Error(method + ' is only for named input items! (used on '
-          + item.tagName + ')');
+      throw new Error(
+          `${method} is only for named input/textarea/select/list-group items! (used on ${item.tagName})`);
     }
   });
 }
@@ -503,8 +532,7 @@ function checkClass(method, $elem, className) {
   $.each($elem, (idx, item) => {
     if (!$(item).hasClass(className)) {
       throw new Error(
-          method + ' is only for items of class ' + className + '! (used on '
-          + item.tagName + ')');
+          `${method} is only for items of class ${className}! (used on ${item.tagName})`);
     }
   });
 }
@@ -540,66 +568,80 @@ $.fn.extend({
   },
 
   // for single .server-formular
-  populateForm: function (serverData, path) {
+  populateForm: function (serverData, path, isTemplateData) {
     checkTag('populateForm', this, 'FORM');
     checkClass('populateForm', this, 'server-formular');
     checkSingle('populateForm', this);
+
+    // in case its applying a template drop its name field
+    delete serverData.templateName;
 
     for (const field in serverData) {
       const value = serverData[field];
       if (value != null && typeof value === 'object' && !Array.isArray(
           value)) {
-        this.populateForm(value, path + "." + field);
+        this.populateForm(value, `${path}.${field}`, isTemplateData);
         continue;
       }
       const nameStr = path + (path.length === 0 ? "" : ".") + field;
       let listHtml = '';
       if (Array.isArray(value)) {
-        const elem = this.find('.list-group[name="' + nameStr + '"]');
-        let editable = false;
-        if (typeof value[0] === 'object') {
-          $.each(value, function (idx, item) {
-            listHtml += getListItem(
-                $('<div/>').text(elem.generateListItemLabel(item)).html(),
-                false, false);
-          });
-          elem.html(listHtml);
-          $.each(value, function (idx, itemData) {
-            $(elem.children()[idx]).data("listdata", itemData);
-          });
+        if (field === 'source' && serverData.type !== 'compose') {
+          const elem = this.find(`*[name="${nameStr}"]`);
+          if (elem.length === 0) {
+            console.error("UNKNOWN ELEM for " + path + " -> " + field);
+            continue;
+          }
+          if (!isTemplateData || !elem.getValue()) {
+            elem.setValue(serverData[field]);
+          }
         } else {
-          const fieldSet = elem.parents('fieldset');
-          editable = fieldSet.hasClass('editableList');
-          $.each(value, function (idx, item) {
-            listHtml += getListItem(item, false, false);
-          });
-          elem.html(listHtml);
+          // TODO if isTemplate apply value only if list is empty!
+          const elem = this.find(`.list-group[name="${nameStr}"]`);
+          let editable = false;
+          if (typeof value[0] === 'object') {
+            $.each(value, function (idx, item) {
+              listHtml += getListItem(
+                  $('<div/>').text(elem.generateListItemLabel(item)).html(),
+                  false);
+            });
+            elem.html(listHtml);
+            $.each(value, function (idx, itemData) {
+              $(elem.children()[idx]).data("listdata", itemData);
+            });
+          } else {
+            const fieldSet = elem.parents('fieldset');
+            editable = fieldSet.hasClass('editableList');
+            $.each(value, function (idx, item) {
+              listHtml += getListItem(item, false);
+            });
+            elem.html(listHtml);
+          }
+          elem.find(".list-group-item > span")
+          .addClickNKeyCallbacks2ListItem(editable);
         }
-        elem.find(".list-group-item > span").addClickNKeyCallbacks2ListItem(
-            editable);
-        continue;
+      } else {
+        const elem = this.find(`*[name="${nameStr}"]`);
+        if (elem.length === 0) {
+          console.error(`UNKNOWN ELEM for ${path} -> ${field}`);
+          continue;
+        }
+        if (!isTemplateData || !elem.getValue()) {
+          elem.setValue(serverData[field]);
+        }
       }
-      const elem = this.find('*[name="' + nameStr + '"]');
-      if (elem.length === 0) {
-        console.error("UNKNOWN ELEM for " + path + " -> " + field);
-        continue;
-      }
-      elem.setValue(serverData[field]);
     }
-
-    this.find('fieldset:not(.subset):not(subset-below)').enableSubSetFields(
-        false);
-
+    this.find('fieldset:not(.subset)').enableSubSetFields(false);
   },
+
   // for single form.server-formular
   populateTemplateList: function () {
     checkTag('populateTemplateList', this, 'FORM');
     checkClass('populateTemplateList', this, 'server-formular');
     let html = "";
     $.each(currTemplates.templates, (idx, template) => {
-      html += '<option value="' + template.templateName + '">'
-          + template.templateName.replace("_", " ")
-          + '</option>';
+      html += `<option value="${template.templateName}">${template.templateName.replace(
+          "_", " ")}</option>`;
     });
     const select = $(this).find('select[name="template"]');
     let selected = select.val();
@@ -614,13 +656,13 @@ $.fn.extend({
     const summaryPattern = this.attr("summaryPattern");
     return '<span class="text summary fs-6">' + summaryPattern.replace(
         dollarTokens,
-        (m, g1) => this.getValue(g1) || "&nbsp;") + '</span>';
+        (m, g1) => this.getValueOfInput(g1) || "&nbsp;") + '</span>';
   },
   // for single fieldset
-  getValue: function (name) {
+  getValueOfInput: function (name) {
     checkTag('getValue', this, 'FIELDSET');
     checkSingle('getValue', this);
-    const elem = this.find("*[name='" + name + "']");
+    const elem = this.find(`*[name='${name}']`);
     let str;
     if (elem.prop("tagName") === 'UL') {
       str = this.getListValue(name);
@@ -628,14 +670,14 @@ $.fn.extend({
     } else if (elem.attr("type") === 'checkbox') {
       return elem.prop('checked') ? 'ON' : 'OFF';
     } else {
-      str = this.find("*[name='" + name + "']").val();
+      str = this.find(`*[name='${name}']`).val();
       return $('<span>').text(str).html();
     }
   },
   // for single fieldset
   isChecked: function (name) {
     checkTag('isChecked', this, 'FIELDSET');
-    const elem = this.find("*[name='" + name + "']");
+    const elem = this.find(`*[name='${name}']`);
     checkSingle('isChecked', elem);
     return elem.prop("checked");
   },
@@ -643,7 +685,7 @@ $.fn.extend({
   getListValue: function (name) {
     checkTag('getListValue', this, 'FIELDSET');
     checkSingle('getListValue', this);
-    const lis = this.find("ul[name='" + name + "'] > li");
+    const lis = this.find(`ul[name='${name}'] > li`);
     let csv = "";
     $.each(lis, function (idx, el) {
       csv += $('<span>').text($(el).text()).html() + ",<br/>";
@@ -653,6 +695,7 @@ $.fn.extend({
     }
     return csv.substr(0, csv.length - ",<br/>".length);
   },
+
   // for single fieldset
   setObjectFieldInForm: function (data, field, path) {
     checkTag('setObjectFieldInForm', this, 'FIELDSET')
@@ -662,7 +705,7 @@ $.fn.extend({
         this.setObjectFieldInForm(data[field], child, path + "." + field);
       }
     } else {
-      const inputField = this.find("*[name='" + path + "." + field + "']");
+      const inputField = this.find(`*[name='${path}.${field}']`);
       checkSingle('setObjectFieldInForm -> input field', inputField);
       inputField.setValue(data[field]);
     }
@@ -670,47 +713,56 @@ $.fn.extend({
   // for single fieldset
   enableSubSetFields: function (state) {
     checkTag('enableSubSetFields', this, 'FIELDSET');
+    // TODO refactor so that each subset-below is also a subset and skip half of these lines
     this.find('fieldset.subset input').tgrEnabled(state);
+    this.find('fieldset.subset textarea').tgrEnabled(state);
     this.find('fieldset.subset select').tgrEnabled(state);
     this.find('fieldset.subset .form-switch').tgrEnabled(state);
     this.find('fieldset.subset-below input').tgrEnabled(state);
+    this.find('fieldset.subset-below textarea').tgrEnabled(state);
     this.find('fieldset.subset-below select').tgrEnabled(state);
     this.find('fieldset.subset-below .form-switch').tgrEnabled(state);
   },
-  // for single fieldset
+  // for multiple fieldsets
   updateDataAndLabelForActiveItem: function (emptyValues) {
     checkTag('updateDataAndLabelForActiveItem', this, 'FIELDSET');
-    checkSingle('updateDataAndLabelForActiveItem', this);
-    const listGroup = this.find('.list-group');
-    let elem = listGroup.find(".list-group-item.active");
-    const fieldSet = this.find('fieldset.subset');
-    const data = this.getNewDataFromSubsetFieldset(emptyValues)
-    if (emptyValues) {
-      let notEmpty = false;
-      $.each(fieldSet.find("*[name]"), function () {
-        const value = fieldSet.getValue($(this).attr('name'));
-        if (value) {
-          notEmpty = true;
-        }
-      });
-      if (notEmpty) {
-        warn('Aborting other editing');
+    this.each(function () {
+      if ($(this).hasClass('subset')) {
+        throw new Error(
+            `updateDataAndLabelForActiveItem is NOT for fieldsets with class subset! (used on ${this.tagName})`);
       }
-    }
-    elem.replaceWith(
-        getListItem(
-            $('<div/>').text(listGroup.generateListItemLabel(data)).html(),
-            true, false
-        )
-    );
-    elem = listGroup.find(".list-group-item.active");
-    elem.data("listdata", data);
-    elem.find('span:first').addClickNKeyCallbacks2ListItem(false);
+      const listGroup = $(this).find('.list-group');
+      let elem = listGroup.find(".list-group-item.active");
+      const fieldSet = $(this).find('fieldset.subset');
+      const data = $(this).getNewDataFromSubsetFieldset(emptyValues)
+      if (emptyValues) {
+        let notEmpty = false;
+        $.each(fieldSet.find("*[name]"), function (field) {
+          const value = fieldSet.getValue($(field).attr('name'));
+          if (value) {
+            notEmpty = true;
+          }
+        });
+        if (notEmpty) {
+          warn('Aborting other editing');
+        }
+      }
+      elem.replaceWith(
+          getListItem(
+              $('<div/>').text(listGroup.generateListItemLabel(data)).html(),
+              true)
+      );
+      elem = listGroup.find(".list-group-item.active");
+      elem.data("listdata", data);
+      elem.find('span:first').addClickNKeyCallbacks2ListItem(false);
+    });
   },
+
   // for single fieldset
   getNewDataFromSubsetFieldset: function (emptyValues) {
     checkTag('getNewDataFromSubsetFieldset', this, 'FIELDSET');
     checkSingle('getNewDataFromSubsetFieldset', this);
+
     const section = this.attr("section");
     const listGroup = this.find('.list-group');
     let elem = listGroup.find(".list-group-item.active");
@@ -735,8 +787,8 @@ $.fn.extend({
       const btnAdvanced = $(this).parents('fieldset').find('.btn-advanced');
       if (collIcon.isCollapsed()) {
         $(this).siblings(':not(.advanced):not(.hidden)').fadeIn();
-        if (!$(this).parents('fieldset').find('.btn-advanced').hasClass(
-            "active")) {
+        if (!$(this).parents('fieldset')
+        .find('.btn-advanced').hasClass("active")) {
           $(this).parent().find('.advanced').hide();
         }
       } else {
@@ -803,8 +855,8 @@ $.fn.extend({
   // for multiple input or select
   setValue: function (value) {
     if (!this.length) {
-      throw new Error('Trying to set value on not found item! (value was '
-          + value + ')');
+      throw new Error(
+          `Trying to set value on not found item! (value was ${value})`);
     }
     checkInputField('setValue', this);
     return this.each(function () {
@@ -819,8 +871,8 @@ $.fn.extend({
         });
         if (value) {
           $.each($(this).find('option'), function (idx, opt) {
-            $(opt).attr('selected',
-                $(opt).text() === value);
+            $(opt).prop('selected',
+                $(opt).text() === value || $(opt).val() === value);
           });
         }
       } else {
@@ -840,6 +892,23 @@ $.fn.extend({
       }
     });
   },
+  // for multiple input or select
+  getValue: function () {
+    checkInputField('getValue', this);
+    checkSingle('getValue', this);
+    if (this.attr("type") === "checkbox") {
+      return this.prop("checked");
+    } else if (this[0].tagName === "SELECT") {
+      return this.val();
+    } else {
+      if (this.attr('type') === 'Number') {
+        return Number(this.val());
+      } else {
+        return this.val();
+      }
+    }
+  },
+
   // for multiple input fields
   setValueInData: function (section, data, emptyValues) {
     checkInputField('setValueInData', this);
@@ -870,7 +939,6 @@ $.fn.extend({
           pathCursor[fieldName] = $(this).val();
         }
       }
-
     });
   },
 
@@ -879,8 +947,8 @@ $.fn.extend({
     checkSingle('handleEnterEscOnEditableContent', this)
     if (!$(this).hasClass('editing')) {
       console.log(
-          "WARN Used handleEnterEscOnEditableContent on non .editing element "
-          + $(this).attr('class'));
+          `WARN Used handleEnterEscOnEditableContent on non .editing element ${$(
+              this).attr('class')}`);
       return;
     }
     if (ev.keyCode === 13 || ev.keyCode === 27) {
@@ -918,6 +986,7 @@ $.fn.extend({
       $(this).attr('class', clz);
     });
   },
+
   // for single or none i
   isCollapsed: function () {
     if (!this.length) {
@@ -929,7 +998,7 @@ $.fn.extend({
     const clz = this.attr('class');
     const result = clz.match(findState);
     return result[2] === '-right';
-  },
+  }
 });
 
 //
@@ -1008,6 +1077,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
         // reset all fields as currently we receive yaml struct without null attributes
         fieldSet.find('input[name][type!="checkbox"]').val('');
         fieldSet.find('input[name][type="checkbox"]').prop('checked', false);
+        fieldSet.find('textarea[name]').val('');
         fieldSet.find('select[name]').val('');
         let data = listItem.data("listdata");
         for (const field in data) {
@@ -1019,14 +1089,11 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
   });
 }
 
-function getListItem(text, active, reallySmall) {
-  return '<li class="list-group-item ' + (active ? 'active ' : '') +
-      (reallySmall ? 'really-small' : '') + '">'
-      // TODO why <span><span> ??
-      + '<i title="Click to rearrange item in list" class="fas fa-grip-lines draghandle"></i><span><span>'
-      + text
-      + '</span></span>'
-      + '</li>'
+function getListItem(text, active) {
+  // TODO why <span><span> ??
+  return `<li class="list-group-item ${active ? 'active ' : ''}">` +
+      '<i title="Click to rearrange item in list" class="fas fa-grip-lines draghandle"></i>'
+      + `<span><span>${text}</span></span></li>`;
 }
 
 function objectDeepEquals(obj1, obj2) {
@@ -1045,4 +1112,8 @@ function objectDeepEquals(obj1, obj2) {
     }
   }
   return true;
+}
+
+function getTemplate(tmplName) {
+  return currTemplates.templates.find(f => f.templateName === tmplName);
 }

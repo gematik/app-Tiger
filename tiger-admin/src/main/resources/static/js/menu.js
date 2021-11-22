@@ -44,8 +44,7 @@ function openYamlFile(path, separator, cfgfile) {
     },
     error: function (xhr) {
       showError(
-          'We are sorry, but we were unable '
-          + 'to load your configuration file \'' + cfgfile + '\'!',
+          `We are sorry, but we were unable to load your configuration file '${cfgfile}'!`,
           xhr.responseJSON);
     }
   });
@@ -58,7 +57,7 @@ function setYamlFileName(cfgfile, path) {
     document.title = "Tiger Admin";
   } else {
     $('.cfg-file-label').text(cfgfile);
-    document.title = "Tiger Admin - " + path + fsSeparator + cfgfile;
+    document.title = `Tiger Admin - ${path}${fsSeparator}${cfgfile}`;
     currFolder = path;
   }
 }
@@ -76,6 +75,7 @@ function populateServersFromYaml(testEnvYaml) {
   for (const serverKey in testEnvYaml) {
     addServer(serverKey, testEnvYaml[serverKey]);
   }
+
   // update proxied select field in all formulars
   updateServerLists(Object.keys(testEnvYaml));
 
@@ -92,7 +92,7 @@ function addServer(serverKey, serverData) {
   serverContent.append('<form id="content_server_' + serverKey
       + '" class="col server-formular"></form>')
   // init formular with data
-  const formular = $('#content_server_' + serverKey);
+  const formular = $(`#content_server_${serverKey}`);
 
   formular.initFormular(serverKey, serverData);
 
@@ -103,17 +103,21 @@ function addServer(serverKey, serverData) {
   // create sidebar entry
   if (serverKey !== 'local_proxy') {
     $('.container.sidebar.server-container').append(
-        '<div id="sidebar_server_' + serverKey
-        + '" class="box sidebar-item row">'
-        + '<div class="col-1"><i class="fas fa-grip-lines draghandle"></i></div>'
-        + '<div class="col-9"><i title="' + serverData.type
-        + '" class="server-icon '
-        + serverIcons[serverData.type]
-        + '"></i><span class="server-label">' + serverKey + '</span></div>'
-        + '<div class="col-1 context-menu-one"> <i class="fas fa-ellipsis-v"></i> </div> </div>');
-    $('#sidebar_server_' + serverKey + ' .server-label').click(function () {
-      window.scrollTo(0, formular.position().top);
-    });
+        `<div id="sidebar_server_${serverKey}" class="box sidebar-item row">`
+        + '<div class="col-1">'
+        + '  <i class="fas fa-grip-lines draghandle"></i>'
+        + '</div>'
+        + '<div class="col-9">'
+        + `  <i title="${serverData.type}" class="server-icon ${serverIcons[serverData.type]}"></i>`
+        + `  <span class="server-label">${serverKey}</span>`
+        + '</div>'
+        + '<div class="col-1 context-menu-one">'
+        + '  <i class="fas fa-ellipsis-v"></i>'
+        + '</div></div>');
+    $(`#sidebar_server_${serverKey} .server-label`).parent().click(
+        function () {
+          window.scrollTo(0, formular.position().top);
+        });
   } else {
     $('#sidebar_server_local_proxy .server-label').click(function () {
       window.scrollTo(0, 0);
@@ -155,7 +159,7 @@ function addSelectedServer() {
     currEnvironment[newKey].template = templateData.templateName;
     delete currEnvironment[newKey].templateName;
   }
-  addServer(newKey, currEnvironment[newKey]);
+  addServer(newKey, {...currEnvironment[newKey]});
   notifyChangesToTestenvData(true);
   updateServerLists(Object.keys(currEnvironment));
   addServerModal.modal('hide');
@@ -197,13 +201,13 @@ function confirmNoDefault(flag, title, content, yesfunc) {
           '<div>' + content + '</div>',
       buttons: [
         {
-          text: 'Yes', class: 'btn btn-sm btn-danger',
+          text: 'Yes', class: 'btn btn-danger',
           handler: (ev) => {
             $(ev.target).parents('.modal.show').modal('hide')
             yesfunc(ev);
           }
         },
-        {text: 'No', class: 'btn btn-sm btn-primary', type: 'dismiss'},
+        {text: 'No', class: 'btn btn-primary', type: 'dismiss'},
       ],
       centered: true, dismissible: true, backdrop: 'static', keyboard: true,
       focus: false, type: 'danger'
@@ -227,7 +231,7 @@ function showError(errMessage, errorCauses) {
     buttons: [
       {
         text: 'Advanced details',
-        class: 'btn btn-sm btn-info',
+        class: 'btn btn-info',
         handler: (ev) => {
           const detMsg = $(ev.target).parents('.modal-dialog').find(
               '.detailedMessage');
@@ -246,7 +250,7 @@ function showError(errMessage, errorCauses) {
           }
         }
       },
-      {text: 'Close', class: 'btn btn-sm btn-primary', type: 'dismiss'}
+      {text: 'Close', class: 'btn btn-primary', type: 'dismiss'}
     ],
     centered: true, dismissible: true, backdrop: 'static', keyboard: true,
     focus: false, type: 'danger'
@@ -300,8 +304,10 @@ function openFileSaveAsDialog(okfunc) {
   navigateIntoFolder(currFolder, okfunc, true, 'save');
   filedlg.find('.btn-filenav-ok').click(function () {
     // get cfgfile from input field together with currentFolder and separator
-    console.log("Saving to file '" + currFolder + fsSeparator + filedlg.find(
-        '.file-navigation-save input').val());
+    console.log(`Saving to file '${
+        currFolder}${fsSeparator}${filedlg.find(
+        '.file-navigation-save input').val()
+    }`);
     notifyChangesToTestenvData(false);
     setYamlFileName(filedlg.find('.file-navigation-save input').val(),
         currFolder);
@@ -321,12 +327,10 @@ function navigateIntoFolder(folder, okfunc, addroots, mode) {
       fsSeparator = res.separator;
       let htmlstr = '';
       res.folders.forEach(function (folder) {
-        htmlstr += '<div class="folder text-primary"><i class="far fa-folder icon-right"></i>'
-            + folder + '</div>\n';
+        htmlstr += `<div class="folder text-primary"><i class="far fa-folder icon-right"></i>${folder}</div>`;
       });
       res.cfgfiles.forEach(function (cfgfile) {
-        htmlstr += '<div class="cfgfile text-success"><i class="far fa-file-alt icon-right"></i>'
-            + cfgfile + '</div>\n';
+        htmlstr += `<div class="cfgfile text-success"><i class="far fa-file-alt icon-right"></i>${cfgfile}</div>`;
       });
       const filepathInput = filedlg.find('.filepath input');
       filepathInput.val(res.current);
@@ -356,8 +360,8 @@ function navigateIntoFolder(folder, okfunc, addroots, mode) {
         } else {
           htmlstr = '';
           res.roots.forEach(function (rootfs) {
-            htmlstr += '<li><a class="dropdown-item rootfs-item" href="#">'
-                + rootfs + '</a></li>\n';
+            htmlstr += `<li><a class="dropdown-item rootfs-item" href="#">${rootfs}</a></li>
+`;
           });
           const fsListRootsList = $('.fs-list-roots-list')
           fsListRootsList.children().remove();

@@ -387,7 +387,6 @@ i.collapse-icon {
 
 .form-control, .form-select{
     border: 3px solid lightsteelblue;
-    border-radius: 0.5rem !important;
     padding: 0.5rem;
 }
 
@@ -409,4 +408,9 @@ div.local_proxy_info {
     padding: 1.5rem;
     color: var(--bs-gray-600);
     text-align: justify;
+}
+
+.btn-reset-template {
+    border-width: 3px;
+    border-radius: 0.75rem !important;
 }

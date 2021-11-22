@@ -71,11 +71,11 @@ public class TigerRemoteProxyClientTest {
 
     @BeforeEach
     public void setup() {
+        log.info("Java Heap1: total {}    free {} ",Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory());
         log.info("Setup remote client... {}, {}, {}", tigerRemoteProxyClient , unirestInstance, tigerProxy);
+        TigerProxyConfiguration cfg = TigerProxyConfiguration.builder().proxyLogLevel("WARN").build();
         tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
-            TigerProxyConfiguration.builder()
-                .proxyLogLevel("WARN")
-                .build());
+            cfg);
         mockServerClient.when(request().withPath("/foo"))
             .respond(httpRequest -> response().withBody("bar"));
 
@@ -104,10 +104,20 @@ public class TigerRemoteProxyClientTest {
 
     @AfterEach
     public void clearRoutes() {
+        log.info("Java Heap2: total {}    free {} ",Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory());
+
         log.info("Clearing all routes");
         tigerRemoteProxyClient.unsubscribe();
         tigerRemoteProxyClient.close();
         tigerProxy.clearAllRoutes();
+        log.info("Messages {}", tigerProxy.getRbelMessages().size());
+        tigerRemoteProxyClient = null;
+        System.gc();
+        await().atLeast(1, TimeUnit.SECONDS);
+        Runtime.getRuntime().runFinalization();
+        await().atLeast(1, TimeUnit.SECONDS);
+        unirestInstance.shutDown();
+        log.info("Java Heap3: total {}    free {} ",Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory());
     }
 
     @Test

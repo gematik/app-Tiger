@@ -1,3 +1,5 @@
+# make sure to add all sub structure objects / arrays at least with empty/null values
+# so that admin UI can reset the template node
 templates:
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -56,7 +58,7 @@ templates:
 
     # list of regex to be matched by the local docker proxy, in format:
     # scheme://host:port -> scheme://host:port
-    urlMappings:
+    urlMappings: []
     # environment variables sent to the docker container at startup
     # support substitution of exported env variables from previously started servers
     environment:
@@ -72,6 +74,11 @@ templates:
     # for this to work the port must be exported in the docker container config
     exports:
       - IDP_SERVER=http://idp/.well-known/openid-configuration
+
+    dockerOptions:
+      proxied: true
+      oneShot: false
+      entryPoint: null
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -90,6 +97,10 @@ templates:
       - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
       - GEMATIK_TESTCONFIG=rise-ru
 
+    pkiKeys: []
+    environment: []
+    urlMappings: []
+
   # ----------------------------------------------------------------------------------------------------------------------
   #
   # RISE IDP in RTU
@@ -106,6 +117,10 @@ templates:
       - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
       - GEMATIK_TESTCONFIG=rise-tu
 
+    pkiKeys: []
+    environment: []
+    urlMappings: []
+
   # ----------------------------------------------------------------------------------------------------------------------
   #
   # Latest E-Rezept FD Ref as local docker container
@@ -118,7 +133,7 @@ templates:
     version: 0.19.2
     startupTimeoutSec: 50
     urlMappings:
-      # NG TODO once we support https proxying the TSL we can remove this mapping
+      # TODO once we support https proxying the TSL we can remove this mapping
       - http://tsl --> https://download-ref.tsl.ti-dienste.de
     environment:
       - TOKEN=http://idp/.well-known/openid-configuration
@@ -138,6 +153,13 @@ templates:
       - BNETZA=file://./Pseudo-BNetzA-VL-seq24.xml
       # telematik-test is needed for download of ocsp pki
 
+    dockerOptions:
+      proxied: true
+      oneShot: false
+      entryPoint: null
+    pkiKeys: []
+    exports: []
+
   # ----------------------------------------------------------------------------------------------------------------------
   #
   # Latest EPA module as docker composition
@@ -154,6 +176,11 @@ templates:
         - http://epa-gateway:8001/
         - http://epa-docv-fdv:8005/
 
+    pkiKeys: []
+    environment: []
+    urlMappings: []
+    exports: []
+
   # ----------------------------------------------------------------------------------------------------------------------
   #
   # Latest DEMIS modules as docker composition
@@ -168,6 +195,12 @@ templates:
       serviceHealthchecks:
         - http://notification-gateway:9042
         - http://notification-portal:9041/welcome
+
+    pkiKeys: [ ]
+    environment: [ ]
+    urlMappings: [ ]
+    exports: [ ]
+
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -195,6 +228,12 @@ templates:
         - --aktor.rproxySGD2.use=false
       healthcheck: https://127.0.0.1:9107
 
+    pkiKeys: [ ]
+    environment: [ ]
+    urlMappings: [ ]
+    exports: [ ]
+
+
   # ----------------------------------------------------------------------------------------------------------------------
   #
   # Konnektor simulator as external jar from local folder
@@ -212,6 +251,10 @@ templates:
       # options to the java call
       healthcheck: https://127.0.0.1:9106
 
+    pkiKeys: []
+    environment: []
+    urlMappings: []
+    exports: []
 
   # ----------------------------------------------------------------------------------------------------------------------
   #
@@ -233,3 +276,8 @@ templates:
         - -Dspring.profiles.active=ide,noevents
         - -Djdk.internal.httpclient.disableHostnameVerification
         - -Dfile.encoding=UTF-8
+
+    pkiKeys: []
+    environment: []
+    urlMappings: []
+    exports: []

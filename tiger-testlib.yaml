@@ -1,5 +1,6 @@
 #
-# TODO this is not used throughout the project!
+# TODO this is not used anywhere in the project! Its more a possible future way of configuring the testlib integration
+# with polarion
 #
 tigerActive: true
 

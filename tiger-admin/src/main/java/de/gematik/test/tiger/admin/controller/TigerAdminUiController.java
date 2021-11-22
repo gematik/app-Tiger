@@ -1,5 +1,8 @@
 package de.gematik.test.tiger.admin.controller;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -36,12 +39,9 @@ public class TigerAdminUiController {
     @ResponseBody
     public String openYamlFile(@RequestParam("cfgfile") String file) throws IOException {
         String yamlString = IOUtils.toString(new File(file).toURI(), StandardCharsets.UTF_8);
-
         JSONObject jsonCfg = TigerConfigurationHelper.yamlStringToJson(yamlString);
-
         Configuration configuration = new TigerConfigurationHelper<Configuration>()
             .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
-
         return TigerConfigurationHelper.toJson(configuration);
     }
 
