@@ -32,7 +32,7 @@ public class TigerAdminUiController {
 
     @GetMapping("/")
     public String getStartPage() {
-        return "ymlPage";
+        return "adminui";
     }
 
     @GetMapping(value = "/openYamlFile", produces = MediaType.APPLICATION_JSON_VALUE)

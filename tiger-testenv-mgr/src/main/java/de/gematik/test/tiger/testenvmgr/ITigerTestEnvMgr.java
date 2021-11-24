@@ -6,7 +6,6 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import java.util.List;
 import java.util.Map;
 
 public interface ITigerTestEnvMgr {

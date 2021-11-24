@@ -166,4 +166,24 @@ $(document).ready(function () {
           xhr.responseJSON);
     }
   });
+
+  $(document).keydown(function (ev) {
+    if (ev.metaKey || ev.ctrlKey) {
+      switch (ev.keyCode) {
+        case 65: // Ctrl + A
+          openAddServerModal();
+          ev.preventDefault();
+          return false;
+        case 79: // Ctrl + O
+          confirmNoDefault(unsavedModifications, 'Unsaved Modifications',
+              'Do you really want to discard current changes?',
+              function () {
+                openFileOpenDialog(openYamlFile);
+              });
+          ev.preventDefault();
+          return false;
+      }
+    }
+    return true;
+  });
 });

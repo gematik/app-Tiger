@@ -231,7 +231,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
-                    <!--<skipTests>true</skipTests>-->
+                    <!-- TODO Julian this is workaround for java heap space issue -->
                     <forkMode>always</forkMode>
                 </configuration>
             </plugin>

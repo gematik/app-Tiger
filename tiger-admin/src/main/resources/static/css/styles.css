@@ -1,5 +1,5 @@
 body {
-    padding-top: 4.5rem;
+    padding-top: 6rem;
 }
 
 inlinepre {
@@ -39,22 +39,18 @@ inlinepre {
     box-shadow: 5px 5px 8px -5px var(--success);
     border-radius: 0.75rem;
     padding: 1rem 0;
-    border: 3px solid var(--success);
+    border: 3px solid rgba(var(--bs-success-rgb), 0.75);
 }
 
-.sidebar-item:hover {
-    background: var(--success);
+.sidebar-item:hover,.sidebar-local-proxy:hover {
+    background: rgba(var(--bs-success-rgb), 0.5);
 }
 
 .sidebar-local-proxy {
     box-shadow: 5px 5px 8px -5px var(--bs-gray-600);
     border-radius: 0.75rem;
     padding: 1rem 0;
-    border: 3px solid var(--bs-gray-700);
-}
-
-.sidebar-local-proxy:hover {
-    background: var(--bs-gray-500);
+    border: 3px solid var(--bs-gray-500);
 }
 
 
@@ -96,20 +92,13 @@ input:hover, select:hover {
     border: 3px solid var(--success);
 }
 
-.list-group-item * {
-    border: 3px solid transparent;
-    border-right-width: 0;
-    border-left-width: 0;
-}
-
-.list-group-item:hover {
-    border-color: var(--success);
-    border-width: 3px 0;
+.list-group:not(.list-server-types) .list-group-item:hover:not(.active) {
+    background: rgba(var(--bs-primary-rgb), 0.5);
 }
 
 span.fieldset-summary {
     overflow: hidden;
-    white-space: nowrap;
+    line-break: anywhere;
     text-overflow: ellipsis;
     display: inline-block;
     max-width: 100%;
@@ -123,6 +112,10 @@ span.fieldset-summary {
 
 .btn-group-vertical button {
     margin-bottom: 0.25rem !important;
+}
+
+.btn-list-apply {
+    float: right;
 }
 
 .input-group-text {
@@ -228,8 +221,7 @@ i.collapse-icon {
 
 .server-formular {
     border-top: 1rem solid var(--primary);
-    border-top-left-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
+    border-radius: 0.5rem;
     box-shadow: 2px 2px 8px -3px var(--primary);
     margin-bottom: 0.5rem;
     padding-left: 0;
@@ -250,12 +242,12 @@ i.collapse-icon {
 }
 
 .btn-advanced.active {
-    color: var(--danger);
+    color: var(--info);
 }
 
-.advanced .input-group *, .advanced legend, .advanced .form-switch *,
-.advanced.input-group *, .advanced.form-switch * {
-    color: var(--danger);
+.advanced .input-group *:not(.invalid-feedback), .advanced legend, .advanced .form-switch *,
+.advanced.input-group *:not(.invalid-feedback), .advanced.form-switch * {
+    color: var(--info);
 }
 
 .editing {
@@ -365,7 +357,13 @@ i.collapse-icon {
     border-color: var(--success);
 }
 
+.list-server-types.list-group .list-group-item.text-success:hover:not(.active) {
+  background: rgba(var(--bs-success-rgb), 0.5)
+}
 
+.list-server-types.list-group .list-group-item.text-secondary:hover:not(.active) {
+    background: rgba(var(--bs-secondary-rgb), 0.5)
+}
 
 .fade {
     transition: all 0.2s ease-in-out;
@@ -396,7 +394,7 @@ i.collapse-icon {
 }
 
 .col.form-text {
-    color: var(--gray);
+    color: var(--bs-gray);
     text-align: justify;
 }
 

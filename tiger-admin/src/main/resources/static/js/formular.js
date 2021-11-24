@@ -4,46 +4,18 @@
 //
 // ----------------------------------------------------------------------------
 
-/* DONE
-welcome page, new testenv, type icons
-new testenv fixed
-introduced unsavedmodification flag
-handle save icon on toolbar accordingly
-make sure callbacks are registered for welcome section buttons
-on rename of serverkey type icon gets removed!
-raise flag only if list edit really changes value
-on add new testenv ask before deleting existing env if any unsaved
-before opening ask to save existing env if any unsaved
-moved exception parsing to browser and introduced general error modal
-*/
-
-// TODO add ssl suites list group to tls config
-
-// TODO mv apply btn to subset fieldset
-
 // TODO recheck modification detection on complex lists once default values are implemented
-// as of now the yaml from the server does only ocntain attributes which have a value (null are not added)
+// as of now the yaml from the server does only contain attributes which have a value (null are not added)
 // so in routes if id is not set its not forwarded at all in the serverYaml struct
-// so the mod detection always barks when unactivating it until you applied the settings once
-
-// TODO fix all test data configs (demis no type et all....)
-
-// TODO how to mark settings that are defined in template/overridden
+// so the mod detection always barks when "unactivating" it until you applied the settings once
 
 // TODO save to file
-
-// TODO regex based validation pattern TGR-204
-
-// TODO help section probably visualized beneath the side bar showing help text to each hovering input
-// or do we do hovering tooltip?
 
 // TODO LOPRIO refactor section attribute to using name???
 // section is only needed for special handling of summary text, if general behaviour is ok with summarypattern,
 // then no need for section attribute
 // and i use it somewhere else too so reinvestigate
 // TODO LOPRIO get label size/alignment optimized
-
-const dollarTokens = /\${([\w|.]+)}/g
 
 //
 // formular API methods
@@ -78,6 +50,29 @@ $.fn.initFormular = function (serverKey, serverData) {
 
   this.find('.advanced').hide();
   this.find(".btn-advanced").attr('title', 'Show advanced settings');
+
+  // deal with source input field special treatment
+  // adapt source field according to type (single line for docker, tigerproxy,
+  // externalJar, externalUrl, only for docker compose its a list)
+  const sourceFieldType = {
+    docker: '#template-source-single',
+    externalUrl: '#template-source-single',
+    externalJar: '#template-source-single',
+    tigerProxy: '#template-source-select',
+  }
+  switch (serverData.type) {
+    case 'compose':
+      // empty on purpose as for compose we use the editable list already present
+      break;
+    case 'localProxy':
+      this.showFieldset('source', false);
+      this.find('div.local_proxy_info').removeClass('hidden');
+      break;
+    default:
+      this.find('fieldset[section="source"]').replaceWith(
+          $(sourceFieldType[serverData.type]).prop('outerHTML'));
+      this.find('fieldset[section="source"]')[0].removeAttribute('id');
+  }
 
   //
   // callbacks
@@ -193,15 +188,18 @@ $.fn.initFormular = function (serverKey, serverData) {
       });
 
   // add buttons to lists
-  $(this).find('fieldset.complex-list > .row > .col-list-btns').html(
-      $('#template-list-all-buttons').html());
-  $(this).find('fieldset.editableList > .row > .col-list-btns').html(
-      $('#template-list-add-delete-buttons').html());
+  const btnsHtml = $('#template-list-all-buttons').html();
+  $(this).find('fieldset.complex-list > .row > .col-list-btns').html(btnsHtml);
+  $(this).find('fieldset.complex-list fieldset.subset').append(
+      $('#template-list-apply-button').html());
+
+  // TODO APPLY add apply  buttonto all subset fieldsets
+  $(this).find('fieldset.editableList > .row > .col-list-btns').html(btnsHtml);
 
   // list button callbacks
   this.find('fieldset.editableList .btn-list-add').click(
       function () {
-        const listGroup = $(this).parents('fieldset').find(".list-group");
+        const listGroup = $(this).parents('.row:first').find(".list-group");
         listGroup.find('.active').removeClass('active');
         const activeItem = listGroup.find('.active');
         if (activeItem.length === 0) {
@@ -221,7 +219,7 @@ $.fn.initFormular = function (serverKey, serverData) {
       function () {
         const fieldSet = $(this).parents('fieldset');
         fieldSet.enableSubSetFields(true);
-        const listGroup = fieldSet.find(".list-group");
+        const listGroup = $(this).parents(".row:first").find(".list-group");
 
         const activeItem = listGroup.find('.active');
         if (activeItem.length) {
@@ -252,7 +250,7 @@ $.fn.initFormular = function (serverKey, serverData) {
 
         // start editing
         editFieldSet.find("*[name]:first").focus();
-        fieldSet.find(".btn-list-apply").tgrEnabled(true);
+        fieldSet.find(".btn-list-apply").show();
         fieldSet.find(".btn-list-delete").tgrEnabled(true);
       });
   this.find('fieldset .btn-list-delete').click(function () {
@@ -262,7 +260,7 @@ $.fn.initFormular = function (serverKey, serverData) {
     $(this).tgrEnabled(false);
   });
   this.find('fieldset .btn-list-apply').click(function () {
-    const fieldSet = $(this).parents('fieldset');
+    const fieldSet = $(this).parents('fieldset.complex-list');
     fieldSet.updateDataAndLabelForActiveItem(false);
   });
 
@@ -305,32 +303,9 @@ $.fn.initFormular = function (serverKey, serverData) {
   // initial state of buttons
   //
   this.find('.btn-list-delete').tgrEnabled(false);
-  this.find('.btn-list-apply').tgrEnabled(false);
+  this.find('.btn-list-apply').hide();
   // disable submit generally and especially on enter key of single input field sections
   this.submit(false);
-
-  // deal with source input field special treatment
-  // adapt source field according to type (single line for docker, tigerproxy,
-  // externalJar, externalUrl, only for docker compose its a list)
-  const sourceFieldType = {
-    docker: '#template-source-single',
-    externalUrl: '#template-source-single',
-    externalJar: '#template-source-single',
-    tigerProxy: '#template-source-select',
-  }
-  switch (serverData.type) {
-    case 'compose':
-      // empty on purpose as for compose we use the editable list already present
-      break;
-    case 'localProxy':
-      this.showFieldset('source', false);
-      this.find('div.local_proxy_info').removeClass('hidden');
-      break;
-    default:
-      this.find('fieldset[section="source"]').replaceWith(
-          $(sourceFieldType[serverData.type]).prop('outerHTML'));
-      this.find('fieldset[section="source"]')[0].removeAttribute('id');
-  }
 
   this.populateForm(serverData, "", false);
 
@@ -653,16 +628,33 @@ $.fn.extend({
   // for single fieldset
   generateSummary: function () {
     checkTag('generateSummary', this, 'FIELDSET');
-    const summaryPattern = this.attr("summaryPattern");
-    return '<span class="text summary fs-6">' + summaryPattern.replace(
-        dollarTokens,
-        (m, g1) => this.getValueOfInput(g1) || "&nbsp;") + '</span>';
+
+    const fieldSetSummaryProvider = {
+      init: function (fieldset) {
+        this.fieldSet = fieldset;
+      },
+      fieldSet: null,
+      getData: function (name) {
+        return this.fieldSet.getValueOfInput(name, true);
+      }
+    };
+    fieldSetSummaryProvider.init(this);
+
+    return html = '<span class="text summary fs-6">' +
+        constructSummaryFromPattern(
+            this.attr("summaryPattern"),
+            fieldSetSummaryProvider)
+        + '</span>';
   },
+
   // for single fieldset
-  getValueOfInput: function (name) {
+  getValueOfInput: function (name, emptyIfHidden) {
     checkTag('getValue', this, 'FIELDSET');
     checkSingle('getValue', this);
     const elem = this.find(`*[name='${name}']`);
+    if (emptyIfHidden && elem.parent().hasClass('hidden')) {
+      return '';
+    }
     let str;
     if (elem.prop("tagName") === 'UL') {
       str = this.getListValue(name);
@@ -737,8 +729,8 @@ $.fn.extend({
       const data = $(this).getNewDataFromSubsetFieldset(emptyValues)
       if (emptyValues) {
         let notEmpty = false;
-        $.each(fieldSet.find("*[name]"), function (field) {
-          const value = fieldSet.getValue($(field).attr('name'));
+        $.each(fieldSet.find("*[name]"), function (idx, field) {
+          const value = fieldSet.getValueOfInput($(field).attr('name'));
           if (value) {
             notEmpty = true;
           }
@@ -810,9 +802,6 @@ $.fn.extend({
       const collapsed = $(this).find('i.collapse-icon').isCollapsed();
       if (collapsed) {
         switch (fsName) {
-          case "source":
-            summarySpan.html(fieldSet.generateSummary());
-            break;
           case ".tigerProxyCfg.proxyCfg.forwardToProxy":
             if (fieldSet.isChecked("enableForwardProxy")) {
               summarySpan.html(fieldSet.generateSummary());
@@ -835,23 +824,31 @@ $.fn.extend({
   generateListItemLabel: function (data) {
     checkClass('generateListItemLabel', this, 'list-group');
     checkSingle('generateListItemLabel', this);
-    const summaryPattern = this.attr("summaryPattern");
-    return summaryPattern.replace(dollarTokens, (m, g1) => {
-      if (g1.indexOf('.') !== -1) {
-        const path = g1.split('.');
-        let pathCursor = data;
-        $.each(path, function (idx, node) {
-          if (!pathCursor) {
-            return false;
-          }
-          pathCursor = pathCursor[node];
-        });
-        return pathCursor || " ";
-      } else {
-        return data[g1] || " ";
+    const dataProvider = {
+      init: function (data) {
+        this.data = data;
+      },
+      data: null,
+      getData: function (name) {
+        if (name.indexOf('.') !== -1) {
+          const path = name.split('.');
+          let pathCursor = this.data;
+          $.each(path, function (idx, node) {
+            if (!pathCursor) {
+              return false;
+            }
+            pathCursor = pathCursor[node];
+          });
+          return pathCursor || "";
+        } else {
+          return this.data[name] || "";
+        }
       }
-    });
+    }
+    dataProvider.init(data);
+    return constructSummaryFromPattern(this.attr("summaryPattern"), dataProvider);
   },
+
   // for multiple input or select
   setValue: function (value) {
     if (!this.length) {
@@ -1005,6 +1002,61 @@ $.fn.extend({
 // add callback methods for list items (editable and non editable)
 //
 
+function constructSummaryFromPattern(summaryPattern, dataProvider) {
+  try {
+    let html ='';
+    JSON.parse(summaryPattern).forEach(v => {
+      if (!Array.isArray(v)) {
+        if (v.startsWith("$")) {
+          html += dataProvider.getData(v.substr(1));
+        } else {
+          html += v;
+        }
+        return;
+      }
+      switch (v[0]) {
+        case 'single':
+          const value = dataProvider.getData(v[2].substr(1));
+          if (value) {
+            html += v[1] + value + v[3];
+          } else if (v.length === 5) {
+            html += v[1] + v[4] + v[3];
+          }
+          break;
+        case 'group':
+          const values = [];
+          v[3].forEach(vv => {
+            if (Array.isArray(vv)) {
+              const value = dataProvider.getData(vv[1].substr(1));
+              if (value) {
+                values.push(vv[0] + value + vv[2]);
+              }
+            } else {
+              const val = dataProvider.getData(vv.substr(1))
+              if (val) {
+                values.push(val);
+              }
+            }
+          });
+          if (values.length) {
+            html += v[1] + values.join(v[2]) + v[4];
+          }
+          break;
+        default:
+          if (v[0].startsWith("$")) {
+            html += dataProvider.getData(v[0].substr(1));
+          } else {
+            html += v[0];
+          }
+      }
+    });
+    return html;
+  } catch (e) {
+    console.error(`Failed to parse pattern "${summaryPattern}"`);
+    return `Failed to parse pattern "${summaryPattern}"`;
+  }
+}
+
 function abortOtherEditing() {
   const editing = $('.editing');
   if (editing.length) {
@@ -1083,7 +1135,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
         for (const field in data) {
           fieldSet.setObjectFieldInForm(data, field, section);
         }
-        $(this).parents('fieldset').find('.btn-list-apply').tgrEnabled(true);
+        $(this).parents('fieldset').find('.btn-list-apply').show();
       }
     });
   });

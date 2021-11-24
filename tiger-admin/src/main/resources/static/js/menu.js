@@ -97,6 +97,19 @@ function addServer(serverKey, serverData) {
   formular.initFormular(serverKey, serverData);
 
   $('*[name]').change(function () {
+    const required = $(this).attr('required');
+    const validation = $(this).attr('validation');
+    const value = $(this).val();
+    if (required && !value) {
+      $(this).addClass('is-invalid');
+      return;
+    }
+    if (validation && !eval(validation)) {
+      $(this).addClass('is-invalid');
+    } else {
+      $(this).removeClass('is-invalid');
+      $(this).addClass('is-valid');
+    }
     notifyChangesToTestenvData(true);
   });
 
@@ -114,12 +127,12 @@ function addServer(serverKey, serverData) {
         + '<div class="col-1 context-menu-one">'
         + '  <i class="fas fa-ellipsis-v"></i>'
         + '</div></div>');
-    $(`#sidebar_server_${serverKey} .server-label`).parent().click(
+    $(`#sidebar_server_${serverKey} .server-label`).parent().parent().click(
         function () {
           window.scrollTo(0, formular.position().top);
         });
   } else {
-    $('#sidebar_server_local_proxy .server-label').click(function () {
+    $('#sidebar_server_local_proxy .server-label').parent().click(function () {
       window.scrollTo(0, 0);
     });
 
