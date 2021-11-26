@@ -8,14 +8,18 @@ let bs5Utils;
 const bs5UtilsDismissible = true;
 const bs5UtilsDelay5Sec = 5000;
 
-$(document).ready(function () {
+loadTemplatesFromServer();
 
-  bs5Utils = new Bs5Utils();
-  Bs5Utils.defaults.toasts.position = 'top-center';
+$(document).ready(function () {
+  Bs5Utils.defaults.toasts.position = 'bottom-right';
+  Bs5Utils.defaults.toasts.container = 'toast-container';
   Bs5Utils.defaults.toasts.stacking = true;
+  /** @namespace Bs5Utils.defaults */
+  bs5Utils = new Bs5Utils();
 
   // sidebar
 
+  // noinspection JSUnusedGlobalSymbols
   $.contextMenu({
     selector: '.context-menu-one',
     trigger: 'left',
@@ -50,6 +54,7 @@ $(document).ready(function () {
     }
   });
 
+  // noinspection JSUnusedGlobalSymbols
   $(".sidebar.server-container").sortable({
     start: function (e, ui) {
       $(this).attr('data-previndex', ui.item.index());
@@ -74,14 +79,7 @@ $(document).ready(function () {
 
   // top menu
 
-  $('.btn-open-testenv').click(function () {
-    confirmNoDefault(unsavedModifications, 'Unsaved Modifications',
-        'Do you really want to discard current changes?',
-        function () {
-          openFileOpenDialog(openYamlFile);
-        });
-  });
-
+  $('.btn-open-testenv').click(handleOpenTestEnvironmentClick);
   $('.btn-save-testenv').click(function () {
     if (!currFile) {
       openFileSaveAsDialog(saveYamlFile)
@@ -110,63 +108,7 @@ $(document).ready(function () {
     openAddServerModal();
   });
 
-  // show welcome
-  showWelcomeCard();
-
-  $.ajax({
-    url: "/getTemplates",
-    type: "GET",
-    dataType: 'json',
-    success: function (res) {
-      currTemplates = res;
-      const addServerModal = $('#add-server-modal');
-      addServerModal.find('.btn-add-server-ok').click(addSelectedServer);
-      addServerModal.find('.btn-add-server-cancel').click(function () {
-        addServerModal.modal('hide');
-      });
-
-      const list = addServerModal.find('.list-server-types');
-      list.children().remove();
-      let html = '<li class="list-group-item p-2 bg-success text-center text-white">Basic Types</li>';
-      for (icon in serverIcons) {
-        if (icon !== 'localProxy') {
-          html += '<li class="list-group-item p-2 text-success">'
-              + '<i class="server-icon ' + serverIcons[icon] + '"></i>'
-              + icon + '</li>';
-        }
-      }
-      html += '<li class="list-group-item p-2 bg-secondary text-center text-white">Templates</li>';
-      currTemplates.templates.forEach(function (template) {
-        html += '<li class="list-group-item p-2 text-secondary">'
-            + '<i class="server-icon ' + serverIcons[template.type] + '"></i>'
-            + template.templateName + '</li>';
-
-      })
-      list.prepend($(html));
-      list.find('.list-group-item:not(.text-white)').click(function () {
-        list.find('.active').removeClass("active");
-        $('#add-server-modal .info-block').html(
-            $('#add-server-modal .info-' + $(this).text()).html());
-        $(this).addClass("active");
-        addServerModal.find('.btn-add-server-ok').tgrEnabled(true);
-      });
-      list.find('.list-group-item:not(.text-white)').dblclick(function (ev) {
-        $(this).click();
-        addServerModal.find('.btn-add-server-ok').click();
-        ev.preventDefault();
-        return false;
-      });
-
-      snack('Templates loaded', 'success', 1000);
-    },
-    error: function (xhr) {
-      $('body *').tgrEnabled(false);
-      showError('We are sorry, but we were unable to load the server templates!'
-          + '<p>The admin UI is NOT usable!</p><p><b>Please reload the page</b></p>',
-          xhr.responseJSON);
-    }
-  });
-
+  // global key shortcuts
   $(document).keydown(function (ev) {
     if (ev.metaKey || ev.ctrlKey) {
       switch (ev.keyCode) {
@@ -175,15 +117,13 @@ $(document).ready(function () {
           ev.preventDefault();
           return false;
         case 79: // Ctrl + O
-          confirmNoDefault(unsavedModifications, 'Unsaved Modifications',
-              'Do you really want to discard current changes?',
-              function () {
-                openFileOpenDialog(openYamlFile);
-              });
+          handleOpenTestEnvironmentClick();
           ev.preventDefault();
           return false;
       }
     }
     return true;
   });
+
+  showWelcomeCard();
 });

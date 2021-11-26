@@ -164,13 +164,7 @@
         <i class="server-formular-collapse-icon fas fa-angle-down"></i>
         <i class="fas fa-toolbox btn-advanced global"></i>
       </h1>
-      <fieldset section="node-settings"
-                summarypattern='[
-                [ "single", "<b>", "$hostname", "</b>"],
-                [ "group" ,"(", ", ",
-                    [ "$active","$type", "$template", [ "", "$startupTimeoutSec", " sec" ] ], ")"
-                ]
-                ]'>
+      <fieldset section="node-settings">
         <legend>
           Node settings
           <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -210,7 +204,7 @@
           <label class="form-check-label">Instantiate this node on test run</label>
         </div>
       </fieldset>
-      <fieldset class="editableList" section="source" summarypattern='[ "$source", [ ":", "$version", "" ] ]'>
+      <fieldset class="editableList" section="source-settings">
         <legend>
           Source
           <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -289,11 +283,7 @@
         <div class="tab-content">
           <!-- DOCKER PANEL --->
           <div class="tab-pane fade dockerOptions" role="tabpanel">
-            <fieldset section=".dockerOptions.dockerSettings"
-                      summarypattern='[
-                      [ "single", "Cmd: ", "$.dockerOptions.entryPoint", "&nbsp;"],
-                      [ "single", "Proxied ", "$.dockerOptions.proxied", "&nbsp;"],
-                      [ "single", "Oneshot ", "$.dockerOptions.oneShot", "&nbsp;"] ]'>
+            <fieldset section=".dockerOptions.dockerSettings">
               <legend>
                 Docker settings<i class="collapse-icon fas fa-angle-down"></i>&nbsp;
                 <span class="fieldset-summary fs-6"></span><i class="fas fa-toolbox btn-advanced"></i>
@@ -311,8 +301,7 @@
                 <input class="form-check-input" type="checkbox" name=".dockerOptions.oneShot">
                 <label class="form-check-label">Apply One shot health check strategy</label></div>
             </fieldset>
-            <fieldset class="editableList" section=".dockerOptions.serviceHealthchecks"
-                      summarypattern='[ "$.dockerOptions.serviceHealthchecks" ]'>
+            <fieldset class="editableList" section=".dockerOptions.serviceHealthchecks">
               <legend>Service Healthchecks<i class="collapse-icon fas fa-angle-down"></i>&nbsp;<span
                   class="fieldset-summary fs-6"></span>
               </legend>
@@ -333,12 +322,7 @@
           </div>
           <!-- EXTERNAL JAR PANEL -->
           <div class="tab-pane fade externalJarOptions" role="tabpanel" id="tab-11" section=".externalJarOptions">
-            <fieldset
-                summarypattern='[
-                [ "single", "Folder ", "$.externalJarOptions.workingDir", "<br/>" ],
-                [ "single", "CheckURL", "$.externalJarOptions.healthcheck", ""]
-                ]'
-                section=".externalJarOptions.externalSettings">
+            <fieldset section=".externalJarOptions.externalSettings">
               <legend>External Settings<i class="collapse-icon fas fa-angle-down"></i>&nbsp;<span
                   class="fieldset-summary fs-6"></span></legend>
               <div class="input-group">
@@ -355,8 +339,7 @@
                        title="URL to be used to check for successfully started node">
               </div>
             </fieldset>
-            <fieldset class="editableList start-collapsed" section=".externalJarOptions.options"
-                      summarypattern='[ "$.externalJarOptions.options"]'>
+            <fieldset class="editableList start-collapsed" section=".externalJarOptions.options">
               <legend>Options<i class="collapse-icon fas fa-angle-down"></i>&nbsp;<span
                   class="fieldset-summary fs-6"></span>
               </legend>
@@ -373,8 +356,7 @@
                 </div>
               </div>
             </fieldset>
-            <fieldset class="editableList start-collapsed" section=".externalJarOptions.arguments"
-                      summarypattern='[ "$.externalJarOptions.arguments" ]'>
+            <fieldset class="editableList start-collapsed" section=".externalJarOptions.arguments">
               <legend>Arguments<i class="collapse-icon fas fa-angle-down"></i>&nbsp;<span
                   class="fieldset-summary fs-6"></span>
               </legend>
@@ -396,21 +378,7 @@
           <!-- TIGER PROXY PANEL -->
           <div class="tab-pane fade tigerProxy" role="tabpanel" id="tab-12">
             <div class="proxyCfg">
-              <fieldset class="labels-col-4" section=".tigerProxyCfg"
-                        summarypattern='[
-                        [ "single", "Proxied ", "$.tigerProxyCfg.proxiedServer", "@ "],
-                        [ "single", "", "$.tigerProxyCfg.proxyProtocol", "://localhost" ],
-                        [ "single", ":", "$.tigerProxyCfg.proxyPort", "", "RANDOMPORT"],
-                        "<br/>",
-                        [ "single", "WebUI http://localhost:", "$.tigerProxyCfg.serverPort", "/webui<br/>"],
-                        [ "single", "Loglevel ", "$.tigerProxyCfg.proxyCfg.proxyLogLevel", "<br/>"],
-                        [ "group", "", "<br/>", [
-                            [ "Rbel Endpoint ", "$.tigerProxyCfg.proxyCfg.activateRbelEndpoint", "" ],
-                            [ "ASN1 parsing ", "$.tigerProxyCfg.proxyCfg.activateAsn1Parsing", "" ],
-                            [ "Log traffic even without routes ", "$.tigerProxyCfg.proxyCfg.activateForwardAllLogging", ""],
-                            [ "Parse Rbel ", "$.tigerProxyCfg.proxyCfg.disableRbelParsing", "" ]
-                          ], ""
-                        ]]'>
+              <fieldset class="labels-col-4" section=".tigerProxyCfg">
                 <legend>Tiger Proxy settings&nbsp;<i class="collapse-icon fas fa-angle-down"></i>&nbsp;<span
                     class="fieldset-summary fs-6"></span><i class="fas fa-toolbox btn-advanced"></i></legend>
                 <div class="row">
@@ -476,8 +444,7 @@
                   </div>
                 </div>
               </fieldset>
-              <fieldset class="complex-list" section=".tigerProxyCfg.proxyCfg.proxyRoutes"
-                        summarypattern='[ "$.tigerProxyCfg.proxyCfg.proxyRoutes" ]'>
+              <fieldset class="complex-list" section=".tigerProxyCfg.proxyCfg.proxyRoutes">
                 <legend>
                   Routes
                   <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -493,14 +460,7 @@
                 </div>
                 <div class="row">
                   <div class="col align-items-stretch">
-                    <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes"
-                        summarypattern='[
-                          ["single", "", "$id", ": " ],
-                          ["single", " [", "$basicAuth.username", "@"],
-                          ["single", "", "$basicAuth.password", "]"],
-                          [ "single", " ","$from", ""],
-                          [ "single" , " &#8611; ", "$to", ""]
-                        ]'></ul>
+                    <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes"></ul>
                   </div>
                   <div class="col-auto col-list-btns">
                   </div>
@@ -563,12 +523,7 @@
                 </div>
               </fieldset>
               <fieldset class="labels-col-4 forwardToProxy advanced start-collapsed"
-                        section=".tigerProxyCfg.proxyCfg.forwardToProxy"
-                        summarypattern='[
-                          "$.tigerProxyCfg.proxyCfg.forwardToProxy.type",
-                          [ "single", "://", "$.tigerProxyCfg.proxyCfg.forwardToProxy.hostname", "" ],
-                          [ "single", ":", "$.tigerProxyCfg.proxyCfg.forwardToProxy.port", ""]
-                        ]'>
+                        section=".tigerProxyCfg.proxyCfg.forwardToProxy">
                 <legend>
                   Forward Proxy
                   <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -603,13 +558,7 @@
                 </div>
               </fieldset>
               <fieldset class="labels-col-3 editableList advanced start-collapsed"
-                        section=".tigerProxyCfg.proxyCfg.trafficEndpoints"
-                        summarypattern='[
-                          [ "single", "Endpoints <br/>", "$.tigerProxyCfg.proxyCfg.trafficEndpoints}", "<br/>" ],
-                          [ "single", "Timeout ", "$.tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds", " sec<br/>"],
-                          [ "group", "Buffers in Mb ", ", ", [ "$.tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb", "$.tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb", "$.tigerProxyCfg.proxyCfg.rbelBufferSizeInMb" ], "<br/>" ],
-                          [ "single", "Skip subscription at startup ", "$.tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription", ""]
-                        ]'>
+                        section=".tigerProxyCfg.proxyCfg.trafficEndpoints">
                 <legend>
                   Traffic Endpoints
                   <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -666,8 +615,7 @@
                 </div>
               </fieldset>
               <fieldset class="labels-col-3 start-collapsed advanced  complex-list"
-                        section=".tigerProxyCfg.proxyCfg.modifications"
-                        summarypattern='[ "$.tigerProxyCfg.proxyCfg.modifications" ]'>
+                        section=".tigerProxyCfg.proxyCfg.modifications">
                 <legend>
                   Modifications
                   <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -680,8 +628,7 @@
                 </div>
                 <div class="row">
                   <div class="col align-items-stretch">
-                    <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications"
-                        summarypattern='[ ["single", "","$name", ": "], "$condition"]'></ul>
+                    <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications"></ul>
                   </div>
                   <div class="col-auto col-list-btns">
                   </div>
@@ -717,15 +664,7 @@
                   </div>
                 </div>
               </fieldset>
-              <fieldset class="editableList advanced tls start-collapsed" section=".tigerProxyCfg.proxyCfg.tls"
-                        summarypattern='[
-                          [ "single", "<b>", "$.tigerProxyCfg.proxyCfg.tls.domainName", "</b><br/>" ],
-                          [ "single", "RootCa ", "$.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation", "<br/>" ],
-                          [ "single", "Mutual TLS Identity ", "$.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation", "<br/>"],
-                          [ "single", "Server Identity ", "$.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation", "<br/>"],
-                          [ "single", "Additional Names:<br/> ", "$.tigerProxyCfg.proxyCfg.tls.alternativeNames", "<br/>"],
-                          [ "single", "Server SSL Suites:<br/> ", "$.tigerProxyCfg.proxyCfg.tls.serverSslSuites", ""]
-                         ]'>
+              <fieldset class="editableList advanced tls start-collapsed" section=".tigerProxyCfg.proxyCfg.tls">
                 <legend>
                   TLS Configuration
                   <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -780,7 +719,7 @@
           </div>
           <!-- PKIKEYS Panel -->
           <div class="tab-pane fade pkiKeys" role="tabpanel" id="tab-13">
-            <fieldset class="complex-list" section="pkiKeys" summarypattern='["$pkiKeys"]'>
+            <fieldset class="complex-list" section="pkiKeys">
               <legend>
                 PKI Keys
                 <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -793,7 +732,7 @@
               </div>
               <div class="row">
                 <div class="col align-items-stretch">
-                  <ul class="list-group" name="pkiKeys" summarypattern='["$id", "(", "$type", ")"]'></ul>
+                  <ul class="list-group" name="pkiKeys"></ul>
                 </div>
                 <div class="col-auto col-list-btns">
                 </div>
@@ -835,7 +774,7 @@
           </div>
           <!-- ENVIRONMENT PANEL -->
           <div class="tab-pane fade environment" role="tabpanel" id="tab-14">
-            <fieldset class="editableList" section="environment" summarypattern='["$environment"]'>
+            <fieldset class="editableList" section="environment">
               <legend>
                 Environment variables for server
                 <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -856,7 +795,7 @@
                 </div>
               </div>
             </fieldset>
-            <fieldset class="always-shown editableList" section="exports" summarypattern='["$exports"]'>
+            <fieldset class="always-shown editableList" section="exports">
               <legend>
                 Exported system properties
                 <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -881,7 +820,7 @@
           </div>
           <!-- URL MAPPINGS Panel -->
           <div class="tab-pane fade urlMappings" role="tabpanel" id="tab-15">
-            <fieldset class="editableList" summarypattern='["$urlMappings"]' section="urlMappings">
+            <fieldset class="editableList" section="urlMappings">
               <legend>
                 URL Mappings for local Tiger Proxy
                 <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -926,8 +865,7 @@
   </div>
 
   <!-- TODO summary regex deluxe -->
-  <fieldset id="template-source-list" class="editableList" section="source"
-            summarypattern='[ "$source", [":", "$version", ""]]'>
+  <fieldset id="template-source-list" class="editableList" section="source-settings">
     <legend>
       Source
       <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -947,7 +885,7 @@
     </div>
   </fieldset>
 
-  <fieldset id="template-source-single" section="source" summarypattern='[ "$source", [":", "$version", ""]]'>
+  <fieldset id="template-source-single" section="source-settings">
     <legend>
       Source
       <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -967,8 +905,7 @@
     </div>
   </fieldset>
 
-  <fieldset id="template-source-select" section="source"
-            summarypattern='[ "$source", [ "single", ":", "$version", ""]]'>
+  <fieldset id="template-source-select" section="source-settings">
     <legend>
       Source
       <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -1178,6 +1115,12 @@
 <!--<script th:src="@{/webjars/popper.js/2.9.3/umd/popper.min.js}"></script>-->
 <!-- https://github.com/Script47/bs5-utils -->
 <script type="text/javascript" th:src="@{/js/bs5util.js}"></script>
+<script type="text/javascript" th:src="@{/js/common.js}"></script>
+<script type="text/javascript" th:src="@{/js/collapse.js}"></script>
+<script type="text/javascript" th:src="@{/js/inputfields.js}"></script>
+<script type="text/javascript" th:src="@{/js/lists.js}"></script>
+<script type="text/javascript" th:src="@{/js/summary.js}"></script>
+<script type="text/javascript" th:src="@{/js/advanced.js}"></script>
 <script type="text/javascript" th:src="@{/js/menu.js}"></script>
 <script type="text/javascript" th:src="@{/js/formular.js}"></script>
 <script type="text/javascript" th:src="@{/js/initialization.js}"></script>

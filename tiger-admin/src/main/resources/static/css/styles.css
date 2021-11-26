@@ -19,7 +19,7 @@ inlinepre {
     border-radius: 1rem 1rem 0 0;
 }
 
-.box-config-file > div{
+.box-config-file > div {
     min-height: 1rem;
 }
 
@@ -42,7 +42,7 @@ inlinepre {
     border: 3px solid rgba(var(--bs-success-rgb), 0.75);
 }
 
-.sidebar-item:hover,.sidebar-local-proxy:hover {
+.sidebar-item:hover, .sidebar-local-proxy:hover {
     background: rgba(var(--bs-success-rgb), 0.5);
 }
 
@@ -234,6 +234,7 @@ i.collapse-icon {
 .tabbedpanel {
     margin-top: 0.75rem;
 }
+
 .btn-advanced {
     float: right;
     font-size: 50%;
@@ -247,7 +248,7 @@ i.collapse-icon {
 
 .advanced .input-group *:not(.invalid-feedback), .advanced legend, .advanced .form-switch *,
 .advanced.input-group *:not(.invalid-feedback), .advanced.form-switch * {
-    color: var(--info);
+/**    color: var(--info);*/
 }
 
 .editing {
@@ -358,7 +359,7 @@ i.collapse-icon {
 }
 
 .list-server-types.list-group .list-group-item.text-success:hover:not(.active) {
-  background: rgba(var(--bs-success-rgb), 0.5)
+    background: rgba(var(--bs-success-rgb), 0.5)
 }
 
 .list-server-types.list-group .list-group-item.text-secondary:hover:not(.active) {
@@ -368,9 +369,6 @@ i.collapse-icon {
 .fade {
     transition: all 0.2s ease-in-out;
 }
-
-
-
 
 
 .input-group {
@@ -383,7 +381,7 @@ i.collapse-icon {
 }
 
 
-.form-control, .form-select{
+.form-control, .form-select {
     border: 3px solid lightsteelblue;
     padding: 0.5rem;
 }
@@ -411,4 +409,34 @@ div.local_proxy_info {
 .btn-reset-template {
     border-width: 3px;
     border-radius: 0.75rem !important;
+}
+
+
+/*  Validierungsstyling undo greenish bs5 stuff */
+
+.form-control.is-valid, .form-select.is-valid, .was-validated .form-control:valid {
+    border: 3px solid lightsteelblue;
+}
+
+.form-check-input.is-valid ~ .form-check-label, .was-validated .form-check-input:valid ~ .form-check-label {
+    color: #333;
+}
+
+.form-check-input.is-valid, .was-validated .form-check-input:valid {
+    border: 1px solid rgba(0,0,0,.25);
+}
+
+.form-check-input.is-valid:checked, .was-validated .form-check-input:valid:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Beautifying the toast container */
+.toast-container:empty {
+    display:none;
+}
+
+.toast-container {
+    background: rgba(0,0,0,0.25);
+    padding: 1rem !important;
 }

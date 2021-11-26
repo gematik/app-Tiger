@@ -1,5 +1,8 @@
 let currEnvironment = {};
 let currTemplates = [];
+/** @namespace currTemplates.templates */
+/** @namespace currTemplates.templates.templateName */
+
 let currFolder = '.';
 let fsSeparator = '';
 let currFile = '';
@@ -28,6 +31,7 @@ function openYamlFile(path, separator, cfgfile) {
     type: "GET",
     dataType: 'json',
     success: function (res) {
+      /** @namespace res.servers */
       currEnvironment = {};
       currEnvironment['local_proxy'] = {
         localProxyActive: res.localProxyActive,
@@ -39,12 +43,12 @@ function openYamlFile(path, separator, cfgfile) {
       }
       populateServersFromYaml(currEnvironment);
       setYamlFileName(cfgfile, path);
-      $('.btn-save-as-testenv').tgrEnabled(true);
-      $('.btn-save-testenv').tgrEnabled(true);
+      $('.btn-save-as-testenv').setEnabled(true);
+      $('.btn-save-testenv').setEnabled(true);
     },
     error: function (xhr) {
-      showError(
-          `We are sorry, but we were unable to load your configuration file '${cfgfile}'!`,
+      /** @namespace xhr.responseJSON */
+      showError(`We are sorry, but we were unable to load your configuration file '${cfgfile}'!`,
           xhr.responseJSON);
     }
   });
@@ -189,15 +193,16 @@ function notifyChangesToTestenvData(flag) {
   }
 }
 
+function handleOpenTestEnvironmentClick() {
+  confirmNoDefault(unsavedModifications, 'Unsaved Modifications', 'Do you really want to discard current changes?',
+      function () {
+        openFileOpenDialog(openYamlFile);
+      });
+}
+
 function showWelcomeCard() {
   $('.server-content').html($('#template-welcome-card').html());
-  $('.server-content .btn-open-testenv').click(function () {
-    confirmNoDefault(unsavedModifications, 'Unsaved Modifications',
-        'Do you really want to discard current changes?',
-        function () {
-          openFileOpenDialog(openYamlFile);
-        });
-  });
+  $('.server-content .btn-open-testenv').click(handleOpenTestEnvironmentClick);
   $('.server-content .btn-add-server').click(openAddServerModal);
 }
 
@@ -214,13 +219,13 @@ function confirmNoDefault(flag, title, content, yesfunc) {
           '<div>' + content + '</div>',
       buttons: [
         {
-          text: 'Yes', class: 'btn btn-danger',
+          text: 'Yes', class: 'btn btn-danger btn-lg',
           handler: (ev) => {
             $(ev.target).parents('.modal.show').modal('hide')
             yesfunc(ev);
           }
         },
-        {text: 'No', class: 'btn btn-primary', type: 'dismiss'},
+        {text: 'No', class: 'btn btn-primary btn-lg', type: 'dismiss'},
       ],
       centered: true, dismissible: true, backdrop: 'static', keyboard: true,
       focus: false, type: 'danger'
@@ -231,6 +236,8 @@ function confirmNoDefault(flag, title, content, yesfunc) {
 }
 
 function showError(errMessage, errorCauses) {
+  /** @namespace errorCauses.mainCause */
+  /** @namespace errorCauses.causes */
   let details = '<b>' + errorCauses.mainCause + '</b><br/>';
   errorCauses.causes.forEach(function (cause) {
     details += '\n<br/>Caused by: ' + cause;
@@ -244,7 +251,7 @@ function showError(errMessage, errorCauses) {
     buttons: [
       {
         text: 'Advanced details',
-        class: 'btn btn-info',
+        class: 'btn btn-info btn-lg',
         handler: (ev) => {
           const detMsg = $(ev.target).parents('.modal-dialog').find(
               '.detailedMessage');
@@ -252,15 +259,10 @@ function showError(errMessage, errorCauses) {
               '.dropdown-divider');
           detMsg.html(details);
           const btn = $('.btn.btn-sm.btn-info');
-          if (btn.text() === 'Hide Details') {
-            divider.hide();
-            detMsg.hide();
-            btn.text('Advanced details');
-          } else {
-            divider.show();
-            detMsg.show();
-            btn.text('Hide Details');
-          }
+          const advDetailsHidden = btn.text() === 'Advanced Details';
+          divider.toggle(!advDetailsHidden)
+          detMsg.toggle(!advDetailsHidden);
+          btn.text((advDetailsHidden ? 'Hide' : 'Show') + ' Details');
         }
       },
       {text: 'Close', class: 'btn btn-primary', type: 'dismiss'}
@@ -337,6 +339,11 @@ function navigateIntoFolder(folder, okfunc, addroots, mode) {
     type: "GET",
     dataType: 'json',
     success: function (res) {
+      /** @namespace res.current */
+      /** @namespace res.folders */
+      /** @namespace res.cfgfiles */
+      /** @namespace res.roots */
+      /** @namespace res.separator */
       fsSeparator = res.separator;
       let htmlstr = '';
       res.folders.forEach(function (folder) {
@@ -396,6 +403,62 @@ function openAddServerModal() {
   addServerModal.find('.info-block').html(
       addServerModal.find('.info-intro-text').html());
   addServerModal.find('.list-server-types .active').removeClass("active");
-  addServerModal.find('.btn-add-server-ok').tgrEnabled(false);
+  addServerModal.find('.btn-add-server-ok').setEnabled(false);
   addServerModal.modal('show');
+}
+
+function loadTemplatesFromServer() {
+  $.ajax({
+    url: "/getTemplates",
+    type: "GET",
+    dataType: 'json',
+    success: function (res) {
+      currTemplates = res;
+      const addServerModal = $('#add-server-modal');
+      addServerModal.find('.btn-add-server-ok').click(addSelectedServer);
+      addServerModal.find('.btn-add-server-cancel').click(function () {
+        addServerModal.modal('hide');
+      });
+
+      const list = addServerModal.find('.list-server-types');
+      list.children().remove();
+      let html = '<li class="list-group-item p-2 bg-success text-center text-white">Basic Types</li>';
+      for (let icon in serverIcons) {
+        if (icon !== 'localProxy') {
+          html += '<li class="list-group-item p-2 text-success">'
+              + '<i class="server-icon ' + serverIcons[icon] + '"></i>'
+              + icon + '</li>';
+        }
+      }
+      html += '<li class="list-group-item p-2 bg-secondary text-center text-white">Templates</li>';
+      currTemplates.templates.forEach(function (template) {
+        html += '<li class="list-group-item p-2 text-secondary">'
+            + '<i class="server-icon ' + serverIcons[template.type] + '"></i>'
+            + template.templateName + '</li>';
+
+      })
+      list.prepend($(html));
+      list.find('.list-group-item:not(.text-white)').click(function () {
+        list.find('.active').removeClass("active");
+        $('#add-server-modal .info-block').html(
+            $('#add-server-modal .info-' + $(this).text()).html());
+        $(this).addClass("active");
+        addServerModal.find('.btn-add-server-ok').setEnabled(true);
+      });
+      list.find('.list-group-item:not(.text-white)').dblclick(function (ev) {
+        $(this).click();
+        addServerModal.find('.btn-add-server-ok').click();
+        ev.preventDefault();
+        return false;
+      });
+
+      snack('Templates loaded', 'success', 1000);
+    },
+    error: function (xhr) {
+      $('body *').setEnabled(false);
+      showError('We are sorry, but we were unable to load the server templates!'
+          + '<p>The admin UI is NOT usable!</p><p><b>Please reload the page</b></p>',
+          xhr.responseJSON);
+    }
+  });
 }
