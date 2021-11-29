@@ -28,7 +28,7 @@ import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
@@ -57,6 +57,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.awaitility.core.ConditionTimeoutException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 @Slf4j
@@ -123,7 +124,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     public TigerTestEnvMgr() {
-        // read configuration from file and templates from classpath resource
         var cfgFile = new File(OsEnvironment.getAsString(
             "TIGER_TESTENV_CFGFILE", "tiger-testenv-" + getComputerName() + ".yaml"));
         if (!cfgFile.exists()) {
@@ -132,18 +132,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         log.info("Reading configuration from " + cfgFile.getAbsolutePath() + "...");
         JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
-
-        try {
-            JSONObject jsonTemplate = TigerConfigurationHelper.yamlStringToJson(
-                IOUtils.toString(Objects.requireNonNull(getClass().getResource(
-                    "templates.yaml")).toURI(), StandardCharsets.UTF_8));
-            TigerConfigurationHelper.applyTemplate(
-                jsonCfg.getJSONObject("servers"), "template",
-                jsonTemplate.getJSONArray("templates"), "templateName");
-        } catch (IOException | URISyntaxException e) {
-            throw new TigerConfigurationException("Unable to read templates YAML!", e);
-        }
-
+        applyTemplates(jsonCfg);
         TigerConfigurationHelper.overwriteWithSysPropsAndEnvVars("TIGER_TESTENV", "tiger.testenv", jsonCfg);
 
         configuration = new TigerConfigurationHelper<Configuration>()
@@ -159,7 +148,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             proxyConfig.setProxyRoutes(List.of());
         }
         if (proxyConfig.getTls().getServerRootCa() == null) {
-            proxyConfig.getTls().setServerRootCa(new TigerPkiIdentity(
+            proxyConfig.getTls().setServerRootCa(new TigerConfigurationPkiIdentity(
                 "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
         localTigerProxy = new TigerProxy(configuration.getTigerProxy());
@@ -172,8 +161,24 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             log.info("Local docker tiger proxy deactivated");
             environmentVariables = new HashMap<>();
         }
-        log.info("Tiger Testenv mgr created OK");
+        log.info("Tiger Testenv mgrhostname: testWinstone2\n created OK");
     }
+
+    public static void applyTemplates(JSONObject jsonCfg) {
+        // read configuration from file and templates from classpath resource
+        try {
+            JSONObject jsonTemplate = TigerConfigurationHelper.yamlStringToJson(
+                IOUtils.toString(Objects.requireNonNull(TigerTestEnvMgr.class.getResource(
+                    "templates.yaml")).toURI(), StandardCharsets.UTF_8));
+            TigerConfigurationHelper.applyTemplate(
+                jsonCfg.getJSONObject("servers"), "template",
+                jsonTemplate.getJSONArray("templates"), "templateName");
+        } catch (IOException | URISyntaxException e) {
+            throw new TigerConfigurationException("Unable to read templates YAML!", e);
+        }
+    }
+
+
 
     @Override
     public void setUpEnvironment() {
@@ -368,7 +373,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
     }
 
-    private String getComputerName() {
+    private static String getComputerName() {
         try {
             return InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {

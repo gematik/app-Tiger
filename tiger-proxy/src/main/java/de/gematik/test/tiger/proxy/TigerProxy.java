@@ -46,6 +46,7 @@ import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.KeyAndCertificateFactory;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
+import org.mockserver.socket.tls.NettySslContextFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -85,15 +86,14 @@ public class TigerProxy extends AbstractTigerProxy {
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
+        customizeSslSuitesIfApplicable(configuration);
 
         mockServer = convertProxyConfiguration()
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
 
-        mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort()) {
-
-        };
+        mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         if (configuration.getProxyRoutes() != null) {
             for (TigerRoute tigerRoute : configuration.getProxyRoutes()) {
                 addRoute(tigerRoute);
@@ -142,6 +142,15 @@ public class TigerProxy extends AbstractTigerProxy {
                         }
                         return resp;
                     });
+        }
+    }
+
+    private void customizeSslSuitesIfApplicable(TigerProxyConfiguration configuration) {
+        if (configuration.getTls().getServerSslSuites() != null) {
+            NettySslContextFactory.sslServerContextBuilderCustomizer = builder -> {
+                builder.ciphers(configuration.getTls().getServerSslSuites());
+                return builder;
+            };
         }
     }
 

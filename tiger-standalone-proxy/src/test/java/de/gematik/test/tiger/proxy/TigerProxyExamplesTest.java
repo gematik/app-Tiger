@@ -5,12 +5,14 @@ import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import kong.unirest.Config;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -240,7 +243,7 @@ public class TigerProxyExamplesTest {
                 .to("http://localhost:" + mockServerClient.getPort())
                 .build()))
             .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerPkiIdentity("../tiger-proxy/src/test/resources/customCa.p12;00"))
+                .serverRootCa(new TigerConfigurationPkiIdentity("../tiger-proxy/src/test/resources/customCa.p12;00"))
                 .build())
             .build());
 
@@ -282,6 +285,17 @@ public class TigerProxyExamplesTest {
                 .replaceWith("horridoh!")
                 .build()))
             .build());
+        @Language("yaml") String yamlConfiguration =
+            "tigerProxy:\n" +
+            "  modifications:\n" +
+            "    # wird nur für antworten ausgeführt: Anfragen haben keinen statusCode (fails silently)\n" +
+            "    - targetElement: \"$.header.statusCode\"\n" +
+            "      replaceWith: \"400\"\n" +
+            "    - targetElement: \"$.body\"\n" +
+            "      condition: \"isRequest\"\n" +
+            "      replaceWith: \"my.host\"\n" +
+            "      regexFilter: \"hostToBeReplaced:\\d{3,5}\"";
+
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().proxy("localhost", tigerProxy.getPort());
         unirestInstance.get("http://blub/foo").asString();
@@ -289,5 +303,31 @@ public class TigerProxyExamplesTest {
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
             .get().getRawStringContent())
             .isEqualTo("horridoh!");
+    }
+
+    @Test
+    public void tslSuiteEnforcement() {
+        final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
+
+        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("https://blub")
+                .to("http://localhost:" + mockServerClient.getPort())
+                .build()))
+                .tls(TigerTlsConfiguration.builder()
+                    .serverSslSuites(List.of(configuredSslSuite))
+                    .build())
+                .build());
+
+        SSLContext ctx = tigerProxy.buildSslContext();
+        final UnirestInstance unirestInstance = Unirest.spawnInstance();
+        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().sslContext(ctx);
+        unirestInstance.get("https://blub/foo").asString();
+
+        assertThat(ctx.getClientSessionContext()
+            .getSession(ctx.getClientSessionContext().getIds().nextElement())
+            .getCipherSuite())
+            .isEqualTo(configuredSslSuite);
     }
 }

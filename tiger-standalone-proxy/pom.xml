@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-standalone-proxy</artifactId>
-    <version>0.16.1</version>
+    <version>0.16.2</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.16.1</version>
+        <version>0.16.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -223,6 +223,16 @@
                 <version>0.8.7</version>
                 <configuration>
                     <dataFileIncludes>**/target/jacoco-output/*.exec</dataFileIncludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <!-- TODO Julian this is workaround for java heap space issue -->
+                    <forkMode>always</forkMode>
                 </configuration>
             </plugin>
 

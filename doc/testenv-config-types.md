@@ -21,7 +21,7 @@ Attribute in Klammern (Attribute: Wert) sind optional und haben einen Defaultwer
 
 ```yaml
     (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
-     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+     Wird dieses Attribut nicht gesetzt, so wird die ID des Serverknotens als hostname verwendet.)
 
     type: docker
     
@@ -51,7 +51,7 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
 
 ```yaml
     (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
-     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+      Wird dieses Attribut nicht gesetzt, so wird die ID des Serverknotens als hostname verwendet.)
 
     type: tigerProxy
     
@@ -88,7 +88,7 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
 
 ```yaml
     (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
-     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+      Wird dieses Attribut nicht gesetzt, so wird die ID des Serverknotens als hostname verwendet.)
 
     type: externalUrl
     
@@ -114,7 +114,7 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
 
 ```yaml
     (hostname: Hier kann ein beliebiger Hostname angegeben werden unter dem die Testsuite diesen Server ansprechen kann.
-     Wird dieses Attribute nicht gesetzt, so wird die ID des Serverknotens in der Serverkonfigurations Map als hostname verwendet.)
+      Wird dieses Attribut nicht gesetzt, so wird die ID des Serverknotens als hostname verwendet.)
 
     type: externalJar
     

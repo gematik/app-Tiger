@@ -4,6 +4,7 @@
 
 ## Features
 * TGR-136 Client-Adressen werden nun in Rbel-Nachrichten korrekt gesetzt
+* TGR-120: Die SSL-Suiten des Servers sind nun konfigurierbar
 
 ## Release 0.15.0
 

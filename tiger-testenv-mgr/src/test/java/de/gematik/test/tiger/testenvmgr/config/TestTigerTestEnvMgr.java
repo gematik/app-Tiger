@@ -118,7 +118,9 @@ public class TestTigerTestEnvMgr {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDoubleKey.yaml");
 
-        assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
+        assertThatThrownBy(TigerTestEnvMgr::new)
+            .isInstanceOf(TigerConfigurationException.class)
+            .hasMessageStartingWith("Duplicate key");
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -146,7 +148,7 @@ public class TestTigerTestEnvMgr {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFileName);
+        envMgr.getConfiguration().getServers().get(cfgFileName);
         try {
             envMgr.setUpEnvironment();
             Thread.sleep(2000);

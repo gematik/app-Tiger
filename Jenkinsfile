@@ -1,4 +1,4 @@
-@Library('gematik-jenkins-shared-library@master') _
+@Library('gematik-jenkins-shared-library') _
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def BRANCH = 'master'
@@ -6,6 +6,7 @@ def JIRA_PROJECT_ID = 'TGR'
 def GITLAB_PROJECT_ID = '644'
 def TAG_NAME = "ci/build"
 def POM_PATH = 'pom.xml'
+def POM_PATH_PRODUCT = 'tiger-standalone-proxy/pom.xml'
 
 
 pipeline {
@@ -75,7 +76,7 @@ pipeline {
         stage('GitLab-Update-Snapshot') {
             when { branch BRANCH }
             steps {
-                gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID, POM_PATH)
+                gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID, POM_PATH_PRODUCT)
             }
         }
     }

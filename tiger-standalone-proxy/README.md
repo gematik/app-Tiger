@@ -98,6 +98,10 @@ tigerProxy:
       serverIdentity: "certificateAndKeyAndChain.p12;Password"
       # Alternative solution: now all incoming TLS-traffic will be handled using this identity.
       # This might be easier but requires a certificate which is valid for the configured routes
+      serverSslSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+      # Defines which SSL-Suites are allowed. This will delete all default-suites and only add 
+      # the one defined here.
 
       forwardMutualTlsIdentity: "directory/where/another/identityResides.jks;changeit;JKS"
       # This identity will be used as a client-identity for mutual-TLS when forwarding to

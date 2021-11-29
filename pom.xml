@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.16.1</version>
+    <version>0.16.2</version>
     <packaging>pom</packaging>
     <name>app-Tiger</name>
     <description>Short project description </description>
@@ -73,7 +73,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
 
-        <version.rbellogger>0.17.0</version.rbellogger>
+        <version.rbellogger>0.18.0</version.rbellogger>
         <version.cucumber>6.10.4</version.cucumber>
         <version.serenity.core>2.4.34</version.serenity.core>
         <version.serenity.cucumber.6>2.4.34</version.serenity.cucumber.6>
@@ -85,7 +85,7 @@
         <version.slf4j>1.7.32</version.slf4j>
         <version.junit4>4.13.2</version.junit4>
         <version.lombok>1.18.22</version.lombok>
-        <version.mockserver>5.11.7</version.mockserver>
+        <version.mockserver>5.11.9</version.mockserver>
 
         <sonar.coverage.jacoco.xmlReportPaths>${project.reporting.outputDirectory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>

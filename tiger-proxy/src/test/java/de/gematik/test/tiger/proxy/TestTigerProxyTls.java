@@ -21,6 +21,7 @@ import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import kong.unirest.*;
 import lombok.SneakyThrows;
@@ -110,7 +111,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .tls(TigerTlsConfiguration.builder()
-                .serverIdentity(new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
+                .serverIdentity(new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
                 .build())
             .build());
 
@@ -152,7 +153,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"))
+                .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"))
                 .build())
             .build());
 
@@ -167,7 +168,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
     public void defunctCertificate_expectException() throws UnirestException {
         assertThatThrownBy(() -> new TigerProxy(TigerProxyConfiguration.builder()
             .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
+                .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
                 .build())
             .build()))
             .isInstanceOf(RuntimeException.class);
@@ -184,7 +185,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerPkiIdentity("src/test/resources/customCa.p12;00"))
+                .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/customCa.p12;00"))
                 .build())
             .build());
 
@@ -222,7 +223,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerPkiIdentity(
+                .serverRootCa(new TigerConfigurationPkiIdentity(
                     "src/test/resources/selfSignedCa/rootCa.p12;00"))
                 .build())
             .proxyRoutes(List.of(TigerRoute.builder()
@@ -240,7 +241,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     @Test
     public void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException, IOException {
-        final TigerPkiIdentity ca = new TigerPkiIdentity(
+        final TigerConfigurationPkiIdentity ca = new TigerConfigurationPkiIdentity(
             "src/test/resources/selfSignedCa/rootCa.p12;00");
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -250,7 +251,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build()))
             .tls(TigerTlsConfiguration.builder()
                 .serverRootCa(ca)
-                .forwardMutualTlsIdentity(new TigerPkiIdentity("src/test/resources/rsa.p12;00"))
+                .forwardMutualTlsIdentity(new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00"))
                 .build())
             .build());
 
@@ -261,8 +262,8 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     @Test
     public void perRouteCertificate_shouldBePresentedOnlyForThisRoute() throws UnirestException {
-        final TigerPkiIdentity serverIdentity
-            = new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
+        final TigerConfigurationPkiIdentity serverIdentity
+            = new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .tls(TigerTlsConfiguration.builder()
@@ -309,5 +310,26 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
         sslContext.init(null, tmf.getTrustManagers(), null);
 
         return sslContext;
+    }
+
+    @Test
+    public void configureServerTslSuites() {
+        final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .tls(TigerTlsConfiguration.builder()
+                .serverSslSuites(List.of(configuredSslSuite))
+                .build())
+            .build());
+
+        SSLContext ctx = tigerProxy.buildSslContext();
+        new UnirestInstance(new Config()
+            .sslContext(ctx)
+            .proxy("localhost", tigerProxy.getPort()))
+            .get("https://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+
+        assertThat(ctx.getClientSessionContext()
+            .getSession(ctx.getClientSessionContext().getIds().nextElement())
+            .getCipherSuite())
+            .isEqualTo(configuredSslSuite);
     }
 }

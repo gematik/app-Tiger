@@ -27,9 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -55,7 +53,6 @@ import static org.mockserver.model.HttpResponse.response;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RequiredArgsConstructor
 @Slf4j
-@DirtiesContext
 public class TigerRemoteProxyClientTest {
     /*
      *  Our Testsetup:
@@ -86,20 +83,20 @@ public class TigerRemoteProxyClientTest {
 
     @BeforeEach
     public void setup() {
-        if (tigerRemoteProxyClient == null) {
-            tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
-                TigerProxyConfiguration.builder()
-                    .proxyLogLevel("WARN")
-                    .build());
-            mockServerClient.when(request().withPath("/foo"))
-                .respond(httpRequest -> response().withBody("bar"));
+        log.info("Java Heap1: total {}    free {} ",Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory());
+        log.info("Setup remote client... {}, {}, {}", tigerRemoteProxyClient , unirestInstance, tigerProxy);
+        TigerProxyConfiguration cfg = TigerProxyConfiguration.builder().proxyLogLevel("WARN").build();
+        tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
+            cfg);
+        mockServerClient.when(request().withPath("/foo"))
+            .respond(httpRequest -> response().withBody("bar"));
 
-            mockServerClient.when(request().withPath("/echo"))
-                .respond(httpRequest -> response()
-                    .withHeaders(httpRequest.getHeaders())
-                    .withBody(httpRequest.getBodyAsRawBytes()));
-        }
+        mockServerClient.when(request().withPath("/echo"))
+            .respond(httpRequest -> response()
+                .withHeaders(httpRequest.getHeaders())
+                .withBody(httpRequest.getBodyAsRawBytes()));
 
+        log.info("Configuring routes...");
         try {
             tigerProxy.addRoute(TigerRoute.builder()
                 .from("http://myserv.er")
@@ -119,7 +116,20 @@ public class TigerRemoteProxyClientTest {
 
     @AfterEach
     public void clearRoutes() {
+        log.info("Java Heap2: total {}    free {} ",Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory());
+
+        log.info("Clearing all routes");
+        tigerRemoteProxyClient.unsubscribe();
+        tigerRemoteProxyClient.close();
         tigerProxy.clearAllRoutes();
+        log.info("Messages {}", tigerProxy.getRbelMessages().size());
+        tigerRemoteProxyClient = null;
+        System.gc();
+        await().atLeast(1, TimeUnit.SECONDS);
+        Runtime.getRuntime().runFinalization();
+        await().atLeast(1, TimeUnit.SECONDS);
+        unirestInstance.shutDown();
+        log.info("Java Heap3: total {}    free {} ",Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory());
     }
 
     @Test

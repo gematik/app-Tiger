@@ -1,10 +1,15 @@
 body {
-    padding-top: 5rem;
+    padding-top: 6rem;
+}
+
+inlinepre {
+    white-space: pre;
+    font-family: "Courier New", monospace;
+    display: inline;
 }
 
 .box, .box-config-file {
-    border: 1px solid #6b8ab8;
-    background-color: #b5cae6;
+    border: 1px solid var(--primary);
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     border-radius: 0;
@@ -14,16 +19,40 @@ body {
     border-radius: 1rem 1rem 0 0;
 }
 
+.box-config-file > div {
+    min-height: 1rem;
+}
+
 .box > div, .box > div > i {
     display: inline-block;
-    color: #6b8ab8;
+    color: var(--primary);
 }
 
 .sidebar-toolbar {
     border-radius: 0 0 1rem 1rem;
     border-width: 1px;
     border-style: solid;
+    padding: 0.5rem 0;
 }
+
+.sidebar-item {
+    box-shadow: 5px 5px 8px -5px var(--success);
+    border-radius: 0.75rem;
+    padding: 1rem 0;
+    border: 3px solid rgba(var(--bs-success-rgb), 0.75);
+}
+
+.sidebar-item:hover, .sidebar-local-proxy:hover {
+    background: rgba(var(--bs-success-rgb), 0.5);
+}
+
+.sidebar-local-proxy {
+    box-shadow: 5px 5px 8px -5px var(--bs-gray-600);
+    border-radius: 0.75rem;
+    padding: 1rem 0;
+    border: 3px solid var(--bs-gray-500);
+}
+
 
 .server-label {
     text-overflow: ellipsis;
@@ -31,28 +60,15 @@ body {
     line-break: anywhere;
 }
 
-.context-menu-hover {
-    background-color: #a8c1e6 !important;
-}
-
-.content {
-    padding: 1rem 0 2rem 0;
-    display: none;
-    overflow: hidden;
-    border: 1px solid #d3d3d3;
-}
-
 .server-container {
     display: grid;
     gap: 1rem;
-    padding-top: 1rem;
     padding-bottom: 1rem;
 }
 
-
-
-
-
+.server-content {
+    margin-left: 1rem;
+}
 
 
 /* ----------------------------------------------------------------------------- */
@@ -60,33 +76,29 @@ body {
 
 fieldset {
     border: 1px solid lightgray;
-    padding: 1rem;
     margin: 1rem;
-    padding-top: 0.5rem;
+    padding: 0.5rem 1rem 1rem;
 }
 
 fieldset.subset {
-    margin-top: 0;
+    margin-top: 1rem;
+}
+
+legend {
+    color: var(--secondary);
 }
 
 input:hover, select:hover {
-    color: steelblue;
-    background-color: #a8c1e6;
+    border: 3px solid var(--success);
 }
 
-li.list-group-item:not(.active):hover {
-    background: #a8c1e6;
-}
-
-.list-group-item.active {
-    color: #084298;
-    background-color: #8ca9d4; /*#cfe2ff;*/
-    border-color: #6b8ab8; /*#b6d4fe;*/
+.list-group:not(.list-server-types) .list-group-item:hover:not(.active) {
+    background: rgba(var(--bs-primary-rgb), 0.5);
 }
 
 span.fieldset-summary {
     overflow: hidden;
-    white-space: nowrap;
+    line-break: anywhere;
     text-overflow: ellipsis;
     display: inline-block;
     max-width: 100%;
@@ -95,15 +107,21 @@ span.fieldset-summary {
 
 .input-group, .form-check {
     margin-top: 0.5rem !important;
+    margin-left: 1rem;
 }
 
 .btn-group-vertical button {
     margin-bottom: 0.25rem !important;
 }
 
+.btn-list-apply {
+    float: right;
+}
+
 .input-group-text {
     flex: 0 0 auto;
     width: 30%;
+    margin-right: 1rem;
 }
 
 .labels-col-5 .input-group-text {
@@ -126,7 +144,7 @@ span.fieldset-summary {
     width: 20%;
 }
 
-.list-group {
+.list-group:not(.list-server-types) {
     background: #f0f0f0;
     border: 1px solid lightgray;
     min-height: 10rem;
@@ -142,20 +160,24 @@ span.fieldset-summary {
     color: #0d6efd;
     font-weight: bolder;
     border-color: #8ca9d4;
-    border-radius: 0.25rem;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    border-radius: 0.25rem 0.25rem 0 0;
 }
 
 fieldset .list-group .list-group-item > span {
     width: 100%;
     display: table-cell;
     vertical-align: middle;
+    line-break: anywhere;
 }
 
 .topcol {
     padding-left: 0;
-    padding-right: 1px;
+}
+
+
+.testenv-sidebar-header {
+    margin-left: 15px;
+    margin-right: 15px;
 }
 
 .text.summary {
@@ -173,12 +195,14 @@ fieldset .list-group .list-group-item > span {
 }
 
 i.server-formular-collapse-icon {
-    margin-left:1rem;
+    margin-left: 1rem;
+    cursor: pointer;
 }
 
 i.collapse-icon {
     color: steelblue;
     margin-left: 1rem;
+    cursor: pointer;
 }
 
 .list-group-item {
@@ -196,26 +220,35 @@ i.collapse-icon {
 }
 
 .server-formular {
-    box-shadow: 2px 2px 8px -3px var(--bs-gray-700);
-    margin-bottom: 1.5rem;
+    border-top: 1rem solid var(--primary);
+    border-radius: 0.5rem;
+    box-shadow: 2px 2px 8px -3px var(--primary);
+    margin-bottom: 0.5rem;
+    padding-left: 0;
 }
 
 .server-formular > .row {
     margin-left: 0;
 }
 
+.tabbedpanel {
+    margin-top: 0.75rem;
+}
+
 .btn-advanced {
     float: right;
     font-size: 50%;
-    color: lightgray;
+    color: var(--secondary);
+    cursor: pointer;
 }
 
 .btn-advanced.active {
-    color: #d9534f;
+    color: var(--info);
 }
 
-.advanced * {
-    color: #d9534f;
+.advanced .input-group *:not(.invalid-feedback), .advanced legend, .advanced .form-switch *,
+.advanced.input-group *:not(.invalid-feedback), .advanced.form-switch * {
+/**    color: var(--info);*/
 }
 
 .editing {
@@ -227,6 +260,18 @@ i.collapse-icon {
 
 .sidebar-col {
     position: fixed;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.sidebar {
+    margin-top: 1rem;
+}
+
+.server-icon {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+    font-size: 1.5rem;
 }
 
 .tiger-logo {
@@ -234,5 +279,164 @@ i.collapse-icon {
 }
 
 .toast-container {
-    z-index:32000;
+    z-index: 32000;
+}
+
+.welcome-card {
+    margin: 0 1rem;
+}
+
+.highlight-clean .intro {
+    font-size: 1rem;
+    margin: 2rem auto 2rem;
+}
+
+.hidden {
+    display: none;
+}
+
+.modal-error.detailedMessage {
+    font-family: monospace;
+    line-break: anywhere;
+}
+
+
+.icon-right {
+    margin-right: 0.5rem;
+}
+
+
+/* file navigation dialog styles */
+
+.filepath input {
+    direction: rtl;
+    text-align: left;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.modal-dialog {
+    margin: auto;
+    max-width: 800px;
+}
+
+#file-navigation-modal .modal-content {
+    height: 600px;
+}
+
+#file-navigation-modal .modal-body {
+    height: 500px;
+    overflow-y: auto;
+}
+
+.modal-content .cfgfile, .modal-content .folder {
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+}
+
+.modal-content .cfgfile:hover, .modal-content .folder:hover {
+    background: var(--success);
+    color: white !important;
+}
+
+.modal-content .folder:hover {
+    background: var(--primary);
+    color: white !important;
+}
+
+
+/* add server modal */
+
+#add-server-modal .modal-dialog {
+    max-width: 1024px;
+    height: 800px;
+}
+
+.list-server-types.list-group .list-group-item.active {
+    background: var(--success);
+    color: var(--white) !important;
+    border-color: var(--success);
+}
+
+.list-server-types.list-group .list-group-item.text-success:hover:not(.active) {
+    background: rgba(var(--bs-success-rgb), 0.5)
+}
+
+.list-server-types.list-group .list-group-item.text-secondary:hover:not(.active) {
+    background: rgba(var(--bs-secondary-rgb), 0.5)
+}
+
+.fade {
+    transition: all 0.2s ease-in-out;
+}
+
+
+.input-group {
+    margin: 1rem 0;
+}
+
+.input-group-text {
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+
+.form-control, .form-select {
+    border: 3px solid lightsteelblue;
+    padding: 0.5rem;
+}
+
+.form-control.disabled, .form-select.disabled {
+    border: 3px solid var(--light);
+    background: var(--light);
+}
+
+.col.form-text {
+    color: var(--bs-gray);
+    text-align: justify;
+}
+
+ul.nav-tabs {
+    border: 0;
+}
+
+div.local_proxy_info {
+    padding: 1.5rem;
+    color: var(--bs-gray-600);
+    text-align: justify;
+}
+
+.btn-reset-template {
+    border-width: 3px;
+    border-radius: 0.75rem !important;
+}
+
+
+/*  Validierungsstyling undo greenish bs5 stuff */
+
+.form-control.is-valid, .form-select.is-valid, .was-validated .form-control:valid {
+    border: 3px solid lightsteelblue;
+}
+
+.form-check-input.is-valid ~ .form-check-label, .was-validated .form-check-input:valid ~ .form-check-label {
+    color: #333;
+}
+
+.form-check-input.is-valid, .was-validated .form-check-input:valid {
+    border: 1px solid rgba(0,0,0,.25);
+}
+
+.form-check-input.is-valid:checked, .was-validated .form-check-input:valid:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Beautifying the toast container */
+.toast-container:empty {
+    display:none;
+}
+
+.toast-container {
+    background: rgba(0,0,0,0.25);
+    padding: 1rem !important;
 }
