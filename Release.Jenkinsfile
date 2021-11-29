@@ -10,7 +10,8 @@ def GROUP_ID_PATH = "de/gematik/test"
 def GROUP_ID = "de.gematik.test"
 def ARTIFACT_ID = 'tiger-standalone-proxy'
 def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-bdd-driver-generator-maven-plugin,tiger-standalone-proxy,tiger-proxy,tiger-testenv-mgr,tiger-test-lib'
-def POM_PATH = 'pom.xml'						
+def POM_PATH = 'pom.xml'
+def PACKAGING = "jar"
 
 pipeline {
     options {
@@ -45,7 +46,7 @@ pipeline {
 
         stage('Environment') {
             environment {
-                LATEST = nexusGetLatestVersionByGAVR(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID).trim()
+                LATEST = nexusGetLatestVersionByGAVR(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID, PACKAGING).trim()
                 TAG_NAME = 'Release/ReleaseBuild'
             }
             stages {

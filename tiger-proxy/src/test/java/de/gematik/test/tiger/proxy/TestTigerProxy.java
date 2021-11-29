@@ -9,6 +9,7 @@ import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.tigerProxy.*;
@@ -141,15 +142,15 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(0)
-            .findElement("$.recipient")
-            .flatMap(RbelElement::seekValue))
-            .get()
-            .isEqualTo(new RbelHostname("localhost", fakeBackendServer.port()));
+            .findElement("$.receiver")
+            .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+            .map(Object::toString)).get()
+            .isEqualTo("localhost:" + fakeBackendServer.port());
         assertThat(tigerProxy.getRbelMessages().get(1)
             .findElement("$.sender")
-            .flatMap(RbelElement::seekValue))
-            .get()
-            .isEqualTo(new RbelHostname("localhost", fakeBackendServer.port()));
+            .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+            .map(Object::toString)).get()
+            .isEqualTo("localhost:" + fakeBackendServer.port());
     }
 
     @Test
@@ -202,15 +203,15 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         proxyRest.get("http://foo.bar/foobar").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(0)
-            .findElement("$.recipient")
-            .flatMap(RbelElement::seekValue))
-            .get()
-            .isEqualTo(new RbelHostname("foo.bar", 80));
+            .findElement("$.receiver")
+            .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+            .map(Object::toString)).get()
+            .isEqualTo("foo.bar:80");
         assertThat(tigerProxy.getRbelMessages().get(1)
             .findElement("$.sender")
-            .flatMap(RbelElement::seekValue))
-            .get()
-            .isEqualTo(new RbelHostname("foo.bar", 80));
+            .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+            .map(Object::toString)).get()
+            .isEqualTo("foo.bar:80");
     }
 
     @Test
