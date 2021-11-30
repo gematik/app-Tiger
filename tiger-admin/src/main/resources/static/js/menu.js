@@ -87,6 +87,8 @@ function populateServersFromYaml(testEnvYaml) {
     showWelcomeCard();
   }
   notifyChangesToTestenvData(false);
+  snack(`Loaded yaml file`, 'success');
+
 }
 
 function addServer(serverKey, serverData) {
@@ -100,7 +102,7 @@ function addServer(serverKey, serverData) {
 
   formular.initFormular(serverKey, serverData);
 
-  $('*[name]').change(function () {
+  formular.find('*[name]').change(function () {
     const required = $(this).attr('required');
     const validation = $(this).attr('validation');
     const value = $(this).val();
@@ -180,6 +182,7 @@ function addSelectedServer() {
   notifyChangesToTestenvData(true);
   updateServerLists(Object.keys(currEnvironment));
   addServerModal.modal('hide');
+  snack(`Added node ${newKey}`, 'success', 3000);
 }
 
 function notifyChangesToTestenvData(flag) {

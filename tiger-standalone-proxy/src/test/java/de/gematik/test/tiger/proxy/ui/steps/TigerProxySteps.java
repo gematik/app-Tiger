@@ -151,7 +151,7 @@ public class TigerProxySteps {
                     }
                 });
         } catch (ConditionTimeoutException cte) {
-            throw new AssertionError("Timed out after 10s trying to find downloaded report");
+            throw new AssertionError("Timed out after 10s trying to find downloaded report in folder " + downloadFolder.getAbsolutePath());
         }
         return downloadedReport.get();
     }

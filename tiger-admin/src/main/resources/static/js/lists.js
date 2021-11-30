@@ -155,6 +155,11 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
   checkTag('addClickNKeyCallbacks2ListItem', this, 'SPAN')
   this.each(function () {
     if (editable) {
+      const li = $(this).parent();
+      li.off("click")
+      li.click(() => {
+        abortOtherEditing();
+      });
       $(this).off('click');
       $(this).click((ev) => {
         $(this).off('keydown');

@@ -34,41 +34,25 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-core</artifactId>
-            <!-- Security related excludes -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jruby</groupId>
-                    <artifactId>jruby-complete</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.thoughtworks.xstream</groupId>
-                    <artifactId>xstream</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>${version.serenity.core}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-model</artifactId>
-            <!-- Security related excludes -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.thoughtworks.xstream</groupId>
-                    <artifactId>xstream</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>${version.serenity.core}</version>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber6</artifactId>
+            <artifactId>serenity-cucumber</artifactId>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-rest-assured</artifactId>
-            <version>${version.serenity.core}</version>
         </dependency>
-        <dependency><!-- needed for type registry -->
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-core</artifactId>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-screenplay</artifactId>
         </dependency>
 
         <!-- needed for java test code parsing -->
@@ -226,35 +210,30 @@
 
             <!-- plugin used to generate serenity driver classes from vm template file -->
             <plugin>
-                <groupId>com.github.temyers</groupId>
-                <artifactId>cucumber-jvm-parallel-plugin</artifactId>
-                <version>4.2.0</version>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+                <version>0.16.1</version>
                 <executions>
                     <execution>
                         <configuration>
-                            <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
-                            <glue>
-                                <package>de.gematik.test.tiger.glue</package>
-                                <!-- add your packages here -->
-                            </glue>
-                            <plugins>
-                            </plugins>
-                            <parallelScheme>FEATURE</parallelScheme>
-
-                            <!-- deactivated as jenkins xunit plugin is not very flexible and does not work well with serenity junit xml exports
-                            see https://issues.apache.org/jira/browse/SUREFIRE-1533
-                            <plugins>
-                              <plugin>
-                                <name>junit</name>
-                                <extension>xml</extension>
-                              </plugin>
-                            </plugins>-->
+                            <basedir>${project.basedir}/src/test/resources/features</basedir>
+                            <includes>
+                                <include>**/*.feature</include>
+                            </includes>
+                            <!-- mandatory -->
+                            <glues>
+                                <glue>de.gematik.test.tiger.glue</glue>
+                            </glues>
+                            <!-- optional -->
+                            <driverPackage>de.gematik.test.tiger.testlib.bdd.drivers</driverPackage>
+                            <!-- optional -->
+                            <driverClassName>Parallel${ctr}IT</driverClassName>
                         </configuration>
-                        <goals>
-                            <goal>generateRunners</goal>
-                        </goals>
-                        <id>generateRunners</id>
                         <phase>generate-test-sources</phase>
+                        <id>default-testSources</id>
+                        <goals>
+                            <goal>generate-drivers</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

@@ -6,7 +6,6 @@ package de.gematik.test.tiger.common.context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import java.util.Map;
 import org.junit.Test;
 

@@ -73,18 +73,19 @@
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
         <version.rbellogger>0.18.0</version.rbellogger>
-        <version.cucumber>6.10.4</version.cucumber>
-        <version.serenity.core>2.4.34</version.serenity.core>
-        <version.serenity.cucumber.6>2.4.34</version.serenity.cucumber.6>
-        <version.serenity.maven.plugin>2.4.34</version.serenity.maven.plugin>
+        <version.cucumber>6.11.0</version.cucumber>
+        <version.serenity.core>3.0.5</version.serenity.core>
+        <version.serenity.maven.plugin>3.0.5</version.serenity.maven.plugin>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.8.1</version.junit5>
         <version.assertj>3.21.0</version.assertj>
-        <version.jackson>2.11.3</version.jackson>
+        <version.jackson>2.12.3</version.jackson>
         <version.slf4j>1.7.32</version.slf4j>
         <version.junit4>4.13.2</version.junit4>
         <version.lombok>1.18.22</version.lombok>
         <version.mockserver>5.11.9</version.mockserver>
+
+        <htmlunit.version>3.55.0</htmlunit.version>
 
         <sonar.coverage.jacoco.xmlReportPaths>${project.reporting.outputDirectory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -141,13 +142,14 @@
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-core</artifactId>
                 <version>${version.serenity.core}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
-                <artifactId>serenity-model</artifactId>
+                <artifactId>serenity-cucumber</artifactId>
                 <version>${version.serenity.core}</version>
+                <scope>test</scope>
             </dependency>
-
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-rest-assured</artifactId>
@@ -156,13 +158,9 @@
             </dependency>
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
-                <artifactId>serenity-cucumber6</artifactId>
-                <version>${version.serenity.cucumber.6}</version>
-            </dependency>
-            <dependency><!-- needed for type registry -->
-                <groupId>io.cucumber</groupId>
-                <artifactId>cucumber-core</artifactId>
-                <version>${version.cucumber}</version>
+                <artifactId>serenity-screenplay</artifactId>
+                <version>${version.serenity.core}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.cucumber</groupId>
@@ -184,7 +182,17 @@
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
 
@@ -384,7 +392,7 @@
                     <dependency>
                         <groupId>net.serenity-bdd</groupId>
                         <artifactId>serenity-single-page-report</artifactId>
-                        <version>2.3.33</version>
+                        <version>${version.serenity.maven.plugin}</version>
                     </dependency>
                 </dependencies>
                 <configuration>

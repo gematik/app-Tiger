@@ -21,10 +21,6 @@
         <jacoco.skip>true</jacoco.skip>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <serenity.version>2.4.34</serenity.version>
-        <serenity.maven.version>2.4.34</serenity.maven.version>
-        <serenity.cucumber6.version>2.4.34</serenity.cucumber6.version>
-        <cucumber6.version>6.10.4</cucumber6.version>
     </properties>
 
     <dependencyManagement>
@@ -134,53 +130,32 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-core</artifactId>
-            <version>${serenity.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.cucumber</groupId>
-                    <artifactId>cucumber-core</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-cucumber</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-rest-assured</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-spring</artifactId>
-            <version>${serenity.version}</version>
+            <version>${version.serenity.core}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-screenplay</artifactId>
-            <version>${serenity.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.cucumber</groupId>
-                    <artifactId>cucumber-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber6</artifactId>
-            <version>${serenity.cucumber6.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-java</artifactId>
-            <version>${cucumber6.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <artifactId>serenity-rest-assured</artifactId>
-            <groupId>net.serenity-bdd</groupId>
-            <scope>test</scope>
-            <version>${version.serenity.core}</version>
         </dependency>
     </dependencies>
 
@@ -231,6 +206,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
+                    <environmentVariables>
+                        <MOZ_HEADLESS>1</MOZ_HEADLESS>
+                    </environmentVariables>
                     <!-- TODO Julian this is workaround for java heap space issue -->
                     <forkMode>always</forkMode>
                 </configuration>
@@ -265,7 +243,7 @@
                     <dependency>
                         <groupId>net.serenity-bdd</groupId>
                         <artifactId>serenity-single-page-report</artifactId>
-                        <version>2.3.33</version>
+                        <version>${version.serenity.maven.plugin}</version>
                     </dependency>
                 </dependencies>
                 <configuration>

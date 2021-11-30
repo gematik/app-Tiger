@@ -1,10 +1,7 @@
 package de.gematik.test.tiger.admin.controller;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import java.io.File;
@@ -13,29 +10,28 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.testcontainers.shaded.com.github.dockerjava.core.MediaType;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 public class TigerFileNavigatorControllerTest {
 
+    private static String slash = File.separator;
     @Autowired
     private MockMvc mockMvc;
 
-    private static String slash = File.separator;
-
     @Test
     public void testMultipleConfigFiles() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/navigator/folder?current=../tiger-testenv-mgr/src/test/resources/de/gematik/test/tiger/testenvmgr"))
+        this.mockMvc.perform(MockMvcRequestBuilders.get(
+                "/navigator/folder?current=../tiger-testenv-mgr/src/test/resources/de/gematik/test/tiger/testenvmgr"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.folders").value(hasSize(1)))
             .andExpect(jsonPath("$.cfgfiles").value(hasSize(16)))
             .andExpect(jsonPath("$.cfgfiles[0]").value(is("testAdminUI.yaml")))
             .andExpect(jsonPath("$.cfgfiles[15]").value(is("testUnknownTemplate.yaml")));
     }
+
     @Test
     public void testMultipleSubFolders() throws Exception {
         String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test").toFile().toString();

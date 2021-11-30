@@ -33,7 +33,6 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.find(".collapse-icon").attr('title', 'Fold/Unfold');
   this.find(".btn-advanced").attr('title', 'Show advanced settings');
 
-
   // deal with source input field special treatment
   // adapt source field according to type (single line for docker, tigerproxy,
   // externalJar, externalUrl, only for docker compose its a list)
