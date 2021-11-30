@@ -127,7 +127,7 @@ public class TigerProxySteps {
         actionHelper("//button[@id='saveMsgs']");
     }
 
-    public File assertReportDownloaded() throws InterruptedException {
+    public File assertReportDownloaded() {
         final AtomicReference<File> downloadedReport = new AtomicReference<>();
         try {
             await().atMost(10, TimeUnit.SECONDS).pollDelay(1, TimeUnit.SECONDS)
