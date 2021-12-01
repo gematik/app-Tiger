@@ -206,7 +206,7 @@ public class SerenityDriverGeneratorMavenPlugin extends AbstractMojo {
         String driverSourceCode = template.replace("${ctr}", String.valueOf(ctr))
             .replace("${package}", packageLine)
             .replace("${driverClassName}", currentDriverClassName)
-            .replace("${feature}", featurePath)
+            .replace("${feature}", featurePath.replace("\\", "/"))
             .replace("${glues}", glueCsv);
         try (FileOutputStream fos = new FileOutputStream(out)) {
             IOUtils.write(driverSourceCode, fos, StandardCharsets.UTF_8);
@@ -217,7 +217,7 @@ public class SerenityDriverGeneratorMavenPlugin extends AbstractMojo {
         if (StringUtils.isBlank(basedir)) {
             return file;
         }
-        return basedir + File.separator + file;
+        return basedir + "/" + file;
     }
 
 }

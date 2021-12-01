@@ -269,12 +269,12 @@ public class TigerProxySteps {
 
     public void assertElemTextMatches(String xpath, String text) {
         WebElement el = mainPage.elemX(xpath);
-        Assert.assertEquals(text, el.getText());
+        Assert.assertEquals(text.replace("\n", ""), el.getText().replace("\n", ""));
     }
 
     public void assertElemTextDoesntMatch(String cssSelector, String text) {
         WebElement el = mainPage.getDriver().findElement(By.cssSelector(cssSelector));
-        Assert.assertNotEquals(text, el.getText());
+        Assert.assertNotEquals(text.replace("\n", ""), el.getText().replace("\n", ""));
     }
 
     public void assertElementExistsAndIsDisplayed(String xpath) {

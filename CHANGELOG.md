@@ -1,6 +1,11 @@
 # Changelog Tiger Testplattform
 
-## Release 0.16.0
+## Release 0.16.3
+
+## Bugfix
+* TGR-219 bdd driver generator plugin created invalid feature path on windows 
+
+## Release 0.16.2
 
 ## Bugfix
 * TGR-212 Content-Length now correctly after Rbel-Modifications
