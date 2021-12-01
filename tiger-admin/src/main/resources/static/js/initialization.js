@@ -8,14 +8,14 @@ let bs5Utils;
 const bs5UtilsDismissible = true;
 const bs5UtilsDelay5Sec = 5000;
 
-loadTemplatesFromServer();
-
 $(document).ready(function () {
   Bs5Utils.defaults.toasts.position = 'bottom-right';
   Bs5Utils.defaults.toasts.container = 'toast-container';
   Bs5Utils.defaults.toasts.stacking = true;
   /** @namespace Bs5Utils.defaults */
   bs5Utils = new Bs5Utils();
+
+  loadTemplatesFromServer();
 
   // sidebar
 
@@ -110,7 +110,8 @@ $(document).ready(function () {
 
   // global key shortcuts
   $(document).keydown(function (ev) {
-    if (ev.metaKey || ev.ctrlKey) {
+    console.log(ev.keyCode);
+    if ((ev.metaKey || ev.ctrlKey) && ev.shiftKey) {
       switch (ev.keyCode) {
         case 65: // Ctrl + A
           openAddServerModal();

@@ -127,7 +127,7 @@ public class TigerProxySteps {
         actionHelper("//button[@id='saveMsgs']");
     }
 
-    public File assertReportDownloaded() throws InterruptedException {
+    public File assertReportDownloaded() {
         final AtomicReference<File> downloadedReport = new AtomicReference<>();
         try {
             await().atMost(10, TimeUnit.SECONDS).pollDelay(1, TimeUnit.SECONDS)
@@ -151,7 +151,7 @@ public class TigerProxySteps {
                     }
                 });
         } catch (ConditionTimeoutException cte) {
-            throw new AssertionError("Timed out after 10s trying to find downloaded report");
+            throw new AssertionError("Timed out after 10s trying to find downloaded report in folder " + downloadFolder.getAbsolutePath());
         }
         return downloadedReport.get();
     }
@@ -269,12 +269,12 @@ public class TigerProxySteps {
 
     public void assertElemTextMatches(String xpath, String text) {
         WebElement el = mainPage.elemX(xpath);
-        Assert.assertEquals(text, el.getText());
+        Assert.assertEquals(text.replace("\n", ""), el.getText().replace("\n", ""));
     }
 
     public void assertElemTextDoesntMatch(String cssSelector, String text) {
         WebElement el = mainPage.getDriver().findElement(By.cssSelector(cssSelector));
-        Assert.assertNotEquals(text, el.getText());
+        Assert.assertNotEquals(text.replace("\n", ""), el.getText().replace("\n", ""));
     }
 
     public void assertElementExistsAndIsDisplayed(String xpath) {

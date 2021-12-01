@@ -36,6 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestTigerProxyModifications extends AbstractTigerProxyTest {
     @Test
     public void replaceStuffForForwardRoute() {
+        final String jsonBody = "{\"another\":{\"node\":{\"path\":\"correctValue\"}}}";
+
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
@@ -65,7 +67,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
                 RbelModificationDescription.builder()
                     .condition("isResponse")
                     .targetElement("$.body")
-                    .replaceWith("{\"another\":{\"node\":{\"path\":\"correctValue\"}}}")
+                    .replaceWith(jsonBody)
                     .build(),
                 RbelModificationDescription.builder()
                     .condition("isResponse")
@@ -85,6 +87,9 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.header.Matched-Stub-Id"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified value");
+        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.header.Content-Length"))
+            .get().extracting(RbelElement::getRawStringContent)
+            .isEqualTo(Integer.toString(jsonBody.length()));
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.another.node.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("correctValue");

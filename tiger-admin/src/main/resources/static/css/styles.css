@@ -248,7 +248,7 @@ i.collapse-icon {
 
 .advanced .input-group *:not(.invalid-feedback), .advanced legend, .advanced .form-switch *,
 .advanced.input-group *:not(.invalid-feedback), .advanced.form-switch * {
-/**    color: var(--info);*/
+    /**    color: var(--info);*/
 }
 
 .editing {
@@ -423,7 +423,7 @@ div.local_proxy_info {
 }
 
 .form-check-input.is-valid, .was-validated .form-check-input:valid {
-    border: 1px solid rgba(0,0,0,.25);
+    border: 1px solid rgba(0, 0, 0, .25);
 }
 
 .form-check-input.is-valid:checked, .was-validated .form-check-input:valid:checked {
@@ -433,10 +433,15 @@ div.local_proxy_info {
 
 /* Beautifying the toast container */
 .toast-container:empty {
-    display:none;
+    display: none;
 }
 
 .toast-container {
-    background: rgba(0,0,0,0.25);
+    background: rgba(0, 0, 0, 0.25);
     padding: 1rem !important;
+    z-index: 10000;
+}
+
+.modal {
+    z-index: 20000;
 }

@@ -10,7 +10,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.16.2</version>
+        <version>0.16.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,41 +34,25 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-core</artifactId>
-            <!-- Security related excludes -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jruby</groupId>
-                    <artifactId>jruby-complete</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.thoughtworks.xstream</groupId>
-                    <artifactId>xstream</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>${version.serenity.core}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-model</artifactId>
-            <!-- Security related excludes -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.thoughtworks.xstream</groupId>
-                    <artifactId>xstream</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>${version.serenity.core}</version>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber6</artifactId>
+            <artifactId>serenity-cucumber</artifactId>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-rest-assured</artifactId>
-            <version>${version.serenity.core}</version>
         </dependency>
-        <dependency><!-- needed for type registry -->
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-core</artifactId>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-screenplay</artifactId>
         </dependency>
 
         <!-- needed for java test code parsing -->
@@ -224,40 +208,6 @@
             </plugin>
             <!-- end create reusable test jar part -->
 
-            <!-- plugin used to generate serenity driver classes from vm template file -->
-            <plugin>
-                <groupId>com.github.temyers</groupId>
-                <artifactId>cucumber-jvm-parallel-plugin</artifactId>
-                <version>4.2.0</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
-                            <glue>
-                                <package>de.gematik.test.tiger.glue</package>
-                                <!-- add your packages here -->
-                            </glue>
-                            <plugins>
-                            </plugins>
-                            <parallelScheme>FEATURE</parallelScheme>
-
-                            <!-- deactivated as jenkins xunit plugin is not very flexible and does not work well with serenity junit xml exports
-                            see https://issues.apache.org/jira/browse/SUREFIRE-1533
-                            <plugins>
-                              <plugin>
-                                <name>junit</name>
-                                <extension>xml</extension>
-                              </plugin>
-                            </plugins>-->
-                        </configuration>
-                        <goals>
-                            <goal>generateRunners</goal>
-                        </goals>
-                        <id>generateRunners</id>
-                        <phase>generate-test-sources</phase>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <groupId>org.apache.maven.plugins</groupId>
