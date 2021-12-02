@@ -1,5 +1,16 @@
 # Changelog Tiger Testplattform
 
+## Release 0.17.0
+
+### Breaking Changes
+* TGR-208: The startup-order of the servers is now ONLY determined by the "dependsUpon"-Flag. This can give a 
+ comma separated list of servers that need to be started prior to the given server. Please review & change all 
+ testenv.ymls accordingly.
+
+# Features
+* TGR-208: Refactoring Testenv-Mgr
+* TGR-208: Startup of services by Testenv-Mgr can now be parallel and in given sequence (dependsUpon-Flag added)
+
 ## Release 0.16.3
 
 ## Bugfix
@@ -21,8 +32,6 @@
 ### Features
 * TGR-136 Client-addresses are now correctly set in Rbel-Messages
 * TGR-186 First version of an UI test run monitor, displaying all banner and text messages to guide manual testers.
-
-### Breaking Changes
 
 ### Bugfixes
 * TGR-183 German keyword "Gegeben sei" was not correctly detected by FeatureParser

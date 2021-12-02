@@ -4,32 +4,34 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.stream.Stream;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @Slf4j
 public class TestTigerTestEnvMgr {
@@ -47,34 +49,6 @@ public class TestTigerTestEnvMgr {
         }
     }
 
-    @BeforeEach
-    public void printName(TestInfo testInfo) {
-        if (testInfo.getTestMethod().isPresent()) {
-            log.info(Ansi.colorize("Starting " + testInfo.getTestMethod().get().getName(), RbelAnsiColors.GREEN_BOLD));
-        } else {
-            log.warn(Ansi.colorize("Starting UNKNOWN step", RbelAnsiColors.GREEN_BOLD));
-        }
-    }
-
-    // -----------------------------------------------------------------------------------------------------------------
-    //
-    // check missing mandatory props are detected
-    // check key twice in yaml leads to exception
-    //
-
-    @ParameterizedTest
-    @MethodSource("cfgFileAndMandatoryPropertyProvider")
-    public void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop)
-        throws InvocationTargetException, IllegalAccessException {
-        System.setProperty("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml");
-
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
-        nullifyObjectProperty(srv, prop);
-        assertThatThrownBy(() -> envMgr.checkCfgProperties(cfgFile, srv)).isInstanceOf(TigerTestEnvException.class);
-    }
-
     static Stream<Arguments> cfgFileAndMandatoryPropertyProvider() {
         return Stream.of(
             arguments("testDocker", "type"),
@@ -89,16 +63,48 @@ public class TestTigerTestEnvMgr {
         );
     }
 
+    // -----------------------------------------------------------------------------------------------------------------
+    //
+    // check missing mandatory props are detected
+    // check key twice in yaml leads to exception
+    //
+
+    @BeforeEach
+    public void printName(TestInfo testInfo) {
+        if (testInfo.getTestMethod().isPresent()) {
+            log.info(Ansi.colorize("Starting " + testInfo.getTestMethod().get().getName(), RbelAnsiColors.GREEN_BOLD));
+        } else {
+            log.warn(Ansi.colorize("Starting UNKNOWN step", RbelAnsiColors.GREEN_BOLD));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("cfgFileAndMandatoryPropertyProvider")
+    public void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop) {
+        System.setProperty("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml");
+
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
+            ReflectionTestUtils.setField(srv, prop, null);
+            assertThatThrownBy(() -> TigerServer.create("blub", srv, null)
+                .assertThatConfigurationIsCorrect())
+                .isInstanceOf(TigerTestEnvException.class);
+        });
+    }
+
     @Test
     public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testTigerProxy.yaml");
 
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-        srv.getTigerProxyCfg().setServerPort(-1);
-        assertThatThrownBy(() -> envMgr.checkCfgProperties("testTigerProxy", srv)).isInstanceOf(
-            TigerTestEnvException.class);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
+            srv.getTigerProxyCfg().setServerPort(-1);
+            assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, null)
+                .assertThatConfigurationIsCorrect())
+                .isInstanceOf(TigerTestEnvException.class);
+        });
     }
 
     @Test
@@ -123,44 +129,41 @@ public class TestTigerTestEnvMgr {
     public void testCheckCfgPropertiesMinimumConfigPasses_OK(String cfgFileName) {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFileName);
-        envMgr.checkCfgProperties(cfgFileName, srv);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFileName);
+            TigerServer.create("blub", srv, null).assertThatConfigurationIsCorrect();
+        });
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"testDockerMVP", "testTigerProxy", "testExternalJarMVP", "testExternalUrl"})
-    public void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName)
-        throws IOException, InterruptedException {
+    public void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) throws IOException {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.getConfiguration().getServers().get(cfgFileName);
-        try {
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.getConfiguration().getServers().get(cfgFileName);
             envMgr.setUpEnvironment();
-            Thread.sleep(2000);
-        } finally {
-            envMgr.shutDown(cfgFileName);
-        }
+        });
     }
 
     @Test
     public void testHostnameIsAutosetIfMissingK() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testServerWithNoHostname.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.setUpEnvironment();
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testServerWithNoHostname");
-        assertThat(srv.getHostname()).isEqualTo("testServerWithNoHostname");
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            TigerServer srv = envMgr.getServers().get("testServerWithNoHostname");
+            assertThat(srv.getHostname()).isEqualTo("testServerWithNoHostname");
+        });
     }
 
     @Test
     public void testHostnameForDockerComposeNotAllowed_NOK() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testComposeWithHostname.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerConfigurationException.class);
+        createTestEnvMgrSafelyAndExecute(envMgr ->
+            assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerConfigurationException.class));
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -172,10 +175,11 @@ public class TestTigerTestEnvMgr {
     public void testCreateDockerNonExistingVersion() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDockerMVP.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testDockerMVP");
-        srv.setVersion("200.200.200-2000");
-        assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            CfgServer srv = envMgr.getConfiguration().getServers().get("testDockerMVP");
+            srv.setVersion("200.200.200-2000");
+            assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class);
+        });
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -187,24 +191,23 @@ public class TestTigerTestEnvMgr {
     public void testExternalUrlViaProxy() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.setUpEnvironment();
+        createTestEnvMgrSafelyAndExecute(envMgr -> envMgr.setUpEnvironment());
     }
 
     @Test
     public void testExternalUrlInternalUrl() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrlInternalServer.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
-        srv.getSource().set(0, "https://build.top.local");
-        envMgr.setUpEnvironment();
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
+            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
+            srv.getSource().set(0, "https://build.top.local");
+            envMgr.setUpEnvironment();
+        });
     }
 
     @Test
     public void testCreateExternalJarEnvInvalidJar() throws IOException {
-//        System.setProperty("http.nonProxyHosts", "build.top.local|*.local");
         File f = new File("WinstoneHTTPServer");
         FileUtils.deleteDirectory(f);
         if (!f.mkdirs()) {
@@ -224,7 +227,7 @@ public class TestTigerTestEnvMgr {
         } finally {
             FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
             try {
-                shutDownWebServer(envMgr, "testExternalJarMVP");
+                shutDownWebServer(envMgr);
             } catch (Exception ignore) {
             }
         }
@@ -234,50 +237,48 @@ public class TestTigerTestEnvMgr {
     public void testCreateExternalJarRelativePath() throws InterruptedException {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
-        srv.getSource().set(0, "local://miniJar.jar");
-        srv.getExternalJarOptions().setWorkingDir("src/test/resources");
-        srv.getExternalJarOptions().setHealthcheck("NONE");
-        srv.setStartupTimeoutSec(1);
-        try {
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
+            srv.getSource().set(0, "local://miniJar.jar");
+            srv.getExternalJarOptions().setWorkingDir("src/test/resources");
+            srv.getExternalJarOptions().setHealthcheck("NONE");
+            srv.setStartupTimeoutSec(1);
             envMgr.setUpEnvironment();
-        } finally {
-            shutDownWebServer(envMgr, "testExternalJarMVP");
-        }
+        });
     }
 
     @Test
-    public void testCreateExternalJarNonExistingWorkingDir() throws InterruptedException, IOException {
+    public void testCreateExternalJarNonExistingWorkingDir() throws IOException {
         File folder = new File("NonExistingFolder");
         if (folder.exists()) {
             FileUtils.deleteDirectory(folder);
         }
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
-        srv.getExternalJarOptions().setWorkingDir("NonExistingFolder");
-        srv.getExternalJarOptions().setHealthcheck("NONE");
-        srv.setStartupTimeoutSec(1);
-        try {
-            envMgr.setUpEnvironment();
-        } finally {
-            shutDownWebServer(envMgr, "testExternalJarMVP");
-            FileUtils.deleteDirectory(folder);
-        }
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
+            srv.getExternalJarOptions().setWorkingDir("NonExistingFolder");
+            srv.getExternalJarOptions().setHealthcheck("NONE");
+            srv.setStartupTimeoutSec(1);
+            try {
+                envMgr.setUpEnvironment();
+            } finally {
+                FileUtils.deleteDirectory(folder);
+            }
+        });
     }
 
     @Test
     public void testCreateExternalJarRelativePathFileNotFound() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
-        srv.getSource().set(0, "local://miniJarWHICHDOESNOTEXIST.jar");
-        srv.getExternalJarOptions().setWorkingDir("src/test/resources");
-        assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
-            .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
+            srv.getSource().set(0, "local://miniJarWHICHDOESNOTEXIST.jar");
+            srv.getExternalJarOptions().setWorkingDir("src/test/resources");
+            assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
+                .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
+        });
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -291,8 +292,7 @@ public class TestTigerTestEnvMgr {
 
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testReverseProxy.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        try {
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             URLConnection con = new URL("http://127.0.0.1:10020").openConnection();
             con.connect();
@@ -301,20 +301,16 @@ public class TestTigerTestEnvMgr {
                 .startsWith("<html>").endsWith("</html>")
                 .contains("Directory list generated by Winstone Servlet Engine");
             con.getInputStream().close();
-        } finally {
-            shutDownWebServer(envMgr, "testWinstone2");
-            shutDownWebServer(envMgr, "reverseproxy1");
-        }
+        });
     }
 
     @Test
-    public void testReverseProxyManual() throws IOException, InterruptedException {
+    public void testReverseProxyManual() throws IOException {
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
 
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testReverseProxyManual.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        try {
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             URLConnection con = new URL("http://127.0.0.1:10010").openConnection();
             con.connect();
@@ -323,10 +319,7 @@ public class TestTigerTestEnvMgr {
                 .startsWith("<html>").endsWith("</html>")
                 .contains("Directory list generated by Winstone Servlet Engine");
             con.getInputStream().close();
-        } finally {
-            shutDownWebServer(envMgr, "testWinstone3");
-            shutDownWebServer(envMgr, "reverseproxy2");
-        }
+        });
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -356,29 +349,34 @@ public class TestTigerTestEnvMgr {
     //
     // helper methods
 
+    private void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
+        TigerTestEnvMgr envMgr = null;
+        try {
+            envMgr = new TigerTestEnvMgr();
+            testEnvMgrConsumer.accept(envMgr);
+        } finally {
+            if (envMgr != null) {
+                envMgr.shutDown();
+            }
+        }
+    }
 
-    private void shutDownWebServer(TigerTestEnvMgr envMgr, String serverName) throws InterruptedException {
+    private void shutDownWebServer(TigerTestEnvMgr envMgr) throws InterruptedException {
         Thread.sleep(2000);
-        envMgr.shutDown(serverName);
+        envMgr.shutDown();
     }
-
-    private void nullifyObjectProperty(Object obj, String propName)
-        throws InvocationTargetException, IllegalAccessException {
-        Method mthd = Arrays.stream(obj.getClass()
-                .getMethods())
-            .filter(m -> m.getName().equals("set" + Character.toUpperCase(propName.charAt(0)) + propName.substring(1)))
-            .findAny().orElseThrow();
-        mthd.invoke(obj, (Object) null);
-    }
-
 
     @Test
     @Disabled("Only for local testing as CI tests would take too long for this test method")
-    public void testCreateEpa2() throws InterruptedException {
+    public void testCreateEpa2() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/de/gematik/test/tiger/testenvmgr/epa.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.setUpEnvironment();
-        Thread.sleep(200000);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            try {
+                Thread.sleep(200000);
+            } catch (InterruptedException e) {
+            }
+        });
     }
 
     @Test
@@ -386,9 +384,13 @@ public class TestTigerTestEnvMgr {
     public void testCreateDemis() throws InterruptedException {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDemis.yaml");
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        envMgr.setUpEnvironment();
-        Thread.sleep(20000000);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            try {
+                Thread.sleep(20000000);
+            } catch (InterruptedException e) {
+            }
+        });
     }
 
     @Test

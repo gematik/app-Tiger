@@ -14,6 +14,25 @@ import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.servers.DockerComposeServer;
+import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,21 +50,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.testcontainers.DockerClientFactory;
-import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.containers.wait.strategy.WaitStrategy;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 
 @Slf4j
 @Getter
@@ -59,16 +63,13 @@ public class DockerMgr {
     private final Map<String, GenericContainer<?>> containers = new HashMap<>();
 
     @SuppressWarnings("unused")
-    public void startContainer(final CfgServer server, Configuration configuration, final TigerTestEnvMgr envmgr) {
-        var imageName = envmgr == null ? server.getSource().get(0) : envmgr.replaceSysPropsInString(server.getSource().get(0));
-        if (server.getVersion() != null) {
-            imageName += ":" + server.getVersion();
-        }
-        var imgName = DockerImageName.parse(imageName);
+    public void startContainer(final DockerServer server) {
+        String imageName = buildImageName(server);
+        var testContainersImageName = DockerImageName.parse(imageName);
 
         pullImage(imageName);
 
-        final GenericContainer<?> container = new GenericContainer<>(imgName);
+        final GenericContainer<?> container = new GenericContainer<>(testContainersImageName);
         try {
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
             final ContainerConfig containerConfig = iiResponse.getConfig();
@@ -97,23 +98,18 @@ public class DockerMgr {
                 container.withCopyFileToContainer(
                     MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC),
                     containerScriptPath);
-                /* WEBCLIENT
-                container.withCopyFileToContainer(
-                    MountableFile.forHostPath(Path.of("webclient"), MOD_ALL_EXEC),
-                    "/usr/bin/webclient");
-                 */
                 container.withCreateContainerCmdModifier(
                     cmd -> cmd.withUser("root").withEntrypoint(containerScriptPath));
             }
 
             container.setLogConsumers(List.of(new Slf4jLogConsumer(log)));
             log.info("Passing in environment:");
-            addEnvVarsToContainer(container, server.getEnvironment());
-            server.getEnvironment().stream()
+            addEnvVarsToContainer(container, server.getEnvironmentProperties());
+            server.getEnvironmentProperties().stream()
                 .filter(i -> i.startsWith("${"))
                 .map(i -> i.substring(2, i.length() - 1))
                 .forEach(envsetName -> {
-                    List<String> envVars = configuration.getEnvSets().stream()
+                    List<String> envVars = server.getTigerTestEnvMgr().getConfiguration().getEnvSets().stream()
                         .filter(envset -> envset.getName().equals(envsetName))
                         .map(CfgEnvSets::getEnvVars)
                         .findAny().orElseThrow(
@@ -143,7 +139,18 @@ public class DockerMgr {
         }
     }
 
-    public void startComposition(final CfgServer server) {
+    private String buildImageName(DockerServer server) {
+        String result = server.getDockerSource();
+        if (server.getTigerTestEnvMgr() == null) {
+            result = server.getTigerTestEnvMgr().replaceSysPropsInString(server.getDockerSource());
+        }
+        if (server.getConfiguration().getVersion() != null) {
+            result += ":" + server.getConfiguration().getVersion();
+        }
+        return result;
+    }
+
+    public void startComposition(final DockerComposeServer server) {
         var folder = Paths.get("target", "tiger-testenv-mgr", server.getHostname()).toFile();
         if (!folder.exists() && !folder.mkdirs()) {
             throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
@@ -177,7 +184,9 @@ public class DockerMgr {
                     WaitStrategy waitStrategy = (serviceUrl.getProtocol().equals("http") ?
                         Wait.forHttp(serviceUrl.getPath()) : Wait.forHttps(serviceUrl.getPath())).forStatusCode(200)
                         .forStatusCode(404)
-                        .withStartupTimeout(Duration.of(server.getStartupTimeoutSec(), ChronoUnit.SECONDS));
+                        .withStartupTimeout(Duration.of(server.getStartupTimeoutSec()
+                                .orElse(TigerServer.DEFAULT_STARTUP_TIMEOUT_IN_SECONDS),
+                            ChronoUnit.SECONDS));
                     composition = composition.withExposedService(
                         serviceUrl.getHost(), serviceUrl.getPort(), waitStrategy);
                 } catch (MalformedURLException e) {
@@ -238,8 +247,8 @@ public class DockerMgr {
         log.info("Docker image " + imageName + " is available locally!");
     }
 
-    private String createContainerStartupScript(CfgServer server, InspectImageResponse iiResponse, String[] startCmd,
-        String[] entryPointCmd) {
+    private String createContainerStartupScript(TigerServer server, InspectImageResponse iiResponse, String[] startCmd,
+                                                String[] entryPointCmd) {
         final ContainerConfig containerConfig = iiResponse.getConfig();
         if (containerConfig == null) {
             throw new TigerTestEnvException(
@@ -286,14 +295,14 @@ public class DockerMgr {
 
 
             // testing ca cert of proxy with openssl
-                //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
-                //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
-                //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
-                // idp-test.zentral.idp.splitdns.ti-dienste.de:443
-                // testing ca cert of proxy with rust client
-                // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
+            //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
+            //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
+            //+ envmgr.getLocalDockerProxy().getPort() + " -CAfile /tmp/chain.pem\n"
+            // idp-test.zentral.idp.splitdns.ti-dienste.de:443
+            // testing ca cert of proxy with rust client
+            // WEBCLIENT + "RUST_LOG=trace /usr/bin/webclient http://tsl \n"
 
-                // change to working dir and execute former entrypoint/startcmd
+            // change to working dir and execute former entrypoint/startcmd
             content += getContainerWorkingDirectory(containerConfig)
                 + String.join(" ", entryPointCmd).replace("\t", " ")
                 + " " + String.join(" ", startCmd).replace("\t", " ") + "\n";
@@ -317,9 +326,11 @@ public class DockerMgr {
         }
     }
 
-    private void waitForHealthyStartup(CfgServer server, GenericContainer<?> container) {
+    private void waitForHealthyStartup(TigerServer server, GenericContainer<?> container) {
         final long startms = System.currentTimeMillis();
-        long endhalfms = server.getStartupTimeoutSec() == null ? 5000 : server.getStartupTimeoutSec() * 500L;
+        long endhalfms = server.getStartupTimeoutSec()
+            .map(seconds -> seconds * 500L)
+            .orElse(5000l);
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {
@@ -342,7 +353,7 @@ public class DockerMgr {
         } catch (TigerTestEnvException ttee) {
             throw ttee;
         } catch (final RuntimeException rte) {
-            int timeout = server.getStartupTimeoutSec() != null ? server.getStartupTimeoutSec() : 20;
+            int timeout = server.getStartupTimeoutSec().orElse(TigerServer.DEFAULT_STARTUP_TIMEOUT_IN_SECONDS);
             log.warn("probably no health check configured - defaulting to " + timeout + "s startup time");
             try {
                 Thread.sleep(timeout * 1000L);
@@ -355,8 +366,8 @@ public class DockerMgr {
         }
     }
 
-    public void stopContainer(final CfgServer srv) {
-        final GenericContainer<?> container = containers.get(srv.getHostname());
+    public void stopContainer(final TigerServer server) {
+        final GenericContainer<?> container = containers.get(server.getHostname());
         if (container != null && container.getDockerClient() != null) {
             try {
                 container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
@@ -368,13 +379,13 @@ public class DockerMgr {
     }
 
     @SuppressWarnings("unused")
-    public void pauseContainer(final CfgServer srv) {
+    public void pauseContainer(final DockerServer srv) {
         final GenericContainer<?> container = containers.get(srv.getHostname());
         container.getDockerClient().pauseContainerCmd(container.getContainerId()).exec();
     }
 
     @SuppressWarnings("unused")
-    public void unpauseContainer(final CfgServer srv) {
+    public void unpauseContainer(final DockerServer srv) {
         final GenericContainer<?> container = containers.get(srv.getHostname());
         container.getDockerClient().unpauseContainerCmd(container.getContainerId()).exec();
     }

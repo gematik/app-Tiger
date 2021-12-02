@@ -13,6 +13,7 @@ public class CfgServer extends CfgTemplate {
 
     private String hostname;
     private String template;
+    private String dependsUpon;
     @JsonIgnore
     private boolean started = false;
 }

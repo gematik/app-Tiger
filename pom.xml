@@ -248,7 +248,12 @@
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>1.68</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.github.stefanbirkner</groupId>
+                <artifactId>system-lambda</artifactId>
+                <version>1.2.0</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
