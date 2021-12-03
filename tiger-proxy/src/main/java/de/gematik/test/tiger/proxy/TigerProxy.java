@@ -280,6 +280,22 @@ public class TigerProxy extends AbstractTigerProxy {
     }
 
     @Override
+    public RbelModificationDescription addModificaton(RbelModificationDescription modification) {
+        getRbelLogger().getRbelModifier().addModification(modification);
+        return modification;
+    }
+
+    @Override
+    public List<RbelModificationDescription> getModifications() {
+        return getRbelLogger().getRbelModifier().getModifications();
+    }
+
+    @Override
+    public void removeModification(String modificationId) {
+        getRbelLogger().getRbelModifier().deleteModification(modificationId);
+    }
+
+    @Override
     public TigerRoute addRoute(final TigerRoute tigerRoute) {
         tigerRouteMap.values().stream()
             .filter(existingRoute ->

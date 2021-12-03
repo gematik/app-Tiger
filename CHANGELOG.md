@@ -10,8 +10,9 @@
 # Features
 * TGR-208: Refactoring Testenv-Mgr
 * TGR-208: Startup of services by Testenv-Mgr can now be parallel and in given sequence (dependsUpon-Flag added)
+* TGR-218 added REST-Interface for Modifications
 
-## Release 0.16.3
+## Release 0.16.4
 
 ## Bugfix
 * TGR-219 bdd driver generator plugin created invalid feature path on windows 
