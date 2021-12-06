@@ -4,6 +4,8 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -16,6 +18,17 @@ import de.gematik.test.tiger.exception.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -35,21 +48,6 @@ import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.KeyAndCertificateFactory;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 import org.mockserver.socket.tls.NettySslContextFactory;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
-import static org.mockserver.model.HttpRequest.request;
 
 @Slf4j
 public class TigerProxy extends AbstractTigerProxy {
@@ -227,6 +225,7 @@ public class TigerProxy extends AbstractTigerProxy {
 
     private Optional<ProxyConfiguration> convertProxyConfiguration() {
         Optional<ProxyConfiguration> cfg = Optional.empty();
+
         try {
             if (getTigerProxyConfiguration().getForwardToProxy() == null
                 || StringUtils.isEmpty(getTigerProxyConfiguration().getForwardToProxy().getHostname())) {
@@ -248,7 +247,9 @@ public class TigerProxy extends AbstractTigerProxy {
                         .orElse(Type.HTTPS),
                     getTigerProxyConfiguration().getForwardToProxy().getHostname()
                         + ":"
-                        + getTigerProxyConfiguration().getForwardToProxy().getPort()));
+                        + getTigerProxyConfiguration().getForwardToProxy().getPort(),
+                    getTigerProxyConfiguration().getForwardToProxy().getUsername(),
+                    getTigerProxyConfiguration().getForwardToProxy().getPassword()));
             }
             return cfg;
         } finally {
@@ -300,7 +301,7 @@ public class TigerProxy extends AbstractTigerProxy {
         tigerRouteMap.values().stream()
             .filter(existingRoute ->
                 uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
-            || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom()))
+                    || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom()))
             .findAny()
             .ifPresent(existingRoute -> {
                 throw new TigerProxyRouteConflictException(existingRoute);
@@ -391,7 +392,8 @@ public class TigerProxy extends AbstractTigerProxy {
             .map(RbelElement::getRawContent)
             .mapToLong(ar -> ar.length)
             .sum();
-        final boolean exceedingLimit = bufferSize > (getTigerProxyConfiguration().getRbelBufferSizeInMb() * 1024 * 1024);
+        final boolean exceedingLimit =
+            bufferSize > (getTigerProxyConfiguration().getRbelBufferSizeInMb() * 1024 * 1024);
         if (exceedingLimit) {
             log.info("Buffersize is {} Mb which exceeds the limit of {} Mb",
                 bufferSize / (1024 ^ 2), getTigerProxyConfiguration().getRbelBufferSizeInMb());

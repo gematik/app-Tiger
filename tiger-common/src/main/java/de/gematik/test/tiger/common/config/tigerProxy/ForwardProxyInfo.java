@@ -21,4 +21,6 @@ public class ForwardProxyInfo {
     private String hostname;
     private Integer port;
     private TigerProxyType type;
+    private String username;
+    private String password;
 }

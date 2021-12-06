@@ -1,16 +1,14 @@
 package de.gematik.test.tiger.proxy;
 
+import static org.mockserver.model.Header.header;
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import java.net.URI;
+import java.net.URISyntaxException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import static org.mockserver.model.Header.header;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
 @Slf4j
 public class ForwardProxyCallback extends AbstractTigerRouteCallback {
