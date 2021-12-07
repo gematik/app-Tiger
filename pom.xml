@@ -90,7 +90,7 @@
         <sonar.coverage.jacoco.xmlReportPaths>${project.reporting.outputDirectory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
+        <sonar.jacoco.reportFolder>${project.basedir}/../target/jacoco</sonar.jacoco.reportFolder>
         <sonar.language>java</sonar.language>
     </properties>
 
@@ -330,8 +330,9 @@
                             <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <destFile>${project.build.directory}/jacoco-output/jacoco-unit-tests.exec</destFile>
+                            <destFile>${sonar.jacoco.reportFolder}/jacoco-unit-tests.exec</destFile>
                             <propertyName>surefire.jacoco.args</propertyName>
+                            <append>true</append>
                         </configuration>
                     </execution>
                     <execution>
@@ -341,8 +342,9 @@
                             <goal>report</goal>
                         </goals>
                         <configuration>
-                            <dataFile>${project.build.directory}/jacoco-output/jacoco-unit-tests.exec</dataFile>
+                            <dataFile>${sonar.jacoco.reportFolder}/jacoco-unit-tests.exec</dataFile>
                             <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+                            <append>true</append>
                         </configuration>
                     </execution>
                     <!-- Failsafe -->
@@ -353,8 +355,9 @@
                             <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <destFile>${project.build.directory}/jacoco-output/jacoco-failsafe-tests.exec</destFile>
+                            <destFile>${sonar.jacoco.reportFolder}/jacoco-failsafe-tests.exec</destFile>
                             <propertyName>failsafe.jacoco.args</propertyName>
+                            <append>true</append>
                         </configuration>
                     </execution>
                     <execution>
@@ -364,9 +367,10 @@
                             <goal>report</goal>
                         </goals>
                         <configuration>
-                            <dataFile>${project.build.directory}/jacoco-output/jacoco-failsafe-tests.exec</dataFile>
+                            <dataFile>${sonar.jacoco.reportFolder}/jacoco-failsafe-tests.exec</dataFile>
                             <outputDirectory>${project.reporting.outputDirectory}/jacoco-failsafe-test-coverage-report
                             </outputDirectory>
+                            <append>true</append>
                         </configuration>
                     </execution>
                 </executions>
