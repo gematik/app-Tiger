@@ -67,7 +67,7 @@ templates:
     # environment variables made available to other servers
     # NG TODO change to java system properties and env vars?
     # are not automatically imported but can be used as token ${ENVVAR}
-    # ${NAME} is replaced with server name
+    # ${NAME} is replaced with server host name
     # ${PORT:XXXXX} is replaced with the external port matchign the internal port XXXXX
     # ${PROXYHOST} is replaced with the local docker proxy host
     # ${PROXYPORT} is replaced with the local docker proxy port

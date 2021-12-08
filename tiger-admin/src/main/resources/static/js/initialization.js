@@ -45,10 +45,10 @@ $(document).ready(function () {
       }
     },
     items: {
-      "start": {name: "Start", icon: "fas text-success fa-play"},
-      "restart": {name: "Restart", icon: "fas text-success fa-undo"},
-      "stop": {name: "Stop", icon: "fas text-warning fa-stop"},
-      "delete": {name: "Delete", icon: "fas text-danger fa-trash-alt"},
+      "start": {name: "Start", icon: "fas text-success fa-play ctxt-start"},
+      "restart": {name: "Restart", icon: "fas text-success fa-undo ctxt-restart"},
+      "stop": {name: "Stop", icon: "fas text-warning fa-stop ctxt-stop"},
+      "delete": {name: "Delete", icon: "fas text-danger fa-trash-alt ctxt-delete"},
       /* TODO logging is way to go
           "logs": {name: "Logs", icon: "fas fa-terminal"},*/
     }
@@ -97,11 +97,11 @@ $(document).ready(function () {
         'Do you really want to discard current changes?',
         function () {
           currEnvironment = {};
+          $('.testenv-sidebar-header').fadeOut();
           setYamlFileName(null);
           populateServersFromYaml(currEnvironment);
           notifyChangesToTestenvData(false);
         });
-    $('.testenv-sidebar-header').fadeOut();
   });
 
   $('.btn-add-server').click(function () {

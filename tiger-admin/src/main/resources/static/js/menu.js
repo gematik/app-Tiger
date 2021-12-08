@@ -222,13 +222,13 @@ function confirmNoDefault(flag, title, content, yesfunc) {
           '<div>' + content + '</div>',
       buttons: [
         {
-          text: 'Yes', class: 'btn btn-danger btn-lg',
+          text: 'Yes', class: 'btn btn-danger btn-lg btn-yes',
           handler: (ev) => {
             $(ev.target).parents('.modal.show').modal('hide')
             yesfunc(ev);
           }
         },
-        {text: 'No', class: 'btn btn-primary btn-lg', type: 'dismiss'},
+        {text: 'No', class: 'btn btn-primary btn-lg btn-no', type: 'dismiss'},
       ],
       centered: true, dismissible: true, backdrop: 'static', keyboard: true,
       focus: false, type: 'danger'

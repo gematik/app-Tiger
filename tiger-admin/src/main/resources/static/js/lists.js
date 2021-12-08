@@ -42,8 +42,8 @@ function abortOtherEditing() {
 
 function handleAddButtonOnSimpleList() {
   const listGroup = $(this).parents('.row:first').find(".list-group");
-  listGroup.find('.active').removeClass('active');
   const activeItem = listGroup.find('.active');
+  listGroup.find('.active').removeClass('active');
 
   addItemToList(listGroup, activeItem)
   $.each(listGroup.find('.list-group-item > span'), function () {
@@ -61,7 +61,7 @@ function handleAddButtonOnComplexList() {
   if (activeItem.length) {
     const origData = activeItem.data("listdata");
     if (!objectDeepEquals(origData, fieldSet.getNewDataFromSubsetFieldset(false))) {
-      warn('Aborting other editing3');
+      warn('Aborting other editing3', 10000);
     }
     activeItem.removeClass('active');
   }

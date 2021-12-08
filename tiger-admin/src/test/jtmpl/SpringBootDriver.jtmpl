@@ -1,0 +1,23 @@
+${package}
+
+import io.cucumber.junit.CucumberOptions;
+import net.serenitybdd.cucumber.CucumberWithSerenity;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.server.LocalServerPort;
+
+@RunWith(CucumberWithSerenity.class)
+@CucumberOptions(
+    features = {"${feature}"},
+    plugin = {"de.gematik.test.tiger.admin.bdd.SpringBootStarterPlugin","json:target/cucumber-parallel/${ctr}.json"},
+    glue = { ${glues} })
+@SpringBootTest()
+public class ${driverClassName} {
+
+    @LocalServerPort
+    public static int adminPort;
+
+    public static int getAdminPort() {
+        return adminPort == 0 ? 8080 : adminPort;
+    }
+}

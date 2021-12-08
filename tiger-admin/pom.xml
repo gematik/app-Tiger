@@ -190,13 +190,13 @@
             <plugin>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
-                <version>0.16.1</version>
+                <version>${project.version}</version>
                 <executions>
                     <execution>
                         <configuration>
-                            <!-- TODO deactivated for now till we get 0.16.3 out into the wild and it works on windows too! -->
-                            <skip>true</skip>
-                            <basedir>${project.basedir}/src/test/resources/features/uiComponents</basedir>
+                            <skip>false</skip>
+                            <templateFile>tiger-admin/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
+                            <basedir>${project.basedir}/src/test/resources/features</basedir>
                             <includes>
                                 <include>**/*.feature</include>
                             </includes>
@@ -236,7 +236,7 @@
                 <version>3.0.0-M5</version>
                 <configuration>
                     <includes>
-                        <include>**/SpringBootDriver.java</include>
+                        <include>**/Parallel*IT.java</include>
                     </includes>
                     <environmentVariables>
                         <MOZ_HEADLESS>1</MOZ_HEADLESS>
@@ -244,8 +244,8 @@
                     <systemPropertyVariables>
                         <webdriver.base.url>${webdriver.base.url}</webdriver.base.url>
                     </systemPropertyVariables>
-                    <parallel>classes</parallel>
-                    <parallel>methods</parallel>
+                       <parallel>methods</parallel>
+                    <forkCount>2</forkCount>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
                 </configuration>
             </plugin>

@@ -177,7 +177,7 @@ public class SerenityDriverGeneratorMavenPlugin extends AbstractMojo {
             }
         } else {
             getLog().info("Using template file '" + templateFile + "'");
-            template = IOUtils.toString(new File(templateFile).toURI(), StandardCharsets.UTF_8);
+            template = IOUtils.toString(new File(templateFile.replace("/", File.separator)).toURI(), StandardCharsets.UTF_8);
         }
         return template;
     }

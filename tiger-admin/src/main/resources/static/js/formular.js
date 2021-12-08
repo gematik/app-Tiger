@@ -13,7 +13,6 @@
 // formular API methods
 //
 
-// TODO clean this method up
 $.fn.initFormular = function (serverKey, serverData) {
   checkTag('initFormular', this, 'FORM', 'server-formular');
 

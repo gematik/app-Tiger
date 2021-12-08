@@ -8,7 +8,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 
 @RunWith(CucumberWithSerenity.class)
 @CucumberOptions(
-    features = {"./src/test/resources/features/uiComponents/SimpleLists.feature"},
+    features = {"./src/test/resources/features"},
     plugin = {"de.gematik.test.tiger.admin.bdd.SpringBootStarterPlugin"},
     glue = {"de.gematik.test.tiger.admin.bdd.steps"})
 @SpringBootTest()

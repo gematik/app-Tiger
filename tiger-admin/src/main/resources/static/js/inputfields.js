@@ -26,7 +26,12 @@ function handleKeysForServerKeyEditing(ev) {
       snack(
           'No SPACES allowed in server key!<br/>Replacing spaces with underscores!',
           'warning');
-      $(this).text(text.replace(' ', '_'));
+      $(this).text(text.replace(/\s/g, '_'));
+    } else if (/[^A-Za-z0-9_]+/g.test(text)) {
+      snack(
+          'Only ASCII characters, digits and underscore allowed in server key! Please choose a valid name!',
+          'warning');
+      return false;
     } else if (text === 'local_proxy') {
       snack(
           '<p>Sorry \'local_proxy\' is reserved for the test suite\'s local tiger proxy!</p>'

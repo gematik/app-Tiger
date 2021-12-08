@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 @AutoConfigureMockMvc
 public class TigerFileNavigatorControllerTest {
 
-    private static String slash = File.separator;
+    private static final String slash = File.separator;
     @Autowired
     private MockMvc mockMvc;
 
