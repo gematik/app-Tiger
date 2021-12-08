@@ -182,7 +182,7 @@ function addSelectedServer() {
   notifyChangesToTestenvData(true);
   updateServerLists(Object.keys(currEnvironment));
   addServerModal.modal('hide');
-  snack(`Added node ${newKey}`, 'success', 3000);
+  snack(`Added node ${newKey}`, 'success', 5000);
 }
 
 function notifyChangesToTestenvData(flag) {

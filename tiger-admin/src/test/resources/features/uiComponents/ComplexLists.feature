@@ -81,9 +81,9 @@ Feature: Test functionality of complex lists
       basicAuth.username: user5
       basicAuth.password: pwd5
     """
+    And he closes open snack
     Then he checks list item in row 1 has value "entry1: [user1@pwd1] from1 ↦ to1"
     And he checks list item in row 2 has value "entry5: [user5@pwd5] from5 ↦ to5"
-    And he closes open snack
 
   # TODO add snack detection?
 
@@ -100,8 +100,8 @@ Feature: Test functionality of complex lists
       basicAuth.password: pwd6
     """
     And he selects list item in row 1
-    Then he checks list item in row 2 has value "entry5: [user5@pwd5] from5 ↦ to5"
     And he closes open snack
+    Then he checks list item in row 2 has value "entry5: [user5@pwd5] from5 ↦ to5"
 
   # Scenario: Abort editing an entry via delete button
     When he selects list item in row 1
