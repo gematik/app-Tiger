@@ -74,7 +74,7 @@ wird.
 <dependency>
     <groupId>org.junit.vintage</groupId>
     <artifactId>junit-vintage-engine</artifactId>
-    <version>5.7.2</version>
+    <version>5.8.1</version>
 </dependency>
 
 ```
@@ -95,82 +95,56 @@ import org.junit.runner.RunWith;
     monochrome = false,
     glue = {"de.gematik.test.tiger.hooks", "de.gematik.test.tiger.glue",
         "ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code"})
-public class JUnit4TestDriver {
+public class Parallel1IT {
 
 }
 ```
 
 ### oder dynamisch zur Laufzeit erzeugen
 
-Unter Verwendung des Maven jvmparalalell plugins können die pro Feature Datei notwendigen Testtreiberklassen auch
+Unter Verwendung des tiger-bdd-driver-generator-maven-plugin plugins können die pro Feature Datei notwendigen Testtreiberklassen auch
 automatisiert erstellt werden.
 
-Hierfür muss eine Velocity Template Datei im Projekt (unter src/test/resources) hinterlegt werden:
-
-```java
-#parse("/array.java.vm")
-
-#if($packageName)
-package $packageName;
-#end##
-
-import java.io.IOException;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.BeforeClass;
-
-import io.cucumber.junit.CucumberOptions;
-import net.serenitybdd.cucumber.CucumberWithSerenity;
-
-@RunWith(CucumberWithSerenity.class)
-@CucumberOptions(
-    features = {"$featureFile"},
-    plugin = #stringArray($plugins),
-    monochrome = $monochrome,
-#if(!$featureFile.contains(".feature:") && $mytags)
-    tags= #stringArray($mytags),
-#end
-    glue= #stringArray($glue))
-public class $className {
-
-}
-```
-
-Als zweiten Schritt muss im pom.xml das folgende Plugin eingefügt werden. Im Glue Segemnt sind alle projektspezifischen
+Hierfür muss im pom.xml das folgende Plugin eingefügt werden. Im Glue Segemnt sind alle projektspezifischen
 weiteren packages hinzuzufügen und der Wert beim Attribute packageName ist entsprechend anzupassen.
 
 ```xml
-
 <plugin>
-    <groupId>com.github.temyers</groupId>
-    <artifactId>cucumber-jvm-parallel-plugin</artifactId>
-    <version>4.2.0</version>
+    <groupId>de.gematik.test</groupId>
+    <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+    <version>${project.version}</version>
     <executions>
         <execution>
             <configuration>
-                <customVmTemplate>src/test/resources/cucumber-serenity-runner.vm</customVmTemplate>
-                <glue>
-                    <package>de.gematik.test.tiger.hooks</package>
-                    <package>de.gematik.test.tiger.glue</package>
-                    <!-- add your packages here -->
-                </glue>
-                <packageName>tiger.integration.YOURPROJECTNAMEHERE</packageName>
-                <parallelScheme>FEATURE</parallelScheme>
+                <!-- mandatory -->
+                <includes>
+                    <include>**/*.feature</include>
+                </includes>
+                <glues>
+                    <glue>de.gematik.test.tiger.admin.bdd.steps</glue>
+                </glues>
+                <!-- optional -->
+                <driverPackage>de.gematik.test.tiger.admin.bdd.drivers</driverPackage>
+                <!-- optional -->
+                <driverClassName>Parallel${ctr}IT</driverClassName>
+                <!-- optional --> 
+                <!-- <skip>false</skip> -->
+                <!-- optional -->
+                <!-- <templateFile>tiger-admin/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>-->
+                <!-- optional -->
+                <!-- <basedir>${project.basedir}/src/test/resources/features</basedir>-->
             </configuration>
-            <goals>
-                <goal>generateRunners</goal>
-            </goals>
-            <id>generateRunners</id>
             <phase>generate-test-sources</phase>
+            <id>default-testSources</id>
+            <goals>
+                <goal>generate-drivers</goal>
+            </goals>
         </execution>
     </executions>
 </plugin>
 ```
 
-![](images/attention.png) **Derzeit wird dies nur für englischsprachige Schlüsselwörter unterstützt**
-
-## Maven failsafe plugin
+## Maven failsafe plugin (deprecated)
 
 Dieses Plugin triggert nun durch Angabe des entsprechenden Include Filters das Ausführen der JUnit4 Testtreiberklassen.
 
@@ -190,7 +164,7 @@ Dieses Plugin triggert nun durch Angabe des entsprechenden Include Filters das A
             </goals>
             <configuration>
                 <includes>
-                    <include>**/JUnit4TestDriver.java</include>
+                    <include>**/Parallel*IT.java</include>
                     <!-- Diesen Ausdruck an die im Projekt verwendete Bezeichnung der Treiberklassen anpassen -->
                 </includes>
                 <environmentVariables>
@@ -207,9 +181,36 @@ Dieses Plugin triggert nun durch Angabe des entsprechenden Include Filters das A
 </plugin>
 ```
 
+## Maven surefire plugin (preferred)
+
+Dieses Plugin triggert nun durch Angabe des entsprechenden Include Filters das Ausführen der JUnit4 Testtreiberklassen.
+Durch das Setzen des testFailureIgnore flags, wird der maven run bei Fehlern nicht abgebrochen. Dadurch kann das nachfolgende Serenity plugin, den Bericht noch aktualisieren. Das in dem plugin definierte zweite goal (serenity:check),
+bricht den maven run dann im Fehlerfall ab.
+
+```xml
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>3.0.0-M5</version>
+    <configuration>
+        <includes>
+            <include>**/Parallel*IT.java</include>
+        </includes>
+        <environmentVariables>
+            <TIGER_ACTIVE>1</TIGER_ACTIVE>
+        </environmentVariables>
+        <parallel>methods</parallel>
+        <forkCount>4</forkCount>
+        <useUnlimitedThreads>true</useUnlimitedThreads>
+        <testFailureIgnore>true</testFailureIgnore>
+    </configuration>
+</plugin>
+```
+
 ## Maven serenity reports plugin
 
-Nach dem Testlauf erstellt dieses Plugin aus den Testergebnissen einen Serenity Testbericht.
+Nach dem Testlauf erstellt dieses Plugin aus den Testergebnissen einen Serenity Testbericht und bricht im Fehlerfall den maven run ab.
 
 ```xml
 
@@ -231,6 +232,13 @@ Nach dem Testlauf erstellt dieses Plugin aus den Testergebnissen einen Serenity 
             <goals>
                 <goal>reports</goal>
                 <goal>aggregate</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>serenity-check</id>
+            <phase>post-integration-test</phase>
+            <goals>
+                <goal>check</goal>
             </goals>
         </execution>
     </executions>

@@ -195,7 +195,7 @@
                     <execution>
                         <configuration>
                             <skip>false</skip>
-                            <templateFile>tiger-admin/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
+                            <templateFile>${project.basedir}/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
                             <basedir>${project.basedir}/src/test/resources/features</basedir>
                             <includes>
                                 <include>**/*.feature</include>
@@ -242,10 +242,11 @@
                         <MOZ_HEADLESS>1</MOZ_HEADLESS>
                     </environmentVariables>
                     <systemPropertyVariables>
+                        <wdm.gitHubToken>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</wdm.gitHubToken>
                         <webdriver.base.url>${webdriver.base.url}</webdriver.base.url>
                     </systemPropertyVariables>
-                       <parallel>methods</parallel>
-                    <forkCount>4</forkCount>
+                       <parallel>classes</parallel>
+                    <forkCount>2</forkCount>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
                     <testFailureIgnore>true</testFailureIgnore>
                 </configuration>

@@ -208,14 +208,14 @@
                     <execution>
                         <configuration>
                             <skip>false</skip>
-                            <templateFile>tiger-admin/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
+                            <templateFile>${project.basedir}/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
                             <basedir>${project.basedir}/src/test/resources/features</basedir>
                             <includes>
                                 <include>**/*.feature</include>
                             </includes>
                             <!-- mandatory -->
                             <glues>
-                                <glue>de.gematik.test.tiger.admin.bdd.steps</glue>
+                                <glue>de.gematik.test.tiger.proxy.ui.glue</glue>
                             </glues>
                             <!-- optional -->
                             <driverPackage>de.gematik.test.tiger.admin.bdd.drivers</driverPackage>
@@ -243,6 +243,9 @@
                     <environmentVariables>
                         <MOZ_HEADLESS>1</MOZ_HEADLESS>
                     </environmentVariables>
+                    <systemPropertyVariables>
+                        <wdm.gitHubToken>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</wdm.gitHubToken>
+                    </systemPropertyVariables>
                     <!-- TODO Julian this is workaround for java heap space issue -->
                     <forkMode>always</forkMode>
                     <testFailureIgnore>true</testFailureIgnore>

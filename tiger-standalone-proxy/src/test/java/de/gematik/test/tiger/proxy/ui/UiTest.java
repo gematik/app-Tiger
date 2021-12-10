@@ -20,10 +20,10 @@ public class UiTest {
     public static int proxyPort;
 
     public static int getAdminPort() {
-        return adminPort;
+        return adminPort == 0 ? 8080 : adminPort;
     }
 
     public static int getProxyPort() {
-        return proxyPort;
+        return proxyPort == 0 ? 6666 : proxyPort;
     }
 }

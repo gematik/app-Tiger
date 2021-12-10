@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
@@ -18,11 +19,6 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
@@ -31,11 +27,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.awaitility.Awaitility.await;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
 
 @Slf4j
 @Getter
@@ -49,7 +46,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private final TigerProxy localTigerProxy;
     private final List<TigerRoute> routesList = new ArrayList<>();
     private final Map<String, TigerServer> servers = new HashMap<>();
-    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    private final ExecutorService executor = Executors
+        .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
     public TigerTestEnvMgr() {
         Configuration configuration = readConfiguration();
@@ -156,9 +154,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void cycleChecker(final TigerServer currentPosition, final Set<TigerServer> visitedServer) {
         if (visitedServer.contains(currentPosition)) {
-            throw new TigerEnvironmentStartupException("Cyclic graph detected in startup sequence: " + visitedServer.stream()
-                .map(TigerServer::getServerId)
-                .collect(Collectors.toList()));
+            throw new TigerEnvironmentStartupException(
+                "Cyclic graph detected in startup sequence: " + visitedServer.stream()
+                    .map(TigerServer::getServerId)
+                    .collect(Collectors.toList()));
         }
         if (currentPosition.getDependUponList().isEmpty()) {
             System.out.println(visitedServer);
@@ -194,12 +193,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     private void createServerObjects() {
         for (Map.Entry<String, CfgServer> serverEntry : configuration.getServers().entrySet()) {
-            if (!serverEntry.getValue().isActive()) {
-                continue;
+            if (serverEntry.getValue().isActive()) {
+                servers.put(serverEntry.getKey(),
+                    TigerServer.create(serverEntry.getKey(), serverEntry.getValue(), this));
             }
-
-            servers.put(serverEntry.getKey(),
-                TigerServer.create(serverEntry.getKey(), serverEntry.getValue(), this));
         }
     }
 

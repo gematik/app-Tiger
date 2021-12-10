@@ -1,22 +1,11 @@
 package de.gematik.test.tiger.proxy.ui.steps;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.proxy.ui.UiTest;
 import de.gematik.test.tiger.proxy.ui.pages.MainPage;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
-import org.awaitility.core.ConditionTimeoutException;
-import org.junit.Assert;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -30,9 +19,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
+import org.awaitility.core.ConditionTimeoutException;
+import org.junit.Assert;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 @Slf4j
 public class TigerProxySteps {
@@ -170,8 +168,8 @@ public class TigerProxySteps {
     }
 
     public void assertReportNotSeen() {
-        assertElemTextMatches("//div[@id='sidebar-menu']", "");
-        assertElemTextMatches("//div[contains(@class, 'msglist')]", "");
+        assertElemTextMatchesWithoutWhitespace("//div[@id='sidebar-menu']", "");
+        assertElemTextMatchesWithoutWhitespace("//div[contains(@class, 'msglist')]", "");
     }
 
     public void clickOnQuit() {
@@ -245,9 +243,9 @@ public class TigerProxySteps {
 
     public void checkRequest(String idx, String path) {
         assertElementExistsAndIsDisplayed(XPATH_REQUEST + "/span[text()='" + idx + "']");
-        assertElemTextMatches(
+        assertElemTextMatchesWithoutWhitespace(
             "//div[@id='sidebar-menu']//div[contains(@class, 'menu-label')]/span[text()='" + idx + "']/..",
-            idx + "\nREQUEST");
+            idx + "REQUEST");
         assertElementExistsAndIsDisplayed(
             XPATH_REQUEST + "/span[text()='" + idx + "']/../following-sibling::div[starts-with(text(), 'GET\n" + path
                 + "')]");
@@ -259,7 +257,7 @@ public class TigerProxySteps {
     }
 
     public void checkResponse(String idx, String statusCode, String resBodyMessage) {
-        assertElemTextMatches(XPATH_RESPONSE + "/span[text()='" + idx + "']/..", idx + "\nRESPONSE");
+        assertElemTextMatchesWithoutWhitespace(XPATH_RESPONSE + "/span[text()='" + idx + "']/..", idx + "RESPONSE");
 
         WebElement resBody = mainPage.getDriver().findElement(By.xpath(
             "//" + XPATH_RES_BODY + "]//span[text()='" + idx + "']//ancestor::" + XPATH_RES_BODY + "]//h1[text()='" + statusCode
@@ -267,16 +265,19 @@ public class TigerProxySteps {
         Assert.assertTrue("The response body with given parameters is displayed on the page", resBody.isDisplayed());
     }
 
-    public void assertElemTextMatches(String xpath, String text) {
+    public void assertElemTextMatchesWithoutWhitespace(String xpath, String text) {
         WebElement el = mainPage.elemX(xpath);
-        Assert.assertEquals(text.replace("\n", ""), el.getText().replace("\n", ""));
+        Assert.assertEquals(stripSpaceNewlines(text), stripSpaceNewlines(el.getText()));
     }
 
     public void assertElemTextDoesntMatch(String cssSelector, String text) {
         WebElement el = mainPage.getDriver().findElement(By.cssSelector(cssSelector));
-        Assert.assertNotEquals(text.replace("\n", ""), el.getText().replace("\n", ""));
+        Assert.assertNotEquals(stripSpaceNewlines(text), stripSpaceNewlines(el.getText()));
     }
 
+    private String stripSpaceNewlines(String str) {
+        return str.replace("\n", "").replace(" ", "");
+    }
     public void assertElementExistsAndIsDisplayed(String xpath) {
         WebElement el = mainPage.getDriver().findElement(By.xpath(xpath));
         if (!el.isDisplayed()) {

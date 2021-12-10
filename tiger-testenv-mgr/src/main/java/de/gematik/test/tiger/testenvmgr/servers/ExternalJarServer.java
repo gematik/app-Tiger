@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.CfgExternalJarOptions;
@@ -7,13 +8,6 @@ import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.awaitility.core.ConditionTimeoutException;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -27,8 +21,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import static org.awaitility.Awaitility.await;
+import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.awaitility.core.ConditionTimeoutException;
 
 @Slf4j
 public class ExternalJarServer extends AbstractExternalTigerServer {
@@ -181,6 +179,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                 FileUtils.copyURLToFile(new URL(jarUrl), jarFile);
                 finished.set(true);
             } catch (IOException ioe) {
+                log.warn("Failed to copy external jar", ioe);
                 exception.set(ioe);
             }
         });
