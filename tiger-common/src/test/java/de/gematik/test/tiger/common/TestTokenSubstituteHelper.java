@@ -6,7 +6,7 @@ package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestTokenSubstituteHelper {
     // TODO replace next three methods with data provided methods

@@ -14,7 +14,8 @@ import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-// TODO TGR-171 support german umlauts
+/* do editing of the font files in the notepad
+ while editing, missing spaces after the characters can occur and should be fixed*/
 
 public class Banner {
 
@@ -28,7 +29,7 @@ public class Banner {
     private static BannerFontMetrics cfg;
 
     @SneakyThrows
-    private static void initialize() {
+    public static void initialize() {
         configs.put("Spliff", new BannerFontMetrics(9, 5, true));
         configs.put("Doom", new BannerFontMetrics(12, 8, true));
         configs.put("Thin", new BannerFontMetrics(6, 6, false));
@@ -42,7 +43,7 @@ public class Banner {
             .readLines(Objects.requireNonNull(Banner.class.getResourceAsStream(
                     "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
                 StandardCharsets.UTF_8);
-        for (int ascii = ' '; ascii < 'ü'; ascii++) {
+        for (int ascii = ' '; ascii <= 'ü'; ascii++) {
             List<String> linesForChar = new ArrayList<>();
             int maxWidth = 0;
             for (int i = 0; i < cfg.getHeight(); i++) {

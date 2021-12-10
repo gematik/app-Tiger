@@ -7,7 +7,7 @@ package de.gematik.test.tiger.common.context;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestContextProviders {
 
@@ -62,12 +62,12 @@ public class TestContextProviders {
         ctxt.getContext().put("nullkey", null);
         ctxt.putString("key3", "$NULL");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key1", "$NULL"))
-            .hasMessage("expected:<null> but was:<\"value1\">");
+            .hasMessage("\nexpected: null\n but was: \"value1\"".replace("\n", NL));
 
         ctxt.assertRegexMatches("nullkey", null);
         ctxt.assertRegexMatches("nullkey", "$NULL");
         assertThatThrownBy(() -> ctxt.assertRegexMatches("key3", "$NULL"))
-            .hasMessage("expected:<null> but was:<\"$NULL\">");
+            .hasMessage("\nexpected: null\n but was: \"$NULL\"".replace("\n", NL));
     }
 
     @Test

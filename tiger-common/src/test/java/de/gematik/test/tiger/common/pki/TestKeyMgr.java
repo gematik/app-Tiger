@@ -6,18 +6,13 @@ package de.gematik.test.tiger.common.pki;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
-
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.bouncycastle.openssl.PEMException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestKeyMgr {
 

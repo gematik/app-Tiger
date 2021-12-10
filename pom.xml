@@ -76,7 +76,6 @@
         <version.cucumber>6.11.0</version.cucumber>
         <version.serenity.core>3.0.5</version.serenity.core>
         <version.serenity.maven.plugin>3.0.5</version.serenity.maven.plugin>
-        <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.8.1</version.junit5>
         <version.assertj>3.21.0</version.assertj>
         <version.jackson>2.12.3</version.jackson>

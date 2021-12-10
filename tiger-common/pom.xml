@@ -18,10 +18,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${version.junit4}</version>
-            <scope>test</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${version.junit5}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -85,6 +84,12 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bctls-jdk15on</artifactId>
             <version>1.69</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.7.2</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

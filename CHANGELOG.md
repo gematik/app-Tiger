@@ -13,6 +13,9 @@
 * TGR-218 added REST-Interface for Modifications
 * TGR-96: support basic auth for forward proxy
 
+## Bugfix
+* TGR-171: Banner Helper Klasse unterstützt keine deutschen Umlaute
+
 # Release 0.16.4
 
 ## Bugfix
