@@ -194,6 +194,12 @@
           </button>
         </div>
         <div class="input-group advanced">
+          <span class="input-group-text">Depends Upon</span>
+          <select class="form-select" name="dependsUpon"
+                  title="Choose another node that must be ready before the actual node is started.">
+          </select>
+        </div>
+        <div class="input-group advanced">
           <span class="flex-fill input-group-text">Startup Timeout (sec)</span>
           <input class="form-control" name="startupTimeoutSec" required title="Number of seconds to wait till healthcheck reports this server as started successfully" type="number"
                  validation="value > 0">

@@ -221,21 +221,35 @@ $.fn.showInputGroup = function (name, flag) {
 }
 
 // for form.server-formular
-$.fn.updateServerList = function (serverList, replacedSelection,
-    optNewSelection) {
+$.fn.updateServerList = function (serverList, optOldSelection, optNewSelection) {
   checkTagNClass('updateServerList', this, 'FORM', 'server-formular');
   let html = "";
   serverList.filter(key => key !== 'local_proxy').forEach(key => {
     html += `<option value="${key}">${key}</option>`;
   });
-  const select = $(this).find('select[name=".tigerProxyCfg.proxiedServer"]');
+  replaceSelectOptions($(this).find('select[name=".tigerProxyCfg.proxiedServer"]'), html, optOldSelection, optNewSelection);
+}
+
+$.fn.updateDependsUponList = function (serverList, optOldSelection, optNewSelection) {
+  checkTagNClass('updateDependsUponList', this, 'FORM', 'server-formular');
+  let html = "";
+  serverList.filter(key => key !== 'local_proxy').forEach(key => {
+    html += `<option value="${key}">${key}</option>`;
+  });
+  replaceSelectOptions($(this).find('select[name="dependsUpon"]'), html, optOldSelection, optNewSelection);
+}
+
+function replaceSelectOptions(select, html, optOldSelection, optNewSelection) {
   let selected = select.val();
   select.children().remove();
   select.prepend(html);
-  if (replacedSelection && selected === replacedSelection) {
+  if ((optOldSelection && selected === optOldSelection) || optOldSelection === null) {
     selected = optNewSelection
   }
   select.val(selected);
+  if (selected && select.val() !== selected) {
+    console.error(`ERR Unable to select ${optNewSelection} in ${select.attr('name')}`);
+  }
 }
 
 // ----------------------------------------------------------------------------

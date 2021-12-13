@@ -55,8 +55,16 @@ function handleKeysForServerKeyEditing(ev) {
         srvContentHandle.attr('id', 'content_server_' + newServerKey);
         currEnvironment[newServerKey] = currEnvironment[oldServerKey];
         delete currEnvironment[oldServerKey];
-        updateServerLists(Object.keys(currEnvironment), oldServerKey,
-            newServerKey);
+
+        const serverList = Object.keys(currEnvironment).sort();
+        $.each(serverList, function () {
+          const form = $("#content_server_" + this);
+          const serverList2 = [...serverList].filter(e => e != this);
+          if (currEnvironment[this].type === 'tigerProxy') {
+            form.updateServerList(serverList2, oldServerKey, newServerKey );
+          }
+          form.updateDependsUponList(serverList2, oldServerKey, newServerKey);
+        });
       }
     }
   }

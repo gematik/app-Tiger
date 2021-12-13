@@ -6,19 +6,24 @@ Feature: Check advanced input fields and sections for all server types
     And he focuses on formular "docker_001"
     When he clicks on global advanced icon
     Then he sees input field "startupTimeoutSec"
+    And he sees select field "dependsUpon"
     And he sees input field ".dockerOptions.entryPoint"
     When he clicks on global advanced icon
     Then he doesn't see field "startupTimeoutSec"
+    And he doesn't see field "dependsUpon"
     And he doesn't see field ".dockerOptions.entryPoint"
     When he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
+    And he sees select field "dependsUpon"
     But he doesn't see field ".dockerOptions.entryPoint"
     When he clicks on advanced icon in section "node-settings"
-    When he clicks on advanced icon in section ".dockerOptions.dockerSettings"
+    And he clicks on advanced icon in section ".dockerOptions.dockerSettings"
     Then he doesn't see field "startupTimeoutSec"
+    And he doesn't see field "dependsUpon"
     But he sees input field ".dockerOptions.entryPoint"
     When he clicks on advanced icon in section ".dockerOptions.dockerSettings"
     Then he doesn't see field "startupTimeoutSec"
+    And he doesn't see field "dependsUpon"
     And he doesn't see field ".dockerOptions.entryPoint"
 
   Scenario Outline: Check advanced fields for compose, externalJar, excternalUrl type
@@ -27,8 +32,10 @@ Feature: Check advanced input fields and sections for all server types
     And he focuses on formular "<type>_001"
     When he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
+    And he sees select field "dependsUpon"
     When he clicks on advanced icon in section "node-settings"
     Then he doesn't see field "startupTimeoutSec"
+    And he doesn't see field "dependsUpon"
 
     Examples:
     |type|
@@ -42,6 +49,7 @@ Feature: Check advanced input fields and sections for all server types
     When he focuses on formular "tigerProxy_001"
     When he clicks on global advanced icon
     Then he sees input field "startupTimeoutSec"
+    And he sees select field "dependsUpon"
     And he sees select field ".tigerProxyCfg.proxyProtocol"
     And he sees input field ".tigerProxyCfg.serverPort"
     And he sees select field ".tigerProxyCfg.proxyCfg.proxyLogLevel"
@@ -84,6 +92,7 @@ Feature: Check advanced input fields and sections for all server types
 
     When he clicks on global advanced icon
     Then he doesn't see field "startupTimeoutSec"
+    And he doesn't see field "dependsUpon"
     And he doesn't see field ".tigerProxyCfg.proxyProtocol"
     And he doesn't see field ".tigerProxyCfg.serverPort"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.proxyLogLevel"
@@ -114,6 +123,7 @@ Feature: Check advanced input fields and sections for all server types
     And he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"
     And he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging"
     But he doesn't see field "startupTimeoutSec"
+    And he doesn't see field "dependsUpon"
 
     And he sees section ".tigerProxyCfg.proxyCfg.forwardToProxy"
     And he sees section ".tigerProxyCfg.proxyCfg.trafficEndpoints"
@@ -148,6 +158,8 @@ Feature: Check advanced input fields and sections for all server types
     When he focuses on formular "local_proxy"
     And he clicks on global advanced icon
     Then he doesn't see field ".tigerProxyCfg.proxyProtocol"
+    And he doesn't see field "startupTimeoutSec"
+    And he doesn't see field "dependsUpon"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.proxyLogLevel"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.disableRbelParsing"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.activateRbelEndpoint"

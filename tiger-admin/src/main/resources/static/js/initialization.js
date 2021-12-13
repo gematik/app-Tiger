@@ -25,7 +25,7 @@ $(document).ready(function () {
     trigger: 'left',
     callback: function (key/*, options*/) {
       const sidebarItem = $(this).parents('.sidebar-item');
-      const serverIndex = sidebarItem.attr("id").substr("sidebar_".length);
+      const serverIndex = sidebarItem.attr("id").substr("sidebar_server_".length);
 
       switch (key) {
         case "start":
@@ -34,9 +34,23 @@ $(document).ready(function () {
           danger('TODO feature ' + key + ' NOT implemented so far!');
           break;
         case "delete":
-          sidebarItem.remove();
-          $("#content_" + serverIndex).remove();
-          warn('Server "' + serverIndex + '" removed!');
+          confirmNoDefault(true, 'Delete node ' + serverIndex, 'Do you really want to delete this node?', function() {
+            sidebarItem.remove();
+            $("#content_server_" + serverIndex).remove();
+            delete currEnvironment[serverIndex];
+            warn('Server "' + serverIndex + '" removed!');
+
+            // update server lists removing any selection of the currently deleted node
+            const serverList = Object.keys(currEnvironment).sort();
+            $.each(serverList, function () {
+              const form = $("#content_server_" + this);
+              const serverList2 = [...serverList].filter(e => e != this);
+              if (currEnvironment[this].type === 'tigerProxy') {
+                form.updateServerList(serverList2, serverIndex, null);
+              }
+              form.updateDependsUponList(serverList2, serverIndex, null);
+            });
+          });
           break;
           /*
           case "logs":
@@ -110,14 +124,13 @@ $(document).ready(function () {
 
   // global key shortcuts
   $(document).keydown(function (ev) {
-    console.log(ev.keyCode);
     if ((ev.metaKey || ev.ctrlKey) && ev.shiftKey) {
       switch (ev.keyCode) {
-        case 65: // Ctrl + A
+        case 65: // Ctrl + Shift + A
           openAddServerModal();
           ev.preventDefault();
           return false;
-        case 79: // Ctrl + O
+        case 79: // Ctrl + Shift + O
           handleOpenTestEnvironmentClick();
           ev.preventDefault();
           return false;

@@ -2,9 +2,8 @@ package de.gematik.test.tiger.admin.bdd.steps;
 
 import static net.serenitybdd.screenplay.actors.OnStage.theActorCalled;
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
-import de.gematik.test.tiger.admin.bdd.actions.*;
+import de.gematik.test.tiger.admin.bdd.actions.AddServer;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.NavigateTo;
-import de.gematik.test.tiger.admin.bdd.actions.lolevel.PerformActionsOnSnack;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.ShowTabInFormular;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.ToggleCollapseSection;
 import de.gematik.test.tiger.admin.bdd.pages.AdminHomePage;
@@ -17,7 +16,6 @@ import io.cucumber.java.en.When;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.actions.Enter;
-import net.serenitybdd.screenplay.actions.Scroll;
 import net.serenitybdd.screenplay.actions.SendKeys;
 import net.serenitybdd.screenplay.actors.OnStage;
 import net.serenitybdd.screenplay.actors.OnlineCast;

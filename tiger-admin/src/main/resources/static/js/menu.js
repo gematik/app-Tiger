@@ -1,4 +1,5 @@
 let currEnvironment = {};
+/** @namespace currEnvironment.tigerProxyCfg.proxiedServer */
 let currTemplates = [];
 /** @namespace currTemplates.templates */
 /** @namespace currTemplates.templates.templateName */
@@ -80,8 +81,16 @@ function populateServersFromYaml(testEnvYaml) {
     addServer(serverKey, testEnvYaml[serverKey]);
   }
 
-  // update proxied select field in all formulars
-  updateServerLists(Object.keys(testEnvYaml));
+  const serverList = Object.keys(testEnvYaml).sort();
+  // update server list fields in all formulars, setting the value from testEnvYaml
+  for (const serverKey in testEnvYaml) {
+    const form = $('#content_server_' + serverKey);
+    const serverList2 = [...serverList].filter(e => e !== serverKey);
+    if (testEnvYaml[serverKey].type === 'tigerProxy') {
+      form.updateServerList(serverList2, null, testEnvYaml[serverKey].tigerProxyCfg.proxiedServer);
+    }
+    form.updateDependsUponList(serverList2, null, testEnvYaml[serverKey].dependsUpon);
+  }
 
   if (!serverContent.children().length) {
     showWelcomeCard();
@@ -180,7 +189,17 @@ function addSelectedServer() {
   }
   addServer(newKey, {...currEnvironment[newKey]});
   notifyChangesToTestenvData(true);
-  updateServerLists(Object.keys(currEnvironment));
+
+  // update server list fields, as we add a new server no selection replacement needed, thus no add. params
+  const serverList = Object.keys(currEnvironment).sort();
+  $.each(serverList, function () {
+    const form = $("#content_server_" + this);
+    const serverList2 = [...serverList].filter(e => e != this);
+    if (currEnvironment[this].type === 'tigerProxy') {
+      form.updateServerList(serverList2);
+    }
+    form.updateDependsUponList(serverList2);
+  });
   addServerModal.modal('hide');
   snack(`Added node ${newKey}`, 'success', 5000);
 }
@@ -207,11 +226,6 @@ function showWelcomeCard() {
   $('.server-content').html($('#template-welcome-card').html());
   $('.server-content .btn-open-testenv').click(handleOpenTestEnvironmentClick);
   $('.server-content .btn-add-server').click(openAddServerModal);
-}
-
-function updateServerLists(serverList, replacedSelection, optNewSelection) {
-  $('form.server-formular').updateServerList(serverList, replacedSelection,
-      optNewSelection);
 }
 
 function confirmNoDefault(flag, title, content, yesfunc) {

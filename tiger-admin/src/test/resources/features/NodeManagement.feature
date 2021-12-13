@@ -12,22 +12,27 @@ Feature: Node management
 
     # Scenario: remove server nodes
     When he deletes node "docker_001"
+    And he confirms modal
     Then nodes are ordered "Local Tiger proxy,compose_001,tigerProxy_001,externalJar_001,externalUrl_001"
     And formulars are ordered "local_proxy,compose_001,tigerProxy_001,externalJar_001,externalUrl_001"
 
     When he deletes node "externalJar_001"
+    And he confirms modal
     Then nodes are ordered "Local Tiger proxy,compose_001,tigerProxy_001,externalUrl_001"
     And formulars are ordered "local_proxy,compose_001,tigerProxy_001,externalUrl_001"
 
     When he deletes node "tigerProxy_001"
+    And he confirms modal
     Then nodes are ordered "Local Tiger proxy,compose_001,externalUrl_001"
     And formulars are ordered "local_proxy,compose_001,externalUrl_001"
 
     When he deletes node "externalUrl_001"
+    And he confirms modal
     Then nodes are ordered "Local Tiger proxy,compose_001"
     And formulars are ordered "local_proxy,compose_001"
 
     When he deletes node "compose_001"
+    And he confirms modal
     Then nodes are ordered "Local Tiger proxy"
     And formulars are ordered "local_proxy"
 
