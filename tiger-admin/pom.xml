@@ -263,7 +263,6 @@
                         <MOZ_HEADLESS>1</MOZ_HEADLESS>
                     </environmentVariables>
                     <systemPropertyVariables>
-                        <wdm.gitHubToken>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</wdm.gitHubToken>
                         <webdriver.base.url>${webdriver.base.url}</webdriver.base.url>
                         <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>

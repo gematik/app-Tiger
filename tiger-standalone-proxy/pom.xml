@@ -264,7 +264,6 @@
                         <MOZ_HEADLESS>1</MOZ_HEADLESS>
                     </environmentVariables>
                     <systemPropertyVariables>
-                        <wdm.gitHubToken>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</wdm.gitHubToken>
                         <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>
                     <!-- TODO Julian this is workaround for java heap space issue -->

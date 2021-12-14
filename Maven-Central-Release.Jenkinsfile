@@ -2,6 +2,7 @@
 // GitHub
 def REPO_URL = 'https://github.com/gematik/app-Tiger.git'
 def BRANCH = 'master'
+def POM_PATH = 'pom.xml'
 
 pipeline {
 
@@ -26,20 +27,22 @@ pipeline {
 
         stage('Build') {
             steps {
-                mavenBuild()
+                mavenBuild(POM_PATH)
                 archiveArtifacts allowEmptyArchive: true, artifacts: '**/target/*.jar,**/target/*.war', fingerprint: true
             }
         }
 
         stage('Unit Test') {
             steps {
-                mavenTest()
+                withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
+                    mavenTest(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN")
+                }
             }
         }
 
         stage('Publish to MavenCentral') {
             steps {
-                mavenDeploy("pom.xml", "-Pexternal")
+                mavenDeploy(POM_PATH, "-Pexternal")
             }
         }
     }
