@@ -74,16 +74,16 @@ tigerProxy:
         hostname: 192.168.110.10
         port: 3128
         type: HTTP
-    activateForwardAllLogging: false
+    activateForwardAllLogging: true
     # The tiger-proxy will route google.com to google.com even if no route is set.
     # The traffic routed via this "forwardAll"-routing will be logged by default
     # (meaning it will show up in the Rbel-Logs and be fowarded to tracing-clients)
-    # This can be deactivated via this flag
+    # This can be deactivated by setting this flag to false
     rbelBufferSizeInMb: 1024 
     # Limits the rbel-Buffer to approximately this size.
     # Note: When Rbel-Analysis is done the size WILL vastly exceed this limit!
-    disableRbelParsing: true 
-    # Disable traffic-analysis by Rbel. This will not impeed proxy-forwarding nor
+    activateRbelParsing: true 
+    # If set to false disables traffic-analysis by Rbel. This will not impeed proxy-forwarding nor
     # the traffic-endpoints.
     localResources: true
     # This will share the WebUI-Resources (various CSS-files) from the tiger-proxy 

@@ -227,7 +227,8 @@ $.fn.updateServerList = function (serverList, optOldSelection, optNewSelection) 
   serverList.filter(key => key !== 'local_proxy').forEach(key => {
     html += `<option value="${key}">${key}</option>`;
   });
-  replaceSelectOptions($(this).find('select[name=".tigerProxyCfg.proxiedServer"]'), html, optOldSelection, optNewSelection);
+  replaceSelectOptions($(this).find('select[name=".tigerProxyCfg.proxiedServer"]'), html, optOldSelection,
+      optNewSelection);
 }
 
 $.fn.updateDependsUponList = function (serverList, optOldSelection, optNewSelection) {
@@ -265,6 +266,24 @@ $.fn.populateForm = function (serverData, path) {
 
   // in case its applying a template drop its name field
   delete serverData.templateName;
+
+  const skipDefaultValuesFor = [
+      'type', 'key', 'hostname', 'template', 'dependsUpon', 'version',
+    'entryPoint', 'workingDir', '.tigerProxyCfg.proxyPort', 'enableForwardProxy',
+    '.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation',
+    '.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation',
+    '.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation'];
+  // preset default values for all fields (except subset fields) in formular
+  $(this).find('*[name]').each(function () {
+    const fieldName = $(this).attr('name');
+    if (!$(this).parents('fieldset.subset').length && this.tagName !== 'UL' &&
+        skipDefaultValuesFor.indexOf(fieldName) === -1) {
+      const defValue = getDefaultValueFor(fieldName);
+      if (defValue !== null) {
+        $(this).setValue(defValue);
+      }
+    }
+  });
 
   for (const field in serverData) {
     const value = serverData[field];

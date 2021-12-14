@@ -15,7 +15,7 @@ $(document).ready(function () {
   /** @namespace Bs5Utils.defaults */
   bs5Utils = new Bs5Utils();
 
-  loadTemplatesFromServer();
+  loadMetaDataFromServer();
 
   // sidebar
 

@@ -13,14 +13,13 @@ import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.exception.TigerProxyStartupException;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
@@ -41,7 +40,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         }
         rbelLogger = buildRbelLoggerConfiguration(configuration)
             .constructRbelLogger();
-        if (configuration.isDisableRbelParsing()) {
+        if (!configuration.isActivateRbelParsing()) {
             rbelLogger.getRbelConverter().removeAllConverterPlugins();
         }
         addFixVauKey();
@@ -68,8 +67,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
         final RbelConfiguration rbelConfiguration = new RbelConfiguration();
         if (configuration.getKeyFolders() != null) {
-            configuration.getKeyFolders().stream()
-                .forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
+            configuration.getKeyFolders().forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
         }
         rbelConfiguration.setFileSaveInfo(configuration.getFileSaveInfo());
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());

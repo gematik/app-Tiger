@@ -5,8 +5,10 @@ import de.gematik.test.tiger.admin.bdd.pages.ServerFormular;
 import io.cucumber.java.en.Then;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.screenplay.ensure.Ensure;
 
+@Slf4j
 public class SummarySteps {
 
     @Then("the summary of section {string} matches")
@@ -22,6 +24,7 @@ public class SummarySteps {
                     try {
                         return text.equals(trimmedDocString) || text.toString().matches(trimmedDocString);
                     } catch (Exception e) {
+                        log.error("Failed to compare text '" + text + "' and '" + trimmedDocString + "', e");
                         return false;
                     }
                 })

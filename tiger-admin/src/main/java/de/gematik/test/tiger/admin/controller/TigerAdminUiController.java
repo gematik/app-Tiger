@@ -62,6 +62,23 @@ public class TigerAdminUiController {
                 SchemaVersion.DRAFT_7,
                 OptionPreset.PLAIN_JSON
             ).with(module);
+
+            configBuilder.forFields().withDefaultResolver(field -> {
+                Class<?> declaringClass = field.getDeclaringType().getErasedType();
+                if (!field.isFakeContainerItemScope()
+                    && declaringClass.getName().startsWith("de.gematik.test")) {
+                    MethodScope getter = field.findGetter();
+                    if (getter != null) {
+                        try {
+                            return getter.getRawMember().invoke(declaringClass.getConstructor().newInstance());
+                        } catch (Exception ex) {
+                            throw new TigerConfigurationException("Unable to create instance for class " + declaringClass.getName(), ex);
+                        }
+                    }
+                }
+                return null;
+            });
+
             SchemaGeneratorConfig config = configBuilder.build();
             SchemaGenerator generator = new SchemaGenerator(config);
             JsonNode jsonSchema = generator.generateSchema(CfgTemplate.class);

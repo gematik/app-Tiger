@@ -6,6 +6,10 @@
 * TGR-208: The startup-order of the servers is now ONLY determined by the "dependsUpon"-Flag. This can give a 
  comma separated list of servers that need to be started prior to the given server. Please review & change all 
  testenv.ymls accordingly.
+* TGR-193: 
+  * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
+  * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
+
 
 ## Features
 * TGR-208: Refactoring Testenv-Mgr

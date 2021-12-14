@@ -4,6 +4,8 @@ let currTemplates = [];
 /** @namespace currTemplates.templates */
 /** @namespace currTemplates.templates.templateName */
 
+let configScheme =  {};
+
 let currFolder = '.';
 let fsSeparator = '';
 let currFile = '';
@@ -424,7 +426,7 @@ function openAddServerModal() {
   addServerModal.modal('show');
 }
 
-function loadTemplatesFromServer() {
+function loadMetaDataFromServer() {
   $.ajax({
     url: "/getTemplates",
     type: "GET",
@@ -474,6 +476,21 @@ function loadTemplatesFromServer() {
     error: function (xhr) {
       $('body *').setEnabled(false);
       showError('We are sorry, but we were unable to load the server templates!'
+          + '<p>The admin UI is NOT usable!</p><p><b>Please reload the page</b></p>',
+          xhr.responseJSON);
+    }
+  });
+  $.ajax({
+    url: "/getConfigScheme",
+    type: "GET",
+    dataType: 'json',
+    success: function (res) {
+      configScheme = res;
+      snack('ConfigScheme loaded', 'success', 1000);
+    },
+    error: function (xhr) {
+      $('body *').setEnabled(false);
+      showError('We are sorry, but we were unable to load the config scheme!'
           + '<p>The admin UI is NOT usable!</p><p><b>Please reload the page</b></p>',
           xhr.responseJSON);
     }

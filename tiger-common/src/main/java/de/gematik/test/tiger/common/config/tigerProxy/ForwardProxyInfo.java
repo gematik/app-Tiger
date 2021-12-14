@@ -20,7 +20,8 @@ public class ForwardProxyInfo {
 
     private String hostname;
     private Integer port;
-    private TigerProxyType type;
+    @Builder.Default
+    private TigerProxyType type = TigerProxyType.HTTP;
     private String username;
     private String password;
 }

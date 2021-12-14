@@ -32,7 +32,7 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private boolean activateRbelEndpoint = false;
     @Builder.Default
-    private boolean activateAsn1Parsing = true;
+    private boolean activateAsn1Parsing = false;
     @Builder.Default
     private boolean activateForwardAllLogging = true;
     private RbelFileSaveInfo fileSaveInfo;
@@ -49,7 +49,7 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
-    private boolean disableRbelParsing = false;
+    private boolean activateRbelParsing = true;
     @Builder.Default
     private TrafficEndpointConfiguration trafficEndpointConfiguration = new TrafficEndpointConfiguration();
     @Builder.Default

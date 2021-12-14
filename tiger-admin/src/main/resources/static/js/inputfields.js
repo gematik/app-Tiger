@@ -61,7 +61,7 @@ function handleKeysForServerKeyEditing(ev) {
           const form = $("#content_server_" + this);
           const serverList2 = [...serverList].filter(e => e != this);
           if (currEnvironment[this].type === 'tigerProxy') {
-            form.updateServerList(serverList2, oldServerKey, newServerKey );
+            form.updateServerList(serverList2, oldServerKey, newServerKey);
           }
           form.updateDependsUponList(serverList2, oldServerKey, newServerKey);
         });
@@ -187,4 +187,37 @@ $.fn.handleEnterEscOnEditableContent = function (ev) {
     return false;
   }
   return true;
+}
+
+function getDefaultValueFor(fieldName) {
+  if (fieldName === 'localProxyActive') {
+    return true;
+  }
+  if (fieldName === 'startupTimeoutSec') {
+    return 20;
+  }
+  let pathCursor = configScheme.properties;
+  if (fieldName.startsWith(".")) {
+    fieldName = fieldName.substr(1);
+  }
+  if (fieldName.indexOf(".") !== -1) {
+    const path = fieldName.split('.');
+    fieldName = path.pop();
+    $.each(path, function () {
+      if (!pathCursor[this]) {
+        pathCursor[this] = {};
+      }
+      if (pathCursor[this].items) {
+        pathCursor = pathCursor[this].items.properties;
+      } else {
+        pathCursor = pathCursor[this].properties;
+      }
+    });
+  }
+  if (!pathCursor || !pathCursor[fieldName]) {
+    console.log("DEFVALUE " + fieldName + " NOT FOUND");
+  } else if (pathCursor[fieldName].hasOwnProperty('default')) {
+    return pathCursor[fieldName].default;
+  }
+  return null;
 }

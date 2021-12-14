@@ -23,7 +23,8 @@ public class Configuration {
 
     private final Map<String, CfgServer> servers = new HashMap<>();
     private final List<CfgEnvSets> envSets = new ArrayList<>();
-    private boolean localProxyActive;
+    @Builder.Default
+    private boolean localProxyActive = true;
     private TigerProxyConfiguration tigerProxy;
 
 }

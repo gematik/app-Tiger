@@ -1,6 +1,7 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import de.gematik.test.tiger.common.config.CfgExternalJarOptions;
+import de.gematik.test.tiger.common.config.PkiType;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
@@ -143,7 +144,7 @@ public abstract class TigerServer {
     private void loadPkiForProxy() {
         log.info("  loading PKI resources for instance {}...", getHostname());
         getConfiguration().getPkiKeys().stream()
-            .filter(key -> key.getType().equals("cert"))
+            .filter(key -> key.getType() == PkiType.Certificate)
             .forEach(key -> {
                 log.info("Adding certificate " + key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
@@ -153,7 +154,7 @@ public abstract class TigerServer {
                         + "\n-----END CERTIFICATE-----").getPublicKey());
             });
         getConfiguration().getPkiKeys().stream()
-            .filter(key -> key.getType().equals("key"))
+            .filter(key -> key.getType() == PkiType.Key)
             .forEach(key -> {
                 log.info("Adding key " + key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
