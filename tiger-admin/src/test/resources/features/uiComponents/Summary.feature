@@ -1,3 +1,4 @@
+@FullTests @UnitTest
 Feature: Summary feature
 
   Scenario: create tigerproxy node and check route summary is shown

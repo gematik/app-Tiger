@@ -25,7 +25,27 @@
         <!--suppress CheckTagEmptyBody -->
         <tags></tags>
         <webdriver.base.url></webdriver.base.url>
+        <cucumber.filter.tags></cucumber.filter.tags>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>WithoutUiTests</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
+            </properties>
+        </profile>
+        <profile>
+            <id>WithUITests</id>
+            <properties>
+                <!--suppress UnresolvedMavenProperty -->
+                <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
@@ -207,6 +227,7 @@
                             <!-- optional -->
                             <driverPackage>de.gematik.test.tiger.admin.bdd.drivers</driverPackage>
                             <!-- optional -->
+                            <!--suppress UnresolvedMavenProperty -->
                             <driverClassName>Parallel${ctr}IT</driverClassName>
                         </configuration>
                         <phase>generate-test-sources</phase>
@@ -244,6 +265,7 @@
                     <systemPropertyVariables>
                         <wdm.gitHubToken>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</wdm.gitHubToken>
                         <webdriver.base.url>${webdriver.base.url}</webdriver.base.url>
+                        <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>
                        <parallel>classes</parallel>
                     <forkCount>2</forkCount>

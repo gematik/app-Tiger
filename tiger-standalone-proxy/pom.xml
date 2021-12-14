@@ -21,7 +21,27 @@
         <jacoco.skip>true</jacoco.skip>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <cucumber.filter.tags></cucumber.filter.tags>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>WithoutUiTests</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
+            </properties>
+        </profile>
+        <profile>
+            <id>WithUITests</id>
+            <properties>
+                <!--suppress UnresolvedMavenProperty -->
+                <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
@@ -245,6 +265,7 @@
                     </environmentVariables>
                     <systemPropertyVariables>
                         <wdm.gitHubToken>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</wdm.gitHubToken>
+                        <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>
                     <!-- TODO Julian this is workaround for java heap space issue -->
                     <forkMode>always</forkMode>

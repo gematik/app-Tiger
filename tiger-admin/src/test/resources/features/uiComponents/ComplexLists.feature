@@ -1,3 +1,4 @@
+@FullTests @UnitTest
 Feature: Test functionality of complex lists
 
   Scenario: Test complex list item management

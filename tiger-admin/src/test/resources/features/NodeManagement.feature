@@ -1,3 +1,4 @@
+@FullTests @UiTests
 Feature: Node management
 
   Scenario: add server nodes

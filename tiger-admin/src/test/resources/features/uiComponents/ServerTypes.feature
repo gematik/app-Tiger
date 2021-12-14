@@ -1,3 +1,4 @@
+@FullTests @UnitTest
 Feature: Check input fields and sections for all server types
 
   Scenario: Check docker type

@@ -1,3 +1,4 @@
+@FullTests @UnitTest
 Feature: Check collapsing sections
 
   Scenario: Check collapse docker node

@@ -1,3 +1,4 @@
+@FullTests @UiTests
 Feature: Check sidebar drag n drop of nodes
 
   Scenario: Drag first below last sidebar item
