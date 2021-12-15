@@ -174,7 +174,6 @@ public class TigerProxySteps {
 
     public void clickOnQuit() {
         WebElement quitProxyButton = mainPage.getDriver().findElement(By.cssSelector("#quitProxy"));
-        // TODO Thomas Quit button is hidden right off the window, check responsiveness and why quit button is not line broken into next line
         ((JavascriptExecutor) mainPage.getDriver()).executeScript("arguments[0].click();", quitProxyButton);
 
         WebDriverWait wait = new WebDriverWait(mainPage.getDriver(), 5);

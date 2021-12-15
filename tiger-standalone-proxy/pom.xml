@@ -266,7 +266,7 @@
                     <systemPropertyVariables>
                         <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>
-                    <!-- TODO Julian this is workaround for java heap space issue -->
+                    <!-- TODO TGR-262 Julian this is workaround for java heap space issue -->
                     <forkMode>always</forkMode>
                     <testFailureIgnore>true</testFailureIgnore>
                 </configuration>

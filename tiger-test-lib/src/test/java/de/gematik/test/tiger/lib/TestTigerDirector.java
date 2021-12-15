@@ -109,6 +109,7 @@ public class TestTigerDirector {
             .isEqualTo("foobar");
     }
 
+    // TODO TGR-253 create test cases for polarion sync and afo reporter,  rethink architecture and make it pluggable
 /*
     public static void synchronizeTestCasesWithPolarion() {
         if (!checkIsInitialized()) {

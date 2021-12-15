@@ -1,7 +1,5 @@
 # Tiger Produkt Definition
 
-** TODO convert to english **
-
 ## Zielgruppen/Nutzer
 
 * Gematik interne Testteams (GemTT) die IOP Tests für ihre Ref oder Produktentwicklungen durchführen

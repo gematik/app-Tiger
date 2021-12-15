@@ -239,5 +239,5 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
         assertThat(getLastRequest().getQueryParams().get("schmoo").values())
             .containsExactly("loo");
     }
-    //TODO test with response status code (not only number)
+    //TODO TGR-264 test with response status code (not only number)
 }

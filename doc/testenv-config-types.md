@@ -72,7 +72,7 @@ Mehr Informationen zur Angabe von PKI Keys gibt es <a href="#pkiKeys Eintraege">
       (proxyPort: RANDOM ) Port zu dem Proxy Anfragen geschickt werden sollen. Wenn nicht gesetzt wird ein zufälliger Port verwendet. 
       (proxyProtocol: http )
       proxyCfg:
-        **TODO** Siehe Konfiguration eines Tigerproxy
+        **TODO TGR-265** Siehe Konfiguration eines Tigerproxy
    
     (pkiKeys: [] ) Liste von Zertifikaten und Schlüsseln die dem RbelLogger des lokalen Tiger proxies zur Verfügung gestellt werden sollen 
     

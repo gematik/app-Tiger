@@ -23,7 +23,7 @@ public class CfgTemplate {
     private CfgTigerProxyOptions tigerProxyCfg;
 
     private final List<CfgKey> pkiKeys = new ArrayList<>();
-    /** list of env vars to be set for docker DONE, external Jar/TigerProxy TODO */
+    /** list of env vars to be set for docker DONE, external Jar/TigerProxy TODO TGR-249 related to TGR-113 */
     private List<String> environment = new ArrayList<>();
     /** mappings for local tiger proxy to be set when this server is active */
     private final List<String> urlMappings = new ArrayList<>();
