@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.common;
 
+import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -9,10 +9,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import lombok.*;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import lombok.*;
+import org.mockserver.proxyconfiguration.ProxyConfiguration;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
@@ -64,5 +65,10 @@ public class TigerProxyConfiguration {
                 port
             };
         }
+    }
+
+    public Optional<ProxyConfiguration> convertForwardProxyConfigurationToMockServerConfiguration() {
+        return Optional.ofNullable(getForwardToProxy())
+            .flatMap(ForwardProxyInfo::createMockServerProxyConfiguration);
     }
 }

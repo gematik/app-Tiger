@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.common;
+package de.gematik.test.tiger.common.exceptions;
 
 public class TigerOsException extends RuntimeException {
 

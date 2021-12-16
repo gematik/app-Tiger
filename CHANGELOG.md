@@ -16,9 +16,12 @@
 * TGR-208: Startup of services by Testenv-Mgr can now be parallel and in given sequence (dependsUpon-Flag added)
 * TGR-218 added REST-Interface for Modifications
 * TGR-96: support basic auth for forward proxy
+* TGR-226: Set proxy username, proxy password as environment variables
+
 
 ## Bugfix
 * TGR-171: Banner Helper Klasse unterstützt keine deutschen Umlaute
+
 
 # Release 0.16.4
 

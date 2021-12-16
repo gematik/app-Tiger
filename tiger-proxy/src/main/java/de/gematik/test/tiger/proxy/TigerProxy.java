@@ -10,7 +10,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyType;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -44,7 +43,6 @@ import org.mockserver.model.ExpectationId;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
-import org.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import org.mockserver.socket.tls.KeyAndCertificateFactory;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 import org.mockserver.socket.tls.NettySslContextFactory;
@@ -74,7 +72,10 @@ public class TigerProxy extends AbstractTigerProxy {
         }
         customizeSslSuitesIfApplicable(configuration);
 
-        mockServer = convertProxyConfiguration()
+        Optional<ProxyConfiguration> forwardProxyConfig = configuration.convertForwardProxyConfigurationToMockServerConfiguration();
+        outputForwardProxyConfigLogs(forwardProxyConfig);
+
+        mockServer = forwardProxyConfig
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
@@ -213,54 +214,6 @@ public class TigerProxy extends AbstractTigerProxy {
                 HttpResponse.response()
                     .withHeader("content-type", "text/html; charset=utf-8")
                     .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
-    }
-
-    public ProxyConfiguration.Type toMockServerType(TigerProxyType type) {
-        if (type == TigerProxyType.HTTP) {
-            return ProxyConfiguration.Type.HTTP;
-        } else {
-            return ProxyConfiguration.Type.HTTPS;
-        }
-    }
-
-    private Optional<ProxyConfiguration> convertProxyConfiguration() {
-        Optional<ProxyConfiguration> cfg = Optional.empty();
-
-        try {
-            if (getTigerProxyConfiguration().getForwardToProxy() == null
-                || StringUtils.isEmpty(getTigerProxyConfiguration().getForwardToProxy().getHostname())) {
-                return cfg;
-            }
-            if (getTigerProxyConfiguration().getForwardToProxy().getHostname() != null &&
-                getTigerProxyConfiguration().getForwardToProxy().getHostname().equals("$SYSTEM")) {
-                if (System.getProperty("http.proxyHost") != null) {
-                    cfg = Optional.of(ProxyConfiguration.proxyConfiguration(Type.HTTP,
-                        System.getProperty("http.proxyHost") + ":" + System.getProperty("http.proxyPort")));
-                } else if (System.getenv("http_proxy") != null) {
-                    cfg = Optional.of(ProxyConfiguration.proxyConfiguration(Type.HTTP,
-                        System.getenv("http_proxy").split("://")[1]));
-                }
-            } else {
-                cfg = Optional.of(ProxyConfiguration.proxyConfiguration(
-                    Optional.ofNullable(getTigerProxyConfiguration().getForwardToProxy().getType())
-                        .map(this::toMockServerType)
-                        .orElse(Type.HTTPS),
-                    getTigerProxyConfiguration().getForwardToProxy().getHostname()
-                        + ":"
-                        + getTigerProxyConfiguration().getForwardToProxy().getPort(),
-                    getTigerProxyConfiguration().getForwardToProxy().getUsername(),
-                    getTigerProxyConfiguration().getForwardToProxy().getPassword()));
-            }
-            return cfg;
-        } finally {
-            if (cfg.isEmpty()) {
-                log.info("Tigerproxy has NO forward proxy configured!");
-            } else {
-                log.info("Forward proxy is set to " +
-                    cfg.get().getType() + "://" + cfg.get().getProxyAddress().getHostName() + ":" + cfg.get()
-                    .getProxyAddress().getPort());
-            }
-        }
     }
 
     @Override
@@ -447,8 +400,29 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
+    private void outputForwardProxyConfigLogs(Optional<ProxyConfiguration> forwardProxyConfig) {
+        if (forwardProxyConfig.isEmpty()) {
+            log.info("Tigerproxy has NO forward proxy configured!");
+        } else {
+            ProxyConfiguration configNotEmpty = forwardProxyConfig.get();
+            if (configNotEmpty.getUsername() == null) {
+                log.info("Forward proxy is set to " +
+                    configNotEmpty.getType() + "://"
+                    + configNotEmpty.getProxyAddress().getHostName() + ":"
+                    + configNotEmpty.getProxyAddress().getPort());
+            } else if (configNotEmpty.getUsername() != null) {
+                log.info("Forward proxy is set to " +
+                    configNotEmpty.getType() + "://"
+                    + configNotEmpty.getProxyAddress().getHostName() + ":"
+                    + configNotEmpty.getProxyAddress().getPort() + "@"
+                    + configNotEmpty.getUsername() + ":"
+                    + configNotEmpty.getPassword());
+            }
+        }
+    }
+
     public void propagateException(Throwable exception) {
-        exceptionListeners.stream()
+        exceptionListeners
             .forEach(consumer -> consumer.accept(exception));
     }
 

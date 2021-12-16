@@ -448,31 +448,6 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(response.getStatus()).isEqualTo(666);
     }
 
-//    @Test
-//    public void forwardProxyIsAuthenticated_proxyAuthHeaderShouldBeSent() {
-//        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-//            .proxyRoutes(List.of(TigerRoute.builder()
-//                .from("http://backend")
-//                .to("http://notARealServer")
-//                .build()))
-//            .forwardToProxy(ForwardProxyInfo.builder()
-//                .port(forwardProxy.getPort())
-//                .hostname("localhost")
-//                .type(TigerProxyType.HTTP)
-//                .username("username")
-//                .password("geheim")
-//                .build())
-//            .build());
-//
-//        proxyRest.get("http://backend/foobar")
-//            .asJson();
-//
-//        assertThat(((org.mockserver.model.HttpRequest) forwardProxy.getClient().retrieveRecordedRequests(request())[0])
-//            .getHeaders().getValues("Proxy-Authorization"))
-//            .containsExactly(
-//                "Basic " + Base64.getEncoder().encodeToString("username:geheim".getBytes(StandardCharsets.UTF_8)));
-//   }
-
     @Test
     public void reverseProxyRouteViaAnotherForwardProxy() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()

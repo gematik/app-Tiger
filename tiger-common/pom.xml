@@ -91,7 +91,12 @@
             <version>5.7.2</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>io.github.arkinator</groupId>
+            <artifactId>mockserver-core</artifactId>
+            <version>${version.mockserver}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
