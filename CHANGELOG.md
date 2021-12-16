@@ -10,13 +10,14 @@
   * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
   * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
 
-
 ## Features
 * TGR-208: Refactoring Testenv-Mgr
 * TGR-208: Startup of services by Testenv-Mgr can now be parallel and in given sequence (dependsUpon-Flag added)
 * TGR-218 added REST-Interface for Modifications
 * TGR-96: support basic auth for forward proxy
 * TGR-226: Set proxy username, proxy password as environment variables
+* TGR-238: Additional TGR step to store value of rbel path node to context
+* TGR-238: Support TGR validation steps to support "${..}" tokens in TGR verification steps 
 
 
 ## Bugfix
