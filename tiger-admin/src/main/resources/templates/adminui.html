@@ -32,7 +32,7 @@
       <div class="collapse navbar-collapse">
         <ul class="navbar-nav me-auto">
           <li class="nav-item dropdown">
-            <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#"
+            <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle menu-testenv" data-bs-toggle="dropdown" href="#"
                role="button">Testenvironment</a>
             <div class="dropdown-menu">
               <a class="dropdown-item btn-new-testenv" href="#">New</a>
@@ -98,8 +98,8 @@
 
 <section class="d-none" id="html-templates">
 
-  <div class="card welcome-card d-none" id="template-welcome-card">
-    <div class="card-body">
+  <div class="d-none" id="template-welcome-card">
+    <div class="card-body welcome-card">
       <section class="highlight-clean">
         <div class="container">
           <div class="intro">
@@ -192,6 +192,12 @@
                   type="button">
             <i class="fas fa-redo-alt"></i>
           </button>
+        </div>
+        <div class="input-group advanced">
+          <span class="input-group-text">Depends Upon</span>
+          <select class="form-select" name="dependsUpon"
+                  title="Choose another node that must be ready before the actual node is started.">
+          </select>
         </div>
         <div class="input-group advanced">
           <span class="flex-fill input-group-text">Startup Timeout (sec)</span>
@@ -423,7 +429,7 @@
                 <div class="row">
                   <div class="col">
                     <div class="form-check form-switch advanced">
-                      <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.disableRbelParsing"
+                      <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.activateRbelParsing"
                              type="checkbox">
                       <label class="form-check-label">Parse Traffic via RbelLogger</label></div>
                     <div class="form-check form-switch advanced">
@@ -752,8 +758,8 @@
                           <span class="input-group-text">Type</span>
                           <select class="form-select" name="pkiKeys.type"
                                   title="Select the type of the PKI item">
-                            <option value="cert">Certificate</option>
-                            <option value="key">Key</option>
+                            <option value="Certificate">Certificate</option>
+                            <option value="Key">Key</option>
                           </select>
                         </div>
                       </div>
@@ -806,7 +812,7 @@
                   Here you can specify java system properties that will be available to the test suite.
                   Please use the pattern system.property.key<b>=</b>value.<br/>
                   Using ${NAME} in the value part will be replaced with the configured hostname.
-                  TODO also explain that env vars can be used as tokens
+                  TODO TGR-266 also explain that env vars can be used as tokens
                 </div>
               </div>
               <div class="row">

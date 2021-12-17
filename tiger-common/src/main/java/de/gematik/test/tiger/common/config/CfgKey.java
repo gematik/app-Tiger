@@ -16,11 +16,17 @@
 
 package de.gematik.test.tiger.common.config;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 
+@AllArgsConstructor(onConstructor_ = @JsonIgnore)
+@ToString
+@NoArgsConstructor
 @Data
+@Builder
 public class CfgKey {
     private String id;
     private String pem;
-    private String type;
+    @Builder.Default
+    private PkiType type = PkiType.Certificate;
 }

@@ -2,6 +2,7 @@
 # TODO this is not used anywhere in the project! Its more a possible future way of configuring the testlib integration
 # with polarion
 #
+# TODO TGR-251 ins tiger.yaml mergen und code im Testdirector bauen
 tigerActive: true
 
 polarion:

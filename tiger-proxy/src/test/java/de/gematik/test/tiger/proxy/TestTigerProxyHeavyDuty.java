@@ -81,7 +81,7 @@ public class TestTigerProxyHeavyDuty {
                 .to("http://localhost:" + wireMockRule.port())
                 .build()))
             .proxyLogLevel("WARN")
-            .disableRbelParsing(true)
+            .activateRbelParsing(false)
             .build());
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();

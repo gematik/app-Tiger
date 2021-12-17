@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
@@ -109,7 +110,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             .asEmpty()
             .ifFailure(httpResponse -> {
                 throw new TigerRemoteProxyClientException(
-                    "Unable to add route. Got " + httpResponse);
+                    "Unable to remove route. Got " + httpResponse);
             });
     }
 
@@ -135,6 +136,46 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                 );
             })
             .getBody();
+    }
+
+    @Override
+    public RbelModificationDescription addModificaton(RbelModificationDescription modification) {
+        return Unirest.put(remoteProxyUrl + "/modification")
+            .body(modification)
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .asObject(RbelModificationDescription.class)
+            .ifFailure(response -> {
+                throw new TigerRemoteProxyClientException(
+                    "Unable to add modification. Got " + response.getStatus() +
+                        ": " + response.mapError(String.class)
+                );
+            })
+            .getBody();
+    }
+
+    @Override
+    public List<RbelModificationDescription> getModifications() {
+        return Unirest.get(remoteProxyUrl + "/modification")
+            .asObject(new GenericType<List<RbelModificationDescription>>() {
+            })
+            .ifFailure(response -> {
+                throw new TigerRemoteProxyClientException(
+                    "Unable to get modifications. Got " + response.getStatus() +
+                        ": " + response.mapError(String.class)
+                );
+            })
+            .getBody();
+    }
+
+    @Override
+    public void removeModification(String modificationName) {
+        Assert.hasText(modificationName, () -> "No modification name given!");
+        Unirest.delete(remoteProxyUrl + "/modification/" + modificationName)
+            .asEmpty()
+            .ifFailure(httpResponse -> {
+                throw new TigerRemoteProxyClientException(
+                    "Unable to remove modification. Got " + httpResponse);
+            });
     }
 
     private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, TracingMessage tracingMessage) {
@@ -223,6 +264,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     private class TigerReceivedRemoteException extends RuntimeException {
+
         public TigerReceivedRemoteException(String message) {
             super(message);
         }

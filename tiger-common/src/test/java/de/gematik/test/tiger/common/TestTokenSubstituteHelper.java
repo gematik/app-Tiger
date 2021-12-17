@@ -18,10 +18,10 @@ package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestTokenSubstituteHelper {
-    // TODO replace next three methods with data provided methods
+    // TODO TGR-250 replace next three methods with data provided methods
     @Test
     public void testSubstituteTokenOK() {
         final Map<String, Object> ctxt = Map.of("key1", "value1", "key2", "KEY2VALUE");

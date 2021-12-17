@@ -1,0 +1,84 @@
+package de.gematik.test.tiger.admin.bdd.actions.lolevel;
+
+import static net.serenitybdd.screenplay.Tasks.instrumented;
+import java.util.function.BiConsumer;
+import lombok.RequiredArgsConstructor;
+import net.serenitybdd.screenplay.Actor;
+import net.serenitybdd.screenplay.Task;
+import net.serenitybdd.screenplay.actions.PerformActions;
+import net.serenitybdd.screenplay.targets.Target;
+import net.thucydides.core.annotations.Step;
+import org.openqa.selenium.InvalidArgumentException;
+
+public class PerformDragAction implements Task {
+
+    private final Action action;
+    private final Target source;
+    private final Target destination;
+    private final int yoffset;
+    @SuppressWarnings("unused")
+    private final String stepDescription;
+
+    public PerformDragAction(Target source, Target destination, int yoffset, Action action) {
+        this.source = source;
+        this.destination = destination;
+        this.yoffset = yoffset;
+        this.action = action;
+        stepDescription = action.descriptionOf(this);
+    }
+
+    // actions
+
+    public static PerformDragAction dragsItemBelow(Target source, Target destination, int yoffset) {
+        return instrumented(PerformDragAction.class, source, destination, yoffset, Action.dragsItemBelow);
+    }
+
+    public static PerformDragAction dragsItemAbove(Target source, Target destination, int yoffset) {
+        return instrumented(PerformDragAction.class, source, destination, yoffset, Action.dragsItemAbove);
+    }
+
+    // implementation
+
+    private void dragsItem(Actor actor) {
+        actor.attemptsTo(
+            PerformActions.with(
+                actions -> actions.pause(500)
+                    .clickAndHold(source.resolveFor(actor))
+                    .pause(200)
+                    .moveToElement(destination.resolveFor(actor), 0, yoffset)
+                    .pause(200)
+                    .release()
+                    .perform()
+            )
+        );
+    }
+
+    @Override
+    @Step("{0} #stepDescription")
+    public <T extends Actor> void performAs(T actor) {
+        action.execute(actor, this);
+    }
+
+    @RequiredArgsConstructor
+    public enum Action {
+        dragsItemAbove((actor, instance) -> instance.dragsItem(actor)),
+        dragsItemBelow((actor, instance) -> instance.dragsItem(actor));
+
+        private final BiConsumer<Actor, PerformDragAction> actionConsumer;
+
+        void execute(Actor actor, PerformDragAction instance) {
+            actionConsumer.accept(actor, instance);
+        }
+
+        String descriptionOf(PerformDragAction instance) {
+            switch (instance.action) {
+                case dragsItemAbove:
+                    return " drags item " + instance.source + " above item " + instance.destination;
+                case dragsItemBelow:
+                    return " drags item " + instance.source + " below item " + instance.destination;
+                default:
+                    throw new InvalidArgumentException("Unknown action " + instance.action);
+            }
+        }
+    }
+}

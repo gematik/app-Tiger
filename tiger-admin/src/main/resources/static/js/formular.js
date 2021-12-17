@@ -13,7 +13,6 @@
 // formular API methods
 //
 
-// TODO clean this method up
 $.fn.initFormular = function (serverKey, serverData) {
   checkTag('initFormular', this, 'FORM', 'server-formular');
 
@@ -222,21 +221,36 @@ $.fn.showInputGroup = function (name, flag) {
 }
 
 // for form.server-formular
-$.fn.updateServerList = function (serverList, replacedSelection,
-    optNewSelection) {
+$.fn.updateServerList = function (serverList, optOldSelection, optNewSelection) {
   checkTagNClass('updateServerList', this, 'FORM', 'server-formular');
   let html = "";
   serverList.filter(key => key !== 'local_proxy').forEach(key => {
     html += `<option value="${key}">${key}</option>`;
   });
-  const select = $(this).find('select[name=".tigerProxyCfg.proxiedServer"]');
+  replaceSelectOptions($(this).find('select[name=".tigerProxyCfg.proxiedServer"]'), html, optOldSelection,
+      optNewSelection);
+}
+
+$.fn.updateDependsUponList = function (serverList, optOldSelection, optNewSelection) {
+  checkTagNClass('updateDependsUponList', this, 'FORM', 'server-formular');
+  let html = "";
+  serverList.filter(key => key !== 'local_proxy').forEach(key => {
+    html += `<option value="${key}">${key}</option>`;
+  });
+  replaceSelectOptions($(this).find('select[name="dependsUpon"]'), html, optOldSelection, optNewSelection);
+}
+
+function replaceSelectOptions(select, html, optOldSelection, optNewSelection) {
   let selected = select.val();
   select.children().remove();
   select.prepend(html);
-  if (replacedSelection && selected === replacedSelection) {
+  if ((optOldSelection && selected === optOldSelection) || optOldSelection === null) {
     selected = optNewSelection
   }
   select.val(selected);
+  if (selected && select.val() !== selected) {
+    console.error(`ERR Unable to select ${optNewSelection} in ${select.attr('name')}`);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -252,6 +266,24 @@ $.fn.populateForm = function (serverData, path) {
 
   // in case its applying a template drop its name field
   delete serverData.templateName;
+
+  const skipDefaultValuesFor = [
+      'type', 'key', 'hostname', 'template', 'dependsUpon', 'version',
+    'entryPoint', 'workingDir', '.tigerProxyCfg.proxyPort', 'enableForwardProxy',
+    '.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation',
+    '.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation',
+    '.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation'];
+  // preset default values for all fields (except subset fields) in formular
+  $(this).find('*[name]').each(function () {
+    const fieldName = $(this).attr('name');
+    if (!$(this).parents('fieldset.subset').length && this.tagName !== 'UL' &&
+        skipDefaultValuesFor.indexOf(fieldName) === -1) {
+      const defValue = getDefaultValueFor(fieldName);
+      if (defValue !== null) {
+        $(this).setValue(defValue);
+      }
+    }
+  });
 
   for (const field in serverData) {
     const value = serverData[field];

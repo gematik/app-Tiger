@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.proxy;
 
+import static org.mockserver.model.Header.header;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
@@ -7,13 +8,10 @@ import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameters;
-
-import static org.mockserver.model.Header.header;
 
 @RequiredArgsConstructor
 @Data

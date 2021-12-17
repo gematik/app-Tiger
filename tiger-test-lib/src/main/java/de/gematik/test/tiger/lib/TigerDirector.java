@@ -62,7 +62,7 @@ public class TigerDirector {
     /**
      * Thread id based map of tiger proxies. For each thread a separate proxy is instantiated to ensure the traffic is
      * assigned to the correct test runner thread / test step.
-     * TODO CRITICAL make sure we can do proxiing thread based!
+     * TODO TGR-257 make sure we can do proxying thread based!, eventually use sequence diagramm aproach / process id
      * https://stackoverflow.com/questions/16388112/each-thread-using-its-own-proxy
      */
     private static final Map<Long, TigerProxy> proxiesMap = new HashMap<>();
@@ -185,7 +185,7 @@ public class TigerDirector {
                 Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
                     .getDeclaredMethod("main", String[].class);
                 String[] args = new String[]{"-m", "tcimp", "-dryrun"};
-                // TODO read from tiger-testlib.yaml or env vars values for -h -u -p -prj -aq -fd -f -bdd
+                // TODO TGR-251 - read from tiger-testlib.yaml or env vars values for -h -u -p -prj -aq -fd -f -bdd
 
                 log.info("Syncing test cases with Polarion...");
                 polarionToolBoxMain.invoke(null, (Object[]) args);
@@ -193,7 +193,7 @@ public class TigerDirector {
             } catch (NoSuchMethodException | ClassNotFoundException e) {
                 throw new TigerLibraryException("Unable to access Polarion Toolbox! "
                     + "Be sure to have it included in mvn dependencies.", e);
-                // TODO add the mvn dependency lines to log output
+                // TODO TGR-258 add the mvn dependency lines to log output
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new TigerLibraryException("Unable to call Polarion Toolbox's main method!", e);
             }
@@ -215,7 +215,7 @@ public class TigerDirector {
 
     public static void createAfoRepoort() {
         assertThatTigerIsInitialized();
-        // TODO create Aforeport and embedd it into serenity report
+        // TODO TGR-259 (see architecture decision about pluggable (TGR-253)) create Aforeport and embedd it into serenity report
     }
 
     public static String getProxySettings() {

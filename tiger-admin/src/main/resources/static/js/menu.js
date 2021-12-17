@@ -1,7 +1,10 @@
 let currEnvironment = {};
+/** @namespace currEnvironment.tigerProxyCfg.proxiedServer */
 let currTemplates = [];
 /** @namespace currTemplates.templates */
 /** @namespace currTemplates.templates.templateName */
+
+let configScheme =  {};
 
 let currFolder = '.';
 let fsSeparator = '';
@@ -80,8 +83,16 @@ function populateServersFromYaml(testEnvYaml) {
     addServer(serverKey, testEnvYaml[serverKey]);
   }
 
-  // update proxied select field in all formulars
-  updateServerLists(Object.keys(testEnvYaml));
+  const serverList = Object.keys(testEnvYaml).sort();
+  // update server list fields in all formulars, setting the value from testEnvYaml
+  for (const serverKey in testEnvYaml) {
+    const form = $('#content_server_' + serverKey);
+    const serverList2 = [...serverList].filter(e => e !== serverKey);
+    if (testEnvYaml[serverKey].type === 'tigerProxy') {
+      form.updateServerList(serverList2, null, testEnvYaml[serverKey].tigerProxyCfg.proxiedServer);
+    }
+    form.updateDependsUponList(serverList2, null, testEnvYaml[serverKey].dependsUpon);
+  }
 
   if (!serverContent.children().length) {
     showWelcomeCard();
@@ -180,9 +191,19 @@ function addSelectedServer() {
   }
   addServer(newKey, {...currEnvironment[newKey]});
   notifyChangesToTestenvData(true);
-  updateServerLists(Object.keys(currEnvironment));
+
+  // update server list fields, as we add a new server no selection replacement needed, thus no add. params
+  const serverList = Object.keys(currEnvironment).sort();
+  $.each(serverList, function () {
+    const form = $("#content_server_" + this);
+    const serverList2 = [...serverList].filter(e => e != this);
+    if (currEnvironment[this].type === 'tigerProxy') {
+      form.updateServerList(serverList2);
+    }
+    form.updateDependsUponList(serverList2);
+  });
   addServerModal.modal('hide');
-  snack(`Added node ${newKey}`, 'success', 3000);
+  snack(`Added node ${newKey}`, 'success', 5000);
 }
 
 function notifyChangesToTestenvData(flag) {
@@ -209,11 +230,6 @@ function showWelcomeCard() {
   $('.server-content .btn-add-server').click(openAddServerModal);
 }
 
-function updateServerLists(serverList, replacedSelection, optNewSelection) {
-  $('form.server-formular').updateServerList(serverList, replacedSelection,
-      optNewSelection);
-}
-
 function confirmNoDefault(flag, title, content, yesfunc) {
   if (flag) {
     bs5Utils.Modal.show({
@@ -222,13 +238,13 @@ function confirmNoDefault(flag, title, content, yesfunc) {
           '<div>' + content + '</div>',
       buttons: [
         {
-          text: 'Yes', class: 'btn btn-danger btn-lg',
+          text: 'Yes', class: 'btn btn-danger btn-lg btn-yes',
           handler: (ev) => {
             $(ev.target).parents('.modal.show').modal('hide')
             yesfunc(ev);
           }
         },
-        {text: 'No', class: 'btn btn-primary btn-lg', type: 'dismiss'},
+        {text: 'No', class: 'btn btn-primary btn-lg btn-no', type: 'dismiss'},
       ],
       centered: true, dismissible: true, backdrop: 'static', keyboard: true,
       focus: false, type: 'danger'
@@ -410,7 +426,7 @@ function openAddServerModal() {
   addServerModal.modal('show');
 }
 
-function loadTemplatesFromServer() {
+function loadMetaDataFromServer() {
   $.ajax({
     url: "/getTemplates",
     type: "GET",
@@ -460,6 +476,21 @@ function loadTemplatesFromServer() {
     error: function (xhr) {
       $('body *').setEnabled(false);
       showError('We are sorry, but we were unable to load the server templates!'
+          + '<p>The admin UI is NOT usable!</p><p><b>Please reload the page</b></p>',
+          xhr.responseJSON);
+    }
+  });
+  $.ajax({
+    url: "/getConfigScheme",
+    type: "GET",
+    dataType: 'json',
+    success: function (res) {
+      configScheme = res;
+      snack('ConfigScheme loaded', 'success', 1000);
+    },
+    error: function (xhr) {
+      $('body *').setEnabled(false);
+      showError('We are sorry, but we were unable to load the config scheme!'
           + '<p>The admin UI is NOT usable!</p><p><b>Please reload the page</b></p>',
           xhr.responseJSON);
     }

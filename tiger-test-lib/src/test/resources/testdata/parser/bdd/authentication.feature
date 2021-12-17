@@ -235,6 +235,7 @@ Feature: Authentifiziere Anwendung am IDP Server
   @TCID:IDP_REF_AUTH_007 @PRIO:1
     @Afo:A_20440
     @Approval @Todo:IDP-553
+    # TODO TGR-252
   Scenario Outline: Auth - Ungültige Parameter
 
   ```

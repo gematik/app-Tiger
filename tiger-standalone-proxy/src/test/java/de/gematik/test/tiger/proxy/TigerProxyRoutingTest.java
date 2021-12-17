@@ -22,6 +22,7 @@ import kong.unirest.*;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
@@ -84,7 +85,7 @@ public class TigerProxyRoutingTest {
                 .isEqualTo("bar");
     }
 
-    // TODO Julian @Test
+    @Test
     public void addRoute_shouldWork() {
         unirestInstance.put("http://tiger.proxy/route")
                 .header("Content-Type", "application/json")
@@ -97,7 +98,7 @@ public class TigerProxyRoutingTest {
                 .isEqualTo("bar");
     }
 
-    // TODO Julian @Test
+    @Test
     public void deleteRoute_shouldWork() {
         assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
                 .isEqualTo(404);
@@ -120,7 +121,7 @@ public class TigerProxyRoutingTest {
                 .isEqualTo(404);
     }
 
-    // TODO Julian @Test
+    @Test
     public void getRoutes_shouldGiveAllRoutes() {
         final HttpResponse<List<TigerRouteDto>> tigerRoutesResponse = unirestInstance.get("http://tiger.proxy/route")
                 .asObject(new GenericType<>() {
@@ -133,7 +134,8 @@ public class TigerProxyRoutingTest {
                 .contains("http://tiger.proxy", "http://myserv.er");
     }
 
-//    @Test
+    @Disabled // fix with TGR-224
+    @Test
     public void testRouteUI() {
         mockServerClient.when(request()
             .withPath("/foo1"))
@@ -145,8 +147,7 @@ public class TigerProxyRoutingTest {
             .header("Content-Type", "application/json")
             .body("{\"from\":\"http://temp.server\","
                 + "\"to\":\"http://localhost:" + mockServerClient.getPort() + "\"}")
-            .asObject(TigerRouteDto.class)
-            .getBody().getId();
+            .asObject(TigerRouteDto.class);
 
         await()
             .atMost(2, TimeUnit.SECONDS)

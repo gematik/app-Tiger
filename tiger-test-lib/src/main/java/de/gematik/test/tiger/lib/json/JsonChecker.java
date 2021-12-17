@@ -40,7 +40,7 @@ import org.skyscreamer.jsonassert.comparator.CustomComparator;
  * JSON object attributes starting with four underscores "____" are optional and allow the oracle string to contain
  * attributes to be checked for value ONLY if it exists in the test JSON
  * <p>
- * TODO: check JSONObject as parameter yields unreadable output in serenity output, maybe reintroduce
+ * TODO TGR-256 check JSONObject as parameter yields unreadable output in serenity output, maybe reintroduce
  * SerenityJSONObject
  */
 public class JsonChecker {
@@ -73,7 +73,7 @@ public class JsonChecker {
                 compareJSON(expected.getJSONObject(0), actual.getJSONObject(0));
                 return;
             }
-            // TODO LO PRIO make it without unique key based approach
+            // TODO TGR-254 LOW PRIO make it without unique key based approach
             super.compareJSONArrayOfJsonObjects(key, expected, actual, result);
         }
     };
@@ -150,7 +150,7 @@ public class JsonChecker {
                     assertJsonObjectShouldMatchOrContainInAnyOrder(json.get(jsonKey).toString(),
                         oracle.get(oracleKey).toString(), true);
                 } else if (json.get(jsonKey) instanceof JSONArray) {
-                    // TODO shouldn't this call assertJsonArrayShouldMatchInAnyOrder?
+                    // TODO TGR-254 shouldn't this call assertJsonArrayShouldMatchInAnyOrder?
                     JSONAssert.assertEquals(oracle.get(oracleKey).toString(), json.get(jsonKey).toString(),
                         customComparator);
                 } else {

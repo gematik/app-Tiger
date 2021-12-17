@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.16.4</version>
+        <version>0.17.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,10 +18,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${version.junit4}</version>
-            <scope>test</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${version.junit5}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -86,7 +85,18 @@
             <artifactId>bctls-jdk15on</artifactId>
             <version>1.69</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.7.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.arkinator</groupId>
+            <artifactId>mockserver-core</artifactId>
+            <version>${version.mockserver}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

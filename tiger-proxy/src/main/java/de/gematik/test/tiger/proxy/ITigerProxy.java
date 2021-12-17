@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 
 import java.security.Key;
@@ -44,4 +45,10 @@ public interface ITigerProxy {
     List<TigerRoute> getRoutes();
 
     void clearAllRoutes();
+
+    RbelModificationDescription addModificaton(RbelModificationDescription modification);
+
+    List<RbelModificationDescription> getModifications();
+
+    void removeModification(String modificationId);
 }

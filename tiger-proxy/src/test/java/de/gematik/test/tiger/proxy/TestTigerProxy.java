@@ -16,9 +16,14 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
@@ -27,18 +32,6 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
-import kong.unirest.*;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jose4j.jws.JsonWebSignature;
-import org.junit.Test;
-import org.mockserver.model.MediaType;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.security.Key;
@@ -53,11 +46,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import kong.unirest.*;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jose4j.jws.JsonWebSignature;
+import org.junit.Test;
+import org.mockserver.model.MediaType;
 
 @Slf4j
 public class TestTigerProxy extends AbstractTigerProxyTest {
@@ -77,7 +76,8 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
 
-        assertThat(tigerProxy.getRbelMessages().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname())
+        assertThat(
+            tigerProxy.getRbelMessages().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname())
             .isEqualTo(new RbelHostname("backend", 80));
         assertThat(tigerProxy.getRbelMessages().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname())
             .isEqualTo(new RbelHostname("backend", 80));
@@ -166,7 +166,8 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate() throws NoSuchAlgorithmException, KeyManagementException {
+    public void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate()
+        throws NoSuchAlgorithmException, KeyManagementException {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -235,7 +236,8 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        final HttpResponse<JsonNode> response = proxyRest.get("http://localhost:" + fakeBackendServer.port() + "/foobar")
+        final HttpResponse<JsonNode> response = proxyRest.get(
+                "http://localhost:" + fakeBackendServer.port() + "/foobar")
             .asJson();
 
         assertThat(response.getStatus()).isEqualTo(666);

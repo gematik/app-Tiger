@@ -41,7 +41,7 @@ const summaryPatterns = {
         ["Rbel Endpoint ", "$.tigerProxyCfg.proxyCfg.activateRbelEndpoint", ""],
         ["ASN1 parsing ", "$.tigerProxyCfg.proxyCfg.activateAsn1Parsing", ""],
         ["Log traffic even without routes ", "$.tigerProxyCfg.proxyCfg.activateForwardAllLogging", ""],
-        ["Parse Rbel ", "$.tigerProxyCfg.proxyCfg.disableRbelParsing", ""]
+        ["Parse Rbel ", "$.tigerProxyCfg.proxyCfg.activateRbelParsing", ""]
       ], ""
     ]
   ],

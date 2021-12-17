@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.common;
 
+import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,7 +64,7 @@ public final class OsEnvironment {
         } else if (SystemUtils.IS_OS_MAC) {
             dockerNet = "en0";
         } else if (SystemUtils.IS_OS_WINDOWS) {
-            // TODO dynamically detect network once i know how to do that
+            // TODO TGR-248 dynamically detect network once i know how to do that, check with testcontaienrs 1.16.0 release
             log.warn("Docker host IP detection on Windows is not supported at the moment, "
                 + "falling back to default docker host ip 172.17.0.1 - FINGERS CROSSED!");
             return "172.17.0.1";

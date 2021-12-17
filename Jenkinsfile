@@ -42,7 +42,9 @@ pipeline {
 
         stage('Test') {
             steps {
-                mavenVerify(POM_PATH)
+                withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
+                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN")
+                }
             }
         }
 
@@ -84,7 +86,7 @@ pipeline {
         always {
             sendEMailNotification(getTigerEMailList())
             showJUnitAsXUnitResult()
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-standalone-proxy/target/site/serenity/**/*', fingerprint: false
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-standalone-proxy/target/site/serenity/**/*,tiger-admin/target/site/serenity/**/*', fingerprint: false
             publishHTML (target: [
                 allowMissing: false,
                 alwaysLinkToLastBuild: false,
@@ -92,6 +94,14 @@ pipeline {
                 reportDir: 'tiger-standalone-proxy/target/site/serenity',
                 reportFiles: 'index.html',
                 reportName: "Proxy Standalone UI Report"
+            ])
+            publishHTML (target: [
+                allowMissing: false,
+                alwaysLinkToLastBuild: false,
+                keepAll: true,
+                reportDir: 'tiger-admin/target/site/serenity',
+                reportFiles: 'index.html',
+                reportName: "Admin UI Report"
             ])
         }
     }

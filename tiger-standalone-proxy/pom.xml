@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-standalone-proxy</artifactId>
-    <version>0.16.4</version>
+    <version>0.17.0</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.16.4</version>
+        <version>0.17.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -21,7 +21,27 @@
         <jacoco.skip>true</jacoco.skip>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <cucumber.filter.tags></cucumber.filter.tags>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>WithoutUiTests</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
+            </properties>
+        </profile>
+        <profile>
+            <id>WithUITests</id>
+            <properties>
+                <!--suppress UnresolvedMavenProperty -->
+                <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
@@ -200,17 +220,55 @@
                     <dataFileIncludes>**/target/jacoco-output/*.exec</dataFileIncludes>
                 </configuration>
             </plugin>
-
+            <plugin>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <skip>false</skip>
+                            <templateFile>${project.basedir}/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
+                            <basedir>${project.basedir}/src/test/resources/features</basedir>
+                            <includes>
+                                <include>**/*.feature</include>
+                            </includes>
+                            <!-- mandatory -->
+                            <glues>
+                                <glue>de.gematik.test.tiger.proxy.ui.glue</glue>
+                            </glues>
+                            <!-- optional -->
+                            <driverPackage>de.gematik.test.tiger.admin.bdd.drivers</driverPackage>
+                            <!-- optional -->
+                            <driverClassName>Parallel${ctr}IT</driverClassName>
+                        </configuration>
+                        <phase>generate-test-sources</phase>
+                        <id>default-testSources</id>
+                        <goals>
+                            <goal>generate-drivers</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
+                    <includes>
+                        <include>**/Parallel*IT.java</include>
+                        <include>**/*Test.java</include>
+                        <exclude>**/UiTest.java</exclude>
+                    </includes>
                     <environmentVariables>
                         <MOZ_HEADLESS>1</MOZ_HEADLESS>
                     </environmentVariables>
-                    <!-- TODO Julian this is workaround for java heap space issue -->
+                    <systemPropertyVariables>
+                        <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
+                    </systemPropertyVariables>
+                    <!-- TODO TGR-262 Julian this is workaround for java heap space issue -->
                     <forkMode>always</forkMode>
+                    <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
             </plugin>
 
@@ -256,6 +314,13 @@
                         <goals>
                             <goal>aggregate</goal>
                             <goal>reports</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>serenity-check</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>

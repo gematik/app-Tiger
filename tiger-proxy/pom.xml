@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-proxy</artifactId>
-    <version>0.16.4</version>
+    <version>0.17.0</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.16.4</version>
+        <version>0.17.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -159,6 +159,16 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-rest-assured</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-lambda</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <version>${version.spring-boot-test}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
