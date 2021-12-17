@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import java.net.URI;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +25,6 @@ import org.mockserver.proxyconfiguration.ProxyConfiguration;
 @Builder
 @JsonInclude(Include.NON_NULL)
 public class ForwardProxyInfo {
-
     private String hostname;
     private Integer port;
     @Builder.Default
@@ -39,27 +37,27 @@ public class ForwardProxyInfo {
             return Optional.empty();
         }
         if (StringUtils.equals(hostname, "$SYSTEM")) {
-            if (System.getProperty("http.proxyHost") != null) {
-                return useProxyWithSystemProperties();
-            } else if (System.getenv("http_proxy") != null) {
-                return useProxySetAsEnvVar();
-            }
+            return convertSystemProxyConfig();
         } else {
             return Optional.of(proxyConfiguration(
                 Optional.ofNullable(type)
                     .map(this::toMockServerType)
                     .orElse(ProxyConfiguration.Type.HTTPS),
-                hostname + ":" + Objects.requireNonNullElse(port, 80),
+                hostname + ":" + getProxyPort(String.valueOf(port), type),
                 username, password));
         }
-        return Optional.empty();
     }
 
-    private Optional<ProxyConfiguration> useProxyWithSystemProperties() {
-        String proxyHost = System.getProperty("http.proxyHost");
-        String proxyPort = System.getProperty("http.proxyPort");
-        String proxyUser = System.getProperty("http.proxyUser");
-        String proxyPassword = System.getProperty("http.proxyPassword");
+    private Optional<ProxyConfiguration> useProxyWithSystemProperties(String proxyProtocol) {
+        ProxyConfiguration.Type proxyType = toMockServerType(getProxyProtocol(proxyProtocol));
+        String proxyHost = System.getProperty(proxyProtocol + ".proxyHost");
+        String proxyPort = System.getProperty(proxyProtocol + ".proxyPort");
+        String proxyUser = System.getProperty(proxyProtocol + ".proxyUser");
+        String proxyPassword = System.getProperty(proxyProtocol + ".proxyPassword");
+
+        if (StringUtils.isEmpty(proxyHost)) {
+            return Optional.empty();
+        }
 
         if (proxyUser != null || proxyPassword != null) {
             if (proxyUser == null) {
@@ -69,31 +67,42 @@ public class ForwardProxyInfo {
                 throw new TigerProxyToForwardProxyException(
                     "Could not convert proxy configuration: proxyUser != null, proxyPassword == null");
             }
-            return Optional.of(proxyConfiguration(HTTP, proxyHost + ":" + Objects.requireNonNullElse(proxyPort, 80),
+            return Optional.of(proxyConfiguration(proxyType,
+                proxyHost + ":" + getProxyPort(proxyPort, getProxyProtocol(proxyProtocol)),
                 proxyUser, proxyPassword));
         } else {
-            return Optional.of(proxyConfiguration(HTTP, proxyHost + ":" + Objects.requireNonNullElse(proxyPort, 80)));
+            return Optional.of(proxyConfiguration(proxyType,
+                proxyHost + ":" + getProxyPort(proxyPort, getProxyProtocol(proxyProtocol))));
         }
     }
 
-    private Optional<ProxyConfiguration> useProxySetAsEnvVar() {
-        String httpProxyAsEnv = System.getenv("http_proxy");
+    private Optional<ProxyConfiguration> useProxyAsEnvVar(String envProxyType) {
+        String httpProxyAsEnv = System.getenv(envProxyType);
+
+        if (StringUtils.isEmpty(httpProxyAsEnv)) {
+            return Optional.empty();
+        }
+
         URI proxyAsUri = URI.create(httpProxyAsEnv);
-        String proxyUsernamePassword = proxyAsUri.getUserInfo();
 
         if (proxyAsUri.getHost() == null || proxyAsUri.getScheme() == null) {
             throw new TigerProxyToForwardProxyException("No proxy host or no proxy protocol specified.");
         }
+
+        ProxyConfiguration.Type proxyType = toMockServerType(getProxyProtocol(proxyAsUri.getScheme()));
+        String proxyUsernamePassword = proxyAsUri.getUserInfo();
+        String proxyPort = getProxyPort(String.valueOf(proxyAsUri.getPort()),
+            getProxyProtocol(proxyAsUri.getScheme()));
+
         if (proxyUsernamePassword == null) {
-            return Optional.of(proxyConfiguration(HTTP,
-                proxyAsUri.getHost() + ":" + ((proxyAsUri.getPort() == -1) ? 80 : proxyAsUri.getPort())));
+            return Optional.of(proxyConfiguration(proxyType,
+                proxyAsUri.getHost() + ":" + proxyPort));
         } else if (!proxyUsernamePassword.contains(":")) {
             throw new TigerProxyToForwardProxyException(
                 "Could not convert proxy configuration: either username or password are not present in the env variable");
         } else {
-            return Optional.of(proxyConfiguration(HTTP,
-                proxyAsUri.getHost() + ":" + ((proxyAsUri.getPort() == -1) ? 80 : proxyAsUri.getPort()),
-                proxyUsernamePassword.split(":")[0],
+            return Optional.of(proxyConfiguration(proxyType,
+                proxyAsUri.getHost() + ":" + proxyPort, proxyUsernamePassword.split(":")[0],
                 proxyUsernamePassword.split(":")[1]));
         }
     }
@@ -107,5 +116,34 @@ public class ForwardProxyInfo {
             throw new TigerUnknownProtocolException(
                 "Protocol of type " + type.toString() + " not specified for proxies");
         }
+    }
+
+    private Optional<ProxyConfiguration> convertSystemProxyConfig() {
+        return useProxyWithSystemProperties("http")
+            .or(() -> useProxyWithSystemProperties("https"))
+            .or(() -> useProxyAsEnvVar("http_proxy"))
+            .or(() -> useProxyAsEnvVar("https_proxy"));
+    }
+
+    private TigerProxyType getProxyProtocol(String proxyProtocol) {
+        if (proxyProtocol.equalsIgnoreCase("http")) {
+            return TigerProxyType.HTTP;
+        } else if (proxyProtocol.equalsIgnoreCase("https")) {
+            return TigerProxyType.HTTPS;
+        } else {
+            throw new TigerUnknownProtocolException(
+                "Protocol of type " + proxyProtocol + " not specified for proxies");
+        }
+    }
+
+    private String getProxyPort(String proxyPort, TigerProxyType type) {
+        if (proxyPort == null || proxyPort.equals("null") || proxyPort.equals("-1")) {
+            if (type == TigerProxyType.HTTP) {
+                return "80";
+            } else if (type == TigerProxyType.HTTPS) {
+                return "443";
+            }
+        }
+        return proxyPort;
     }
 }
