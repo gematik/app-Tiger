@@ -61,7 +61,7 @@ public class MonitorUI extends JFrame {
     private void setMessage(String stepText) {
         Matcher m = showSteps.matcher(stepText);
         if (m.find()) {
-            // TODO Julian what else can I do? Only Reflection works here
+            // TODO TGR-277 LOWPRIO Julian what else can I do? Only Reflection works here
             try {
                 Color color = (Color) Color.class.getDeclaredField(
                     RbelAnsiColors.seekColor(m.group(2)).name().toUpperCase()).get(null);

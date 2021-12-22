@@ -20,7 +20,7 @@ function getListItem(text, active) {
   // TODO why <span><span> ??
   return `<li class="list-group-item ${active ? 'active ' : ''}">` +
       '<i title="Click to rearrange item in list" class="fas fa-grip-lines draghandle"></i>'
-      + `<span><span>${text}</span></span></li>`;
+      + `<span><span>${text}</span></span><i class="far fa-trash-alt btn-list-delete"></i></li>`;
 }
 
 //
@@ -65,7 +65,8 @@ function handleAddButtonOnComplexList() {
     }
     activeItem.removeClass('active');
   }
-  addItemToList(listGroup, activeItem)
+  addItemToList(listGroup, activeItem);
+
   const editFieldSet = fieldSet.find('fieldset');
   if (activeItem.length) {
     // if no active item dont skip entered data as its not very user friendly
@@ -86,7 +87,6 @@ function handleAddButtonOnComplexList() {
   // start editing
   editFieldSet.find("*[name]:first").focus();
   fieldSet.find(".btn-list-apply").show();
-  fieldSet.find(".btn-list-delete").setEnabled(true);
 }
 
 function addItemToList(listGroup, activeItem) {
@@ -96,12 +96,13 @@ function addItemToList(listGroup, activeItem) {
   } else {
     newItem.insertAfter(activeItem);
   }
+  newItem.find('.btn-list-delete').click(handleDeleteButtonOnList);
 }
 
 function handleDeleteButtonOnList() {
   // select previous list entry Or if no more select next and if none disable apply
   const fieldSet = $(this).parents('fieldset');
-  const activeItem = fieldSet.find('.list-group .list-group-item.active');
+  const activeItem = $(this).parent();
   let nextActive = activeItem.prev();
   if (!nextActive.length) {
     nextActive = activeItem.next();
@@ -126,7 +127,6 @@ function handleDeleteButtonOnList() {
       let defValue = getDefaultValueFor(fieldName);
       $(this).val(defValue === null ? '' : defValue);
     });
-    $(this).setEnabled(false);
     fieldSet.find('.btn-list-apply').hide();
   }
   activeItem.remove();
@@ -188,7 +188,6 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
           $(this).parents('.list-group').find('.active').removeClass('active');
           $(this).parent().addClass('active');
           $(this).focus();
-          $(this).parents('fieldset').find('.btn-list-delete').setEnabled(true);
         }
         $(this).keydown((ev) => {
           return $(this).handleEnterEscOnEditableContent(ev);
@@ -216,9 +215,6 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
       curActive.removeClass('active');
       $(this).addClass('active');
       const section = fieldSet.attr("section");
-      const btnDel = fieldSet.find('.btn-list-delete');
-      btnDel.attr("disabled", false);
-      btnDel.removeClass("disabled");
       // for complex lists also populate the edit fieldset
       if (!editable) {
         const editFieldSet = fieldSet.find('fieldset');
@@ -288,6 +284,7 @@ $.fn.updateDataAndLabelForActiveItem = function (emptyValues) {
     }
     elem.replaceWith(getListItem($('<div/>').text(listGroup.generateListItemLabel(data)).html(), true));
     elem = listGroup.find(".list-group-item.active");
+    elem.find('.btn-list-delete').click(handleDeleteButtonOnList);
     elem.data("listdata", data);
     elem.find('span:first').addClickNKeyCallbacks2ListItem(false);
   });

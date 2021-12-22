@@ -1,20 +1,18 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.testenvmgr.InsecureRestorableTrustAllManager;
+import de.gematik.test.tiger.testenvmgr.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import lombok.extern.slf4j.Slf4j;
-import org.awaitility.core.ConditionTimeoutException;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import java.net.*;
 import java.util.concurrent.TimeUnit;
-
-import static org.awaitility.Awaitility.await;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import lombok.extern.slf4j.Slf4j;
+import org.awaitility.core.ConditionTimeoutException;
 
 @Slf4j
 public abstract class AbstractExternalTigerServer extends TigerServer {
@@ -23,11 +21,11 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     boolean waitForService(boolean quiet) {
-        final long timeoutms = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000;
+        final long timeOutInMs = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L;
         if (isHealthCheckNone()) {
-            log.info("Waiting {}s to get external server {} online...", (timeoutms / 1000), getHostname());
+            log.info("Waiting {}s to get external server {} online...", (timeOutInMs / 1000L), getHostname());
             try {
-                Thread.sleep(timeoutms);
+                Thread.sleep(timeOutInMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -38,13 +36,12 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             log.info("  Checking {} instance '{}' is available ...", getClass().getSimpleName(), getHostname());
         }
         try {
-            InsecureRestorableTrustAllManager.saveContext();
-            InsecureRestorableTrustAllManager.allowAllSSL();
             var url = getHealthcheckUrl();
-            await().atMost(timeoutms, TimeUnit.MILLISECONDS)
+            await().atMost(timeOutInMs, TimeUnit.MILLISECONDS)
                 .pollDelay(1, TimeUnit.SECONDS)
                 .until(() -> {
-                    URLConnection con = url.openConnection();
+                    URLConnection con =  url.openConnection();
+                    InsecureTrustAllManager.allowAllSSL(con);
                     con.setConnectTimeout(1000);
                     try {
                         con.connect();
@@ -82,9 +79,6 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
                 throw new TigerTestEnvException("Timeout waiting for external server to respond at '"
                     + getConfiguration().getExternalJarOptions().getHealthcheck() + "'!");
             }
-        } finally {
-            //TODO this makes the GLOBAL trustmanager unusable! restrain to only this method!
-            InsecureRestorableTrustAllManager.restoreContext();
         }
         return false;
     }

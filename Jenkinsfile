@@ -43,15 +43,8 @@ pipeline {
         stage('Test') {
             steps {
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN")
+                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithoutUiTests")
                 }
-            }
-        }
-
-        stage('OWASP') {
-            when { branch BRANCH }
-            steps {
-                mavenOwaspScan(POM_PATH)
             }
         }
 
@@ -86,23 +79,6 @@ pipeline {
         always {
             sendEMailNotification(getTigerEMailList())
             showJUnitAsXUnitResult()
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-standalone-proxy/target/site/serenity/**/*,tiger-admin/target/site/serenity/**/*', fingerprint: false
-            publishHTML (target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: false,
-                keepAll: true,
-                reportDir: 'tiger-standalone-proxy/target/site/serenity',
-                reportFiles: 'index.html',
-                reportName: "Proxy Standalone UI Report"
-            ])
-            publishHTML (target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: false,
-                keepAll: true,
-                reportDir: 'tiger-admin/target/site/serenity',
-                reportFiles: 'index.html',
-                reportName: "Admin UI Report"
-            ])
         }
     }
 }

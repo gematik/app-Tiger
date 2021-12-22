@@ -4,7 +4,7 @@ let currTemplates = [];
 /** @namespace currTemplates.templates */
 /** @namespace currTemplates.templates.templateName */
 
-let configScheme =  {};
+let configScheme = {};
 
 let currFolder = '.';
 let fsSeparator = '';
@@ -18,6 +18,15 @@ const serverIcons = {
   localProxy: "fas fa-project-diagram",
   externalJar: "fas fa-rocket",
   externalUrl: "fas fa-external-link-alt"
+}
+
+const serverTypeNames = {
+  docker: "Docker Container",
+  compose: "Docker Compose",
+  tigerProxy: "Tiger Proxy",
+  externalJar: "External Jar",
+  externalUrl: "External URL"
+
 }
 
 // =============================================================================
@@ -137,7 +146,7 @@ function addServer(serverKey, serverData) {
         + '<div class="col-1">'
         + '  <i class="fas fa-grip-lines draghandle"></i>'
         + '</div>'
-        + '<div class="col-9">'
+        + '<div class="col-10">'
         + `  <i title="${serverData.type}" class="server-icon ${serverIcons[serverData.type]}"></i>`
         + `  <span class="server-label">${serverKey}</span>`
         + '</div>'
@@ -145,8 +154,11 @@ function addServer(serverKey, serverData) {
         + '  <i class="fas fa-ellipsis-v"></i>'
         + '</div></div>');
     $(`#sidebar_server_${serverKey} .server-label`).parent().parent().click(
-        function () {
-          window.scrollTo(0, formular.position().top);
+        function (ev) {
+          const target = $(ev.target);
+          if (!target.hasClass("fa-ellipsis-v") && !target.hasClass("context-menu-one")) {
+            window.scrollTo(0, formular.position().top - $('.navbar').outerHeight() - 10);
+          }
         });
   } else {
     $('#sidebar_server_local_proxy .server-label').parent().click(function () {
@@ -158,7 +170,7 @@ function addServer(serverKey, serverData) {
 
 function addSelectedServer() {
   const addServerModal = $('#add-server-modal');
-  const type = addServerModal.find('.list-server-types .active').text();
+  const type = addServerModal.find('.list-server-types .active').attr('data-value');
   // hide welcome card
   if (!Object.keys(currEnvironment).length) {
     currEnvironment['local_proxy'] = {
@@ -238,7 +250,7 @@ function confirmNoDefault(flag, title, content, yesfunc) {
           '<div>' + content + '</div>',
       buttons: [
         {
-          text: 'Yes', class: 'btn btn-danger btn-lg btn-yes',
+          text: 'Yes', class: 'btn btn-outline-primary btn-lg btn-yes',
           handler: (ev) => {
             $(ev.target).parents('.modal.show').modal('hide')
             yesfunc(ev);
@@ -247,7 +259,7 @@ function confirmNoDefault(flag, title, content, yesfunc) {
         {text: 'No', class: 'btn btn-primary btn-lg btn-no', type: 'dismiss'},
       ],
       centered: true, dismissible: true, backdrop: 'static', keyboard: true,
-      focus: false, type: 'danger'
+      focus: false, type: 'white'
     });
   } else {
     yesfunc();
@@ -419,9 +431,10 @@ function navigateIntoFolder(folder, okfunc, addroots, mode) {
 
 function openAddServerModal() {
   const addServerModal = $('#add-server-modal');
-  addServerModal.find('.info-block').html(
-      addServerModal.find('.info-intro-text').html());
+  addServerModal.find('button.dropdown-toggle').text("Bitte wählen");
   addServerModal.find('.list-server-types .active').removeClass("active");
+  addServerModal.find('.info-block').html('');
+  addServerModal.find('.info-block').hide();
   addServerModal.find('.btn-add-server-ok').setEnabled(false);
   addServerModal.modal('show');
 }
@@ -439,38 +452,33 @@ function loadMetaDataFromServer() {
         addServerModal.modal('hide');
       });
 
-      const list = addServerModal.find('.list-server-types');
-      list.children().remove();
-      let html = '<li class="list-group-item p-2 bg-success text-center text-white">Basic Types</li>';
+      const dropdown = addServerModal.find('.list-server-types .dropdown-menu');
+      dropdown.children().remove();
+      let html = '<li class="p-2 text-center text-success">Servertypen</li>'
       for (let icon in serverIcons) {
         if (icon !== 'localProxy') {
-          html += '<li class="list-group-item p-2 text-success">'
+          html += '<li class="dropdown-item p-2 text-success" data-value="' + icon + '">'
               + '<i class="server-icon ' + serverIcons[icon] + '"></i>'
-              + icon + '</li>';
+              + serverTypeNames[icon] + '</li>';
         }
       }
-      html += '<li class="list-group-item p-2 bg-secondary text-center text-white">Templates</li>';
+      html += '<li class="p-2 text-center text-secondary">Testvorlagen</li>';
       currTemplates.templates.forEach(function (template) {
-        html += '<li class="list-group-item p-2 text-secondary">'
+        html += '<li class="dropdown-item p-2 text-secondary" data-value="' + template.templateName + '">'
             + '<i class="server-icon ' + serverIcons[template.type] + '"></i>'
-            + template.templateName + '</li>';
+            + template.templateName[0].toUpperCase() + template.templateName.substr(1) + '</li>';
 
       })
-      list.prepend($(html));
-      list.find('.list-group-item:not(.text-white)').click(function () {
-        list.find('.active').removeClass("active");
-        $('#add-server-modal .info-block').html(
-            $('#add-server-modal .info-' + $(this).text()).html());
-        $(this).addClass("active");
+      dropdown.prepend($(html));
+      // single click displays info
+      dropdown.find('li.dropdown-item').click(function () {
+        $(this).parent().find('.active').removeClass('active');
+        $(this).addClass('active');
+        addServerModal.find('.info-block').html($('#add-server-modal .info-' + $(this).attr('data-value')).html());
+        addServerModal.find('.info-block').show();
         addServerModal.find('.btn-add-server-ok').setEnabled(true);
+        addServerModal.find('button.dropdown-toggle').html($(this).html());
       });
-      list.find('.list-group-item:not(.text-white)').dblclick(function (ev) {
-        $(this).click();
-        addServerModal.find('.btn-add-server-ok').click();
-        ev.preventDefault();
-        return false;
-      });
-
       snack('Templates loaded', 'success', 1000);
     },
     error: function (xhr) {

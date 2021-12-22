@@ -19,21 +19,13 @@ package de.gematik.test.tiger.lib;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import de.gematik.test.tiger.common.config.CfgTemplate;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
-import de.gematik.test.tiger.testenvmgr.InsecureRestorableTrustAllManager;
-
-import java.io.File;
+import de.gematik.test.tiger.testenvmgr.InsecureTrustAllManager;
+import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.net.URL;
 import java.net.URLConnection;
-
-import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
 import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 public class TestTigerDirector {
@@ -77,8 +69,12 @@ public class TestTigerDirector {
         // TODO TGR-124 upgrading to testcontainer 1.16.0 causes the ports info to be not available in docker config network bindings
         // so make sure we get ONE valid value here!
         // see https://github.com/testcontainers/testcontainers-java/issues/4489
-        assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().getServers().get("idp2-simple").getDockerOptions().getPorts()).hasSize(1);
-        assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().getServers().get("idp2-simple").getDockerOptions().getPorts().get(8080)).isNotNull();
+        assertThat(
+            TigerDirector.getTigerTestEnvMgr().getConfiguration().getServers().get("idp2-simple").getDockerOptions()
+                .getPorts()).hasSize(1);
+        assertThat(
+            TigerDirector.getTigerTestEnvMgr().getConfiguration().getServers().get("idp2-simple").getDockerOptions()
+                .getPorts().get(8080)).isNotNull();
     }
 
     @SneakyThrows
@@ -91,17 +87,20 @@ public class TestTigerDirector {
 
         System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
 
-        System.out.println("PROXY:" + System.getProperty("http.proxyHost") + " / " +  System.getProperty("https.proxyHost"));
-        System.out.println("PORTS:" + System.getProperty("http.proxyPort") + " / " +  System.getProperty("https.proxyPort"));
+        System.out.println(
+            "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
+        System.out.println(
+            "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
 
         assertThat(TigerDirector.isInitialized()).isTrue();
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
         assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
 
-        InsecureRestorableTrustAllManager.saveContext();
-        InsecureRestorableTrustAllManager.allowAllSSL();
         var url = new URL("http://idp-rise-tu-noproxy");
         URLConnection con = url.openConnection();
+        InsecureTrustAllManager.allowAllSSL(con);
+
+
         con.setConnectTimeout(1000);
         assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
     }
@@ -110,10 +109,11 @@ public class TestTigerDirector {
     @Test
     public void checkComplexKeyOverriding() throws Exception {
         final Configuration config = withEnvironmentVariable(
-                "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
+            "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
             .execute(() ->
                 new TigerConfigurationHelper<Configuration>()
-                .yamlReadOverwriteToConfig("src/test/resources/testdata/idpError.yaml", "TIGER_TESTENV", Configuration.class));
+                    .yamlReadOverwriteToConfig("src/test/resources/testdata/idpError.yaml", "TIGER_TESTENV",
+                        Configuration.class));
 
         assertThat(config.getServers().get("idp")
             .getExternalJarOptions()

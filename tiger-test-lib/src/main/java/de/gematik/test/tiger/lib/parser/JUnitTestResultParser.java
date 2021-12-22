@@ -75,7 +75,7 @@ public class JUnitTestResultParser implements ITestResultParser {
     }
 
     private void parseTestSuite(final Element suite, final Map<String, TestResult> results) {
-        // TODO workaround for now
+        // TODO TGR-278 workaround for now, how to get start datetime for test run from junit results
         LocalDateTime start = null;
         if (suite.hasAttribute("timestamp")) {
             start = LocalDateTime.parse(suite.getAttribute("timestamp").split(" ")[0],
@@ -95,8 +95,9 @@ public class JUnitTestResultParser implements ITestResultParser {
                     tr.setStartms(0);
                     tr.setEndms(0);
                 }
-                // TODO workaround for now we assume junit methods have to pass in the polarion ID as test method name
+                // TODO TGR-279 workaround for now we assume junit methods have to pass in the polarion ID as test method name
                 // Later on parse test case json and look for annotations by matching the test class and method name
+                // in Doku klarstellen
                 tr.setPolarionID(tr.getMethod());
                 results.put(tr.getClazz() + ":" + tr.getMethod(), tr);
             }

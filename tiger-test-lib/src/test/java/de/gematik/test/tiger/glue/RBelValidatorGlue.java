@@ -15,8 +15,11 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.xmlunit.builder.DiffBuilder;
 
+@Slf4j
 public class RBelValidatorGlue {
 
     static RbelMessageValidator rbelValidator = new RbelMessageValidator();
@@ -173,8 +176,12 @@ public class RBelValidatorGlue {
     @Dann("TGR speichere Wert des Knotens {string} der aktuellen Antwort in der Variable {string}")
     @Then("TGR store current response node text value at {string} in variable {string}")
     public void storeCurrentResponseNodeTextValueInVariable(final String rbelPath, final String varName) {
-        final String text = rbelValidator.findElemInLastResponse(rbelPath).getRawStringContent();
+        final String text = rbelValidator.findElemsInLastResponse(rbelPath).stream()
+            .map(RbelElement::getRawStringContent)
+            .map(String::trim)
+            .collect(Collectors.joining());
         new TestContext("tiger").putString(varName, text);
+        log.info(String.format("Storing '%s' in testcontext tiger::%s", text, varName));
     }
 
     // =================================================================================================================
@@ -206,7 +213,10 @@ public class RBelValidatorGlue {
     @Then("TGR current response with attribute {string} matches {string}")
     public void currentResponseMessageAttributeMatches(final String rbelPath, final String value) {
         final String parsedRbelPath = TokenSubstituteHelper.substitute(rbelPath, "", new TestContext().getContext("tiger"));
-        final String text = rbelValidator.findElemInLastResponse(parsedRbelPath).getRawStringContent();
+        final String text = rbelValidator.findElemsInLastResponse(parsedRbelPath).stream()
+            .map(RbelElement::getRawStringContent)
+            .map(String::trim)
+            .collect(Collectors.joining());
         final String parsedValue = TokenSubstituteHelper.substitute(value, "", new TestContext().getContext("tiger"));
         if (!text.equals(parsedValue)) {
             assertThat(text).matches(Pattern.compile(parsedValue, Pattern.MULTILINE | Pattern.DOTALL));

@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-proxy</artifactId>
-    <version>0.17.0</version>
+    <version>0.17.1</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.17.0</version>
+        <version>0.17.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

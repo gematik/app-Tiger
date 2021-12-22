@@ -3,6 +3,7 @@
 function handleNodeCollapse() {
   $(this).parent().siblings(':not(.hidden)').toggle();
   $(this).parent().parent().siblings(':not(.hidden)').toggle();
+  $(this).parent().parent().parent().siblings(':not(.hidden)').toggle();
   $(this).toggleCollapseIcon();
 }
 

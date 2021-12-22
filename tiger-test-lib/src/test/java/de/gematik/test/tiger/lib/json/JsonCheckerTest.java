@@ -154,7 +154,7 @@ public class JsonCheckerTest {
             "attr3",
             "val3XXXX")).isInstanceOf(AssertionError.class);
     }
-    // TODO $REMOVE
+    // TODO TGR-281 $REMOVE als testwert testen
 
     @Test
     public void testJSONAttributeShouldMatchOKMismatch() {
@@ -240,7 +240,7 @@ public class JsonCheckerTest {
             "xxx.*");
     }
 
-    // TODO multilevel JSON Objects
+    // TODO TGR-281 teste auch multilevel JSON Objects
     @Test
     public void testJSONAttributeMultiLvlOKEquals() {
         check.assertJsonObjectShouldMatchOrContainInAnyOrder(
@@ -273,7 +273,7 @@ public class JsonCheckerTest {
 
 
 
-    // TODO JSONArrays as top struct with primitives
-    // TODO multilvl JSON Objects with JSONArrays
-    // TODO JSONArrays as top struct with multilvl JSONObjects/JSONArrays
+    // TODO TGR-281 JSONArrays as top struct with primitives
+    // TODO TGR-281 multilvl JSON Objects with JSONArrays
+    // TODO TGR-281 JSONArrays as top struct with multilvl JSONObjects/JSONArrays
 }

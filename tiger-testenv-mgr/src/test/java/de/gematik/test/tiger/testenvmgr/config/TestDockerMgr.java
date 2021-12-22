@@ -88,7 +88,8 @@ public class TestDockerMgr {
 
     @Test
     public void testDockerMgrStartupTimeoutFallback() {
-        // TODO ensure image with given version is available locally
+        // TGR-285 ensure image with given version is available locally
+        // see below
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
@@ -103,7 +104,9 @@ public class TestDockerMgr {
 
     @Test
     public void testDockerMgrPauseUnpause() {
-        // TODO ensure image with given version is available locally
+        // TODO TGR-285 ensure image with given version is available locally
+        // Rewrite so that the docker image can be downloaded gematik internally and without gematik connection
+        // check backlog for simliar topic
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck

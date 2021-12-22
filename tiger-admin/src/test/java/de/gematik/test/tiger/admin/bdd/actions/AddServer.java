@@ -33,10 +33,13 @@ public class AddServer implements Performable {
         return instrumented(AddServer.class, nodeType, addServerBtn);
     }
 
+    private static final Target dropDownButton = Target.the("dropdown button of server types")
+            .locatedBy("#add-server-modal button.dropdown-toggle");
+
     private static Target getNodeTypeListEntryFor(String nodeType) {
         return Target.the("entry for " + nodeType)
             .locatedBy("//div[@id='add-server-modal']"
-                + "//li[contains(@class, 'list-group-item') and text()='" + nodeType + "']");
+                + "//li[contains(@class, 'dropdown-item') and @data-value='" + nodeType + "']");
     }
 
     @Override
@@ -52,6 +55,7 @@ public class AddServer implements Performable {
             // Actions
             Click.on(addServerBtn),
             Ensure.that(MODAL_ADD_SERVER).isDisplayed(),
+            Click.on(dropDownButton),
             Click.on(getNodeTypeListEntryFor(nodeType)),
             Click.on(BTN_ADD_SERVER_OK),
             // Verification

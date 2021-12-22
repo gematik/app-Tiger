@@ -61,13 +61,6 @@ public class SimpleListSteps {
         );
     }
 
-    @And("she/he checks list delete button is disabled")
-    public void checksDeleteButtonIsDisabled() {
-        theActorInTheSpotlight().attemptsTo(
-            Ensure.that(PerformActionsOnList.listDeleteButton()).isDisabled()
-        );
-    }
-
     @And("she/he checks list add button is enabled")
     public void checksAddButtonIsEnabled() {
         theActorInTheSpotlight().attemptsTo(

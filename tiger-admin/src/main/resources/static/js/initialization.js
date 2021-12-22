@@ -87,7 +87,7 @@ $(document).ready(function () {
       } else {
         content.insertBefore($(".server-content").children()[newIndex + 1]);
       }
-      window.scrollTo(0, content.position().top);
+      window.scrollTo(0, content.position().top - $('.navbar').outerHeight() - 10);
     }
   });
 

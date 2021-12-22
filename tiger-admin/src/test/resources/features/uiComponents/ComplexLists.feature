@@ -150,10 +150,8 @@ Feature: Test functionality of complex lists
     When he deletes active list item
     And he deletes active list item
     Then he checks list length is 0
-    And he checks list delete button is disabled
 
-
-  Scenario: Drag items in simple list
+  Scenario: Drag items in complex list
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"

@@ -122,9 +122,9 @@ public class PerformActionsOnList implements Task {
             .locatedBy(listGroupUlXpath() + "/parent::div/parent::div//button[contains(@class, 'btn-list-add')]");
     }
 
-    public static Target listDeleteButton() {
-        return Target.the("delete button for list " + theActorInTheSpotlight().recall("listName"))
-            .locatedBy(listGroupUlXpath() + "/parent::div/parent::div//button[contains(@class, 'btn-list-delete')]");
+    public static Target listDeleteButtonOfActiveItem() {
+        return Target.the("delete button for active item of list " + theActorInTheSpotlight().recall("listName"))
+            .locatedBy(activeListItem().getCssOrXPathSelector() + "/../i[contains(@class, 'btn-list-delete')]");
     }
 
     public static Target listApplyButton() {
@@ -149,7 +149,7 @@ public class PerformActionsOnList implements Task {
 
     public static Target dragHandleOfItemInRow(int index) {
         return Target.the("item with index " + index)
-            .locatedBy("(" + listGroupUlXpath() + "//li)[" + index + "]/i");
+            .locatedBy("(" + listGroupUlXpath() + "//li)[" + index + "]/i[contains(@class,'draghandle')]");
     }
 
     private static String formXpath() {
@@ -202,7 +202,7 @@ public class PerformActionsOnList implements Task {
         actor.attemptsTo(
             // Actions
             Ensure.that(listItem).isDisplayed(),
-            Click.on(listDeleteButton())
+            Click.on(listDeleteButtonOfActiveItem())
         );
     }
 

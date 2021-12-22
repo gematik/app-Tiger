@@ -24,7 +24,7 @@ public class TigerAdminApplication {
     public ITemplateResolver defaultTemplateResolver() {
         AbstractConfigurableTemplateResolver resolver;
         String prefix = properties.getPrefix();
-        if (prefix == null || prefix.startsWith("classpath:")) {
+        if (prefix != null && prefix.startsWith("classpath:")) {
             resolver = new ClassLoaderTemplateResolver();
             prefix = prefix.substring("classpath:".length());
         } else {

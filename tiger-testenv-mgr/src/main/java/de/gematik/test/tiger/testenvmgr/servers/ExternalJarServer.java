@@ -112,7 +112,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                 }
             }
         } finally {
-            log.info("proc: " + processReference.get());
+            log.info("proc: {}", processReference.get());
             if (processReference.get() != null) {
                 if (processReference.get().isAlive()) {
                     log.info("Started {}", getHostname());

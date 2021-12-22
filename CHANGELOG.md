@@ -1,5 +1,17 @@
 # Changelog Tiger Testplattform
 
+# Release 0.17.1
+
+## Bugfix
+* TGR-222: Trustmanager im AbstractExternalTigerServer lokal begrenzen
+
+## Features
+* TGR-269: Configuration for HTTPS forward proxy
+
+## Enhancements
+* TGR-250: Tests überarbeiten in TestTokenSubstituteHelper
+
+
 # Release 0.17.0
 
 ## Breaking Changes

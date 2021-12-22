@@ -48,7 +48,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
   @Afo:A_20731 @Afo:A_20310 @Afo:A_20464 @Afo:A_20952 @Afo:A_21320 @Afo:A_21321 @Afo:A_20313
   @Approval @Todo:AccessTokenContent
   @Todo:CompareSubjectInfosInAccessTokenAndInCert
-    # TODO: wollen wir noch den Wert der auth_time gegen den Zeitpunkt der Authentifizierung pruefen
   Scenario: GetToken Signierte Challenge - Gutfall - Check Access Token - Validiere Access Token Claims
     Given I choose code verifier '${TESTENV.code_verifier01}'
     And I request a challenge with
@@ -89,11 +88,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
             sub:              ".*"
           }
         """
-
-        # TODO organizationName bei HBA nicht gesetzt
-        # TODO bei SMC-B sind names optional, wie gehen wir damit um?
-        # TODO Zu klären: wo prüfen wir die gültigkeit der professionOID am server? oder akzeptieren wir was in der Karte steht?
-        # 1\\.2\\.276\\.0\\.76\\.4\\.(3\\d|4\\d|178|23[2-0]|240|241)
 
   @Approval @Ready
   @Todo:WeAlreadyHaveTheseChecksInAnotherTestcase @Todo:Duplicate
@@ -183,9 +177,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
     Then the body claim 'sub' should match '.*'
     And the body claim 'idNummer' should match "[A-Z][\d]{9,10}"
 
-    # TODO write method to save a specific claim and compare it with another (positive and negative)
-    # TODO rewrite test case to run two times and verify that sub values do mismatch
-
   @Approval @Todo:AccessTokenContent
   Scenario: GetToken Signierte Challenge - Subject Claim wird auch für nicht durch Versicherte signierte Challenges erstellt
     Given I choose code verifier '${TESTENV.code_verifier01}'
@@ -236,8 +227,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
     When I request an access token
     Then the context ID_TOKEN must be signed with cert PUK_SIGN
 
-    # TODO card specific cases (if user consent claims should be validated)
-
 
   @Afo:A_20314 @Afo:A_20315
   @Approval @Ready @LongRunning
@@ -277,8 +266,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
 	        gematik_code:       "<err_id>"
           }
         """
-
-    # TODO check error detail message
 
     Examples: GetToken - Null Parameter Beispiele
       | err_id | err_code               | grant_type         | redirect_uri            | token_code | code_verifier              | client_id            |
