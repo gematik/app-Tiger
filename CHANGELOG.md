@@ -8,6 +8,9 @@
 ## Features
 * TGR-269: Configuration for HTTPS forward proxy
 
+## Enhancements
+* TGR-250: Tests überarbeiten in TestTokenSubstituteHelper
+
 
 # Release 0.17.0
 
