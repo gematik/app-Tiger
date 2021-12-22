@@ -220,7 +220,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     private void startServer(TigerServer server) {
-        synchronized (server) {
+        synchronized (server) { //NOSONAR
+            // we REALLY want to synchronize ONLY on the server!
             if (server.isStarted()) {
                 return;
             }

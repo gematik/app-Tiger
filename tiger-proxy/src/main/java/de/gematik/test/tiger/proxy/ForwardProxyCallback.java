@@ -37,7 +37,7 @@ public class ForwardProxyCallback extends AbstractTigerRouteCallback {
                 header("Authorization",
                     getTigerRoute().getBasicAuth().toAuthorizationHeaderValue()));
         }
-        final String path = req.getPath().equals("/") ?
+        final String path = req.getPath().toString().equals("/") ?
             targetUri.getPath()
             : targetUri.getPath() + req.getPath();
         return forwardOverriddenRequest(req)

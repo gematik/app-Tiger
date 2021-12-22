@@ -21,11 +21,11 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     boolean waitForService(boolean quiet) {
-        final long timeoutms = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000;
+        final long timeOutInMs = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000l;
         if (isHealthCheckNone()) {
-            log.info("Waiting {}s to get external server {} online...", (timeoutms / 1000), getHostname());
+            log.info("Waiting {}s to get external server {} online...", (timeOutInMs / 1000), getHostname());
             try {
-                Thread.sleep(timeoutms);
+                Thread.sleep(timeOutInMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -37,7 +37,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         }
         try {
             var url = getHealthcheckUrl();
-            await().atMost(timeoutms, TimeUnit.MILLISECONDS)
+            await().atMost(timeOutInMs, TimeUnit.MILLISECONDS)
                 .pollDelay(1, TimeUnit.SECONDS)
                 .until(() -> {
                     URLConnection con =  url.openConnection();

@@ -1,10 +1,10 @@
 package de.gematik.test.tiger.proxy;
 
-import static org.mockserver.model.Header.header;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.exception.TigerProxyModificationException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +12,8 @@ import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameters;
+
+import static org.mockserver.model.Header.header;
 
 @RequiredArgsConstructor
 @Data
@@ -27,16 +29,22 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         if (modifiedRequest == requestElement) {
             return;
         }
-        request.withBody(modifiedRequest.findElement("$.body").get().getRawContent());
+        request.withBody(extractSafe(modifiedRequest, "$.body").getRawContent());
         for (RbelElement modifiedHeader : modifiedRequest.findRbelPathMembers("$.header.*")) {
             request = request.replaceHeader(header(modifiedHeader.getKey().orElseThrow(),
                 modifiedHeader.getRawStringContent()));
         }
-        final RbelUriFacet uriFacet = modifiedRequest.findElement("$.path").get().getFacetOrFail(RbelUriFacet.class);
+        final RbelUriFacet uriFacet = extractSafe(modifiedRequest, "$.path").getFacetOrFail(RbelUriFacet.class);
         request.withPath(uriFacet.getBasicPathString());
         clearExistingQueryParameters(request);
         addAllQueryParametersFromRbelMessage(request, uriFacet);
-        request.withMethod(modifiedRequest.findElement("$.method").get().getRawStringContent());
+        request.withMethod(extractSafe(modifiedRequest, "$.method").getRawStringContent());
+    }
+
+    private RbelElement extractSafe(RbelElement targetElement, String rbelPath) {
+        return targetElement.findElement(rbelPath)
+            .orElseThrow(() ->
+                new TigerProxyModificationException("Unexpected structure: Could not find '" + rbelPath + "'!"));
     }
 
     private void addAllQueryParametersFromRbelMessage(HttpRequest request, RbelUriFacet uriFacet) {
@@ -63,12 +71,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         if (modifiedResponse == responseElement) {
             return;
         }
-        response.withBody(modifiedResponse.findElement("$.body").get().getRawContent());
+        response.withBody(extractSafe(modifiedResponse, "$.body").getRawContent());
         for (RbelElement modifiedHeader : modifiedResponse.findRbelPathMembers("$.header.*")) {
             response = response.replaceHeader(header(modifiedHeader.getKey().orElseThrow(),
                 modifiedHeader.getRawStringContent()));
         }
-        response.withStatusCode(Integer.parseInt(modifiedResponse.findElement("$.responseCode").get().getRawStringContent()));
+        response.withStatusCode(Integer.parseInt(extractSafe(modifiedResponse, "$.responseCode").getRawStringContent()));
     }
 
     @Override

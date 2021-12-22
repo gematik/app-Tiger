@@ -10,6 +10,7 @@ import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
+import com.github.dockerjava.api.model.ResponseItem;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -44,10 +45,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -69,7 +67,7 @@ public class DockerMgr {
 
         pullImage(imageName);
 
-        final GenericContainer<?> container = new GenericContainer<>(testContainersImageName);
+        final var container = new GenericContainer<>(testContainersImageName); //NOSONAR
         try {
             InspectImageResponse iiResponse = container.getDockerClient().inspectImageCmd(imageName).exec();
             final ContainerConfig containerConfig = iiResponse.getConfig();
@@ -132,8 +130,6 @@ public class DockerMgr {
                 .filter(entry -> entry.getValue() != null)
                 .forEach(entry -> ports.put(entry.getKey().getPort(), Integer.valueOf(entry.getValue()[0].getHostPortSpec())));
             server.getDockerOptions().setPorts(ports);
-
-
         } catch (final DockerException de) {
             throw new TigerTestEnvException("Failed to start container for server " + server.getHostname(), de);
         }
@@ -219,7 +215,13 @@ public class DockerMgr {
             .exec(new ResultCallback.Adapter<PullResponseItem>() {
                 @Override
                 public void onNext(PullResponseItem item) {
-                    log.debug(item.getStatus() + " " + (item.getProgressDetail() != null ? item.getProgressDetail().getCurrent() : ""));
+                    if (log.isDebugEnabled()) {
+                        log.debug("{} {}", item.getStatus(),
+                            Optional.ofNullable(item.getProgressDetail())
+                                .map(ResponseItem.ProgressDetail::getCurrent)
+                                .map(Object::toString)
+                                .orElse(""));
+                    }
                 }
 
                 @Override
