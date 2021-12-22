@@ -73,7 +73,6 @@ Feature: Test functionality of simple lists
     When he deletes active list item
     And he deletes active list item
     Then he checks list length is 0
-    And he checks list delete button is disabled
 
 
   Scenario: Drag items in simple list

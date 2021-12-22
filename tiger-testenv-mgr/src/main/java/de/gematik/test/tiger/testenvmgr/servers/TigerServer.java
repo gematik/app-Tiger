@@ -122,9 +122,8 @@ public abstract class TigerServer {
 
         loadPkiForProxy();
 
-        // set system properties from exports section and store the value in environmentVariables map
-        // replace ${NAME} with server name
-        // TODO once we did server list -> server map replace with HOSTNAME of server
+        // TGR-284 set system properties from exports section and store the value in environmentVariables map
+        // replace ${NAME} with server host name
         //
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);

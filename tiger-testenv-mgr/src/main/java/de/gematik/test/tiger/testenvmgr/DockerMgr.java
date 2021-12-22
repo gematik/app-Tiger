@@ -125,7 +125,8 @@ public class DockerMgr {
                 .withName("tiger." + server.getHostname()).exec();
             containers.put(server.getHostname(), container);
             final Map<Integer, Integer> ports = new HashMap<>();
-            // TODO for now we assume ports are bound only to one other port on the docker container
+            // TODO TGR-282 LO PRIO for now we assume ports are bound only to one other port on the docker container
+            // maybe just make clear we support only single exported port
             container.getContainerInfo().getNetworkSettings().getPorts().getBindings().entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
                 .forEach(entry -> ports.put(entry.getKey().getPort(), Integer.valueOf(entry.getValue()[0].getHostPortSpec())));
@@ -288,7 +289,7 @@ public class DockerMgr {
                 content += "grep -q \"host.docker.internal\" /etc/hosts || "
                     + "echo \" \" >> /etc/hosts && echo \"" + hostip + "    host.docker.internal\" >> /etc/hosts\n";
 
-                // TODO reactivate once we have docker 20 on maven nodes
+                // TODO TGR-283 reactivate once we have docker v20 on maven nodes
                 //  container.withExtraHost("host.docker.internal", "host-gateway");
                 content += "echo HOSTS:\ncat /etc/hosts\n";
             } else {

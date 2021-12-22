@@ -97,6 +97,7 @@ Feature: Summary feature
     And he clicks on global advanced icon
     Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
     """
+      localhost
       Additional Names:
       No entries
       Server SSL Suites:
@@ -108,6 +109,7 @@ Feature: Summary feature
     And he folds section ".tigerProxyCfg.proxyCfg.tls"
     Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
     """
+      localhost
       Additional Names:
       altname1
       Server SSL Suites:
@@ -119,6 +121,7 @@ Feature: Summary feature
     And he folds section ".tigerProxyCfg.proxyCfg.tls"
     Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
     """
+      localhost
       Additional Names:
       altname1
       Server SSL Suites:
@@ -129,6 +132,7 @@ Feature: Summary feature
     And he folds section ".tigerProxyCfg.proxyCfg.tls"
     Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
     """
+      localhost
       RootCa rootca1
       Additional Names:
       altname1

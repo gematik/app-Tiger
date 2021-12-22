@@ -8,3 +8,4 @@ application.yml
 /tiger-testenv-mgr/FdVPortable/
 /depstree.txt
 tiger-testenv-mgr/WinstoneHTTPServer
+/tiger-admin/src/test/resources/webdriver

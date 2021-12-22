@@ -19,14 +19,14 @@ $.fn.initFormular = function (serverKey, serverData) {
   $('.testenv-sidebar-header').fadeIn(500);
 
   // add copy of template to form and set heading
-  $(this).html(`<div class="row">${$('#template-server-formular').html()}</div>`);
+  $(this).html(`<div>${$('#template-server-formular').html()}</div>`);
   $(this).find('.server-key').text(serverKey);
   $(this).find('.server-icon').addClass(serverIcons[serverData.type]);
   $(this).find('.server-icon').attr('title', serverData.type);
   // add buttons to lists
   const btnsHtml = $('#template-list-all-buttons').html();
-  $(this).find('fieldset:not(.subset) > .row > .col-list-btns').html(btnsHtml);
-  $(this).find('fieldset.complex-list fieldset.subset').append($('#template-list-apply-button').html());
+  $(btnsHtml).insertBefore($(this).find('fieldset:not(.subset) > .row > .col > .list-group'));
+  $(this).find('fieldset.complex-list fieldset.subset .col:last-child').append($('#template-list-apply-button').html());
   // add titles to some elements
   this.find(".server-formular-collapse-icon").attr('title', 'Fold/Unfold');
   this.find(".collapse-icon").attr('title', 'Fold/Unfold');
@@ -70,7 +70,7 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.find('.btn-advanced.global').click(handleGlobalAdvancedButtonClick);
   this.find('.btn-advanced:not(.global)').click(handleSectionAdvancedButtonClick);
   // draggable list items
-  this.find('fieldset .list-group').sortable({handle: 'i'});
+  this.find('fieldset .list-group').sortable({handle: 'i.draghandle'});
   // list group items of editable lists editable on single click
   this.find('fieldset.editableList .list-group-item > span').each(function () {
     $(this).addClickNKeyCallbacks2ListItem(true);
@@ -124,6 +124,7 @@ $.fn.initFormular = function (serverKey, serverData) {
   //
   // default hide all but pki, env, urlmappings
   this.find('.nav-tabs .nav-link').hide();
+  this.showTabLink('general', true);
   this.showTabLink('pkiKeys', serverData.type !== 'localProxy');
   this.showTabLink('environment', serverData.type !== 'localProxy');
   this.showTabLink('urlMappings', serverData.type !== 'localProxy');
@@ -134,13 +135,13 @@ $.fn.initFormular = function (serverKey, serverData) {
     externalUrl: 'externalJarOptions',
     externalJar: 'externalJarOptions',
     tigerProxy: 'tigerProxy',
-    localProxy: 'tigerProxy'
+    localProxy: 'general'
   }
   this.showTab(defaultTabs[serverData.type]);
   this.showTabLink(defaultTabs[serverData.type], true);
   this.showTabLink('externalJarOptions',
-      defaultTabs[serverData.type] === 'externalJarOptions' ||
-      serverData.type === 'tigerProxy');
+      defaultTabs[serverData.type] === 'externalJarOptions' || serverData.type === 'tigerProxy');
+  this.showTabLink('tigerProxy', serverData.type === 'localProxy' || serverData.type === 'tigerProxy');
 
   //
   // show fieldsets and input groups specific to types
@@ -175,7 +176,7 @@ $.fn.initFormular = function (serverKey, serverData) {
   //
   // initial state of buttons / fieldsets / advanced buttons
   //
-  this.find('.btn-list-delete').setEnabled(false);
+  this.find('fieldset .btn-list-delete').click(handleDeleteButtonOnList);
   this.find('.btn-list-apply').hide();
   // disable submit generally and especially on enter key of single input field sections
   this.submit(false);
@@ -268,7 +269,7 @@ $.fn.populateForm = function (serverData, path) {
   delete serverData.templateName;
 
   const skipDefaultValuesFor = [
-      'type', 'key', 'hostname', 'template', 'dependsUpon', 'version',
+    'type', 'key', 'hostname', 'template', 'dependsUpon', 'version',
     'entryPoint', 'workingDir', '.tigerProxyCfg.proxyPort', 'enableForwardProxy',
     '.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation',
     '.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation',

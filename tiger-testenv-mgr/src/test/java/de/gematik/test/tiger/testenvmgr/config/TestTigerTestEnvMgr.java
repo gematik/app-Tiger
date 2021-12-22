@@ -36,7 +36,7 @@ public class TestTigerTestEnvMgr {
 
     @BeforeAll
     public static void proxySettings() {
-        // TODO check whether to remove once the Jenkinsfile has been merged to master
+        // TODO TGR-286 check whether to remove once the Jenkinsfile has been merged to master
         if (System.getenv("PROXY_HOST") != null) {
             log.info("Applying Jenkins proxy env vars! " +
                 System.getenv("PROXY_HOST") + ":" + System.getenv("PROXY_PORT"));
@@ -400,6 +400,6 @@ public class TestTigerTestEnvMgr {
         Thread.sleep(2000);
     }
 
-    // TODO check pkis set, routings set,....
+    // TODO TGR-286 check pkis set, routings set,....
 
 }

@@ -21,9 +21,9 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     boolean waitForService(boolean quiet) {
-        final long timeOutInMs = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000l;
+        final long timeOutInMs = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L;
         if (isHealthCheckNone()) {
-            log.info("Waiting {}s to get external server {} online...", (timeOutInMs / 1000), getHostname());
+            log.info("Waiting {}s to get external server {} online...", (timeOutInMs / 1000L), getHostname());
             try {
                 Thread.sleep(timeOutInMs);
             } catch (InterruptedException e) {

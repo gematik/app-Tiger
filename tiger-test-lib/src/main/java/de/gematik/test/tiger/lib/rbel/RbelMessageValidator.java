@@ -160,7 +160,10 @@ public class RbelMessageValidator {
             if (StringUtils.isEmpty(value)) {
                 return Optional.of(candidateMessage);
             } else {
-                String content = pathExecutionResult.get(0).getRawStringContent();
+                String content = pathExecutionResult.stream()
+                    .map(RbelElement::getRawStringContent)
+                    .map(String::trim)
+                    .collect(Collectors.joining());
                 if (content.equals(value) ||
                     content.matches(value) ||
                     Pattern.compile(value, Pattern.DOTALL).matcher(content).matches()) {
@@ -278,5 +281,14 @@ public class RbelMessageValidator {
         }
     }
 
+    public List<RbelElement> findElemsInLastResponse(final String rbelPath) {
+        try {
+            List<RbelElement> elems = lastResponse.findRbelPathMembers(rbelPath);
+            assertThat(elems).isNotEmpty();
+            return elems;
+        } catch (Exception e) {
+            throw new AssertionError("Unable to find element in last response for rbel path '" + rbelPath + "'");
+        }
+    }
 
 }

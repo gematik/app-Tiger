@@ -66,7 +66,10 @@ templates:
       - IDP_SERVER_URL=http://idp
     # environment variables made available to other servers
     # NG TODO change to java system properties and env vars?
+    # check when doing TGR-113
     # are not automatically imported but can be used as token ${ENVVAR}
+    #
+    #
     # ${NAME} is replaced with server host name
     # ${PORT:XXXXX} is replaced with the external port matchign the internal port XXXXX
     # ${PROXYHOST} is replaced with the local docker proxy host
@@ -133,7 +136,6 @@ templates:
     version: 0.19.2
     startupTimeoutSec: 50
     urlMappings:
-      # TODO once we support https proxying the TSL we can remove this mapping
       - http://tsl --> https://download-ref.tsl.ti-dienste.de
     environment:
       - TOKEN=http://idp/.well-known/openid-configuration
