@@ -164,7 +164,7 @@ Feature: Authentifiziere Anwendung am IDP Server
 
   @TCID:IDP_REF_AUTH_005 @PRIO:2
     @Afo:A_20698 @Afo:A_20440
-    @Approval @Todo:IDP-553
+    @Approval
   Scenario Outline: Auth - Fehlende Parameter alle anderen
 
   ```
@@ -193,7 +193,7 @@ Feature: Authentifiziere Anwendung am IDP Server
 
   @TCID:IDP_REF_AUTH_006 @PRIO:2
     @Afo:A_20440
-    @Approval @Todo:IDP-553
+    @Approval
   Scenario Outline: Auth - Null Parameter
 
   ```
@@ -222,8 +222,7 @@ Feature: Authentifiziere Anwendung am IDP Server
 
   @TCID:IDP_REF_AUTH_007 @PRIO:1
     @Afo:A_20440
-    @Approval @Todo:IDP-553
-    # TODO TGR-252
+    @Approval
   Scenario Outline: Auth - Ungültige Parameter
 
   ```

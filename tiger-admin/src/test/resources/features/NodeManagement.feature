@@ -82,13 +82,11 @@ Feature: Node management
     And formulars are ordered "local_proxy,do:cker_222"
     And he sees snack starting with "Only ASCII characters, digits and underscore allowed"
     And he closes open snack
-#    When he focuses on formular "docker_001"
     And he renames the node to "do$cker_222"
     Then nodes are ordered "Local Tiger proxy,docker_001"
     And formulars are ordered "local_proxy,do$cker_222"
     And he sees snack starting with "Only ASCII characters, digits and underscore allowed"
     And he closes open snack
-#    When he focuses on formular "docker_001"
     And he renames the node to "döckär_222"
     Then nodes are ordered "Local Tiger proxy,docker_001"
     And formulars are ordered "local_proxy,döckär_222"

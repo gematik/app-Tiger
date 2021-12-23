@@ -292,11 +292,6 @@
       "displayName": "testsuite"
     },
     {
-      "name": "NotCheckingSsoTokenExactly12H",
-      "type": "Todo",
-      "displayName": "NotCheckingSsoTokenExactly12H"
-    },
-    {
       "name": "Core features/Fordere Access Token mittels SSO Token an",
       "type": "feature",
       "displayName": "Fordere Access Token mittels SSO Token an"

@@ -34,8 +34,7 @@ Feature: Fordere Access Token mit einer signierten Challenge an
         """
 
   @Afo:A_20731 @Afo:A_20310 @Afo:A_20464 @Afo:A_20952 @Afo:A_21320 @Afo:A_21321 @Afo:A_20313
-  @Approval @Todo:AccessTokenContent
-  @Todo:CompareSubjectInfosInAccessTokenAndInCert
+  @Approval
   Scenario: GetToken Signierte Challenge - Gutfall - Check Access Token - Validiere Access Token Claims
     Given I choose code verifier '${TESTENV.code_verifier01}'
     And I request a challenge with
@@ -78,7 +77,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
         """
 
   @Approval @Ready
-  @Todo:WeAlreadyHaveTheseChecksInAnotherTestcase @Todo:Duplicate
   Scenario: GetToken Signierte Challenge - Gutfall - Check ID Token - Validiere Antwortstruktur
     Given I choose code verifier '${TESTENV.code_verifier01}'
     And I request a challenge with
@@ -147,7 +145,7 @@ Feature: Fordere Access Token mit einer signierten Challenge an
           }
         """
 
-  @Approval @Todo:AccessTokenContent
+  @Approval
   Scenario: GetToken Signierte Challenge - Subject Claim ist abhängig von idNummer
     Given I choose code verifier '${TESTENV.code_verifier01}'
     And I request a challenge with
@@ -165,7 +163,7 @@ Feature: Fordere Access Token mit einer signierten Challenge an
     Then the body claim 'sub' should match '.*'
     And the body claim 'idNummer' should match "[A-Z][\d]{9,10}"
 
-  @Approval @Todo:AccessTokenContent
+  @Approval
   Scenario: GetToken Signierte Challenge - Subject Claim wird auch für nicht durch Versicherte signierte Challenges erstellt
     Given I choose code verifier '${TESTENV.code_verifier01}'
     And I request a challenge with
@@ -326,7 +324,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
       | 3007   | invalid_client         | authorization_code | ${TESTENV.redirect_uri}        | $CONTEXT                                                                                                                                                  | ${TESTENV.code_verifier01}                                                                                                     | shadows              |
 
 
-  @Todo:CompareSubjectInfosInAccessTokenAndInCert
     @UserConsent
   Scenario Outline: GetToken Signierte Challenge - Inhalte des Zertifikats entsprechen nicht der Spezifikation und werden akzeptiert, Prüfung der Claims
     Given I choose code verifier '${TESTENV.code_verifier01}'
@@ -362,7 +359,6 @@ Feature: Fordere Access Token mit einer signierten Challenge an
       | /certs/invalid/egk-idp-profid-invoid2-ecc.p12      | Dal                                                               | Luca                                                              | X764228437 | 1.2.276.0.76.255  | gematik Musterkasse1GKVNOT-VALID                                  |
       | /certs/invalid/egk-idp-orgname-toolong-ecc.p12     | Dal                                                               | Luca                                                              | X764228437 | 1.2.276.0.76.4.49 | gematik Musterkasse1GKVNOT-VALIDgematik Musterkasse11GKVNOT-VALID |
 
-  @Todo:CompareSubjectInfosInAccessTokenAndInCert
     @UserConsent
   Scenario Outline: GetToken Signierte Challenge - Inhalte des Zertifikats entsprechen nicht der Spezifikation, werden aber akzeptiert, keine Prüfung der Claims
     Given I choose code verifier '${TESTENV.code_verifier01}'

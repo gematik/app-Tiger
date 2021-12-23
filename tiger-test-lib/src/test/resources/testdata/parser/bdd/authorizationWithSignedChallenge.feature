@@ -430,7 +430,6 @@ Feature: Autorisiere Anwendung am IDP Server mit signierter Challenge
 
   @TCID:IDP_REF_AUTH_066 @PRIO:1 @Negative
     @Approval @Ready
-    @Todo:IDP-553 @Todo:IDP-500
   Scenario Outline: AuthorChallenge - IDNummer invalid oder null
 
   ```
