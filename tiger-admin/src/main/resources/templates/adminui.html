@@ -10,6 +10,7 @@
   <link rel="stylesheet" th:href="@{/webjars/font-awesome/5.15.4/css/all.css}">
   <link rel="stylesheet" th:href="@{/css/bootstrap-tiger.css}">
   <link rel="stylesheet" th:href="@{/css/jquery.contextMenu.min.css}">
+  <link rel="stylesheet" th:href="@{/css/BsMultiSelect.min.css}">
   <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
@@ -206,7 +207,7 @@
             </div>
             <div class="input-group advanced">
               <span class="input-group-text">Depends Upon</span>
-              <select class="form-select" name="dependsUpon"
+              <select class="form-select" name="dependsUpon" multiple
                       title="Choose another node that must be ready before the actual node is started.">
               </select>
             </div>
@@ -1095,7 +1096,7 @@
 
 
 <script th:src="@{/webjars/bootstrap/5.1.1/js/bootstrap.bundle.min.js}"></script>
-<!--<script th:src="@{/webjars/popper.js/2.9.3/umd/popper.min.js}"></script>-->
+<script th:src="@{/webjars/popper.js/2.9.3/umd/popper.min.js}"></script>
 <!-- https://github.com/Script47/bs5-utils -->
 <script th:src="@{/js/bs5util.js}" type="text/javascript"></script>
 <script th:src="@{/js/common.js}" type="text/javascript"></script>
@@ -1108,6 +1109,7 @@
 <script th:src="@{/js/formular.js}" type="text/javascript"></script>
 <script th:src="@{/js/jquery.contextMenu.min.js}"></script>
 <script th:src="@{/js/jquery.ui.position.js}"></script>
+<script th:src="@{/js/BsMultiSelect.min.js}"></script>
 <script th:src="@{/js/initialization.js}" type="text/javascript"></script>
 </body>
 </html>

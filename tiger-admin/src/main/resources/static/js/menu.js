@@ -182,7 +182,7 @@ function addSelectedServer() {
 
   let index = 1;
   const serverKeys = Object.keys(currEnvironment);
-  while (serverKeys.indexOf(type + String(index).padStart(3, '0'))
+  while (serverKeys.indexOf(type + "_" + String(index).padStart(3, '0'))
   !== -1) {
     index++;
   }

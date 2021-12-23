@@ -21,14 +21,14 @@ Feature: Check dependsUpon and proxiedServer fields are managed correctly
     And he focuses on formular "tigerProxy_001"
     And he clicks on global advanced icon
     And he shows "Allgemeines" tab
-    And he selects entry "docker_001" in select field "dependsUpon"
+    And he selects entry "docker_001" in multi select field "dependsUpon"
     And he shows "TigerProxy" tab
     And he selects entry "docker_001" in select field ".tigerProxyCfg.proxiedServer"
     And he focuses on formular "docker_001"
     And he renames the node to "docker_222"
     And he focuses on formular "tigerProxy_001"
     And he shows "Allgemeines" tab
-    And he checks select field "dependsUpon" has entry "docker_222" selected
+    And he checks multi select field "dependsUpon" has entry "docker_222" selected
     And he shows "TigerProxy" tab
     And he checks select field ".tigerProxyCfg.proxiedServer" has entry "docker_222" selected
 
@@ -39,7 +39,7 @@ Feature: Check dependsUpon and proxiedServer fields are managed correctly
     And he focuses on formular "tigerProxy_001"
     And he clicks on global advanced icon
     And he shows "Allgemeines" tab
-    And he selects entry "docker_001" in select field "dependsUpon"
+    And he selects entry "docker_001" in multi select field "dependsUpon"
     And he shows "TigerProxy" tab
     And he selects entry "docker_001" in select field ".tigerProxyCfg.proxiedServer"
     And he deletes node "docker_001"
@@ -49,6 +49,6 @@ Feature: Check dependsUpon and proxiedServer fields are managed correctly
     And he shows "TigerProxy" tab
     And he checks select field ".tigerProxyCfg.proxiedServer" contains no entries
     And he shows "Allgemeines" tab
-    And he checks select field "dependsUpon" has no entry selected
+    And he checks multi select field "dependsUpon" has no entry selected
     And he shows "TigerProxy" tab
     And he checks select field ".tigerProxyCfg.proxiedServer" has no entry selected

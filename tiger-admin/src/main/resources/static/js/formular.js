@@ -154,6 +154,9 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.showInputGroup('template', serverData.template);
   // show version only for tigerProxy and docker
   this.showInputGroup('version', ['tigerProxy', 'docker'].includes(serverData.type));
+  // initialize multiselects
+  this.find('select[name="dependsUpon"]').bsMultiSelect();
+
   switch (serverData.type) {
     case 'compose':
       this.showFieldset('.dockerOptions.dockerSettings', false);
@@ -239,14 +242,19 @@ $.fn.updateDependsUponList = function (serverList, optOldSelection, optNewSelect
     html += `<option value="${key}">${key}</option>`;
   });
   replaceSelectOptions($(this).find('select[name="dependsUpon"]'), html, optOldSelection, optNewSelection);
+  $(this).find('select[name="dependsUpon"]').bsMultiSelect("Update");
 }
 
 function replaceSelectOptions(select, html, optOldSelection, optNewSelection) {
   let selected = select.val();
   select.children().remove();
   select.prepend(html);
-  if ((optOldSelection && selected === optOldSelection) || optOldSelection === null) {
-    selected = optNewSelection
+  if (Array.isArray(selected)) {
+    selected = selected.map(entry => ((optOldSelection && entry === optOldSelection) || optOldSelection === null) ? optNewSelection : entry );
+  } else {
+    if ((optOldSelection && selected === optOldSelection) || optOldSelection === null) {
+      selected = optNewSelection
+    }
   }
   select.val(selected);
   if (selected && select.val() !== selected) {
