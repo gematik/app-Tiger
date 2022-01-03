@@ -101,7 +101,6 @@ pipeline {
             string(name: 'TAGNAME', value: String.valueOf("R${RELEASE_VERSION}")),
             string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
             text(name: 'COMMIT_MESSAGE', value: String.valueOf("Release ${RELEASE_VERSION}")),
-            text(name: 'RELEASE_NOTES', value: String.valueOf("Siehe Changelog")),
             string(name: 'SUBSEQUENT_JOB', value: String.valueOf("Tiger-Maven-Central-Release")),
             string(name: 'DRY_RUN', value: String.valueOf(params.DRY_RUN)),
           ]
