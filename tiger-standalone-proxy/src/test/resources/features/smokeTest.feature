@@ -1,4 +1,4 @@
-@FullTests @UiTest
+@FullTests @UiTests
 Feature: smoke test scenarios
 
   Background:

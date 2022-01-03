@@ -21,12 +21,12 @@ public class SelectFields {
         Target fieldTarget = ServerFormular.getInputField(theActorInTheSpotlight(), fieldName);
         List<String> options = List.of(optionCSV.split(","));
         theActorInTheSpotlight().attemptsTo(
-            Ensure.that(fieldTarget.resolveFor(theActorInTheSpotlight()).findElements(By.cssSelector("option")).stream().map(
-                WebElement::getText).collect(
-                Collectors.toList())).hasSameSizeAs(options),
-            Ensure.that(fieldTarget.resolveFor(theActorInTheSpotlight()).findElements(By.cssSelector("option")).stream().map(
-                WebElement::getText).collect(
-                Collectors.toList())).containsOnlyElementsFrom(options)
+            Ensure.that(fieldTarget.resolveFor(theActorInTheSpotlight()).findElements(By.cssSelector("option")).stream()
+                .map(WebElement::getText)
+                .collect(Collectors.toList())).hasSameSizeAs(options),
+            Ensure.that(fieldTarget.resolveFor(theActorInTheSpotlight()).findElements(By.cssSelector("option")).stream()
+                .map(e -> e.getAttribute("innerHTML")) // getText() returns "" as the option elements are hidden
+                .collect(Collectors.toList())).containsOnlyElementsFrom(options)
         );
     }
 

@@ -13,7 +13,7 @@ Feature: Check advanced input fields and sections for all server types
     When he shows "Allgemeines" tab
     And he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
-    And he sees select field "dependsUpon"
+    And he sees multiselect field "dependsUpon"
     When he clicks on advanced icon in section "node-settings"
     Then he doesn't see field "startupTimeoutSec"
     And he doesn't see field "dependsUpon"
@@ -31,7 +31,7 @@ Feature: Check advanced input fields and sections for all server types
     And he shows "Allgemeines" tab
     When he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
-    And he sees select field "dependsUpon"
+    And he sees multiselect field "dependsUpon"
     When he clicks on advanced icon in section "node-settings"
     Then he doesn't see field "startupTimeoutSec"
     And he doesn't see field "dependsUpon"

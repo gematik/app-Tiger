@@ -6,9 +6,11 @@ Feature: Check dependsUpon and proxiedServer fields are managed correctly
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
     And he clicks on global advanced icon
-    And he checks select field "dependsUpon" contains no entries
-    And he checks select field ".tigerProxyCfg.proxiedServer" contains no entries
-    And he adds a "docker" node via sidebar
+    When he shows "Allgemeines" tab
+    Then he checks select field "dependsUpon" contains no entries
+    When he shows "TigerProxy" tab
+    Then he checks select field ".tigerProxyCfg.proxiedServer" contains no entries
+    When he adds a "docker" node via sidebar
     And he shows "Allgemeines" tab
     Then he checks select field "dependsUpon" contains "docker_001"
     When he shows "TigerProxy" tab

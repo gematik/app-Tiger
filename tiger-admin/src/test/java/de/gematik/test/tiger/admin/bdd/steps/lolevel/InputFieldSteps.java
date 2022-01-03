@@ -17,7 +17,12 @@ public class InputFieldSteps {
 
     @And("she/he sees {word} field {string}")
     public void seesField(final String type, String name) {
-        Target fieldTarget = ServerFormular.getInputField(theActorInTheSpotlight(), name);
+        Target fieldTarget;
+        if (type.equals("multiselect")) {
+            fieldTarget = ServerFormular.getMultiSelectField(theActorInTheSpotlight(), name);
+        } else {
+             fieldTarget = ServerFormular.getInputField(theActorInTheSpotlight(), name);
+        }
         WebElementFacade el = fieldTarget.resolveFor(theActorInTheSpotlight());
         List<Performable> tasks = new ArrayList<>();
         tasks.add(Ensure.that(fieldTarget).isDisplayed());
@@ -34,6 +39,10 @@ public class InputFieldSteps {
                 break;
             case "select":
                 tasks.add(Ensure.that(el.getTagName()).isEqualTo("select"));
+                break;
+            case "multiselect":
+                tasks.add(Ensure.that(el.getTagName()).isEqualTo("div"));
+                tasks.add(Ensure.that(el.getElement().getAttribute("class")).contains("dashboardcode-bsmultiselect"));
                 break;
             case "list":
                 tasks.add(Ensure.that(el.getTagName()).isEqualTo("ul"));
