@@ -6,7 +6,7 @@ package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.json.JSONObject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JsonCheckerTest {
 
@@ -153,11 +153,6 @@ public class JsonCheckerTest {
     }
 
 
-
-
-
-
-
     @Test
     public void testJSONAttributeShouldNotMatchOKEqual() {
         assertThatThrownBy(() -> check.assertJsonAttributeShouldNotMatch(
@@ -258,8 +253,6 @@ public class JsonCheckerTest {
             "{ attr1: { sub1: 'xxx.*' }, attr2: 'val2' }", true))
             .isInstanceOf(AssertionError.class);
     }
-
-
 
     // TODO TGR-281 JSONArrays as top struct with primitives
     // TODO TGR-281 multilvl JSON Objects with JSONArrays

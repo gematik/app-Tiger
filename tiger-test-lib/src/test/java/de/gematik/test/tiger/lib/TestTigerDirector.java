@@ -10,19 +10,32 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.testenvmgr.InsecureTrustAllManager;
+import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.net.URL;
 import java.net.URLConnection;
 import lombok.SneakyThrows;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
+@ExtendWith(OutputCaptureExtension.class)
 public class TestTigerDirector {
+
+    @BeforeEach
+    public void init() {
+        TigerDirector.testUninitialize();
+    }
 
     @Test
     public void testBeforeTestRunNOTIGERACTIVE() {
-        TigerDirector.testUninitialize();
         System.setProperty("TIGER_ACTIVE", "0");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
+
         assertThatThrownBy(TigerDirector::beforeTestRun).isInstanceOf(AssertionError.class);
         assertThat(TigerDirector.isInitialized()).isFalse();
         assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
@@ -31,10 +44,10 @@ public class TestTigerDirector {
     }
 
     @Test
-    public void testBeforeTestRunIGERACTIVENOTINIT() {
-        TigerDirector.testUninitialize();
+    public void testBeforeTestRunTIGERACTIVENOTINIT() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
+
         assertThat(TigerDirector.isInitialized()).isFalse();
         assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
         assertThatThrownBy(TigerDirector::getProxySettings).isInstanceOf(TigerStartupException.class);
@@ -43,7 +56,6 @@ public class TestTigerDirector {
 
     @Test
     public void testDirectorSimpleIdp() {
-        TigerDirector.testUninitialize();
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp2.yaml");
         TigerDirector.beforeTestRun();
@@ -67,10 +79,9 @@ public class TestTigerDirector {
 
     @SneakyThrows
     @Test
-    public void testDirectorDisabledProxy() {
-        TigerDirector.testUninitialize();
+    public void testDirectorDisabledProxy(CapturedOutput capturedOutput) {
         System.setProperty("TIGER_ACTIVE", "1");
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxydisabled.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyDisabled.yaml");
         TigerDirector.beforeTestRun();
 
         System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
@@ -88,11 +99,45 @@ public class TestTigerDirector {
         URLConnection con = url.openConnection();
         InsecureTrustAllManager.allowAllSSL(con);
 
-
         con.setConnectTimeout(1000);
+
+        assertThat(capturedOutput.getOut()).contains("SKIPPING TIGER PROXY settings...");
         assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
     }
 
+    @SneakyThrows
+    @Test
+    public void testDirectorFalsePathToYaml() {
+        System.setProperty("TIGER_ACTIVE", "1");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyisabled.yaml");
+        assertThatThrownBy(TigerDirector::beforeTestRun).isInstanceOf(TigerEnvironmentStartupException.class).hasMessageContaining("Unable to load configuration fromsrc/test/resources/testdata/proxyisabled.yaml or fallback");
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"http.proxyHost, https.proxyHost, http.proxyPort, https.proxyPort"})
+    public void testLocalProxyActiveSetByDefault(String httpHost, String httpsHost, String httpPort, String httpsPort,
+        CapturedOutput capturedOutput) {
+        System.setProperty("TIGER_ACTIVE", "1");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
+        TigerDirector.beforeTestRun();
+
+        System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
+
+        System.out.println(
+            "PROXY:" + System.getProperty(httpHost) + " / " + System.getProperty(httpsHost));
+        System.out.println(
+            "PORTS:" + System.getProperty(httpHost) + " / " + System.getProperty(httpsPort));
+
+        assertThat(capturedOutput.getOut()).contains(
+            "SETTING TIGER PROXY...");
+
+        assertThat(System.getProperty(httpHost)).isNotNull();
+        assertThat(System.getProperty(httpsHost)).isNotNull();
+        assertThat(System.getProperty(httpPort)).isNotNull();
+        assertThat(System.getProperty(httpsPort)).isNotNull();
+
+        assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
+    }
 
     @Test
     public void checkComplexKeyOverriding() throws Exception {

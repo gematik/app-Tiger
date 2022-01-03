@@ -4,15 +4,11 @@
 
 package de.gematik.test.tiger.lib.proxy;
 
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
-import org.junit.Test;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.rbellogger.data.RbelElement;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class TestRbelMessageProvider {
 
@@ -102,7 +98,7 @@ public class TestRbelMessageProvider {
 
     private RbelElement buildMessageWithContent(String messageBody) {
         return RbelElement.builder()
-                .rawContent(messageBody.getBytes(StandardCharsets.UTF_8))
-                .build();
+            .rawContent(messageBody.getBytes(StandardCharsets.UTF_8))
+            .build();
     }
 }

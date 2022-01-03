@@ -5,26 +5,25 @@
 package de.gematik.test.tiger.testenvmgr.config;
 
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
-import lombok.AllArgsConstructor;
+import java.util.*;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Data
 @Slf4j
-@Builder
-@AllArgsConstructor
+@NoArgsConstructor
 public class Configuration {
 
     private final Map<String, CfgServer> servers = new HashMap<>();
     private final List<CfgEnvSets> envSets = new ArrayList<>();
-    @Builder.Default
     private boolean localProxyActive = true;
     private TigerProxyConfiguration tigerProxy;
 
+    @Builder
+    @SuppressWarnings("unused")
+    private Configuration(boolean localProxyActive) {
+        this.localProxyActive = Optional.of(localProxyActive).orElse(true);
+    }
 }

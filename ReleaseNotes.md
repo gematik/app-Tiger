@@ -1,5 +1,11 @@
 # Changelog Tiger Testplattform
 
+# Release 0.17.2
+
+## Bugfix
+* TGR-288: Make snakeyaml/jackson work with default values in Configuration object
+
+
 # Release 0.17.1
 
 ## Bugfix

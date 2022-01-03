@@ -132,9 +132,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             JSONObject jsonTemplate = TigerConfigurationHelper.yamlStringToJson(
                 IOUtils.toString(Objects.requireNonNull(TigerTestEnvMgr.class.getResource(
                     "templates.yaml")).toURI(), StandardCharsets.UTF_8));
-            TigerConfigurationHelper.applyTemplate(
-                jsonCfg.getJSONObject("servers"), "template",
-                jsonTemplate.getJSONArray("templates"), "templateName");
+            if (jsonCfg.has("servers")) {
+                TigerConfigurationHelper.applyTemplate(
+                    jsonCfg.getJSONObject("servers"), "template",
+                    jsonTemplate.getJSONArray("templates"), "templateName");
+            }
         } catch (IOException | URISyntaxException e) {
             throw new TigerConfigurationException("Unable to read templates YAML!", e);
         }
@@ -185,6 +187,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (!cfgFile.exists()) {
             log.warn("Unable to read configuration from {}", cfgFile.getAbsolutePath());
             cfgFile = new File("tiger-testenv.yaml");
+            if (!cfgFile.exists()) {
+                throw new TigerEnvironmentStartupException(
+                    "Unable to load configuration from" + System.getProperty("TIGER_TESTENV_CFGFILE") + " or fallback");
+            }
         }
         log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());
         JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
