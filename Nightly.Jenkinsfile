@@ -3,6 +3,8 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def JIRA_PROJECT_ID = 'TGR'
 def POM_PATH = 'pom.xml'
+def BRANCH = 'master'
+def REPO_URL = createGitUrl('git/Testtools/tiger')
 
 pipeline {
     options {
@@ -16,9 +18,11 @@ pipeline {
 
     stages {
 
-        stage('gitCreateBranch') {
+        stage('Checkout') {
             steps {
-                gitCreateBranch()
+                git branch: BRANCH,
+                    credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                    url: REPO_URL
             }
         }
 
@@ -47,9 +51,12 @@ pipeline {
                 mavenOwaspScan(POM_PATH)
             }
         }
-
+        
         stage('Sonar') {
-            steps {
+             environment {
+                BRANCH_NAME = "${BRANCH}"
+            }
+             steps {
                 mavenCheckWithSonarQube(POM_PATH, "", false)
             }
         }
