@@ -19,7 +19,7 @@ public class TestSerenityRestSetup {
     public void useNonExistentProxy_ExceptionMessageShouldContainRequestInformation() throws Exception {
         withEnvironmentVariable("TIGER_ACTIVE", "1")
             .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")
-            .execute(() -> TigerDirector.beforeTestRun());
+            .execute(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()));
 
         final String proxy = "http://localhost:" + SocketUtils.findAvailableTcpPort();
         final String serverUrl = "http://localhost:5342/foobar";

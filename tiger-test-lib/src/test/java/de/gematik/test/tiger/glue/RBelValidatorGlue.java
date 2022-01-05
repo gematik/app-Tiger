@@ -22,7 +22,7 @@ import org.xmlunit.builder.DiffBuilder;
 @Slf4j
 public class RBelValidatorGlue {
 
-    static RbelMessageValidator rbelValidator = new RbelMessageValidator();
+    static final RbelMessageValidator rbelValidator = new RbelMessageValidator();
 
     public static RbelMessageValidator getRbelValidator() {
         return rbelValidator;

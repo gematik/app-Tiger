@@ -24,6 +24,11 @@ public class Step {
     private final String keyword;
     private final List<String> lines;
 
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    public Step clone()  {
+        return new Step(keyword, new ArrayList<>(lines));
+    }
+
     public static Step fromLine(final String line) {
         final String kw = getKeyword(line.trim());
         return KEYWORDS.stream()

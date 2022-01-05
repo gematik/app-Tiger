@@ -67,7 +67,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         localTigerProxy = new TigerProxy(configuration.getTigerProxy());
         if (configuration.isLocalProxyActive()) {
-            log.info("Starting local docker tiger proxy on port " + localTigerProxy.getPort() + "...");
+            log.info("Started local docker tiger proxy on port " + localTigerProxy.getPort() + "...");
             environmentVariables = new HashMap<>(
                 Map.of("PROXYHOST", "host.docker.internal",
                     "PROXYPORT", localTigerProxy.getPort()));
@@ -189,7 +189,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             cfgFile = new File("tiger-testenv.yaml");
             if (!cfgFile.exists()) {
                 throw new TigerEnvironmentStartupException(
-                    "Unable to load configuration from" + System.getProperty("TIGER_TESTENV_CFGFILE") + " or fallback");
+                    "Unable to load configuration from " + System.getProperty("TIGER_TESTENV_CFGFILE") + " or fallback");
             }
         }
         log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());

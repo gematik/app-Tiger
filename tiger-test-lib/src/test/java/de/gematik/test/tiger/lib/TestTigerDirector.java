@@ -36,11 +36,11 @@ public class TestTigerDirector {
         System.setProperty("TIGER_ACTIVE", "0");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
 
-        assertThatThrownBy(TigerDirector::beforeTestRun).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()))
+            .isInstanceOf(TigerStartupException.class);
         assertThat(TigerDirector.isInitialized()).isFalse();
         assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
         assertThatThrownBy(TigerDirector::getProxySettings).isInstanceOf(TigerStartupException.class);
-        assertThatThrownBy(TigerDirector::getRbelMessageProvider).isInstanceOf(TigerStartupException.class);
     }
 
     @Test
@@ -51,14 +51,13 @@ public class TestTigerDirector {
         assertThat(TigerDirector.isInitialized()).isFalse();
         assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
         assertThatThrownBy(TigerDirector::getProxySettings).isInstanceOf(TigerStartupException.class);
-        assertThatThrownBy(TigerDirector::getRbelMessageProvider).isInstanceOf(TigerStartupException.class);
     }
 
     @Test
     public void testDirectorSimpleIdp() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp2.yaml");
-        TigerDirector.beforeTestRun();
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
 
         assertThat(TigerDirector.isInitialized()).isTrue();
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
@@ -66,7 +65,8 @@ public class TestTigerDirector {
         assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getBaseUrl()).startsWith(
             "http://localhost");
         assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getRbelLogger()).isNotNull();
-        // TODO TGR-124 upgrading to testcontainer 1.16.0 causes the ports info to be not available in docker config network bindings
+        // TODO TGR-124 upgrading to testcontainer 1.16.0 causes the ports info
+        // to be not available in docker config network bindings
         // so make sure we get ONE valid value here!
         // see https://github.com/testcontainers/testcontainers-java/issues/4489
         assertThat(
@@ -82,7 +82,7 @@ public class TestTigerDirector {
     public void testDirectorDisabledProxy(CapturedOutput capturedOutput) {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyDisabled.yaml");
-        TigerDirector.beforeTestRun();
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
 
         System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
 
@@ -110,7 +110,9 @@ public class TestTigerDirector {
     public void testDirectorFalsePathToYaml() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyisabled.yaml");
-        assertThatThrownBy(TigerDirector::beforeTestRun).isInstanceOf(TigerEnvironmentStartupException.class).hasMessageContaining("Unable to load configuration fromsrc/test/resources/testdata/proxyisabled.yaml or fallback");
+        assertThatThrownBy(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()))
+            .isInstanceOf(TigerEnvironmentStartupException.class)
+            .hasMessageContaining("Unable to load configuration from src/test/resources/testdata/proxyisabled.yaml or fallback");
     }
 
     @ParameterizedTest
@@ -119,7 +121,7 @@ public class TestTigerDirector {
         CapturedOutput capturedOutput) {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
-        TigerDirector.beforeTestRun();
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
 
         System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
 

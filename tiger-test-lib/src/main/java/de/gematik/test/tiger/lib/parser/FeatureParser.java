@@ -52,7 +52,8 @@ public class FeatureParser {
                         throw new TestParserException("Step not set!");
                     }
                     step.getLines().add(excLine);
-                } else if (line.startsWith("#") || line.isBlank() || parseTagsFromLine(line, tags)) {
+                } else //noinspection StatementWithEmptyBody
+                    if (line.startsWith("#") || line.isBlank() || parseTagsFromLine(line, tags)) {
                     // skip comments
                 } else if (parseGherkinStructFromLine(line, tags, feature, child)) {
                     mode = ParseMode.DESCRIPTION;

@@ -96,7 +96,7 @@ public class JsonChecker {
         try {
             json = new JSONObject(jsonStr);
             oracle = new JSONObject(oracleStr);
-            Assertions.assertThat(IteratorUtils.toArray(json.keys()))
+            Assertions.assertThat(IteratorUtils.toArray(json.keys(), String.class))
                 .contains(IteratorUtils.toList(oracle.keys()).stream()
                     .filter(key -> !key.toString().startsWith("____"))
                     .toArray());
