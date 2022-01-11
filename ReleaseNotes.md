@@ -5,6 +5,9 @@
 ## Bugfix
 * TGR-288: Make snakeyaml/jackson work with default values in Configuration object
 
+## Features
+* TGR-42: Make Proxy Cert available at runtime
+
 
 # Release 0.17.1
 

@@ -4,6 +4,9 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
@@ -11,32 +14,33 @@ import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import kong.unirest.*;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.junit.Test;
-
-import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
+import javax.net.ssl.*;
+import kong.unirest.*;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.io.FileUtils;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.junit.Test;
 
 @Slf4j
 public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     @Test
-    public void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate() throws NoSuchAlgorithmException, KeyManagementException {
+    public void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate()
+        throws NoSuchAlgorithmException, KeyManagementException {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -156,7 +160,8 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
     public void defunctCertificate_expectException() throws UnirestException {
         assertThatThrownBy(() -> new TigerProxy(TigerProxyConfiguration.builder()
             .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
+                .serverRootCa(
+                    new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
                 .build())
             .build()))
             .isInstanceOf(RuntimeException.class);
@@ -206,7 +211,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void blanketRerverseProxy_shouldForwardHttpsRequest() {
+    public void blanketReverseProxy_shouldForwardHttpsRequest() {
         AtomicInteger callCounter = new AtomicInteger(0);
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -319,5 +324,96 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
             .getSession(ctx.getClientSessionContext().getIds().nextElement())
             .getCipherSuite())
             .isEqualTo(configuredSslSuite);
+    }
+
+    @SneakyThrows
+    @Test
+    public void autoconfigureSslContextUnirest_shouldTrustTigerProxy() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("https://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        var restInstanceWithSslContextConfigured = Unirest.spawnInstance();
+        restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getPort());
+        restInstanceWithSslContextConfigured.config().sslContext(tigerProxy.buildSslContext());
+
+        final HttpResponse<JsonNode> response = restInstanceWithSslContextConfigured.get("https://backend/foobar")
+            .asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+
+    @SneakyThrows
+    @Test
+    public void noConfiguredSslContextUnirest_shouldNotTrustTigerProxy() {
+        assertThatThrownBy(() -> {
+            spawnTigerProxyWith(TigerProxyConfiguration.builder()
+                .proxyRoutes(List.of(TigerRoute.builder()
+                    .from("https://backend")
+                    .to("http://localhost:" + fakeBackendServer.port())
+                    .build()))
+                .build());
+
+            var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
+            restInstanceWithoutSslContextConfigured.config().proxy("localhost", tigerProxy.getPort());
+            restInstanceWithoutSslContextConfigured.get("https://backend/foobar")
+                .asJson();
+
+        }).hasMessageContaining(
+            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
+    }
+
+    @SneakyThrows
+    @Test
+    public void autoconfigureSslContextOkHttp_shouldTrustTigerProxy() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("https://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        OkHttpClient client = new OkHttpClient.Builder()
+            .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getPort())))
+            .sslSocketFactory(tigerProxy.getConfiguredTigerProxySslContext().getSocketFactory(),
+                tigerProxy.buildTrustManagerForTigerProxy())
+            .build();
+
+        Request request = new Request.Builder()
+            .url("https://backend/foobar")
+            .build();
+
+        Response response = client.newCall(request).execute();
+
+        assertThat(response.code()).isEqualTo(666);
+    }
+
+    @SneakyThrows
+    @Test
+    public void noConfiguredSslContextOKHttp_shouldNotTrustTigerProxy() {
+        assertThatThrownBy(() -> {
+            spawnTigerProxyWith(TigerProxyConfiguration.builder()
+                .proxyRoutes(List.of(TigerRoute.builder()
+                    .from("https://backend")
+                    .to("http://localhost:" + fakeBackendServer.port())
+                    .build()))
+                .build());
+
+            OkHttpClient client = new OkHttpClient.Builder()
+                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getPort())))
+                .build();
+
+            Request request = new Request.Builder()
+                .url("https://backend/foobar")
+                .build();
+
+            client.newCall(request).execute();
+
+        }).hasMessageContaining(
+            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
     }
 }

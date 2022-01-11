@@ -20,6 +20,9 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.Map.Entry;
@@ -27,11 +30,18 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import kong.unirest.Unirest;
+import kong.unirest.apache.ApacheClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
@@ -99,10 +109,8 @@ public class TigerProxy extends AbstractTigerProxy {
             for (RbelModificationDescription modification : configuration.getModifications()) {
                 if (modification.getName() == null) {
                     modification.setName("TigerModification #" + counter++);
-                    getRbelLogger().getRbelModifier().addModification(modification);
-                } else {
-                    getRbelLogger().getRbelModifier().addModification(modification);
                 }
+                getRbelLogger().getRbelModifier().addModification(modification);
             }
         }
 
@@ -364,6 +372,63 @@ public class TigerProxy extends AbstractTigerProxy {
             mockServerClient.retrieveActiveExpectations(request()).length);
     }
 
+    public SSLContext getConfiguredTigerProxySslContext() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[]{buildTrustManagerForTigerProxy()}, null);
+
+            SSLContext.setDefault(sslContext);
+            return sslContext;
+        } catch (Exception e) {
+            throw new TigerProxyTrustManagerBuildingException("Error while configuring SSL Context for tiger-proxy",
+                e);
+        }
+    }
+
+    public X509TrustManager buildTrustManagerForTigerProxy() {
+        try {
+            X509TrustManager defaultTrustManager = extractTrustManager(null);
+            X509TrustManager customTrustManager = extractTrustManager(buildTruststore());
+            return new X509TrustManager() {
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return defaultTrustManager.getAcceptedIssuers();
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain,
+                    String authType) throws CertificateException {
+                    try {
+                        customTrustManager.checkServerTrusted(chain, authType);
+                    } catch (CertificateException e) {
+                        defaultTrustManager.checkServerTrusted(chain, authType);
+                    }
+                }
+
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain,
+                    String authType) throws CertificateException {
+                    defaultTrustManager.checkClientTrusted(chain, authType);
+                }
+            };
+        } catch (Exception e) {
+            throw new TigerProxyTrustManagerBuildingException("Error while building TrustManager for tiger-proxy",
+                e);
+        }
+    }
+
+    private X509TrustManager extractTrustManager(KeyStore keystore) throws NoSuchAlgorithmException, KeyStoreException {
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+            TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(keystore);
+
+        return (X509TrustManager) Arrays.stream(trustManagerFactory.getTrustManagers())
+            .filter(X509TrustManager.class::isInstance)
+            .findAny()
+            .orElseThrow(() -> new TigerProxyTrustManagerBuildingException(
+                "Error while configuring TrustManager for Tiger Proxy"));
+    }
+
     public KeyStore buildTruststore() {
         try {
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -382,7 +447,8 @@ public class TigerProxy extends AbstractTigerProxy {
             }
             return ks;
         } catch (Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy", e);
+            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy",
+                e);
         }
     }
 
@@ -393,10 +459,22 @@ public class TigerProxy extends AbstractTigerProxy {
             tmf.init(buildTruststore());
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, tmf.getTrustManagers(), null);
+            TrustManager[] trustManagers = tmf.getTrustManagers();
+            log.info("our trust managers: " + trustManagers);
+            sslContext.init(null, trustManagers, null);
+
+            HttpClient httpClient = HttpClients.custom()
+                .setSSLContext(sslContext)
+                .setSSLHostnameVerifier(new DefaultHostnameVerifier())
+                .build();
+
+            Unirest.primaryInstance()
+                .config()
+                .httpClient(config -> ApacheClient.builder(httpClient).apply(config));
             return sslContext;
         } catch (Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy", e);
+            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy",
+                e);
         }
     }
 
