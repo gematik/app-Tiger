@@ -1,0 +1,14 @@
+tigerProxy:
+
+servers:
+  testPkiKeysWithEmptyCertificate:
+    hostname: emptyCertificate
+    template: idp-ref
+    type: externalUrl
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: true
+    pkiKeys:
+    - id: disc_sig
+      type: Certificate
+      pem: ""

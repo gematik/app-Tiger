@@ -110,11 +110,16 @@ public abstract class TigerServer {
         // apply routes to local proxy
         if (configuration.getUrlMappings() != null) {
             configuration.getUrlMappings().forEach(mapping -> {
+                if (StringUtils.isBlank(mapping) || !mapping.contains("-->") || mapping.split(" --> ", 2).length != 2) {
+                    throw new TigerConfigurationException("The urlMappings configuration '" + mapping + "' is not correct. Please check your .yaml-file.");
+                }
+
                 String[] routeParts = mapping.split(" --> ", 2);
                 testEnvMgr.getLocalTigerProxy().addRoute(TigerRoute.builder()
                     .from(routeParts[0])
                     .to(routeParts[1])
                     .build());
+
             });
         }
 
@@ -145,6 +150,10 @@ public abstract class TigerServer {
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Certificate)
             .forEach(key -> {
+                if (StringUtils.isBlank(key.getPem())) {
+                    throw new TigerConfigurationException(
+                        "Your certificate is empty, please check your .yaml-file for " + key.getId());
+                }
                 log.info("Adding certificate " + key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
@@ -155,6 +164,10 @@ public abstract class TigerServer {
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Key)
             .forEach(key -> {
+                if (StringUtils.isBlank(key.getPem())) {
+                    throw new TigerConfigurationException(
+                        "Your Key is empty, please check your .yaml-file for " + key.getId());
+                }
                 log.info("Adding key " + key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
@@ -176,13 +189,13 @@ public abstract class TigerServer {
 
         assertCfgPropertySet(getConfiguration(), "type");
 
-
         if (type != ServerType.EXTERNALJAR && type != ServerType.EXTERNALURL && type != ServerType.DOCKER_COMPOSE) {
             assertCfgPropertySet(getConfiguration(), "version");
         }
 
         // set default value for Tiger Proxy source
-        if (type == ServerType.TIGERPROXY && (getConfiguration().getSource() == null || getConfiguration().getSource().isEmpty())) {
+        if (type == ServerType.TIGERPROXY && (getConfiguration().getSource() == null || getConfiguration().getSource()
+            .isEmpty())) {
             log.info("Defaulting tiger proxy source to gematik nexus for " + serverId);
             getConfiguration().setSource(new ArrayList<>(List.of("nexus")));
         }
@@ -305,7 +318,8 @@ public abstract class TigerServer {
             .filter(StringUtils::isNotBlank)
             .map(String::trim)
             .map(serverName -> tigerTestEnvMgr.findServer(serverName)
-                .orElseThrow(() -> new TigerEnvironmentStartupException("Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
+                .orElseThrow(() -> new TigerEnvironmentStartupException(
+                    "Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
             .collect(Collectors.toUnmodifiableList());
     }
 }

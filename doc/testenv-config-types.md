@@ -201,7 +201,7 @@ Die PkiKeys Liste beinhaltet eine Liste von Zertifikaten und Schlüsseln, die fo
 ```
   pkiKeys:
     - id: disc_sig
-      type: cert
+      type: Certificate
       pem: "MIICsTCCAligAwIBAgIHA61I5ACUjTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMC
   REUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtv
   bXBvbmVudGVuLUNBIGRlciBUZWxlbWF0aWtpbmZyYXN0cnVrdHVyMSAwHgYDVQQD
@@ -218,6 +218,6 @@ Die PkiKeys Liste beinhaltet eine Liste von Zertifikaten und Schlüsseln, die fo
   RAIgVBPhAwyX8HAVH0O0b3+VazpBAWkQNjkEVRkv+EYX1e8CIFdn4O+nivM+XVi9
   xiKK4dW1R7MD334OpOPTFjeEhIVV"
     - id: disc_enc
-      type: key
+      type: Key
       pem: "ISUADOGBESBXEZOBXWEDHBXOU..."
 ```

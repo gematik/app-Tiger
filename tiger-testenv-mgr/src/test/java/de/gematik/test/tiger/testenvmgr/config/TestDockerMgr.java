@@ -31,8 +31,6 @@ public class TestDockerMgr {
 
     @BeforeEach
     public void pullImages() {
-        TestTigerTestEnvMgr.proxySettings();
-
         dmgr = new DockerMgr();
         dmgr.pullImage(TEST_IMAGE);
         dmgr.pullImage(TEST_IMAGE_NO_HEALTHCHECK);

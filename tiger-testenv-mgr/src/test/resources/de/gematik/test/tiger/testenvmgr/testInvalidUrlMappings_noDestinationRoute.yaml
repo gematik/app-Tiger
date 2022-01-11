@@ -1,0 +1,12 @@
+tigerProxy:
+
+servers:
+  testInvalidUrlMappings_noDestinationRoute:
+    hostname: noDestinationRoute
+    template: idp-ref
+    type: externalUrl
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: true
+    urlMappings:
+      - https://bla -->

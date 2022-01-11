@@ -1,0 +1,13 @@
+tigerProxy:
+
+servers:
+  testExternalUrl_withUrlMappings:
+    hostname: testExternalUrl_withUrlMappings
+    template: idp-ref
+    type: externalUrl
+    source:
+      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    active: true
+    urlMappings:
+      - http://tsl --> https://download-ref.tsl.ti-dienste.de
+      - http://bla --> http://blabla
