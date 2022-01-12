@@ -96,8 +96,9 @@ public class TestTigerDirector {
         assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
 
         var url = new URL("http://idp-rise-tu-noproxy");
+
         URLConnection con = url.openConnection();
-        InsecureTrustAllManager.allowAllSSL(con);
+        InsecureTrustAllManager.allowAllSsl(con);
 
         con.setConnectTimeout(1000);
 
@@ -107,12 +108,33 @@ public class TestTigerDirector {
 
     @SneakyThrows
     @Test
+    public void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
+        System.setProperty("TIGER_ACTIVE", "1");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
+
+        System.out.println(
+            "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
+        System.out.println(
+            "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
+
+        var url = new URL("https://github.com/");
+
+        URLConnection con = url.openConnection();
+        InsecureTrustAllManager.allowAllSsl(con);
+
+        con.connect();
+    }
+
+    @SneakyThrows
+    @Test
     public void testDirectorFalsePathToYaml() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyisabled.yaml");
         assertThatThrownBy(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()))
             .isInstanceOf(TigerEnvironmentStartupException.class)
-            .hasMessageContaining("Unable to load configuration from src/test/resources/testdata/proxyisabled.yaml or fallback");
+            .hasMessageContaining(
+                "Unable to load configuration from src/test/resources/testdata/proxyisabled.yaml or fallback");
     }
 
     @ParameterizedTest

@@ -16,7 +16,9 @@ import org.awaitility.core.ConditionTimeoutException;
 
 @Slf4j
 public abstract class AbstractExternalTigerServer extends TigerServer {
-    AbstractExternalTigerServer(String hostname, String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
+
+    AbstractExternalTigerServer(String hostname, String serverId, CfgServer configuration,
+        TigerTestEnvMgr tigerTestEnvMgr) {
         super(hostname, serverId, configuration, tigerTestEnvMgr);
     }
 
@@ -40,8 +42,8 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             await().atMost(timeOutInMs, TimeUnit.MILLISECONDS)
                 .pollDelay(1, TimeUnit.SECONDS)
                 .until(() -> {
-                    URLConnection con =  url.openConnection();
-                    InsecureTrustAllManager.allowAllSSL(con);
+                    URLConnection con = url.openConnection();
+                    InsecureTrustAllManager.allowAllSsl(con);
                     con.setConnectTimeout(1000);
                     try {
                         con.connect();
@@ -87,7 +89,9 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         try {
             return new URL(getConfiguration().getExternalJarOptions().getHealthcheck());
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Could not build healthcheck URL from '" + getConfiguration().getExternalJarOptions().getHealthcheck() + "'!", e);
+            throw new IllegalArgumentException(
+                "Could not build healthcheck URL from '" + getConfiguration().getExternalJarOptions().getHealthcheck()
+                    + "'!", e);
         }
     }
 

@@ -18,7 +18,7 @@ public class InsecureTrustAllManager implements X509TrustManager {
 
     private static final X509Certificate[] NO_ACCEPTED_ISSUERS = new X509Certificate[]{};
 
-    public static void allowAllSSL(URLConnection urlConnection) {
+    public static void allowAllSsl(URLConnection urlConnection) {
         if (urlConnection instanceof HttpsURLConnection) {
             try {
                 SSLContext context = SSLContext.getInstance("TLS");
@@ -26,6 +26,7 @@ public class InsecureTrustAllManager implements X509TrustManager {
                     new TrustManager[]{new InsecureTrustAllManager()},
                     new SecureRandom());
                 ((HttpsURLConnection) urlConnection).setSSLSocketFactory(context.getSocketFactory());
+                ((HttpsURLConnection) urlConnection).setHostnameVerifier((hostname, sslSession) -> true);
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
                 throw new TigerTestEnvException("Unable to establish relaxed SSL checks", e);
             }
