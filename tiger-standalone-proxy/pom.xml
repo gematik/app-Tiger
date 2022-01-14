@@ -18,7 +18,6 @@
         <docker.image.name>tiger-proxy</docker.image.name>
         <java.version>11</java.version>
         <spring-native.version>0.9.1</spring-native.version>
-        <jacoco.skip>true</jacoco.skip>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <cucumber.filter.tags></cucumber.filter.tags>
@@ -209,15 +208,6 @@
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.7</version>
-                <configuration>
-                    <dataFileIncludes>**/target/jacoco-output/*.exec</dataFileIncludes>
                 </configuration>
             </plugin>
             <plugin>
