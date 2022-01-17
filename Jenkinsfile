@@ -49,8 +49,13 @@ pipeline {
         }
 
         stage('Sonar') {
+            when {
+                not { 
+                    branch BRANCH
+                }
+            }
             steps {
-                mavenCheckWithSonarQube(POM_PATH, "", false)
+                mavenCheckWithSonarQube(POM_PATH)
             }
         }
 
