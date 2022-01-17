@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.common;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import java.net.*;
 import java.util.ArrayList;
@@ -17,19 +18,6 @@ import org.apache.commons.lang3.SystemUtils;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class OsEnvironment {
-
-    public static String getAsString(String name) {
-        return Optional.ofNullable(System.getenv(name)).orElse(System.getProperty(name));
-    }
-
-    public static String getAsString(String name, String defaultValue) {
-        return Optional.ofNullable(System.getenv(name)).orElse(System.getProperty(name, defaultValue));
-    }
-
-    public static boolean getAsBoolean(String name) {
-        var val = getAsString(name);
-        return val != null && val.equals("1");
-    }
 
     public static boolean isIPv4(String ipAddress) {
         boolean isIPv4 = false;
@@ -58,7 +46,7 @@ public final class OsEnvironment {
             return "172.17.0.1";
         } else {
             throw new TigerOsException("Docker host ip detection is only supported on Linux, Mac, Windows! "
-                + "Your system seems to be reported as " + getAsString("os.name"));
+                + "Your system seems to be reported as " + TigerGlobalConfiguration.readString("os.name"));
         }
         try {
             Optional<ArrayList<InetAddress>> optAdresses = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()

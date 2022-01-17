@@ -186,7 +186,7 @@ public class RbelMessageValidator {
         } catch (final URISyntaxException e) {
             return false;
         } catch (PatternSyntaxException rte) {
-            log.error("Probable error while parsing regex!", rte);
+            log.error("Error while parsing regex!", rte);
             return false;
         }
     }

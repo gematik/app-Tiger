@@ -4,17 +4,14 @@
 
 package de.gematik.test.tiger.lib;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.testenvmgr.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import java.net.URL;
-import java.net.URLConnection;
 import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,12 +20,27 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
+import java.io.File;
+import java.net.URL;
+import java.net.URLConnection;
+
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 @ExtendWith(OutputCaptureExtension.class)
 public class TestTigerDirector {
 
     @BeforeEach
     public void init() {
         TigerDirector.testUninitialize();
+    }
+
+    @AfterEach
+    public void clearProperties() {
+        System.clearProperty("TIGER_ACTIVE");
+        System.clearProperty("TIGER_TESTENV_CFGFILE");
+        TigerGlobalConfiguration.reset();
     }
 
     @Test
@@ -44,7 +56,7 @@ public class TestTigerDirector {
     }
 
     @Test
-    public void testBeforeTestRunTIGERACTIVENOTINIT() {
+    public void tigerActiveNotSet_TigerDirectorShouldThrowException() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
 
@@ -130,17 +142,16 @@ public class TestTigerDirector {
     @Test
     public void testDirectorFalsePathToYaml() {
         System.setProperty("TIGER_ACTIVE", "1");
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyisabled.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "non/existing/file.yaml");
         assertThatThrownBy(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()))
             .isInstanceOf(TigerEnvironmentStartupException.class)
-            .hasMessageContaining(
-                "Unable to load configuration from src/test/resources/testdata/proxyisabled.yaml or fallback");
+            .hasMessageContaining("non/existing/file.yaml");
     }
 
     @ParameterizedTest
     @CsvSource(value = {"http.proxyHost, https.proxyHost, http.proxyPort, https.proxyPort"})
     public void testLocalProxyActiveSetByDefault(String httpHost, String httpsHost, String httpPort, String httpsPort,
-        CapturedOutput capturedOutput) {
+                                                 CapturedOutput capturedOutput) {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
         TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
@@ -167,10 +178,11 @@ public class TestTigerDirector {
     public void checkComplexKeyOverriding() throws Exception {
         final Configuration config = withEnvironmentVariable(
             "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
-            .execute(() ->
-                new TigerConfigurationHelper<Configuration>()
-                    .yamlReadOverwriteToConfig("src/test/resources/testdata/idpError.yaml", "TIGER_TESTENV",
-                        Configuration.class));
+            .execute(() -> {
+                TigerGlobalConfiguration.reset();
+                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(new File("src/test/resources/testdata/idpError.yaml")));
+                return TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "TIGER_TESTENV");
+            });
 
         assertThat(config.getServers().get("idp")
             .getExternalJarOptions()

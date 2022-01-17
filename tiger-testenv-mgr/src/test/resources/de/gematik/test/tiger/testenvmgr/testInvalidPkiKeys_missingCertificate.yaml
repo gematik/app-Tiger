@@ -5,10 +5,11 @@ servers:
     hostname: missingCertificate
     template: idp-ref
     type: externalUrl
+    foo: barTemplate
     source:
-      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+      - yaml
     active: true
     pkiKeys:
     - id: disc_sig
       type: Certificate
-      pem: 
+      pem:

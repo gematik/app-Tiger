@@ -1,2 +1,0 @@
-tigerProxy:
-  serverRootCa: "tiger-proxy/src/main/resources/CertificateAuthorityCertificate.pem;tiger-proxy/src/main/resources/PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"

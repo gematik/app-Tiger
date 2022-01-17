@@ -123,9 +123,9 @@ public abstract class TigerServer {
             });
         }
 
-        performStartup();
-
         loadPkiForProxy();
+
+        performStartup();
 
         // TGR-284 set system properties from exports section and store the value in environmentVariables map
         // replace ${NAME} with server host name

@@ -1,6 +1,11 @@
 # Changelog Tiger Testplattform
 
-# Release 0.17.2
+# Release 0.18.0
+
+## Breaking Change
+* TGR-113: Major rework in TigerConfiguration. The Blackbox behavior is unchanged in all known cases. However the API changed a lot! TigerConfigurationHelper was deleted. 
+* If you want to read configuration files please use `TigerGlobalConfiguration` (in cases where you want to use the global configuration store) or instantiate a new `TigerConfigurationLoader` (in cases where you only need the configuration functionality and not the actual global configuration).
+* The serialization/deserialization Utils from TigerConfigurationHelper please refer to TigerSerializationUtil (JSON/YAML conversion).
 
 ## Bugfix
 * TGR-288: Make snakeyaml/jackson work with default values in Configuration object

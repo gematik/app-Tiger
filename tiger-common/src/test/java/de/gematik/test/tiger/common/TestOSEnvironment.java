@@ -5,22 +5,24 @@
 package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import org.junit.jupiter.api.Test;
 
 public class TestOSEnvironment {
 
     @Test
     public void getEnvAsStringPATHOK() {
-        assertThat(OsEnvironment.getAsString(System.getenv().keySet().iterator().next())).isNotBlank();
+        assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next())).isNotBlank();
     }
 
     @Test
     public void getEnvAsStringNotExistingWithDefaultOK() {
-        assertThat(OsEnvironment.getAsString("_______NOT____EXISTS", "DEFAULT")).isEqualTo("DEFAULT");
+        assertThat(TigerGlobalConfiguration.readString("_______NOT____EXISTS", "DEFAULT")).isEqualTo("DEFAULT");
     }
 
     @Test
     public void getEnvAsStringExistingNotDefaultOK() {
-        assertThat(OsEnvironment.getAsString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
+        assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
     }
 }

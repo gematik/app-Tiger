@@ -3,9 +3,7 @@ package de.gematik.test.tiger.admin.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
-import de.gematik.test.tiger.common.config.CfgTemplate;
-import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
+import de.gematik.test.tiger.common.config.*;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
@@ -32,12 +30,11 @@ public class TigerAdminUiController {
 
     @GetMapping(value = "/openYamlFile", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String openYamlFile(@RequestParam("cfgfile") String file) throws IOException {
+    public Configuration openYamlFile(@RequestParam("cfgfile") String file) throws IOException {
         String yamlString = IOUtils.toString(new File(file).toURI(), StandardCharsets.UTF_8);
-        JSONObject jsonCfg = TigerConfigurationHelper.yamlStringToJson(yamlString);
-        Configuration configuration = new TigerConfigurationHelper<Configuration>()
-            .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
-        return TigerConfigurationHelper.toJson(configuration);
+        var configurationLoader = new TigerConfigurationLoader();
+        configurationLoader.readFromYaml(yamlString);
+        return configurationLoader.instantiateConfigurationBean(Configuration.class, "tiger");
     }
 
     @GetMapping(value = "/getTemplates", produces = MediaType.APPLICATION_JSON_VALUE)

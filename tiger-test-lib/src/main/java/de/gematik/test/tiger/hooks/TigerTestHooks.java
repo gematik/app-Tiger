@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.OsEnvironment;
@@ -76,7 +77,7 @@ public class TigerTestHooks {
     private static List<Map<String, String>> currentDataVariant = null;
 
     @Before(order = 100)
-    public void parseFeatureFileNResetRbelLog(final Scenario scenario) {
+    public void parseFeatureFileAndResetRbelLog(final Scenario scenario) {
         assertTigerActive();
         if (!initialized) {
             initializeTiger();
@@ -125,7 +126,7 @@ public class TigerTestHooks {
     }
 
     private void initializeTiger() {
-        if (OsEnvironment.getAsString("TIGER_NOLOGO") == null) {
+        if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO")) {
             try {
                 log.info("\n" + IOUtils.toString(
                     Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
@@ -142,8 +143,12 @@ public class TigerTestHooks {
         }
         TigerLibConfig config;
         if (cfgFile.exists()) {
-            config = new TigerConfigurationHelper<TigerLibConfig>().yamlReadOverwriteToConfig(cfgFile.getAbsolutePath(),
-                "TIGER_LIB", TigerLibConfig.class);
+            try {
+                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new TigerStartupException("Error while reading configuration file '"+cfgFile.getAbsolutePath(), e);
+            }
+            config = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
         } else {
             log.warn("No Tiger configuration file found (tiger.yaml, tiger.yml)! Continuing with default values");
             config = new TigerLibConfig();
@@ -246,13 +251,11 @@ public class TigerTestHooks {
     }
 
     public static void assertTigerActive() {
-        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!TigerGlobalConfiguration.readBoolean("TIGER_ACTIVE")) {
             log.error(Ansi.colorize("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!", RbelAnsiColors.RED_BOLD_BRIGHT));
             throw new TigerStartupException("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
         }
     }
-
-
 }
 
 

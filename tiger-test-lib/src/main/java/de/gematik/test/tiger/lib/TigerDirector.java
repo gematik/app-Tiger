@@ -6,8 +6,8 @@ package de.gematik.test.tiger.lib;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.banner.Banner;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
@@ -15,6 +15,13 @@ import de.gematik.test.tiger.lib.monitor.MonitorUI;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.RestAssured;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.awt.HeadlessException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -34,14 +41,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TigerDirector {
 
-    private TigerDirector() {
-    }
-
     private static TigerTestEnvMgr tigerTestEnvMgr;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
-
     private static boolean initialized = false;
 
     public static synchronized void startMonitorUITestEnvMgrAndTigerProxy(TigerLibConfig config) {
@@ -49,12 +52,11 @@ public class TigerDirector {
 
         if (config.activateMonitorUI) {
             try {
-                optionalMonitorUI =  MonitorUI.getMonitor();
+                optionalMonitorUI = MonitorUI.getMonitor();
             } catch (HeadlessException hex) {
                 log.error("Unable to start Monitor UI on a headless server!", hex);
             }
         }
-
 
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
         tigerTestEnvMgr = new TigerTestEnvMgr();
@@ -119,7 +121,7 @@ public class TigerDirector {
     public static void synchronizeTestCasesWithPolarion() {
         assertThatTigerIsInitialized();
 
-        if (OsEnvironment.getAsBoolean("TIGER_SYNC_TESTCASES")) {
+        if (TigerGlobalConfiguration.readBoolean("TIGER_SYNC_TESTCASES")) {
             try {
                 Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
                     .getDeclaredMethod("main", String[].class);
@@ -159,12 +161,12 @@ public class TigerDirector {
             () -> TigerTestEnvMgr.waitForQuit("Tiger Testsuite"));
     }
 
-    public static void updateStepInMonitor(Step step)  {
+    public static void updateStepInMonitor(Step step) {
         optionalMonitorUI.ifPresent((monitor) -> monitor.updateStep(step));
     }
 
     private static void assertThatTigerIsInitialized() {
-        if (!OsEnvironment.getAsBoolean("TIGER_ACTIVE")) {
+        if (!TigerGlobalConfiguration.readBoolean("TIGER_ACTIVE")) {
             throw new TigerStartupException("Tiger test environment has not been initialized,"
                 + "as the TIGER_ACTIVE environment variable is not set to '1'.");
         }
@@ -185,6 +187,7 @@ public class TigerDirector {
         System.clearProperty("http.proxyPort");
         System.clearProperty("https.proxyPort");
 
+        TigerGlobalConfiguration.reset();
     }
 
     private static class TigerSerenityRestException extends RuntimeException {

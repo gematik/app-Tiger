@@ -5,11 +5,11 @@ tigerProxy:
     port: 3128
 
 servers:
-  - name: idp
+  idp:
     template: idp-ref
     active: true
     startupTimeoutSec: 110
 
-  - name: erzpt-default
+  erzpt-default:
     template: erzpt-fd-ref
     active: true
