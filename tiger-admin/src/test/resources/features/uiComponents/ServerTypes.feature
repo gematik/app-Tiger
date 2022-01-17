@@ -43,7 +43,7 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     When he focuses on formular "tigerProxy_001"
-    Then he sees input field ".tigerProxyCfg.proxyPort"
+    Then he sees input field ".tigerProxyCfg.proxyCfg.port"
     And he sees select field ".tigerProxyCfg.proxiedServer"
     And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
     When he shows "Allgemeines" tab
@@ -122,7 +122,7 @@ Feature: Check input fields and sections for all server types
     And he doesn't see field "version"
     But he sees check field "localProxyActive"
     When he shows "TigerProxy" tab
-    Then he sees input field ".tigerProxyCfg.proxyPort"
+    Then he sees input field ".tigerProxyCfg.proxyCfg.port"
     And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
     But he doesn't see field ".tigerProxyCfg.proxiedServer"
 

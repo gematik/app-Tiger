@@ -98,7 +98,7 @@ $(document).ready(function () {
     if (!currFile) {
       openFileSaveAsDialog(saveYamlFile)
     } else {
-      snack("Save NOT implemented so far", "danger");
+      saveYamlFile();
     }
   });
 

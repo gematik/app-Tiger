@@ -107,7 +107,7 @@
                 <button class="btn btn-outline-primary btn-lg btn-add-server w-50" type="button">Server hinzufügen...</button>
               </p>
               <p>
-                <button class="btn btn-outline-secondary btn-lg btn-open-testenv w-50" type="button">Projeket laden...</button>
+                <button class="btn btn-outline-secondary btn-lg btn-open-testenv w-50" type="button">Projekt laden...</button>
               </p>
             </div>
             <div class="col">
@@ -265,7 +265,7 @@
               <i class="fas fa-toolbox btn-advanced" style="font-size:100%;float:none;" title="Show advanced settings"></i>
             </p>
             <div class="form-check form-switch">
-              <input checked class="form-check-input" name="localProxyActive" type="checkbox">
+              <input checked class="form-check-input hidden" name="localProxyActive" type="checkbox">
               <label class="form-check-label">Activate local Tiger proxy on startup</label>
             </div>
           </div>
@@ -379,7 +379,7 @@
               <div class="col-6">
                 <div class="input-group">
                   <span class="input-group-text">Proxy Port</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyPort" title="Port on which the Tiger proxy is listening"
+                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.port" title="Port on which the Tiger proxy is listening"
                          type="number">
                 </div>
                 <div class="input-group advanced">
@@ -675,17 +675,17 @@
               <div class="col">
                 <div class="input-group">
                   <span class="input-group-text">Server Root Ca</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation"
+                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa"
                          type="text">
                 </div>
                 <div class="input-group">
                   <span class="input-group-text">Forward Mutual TLS Identity</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation"
+                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity"
                          type="text">
                 </div>
                 <div class="input-group">
                   <span class="input-group-text">Server Identity</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation"
+                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity"
                          type="text">
                 </div>
                 <div class="input-group">
@@ -1013,7 +1013,7 @@
             </div>
             <div class="info-tigerProxy hidden">
               <p>
-                With the base type "Tiger proxy" you can add an additional forward or reverse proxy to your test
+                With the base type "Tiger proxy" you can add a forward or reverse proxy to your test
                 environment.
                 These proxies will not be available to the test suite or nodes out of the box but must be configured on
                 the nodes.
@@ -1065,20 +1065,65 @@
             </div>
             <div class="info-idp-rise-ru hidden">
               <p>
-                This template provides a route to the RISE IDP in the Gematik RU
+                This template provides the RU instance of RISE’s IDP server as an "external URL".
               </p>
-              <p>
-                The system property IDP_SERVER is set to the URL of the Discovery Document end point and is available
-                for all subsequently initiated test environment nodes.
+              <p>The system properties IDP_SERVER and GEMATIK_TESTCONFIG are set to the URL
+                of the Discovery Document end point and a config-file for the IDP test suite respectively.
+                They are available for all subsequently initiated test environment nodes.
               </p>
             </div>
             <div class="info-idp-rise-tu hidden">
               <p>
-                This template provides a route to the RISE IDP in the Gematik TU
+                This template provides the TU instance of RISE’s IDP server as an "external URL".
+              </p>
+              <p>The system properties IDP_SERVER and GEMATIK_TESTCONFIG are set to the URL
+                of the Discovery Document end point and a config-file for the IDP test suite respectively.
+                They are available for all subsequently initiated test environment nodes.
+              </p>
+            </div>
+            <div class="info-erzpt-fd-ref hidden">
+              <p>This template provides the reference implementation of the eRezept server
+                as a local docker container.
+                The docker image is loaded from a gematik internal docker registry server.
+                Make sure that an IDP server node is instantiated before the ERp FD is started and
+                that it is available under http://idp or adapt the environment variable configuration.
               </p>
               <p>
-                The system property IDP_SERVER is set to the URL of the Discovery Document end point and is available
-                for all subsequently initiated test environment nodes.
+                A large list of environment variables is set.
+                But dont worry, it is just the server that uses them.
+              </p>
+            </div>
+            <div class="info-epa2 hidden">
+              <p>
+                This template provides the gematik reference Aktensystem simulation as docker compose.
+              </p>
+            </div>
+            <div class="info-pssim hidden">
+              <p>
+                This template provides a Primärsystem simulation (as a jar), usable for ePA.
+                See https://wiki.gematik.de/display/PTP/epa-ps for more information.
+              </p>
+            </div>
+            <div class="info-kon-sim hidden">
+              <p>
+                This template provides a Konnektor simulation (as external jar).
+                See https://wiki.gematik.de/display/PTP/KonSim for more information.
+              </p>
+            </div>
+            <div class="info-konsim hidden">
+              <p>
+                This template provides a Konnektor simulation (as external jar).
+                See https://wiki.gematik.de/display/PTP/KonSim for more information.
+              </p>
+            </div>
+            <div class="info-epa2-fdv hidden">
+              <p>
+                This template provides FdV simulation, usable for ePA.
+              </p>
+            </div>
+            <div class="info-demis hidden">
+              <p>
+                This template provides the DEMIS Meldeportal as local docker compose.
               </p>
             </div>
           </div>

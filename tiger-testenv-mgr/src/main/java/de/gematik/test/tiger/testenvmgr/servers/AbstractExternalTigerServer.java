@@ -48,12 +48,12 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
                     try {
                         con.connect();
                         log.info("External node " + getConfiguration().getHostname() + " is online");
-                        log.info(Ansi.colorize("External server Startup OK " + getConfiguration().getSource().get(0),
+                        log.info(Ansi.colorize("External server Startup OK for " + getConfiguration().getSource().get(0) + " of " + getHostname(),
                             RbelAnsiColors.GREEN_BOLD));
                         return true;
                     } catch (ConnectException | SocketTimeoutException cex) {
                         if (!quiet) {
-                            log.info("No connection...");
+                            log.info("No connection to " + url + " of " + getHostname() + "...");
                         }
                     } catch (SSLHandshakeException sslhe) {
                         log.warn(Ansi.colorize("SSL handshake but server at least seems to be up!" + sslhe.getMessage(),

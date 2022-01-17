@@ -67,10 +67,10 @@ const summaryPatterns = {
   ],
   ".tigerProxyCfg.proxyCfg.tls": [
     ["single", "<b>", "$.tigerProxyCfg.proxyCfg.tls.domainName", "</b><br/>"],
-    ["single", "RootCa ", "$.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation", "<br/>"],
-    ["single", "Mutual TLS Identity ", "$.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation",
+    ["single", "RootCa ", "$.tigerProxyCfg.proxyCfg.tls.serverRootCa", "<br/>"],
+    ["single", "Mutual TLS Identity ", "$.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity",
       "<br/>"],
-    ["single", "Server Identity ", "$.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation", "<br/>"],
+    ["single", "Server Identity ", "$.tigerProxyCfg.proxyCfg.tls.serverIdentity", "<br/>"],
     ["single", "Additional Names:<br/> ", "$.tigerProxyCfg.proxyCfg.tls.alternativeNames", "<br/>"],
     ["single", "Server SSL Suites:<br/> ", "$.tigerProxyCfg.proxyCfg.tls.serverSslSuites", ""]
   ],

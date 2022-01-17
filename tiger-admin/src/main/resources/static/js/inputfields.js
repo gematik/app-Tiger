@@ -130,14 +130,22 @@ $.fn.getValue = function () {
 }
 
 // for multiple input fields
-$.fn.saveInputValueInData = function (section, data, emptyValues) {
+$.fn.saveInputValueInData = function (section, data, defaultToEmptyValues, skipEmptyOrDefaultValues) {
   checkInputField('saveInputValueInData', this);
   return this.each(function () {
-    let fieldName = $(this).attr('name').substring(section.length + 1);
+    let fieldName = $(this).attr('name');
+    const fqName = $(this).attr('name');
+
+    if (section) {
+      fieldName = fieldName.substring(section.length + 1);
+    }
     let pathCursor = data;
     if (fieldName.indexOf(".") !== -1) {
       // auto create all struct nodes as empty objects
       const path = fieldName.split('.');
+      if (section == null) {
+        path.splice(0, 1);
+      }
       fieldName = path.pop();
       $.each(path, function () {
         if (!pathCursor[this]) {
@@ -146,17 +154,44 @@ $.fn.saveInputValueInData = function (section, data, emptyValues) {
         pathCursor = pathCursor[this];
       });
     }
-    if (emptyValues) {
+    if (defaultToEmptyValues) {
       if ($(this).attr('type') === 'checkbox') {
         pathCursor[fieldName] = false;
+      } else if (this.tagName === 'UL') {
+        pathCursor[fieldName] = [];
       } else {
         pathCursor[fieldName] = null;
       }
     } else {
+      const defValue = getDefaultValueFor(fqName);
       if ($(this).attr('type') === 'checkbox') {
-        pathCursor[fieldName] = $(this).prop('checked');
+        if (skipEmptyOrDefaultValues && $(this).prop('checked') !== defValue) {
+          pathCursor[fieldName] = $(this).prop('checked');
+        }
+      } else if (this.tagName === 'UL') {
+        const fieldSet = $(this).closest('fieldset');
+        const values = [];
+        if (fieldSet.hasClass('complex-list')) {
+          $(this).find('li').each(function () {
+            values.push($(this).data('listdata'));
+          });
+        } else {
+          $(this).find('li > span').each(function () {
+            values.push($(this).text());
+          });
+        }
+        pathCursor[fieldName] = values;
       } else {
-        pathCursor[fieldName] = $(this).val();
+        const val = $(this).val();
+        if ($(this).attr('type') === 'number') {
+          if (!skipEmptyOrDefaultValues || (val && Number(val) !== defValue)) {
+            pathCursor[fieldName] = Number(val);
+          }
+        } else {
+          if (!skipEmptyOrDefaultValues || (val && val !== defValue)) {
+            pathCursor[fieldName] = val;
+          }
+        }
       }
     }
   });

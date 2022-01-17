@@ -566,6 +566,10 @@ input, select, .form-control, .form-select {
     flex: 1 0 auto;
 }
 
+.dashboardcode-bsmultiselect li.badge span {
+    font-size: 1rem;
+}
+
 .form-control:focus, .form-select:focus {
     box-shadow: 0 0 0 0;
 }
