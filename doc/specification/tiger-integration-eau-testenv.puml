@@ -1,0 +1,70 @@
+@startuml
+
+!include plantuml.style
+
+<style>
+  title {
+    margin 20
+  }
+</style>
+
+left to right direction
+
+title Tiger EAU Konnektorfarm test
+
+rectangle "EAU Konnektorfarm" as eaufarm {
+    component Konnektor1
+    component Konnektor2
+    component Konnektor3
+}
+
+rectangle "On site" as onsite {
+
+    rectangle "On site test environment" as onsiteenv {
+        component tigerProxy3
+        component tigerProxy2
+        component tigerProxy1
+
+        component aggregatingProxy [
+          aggregating proxy
+
+          ----
+
+          aggregates all messages
+          received by any proxy
+        ]
+        component localTigerProxy
+    }
+    component testenvMgr <<Tiger>>
+
+    component validationTestsuite <<Tiger>> [
+      validation test suite
+
+      ----
+
+      validates the received requests
+      and responses asserting all
+      mandatory criteria
+    ]
+    component primaerSystem  <<External>>
+
+}
+
+testenvMgr -down-> onsiteenv : instantiates the proxies\non start up
+
+tigerProxy1 <--> Konnektor1 <<HTTP>>
+tigerProxy2 <--> Konnektor2 <<HTTP>>
+tigerProxy3 <--> Konnektor3 <<HTTP>> : forward requests received\nlocally via localhost:port\nto KonnektorX@gematik
+
+tigerProxy1 .down.> aggregatingProxy : forwards received messages
+tigerProxy2 ..> aggregatingProxy
+tigerProxy3 ..> aggregatingProxy
+
+aggregatingProxy .left.> localTigerProxy
+
+localTigerProxy ..> validationTestsuite
+
+primaerSystem <--> tigerProxy1 <<HTTP>> : sends requests as\nspecified by workflow\nto local proxies
+primaerSystem <--> tigerProxy2 <<HTTP>>
+primaerSystem <--> tigerProxy3 <<HTTP>>
+@enduml

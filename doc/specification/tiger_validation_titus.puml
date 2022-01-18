@@ -1,5 +1,5 @@
 @startuml
-(*) --> "Starte Tiger testsuite mit mvn clean verify"
+(*) --> "Starte Tiger test suite mit mvn clean verify"
 
 --> Tiger proxy mit entsprechenden Routen oder reverse Proxies werden gestartet
 

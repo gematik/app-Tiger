@@ -1,8 +1,5 @@
+# minimum viable test environment specification
+# default local Tiger Proxy
 tigerProxy:
-  # Für Gematikinternen Zugang zum Internet muss der Firmenproxy als Forwardproxy definiert werden.
-  forwardToProxy:
-    hostname: 192.168.230.85
-    port: 3128
-  proxyLogLevel: TRACE
-
-servers: []
+# no server nodes
+servers: {}

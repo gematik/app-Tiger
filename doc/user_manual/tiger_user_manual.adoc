@@ -1,0 +1,101 @@
+
+= Tiger User Manual
+:toc: 1
+:icons: font
+:icontype: svg
+:author: TIGER@gematik.de
+:numbered:
+:pdf-theme: themes/pdf-theme.yml
+:pdf-fontsdir: fonts
+
+
+include::overview.adoc[]
+
+include::gettingStarted.adoc[]
+
+include::tigerTestEnvironmentManager.adoc[]
+
+include::tigerProxy.adoc[]
+
+include::tigerTestLibrary.adoc[]
+
+== Tiger User interfaces
+
+[#_admin_ui]
+=== Admin UI
+
+The Tiger Admin UI is a separate module that can be downloaded from maven
+
+https://repo1.maven.org/maven2/de/gematik/test/tiger-admin
+
+Choose a current version and download the `tiger-admin-x.y.z.jar` to a local folder on your computer.
+
+Run the following command to get the Tiger Admin UI up and running:
+
+[source,shell script]
+----
+java -jar tiger-admin-x.y.z.jar --server.port=8080
+----
+
+Now open your firefox browser and go to http://127.0.0.1:8080.
+
+Voila you are ready to start working with the Tiger Admin UI
+
+
+=== Workflow UI
+
+The Workflow UI is currently an experimental feature implemented as PoC.
+We plan to have this feature in product grade quality in the first half of 2022.
+Till then there is not much more than in the <<tigerTestLibrary.adoc#_workflow_ui>> section above.
+
+=== Standalone Tiger Proxy UI
+
+To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:
+
+[source,http request]
+----
+http://127.0.0.1:${SERVERPORT}/webui
+----
+
+With `SERVERPORT` being the configured server port of the Tiger Proxy.
+
+==== Bottom menu bar
+
+image::media/TigerProxyBottomNavBar.png[title="Tiger Proxy bottom menu bar "]
+
+The displayed buttons can trigger the following actions:
+
+* *Routes* … allows you to modify the routes configured on this Tiger Proxy
+* *Scroll Lock* … allows you to lock the scroll position. Incoming messages wills till be added to the list at the bottom of the page.
+* *Update buttons* allow you to specify how often the list shall be updated. The Update button is only active if you have choosen manual update mode. To the left of the 1s choice there is a small LED that will indicate active retrieval of new data (green) or failure while retrieving data (red).
+* *Reset* … allwos you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!
+* *Save* … allows you to save the current HTML page.
+* *Quit* … allows you to quit the Tiger Proxy instance
+
+== Links to test relevant topics
+
+* 3-Amigos
+** presumably first mentioned in https://blog.gdinwiddie.com/2009/06/17/if-you-dont-automate-acceptance-tests/[George Dinwiddie's blog] (2009)
+** https://johnfergusonsmart.com/three-amigos-requirements-discovery/[John Ferguson's Blog about 3 Amigos]
+** https://scrumlog.org/2019/03/06/bdd-and-three-amigos/[Becky Carter's blog]
+* Cucumber
+** https://cucumber.io/[Product web site]
+** https://www.guru99.com/gherkin-test-cucumber.html[Guru99's Intro to Gherkin]
+** https://cucumber.io/docs/gherkin/reference/[Cucumbers Gherkin reference]
+* https://serenity-bdd.info/[Serenity BDD]
+* SOLID
+** https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design[Explaining all five concepts with simple Geometry]
+** https://stackify.com/solid-design-principles/[In depth discussion of the 5 principles]
+* https://effectivesoftwaredesign.com/2012/02/05/separation-of-concerns/[Separation of concerns principle]
+* Screenplay Pattern
+** https://www.infoq.com/articles/Beyond-Page-Objects-Test-Automation-Serenity-Screenplay/[Nice overview of what the screenplay pattern is about]
+** https://dzone.com/articles/page-objects-refactored-solid-steps-to-the-screenp[From Page Objects to SOLID Screenplay]
+* FIRST principle for Unit tests
+** http://agileinaflash.blogspot.com/2009/02/first.html[AgileOtters Blog]
+
+
+== FAQs
+
+This chapter will be filled with the most relevant questions and answers to it that we will receive after the release of this manual.
+
+// TODO TGR-316== Glossar

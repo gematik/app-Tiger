@@ -1,65 +1,62 @@
 @startuml
 
-skinparam actorStyle awesome
-skinparam backgroundColor #ffffff
+!include plantuml.style
 
-skinparam usecase {
-    BackgroundColor<<Business>> LightGreen
-    BorderColor<<Business>> Green
-    BackgroundColor<<NextRelease>> LightGreen
-    FontColor<<NextRelease>> Gray
-    BorderColor<<NextRelease>> Green
-}
+hide stereotype
+
+skinparam actorStyle awesome
 
 skinparam StereotypeTitleOpening [
 skinparam StereotypeTitleClosing ]
 
-actor TigerUser as tigUsr
+title "Tiger use cases"
+
+actor TigerUser as tigUsr <<Tiger>>
 actor GematikTestTeam as gemTT
 actor ExternalPoductTeam as extProd
 
 left to right direction
 
-tigUsr <|-- gemTT
-tigUsr <|-- extProd
+tigUsr <|-down- gemTT
+tigUsr <|-down- extProd
 
-usecase/ "Reuse cases/steps from existing test suites"  as BBSUC1 << Business >>
-usecase/ "Set up test environments more efficiently" as BBSUC2 << Business >>
-usecase/ "Perform automated IOP tests more efficiently" as BBSUC3 << Business >>
-usecase/ "Perform analysis of test failures more efficiently " as BBSUC4 << Business >>
-usecase/ "Support non Java Testautomation" as BBSUC5 << NextRelease >>
+usecase/ "Reuse of cases/steps from existing test suites"  as BBSUC1 <<Tiger>>
+usecase/ "Fast and easy set up of test environments" as BBSUC2 <<Tiger>>
+usecase/ "Uncomplicated automated execution of IOP tests" as BBSUC3 <<Tiger>>
+usecase/ "Explicit analysis of test failures" as BBSUC4 <<Tiger>>
+usecase/ "Support non Java Testautomation" as BBSUC5 <<NextRelease>>
 
 tigUsr --> BBSUC1
-tigUsr --> BBSUC2
-gemTT --> BBSUC3
+tigUsr -> BBSUC2
+tigUsr --> BBSUC3
 tigUsr --> BBSUC4
-tigUsr --> BBSUC5
+tigUsr --> BBSUC5 <<NextRelease>>
 
-package TestEnvironmentManager {
+package "Test environment manager" {
     usecase "Use local docker containers" as TEMUC1
     usecase "Use cloud based docker containers" as TEMUC3
     usecase "Use test instances from TU/RU" as TEMUC2
     usecase "Use self hosted services" as TEMUC4
 }
 
-package TitusConnect {
+package "Titus connect" <<NextRelease>> {
   usecase "Sync test cases to Titus" as TCUC1
   usecase "Sync test run results to Titus" as TCUC2
 }
 
-package SerenityIntegration {
+package "Serenity integration" {
     usecase "Analyze test runs based on local reports with detailed testlogs" as SIUC1
     usecase "See requirements coverage in test report" as SIUC2
 }
 
-package PolarionIntegration {
+package "Polarion integration" {
     usecase "Sync test cases to Polarion" as PIUC1
     usecase "Sync test run results to Polarion and Aurora" as PIUC2
 }
 
-usecase "Support C# test automation" as NJTUC1
-usecase "Support Rust test automation" as NJTUC2
-usecase "Provide REST API for test automation" as NJTUC3
+usecase "Support C# test automation" as NJTUC1 <<NextRelease>>
+usecase "Support Rust test automation" as NJTUC2 <<NextRelease>>
+usecase "Provide REST API for test automation" as NJTUC3 <<NextRelease>>
 
 BBSUC2 ..> TEMUC1  : &#171;include&#187;
 BBSUC2 ..> TEMUC2 : &#171;include&#187;
@@ -70,16 +67,16 @@ BBSUC3 ..> BBSUC1 : &#171;include&#187;
 BBSUC3 ..> BBSUC2 : &#171;include&#187;
 BBSUC3 ..> BBSUC4 : &#171;include&#187;
 
-BBSUC3 ..> TCUC1  : &#171;include&#187;
-BBSUC3 ..> TCUC2  : &#171;include&#187;
+BBSUC3 ...> TCUC1 <<NextRelease>> : &#171;include&#187;
+BBSUC3 ...> TCUC2 <<NextRelease>> : &#171;include&#187;
 BBSUC3 ..> SIUC2  : &#171;include&#187;
-BBSUC3 ..> PIUC1  : &#171;include&#187;
+BBSUC3 ...> PIUC1  : &#171;include&#187;
 BBSUC3 ..> PIUC2  : &#171;include&#187;
 
 BBSUC4 ..> SIUC1  : &#171;include&#187;
 
-BBSUC5 ..> NJTUC1  : &#171;include&#187;
-BBSUC5 ..> NJTUC2  : &#171;include&#187;
-BBSUC5 ..> NJTUC3  : &#171;include&#187;
+BBSUC5 ..> NJTUC1 <<NextRelease>> : &#171;include&#187;
+BBSUC5 ..> NJTUC2 <<NextRelease>> : &#171;include&#187;
+BBSUC5 ..> NJTUC3 <<NextRelease>> : &#171;include&#187;
 
 @enduml

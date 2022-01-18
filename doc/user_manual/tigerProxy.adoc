@@ -1,0 +1,343 @@
+== Tiger Proxy
+
+=== Excurse: What are proxies, reverse, forward
+
+There are a lot of different kind of proxies. Here we talk only about HTTP and HTTPS proxies!
+
+==== Forward proxies
+
+Forward proxies work like a switch-station: You send a packet to your destination, via proxy.
+The proxy receives the packet, sees the address and can send that packet to wherever he sees fit.
+To use a forward proxy the sender has to be aware of it and send the packet accordingly.
+
+This allows the creation of virtual domains, something we use extensively in tiger.
+
+A forward proxy can always read the entire content of your communication, something we also use heavily.
+
+Lastly a forward proxy acts as a man-in-the-middle, enabling the penetration of TLS-traffic.
+We also use this, but we will explain it in more depth later.
+
+==== Reverse proxies
+
+Reverse proxies also receive traffic and may reroute them at their own discretion.
+But unlike a forward proxy a reverse proxy is invisible to the sender. Reverse proxies act like
+normal servers and are addressed as such. They then send the received packet to its actual
+destination and return the answer to the original caller.
+
+The reverse proxy can also read the complete traffic.
+
+The eventual destination is opaque to the original caller. This also enables path-rewriting
+(for example the GET http://reverse.proxy.de/my/deep/url might be mapped to http://gematik.de/deep/url, eliminating the /my)
+
+A reverse proxy also terminates https, always. This is less of a problem with a reverse proxy
+since it is technically not a man-in-the-middle attack, due to the traffic being addressed
+to the reverse proxy.
+
+=== Tiger-Proxy basics
+
+The tiger-proxy is a proxy-server. It has two types: tiger-proxy and tiger-standalone-proxy. Both types have a proxy-port (configurable via `tigerProxy.port`), which supports both http- and https-traffic (so you do not have to differentiate between the two).
+
+The tiger-standalone-proxy has an admin-port on top (configurable via `server.port`). This provides a webui to monitor the traffic, a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple tiger-proxies.
+
+=== Understanding routes
+
+Routes are the fundamental mechanic of how the tiger-proxy handles traffic. They can be for a forward-
+or reverse-proxy. A route has the following properties:
+
+==== from
+From where should the traffic be collected? This can either be an absolute URL (eg. http://foobar), which defines a forward-proxy route, or relative (eg. /blub), defining a reverse-proxy-route. Please note: You can freely add parts (eg. http://foobar/extra/part) to further specify the mapping.
+
+==== to
+
+The target of the mapping. This has to be an absolute URL. The tiger-proxy will, upon receiving a request to this mapping, execute a matching request to the defined host.
+
+An example. Consider the following route:
+
+[source,yaml]
+----
+tigerProxy:
+    proxyRoutes:
+      - from: http://my.domain/
+        to: http://orf.at/
+----
+
+The "http://" in the **from property** indicates that we have a forward-proxy route defined. So when we execute: (assuming the tiger-proxy is started locally under the port 1234)
+
+ curl -x http://localhost:1234 http://my.domain/news
+
+The result will match the following curl
+
+ curl http://orf.at/news
+
+Additional headers are kept and just patched through. The same goes for the body and the HTTP-Method.
+
+Added parts of the from-URL are stripped when forwarding. Meaning: If you have a mapping
+
+[source,yaml]
+----
+tigerProxy:
+    proxyRoutes:
+      - from: http://my.domain/deep/
+        to: http://orf.at/blub/
+----
+and you execute GET http://my.domain/deep/deeper, you will get the result of GET http://orf.at/blub/deeper (the /deep in between has been eliminated along with my.domain).
+
+==== disableRbelLogging
+
+You can deactivate the rbel-Logging on a per-Route basis. Rbel is a versatile and powerful tool, but the analysis of individual messages consumes a lot of both CPU and memory. Deactivating it for routes in which it is not needed is therefore a good idea.
+
+==== basicAuth
+
+You can add optional basic-auth configuration which will be added to the forwarded message. Theoretically this could also be done via modifications, but this a more convenient approach.
+
+[source,yaml]
+----
+tigerProxy:
+    basicAuth:
+        username: "test1"
+        password: "pwd2"
+----
+
+=== TLS, keys, certificates a quick tour on proxies
+
+A fundamental part of a proxy setup is TLS. Since a proxy is a constant man-in-the-middle attack TLS is designed to make this exact scenario (eavesdropping while forwarding) impossible. Since a lot of the traffic in the gematik context is security-relevant and thus TLS-secured this point is a very relevant one.
+
+Fundamentally breaking into TLS requires two things:
+
+* A certificate which the server can present which is valid for the given domain
+* The certifying CA (or a CA reachable via a certification path) has to be part of the client truststore
+
+There a different ways to reach these two requirements. Which one should be taken is dependent on the setting and the client used (most importantly, of course: can you alter the truststore for the test-setup?)
+
+Here are a few things to know and ways in which to enable TLS:
+
+==== TLS and HTTPS-Proxy
+
+TLS can be done via a http- or a https-proxy. The proxy-protocol does NOT equate to the client-server-protocol. To minimize the headache in configuration it is therefore strongly recommended to simply always use the http-proxy (sidenote: using a http-proxy does NOT reduce the security of the overall protocol. The security still relies on server-certificate-verification.)
+
+If, however, you can not avoid using the https-proxy you have to make sure that you add the given certificate to your truststore. Currently, there is no tooling to simplify this task. If you need this please contact us.
+
+==== Dynamic server identity
+
+For successfully breaking into TLS traffic the tiger-proxy needs to present a certificate which features the domain-name of the server. Since the domain-names are known only at runtime, we  generate the needed certificate on-the-fly during the first connection.
+
+For a forward-proxy this is easy: The client sends not only the path, but the complete URL to the proxy, letting him handle DNS-resolution. So when the tiger-proxy receives a new request the necessary domain-name is given by the client. A new, matching, certificate is generated (these are cached) and presented. To complete the setup the client-truststore needs to be patched. The default CA used by the tiger-proxy can be found here: https://github.com/gematik/app-Tiger/blob/master/tiger-standalone-proxy/src/main/resources/CertificateAuthorityCertificate.pem
+
+For a reverse-proxy the domain name, which should be used, is unknown to the tiger-proxy (DNS-resolution is done on the client-side). Thus, a  domain-name needs to be provided which should be used for certificate-generation:
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+        domainName: deep.url.of.server.de
+----
+
+==== Client-sided truststore modification
+
+When using a non-default certificate (which will almost always be the case for the tiger-proxy) the modification of the client-truststore is necessary. For cases where the client is running in the same JVM as the target tiger-proxy (which is the typical case for a tiger-based testsuite) there exists helper method to make this task easier.
+
+Depending on your HTTP- or REST- or SOAP-API you will need to choose the exact way yourself. The following two examples might give you some idea of what to do.
+
+
+[source,java]
+----
+Unirest.config().sslContext(tigerProxy.buildSslContext());
+----
+
+[source,java]
+----
+ OkHttpClient client = new OkHttpClient.Builder()
+
+    .proxy(new Proxy(
+        Proxy.Type.HTTP,
+        new InetSocketAddress(
+            "localhost",
+            tigerProxy.getPort())))
+
+    .sslSocketFactory(
+        tigerProxy.getConfiguredTigerProxySslContext().getSocketFactory(),
+        tigerProxy.buildTrustManagerForTigerProxy())
+
+    .build();
+----
+
+==== Custom CA
+
+If you can not or don't want to alter the client-truststore you have two choices: You can either provide a custom CA to be used (and trusted by the client) or you can give the certificate to be used by the tiger-proxy. To set a custom CA to be used for certificate generation simply specify it:
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+        serverRootCa: "certificate.pem;privateKey.pem;PKCS8"
+# for more information on specifying PKI identities in tiger see "Configuring PKI identities"
+----
+
+==== Fixed server identity
+
+The final, easiest and most unflexible way to solve TLS-issues is to simply give a fixed server-identity. This identity will be used for all routes.
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+      serverIdentity: "certificateAndKeyAndChain.p12;Password"
+----
+
+=== Modifications
+
+Modifications are a powerful tool to alter messages before forwarding them. They can be applied to requests and responses, to routes in forward- and reverse-proxy-mode. You can choose to modify only specific parts of the message and only alter messages when certain conditions are met.
+
+Below is a sample configuration giving insight into how modifications are organized:
+
+[source,yaml]
+----
+tigerProxy:
+    modifications:
+    # a list of modifications that will be applied to every proxied request and response
+
+        # The following modification will replace the entire "user-agent" in all requests
+      -
+        condition: "isRequest"
+        # a condition that needs to be fullfilled for the modification to be applied (JEXL grammar)
+        targetElement: "$.header.user-agent"
+        # which element should be targeted?
+        replaceWith: "modified user-agent"
+        # the replacement string to be filled in.
+
+        # The following modification will replace the body of every 200 response completely with the given json-string
+        # (This ignores the existing body. For example this could be an XML-body. Content-Type-headers will NOT be set accordingly)
+      -
+        condition: "isResponse && $.responseCode == 200"
+        targetElement: "$.body"
+        name: "body replacement modification"
+        # The name of this modification. This can be used to identify, alter or remove this modification. A name is optional
+        replaceWith: "{\"another\":{\"node\":{\"path\":\"correctValue\"}}}"
+
+        # The following modification has no condition, so it will be applied to every request and every response
+      -
+        targetElement: "$.body"
+        regexFilter: "ErrorSeverityType:((Error)|(Warning))"
+        # The given regex will be used to target only parts of targeted element.
+        replaceWith: "ErrorSeverityType:Error"
+----
+
+
+[#_mesh_setup_traffic_endpoints]
+=== RBel-Message forwarding
+
+One of the fundamental features of the tiger-proxy is rbel-message forwarding. This forwards the messages, which the proxy has logged, to other tiger-proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered tiger-proxies. Common scenario for this approach might be the use of multiple reverse-proxies on the root level (e.g. when the client only allows the configuration of the server IP or domain, but no path-prefix) or the aggregation of traffic across machine-boundaries (e.g. one constantly running tiger-proxy which is used by a testsuite on another machine).
+
+[source,yaml]
+----
+tigerProxy:
+    trafficEndpoints:
+      - http://another.tiger.proxy:<serverPort>
+    # A list of upstream tiger-proxies. This proxy will try to connect to all given sources to
+    # gather traffic via the STOMP-protocol. If any of the given endpoints are not accesible the
+    # server will not boot. (fail fast, fail early)
+----
+
+Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.port`). The traffic from routes with `activateRbelLogging: false` will not show up here.
+
+NOTE: If you are setting up a tiger-proxy to run constantly and simply forward traffic to a testsuite that is booted ad-hoc you might run into performance-problems. This is due to the Rbel-Logger being a very hungry beast. To stop Rbel from parsing all message simply add `tigerProxy.activateRbelParsing: false`. This will vastly reduce memory and CPU consumption of the application, while still forwarding logged traffic.
+
+=== Understanding RBelPath
+
+RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of captured RBeL-Traffic (navigation of the RbelElement-tree).
+
+A simple example:
+[source,java]
+----
+assertThat(convertedMessage.findRbelPathMembers("$.header"))
+    .containsExactly(convertedMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
+----
+
+or
+[source,java]
+----
+assertThat(convertedMessage.findElement("$.header"))
+    .get()
+    .isSameAs(convertedMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
+----
+(The first example executes the RbelPath and returns a list of all matching element, the second one returns an Optional containing a single result. If there are multiple matches an exception is given.)
+
+RBeL-Path provides seamless retrieval of nested members.
+
+Here is an example of HTTP-Message containing a JSON-Body:
+
+image::media/rbelPath1.jpg[title="Rbel-Path expression in a HTTP-Response"]
+
+The following message contains a JWT (Json Web Token, a structure which contains of a header, a body and a signature). In the body there is a claim (essentially a Key/Value pair represented in a JSON-structure) named `nbf` which we want to inspect.
+
+Please note that the RBeL-Path expression contains no information about the types in the structure. This expression would also work if the HTTP-message contained a JSON-Object with the corresponding path, or an XML-Document.
+
+[source,java]
+----
+assertThat(convertedMessage.findRbelPathMembers("$.body.body.nbf"))
+    .containsExactly(convertedMessage.getFirst("body").get()
+    .getFirst("body").get()
+    .getFirst("nbf").get()
+    .getFirst("content").get());
+----
+
+(The closing .getFirst("content") in the assertion is due to a fix to make RbelPath in JSON-Context easier: If the RbelPath ends on a JSON-Value-Node the corresponding content is returned.)
+
+image::media/rbelPath2.jpg[title="Multiple body references"]
+
+You can also use wildcards to retrieve all members of a certain level:
+
+ $.body.[*].nbf
+
+Alternatively you can recursively descend and retrieve all members:
+
+ $..nbf
+
+and
+
+ $.body..nbf
+
+will both return the same elements (maybe amongst other elements).
+
+==== JEXL expressions
+RBeL-Path can be integrated with JEXL-expression, giving a much more powerful and flexible tool to extract certain element. This can be done using the syntax from the following example:
+
+ $..[?(key=='nbf')]
+
+The expression in the round-brackets is interpreted as JEXL. The available syntax is described in more detail here: https://commons.apache.org/proper/commons-jexl/reference/syntax.html
+
+The variables that can be used are listed below:
+
+* `element` contains the current RBeL-Element
+* `parent` gives direct access to the parent element of the current element.
+Is `null` if not present
+* `message` contains the HTTP-Message under which this element was found
+* `request` is the corresponding HTTP-Request. If `message` is a response, then the corresponding Request will be returned.
+If `message` is a request, then `message` will be returned.
+* `key` is a string containing the key that the current element can be found under in the parent-element.
+* `path` contains the complete sequence of keys from `message` to `element`.
+* `type` is a string containing the class-name of `element` (eg `RbelJsonElement`).
+* `content` is a string describing the content of `element`. The actual representation
+dependens heavily on the type of `element`.
+
+==== Debugging Rbel-Expressions
+
+To help users create RbelPath-Expressions there is a Debug-Functionality which produces log message designed to help. These can be activated by `RbelOptions.activateRbelPathDebugging();`. Please note that this is strictly intended for development purposes and will flood the log with quite a lot of messages. Act accordingly!
+
+To get a better feel for a RbelElement (whether it being a complete message or just a part) you can print the tree with the `RbelElementTreePrinter`. It brings various options:
+
+[source,java]
+----
+RbelElementTreePrinter.builder()
+    .rootElement(this) //the target element
+    .printKeys(printKeys) // should the keys for every leaf be printed?
+    .maximumLevels(100) // only descend this far into the three
+    .printContent(true) // should the content of each element be printed?
+    .build()
+    .execute();
+----
+
+//TODO TGR-312 localResources: true muss erklärt werden
+//TODO TGR-312 rbelBufferSizeInMb: 1024  muss erklärt werden
+//TODO TGR-312 activateForwardAllLogging: true  muss erklärt werden
+//TODO TGR-312 fileSaveInfo  muss erklärt werden

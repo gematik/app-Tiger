@@ -11,6 +11,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -19,9 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -35,6 +39,66 @@ public class TigerAdminUiController {
     @GetMapping("/")
     public String getStartPage() {
         return "adminui";
+    }
+
+    @GetMapping(value = "/tiger_user_manual.html", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public String getManualPage() {
+        try {
+            return IOUtils.resourceToString("/static/manual/tiger_user_manual.html", StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new TigerConfigurationException("Unable to read user manual from classpath resources!", e);
+        }
+    }
+
+
+    @GetMapping(value = "media/{mediafile}.svg", produces = "image/svg+xml")
+    public ResponseEntity<byte[]> getManualPageMediaSVG(@PathVariable("mediafile") String mediaFile) throws IOException {
+        try(InputStream is = getClass().getResourceAsStream("/static/manual/media/" + mediaFile  + ".svg")) {
+            if (is == null) {
+                throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "media file " + mediaFile + " not found"
+                );
+            }
+            return new ResponseEntity<>(IOUtils.toByteArray(is), HttpStatus.OK);
+        }
+    }
+
+
+    @GetMapping(value = "{svgfile}.svg", produces = "image/svg+xml")
+    public ResponseEntity<byte[]> getManualPageSVG(@PathVariable("svgfile") String mediaFile) throws IOException {
+        try(InputStream is = getClass().getResourceAsStream("/static/manual/" + mediaFile  + ".svg")) {
+            if (is == null) {
+                throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "media file " + mediaFile + " not found"
+                );
+            }
+            return new ResponseEntity<>(IOUtils.toByteArray(is), HttpStatus.OK);
+        }
+    }
+
+    @GetMapping(value = "/media/{mediafile}.png", produces = "image/png")
+    public ResponseEntity<byte[]> getManualPageMediaPNG(@PathVariable("mediafile") String mediaFile) throws IOException {
+        try(InputStream is = getClass().getResourceAsStream("/static/manual/media/" + mediaFile + ".png")) {
+            if (is == null) {
+                throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "media file " + mediaFile + " not found"
+                );
+            }
+            return new ResponseEntity<>(IOUtils.toByteArray(is), HttpStatus.OK);
+        }
+    }
+
+    @GetMapping(value = "/examples/{examplefile}")
+    public ResponseEntity<byte[]> getManualPageExampleFile(@PathVariable("examplefile") String exampleFile) throws IOException {
+        try(InputStream is = getClass().getResourceAsStream("/static/manual/examples/" + exampleFile )) {
+            if (is == null) {
+                throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Example file " + exampleFile + " not found"
+                );
+            }
+            return new ResponseEntity<>(IOUtils.toByteArray(is), HttpStatus.OK);
+        }
     }
 
     @GetMapping(value = "/openYamlFile", produces = MediaType.APPLICATION_JSON_VALUE)

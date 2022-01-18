@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="580.3px" preserveAspectRatio="none" style="width:991px;height:580px;background:#FFFFF0;" version="1.1" viewBox="0 0 991 580" width="991.9px" zoomAndPan="magnify"><defs><filter height="300%" id="f6s08fmu7exup" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="1.3999999999999997"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="2.7999999999999994" dy="2.7999999999999994" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><rect fill="#FFFFFF" height="38.4453" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="493.5" x="246.05" y="35"/><text fill="#333333" font-family="sans-serif" font-size="21" font-weight="bold" lengthAdjust="spacing" textLength="353.5" x="316.05" y="61.4927">Tiger EAU Konnektorfarm test</text><!--MD5=[fee384fe61d17d4ea09dd09b36bece22]
+cluster eaufarm--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="181.3" style="stroke:#808080;stroke-width:0.6999999999999998;" width="121.8" x="579.25" y="373.7453"/><text fill="#000000" font-family="sans-serif" font-size="9.8" font-weight="bold" lengthAdjust="spacing" textLength="110.6" x="584.85" y="384.2419">EAU Konnektorfarm</text><!--MD5=[483eed55d2208e56f387aed4f176dc39]
+cluster onsite--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="263.9" style="stroke:#808080;stroke-width:0.6999999999999998;" width="940.1" x="25.9" y="93.0453"/><text fill="#000000" font-family="sans-serif" font-size="9.8" font-weight="bold" lengthAdjust="spacing" textLength="39.9" x="476" y="103.5419">On site</text><!--MD5=[6242ac1e116b970aef112c9a0a048842]
+cluster onsiteenv--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="205.8" style="stroke:#808080;stroke-width:0.6999999999999998;" width="444.5" x="288.4" y="128.7453"/><text fill="#000000" font-family="sans-serif" font-size="9.8" font-weight="bold" lengthAdjust="spacing" textLength="141.4" x="439.95" y="139.2419">On site test environment</text><!--MD5=[4bc321c7d8e403d3ead3c7ae06adc4bb]
+entity Konnektor1--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="32.4078" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="85.4" x="597.45" y="398.2453"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="668.85" y="401.7453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="667.45" y="403.1453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="667.45" y="405.9453"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="57.4" x="607.95" y="421.3419">Konnektor1</text><!--MD5=[83cdf3769684ce0c2c4c0471256f6c1b]
+entity Konnektor2--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="32.4078" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="85.4" x="597.45" y="454.9453"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="668.85" y="458.4453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="667.45" y="459.8453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="667.45" y="462.6453"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="57.4" x="607.95" y="478.0419">Konnektor2</text><!--MD5=[8aa09cf3e9a12e8bf3c8ddb71bf788ba]
+entity Konnektor3--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="32.4078" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="85.4" x="597.45" y="511.6453"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="668.85" y="515.1453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="667.45" y="516.5453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="667.45" y="519.3453"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="57.4" x="607.95" y="534.7419">Konnektor3</text><!--MD5=[eb8835dc47a9b7b8080bd3d8d25adcb8]
+entity testenvMgr--><rect fill="#90EE90" filter="url(#f6s08fmu7exup)" height="43.8156" rx="7" ry="7" style="stroke:#008000;stroke-width:0.6999999999999998;" width="83.3" x="47.6" y="125.5953"/><rect fill="#90EE90" height="7" style="stroke:#008000;stroke-width:0.6999999999999998;" width="10.5" x="116.9" y="129.0953"/><rect fill="#90EE90" height="1.4" style="stroke:#008000;stroke-width:0.6999999999999998;" width="2.8" x="115.5" y="130.4953"/><rect fill="#90EE90" height="1.4" style="stroke:#008000;stroke-width:0.6999999999999998;" width="2.8" x="115.5" y="133.2953"/><text fill="#008000" font-family="sans-serif" font-size="9.8" font-style="italic" lengthAdjust="spacing" textLength="38.5" x="66.5" y="148.6919">«Tiger»</text><text fill="#008000" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="55.3" x="58.1" y="160.0997">testenvMgr</text><!--MD5=[147afd0dd323a4e33bd1ba79dbddeb34]
+entity validationTestsuite--><rect fill="#90EE90" filter="url(#f6s08fmu7exup)" height="106.4547" rx="7" ry="7" style="stroke:#008000;stroke-width:0.6999999999999998;" width="183.4" x="771.4" y="239.3453"/><rect fill="#90EE90" height="7" style="stroke:#008000;stroke-width:0.6999999999999998;" width="10.5" x="940.8" y="242.8453"/><rect fill="#90EE90" height="1.4" style="stroke:#008000;stroke-width:0.6999999999999998;" width="2.8" x="939.4" y="244.2453"/><rect fill="#90EE90" height="1.4" style="stroke:#008000;stroke-width:0.6999999999999998;" width="2.8" x="939.4" y="247.0453"/><text fill="#008000" font-family="sans-serif" font-size="9.8" font-style="italic" lengthAdjust="spacing" textLength="38.5" x="840.35" y="262.4419">«Tiger»</text><text fill="#008000" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="96.6" x="811.3" y="273.8497">validation test suite</text><text fill="#008000" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="0" x="861" y="285.2575"/><line style="stroke:#008000;stroke-width:0.6999999999999998;" x1="772.1" x2="954.1" y1="287.5687" y2="287.5687"/><text fill="#008000" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="0" x="861" y="299.4653"/><text fill="#008000" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="155.4" x="781.9" y="310.8731">validates the received requests</text><text fill="#008000" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="135.1" x="792.05" y="322.281">and responses asserting all</text><text fill="#008000" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="93.1" x="813.05" y="333.6888">mandatory criteria</text><!--MD5=[327334cb52f39391effadf44fb992aa7]
+entity primaerSystem--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="43.8156" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="104.3" x="37.1" y="222.8953"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="127.4" y="226.3953"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="126" y="227.7953"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="126" y="230.5953"/><text fill="#333333" font-family="sans-serif" font-size="9.8" font-style="italic" lengthAdjust="spacing" textLength="53.9" x="58.8" y="245.9919">«External»</text><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="76.3" x="47.6" y="257.3997">primaerSystem</text><!--MD5=[6aa5206ef0747a85cb5cdb001c151f08]
+entity tigerProxy3--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="32.4078" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="84.7" x="305.2" y="285.5453"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="375.9" y="289.0453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="374.5" y="290.4453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="374.5" y="293.2453"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="56.7" x="315.7" y="308.6419">tigerProxy3</text><!--MD5=[27e4c17c70544df3400a0a3da4ee69f4]
+entity tigerProxy2--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="32.4078" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="84.7" x="305.2" y="228.8453"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="375.9" y="232.3453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="374.5" y="233.7453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="374.5" y="236.5453"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="56.7" x="315.7" y="251.9419">tigerProxy2</text><!--MD5=[b43cfb5bf5086d704dea74a02d5976c5]
+entity tigerProxy1--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="32.4078" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="84.7" x="305.2" y="172.1453"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="375.9" y="175.6453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="374.5" y="177.0453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="374.5" y="179.8453"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="56.7" x="315.7" y="195.2419">tigerProxy1</text><!--MD5=[814e7bed23f3583b4671d9dd1ba6304e]
+entity aggregatingProxy--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="83.6391" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="151.9" x="564.2" y="173.8953"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="702.1" y="177.3953"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="700.7" y="178.7953"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="700.7" y="181.5953"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="91.7" x="590.8" y="196.9919">aggregating proxy</text><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="0" x="638.05" y="208.3997"/><line style="stroke:#808080;stroke-width:0.6999999999999998;" x1="564.9" x2="715.4" y1="210.7109" y2="210.7109"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="0" x="638.05" y="222.6075"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="123.9" x="574.7" y="234.0153">aggregates all messages</text><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="109.9" x="581.7" y="245.4231">received by any proxy</text><!--MD5=[fcb652a50c0bbaa313e883088de8acb4]
+entity localTigerProxy--><rect fill="#FFFFF0" filter="url(#f6s08fmu7exup)" height="32.4078" rx="7" ry="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="105" x="587.65" y="282.0453"/><rect fill="#FFFFF0" height="7" style="stroke:#808080;stroke-width:0.6999999999999998;" width="10.5" x="678.65" y="285.5453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="677.25" y="286.9453"/><rect fill="#FFFFF0" height="1.4" style="stroke:#808080;stroke-width:0.6999999999999998;" width="2.8" x="677.25" y="289.7453"/><text fill="#333333" font-family="sans-serif" font-size="9.8" lengthAdjust="spacing" textLength="77" x="598.15" y="305.1419">localTigerProxy</text><!--MD5=[4b40d7a844c30470f7e71245e6deb859]
+link testenvMgr to onsiteenv--><path d="M130.942,147.6453 C166.6385,147.6453 219.499,147.6453 263.9805,147.6453 C269.5407,147.6453 274.97,147.6453 280.2184,147.6453 C282.8426,147.6453 285.4217,147.6453 287.9492,147.6453 " fill="none" id="testenvMgr-to-onsiteenv" style="stroke:#90EE90;stroke-width:1.3999999999999997;"/><polygon fill="#90EE90" points="287.9492,147.6453,281.6492,144.8453,284.4492,147.6453,281.6492,150.4453,287.9492,147.6453" style="stroke:#90EE90;stroke-width:1.3999999999999997;"/><text fill="#008000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="107.8" x="163.1" y="134.3921">instantiates the proxies</text><text fill="#008000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="49" x="192.5" y="144.9851">on start up</text><!--MD5=[1ef72de7845ff860156f13e3dfea1b88]
+link tigerProxy1 to Konnektor1--><path d="M375.851,206.3543 C380.583,209.5813 385.413,212.9623 389.9,216.2453 C476.189,279.3503 574.413,360.0743 617.379,395.8513 " fill="none" id="tigerProxy1-Konnektor1" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="620.13,398.1403,617.0805,391.9572,617.4404,395.9007,613.497,396.2606,620.13,398.1403" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="372.918,204.3593,376.5465,210.2214,375.81,206.3307,379.7007,205.5942,372.918,204.3593" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><!--MD5=[8b2f73cfe3752b46b4ccd40326c165f4]
+link tigerProxy2 to Konnektor2--><path d="M380.66,263.3973 C384.09,266.2743 387.282,269.4663 389.9,272.9453 C408.191,297.2283 392.679,313.7063 410.9,338.0453 C460.292,404.0133 491.141,404.2233 564.2,442.3453 C573.552,447.2243 583.933,451.7253 593.922,455.6383 " fill="none" id="tigerProxy2-Konnektor2" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="597.289,456.9473,592.4221,452.0644,594.0244,455.6855,590.4032,457.2878,597.289,456.9473" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="377.734,261.0523,380.9098,267.1715,380.469,263.2363,384.4042,262.7955,377.734,261.0523" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><!--MD5=[bd0dd564ff18ad9f6620b7e2e87b6375]
+link tigerProxy3 to Konnektor3--><path d="M349.881,321.6443 C353.85,356.7913 367.164,429.6403 410.9,468.9453 C461.636,514.5503 543.06,525.7013 593.782,527.9273 " fill="none" id="tigerProxy3-Konnektor3" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="597.387,528.0743,591.2039,525.0248,593.8898,527.9344,590.9801,530.6203,597.387,528.0743" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="349.482,317.9553,347.3824,324.522,349.8619,321.4346,352.9493,323.9141,349.482,317.9553" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><text fill="#FF0000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="119" x="417.55" y="445.1921">forward requests received</text><text fill="#FF0000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="112" x="421.05" y="455.7851">locally via localhost:port</text><text fill="#FF0000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="112" x="421.05" y="466.3781">to KonnektorX@gematik</text><!--MD5=[c2022044a3ae2e1020836503c0cd9372]
+link tigerProxy1 to aggregatingProxy--><path d="M389.97,192.1583 C434.294,196.3093 505.4,202.9803 560.385,208.1323 " fill="none" id="tigerProxy1-to-aggregatingProxy" style="stroke:#90EE90;stroke-width:0.6999999999999998;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="563.983,208.4683,557.9746,205.0877,560.4985,208.1388,557.4474,210.6628,563.983,208.4683" style="stroke:#90EE90;stroke-width:0.6999999999999998;"/><text fill="#008000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="130.9" x="411.6" y="191.7921">forwards received messages</text><!--MD5=[a3098a2a765c3b25f482fe7c3587d00a]
+link tigerProxy2 to aggregatingProxy--><path d="M389.97,240.7313 C434.294,236.2583 505.4,229.0763 560.385,223.5253 " fill="none" id="tigerProxy2-to-aggregatingProxy" style="stroke:#90EE90;stroke-width:0.6999999999999998;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="563.983,223.1613,557.4344,221.0058,560.5006,223.5116,557.9948,226.5777,563.983,223.1613" style="stroke:#90EE90;stroke-width:0.6999999999999998;"/><!--MD5=[54e47d698ab30431273373ecc1eecc22]
+link tigerProxy3 to aggregatingProxy--><path d="M389.907,289.4233 C429.387,277.8313 490.343,259.9043 543.2,244.2453 C548.807,242.5863 554.596,240.8643 560.427,239.1353 " fill="none" id="tigerProxy3-to-aggregatingProxy" style="stroke:#90EE90;stroke-width:0.6999999999999998;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="564.06,238.0503,557.2255,237.145,560.7027,239.0395,558.8082,242.5167,564.06,238.0503" style="stroke:#90EE90;stroke-width:0.6999999999999998;"/><!--MD5=[b4b99e3287c776f70dd10831d52505e0]
+reverse link localTigerProxy to aggregatingProxy--><path d="M640.15,278.3493 C640.15,271.3493 640.15,264.3493 640.15,257.3493 " fill="none" id="localTigerProxy-backto-aggregatingProxy" style="stroke:#90EE90;stroke-width:0.6999999999999998;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="640.15,282.0103,642.95,275.7103,640.15,278.5103,637.35,275.7103,640.15,282.0103" style="stroke:#90EE90;stroke-width:0.6999999999999998;"/><!--MD5=[6c87cf2fc4e32788db85dbe80146ad10]
+link localTigerProxy to validationTestsuite--><path d="M692.797,296.8293 C715.099,296.2693 741.895,295.5903 767.529,294.9463 " fill="none" id="localTigerProxy-to-validationTestsuite" style="stroke:#90EE90;stroke-width:0.6999999999999998;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="771.302,294.8483,764.9321,292.2112,767.8032,294.9383,765.0761,297.8093,771.302,294.8483" style="stroke:#90EE90;stroke-width:0.6999999999999998;"/><!--MD5=[b3035b53492967f8652bd161fba4712c]
+link primaerSystem to tigerProxy1--><path d="M145.334,232.7233 C191.954,222.4333 257.81,207.8943 301.385,198.2763 " fill="none" id="primaerSystem-tigerProxy1" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="305.004,197.4783,298.2505,196.0928,301.5852,198.228,299.45,201.5628,305.004,197.4783" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="141.631,233.5423,148.3884,234.909,145.0477,232.7831,147.1736,229.4423,141.631,233.5423" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><text fill="#FF0000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="81.9" x="176.05" y="181.2921">sends requests as</text><text fill="#FF0000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="100.1" x="166.95" y="191.8851">specified by workflow</text><text fill="#FF0000" font-family="sans-serif" font-size="9.1" lengthAdjust="spacing" textLength="70" x="182" y="202.4781">to local proxies</text><!--MD5=[7946cdf36083c3d00ca1fc72fe70b570]
+link primaerSystem to tigerProxy2--><path d="M145.334,244.9453 C191.954,244.9453 257.81,244.9453 301.385,244.9453 " fill="none" id="primaerSystem-tigerProxy2" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="305.004,244.9453,298.704,242.1453,301.504,244.9453,298.704,247.7453,305.004,244.9453" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="141.631,244.9453,147.931,247.7453,145.131,244.9453,147.931,242.1453,141.631,244.9453" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><!--MD5=[445a3c15804ace5ff99f983d4e467ccb]
+link primaerSystem to tigerProxy3--><path d="M145.334,257.1673 C191.954,267.4573 257.81,281.9963 301.385,291.6143 " fill="none" id="primaerSystem-tigerProxy3" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="305.004,292.4123,299.45,288.3278,301.5852,291.6626,298.2505,293.7978,305.004,292.4123" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><polygon fill="#FF0000" points="141.631,256.3483,147.1736,260.4483,145.0477,257.1076,148.3884,254.9817,141.631,256.3483" style="stroke:#FF0000;stroke-width:1.3999999999999997;"/><!--MD5=[bf84bc402af03d38cc69c1922457097b]
+@startuml
+
+!include plantuml.style
+
+<style>
+  title {
+    margin 20
+  }
+</style>
+
+left to right direction
+
+title Tiger EAU Konnektorfarm test
+
+rectangle "EAU Konnektorfarm" as eaufarm {
+    component Konnektor1
+    component Konnektor2
+    component Konnektor3
+}
+
+rectangle "On site" as onsite {
+
+    rectangle "On site test environment" as onsiteenv {
+        component tigerProxy3
+        component tigerProxy2
+        component tigerProxy1
+
+        component aggregatingProxy [
+          aggregating proxy
+
+          - - - -
+
+          aggregates all messages
+          received by any proxy
+        ]
+        component localTigerProxy
+    }
+    component testenvMgr <<Tiger>>
+
+    component validationTestsuite <<Tiger>> [
+      validation test suite
+
+      - - - -
+
+      validates the received requests
+      and responses asserting all
+      mandatory criteria
+    ]
+    component primaerSystem  <<External>>
+
+}
+
+testenvMgr -down-> onsiteenv : instantiates the proxies\non start up
+
+tigerProxy1 <- -> Konnektor1 <<HTTP>>
+tigerProxy2 <- -> Konnektor2 <<HTTP>>
+tigerProxy3 <- -> Konnektor3 <<HTTP>> : forward requests received\nlocally via localhost:port\nto KonnektorX@gematik
+
+tigerProxy1 .down.> aggregatingProxy : forwards received messages
+tigerProxy2 ..> aggregatingProxy
+tigerProxy3 ..> aggregatingProxy
+
+aggregatingProxy .left.> localTigerProxy
+
+localTigerProxy ..> validationTestsuite
+
+primaerSystem <- -> tigerProxy1 <<HTTP>> : sends requests as\nspecified by workflow\nto local proxies
+primaerSystem <- -> tigerProxy2 <<HTTP>>
+primaerSystem <- -> tigerProxy3 <<HTTP>>
+@enduml
+
+@startuml
+
+<style>
+root {
+    Margin 30
+    BackgroundColor #fffff0
+    RoundCorner 20
+    FontColor #333
+    LineColor Gray
+    BorderColor Gray
+    HorizontalAlignment center
+    ImagePosition center
+}
+
+title {
+  FontSize 30
+  Margin 0
+  Padding 10 100
+  BackgroundColor White
+}
+
+arrow {
+    LineColor LightGreen
+    FontColor Green
+    LineThickness 2
+}
+
+.Package {
+    BackGroundColor White
+}
+
+.Rect {
+    LineColor Blue
+}
+
+.Tiger {
+    BackgroundColor LightGreen
+    FontColor Green
+    LineColor Green
+}
+
+.Other {
+    BackgroundColor LightSkyBlue
+    LineColor Blue
+}
+
+.NextRelease  {
+    BackgroundColor LightGray
+    FontColor Gray
+    LineColor Gray
+}
+
+interface {
+    FontColor DarkGreen
+}
+
+.HTTP {
+    LineColor Red
+    FontColor Red
+    LineThickness 2
+}
+
+.HTTP2 {
+    LineColor transparent
+}
+
+
+.Current {
+  BackgroundColor White
+  FontColor DarkRed
+}
+
+
+
+.File {
+    LineColor SlateBlue
+    BackgroundColor LightSkyBlue
+    FontColor SlateBlue
+}
+
+.Folder {
+    FontColor Gray
+    BackgroundColor White
+}
+</style>
+
+<style>
+  title {
+    margin 20
+  }
+</style>
+
+left to right direction
+
+title Tiger EAU Konnektorfarm test
+
+rectangle "EAU Konnektorfarm" as eaufarm {
+    component Konnektor1
+    component Konnektor2
+    component Konnektor3
+}
+
+rectangle "On site" as onsite {
+
+    rectangle "On site test environment" as onsiteenv {
+        component tigerProxy3
+        component tigerProxy2
+        component tigerProxy1
+
+        component aggregatingProxy [
+          aggregating proxy
+
+          - - - -
+
+          aggregates all messages
+          received by any proxy
+        ]
+        component localTigerProxy
+    }
+    component testenvMgr <<Tiger>>
+
+    component validationTestsuite <<Tiger>> [
+      validation test suite
+
+      - - - -
+
+      validates the received requests
+      and responses asserting all
+      mandatory criteria
+    ]
+    component primaerSystem  <<External>>
+
+}
+
+testenvMgr -down-> onsiteenv : instantiates the proxies\non start up
+
+tigerProxy1 <- -> Konnektor1 <<HTTP>>
+tigerProxy2 <- -> Konnektor2 <<HTTP>>
+tigerProxy3 <- -> Konnektor3 <<HTTP>> : forward requests received\nlocally via localhost:port\nto KonnektorX@gematik
+
+tigerProxy1 .down.> aggregatingProxy : forwards received messages
+tigerProxy2 ..> aggregatingProxy
+tigerProxy3 ..> aggregatingProxy
+
+aggregatingProxy .left.> localTigerProxy
+
+localTigerProxy ..> validationTestsuite
+
+primaerSystem <- -> tigerProxy1 <<HTTP>> : sends requests as\nspecified by workflow\nto local proxies
+primaerSystem <- -> tigerProxy2 <<HTTP>>
+primaerSystem <- -> tigerProxy3 <<HTTP>>
+@enduml
+
+PlantUML version 1.2021.11(Sat Oct 02 15:26:11 CEST 2021)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

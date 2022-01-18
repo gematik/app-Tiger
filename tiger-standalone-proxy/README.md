@@ -44,7 +44,7 @@ tigerProxy:
         - from: "/blub" 
           # reverse proxy-route. http://<tiger-proxy>/blub will be forwarded
           to: "https://another.de/server"
-          activateRbelLogging: false 
+          activateRbelLogging: false
           # the traffic for this route will NOT be logged (default is true)
 
     modifications:
@@ -83,7 +83,7 @@ tigerProxy:
     # Limits the rbel-Buffer to approximately this size.
     # Note: When Rbel-Analysis is done the size WILL vastly exceed this limit!
     activateRbelParsing: true 
-    # If set to false disables traffic-analysis by Rbel. This will not impeed proxy-forwarding nor
+    # If set to false disables traffic-analysis by Rbel. This will not impede proxy-forwarding nor
     # the traffic-endpoints.
     localResources: true
     # This will share the WebUI-Resources (various CSS-files) from the tiger-proxy 
@@ -133,7 +133,7 @@ tigerProxy:
     # traffic when analyzing it. It has no effect on the proxy-functions themselves.
 
     trafficEndpoints:
-      - http://another.tiger.proxy:<proxyPort>
+      - http://another.tiger.proxy:<serverPort>
     # A list of upstream tiger-proxies. This proxy will try to connect to all given sources to
     # gather traffic via the STOMP-protocol. If any of the given endpoints are not accesible the
     # server will not boot. (fail fast, fail early)

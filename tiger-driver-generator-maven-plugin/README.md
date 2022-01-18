@@ -1,6 +1,6 @@
 # Tiger Maven Driver Generator Plugin
 
-This mvn plugin allows to dynamically generate JUnit4 driver classes that will start Serenity based test runs.
+This mvn plugin allows to dynamically generate JUnit driver classes that will start Serenity based test runs.
 
 To activate this feature in your maven project add the following plugin into your <build><plugins> section:
 

@@ -1,0 +1,72 @@
+= Tiger driver generator plugin
+
+This plugin allows to dynamically generate the JUnit driver classes that are then used in the Surefire plugin to start the test runs.
+
+NOTE: You may decide to manually write your own JUnit driver classes in which case you can omit this plugin.
+
+To activate this feature in your maven project add the following plugin block to your <build><plugins> section:
+
+[source,xml]
+----
+include::../doc/examples/tigerOnly/pom.xml[tag="generator-plugin"]
+----
+
+
+.Mandatory configuration properties
+* **List[include] includes** (mandatory) +
+list of include patterns for feature files in Ant format (directory/**.feature)
+* **List[glue] glues** (mandatory) +
+list of packages to be included as glue or hooks code
+
+.Optional configuration properties or properties with default values
+* String basedir (default: local working directory) +
+root folder from where to apply includes and excludes
+* List[exclude] excludes (default: empty) +
+list of exclusion patterns for feature files in Ant format (directory/**.feature)
+* boolean skip (default: false) +
+flag whether to skip the execution of this plugin
+* String driverPackage (default: de.gematik.test.tiger.serenity.drivers) +
+package of the to be generated driver class
+* String driverClassName (default: Junit4SerenityTestDriver${ctr}) +
+Name of the to be generated driver class.
+
+NOTE:  The ctr token ${ctr} is mandatory! For more details see section below
+
+* String templateFile (default: null which means that the plugin will use the built-in template file) +
+  Optional path to a custom template file to be used for generating the driver Java source code file.
+  ** The plugin currently supports the following list of tokens:
+    *** ${ctr} +
+counter value that is unique and incremented for each feature file.
+    *** ${package} +
+will be replaced with package declaration code line of the driver class.
+Either empty or of the pattern "package xxx.yyy.zzz;" where xxx.yyy.zzz is replaced with the configured driverPackage configuration property.
+    *** ${driverClassName} +
+name of the driver class (with the ctr token already being replaced with the incrementing counter value).
+    *** ${feature} +
+path to the feature file(s).
+    *** ${glues} +
+comma separated list of glue/hook packages as specified by the glues configuration property.
+
+== Manually creating driver classes
+
+For each feature (or use wildcards / directories for single driver class) you can implement a driver class based on the example code below.
+
+```java
+package de.gematik.test.tiger.integration.YOURPROJECT;
+
+import io.cucumber.junit.CucumberOptions;
+import net.serenitybdd.cucumber.CucumberWithSerenity;
+import org.junit.runner.RunWith;
+
+@RunWith(CucumberWithSerenity.class)
+@CucumberOptions(
+    features = {"src/test/resources/features/YOURFEATURE.feature"},
+    plugin = {"json:target/cucumber-parallel/1.json"},
+    monochrome = false,
+    glue = {"de.gematik.test.tiger.hooks", "de.gematik.test.tiger.glue",
+        "ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code"})
+public class Parallel1IT {
+
+}
+```
+
