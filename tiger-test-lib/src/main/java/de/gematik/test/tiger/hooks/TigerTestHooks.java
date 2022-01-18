@@ -126,7 +126,7 @@ public class TigerTestHooks {
     }
 
     private void initializeTiger() {
-        if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO")) {
+        if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO", false)) {
             try {
                 log.info("\n" + IOUtils.toString(
                     Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),

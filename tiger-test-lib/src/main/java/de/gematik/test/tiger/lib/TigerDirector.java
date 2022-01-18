@@ -121,7 +121,7 @@ public class TigerDirector {
     public static void synchronizeTestCasesWithPolarion() {
         assertThatTigerIsInitialized();
 
-        if (TigerGlobalConfiguration.readBoolean("TIGER_SYNC_TESTCASES")) {
+        if (TigerGlobalConfiguration.readBoolean("TIGER_SYNC_TESTCASES", false)) {
             try {
                 Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
                     .getDeclaredMethod("main", String[].class);

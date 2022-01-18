@@ -85,7 +85,7 @@ public class SelectFields {
     public void checksSelectFieldContainsNoEntries(String fieldName) {
         Target fieldTarget = ServerFormular.getInputField(theActorInTheSpotlight(), fieldName);
         theActorInTheSpotlight().attemptsTo(
-            Ensure.that(fieldTarget).not().containsElements("option")
+            Ensure.that(fieldTarget).not().containsElements(".//option[text()!='']")
         );
     }
 }

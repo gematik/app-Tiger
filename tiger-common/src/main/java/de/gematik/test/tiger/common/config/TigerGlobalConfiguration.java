@@ -1,9 +1,8 @@
 package de.gematik.test.tiger.common.config;
 
+import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Optional;
 
 @Slf4j
 public class TigerGlobalConfiguration {
@@ -50,6 +49,11 @@ public class TigerGlobalConfiguration {
     public synchronized static boolean readBoolean(String key) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.readBoolean(key);
+    }
+
+    public synchronized static boolean readBoolean(String key, boolean defaultValue) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.readBoolean(key, defaultValue);
     }
 
     public synchronized static void readTemplates(String templatesYaml, String... baseKeys) {

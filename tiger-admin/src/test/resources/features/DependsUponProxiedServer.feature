@@ -14,7 +14,7 @@ Feature: Check dependsUpon and proxiedServer fields are managed correctly
     And he shows "Allgemeines" tab
     Then he checks select field "dependsUpon" contains "docker_001"
     When he shows "TigerProxy" tab
-    Then he checks select field ".tigerProxyCfg.proxiedServer" contains "docker_001"
+    Then he checks select field ".tigerProxyCfg.proxiedServer" contains ",docker_001"
 
   Scenario: Rename server and check server lists are updated and selection stays
     Given Gerriet is on the homepage
@@ -53,4 +53,4 @@ Feature: Check dependsUpon and proxiedServer fields are managed correctly
     And he shows "Allgemeines" tab
     And he checks multi select field "dependsUpon" has no entry selected
     And he shows "TigerProxy" tab
-    And he checks select field ".tigerProxyCfg.proxiedServer" has no entry selected
+    And he checks select field ".tigerProxyCfg.proxiedServer" has entry "" selected

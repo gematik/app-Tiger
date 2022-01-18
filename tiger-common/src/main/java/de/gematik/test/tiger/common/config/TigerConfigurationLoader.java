@@ -119,6 +119,14 @@ public class TigerConfigurationLoader {
         return Boolean.parseBoolean(rawValue);
     }
 
+    public boolean readBoolean(String key, boolean defValue) {
+        final String rawValue = readString(key, defValue ? "1" : "0");
+        if (rawValue.equals("1")) {
+            return true;
+        }
+        return Boolean.parseBoolean(rawValue);
+    }
+
     public void readTemplates(String templatesYaml, String... baseKeys) {
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
         final Object loadedYaml = yaml.load(templatesYaml);
