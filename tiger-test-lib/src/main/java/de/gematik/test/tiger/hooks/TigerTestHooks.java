@@ -144,7 +144,7 @@ public class TigerTestHooks {
         TigerLibConfig config;
         if (cfgFile.exists()) {
             try {
-                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8));
+                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "TIGER_LIB");
             } catch (IOException e) {
                 throw new TigerStartupException("Error while reading configuration file '"+cfgFile.getAbsolutePath(), e);
             }

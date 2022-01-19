@@ -358,7 +358,11 @@ $.fn.populateForm = function (serverData, path) {
         console.error(`UNKNOWN ELEM for ${path} -> ${field}`);
         continue;
       }
-      elem.setValue(serverData[field]);
+      if (field === 'source') {
+        elem.setValue(serverData[field][0]);
+      } else {
+        elem.setValue(serverData[field]);
+      }
     }
   }
   this.find('fieldset:not(.subset)').enableSubSetFields(false);
