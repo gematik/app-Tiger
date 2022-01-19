@@ -1,0 +1,79 @@
+@startmindmap
+
+<style>
+mindmapDiagram {
+    node {
+      BackgroundColor DarkGray
+      FontColor white
+      Padding 20
+    }
+    boxless {
+      FontColor #333333
+    }
+    rootnode {
+      BackgroundColor orange
+      FontSize 32
+      Padding 60
+    }
+    :depth(1) {
+      BackGroundColor Gray
+      FontSize 20
+    }
+    :depth(2) {
+      FontSize 18
+    }
+    .green {
+      BackGroundColor Green
+    }
+    .blue {
+      BackGroundColor SteelBlue
+    }
+    .rose {
+      BackGroundColor HotPink
+    }
+}
+</style>
+
+
+
+* Tiger
+** Was ist der Mehrwert?
+*** Automatisierbarkeit <<green>>
+****_ Tiger test lib
+****_ Serenity BDD
+****_ Tiger test environment Manager
+*** Fehlerszenarien\neinfach erstellen <<green>>
+****_ BDD/Cucumber Scenario outlines
+*** Wiederverwendbarkeit <<green>>
+****_ Tiger BDD steps
+****_ Tiger test environment templates
+****_ Screenplay pattern
+*** Umfangreiche\nFunktionalität\nout-of-the-box <<green>>
+****_ Tiger core features see manual chapter XXXX
+*** Ansprechende,\ngut strukturierte und\ndetaillierte Reports <<green>>
+****_ Serenity BDD
+****_ RBel logs
+*** Einfache Analyse <<green>>
+****_ Serenity BDD
+****_ RBel logs
+*** Gute Dokumentation\ndes Frameworks <<green>>
+****_ Tiger user manual
+****_ Javadoc Tiger BDD steps
+*** Projektübergreifender\nWissensaufbau <<green>>
+****_ Process pattern (EAU Validierung)
+left side
+
+** Welche Probleme werden gelöst?
+*** Überlast bei Personal <<blue>>
+*** Mangelndes Entwicklungs-\nKnowhow <<blue>>
+*** Kompliziertes Konfigurieren <<blue>>
+*** Unübersichtliche Traffic-\nProtokollierung/-Spezifikation <<blue>>
+
+** Aufwand für MVP Tiger-Testsuite / Wie
+*** User-Manual &\nStartprojekt <<rose>>
+*** Systemvoraussetzungen <<rose>>
+*** Testarchitektur\n(wo können Proxies hin?\nTesttreiber? PKI? ...) <<rose>>
+*** Projektspezifische Testschritte\n(BDD Steps) implementieren <<rose>>
+*** Testfälle implementieren <<rose>>
+*** Regelmäßige Updates\nvon Tiger <<rose>>
+@endmindmap

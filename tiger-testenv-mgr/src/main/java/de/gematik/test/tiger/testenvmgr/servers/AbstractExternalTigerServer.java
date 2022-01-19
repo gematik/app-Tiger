@@ -76,6 +76,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
                     }
                     return false;
                 });
+            return true;
         } catch (ConditionTimeoutException cte) {
             if (!quiet) {
                 throw new TigerTestEnvException("Timeout waiting for external server to respond at '"
