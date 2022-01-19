@@ -17,8 +17,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <springboot.version>2.5.0</springboot.version>
-        <thymeleaf.version>3.0.12.RELEASE</thymeleaf.version>
+        <springboot.version>2.6.2</springboot.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <encoding>UTF-8</encoding>
