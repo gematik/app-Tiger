@@ -16,17 +16,11 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.awt.HeadlessException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * The TigerDirector is the public interface of the high level features of the Tiger test framework.

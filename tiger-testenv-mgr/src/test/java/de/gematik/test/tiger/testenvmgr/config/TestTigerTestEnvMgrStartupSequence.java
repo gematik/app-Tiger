@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
+import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
@@ -17,19 +18,23 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 @Slf4j
 public class TestTigerTestEnvMgrStartupSequence {
+
     private static List<String> startupSequence = new ArrayList<>();
     private static TigerTestEnvMgr envMgr;
 
@@ -69,11 +74,11 @@ public class TestTigerTestEnvMgrStartupSequence {
             ), List.of(List.of("masterServer", "intermediate1", "intermediate2", "leaf"),
                 List.of("masterServer", "intermediate2", "intermediate1", "leaf"))),
 
-            // master1(100ms)   master2
-            //    ^              ^
-            //  leaf1           leaf2
+            // master1(wait till leaf 2 is up)   master2
+            //    ^                                 ^
+            //  leaf1                            leaf2
             Arguments.of(Map.ofEntries(
-                buildServerMockDependingUpon("master1", "", 100),
+                buildServerMockDependingUpon("master1", "", "leaf2"),
                 buildServerMockDependingUpon("leaf1", "master1"),
                 buildServerMockDependingUpon("master2", ""),
                 buildServerMockDependingUpon("leaf2", "master2")
@@ -82,19 +87,20 @@ public class TestTigerTestEnvMgrStartupSequence {
                 List.of("master2", "master1", "leaf2", "leaf1"),
                 List.of("master2", "leaf2", "master1", "leaf1"))),
 
-            //            master1      master2 (50ms)
+            //            master1      master2 (wait until intermediate1 is up)
             //            ^    ^        ^
             // intermediate1  intermediate2
             //             ^  ^
             //             leaf
             Arguments.of(Map.ofEntries(
                 buildServerMockDependingUpon("master1", ""),
-                buildServerMockDependingUpon("master2", "", 50),
+                buildServerMockDependingUpon("master2", "", "intermediate1"),
                 buildServerMockDependingUpon("intermediate1", "master1"),
                 buildServerMockDependingUpon("intermediate2", "master1,master2"),
                 buildServerMockDependingUpon("leaf", "intermediate1, intermediate2")
             ), List.of(List.of("master2", "master1", "intermediate1", "intermediate2", "leaf"),
-                List.of("master1", "master2", "intermediate1", "intermediate2", "leaf")))
+                List.of("master1", "master2", "intermediate1", "intermediate2", "leaf"),
+                List.of("master1", "intermediate1", "master2", "intermediate2", "leaf")))
         );
     }
 
@@ -127,15 +133,20 @@ public class TestTigerTestEnvMgrStartupSequence {
     private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon) {
         final CfgServer configuration = new CfgServer();
         configuration.setDependsUpon(dependsUpon);
-        final TigerServer server = new MockTigerServer(name, configuration, envMgr, 0);
+        configuration.setType(ServerType.EXTERNALURL);
+        configuration.setSource(List.of("blub"));
+        final TigerServer server = new MockTigerServer(name, configuration, envMgr);
 
         return Pair.of(name, server);
     }
 
-    private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon, int startupTimeInMs) {
+    private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon,
+                                                                               String delayStartupUntilThisServerIsRunning) {
         final CfgServer configuration = new CfgServer();
         configuration.setDependsUpon(dependsUpon);
-        final TigerServer server = new MockTigerServer(name, configuration, envMgr, startupTimeInMs);
+        configuration.setType(ServerType.EXTERNALURL);
+        configuration.setSource(List.of("blub"));
+        final TigerServer server = new MockTigerServer(name, configuration, envMgr, delayStartupUntilThisServerIsRunning);
 
         return Pair.of(name, server);
     }
@@ -143,7 +154,7 @@ public class TestTigerTestEnvMgrStartupSequence {
     private static TigerTestEnvMgr buildTestEnvMgr() throws Exception {
         AtomicReference<TigerTestEnvMgr> env = new AtomicReference<>();
         withEnvironmentVariable("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml")
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testNoTigerProxy.yaml")
             .execute(() -> env.set(new TigerTestEnvMgr()));
         return env.get();
     }
@@ -155,7 +166,8 @@ public class TestTigerTestEnvMgrStartupSequence {
 
     @ParameterizedTest
     @MethodSource("checkSuccessfullStartupSequencesParameters")
-    public void checkSuccessfullStartupSequences(Map<String, TigerServer> serverMap, List<List<String>> startupSequences) {
+    public void checkSuccessfullStartupSequences(Map<String, TigerServer> serverMap,
+                                                 List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
 
         envMgr.setUpEnvironment();
@@ -197,29 +209,32 @@ public class TestTigerTestEnvMgrStartupSequence {
     }
 
     public static class MockTigerServer extends TigerServer {
-        private final int startupTimeInMs;
 
-        public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr, int startupTimeInMs) {
+        private final Optional<String> delayStartupUntilThisServerIsRunning;
+
+        public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr, String delayStartupUntilThisServerIsRunning) {
             super(name, name, configuration, envMgr);
-            this.startupTimeInMs = startupTimeInMs;
+            this.delayStartupUntilThisServerIsRunning = Optional.ofNullable(delayStartupUntilThisServerIsRunning);
         }
 
-        @Override
-        public void start(TigerTestEnvMgr testEnvMgr) {
-            synchronized (startupSequence) {
-                startupSequence.add(getHostname());
-            }
-            log.info("Starting server {}", getHostname());
-            try {
-                Thread.sleep(startupTimeInMs);
-            } catch (InterruptedException e) {
-            }
-            ReflectionTestUtils.setField(this, "started", true);
+        public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr) {
+            super(name, name, configuration, envMgr);
+            this.delayStartupUntilThisServerIsRunning = Optional.empty();
         }
 
         @Override
         public void performStartup() {
-
+            synchronized (startupSequence) {
+                startupSequence.add(getHostname());
+            }
+            log.info("Starting server {}", getHostname());
+            if (delayStartupUntilThisServerIsRunning.isPresent()) {
+                await()
+                    .atMost(1, TimeUnit.SECONDS)
+                    .pollInterval(Duration.ofMillis(1))
+                    .until(() -> this.getTigerTestEnvMgr().getServers().get(delayStartupUntilThisServerIsRunning.get())
+                        .getStatus() == TigerServerStatus.RUNNING);
+            }
         }
 
         @Override

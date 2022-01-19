@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.web.embedded.netty.NettyWebServer;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -223,8 +224,16 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         log.info("starting set up of test environment...");
 
-        servers.values().parallelStream()
+        final List<TigerServer> initialServersToBoot = servers.values().parallelStream()
             .filter(server -> server.getDependUponList().isEmpty())
+            .collect(Collectors.toList());
+
+        log.info("Starting setup by triggering boot of following server: {}",
+            initialServersToBoot.stream()
+                .map(TigerServer::getHostname)
+                .collect(Collectors.toList()));
+
+        initialServersToBoot.parallelStream()
             .forEach(this::startServer);
 
         log.info(Ansi.colorize("finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
@@ -238,17 +247,21 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private void startServer(TigerServer server) {
         synchronized (server) { //NOSONAR
             // we REALLY want to synchronize ONLY on the server!
-            if (server.isStarted()) {
+            if (server.getStatus() != TigerServer.TigerServerStatus.NEW) {
                 return;
             }
             server.start(this);
         }
 
         servers.values().parallelStream()
-            .filter(candidate -> !candidate.isStarted())
+            .peek(toBeStartedServer -> log.info("Considering starting server {} with status {}",
+                toBeStartedServer.getHostname(), toBeStartedServer.getStatus()))
+            .filter(candidate -> candidate.getStatus() == TigerServer.TigerServerStatus.NEW)
             .filter(candidate -> candidate.getDependUponList().stream()
-                .filter(depending -> !depending.isStarted())
+                .filter(depending -> depending.getStatus() != TigerServer.TigerServerStatus.RUNNING)
                 .findAny().isEmpty())
+            .peek(toBeStartedServer -> log.info("About to start server {} with status {}",
+                toBeStartedServer.getHostname(), toBeStartedServer.getStatus()))
             .forEach(this::startServer);
     }
 

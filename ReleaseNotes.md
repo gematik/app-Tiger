@@ -9,6 +9,7 @@
 
 ## Bugfix
 * TGR-288: Make snakeyaml/jackson work with default values in Configuration object
+* TGR-325: Parallel startup now waits correctly for long-running startups
 
 ## Features
 * TGR-42: Make Proxy Cert available at runtime

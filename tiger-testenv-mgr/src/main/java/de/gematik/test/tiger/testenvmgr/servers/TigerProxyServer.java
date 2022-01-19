@@ -101,7 +101,7 @@ public class TigerProxyServer extends ExternalJarServer {
 
         if (proxiedServer instanceof DockerServer) {
             if (proxiedServer.getConfiguration().getExternalJarOptions().getHealthcheck() == null) {
-                if (!proxiedServer.isStarted()) {
+                if (proxiedServer.getStatus() != TigerServerStatus.RUNNING) {
                     throw new TigerTestEnvException("If reverse proxy is to be used with docker container '"
                         + proxiedServer.getHostname()
                         + "' make sure to start it first or have a valid healthcheck setting!");

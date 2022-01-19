@@ -42,7 +42,7 @@ public abstract class TigerServer {
     private final List<String> environmentProperties = new ArrayList<>();
     private final List<TigerRoute> routes = new ArrayList<>();
     private final TigerTestEnvMgr tigerTestEnvMgr;
-    private boolean started = false;
+    private TigerServerStatus status = TigerServerStatus.NEW;
 
     public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
         if (configuration.getType() == null) {
@@ -92,10 +92,10 @@ public abstract class TigerServer {
 
     public void start(TigerTestEnvMgr testEnvMgr) {
         synchronized (this) {
-            if (started) {
-                throw new TigerEnvironmentStartupException("Server " + getServerId() + " is already running!");
+            if (this.status != TigerServerStatus.NEW) {
+                throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
             }
-            started = true;
+            this.status = TigerServerStatus.STARTING;
         }
 
         assertThatConfigurationIsCorrect();
@@ -143,6 +143,10 @@ public abstract class TigerServer {
             log.info("  setting system property " + kvp[0] + "=" + kvp[1]);
             System.setProperty(kvp[0], kvp[1]);
         });
+
+        synchronized (this) {
+            this.status = TigerServerStatus.RUNNING;
+        }
     }
 
     private void loadPkiForProxy() {
@@ -321,5 +325,9 @@ public abstract class TigerServer {
                 .orElseThrow(() -> new TigerEnvironmentStartupException(
                     "Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
             .collect(Collectors.toUnmodifiableList());
+    }
+
+    public enum TigerServerStatus {
+        NEW, STARTING, RUNNING
     }
 }
