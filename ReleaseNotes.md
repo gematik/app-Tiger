@@ -9,11 +9,11 @@
 
 ## Bugfix
 * TGR-288: Make snakeyaml/jackson work with default values in Configuration object
+* TGR-305: Concurrent downloads of the same external JAR can now coexist peacefully
 * TGR-325: Parallel startup now waits correctly for long-running startups
 
 ## Features
 * TGR-42: Make Proxy Cert available at runtime
-
 
 # Release 0.17.1
 

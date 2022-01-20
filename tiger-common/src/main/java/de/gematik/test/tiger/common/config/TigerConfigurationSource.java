@@ -36,7 +36,6 @@ public class TigerConfigurationSource {
             .collect(Collectors.toList());
         appliedTemplates.forEach(key -> finalValues.remove(key));
 
-
         return finalValues;
     }
 }

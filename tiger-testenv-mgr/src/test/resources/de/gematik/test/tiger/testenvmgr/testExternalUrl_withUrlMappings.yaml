@@ -5,6 +5,7 @@ servers:
     hostname: testExternalUrl_withUrlMappings
     template: idp-ref
     type: externalUrl
+    startupTimeoutSec: 1
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
     active: true

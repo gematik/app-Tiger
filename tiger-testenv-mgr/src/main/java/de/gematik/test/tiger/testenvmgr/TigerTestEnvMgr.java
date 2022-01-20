@@ -254,7 +254,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
 
         servers.values().parallelStream()
-            .peek(toBeStartedServer -> log.info("Considering starting server {} with status {}",
+            .peek(toBeStartedServer -> log.debug("Considering starting server {} with status {}...",
                 toBeStartedServer.getHostname(), toBeStartedServer.getStatus()))
             .filter(candidate -> candidate.getStatus() == TigerServer.TigerServerStatus.NEW)
             .filter(candidate -> candidate.getDependUponList().stream()

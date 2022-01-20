@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.config.PkiType;
 import de.gematik.test.tiger.common.config.ServerType;
@@ -102,10 +103,12 @@ public abstract class TigerServer {
 
         final ServerType type = configuration.getType();
 
-        // replace sys props in environment
         configuration.getEnvironment().stream()
             .map(testEnvMgr::replaceSysPropsInString)
             .forEach(environmentProperties::add);
+        configuration.setSource(configuration.getSource().stream()
+            .map(TokenSubstituteHelper::substitute)
+            .collect(Collectors.toList()));
 
         // apply routes to local proxy
         if (configuration.getUrlMappings() != null) {
@@ -186,8 +189,7 @@ public abstract class TigerServer {
     public void assertThatConfigurationIsCorrect() {
         var type = getConfiguration().getType();
         assertThat(serverId).withFailMessage("Server Id must not be blank!").isNotBlank();
-        if (this instanceof DockerComposeServer
-            && StringUtils.isNotBlank(getHostname())) {
+        if (this instanceof DockerComposeServer && StringUtils.isNotBlank(getHostname())) {
             throw new TigerConfigurationException("Docker compose does not support a hostname for the node!");
         }
 
@@ -327,7 +329,11 @@ public abstract class TigerServer {
             .collect(Collectors.toUnmodifiableList());
     }
 
+    public void setStatus(TigerServerStatus newStatus) {
+        this.status = newStatus;
+    }
+
     public enum TigerServerStatus {
-        NEW, STARTING, RUNNING
+        NEW, STARTING, RUNNING, STOPPED
     }
 }

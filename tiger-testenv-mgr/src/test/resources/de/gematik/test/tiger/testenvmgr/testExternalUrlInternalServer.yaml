@@ -5,6 +5,4 @@ servers:
     hostname: testExternalJarInternalServer
     type: externalUrl
     source:
-      - https://build.top.local
-    externalJarOptions:
-      healthcheck: https://build.top.local
+      - http://localhost:${mockserver.port}/download

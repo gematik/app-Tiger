@@ -27,7 +27,7 @@ public class TigerTemplateSource {
         tigerConfigurationSource.getValues().entrySet().stream()
             .filter(entry -> entry.getKey().size() == targetPath.size() + 1 + 1) // basePath + serverName + "template"
             .filter(entry -> entry.getKey().subList(0, targetPath.size()).equals(targetPath))
-            .filter(entry -> entry.getKey().get(targetPath.size() + 1).equals("template"))
+            .filter(entry -> entry.getKey().get(targetPath.size() + 1).getValue().equalsIgnoreCase("template"))
             .filter(entry -> entry.getValue().equals(templateName))
             .forEach(templateSelectionEntry -> {
                 for (Map.Entry<List<TigerConfigurationKeyString>, String> valueEntry : values.entrySet()) {

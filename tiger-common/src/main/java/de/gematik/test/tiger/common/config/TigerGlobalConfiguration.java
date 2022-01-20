@@ -16,6 +16,10 @@ public class TigerGlobalConfiguration {
     }
 
     public synchronized static void initialize() {
+        if (initialized) {
+            return;
+        }
+
         initialized = true;
         globalConfigurationLoader.initialize();
     }

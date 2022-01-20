@@ -23,18 +23,28 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.mock.Expectation;
+import org.mockserver.model.Delay;
+import org.mockserver.model.HttpResponse;
+import org.mockserver.netty.MockServer;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.SocketUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockserver.model.HttpRequest.request;
 
 // TGR-296 rewrite disabled tests and don't use separate java processes. if this isn't possibly, we need to change the jenkins-agent
 @Slf4j
@@ -54,12 +64,43 @@ public class TestTigerTestEnvMgr {
         );
     }
 
+    MockServer mockServer;
+    MockServerClient mockServerClient;
+    Expectation downloadExpectation;
+    private byte[] winstoneBytes;
+
+    @BeforeEach
+    public void startServer() throws IOException {
+        if (mockServer != null) {
+            return;
+        }
+        log.info("Booting MockServer...");
+        mockServer = new MockServer(SocketUtils.findAvailableTcpPorts(1).first());
+        mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
+
+        final File winstoneFile = new File("target/winstone.jar");
+        if (!winstoneFile.exists()) {
+            throw new RuntimeException("winstone.jar not found in target-folder. " +
+                "Did you run mvn generate-test-resources? (It should be downloaded automatically)");
+        }
+        winstoneBytes = FileUtils.readFileToByteArray(winstoneFile);
+
+        downloadExpectation = mockServerClient.when(request()
+                .withPath("/download"))
+            .respond(req -> HttpResponse.response()
+                .withBody(winstoneBytes))[0];
+
+        System.setProperty("mockserver.port", Integer.toString(mockServer.getLocalPort()));
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.initialize();
+    }
+
     // -----------------------------------------------------------------------------------------------------------------
     //
     // check missing mandatory props are detected
     // check key twice in yaml leads to exception
     //
-
+    // -----------------------------------------------------------------------------------------------------------------
     @BeforeEach
     public void printName(TestInfo testInfo) {
         TigerGlobalConfiguration.reset();
@@ -68,6 +109,7 @@ public class TestTigerTestEnvMgr {
         } else {
             log.warn(Ansi.colorize("Starting UNKNOWN step", RbelAnsiColors.GREEN_BOLD));
         }
+        System.clearProperty("TIGER_TESTENV_CFGFILE");
     }
 
     @ParameterizedTest
@@ -220,42 +262,14 @@ public class TestTigerTestEnvMgr {
     }
 
     @Test
-    public void testCreateExternalJarEnvInvalidJar() throws IOException {
-        File f = new File("WinstoneHTTPServer");
-        FileUtils.deleteDirectory(f);
-        if (!f.mkdirs()) {
-            throw new RuntimeException("Unable to create folder '" + f.getAbsolutePath() + "'");
-        }
-        f = Path.of("WinstoneHTTPServer", "download").toFile();
-        if (!f.createNewFile()) {
-            throw new RuntimeException("Unable to create file '" + f.getAbsolutePath() + "'");
-        }
-        System.setProperty("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
-        TigerGlobalConfiguration.initialize();
-        final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        try {
-            assertThatThrownBy(envMgr::setUpEnvironment)
-                .isInstanceOf(TigerTestEnvException.class)
-                .hasMessageStartingWith("Timeout waiting for external server to respond at");
-        } finally {
-            FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
-            try {
-                shutDownWebServer(envMgr);
-            } catch (Exception ignore) {
-            }
-        }
-    }
-
-    @Test
     public void testCreateExternalJarRelativePath() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
         TigerGlobalConfiguration.initialize();
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
-            srv.getSource().set(0, "local://miniJar.jar");
-            srv.getExternalJarOptions().setWorkingDir("src/test/resources");
+            srv.getSource().set(0, "local://winstone.jar");
+            srv.getExternalJarOptions().setWorkingDir("target/");
             srv.getExternalJarOptions().setHealthcheck("NONE");
             srv.setStartupTimeoutSec(1);
             envMgr.setUpEnvironment();
@@ -282,6 +296,35 @@ public class TestTigerTestEnvMgr {
             } finally {
                 FileUtils.forceDeleteOnExit(folder);
             }
+        });
+    }
+
+    @Test
+    public void workingDirNotSet_ShouldDefaultToOsTempDirectory() {
+        final Integer port = SocketUtils.findAvailableTcpPorts(1).first();
+        String yamlSource = "testenv:\n" +
+            "   cfgfile: src/test/resources/tiger-testenv.yaml\n" +
+            "servers:\n" +
+            "  externalJarServer:\n" +
+                "    type: externalJar\n" +
+                "    source:\n" +
+                "      - \"http://localhost:${mockserver.port}/download\"\n" +
+                "    externalJarOptions:\n" +
+                "      healthcheck: http://127.0.0.1:" + port + "\n" +
+                "      arguments:\n" +
+                "        - \"--httpPort=" + port + "\"\n" +
+                "        - \"--webroot=.\"\n";
+
+        TigerGlobalConfiguration.readFromYaml(yamlSource, "tiger");
+        TigerGlobalConfiguration.initialize();
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            final String workingDir = envMgr.getServers().get("externalJarServer")
+                .getConfiguration().getExternalJarOptions().getWorkingDir();
+            assertThat(new File(workingDir))
+                .exists()
+                .isDirectoryContaining(file -> file.getName().equals("download"))
+                .isDirectoryContaining(file -> file.getName().equals("download.dwnProps"));
         });
     }
 
@@ -455,7 +498,7 @@ public class TestTigerTestEnvMgr {
 
     @Test
     @Disabled("Only for local testing as CI tests would take too long for this test method")
-    public void testCreateDemis() throws InterruptedException {
+    public void testCreateDemis() {
         System.setProperty("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDemis.yaml");
         createTestEnvMgrSafelyAndExecute(envMgr -> {

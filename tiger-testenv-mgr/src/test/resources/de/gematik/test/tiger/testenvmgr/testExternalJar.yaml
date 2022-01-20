@@ -7,6 +7,6 @@ servers:
     hostname: testExternalJar
     type: externalJar
     source:
-      - https://eitzen.at/download
+      - http://localhost:${mockserver.port}/download
     externalJarOptions:
       healthcheck: http://127.0.0.1:9107
