@@ -3,7 +3,6 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def JIRA_PROJECT_ID = 'TGR'
 def POM_PATH = 'pom.xml'
-def BRANCH = 'master'
 def REPO_URL = createGitUrl('git/Testtools/tiger')
 
 pipeline {
@@ -16,8 +15,11 @@ pipeline {
         maven 'Default'
     }
 
-    stages {
+    parameters {
+        string(name: 'BRANCH', defaultValue: "master", description: 'Branch gegen den die UI-Tests ausgeführt werden sollen. Default: master')
+    }
 
+    stages {
         stage('Checkout') {
             steps {
                 git branch: BRANCH,
