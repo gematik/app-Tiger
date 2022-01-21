@@ -6,7 +6,6 @@
         </encoder>
     </appender>
 
-    <logger name="de" level="DEBUG" />
     <logger name="org.apache" level="INFO" />
     <logger name="httpclient" level="INFO" />
 
