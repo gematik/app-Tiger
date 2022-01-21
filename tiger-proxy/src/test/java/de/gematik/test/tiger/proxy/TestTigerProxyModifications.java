@@ -4,24 +4,22 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import java.util.List;
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
-import org.springframework.web.util.UriUtils;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 public class TestTigerProxyModifications extends AbstractTigerProxyTest {
+
     @Test
     public void replaceStuffForForwardRoute() {
         final String jsonBody = "{\"another\":{\"node\":{\"path\":\"correctValue\"}}}";
@@ -239,5 +237,73 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
         assertThat(getLastRequest().getQueryParams().get("schmoo").values())
             .containsExactly("loo");
     }
-    //TODO TGR-264 test with response status code (not only number)
+
+    @Test
+    public void modifyStatusCode_shouldWork() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .modifications(List.of(
+                RbelModificationDescription.builder()
+                    .condition("isResponse")
+                    .targetElement("$.responseCode")
+                    .replaceWith("200")
+                    .build()
+            ))
+            .build());
+
+        HttpResponse<JsonNode> response = Unirest.get(
+            "http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+
+        assertThat(response.getStatus())
+            .isEqualTo(200);
+    }
+
+    @Test
+    public void modifyReasonPhrase_shouldWork() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .modifications(List.of(
+                RbelModificationDescription.builder()
+                    .condition("isResponse")
+                    .targetElement("$.reasonPhrase")
+                    .replaceWith("Foo bar Bar Foobar")
+                    .build()
+            ))
+            .build());
+
+        HttpResponse<JsonNode> response = Unirest.get(
+            "http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+
+        assertThat(response.getStatusText())
+            .isEqualTo("Foo bar Bar Foobar");
+    }
+
+    @Test
+    public void removeReasonPhrase_shouldWork() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .modifications(List.of(
+                RbelModificationDescription.builder()
+                    .condition("isResponse")
+                    .targetElement("$.reasonPhrase")
+                    .replaceWith(null)
+                    .build()
+            ))
+            .build());
+
+        HttpResponse<JsonNode> response = Unirest.get(
+            "http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+
+        assertThat(response.getStatusText())
+            .isEqualTo("");
+    }
 }

@@ -14,6 +14,7 @@
 
 ## Features
 * TGR-42: Make Proxy Cert available at runtime
+* TGR-264: add support for reason phrases in RBEL
 
 # Release 0.17.1
 

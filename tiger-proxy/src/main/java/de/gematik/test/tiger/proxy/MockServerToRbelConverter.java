@@ -9,19 +9,16 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.util.Arrays;
-import org.mockserver.model.*;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.Arrays;
+import org.mockserver.model.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -29,7 +26,8 @@ public class MockServerToRbelConverter {
 
     private final RbelConverter rbelConverter;
 
-    public RbelElement convertResponse(HttpResponse response, String serverProtocolAndHost, SocketAddress clientAddress) {
+    public RbelElement convertResponse(HttpResponse response, String serverProtocolAndHost,
+        SocketAddress clientAddress) {
         log.trace("Converting response {}, headers {}, body {}", response,
             response.getHeaders(), response.getBodyAsString());
         return rbelConverter.parseMessage(responseToRbelMessage(response),
@@ -55,12 +53,9 @@ public class MockServerToRbelConverter {
 
     private RbelHostname convertUri(String protocolAndHost) {
         try {
-            URI uri = new URI(protocolAndHost);
-            if (StringUtils.isEmpty(uri.getScheme())) {
-                return null;
-            } else {
-                return RbelHostname.generateFromUrl(protocolAndHost);
-            }
+            new URI(protocolAndHost);
+            return (RbelHostname) RbelHostname.generateFromUrl(protocolAndHost)
+                .orElse(null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
