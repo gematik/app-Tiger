@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,10 @@ package de.gematik.test.tiger.lib.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.lib.parser.model.TestResult;
-import org.junit.Test;
-
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 public class TestSerenityTestParser {
 
@@ -31,7 +30,8 @@ public class TestSerenityTestParser {
         final SerenityTestResultParser parser = new SerenityTestResultParser();
 
         final Map<String, TestResult> results = new HashMap<>();
-        parser.parseDirectoryForResults(results, Paths.get("src", "test", "resources", "testdata", "parser","bdd").toFile());
+        parser.parseDirectoryForResults(results,
+            Paths.get("src", "test", "resources", "testdata", "parser", "bdd").toFile());
 
         assertThat(results).containsOnlyKeys(
             "fordere-access-token-mittels-sso-token-an:gettoken-mit-sso-token---veralteter-sso-token-wird-abgelehnt",

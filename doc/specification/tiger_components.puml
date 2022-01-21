@@ -1,109 +1,94 @@
-
 @startuml
 
-skinparam backgroundColor #ffffff
+!include plantuml.style
 
 hide stereotype
 
 ' left to right direction
 
-skinparam component {
-    BackgroundColor Gold
-    BorderColor DarkOrange
-    BackgroundColor<<External>> LightGray
-    BorderColor<<External>> Blue
-    BackgroundColor<<Idp>> LightGreen
-    BorderColor<<Idp>> Green
-    BackgroundColor<<Other>> DeepSkyBlue
-    BorderColor<<Other>> Blue
-    BackgroundColor<<NextRelease>> LightGray
-    FontColor<<NextRelease>> Gray
-    BorderColor<<NextRelease>> Gray
-    ArrowColor<<HTTP>> DodgerBlue
-    FontColor<<HTTP>> Gray
-    ArrowFontColor DarkOrange
-    ArrowThickness 1
-}
-
-skinparam interface {
-    BorderColor<<HTTP>> DodgerBlue
-}
-
-
-' left to right direction
+title Tiger components
 
 ' component TigerServer  <<NextRelease>>
 
-rectangle TestSystems as tsys {
-    component "RU/TU service\ninstances" as rutu <<External>>
+rectangle "Test environment" as tsys <<Rect>> {
+    component "Simulators" as sims <<Other>>
+    component "RU/TU service\ninstances" as rutu <<Other>>
     component "locally started\ndocker containers" as locdock <<Other>>
-
     component "cloud based\ndocker containers" as clddock <<NextRelease>>
-    component "Simulators" as sims <<NextRelease>>
 }
 
-rectangle Tiger as tiger {
-component TigerTestEnvMgr as tem
-component TigerProxy as tp
+rectangle "Current test project" as tiger {
+    component TigerTestEnvMgr as tem <<Tiger>>
+    component TigerProxy as tp <<Tiger>>
+    component TigerTestLib <<Tiger>> [
+      TigerTestLib
 
-component TigerTestLib [
-  TigerTestLib
-  ---
-  Basic steps
-  ---
-  PolarionConnector
-  Banner
-  TestConfig
-  Context
-  Variables
-  JsonChecker
-  AfoReporter
-  TestCodeParser
-  TestResultParser
-  SerenityIntegration
-]
+      ---
 
-'suites
-' interface "Steps" as isteps
-' interface "Helpers" as ihelpers
-interface "Reuse" as ireuse
-' tem
-interface ITestEnvironment as item
-' tp
-interface "Local Http traffic" as ihttp <<HTTP>>
-interface "ProxyConfiguration" as ipconf
-' ts
-interface "IRBelMessaging" as irbel
+      Validation & Workflow steps
+      TestContext steps
 
-component "Current Testsuite" as tdir <<Other>>
-component Serenity <<Other>> [
-    <img:https://pbs.twimg.com/profile_images/875117009171820544/Kgy599vq_400x400.jpg{scale=0.207}>
-    <color:white><b>Serenity BDD</b></color>
-]
+      ---
+
+      TestConfig
+      Context
+      Variables
+      JsonChecker
+      Banner
+      AfoReporter
+      TestCodeParser
+      TestResultParser
+      PolarionConnector
+      SerenityIntegration
+    ]
+
+    'suites
+    ' interface "Steps" as isteps
+    ' interface "Helpers" as ihelpers
+    interface "Reuse" as ireuse
+    ' tem
+    interface ITestEnvironment as item
+    ' tp
+    interface "Local Http traffic" as ihttp <<HTTP>>
+    interface "ProxyConfiguration" as ipconf
+    ' ts
+    interface "IRBelMessaging" as irbel
+
+    component "Tiger Director in \ncurrent test suite"  as tdir <<Current>>
+    component Serenity <<External>> [
+        <img:../images/serenitybdd.png{scale=0.2}>
+    ]
 
 
-component Polarion <<Other>> [
-    <img:https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-thumbnail/s3/0024/4635/brand.gif?itok=imrp3xNh{scale=0.5}>
-]
+    component Polarion <<External>> [
+        <img:https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-thumbnail/s3/0024/4635/brand.gif?itok=imrp3xNh{scale=0.75}>
+    ]
 
+    component suites <<Other>> [
+      Other test suites
+
+      -----
+
+      IDP test suite
+      ERp test suite
+      ePA test suite
+      CATS test suite
+      Other test suites
+    ]
 }
 
-rectangle TestSuitePool as suites {
-    component "Idp test suite" as its <<Idp>>
-    component "Other test suites" as ots <<Other>>
-}
 
 
 
 'tsys
 interface "Routed HTTP traffic" as iroutes <<HTTP>>
 
-sims -right- locdock <<HTTP>>
-sims -down- clddock <<HTTP>>
-rutu -right- clddock <<HTTP>>
-locdock -down- rutu <<HTTP>>
-locdock -down- clddock <<HTTP>>
-sims -- rutu <<HTTP>>
+sims -up- locdock <<HTTP2>>
+'sims -down- clddock <<HTTP2>>
+rutu -up- clddock <<HTTP2>>
+locdock -down- rutu <<HTTP2>>
+locdock -left- clddock <<HTTP2>>
+sims -left- rutu <<HTTP2>>
 
 ihttp -down- tp <<HTTP>>
 tdir --> ihttp <<HTTP>> : test traffic
@@ -111,7 +96,9 @@ tdir --> ihttp <<HTTP>> : test traffic
 irbel -up-> tdir
 tp -up-> irbel : return traffic\nmessages\nfrom test traffic
 
-tsys --down- iroutes <<HTTP>>
+iroutes -up-> sims <<HTTP>>
+iroutes -left-> rutu <<HTTP>>
+iroutes -left-> locdock <<HTTP>>
 
 tp -left-> iroutes <<HTTP>> : routed test traffic
 
@@ -121,10 +108,10 @@ tem --> ipconf : configure URLs, \nURL mappings and certs
 tem -right- item
 tdir -left-> item : build me\na test env
 
-tem -down-> locdock : creates containers
-tem -up-> sims : starts\nsimulators
-ireuse -left- suites
+locdock <-down- tem : creates containers
+tem -right--> sims : starts\nsimulators
 tdir -right-> ireuse
+ireuse -right- suites
 tdir -down- TigerTestLib : use generic helpers
 
 tdir -down--> Serenity : creates detailed\nlocal test reports

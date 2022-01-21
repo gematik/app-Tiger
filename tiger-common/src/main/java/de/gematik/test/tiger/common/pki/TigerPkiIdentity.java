@@ -1,6 +1,5 @@
 package de.gematik.test.tiger.common.pki;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import lombok.Data;
 import lombok.NoArgsConstructor;

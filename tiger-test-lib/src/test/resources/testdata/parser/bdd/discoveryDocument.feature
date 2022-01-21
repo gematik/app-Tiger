@@ -36,7 +36,7 @@ Feature: Fordere Discovery Dokument an
         }
         """
 
-    @Approval @Todo:KeyChecksOCSP
+    @Approval
     Scenario Outline: Check JWKS URI
 
         Given I request the discovery document

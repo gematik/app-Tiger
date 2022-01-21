@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package de.gematik.test.tiger.common;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
+import java.util.Optional;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TokenSubstituteHelper {
@@ -32,6 +34,23 @@ public final class TokenSubstituteHelper {
             final String varName = str.substring(varIdx + tokenStr.length(), endVar);
             if (valueMap.get(varName) != null) {
                 str = str.substring(0, varIdx) + valueMap.get(varName) + str.substring(endVar + 1);
+                varIdx = str.indexOf(tokenStr);
+            } else {
+                varIdx = str.indexOf(tokenStr, varIdx + 1);
+            }
+        }
+        return str;
+    }
+
+    public static String substitute(String str) {
+        final String tokenStr = "${";
+        int varIdx = str.indexOf(tokenStr);
+        while (varIdx != -1) {
+            final int endVar = str.indexOf('}', varIdx);
+            final String varName = str.substring(varIdx + tokenStr.length(), endVar);
+            final Optional<String> valueOptional = TigerGlobalConfiguration.readStringOptional(varName);
+            if (valueOptional.isPresent()) {
+                str = str.substring(0, varIdx) + valueOptional.get() + str.substring(endVar + 1);
                 varIdx = str.indexOf(tokenStr);
             } else {
                 varIdx = str.indexOf(tokenStr, varIdx + 1);

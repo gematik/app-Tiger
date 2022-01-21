@@ -46,7 +46,7 @@ public class RbelMessageValidatorTest {
     @Test
     public void testPathMatchingWithInvalidRegex_NOK() {
         assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
-            buildRequestWithPath("http://bl.ub/foo/bar/test?sch=mar"), "/foo/.*/[test"))
+            buildRequestWithPath("http://bl.ub/foo/bar/test?sch=mar"), "/foo/.*/[test]"))
             .isFalse();
     }
 

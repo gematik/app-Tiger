@@ -16,6 +16,8 @@
 $.fn.initFormular = function (serverKey, serverData) {
   checkTag('initFormular', this, 'FORM', 'server-formular');
 
+  const $form = this;
+
   $('.testenv-sidebar-header').fadeIn(500);
 
   // add copy of template to form and set heading
@@ -47,7 +49,6 @@ $.fn.initFormular = function (serverKey, serverData) {
       break;
     case 'localProxy':
       this.showFieldset('source-settings', false);
-      this.find('div.local_proxy_info').removeClass('hidden');
       break;
     default:
       this.find('fieldset[section="source-settings"]').replaceWith(
@@ -100,6 +101,41 @@ $.fn.initFormular = function (serverKey, serverData) {
   //
   // fill in data into form
   //
+
+  //
+  // type specific data adaptations pre
+  //
+  const fileLoadingInformationFields = [
+    'serverRootCa',
+    'forwardMutualTlsIdentity',
+    'serverIdentity'];
+  if (serverData.tigerProxyCfg && serverData.tigerProxyCfg.proxyCfg && serverData.tigerProxyCfg.proxyCfg.tls) {
+    fileLoadingInformationFields.forEach(field => {
+          if (serverData.tigerProxyCfg.proxyCfg.tls[field]) {
+            serverData.tigerProxyCfg.proxyCfg.tls[field] = serverData.tigerProxyCfg.proxyCfg.tls[field].fileLoadingInformation;
+          }
+        }
+    );
+  }
+
+  const skipDefaultValuesFor = [
+    'type', 'key', 'hostname', 'template', 'dependsUpon', 'version',
+    'entryPoint', 'workingDir', '.tigerProxyCfg.proxyCfg.port', 'enableForwardProxy',
+    '.tigerProxyCfg.proxyCfg.tls.serverRootCa',
+    '.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity',
+    '.tigerProxyCfg.proxyCfg.tls.serverIdentity'];
+  // preset default values for all fields (except subset fields) in formular
+  $(this).find('*[name]').each(function () {
+    const fieldName = $(this).attr('name');
+    if (!$(this).parents('fieldset.subset').length && this.tagName !== 'UL' &&
+        skipDefaultValuesFor.indexOf(fieldName) === -1) {
+      const defValue = getDefaultValueFor(fieldName);
+      if (defValue !== null) {
+        $(this).setValue(defValue);
+      }
+    }
+  });
+
   this.populateForm(serverData, "", false);
   // default settings
   if (!serverData.hostname) { // if hostname not set default to serverKey
@@ -109,7 +145,7 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.find('select[name="template"]').val(serverData.template);
 
   //
-  // type specific data adaptations
+  // type specific data adaptations post
   //
   // set forwardToProxy flag depending on hostname and port being set
   const forwardToProxySection = '.tigerProxyCfg.proxyCfg.forwardToProxy.';
@@ -122,13 +158,17 @@ $.fn.initFormular = function (serverKey, serverData) {
   //
   // show hide Tabs depending on type
   //
-  // default hide all but pki, env, urlmappings
-  this.find('.nav-tabs .nav-link').hide();
+  // default hide all to propagate hidden to input fields
+  this.find('.nav-tabs .nav-link').each(function (idx, link) {
+    $form.showTabLink($(link).parent().attr("tab"), false);
+  });
+
+  // default tabs shown for most node types
   this.showTabLink('general', true);
   this.showTabLink('pkiKeys', serverData.type !== 'localProxy');
   this.showTabLink('environment', serverData.type !== 'localProxy');
   this.showTabLink('urlMappings', serverData.type !== 'localProxy');
-  // show default tab for each type
+  // show default tab for each node type
   const defaultTabs = {
     docker: 'dockerOptions',
     compose: 'dockerOptions',
@@ -154,9 +194,13 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.showInputGroup('template', serverData.template);
   // show version only for tigerProxy and docker
   this.showInputGroup('version', ['tigerProxy', 'docker'].includes(serverData.type));
+  // initialize multiselects
+  this.find('select[name="dependsUpon"]').bsMultiSelect();
+
   switch (serverData.type) {
     case 'compose':
       this.showFieldset('.dockerOptions.dockerSettings', false);
+      this.showInputGroup('hostname', false);
       break;
     case 'externalUrl':
       this.showFieldset('.externalJarOptions.options', false);
@@ -172,6 +216,7 @@ $.fn.initFormular = function (serverKey, serverData) {
       this.find('div.local_proxy_info').removeClass('hidden');
       break;
   }
+  this.find('div.local_proxy_info *[name="localProxyActive"]').toggleClass('hidden', serverData.type !== 'localProxy');
 
   //
   // initial state of buttons / fieldsets / advanced buttons
@@ -205,6 +250,8 @@ $.fn.showTabLink = function (tabName, flag) {
   this.each(function () {
     const tab = $(this).find(`.nav-tabs .nav-item[tab="${tabName}"] .nav-link`);
     tab.toggle(flag);
+    // make all *[name] nodes hidden to ease save job
+    $(this).find('.tab-pane.' + tabName + ' *[name]').toggleClass('hidden', !flag);
   });
 }
 
@@ -212,21 +259,23 @@ $.fn.showFieldset = function (section, flag) {
   checkTag('showhideFieldsetTab', this, 'FORM');
   checkClass('hideFieldset', this, 'server-formular');
   $(this).find(`fieldset[section="${section}"]`).toggleClass('hidden', !flag);
+  $(this).find(`fieldset[section="${section}"] *[name]`).toggleClass('hidden', !flag);
 }
 
 $.fn.showInputGroup = function (name, flag) {
   checkTagNClass('hideInputGroup', this, 'FORM', 'server-formular');
   this.each(function () {
     $(this).find(`*[name="${name}"]`).parent().toggleClass('hidden', !flag);
+    $(this).find(`*[name="${name}"]`).toggleClass('hidden', !flag);
   });
 }
 
 // for form.server-formular
 $.fn.updateServerList = function (serverList, optOldSelection, optNewSelection) {
   checkTagNClass('updateServerList', this, 'FORM', 'server-formular');
-  let html = "";
+  let html = '<option value=""></option>\n';
   serverList.filter(key => key !== 'local_proxy').forEach(key => {
-    html += `<option value="${key}">${key}</option>`;
+    html += `<option value="${key}">${key}</option>\n`;
   });
   replaceSelectOptions($(this).find('select[name=".tigerProxyCfg.proxiedServer"]'), html, optOldSelection,
       optNewSelection);
@@ -239,14 +288,21 @@ $.fn.updateDependsUponList = function (serverList, optOldSelection, optNewSelect
     html += `<option value="${key}">${key}</option>`;
   });
   replaceSelectOptions($(this).find('select[name="dependsUpon"]'), html, optOldSelection, optNewSelection);
+  $(this).find('select[name="dependsUpon"]').bsMultiSelect("Update");
 }
 
 function replaceSelectOptions(select, html, optOldSelection, optNewSelection) {
   let selected = select.val();
   select.children().remove();
   select.prepend(html);
-  if ((optOldSelection && selected === optOldSelection) || optOldSelection === null) {
-    selected = optNewSelection
+  if (Array.isArray(selected)) {
+    selected = selected.map(
+        entry => ((optOldSelection && entry === optOldSelection) || optOldSelection === null) ?
+            optNewSelection : entry);
+  } else {
+    if ((optOldSelection && selected === optOldSelection) || optOldSelection === null) {
+      selected = optNewSelection
+    }
   }
   select.val(selected);
   if (selected && select.val() !== selected) {
@@ -264,27 +320,6 @@ function replaceSelectOptions(select, html, optOldSelection, optNewSelection) {
 $.fn.populateForm = function (serverData, path) {
   checkTagNClass('populateForm', this, 'FORM', 'server-formular');
   checkSingle('populateForm', this);
-
-  // in case its applying a template drop its name field
-  delete serverData.templateName;
-
-  const skipDefaultValuesFor = [
-    'type', 'key', 'hostname', 'template', 'dependsUpon', 'version',
-    'entryPoint', 'workingDir', '.tigerProxyCfg.proxyPort', 'enableForwardProxy',
-    '.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation',
-    '.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation',
-    '.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation'];
-  // preset default values for all fields (except subset fields) in formular
-  $(this).find('*[name]').each(function () {
-    const fieldName = $(this).attr('name');
-    if (!$(this).parents('fieldset.subset').length && this.tagName !== 'UL' &&
-        skipDefaultValuesFor.indexOf(fieldName) === -1) {
-      const defValue = getDefaultValueFor(fieldName);
-      if (defValue !== null) {
-        $(this).setValue(defValue);
-      }
-    }
-  });
 
   for (const field in serverData) {
     const value = serverData[field];
@@ -309,7 +344,7 @@ $.fn.populateForm = function (serverData, path) {
           $(elem.children()[idx]).data("listdata", itemData);
         });
       } else {
-        const fieldSet = elem.parents('fieldset');
+        const fieldSet = elem.closest('fieldset');
         editable = fieldSet.hasClass('editableList');
         $.each(value, function () {
           listHtml += getListItem(this, false);
@@ -323,7 +358,11 @@ $.fn.populateForm = function (serverData, path) {
         console.error(`UNKNOWN ELEM for ${path} -> ${field}`);
         continue;
       }
-      elem.setValue(serverData[field]);
+      if (field === 'source') {
+        elem.setValue(serverData[field][0]);
+      } else {
+        elem.setValue(serverData[field]);
+      }
     }
   }
   this.find('fieldset:not(.subset)').enableSubSetFields(false);

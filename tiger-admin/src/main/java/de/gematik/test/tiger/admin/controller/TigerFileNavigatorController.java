@@ -29,7 +29,7 @@ public class TigerFileNavigatorController {
 
     @GetMapping(value = "/navigator/folder", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String getFolderInfo(@RequestParam("current") String currentFolder) throws IOException {
+    public DTOFileNavigation getFolderInfo(@RequestParam("current") String currentFolder) throws IOException {
         File folder = new File(currentFolder);
         if (folder.listFiles() == null) {
             throw new IOException("Invalid folder '" + folder.getAbsolutePath() + "' given!");
@@ -53,7 +53,7 @@ public class TigerFileNavigatorController {
             fileNavDTO.setCfgfiles(configFiles);
             fileNavDTO.setCurrent(Path.of(folder.getAbsolutePath()).normalize().toFile().getAbsolutePath());
             fileNavDTO.setRoots(Arrays.stream(File.listRoots()).map(File::getPath).collect(Collectors.toList()));
-            return TigerConfigurationHelper.toJson(fileNavDTO);
+            return fileNavDTO;
         } catch (Exception e) {
             throw new IOException("Unable to parse folder '" + currentFolder + "'!", e);
         }

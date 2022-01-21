@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
-import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.banner.Banner;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
@@ -31,9 +29,17 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.web.embedded.netty.NettyWebServer;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -41,10 +47,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
+
+import static org.awaitility.Awaitility.await;
 
 @Slf4j
 @Getter
@@ -52,6 +56,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
+    private static final String TIGER_TESTENV_YAML_FILENAME = "tiger-testenv.yaml";
     private final Configuration configuration;
     private final DockerMgr dockerManager;
     private final Map<String, Object> environmentVariables;
@@ -79,7 +84,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         localTigerProxy = new TigerProxy(configuration.getTigerProxy());
         if (configuration.isLocalProxyActive()) {
-            log.info("Starting local docker tiger proxy on port " + localTigerProxy.getPort() + "...");
+            log.info("Started local docker tiger proxy on port " + localTigerProxy.getPort() + "...");
             environmentVariables = new HashMap<>(
                 Map.of("PROXYHOST", "host.docker.internal",
                     "PROXYPORT", localTigerProxy.getPort()));
@@ -138,15 +143,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
     }
 
-    public static void applyTemplates(JSONObject jsonCfg) {
+    private static void readTemplates() {
         // read configuration from file and templates from classpath resource
         try {
-            JSONObject jsonTemplate = TigerConfigurationHelper.yamlStringToJson(
-                IOUtils.toString(Objects.requireNonNull(TigerTestEnvMgr.class.getResource(
-                    "templates.yaml")).toURI(), StandardCharsets.UTF_8));
-            TigerConfigurationHelper.applyTemplate(
-                jsonCfg.getJSONObject("servers"), "template",
-                jsonTemplate.getJSONArray("templates"), "templateName");
+            final URL templatesUrl = TigerTestEnvMgr.class.getResource("templates.yaml");
+            final String templatesYaml = IOUtils.toString(
+                Objects.requireNonNull(templatesUrl).toURI(),
+                StandardCharsets.UTF_8);
+            TigerGlobalConfiguration.readTemplates(templatesYaml, "tiger", "servers");
         } catch (IOException | URISyntaxException e) {
             throw new TigerConfigurationException("Unable to read templates YAML!", e);
         }
@@ -157,6 +161,40 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             return InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             return InetAddress.getLoopbackAddress().getHostName();
+        }
+    }
+
+    private static Configuration readConfiguration() {
+        TigerGlobalConfiguration.initialize();
+        readTemplates();
+        readTestenvYaml();
+        final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger");
+        for (CfgServer cfgServer : configuration.getServers().values()) {
+            if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
+                throw new TigerConfigurationException("Could not resolve template '" + cfgServer.getTemplate() + "'");
+            }
+        }
+        return configuration;
+    }
+
+    private static void readTestenvYaml() {
+        final String configFileLocation = TigerGlobalConfiguration.readString(
+            "TIGER_TESTENV_CFGFILE", "tiger-testenv-" + getComputerName() + ".yaml");
+        var cfgFile = new File(configFileLocation);
+        if (!cfgFile.exists()) {
+            log.warn("Unable to read configuration from {}", cfgFile.getAbsolutePath());
+            cfgFile = new File(TIGER_TESTENV_YAML_FILENAME);
+            if (!cfgFile.exists()) {
+                throw new TigerEnvironmentStartupException("Could not find configuration-file '" + configFileLocation
+                    + "' or '" + TIGER_TESTENV_YAML_FILENAME + "' fallback");
+            }
+        }
+        log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());
+        try {
+            TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "tiger");
+        } catch (Exception e) {
+            throw new TigerEnvironmentStartupException(
+                "Error while reading configuration from file '" + cfgFile.getAbsolutePath() + "'", e);
         }
     }
 
@@ -182,27 +220,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
     }
 
-    private Configuration readConfiguration() {
-        JSONObject jsonCfg = readConfiguredConfigurationFileAndConvert();
-        applyTemplates(jsonCfg);
-        TigerConfigurationHelper.overwriteWithSysPropsAndEnvVars("TIGER_TESTENV", "tiger.testenv", jsonCfg);
-
-        return new TigerConfigurationHelper<Configuration>()
-            .jsonStringToConfig(jsonCfg.toString(), Configuration.class);
-    }
-
-    private JSONObject readConfiguredConfigurationFileAndConvert() {
-        var cfgFile = new File(OsEnvironment.getAsString(
-            "TIGER_TESTENV_CFGFILE", "tiger-testenv-" + getComputerName() + ".yaml"));
-        if (!cfgFile.exists()) {
-            log.warn("Unable to read configuration from {}", cfgFile.getAbsolutePath());
-            cfgFile = new File("tiger-testenv.yaml");
-        }
-        log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());
-        JSONObject jsonCfg = TigerConfigurationHelper.yamlToJson(cfgFile.getAbsolutePath());
-        return jsonCfg;
-    }
-
     private void createServerObjects() {
         for (Map.Entry<String, CfgServer> serverEntry : configuration.getServers().entrySet()) {
             if (serverEntry.getValue().isActive()) {
@@ -219,8 +236,16 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         log.info("starting set up of test environment...");
 
-        servers.values().parallelStream()
+        final List<TigerServer> initialServersToBoot = servers.values().parallelStream()
             .filter(server -> server.getDependUponList().isEmpty())
+            .collect(Collectors.toList());
+
+        log.info("Starting setup by triggering boot of following server: {}",
+            initialServersToBoot.stream()
+                .map(TigerServer::getHostname)
+                .collect(Collectors.toList()));
+
+        initialServersToBoot.parallelStream()
             .forEach(this::startServer);
 
         log.info(Ansi.colorize("finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
@@ -234,17 +259,21 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private void startServer(TigerServer server) {
         synchronized (server) { //NOSONAR
             // we REALLY want to synchronize ONLY on the server!
-            if (server.isStarted()) {
+            if (server.getStatus() != TigerServer.TigerServerStatus.NEW) {
                 return;
             }
             server.start(this);
         }
 
         servers.values().parallelStream()
-            .filter(candidate -> !candidate.isStarted())
+            .peek(toBeStartedServer -> log.debug("Considering starting server {} with status {}...",
+                toBeStartedServer.getHostname(), toBeStartedServer.getStatus()))
+            .filter(candidate -> candidate.getStatus() == TigerServer.TigerServerStatus.NEW)
             .filter(candidate -> candidate.getDependUponList().stream()
-                .filter(depending -> !depending.isStarted())
+                .filter(depending -> depending.getStatus() != TigerServer.TigerServerStatus.RUNNING)
                 .findAny().isEmpty())
+            .peek(toBeStartedServer -> log.info("About to start server {} with status {}",
+                toBeStartedServer.getHostname(), toBeStartedServer.getStatus()))
             .forEach(this::startServer);
     }
 

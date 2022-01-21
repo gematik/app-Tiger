@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.context.TestContext;
 import de.gematik.test.tiger.common.context.TestVariables;
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;

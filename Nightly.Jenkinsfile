@@ -3,6 +3,7 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def JIRA_PROJECT_ID = 'TGR'
 def POM_PATH = 'pom.xml'
+def REPO_URL = createGitUrl('git/Testtools/tiger')
 
 pipeline {
     options {
@@ -14,11 +15,16 @@ pipeline {
         maven 'Default'
     }
 
-    stages {
+    parameters {
+        string(name: 'BRANCH', defaultValue: "master", description: 'Branch gegen den die UI-Tests ausgeführt werden sollen. Default: master')
+    }
 
-        stage('gitCreateBranch') {
+    stages {
+        stage('Checkout') {
             steps {
-                gitCreateBranch()
+                git branch: BRANCH,
+                    credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                    url: REPO_URL
             }
         }
 
@@ -37,7 +43,7 @@ pipeline {
         stage('Test') {
             steps {
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUITests")
+                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
                 }
             }
         }
@@ -47,9 +53,12 @@ pipeline {
                 mavenOwaspScan(POM_PATH)
             }
         }
-
+        
         stage('Sonar') {
-            steps {
+             environment {
+                BRANCH_NAME = "${BRANCH}"
+            }
+             steps {
                 mavenCheckWithSonarQube(POM_PATH, "", false)
             }
         }

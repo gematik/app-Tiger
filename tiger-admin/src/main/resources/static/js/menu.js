@@ -1,5 +1,10 @@
 let currEnvironment = {};
 /** @namespace currEnvironment.tigerProxyCfg.proxiedServer */
+/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls */
+/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation */
+/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation */
+/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation */
+
 let currTemplates = [];
 /** @namespace currTemplates.templates */
 /** @namespace currTemplates.templates.templateName */
@@ -79,8 +84,91 @@ function setYamlFileName(cfgfile, path) {
 }
 
 function saveYamlFile() {
-  // TODO get values from formulars into json struct and send to server together with file/path info
-  showError("Unable to save file - NOT implemented!");
+  const data = {servers: {}};
+
+  $(".server-content.server-container .server-formular").each(function (idx, node) {
+    const serverKey = $(node).attr("id").substring("content_server_".length);
+    data.servers[serverKey] = {};
+    $(node).find("*[name]").each(function (idx, field) {
+      const $field = $(field);
+      if (!$field.hasClass("hidden") && !$field.hasClass("disabled")) {
+        $field.saveInputValueInData(null, data.servers[serverKey], false, true);
+      }
+    });
+
+    // remove null properties and properties only containing [] or {}
+    removeNullPropertiesAndEmptyArraysOrObjects(data);
+
+    // special handling of some fields
+    if (data.servers[serverKey].dependsUpon) {
+      if (data.servers[serverKey].dependsUpon.length) {
+        data.servers[serverKey].dependsUpon = data.servers[serverKey].dependsUpon.toString();
+      } else {
+        delete data.servers[serverKey].dependsUpon;
+      }
+    }
+    if (data.servers[serverKey].source && !Array.isArray(data.servers[serverKey].source)) {
+      data.servers[serverKey].source = [ data.servers[serverKey].source];
+    }
+
+    delete data.servers[serverKey].enableForwardProxy;
+  });
+
+  // special handling for local proxy
+  if (data.servers["local_proxy"] && data.servers["local_proxy"].tigerProxyCfg) {
+    data.tigerProxy = data.servers["local_proxy"].tigerProxyCfg.proxyCfg;
+  }
+  if (data.servers["local_proxy"]) {
+    data.localProxyActive = data.servers["local_proxy"].localProxyActive;
+  }
+  delete data.servers["local_proxy"];
+  if (data.tigerProxy) {
+    delete data.tigerProxy.localProxyActive;
+  }
+
+  $.ajax({
+    url: "/saveYamlFile",
+    contentType: "application/json",
+    type: "POST",
+    processData: false,
+    data: JSON.stringify({folder: currFolder, file: currFile, config: data}),
+    dataType: 'json',
+    success: function () {
+      notifyChangesToTestenvData(false);
+      snack(`Saved configuration to ${currFolder}${currFile}`, 'info', 3000, true);
+    },
+    error: function (xhr) {
+      /** @namespace xhr.responseJSON */
+      showError(`We are sorry, but we were unable to save your configuration to file '${currFile}'!`,
+          xhr.responseJSON);
+    }
+  });
+}
+
+
+function isObject(objValue) {
+  return objValue && typeof objValue === 'object' && objValue.constructor === Object;
+}
+
+function removeNullPropertiesAndEmptyArraysOrObjects(data) {
+  Object.keys(data).forEach(function(key) {
+    if (Array.isArray(data[key])) {
+      if (data[key].length === 0) {
+        delete data[key];
+      }
+    } else if (isObject(data[key])) {
+      if (Object.keys(data[key]).length === 0) {
+        delete data[key];
+      } else {
+        removeNullPropertiesAndEmptyArraysOrObjects(data[key]);
+        if (Object.keys(data[key]).length === 0) {
+          delete data[key];
+        }
+      }
+    } else if (data[key] === null) {
+      delete data[key];
+    }
+  });
 }
 
 function populateServersFromYaml(testEnvYaml) {
@@ -100,8 +188,13 @@ function populateServersFromYaml(testEnvYaml) {
     if (testEnvYaml[serverKey].type === 'tigerProxy') {
       form.updateServerList(serverList2, null, testEnvYaml[serverKey].tigerProxyCfg.proxiedServer);
     }
-    form.updateDependsUponList(serverList2, null, testEnvYaml[serverKey].dependsUpon);
+    form.updateDependsUponList(serverList2, null, "");
+    if (testEnvYaml[serverKey].dependsUpon) {
+      form.find('select[name="dependsUpon"]').val(testEnvYaml[serverKey].dependsUpon.split(','));
+      form.find('select[name="dependsUpon"]').bsMultiSelect("Update");
+    }
   }
+
 
   if (!serverContent.children().length) {
     showWelcomeCard();
@@ -182,7 +275,7 @@ function addSelectedServer() {
 
   let index = 1;
   const serverKeys = Object.keys(currEnvironment);
-  while (serverKeys.indexOf(type + String(index).padStart(3, '0'))
+  while (serverKeys.indexOf(type + "_" + String(index).padStart(3, '0'))
   !== -1) {
     index++;
   }
@@ -202,6 +295,7 @@ function addSelectedServer() {
     delete currEnvironment[newKey].templateName;
   }
   addServer(newKey, {...currEnvironment[newKey]});
+  $('.btn-save-as-testenv').setEnabled(true);
   notifyChangesToTestenvData(true);
 
   // update server list fields, as we add a new server no selection replacement needed, thus no add. params
@@ -218,14 +312,13 @@ function addSelectedServer() {
   snack(`Added node ${newKey}`, 'success', 5000);
 }
 
-function notifyChangesToTestenvData(flag) {
-  unsavedModifications = flag;
-  if (flag) {
+function notifyChangesToTestenvData(bModifications) {
+  unsavedModifications = bModifications;
+  $('.btn-save-testenv').toggleClass('disabled', !bModifications);
+  if (bModifications) {
     $('.btn.btn-save-testenv').fadeIn();
-    $('.btn-save-testenv').removeClass('disabled');
   } else {
     $('.btn.btn-save-testenv').fadeOut();
-    $('.btn-save-testenv').addClass('disabled');
   }
 }
 
@@ -269,10 +362,14 @@ function confirmNoDefault(flag, title, content, yesfunc) {
 function showError(errMessage, errorCauses) {
   /** @namespace errorCauses.mainCause */
   /** @namespace errorCauses.causes */
-  let details = '<b>' + errorCauses.mainCause + '</b><br/>';
-  errorCauses.causes.forEach(function (cause) {
-    details += '\n<br/>Caused by: ' + cause;
-  });
+  let details = null;
+  if (errorCauses) {
+    details = '<b>' + errorCauses.mainCause + '</b><br/>';
+    errorCauses.causes.forEach(function (cause) {
+      details += '\n<br/>Caused by: ' + cause;
+    });
+  }
+
   bs5Utils.Modal.show({
     title: `Error`,
     content:
@@ -282,7 +379,7 @@ function showError(errMessage, errorCauses) {
     buttons: [
       {
         text: 'Advanced details',
-        class: 'btn btn-info btn-lg',
+        class: 'btn btn-info btn-lg' + (details === null ? ' hidden' : ''),
         handler: (ev) => {
           const detMsg = $(ev.target).parents('.modal-dialog').find(
               '.detailedMessage');
@@ -343,11 +440,13 @@ function openFileSaveAsDialog(okfunc) {
   filedlg.find(".btn-filenav-ok").show();
   filedlg.find('.file-navigation-save').show();
   filedlg.find('.file-navigation-save input').val(currFile);
+  filedlg.find('.btn-filenav-cancel').off('click');
   filedlg.find('.btn-filenav-cancel').click(function () {
     filedlg.modal('hide');
   });
   filedlg.modal('show');
   navigateIntoFolder(currFolder, okfunc, true, 'save');
+  filedlg.find('.btn-filenav-ok').off('click');
   filedlg.find('.btn-filenav-ok').click(function () {
     // get cfgfile from input field together with currentFolder and separator
     console.log(`Saving to file '${
@@ -358,6 +457,7 @@ function openFileSaveAsDialog(okfunc) {
     setYamlFileName(filedlg.find('.file-navigation-save input').val(),
         currFolder);
     filedlg.modal('hide');
+    saveYamlFile();
   });
 }
 

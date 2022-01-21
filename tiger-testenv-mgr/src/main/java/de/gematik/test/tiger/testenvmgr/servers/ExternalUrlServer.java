@@ -7,6 +7,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,15 +29,25 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
 
         log.info("  Waiting 50% of start up time for external URL instance  {} to come up ...", getHostname());
 
-        if (waitForService(true)) {
-            return;
+        waitForService(true);
+        if (getStatus() == TigerServerStatus.STARTING) {
+            waitForService(false);
         }
-        waitForService(false);
     }
 
     @Override
     public void shutdown() {
         removeAllRoutes();
+    }
+
+    @Override
+    String getHealthcheckUrl() {
+        if (getConfiguration().getExternalJarOptions() == null
+        || StringUtils.isEmpty(getConfiguration().getExternalJarOptions().getHealthcheck())){
+            return getConfiguration().getSource().get(0);
+        } else {
+            return getConfiguration().getExternalJarOptions().getHealthcheck();
+        }
     }
 
     private URL buildUrl() {

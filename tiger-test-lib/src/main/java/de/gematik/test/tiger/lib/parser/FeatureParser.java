@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,8 @@ public class FeatureParser {
                         throw new TestParserException("Step not set!");
                     }
                     step.getLines().add(excLine);
-                } else if (line.startsWith("#") || line.isBlank() || parseTagsFromLine(line, tags)) {
+                } else //noinspection StatementWithEmptyBody
+                    if (line.startsWith("#") || line.isBlank() || parseTagsFromLine(line, tags)) {
                     // skip comments
                 } else if (parseGherkinStructFromLine(line, tags, feature, child)) {
                     mode = ParseMode.DESCRIPTION;

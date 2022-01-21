@@ -37,6 +37,16 @@ Feature: Node management
     Then nodes are ordered "Local Tiger proxy"
     And formulars are ordered "local_proxy"
 
+  Scenario: add server type twice and check index in server key is increased
+    Given Gerriet is on the homepage
+    When he adds a "docker" node via welcome screen
+    And he adds a "compose" node via sidebar
+    Then nodes are ordered "Local Tiger proxy,docker_001,compose_001"
+    And formulars are ordered "local_proxy,docker_001,compose_001"
+    When he adds a "compose" node via sidebar
+    And he adds a "compose" node via sidebar
+    Then nodes are ordered "Local Tiger proxy,docker_001,compose_001,compose_002,compose_003"
+    And formulars are ordered "local_proxy,docker_001,compose_001,compose_002,compose_003"
 
   Scenario: rename node
     Given Gerriet is on the homepage
@@ -72,13 +82,11 @@ Feature: Node management
     And formulars are ordered "local_proxy,do:cker_222"
     And he sees snack starting with "Only ASCII characters, digits and underscore allowed"
     And he closes open snack
-#    When he focuses on formular "docker_001"
     And he renames the node to "do$cker_222"
     Then nodes are ordered "Local Tiger proxy,docker_001"
     And formulars are ordered "local_proxy,do$cker_222"
     And he sees snack starting with "Only ASCII characters, digits and underscore allowed"
     And he closes open snack
-#    When he focuses on formular "docker_001"
     And he renames the node to "döckär_222"
     Then nodes are ordered "Local Tiger proxy,docker_001"
     And formulars are ordered "local_proxy,döckär_222"
@@ -103,3 +111,4 @@ Feature: Node management
     And he confirms modal
     Then he sees welcome screen
     And he doesn't see sidebar header
+

@@ -19,10 +19,16 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.xmlunit.builder.DiffBuilder;
 
+// IMPORTANT!
+// IMPORTANT!
+// IMPORTANT! Whenever adapting the code in here make sure to update the tigerTestLibrary.adoc file in the /doc/user_manual folder
+// IMPORTANT!
+// IMPORTANT!
+
 @Slf4j
 public class RBelValidatorGlue {
 
-    static RbelMessageValidator rbelValidator = new RbelMessageValidator();
+    static final RbelMessageValidator rbelValidator = new RbelMessageValidator();
 
     public static RbelMessageValidator getRbelValidator() {
         return rbelValidator;
@@ -257,7 +263,7 @@ public class RBelValidatorGlue {
      *
      * @param rbelPath     path to node/attribute
      * @param mode         one of JSON|XML
-     * @param oracleDocStr value / regex that should equal or match as JSON content
+     * @param oracleDocStr value / regex that should equal or match as JSON or XML content
      * @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten stimmt als {word} überein mit:")

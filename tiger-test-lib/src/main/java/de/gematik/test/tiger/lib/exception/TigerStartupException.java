@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -19,5 +19,9 @@ package de.gematik.test.tiger.lib.exception;
 public class TigerStartupException extends RuntimeException {
     public TigerStartupException(String message) {
         super(message);
+    }
+
+    public TigerStartupException(String message, Exception e) {
+        super(message, e);
     }
 }

@@ -8,7 +8,7 @@ servers:
     template: epa2-fdv
     type: externalJar
     source:
-      - https://eitzen.at/download
+      - http://localhost:${mockserver.port}/download
     startupTimeoutSec: 5
     externalJarOptions:
       workingDir: WinstoneHTTPServer

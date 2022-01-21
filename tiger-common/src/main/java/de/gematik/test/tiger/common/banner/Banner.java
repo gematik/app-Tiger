@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package de.gematik.test.tiger.common.banner;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OsEnvironment;
+
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,7 +49,7 @@ public class Banner {
         configs.put("Thin", new BannerFontMetrics(6, 6, false));
         configs.put("Straight", new BannerFontMetrics(6, 4, false));
 
-        String font = OsEnvironment.getAsString("TIGER_BANNER_FONT", "Straight");
+        String font = TigerGlobalConfiguration.readString("TIGER_BANNER_FONT", "Straight");
         cfg = configs.get(font);
 
         asciiArt = new HashMap<>();

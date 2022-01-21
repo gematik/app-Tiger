@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 gematik GmbH
+# Copyright (c) 2022 gematik GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the License);
 # you may not use this file except in compliance with the License.
@@ -442,7 +442,6 @@ Feature: Autorisiere Anwendung am IDP Server mit signierter Challenge
 
   @TCID:IDP_REF_AUTH_066 @PRIO:1 @Negative
     @Approval @Ready
-    @Todo:IDP-553 @Todo:IDP-500
   Scenario Outline: AuthorChallenge - IDNummer invalid oder null
 
   ```

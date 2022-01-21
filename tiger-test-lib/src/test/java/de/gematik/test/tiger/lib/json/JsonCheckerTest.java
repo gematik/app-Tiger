@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.json.JSONObject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JsonCheckerTest {
 
@@ -165,11 +165,6 @@ public class JsonCheckerTest {
     }
 
 
-
-
-
-
-
     @Test
     public void testJSONAttributeShouldNotMatchOKEqual() {
         assertThatThrownBy(() -> check.assertJsonAttributeShouldNotMatch(
@@ -270,8 +265,6 @@ public class JsonCheckerTest {
             "{ attr1: { sub1: 'xxx.*' }, attr2: 'val2' }", true))
             .isInstanceOf(AssertionError.class);
     }
-
-
 
     // TODO TGR-281 JSONArrays as top struct with primitives
     // TODO TGR-281 multilvl JSON Objects with JSONArrays

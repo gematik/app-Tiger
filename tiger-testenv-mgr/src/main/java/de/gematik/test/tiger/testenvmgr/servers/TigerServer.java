@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.config.PkiType;
 import de.gematik.test.tiger.common.config.ServerType;
@@ -42,7 +43,7 @@ public abstract class TigerServer {
     private final List<String> environmentProperties = new ArrayList<>();
     private final List<TigerRoute> routes = new ArrayList<>();
     private final TigerTestEnvMgr tigerTestEnvMgr;
-    private boolean started = false;
+    private TigerServerStatus status = TigerServerStatus.NEW;
 
     public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
         if (configuration.getType() == null) {
@@ -92,35 +93,42 @@ public abstract class TigerServer {
 
     public void start(TigerTestEnvMgr testEnvMgr) {
         synchronized (this) {
-            if (started) {
-                throw new TigerEnvironmentStartupException("Server " + getServerId() + " is already running!");
+            if (this.status != TigerServerStatus.NEW) {
+                throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
             }
-            started = true;
+            this.status = TigerServerStatus.STARTING;
         }
 
         assertThatConfigurationIsCorrect();
 
         final ServerType type = configuration.getType();
 
-        // replace sys props in environment
         configuration.getEnvironment().stream()
             .map(testEnvMgr::replaceSysPropsInString)
             .forEach(environmentProperties::add);
+        configuration.setSource(configuration.getSource().stream()
+            .map(TokenSubstituteHelper::substitute)
+            .collect(Collectors.toList()));
 
         // apply routes to local proxy
         if (configuration.getUrlMappings() != null) {
             configuration.getUrlMappings().forEach(mapping -> {
+                if (StringUtils.isBlank(mapping) || !mapping.contains("-->") || mapping.split(" --> ", 2).length != 2) {
+                    throw new TigerConfigurationException("The urlMappings configuration '" + mapping + "' is not correct. Please check your .yaml-file.");
+                }
+
                 String[] routeParts = mapping.split(" --> ", 2);
                 testEnvMgr.getLocalTigerProxy().addRoute(TigerRoute.builder()
                     .from(routeParts[0])
                     .to(routeParts[1])
                     .build());
+
             });
         }
 
-        performStartup();
-
         loadPkiForProxy();
+
+        performStartup();
 
         // TGR-284 set system properties from exports section and store the value in environmentVariables map
         // replace ${NAME} with server host name
@@ -138,6 +146,10 @@ public abstract class TigerServer {
             log.info("  setting system property " + kvp[0] + "=" + kvp[1]);
             System.setProperty(kvp[0], kvp[1]);
         });
+
+        synchronized (this) {
+            this.status = TigerServerStatus.RUNNING;
+        }
     }
 
     private void loadPkiForProxy() {
@@ -145,6 +157,10 @@ public abstract class TigerServer {
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Certificate)
             .forEach(key -> {
+                if (StringUtils.isBlank(key.getPem())) {
+                    throw new TigerConfigurationException(
+                        "Your certificate is empty, please check your .yaml-file for " + key.getId());
+                }
                 log.info("Adding certificate " + key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
@@ -155,6 +171,10 @@ public abstract class TigerServer {
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Key)
             .forEach(key -> {
+                if (StringUtils.isBlank(key.getPem())) {
+                    throw new TigerConfigurationException(
+                        "Your Key is empty, please check your .yaml-file for " + key.getId());
+                }
                 log.info("Adding key " + key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
@@ -169,20 +189,19 @@ public abstract class TigerServer {
     public void assertThatConfigurationIsCorrect() {
         var type = getConfiguration().getType();
         assertThat(serverId).withFailMessage("Server Id must not be blank!").isNotBlank();
-        if (this instanceof DockerComposeServer
-            && StringUtils.isNotBlank(getHostname())) {
+        if (this instanceof DockerComposeServer && StringUtils.isNotBlank(getHostname())) {
             throw new TigerConfigurationException("Docker compose does not support a hostname for the node!");
         }
 
         assertCfgPropertySet(getConfiguration(), "type");
-
 
         if (type != ServerType.EXTERNALJAR && type != ServerType.EXTERNALURL && type != ServerType.DOCKER_COMPOSE) {
             assertCfgPropertySet(getConfiguration(), "version");
         }
 
         // set default value for Tiger Proxy source
-        if (type == ServerType.TIGERPROXY && (getConfiguration().getSource() == null || getConfiguration().getSource().isEmpty())) {
+        if (type == ServerType.TIGERPROXY && (getConfiguration().getSource() == null || getConfiguration().getSource()
+            .isEmpty())) {
             log.info("Defaulting tiger proxy source to gematik nexus for " + serverId);
             getConfiguration().setSource(new ArrayList<>(List.of("nexus")));
         }
@@ -305,7 +324,16 @@ public abstract class TigerServer {
             .filter(StringUtils::isNotBlank)
             .map(String::trim)
             .map(serverName -> tigerTestEnvMgr.findServer(serverName)
-                .orElseThrow(() -> new TigerEnvironmentStartupException("Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
+                .orElseThrow(() -> new TigerEnvironmentStartupException(
+                    "Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
             .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void setStatus(TigerServerStatus newStatus) {
+        this.status = newStatus;
+    }
+
+    public enum TigerServerStatus {
+        NEW, STARTING, RUNNING, STOPPED
     }
 }

@@ -399,11 +399,6 @@
       "displayName": "A_20314"
     },
     {
-      "name": "Todo",
-      "type": "tag",
-      "displayName": "Todo"
-    },
-    {
       "name": "Core features/Fordere Access Token mit einer signierten Challenge an",
       "type": "feature",
       "displayName": "Fordere Access Token mit einer signierten Challenge an"

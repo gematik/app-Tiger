@@ -5,14 +5,15 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.Feature;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Scenario;
 import de.gematik.test.tiger.lib.parser.model.gherkin.ScenarioOutline;
 import java.nio.file.Paths;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestFeatureParser {
 
     @Test
     public void testGermanKeywords() {
         FeatureParser p = new FeatureParser();
-        Feature f = p.parseFeatureFile(Paths.get("src", "test", "resources", "testdata", "parser", "bdd", "german.feature").toFile());
+        Feature f = p.parseFeatureFile(
+            Paths.get("src", "test", "resources", "testdata", "parser", "bdd", "german.feature").toFile());
 
         assertThat(f.getBackground()).isNotNull();
         assertThat(f.getBackground().getSteps()).hasSize(10);

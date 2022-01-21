@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.proxy;
 
+import static org.mockserver.model.Header.header;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
@@ -8,12 +9,11 @@ import de.gematik.test.tiger.exception.TigerProxyModificationException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameters;
-
-import static org.mockserver.model.Header.header;
 
 @RequiredArgsConstructor
 @Data
@@ -25,7 +25,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
     public void applyModifications(HttpRequest request) {
         final RbelElement requestElement = tigerProxy.getMockServerToRbelConverter().requestToRbelMessage(request);
-        final RbelElement modifiedRequest = tigerProxy.getRbelLogger().getRbelModifier().applyModifications(requestElement);
+        final RbelElement modifiedRequest = tigerProxy.getRbelLogger().getRbelModifier()
+            .applyModifications(requestElement);
         if (modifiedRequest == requestElement) {
             return;
         }
@@ -67,7 +68,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
     public void applyModifications(HttpResponse response) {
         final RbelElement responseElement = tigerProxy.getMockServerToRbelConverter().responseToRbelMessage(response);
-        final RbelElement modifiedResponse = tigerProxy.getRbelLogger().getRbelModifier().applyModifications(responseElement);
+        final RbelElement modifiedResponse = tigerProxy.getRbelLogger().getRbelModifier()
+            .applyModifications(responseElement);
         if (modifiedResponse == responseElement) {
             return;
         }
@@ -76,7 +78,14 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             response = response.replaceHeader(header(modifiedHeader.getKey().orElseThrow(),
                 modifiedHeader.getRawStringContent()));
         }
-        response.withStatusCode(Integer.parseInt(extractSafe(modifiedResponse, "$.responseCode").getRawStringContent()));
+        response.withStatusCode(
+            Integer.parseInt(extractSafe(modifiedResponse, "$.responseCode").getRawStringContent()));
+        final String reasonPhrase = extractSafe(modifiedResponse, "$.reasonPhrase").getRawStringContent();
+        if (!StringUtils.isEmpty(reasonPhrase)) {
+            response.withReasonPhrase(reasonPhrase);
+        } else {
+            response.withReasonPhrase(" ");
+        }
     }
 
     @Override

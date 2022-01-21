@@ -1,0 +1,64 @@
+@startuml
+
+!include plantuml.style
+
+title Tiger EAU Konnektorfarm process
+
+start
+
+:Installation of openJDK11 and maven.;
+
+:Cloning github repo https://github.com/gematik/tiger-eau-proxy.git\n\
+into a folder on the customers machine.;
+
+
+#palegreen:starting Tiger validation suite via\n\
+**mvn -P Test **;
+
+#palegreen:Tiger test environment manager starts all\n\
+Tiger proxies (reverse, aggregating, local) will be started.;
+
+repeat
+    #palegreen:The validation feature file\npart of the github repo will be started\n\
+        waiting for the first request.;
+
+    fork
+        :The Primärsystem sends requests to the Konnektoren\n\
+via the local reverse Tiger proxies.\n\
+It follows either manually by human tester or\n\
+via test scripts the test work flow\n\
+as specified by Gematik.;
+
+        :The test work flow has been completed or aborted;
+
+    fork again
+        #palegreen:The validation test suite checks\n\
+that all requests and responses,\n\
+matching the specified work flow\n\
+have been received in order\n\
+and do match all criteria.;
+    end fork
+
+    #palegreen:"**mvn serenity:aggregate serenity:reports**\ncreate a local test report";
+
+    if (all steps successful?) then (yes       )
+
+        #palegreen:**mvn assembly:single**\n creates a ZIP archive containing\n\
+all relevant data, the TITUS platform needs\n\
+to perfomr the next steps in the certification process;
+
+        :The ZIP archive is uploaded manually\n\
+by the Primärsystem manufacturer\nto the TITUS platform;
+
+        :The next step in the\ncertification process can be performed;
+
+        end
+    else (       no)
+        #palegreen:The local test report contains detailed failure logs;
+
+        :Primärsystem manufacturer adapts his code\nto address the issues;
+    endif
+repeat while (next try?)
+
+
+@enduml

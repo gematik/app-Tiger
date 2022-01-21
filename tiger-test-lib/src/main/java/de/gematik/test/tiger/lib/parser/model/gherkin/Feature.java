@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -28,4 +28,8 @@ public class Feature extends GherkinStruct {
     private String fileName;
     private Background background;
     private List<GherkinStruct> scenarios = new ArrayList<>();
+
+    public Scenario getScenario(String name) {
+        return scenarios.stream().filter(scenario -> scenario.getName().equals(name)).map(Scenario.class::cast).findFirst().orElseThrow();
+    }
 }

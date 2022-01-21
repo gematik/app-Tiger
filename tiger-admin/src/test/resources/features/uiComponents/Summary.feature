@@ -128,7 +128,7 @@ Feature: Summary feature
       sslSuite1
     """
     When he unfolds section ".tigerProxyCfg.proxyCfg.tls"
-    And he enters "rootca1" into field ".tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation"
+    And he enters "rootca1" into field ".tigerProxyCfg.proxyCfg.tls.serverRootCa"
     And he folds section ".tigerProxyCfg.proxyCfg.tls"
     Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
     """

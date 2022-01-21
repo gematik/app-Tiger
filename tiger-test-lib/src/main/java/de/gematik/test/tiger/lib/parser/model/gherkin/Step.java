@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,11 @@ public class Step {
 
     private final String keyword;
     private final List<String> lines;
+
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    public Step clone()  {
+        return new Step(keyword, new ArrayList<>(lines));
+    }
 
     public static Step fromLine(final String line) {
         final String kw = getKeyword(line.trim());

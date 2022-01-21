@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.17.1</version>
+    <version>0.18.0</version>
     <packaging>pom</packaging>
     <name>app-Tiger</name>
     <description>Short project description </description>
@@ -66,13 +66,14 @@
         <module>tiger-aforeporter-plugin</module>
         <module>tiger-admin</module>
         <module>tiger-driver-generator-maven-plugin</module>
+        <module>tiger-coverage</module>
     </modules>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
-        <version.rbellogger>0.21.0</version.rbellogger>
+        <version.rbellogger>0.22.0</version.rbellogger>
         <version.cucumber>6.11.0</version.cucumber>
         <version.serenity.core>3.0.5</version.serenity.core>
         <version.serenity.maven.plugin>3.0.5</version.serenity.maven.plugin>
@@ -83,15 +84,14 @@
         <version.junit4>4.13.2</version.junit4>
         <version.lombok>1.18.22</version.lombok>
         <version.mockserver>5.11.9</version.mockserver>
-        <version.spring-boot-test>2.5.0</version.spring-boot-test>
+        <version.spring-boot>2.5.0</version.spring-boot>
 
         <htmlunit.version>3.55.0</htmlunit.version>
 
-        <sonar.coverage.jacoco.xmlReportPaths>${project.reporting.outputDirectory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.language>java</sonar.language>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.jacoco.reportFolder>${project.basedir}/../target/jacoco</sonar.jacoco.reportFolder>
-        <sonar.language>java</sonar.language>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <profiles>
@@ -264,6 +264,12 @@
             <scope>provided</scope>
             <version>${version.lombok}</version>
         </dependency>
+            <dependency>
+                <groupId>org.sonarsource.java</groupId>
+                <artifactId>sonar-jacoco-listeners</artifactId>
+                <version>3.8</version>
+                <scope>test</scope>
+            </dependency>
     </dependencies>
 
     <build>
@@ -311,71 +317,35 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
-                    <argLine>${surefire.jacoco.args}</argLine>
+                    <argLine>${argLine}</argLine>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>org.sonar.java.jacoco.JUnitListener</value>
+                        </property>
+                    </properties>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <groupId>org.jacoco</groupId>
                 <version>0.8.7</version>
-                <configuration>
-                    <destFile>${sonar.jacoco.reportPath}</destFile>
-                    <append>true</append>
-                </configuration>
-
                 <executions>
                     <execution>
-                        <id>before-unit-test-execution</id>
+                        <id>default-prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                        <configuration>
-                            <destFile>${sonar.jacoco.reportFolder}/jacoco-unit-tests.exec</destFile>
-                            <propertyName>surefire.jacoco.args</propertyName>
-                            <append>true</append>
-                        </configuration>
                     </execution>
                     <execution>
-                        <id>after-unit-test-execution</id>
-                        <phase>test</phase>
+                        <id>default-report</id>
+                        <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
-                        <configuration>
-                            <dataFile>${sonar.jacoco.reportFolder}/jacoco-unit-tests.exec</dataFile>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
-                            <append>true</append>
-                        </configuration>
-                    </execution>
-                    <!-- Failsafe -->
-                    <execution>
-                        <id>before-integration-test-execution</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                        <configuration>
-                            <destFile>${sonar.jacoco.reportFolder}/jacoco-failsafe-tests.exec</destFile>
-                            <propertyName>failsafe.jacoco.args</propertyName>
-                            <append>true</append>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>after-integration-test-execution</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                        <configuration>
-                            <dataFile>${sonar.jacoco.reportFolder}/jacoco-failsafe-tests.exec</dataFile>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-failsafe-test-coverage-report
-                            </outputDirectory>
-                            <append>true</append>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
-
             <!-- to upload jacoco results to sonar server via mvn sonar:sonar-->
             <plugin>
                 <artifactId>sonar-maven-plugin</artifactId>
@@ -387,7 +357,6 @@
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.9.1</version>
             </plugin>
-
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
                 <artifactId>serenity-maven-plugin</artifactId>
@@ -424,15 +393,6 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.0.0-M5</version>
-                <configuration>
-                    <aggregate>true</aggregate>
-                    <linkXRef>true</linkXRef>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
                 <reportSets>
@@ -447,22 +407,6 @@
                         <id>aggregate</id>
                         <reports>
                             <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.7</version>
-                <configuration>
-                    <dataFileIncludes>**/target/jacoco-output/*.exec</dataFileIncludes>
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <id>report</id>
-                        <reports>
-                            <report>report-aggregate</report>
                         </reports>
                     </reportSet>
                 </reportSets>

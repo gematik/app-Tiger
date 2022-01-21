@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ public class JsonChecker {
         try {
             json = new JSONObject(jsonStr);
             oracle = new JSONObject(oracleStr);
-            Assertions.assertThat(IteratorUtils.toArray(json.keys()))
+            Assertions.assertThat(IteratorUtils.toArray(json.keys(), String.class))
                 .contains(IteratorUtils.toList(oracle.keys()).stream()
                     .filter(key -> !key.toString().startsWith("____"))
                     .toArray());

@@ -10,7 +10,7 @@ templates:
     type: docker
     source:
       - gstopdr1.top.local/idp/idp-server
-    version: 18.2.0-82
+    version: 19.1.0-143
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on without error)
     startupTimeoutSec: 60
@@ -62,7 +62,6 @@ templates:
     # environment variables sent to the docker container at startup
     # support substitution of exported env variables from previously started servers
     environment:
-      - GEMATIK_TESTCONFIG=default
       - IDP_SERVER_URL=http://idp
     # environment variables made available to other servers
     # NG TODO change to java system properties and env vars?
@@ -98,7 +97,6 @@ templates:
       healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
-      - GEMATIK_TESTCONFIG=rise-ru
 
     pkiKeys: []
     environment: []
@@ -118,7 +116,6 @@ templates:
       healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
-      - GEMATIK_TESTCONFIG=rise-tu
 
     pkiKeys: []
     environment: []

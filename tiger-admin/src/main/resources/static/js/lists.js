@@ -9,7 +9,7 @@ const listItemPatterns = {
     ["single", " ↦ ", "$to", ""]
   ],
   ".tigerProxyCfg.proxyCfg.modifications": [
-    ["single", "", "$name", ": "], "$condition"
+    ["single", "", "$name", ": "], "$condition", "$targetElement"
   ],
   "pkiKeys": [
     "$id", "(", "$type", ")"
@@ -53,6 +53,19 @@ function handleAddButtonOnSimpleList() {
   listGroup.find('.active > span').click();
 }
 
+function setDefaultValuesInFieldset(editFieldSet) {
+  editFieldSet.find("*[name][type]").each(function () {
+    const fieldName = $(this).attr('name');
+    const type = $(this).attr('type');
+    let defValue = getDefaultValueFor(fieldName);
+    if (type === 'checkbox') {
+      $(this).prop('checked', defValue === null ? false : defValue);
+    } else {
+      $(this).val(defValue === null ? '' : defValue);
+    }
+  });
+}
+
 function handleAddButtonOnComplexList() {
   const fieldSet = $(this).parents('fieldset');
   fieldSet.enableSubSetFields(true);
@@ -73,16 +86,7 @@ function handleAddButtonOnComplexList() {
     fieldSet.updateDataAndLabelForActiveItem(true);
   }
   // respect default value of fields
-  editFieldSet.find("*[name][type='checkbox']").each(function () {
-    const fieldName = $(this).attr('name');
-    let defValue = getDefaultValueFor(fieldName);
-    $(this).prop('checked', defValue === null ? false : defValue);
-  });
-  editFieldSet.find("*[name][type!='checkbox']").each(function () {
-    const fieldName = $(this).attr('name');
-    let defValue = getDefaultValueFor(fieldName);
-    $(this).val(defValue === null ? '' : defValue);
-  });
+  setDefaultValuesInFieldset(editFieldSet);
 
   // start editing
   editFieldSet.find("*[name]:first").focus();
@@ -115,18 +119,7 @@ function handleDeleteButtonOnList() {
       fieldSet.setObjectFieldInForm(data, field, section);
     }
   } else {
-    const editFieldSet = fieldSet.find('fieldset');
-    // respect default value of fields
-    editFieldSet.find("*[name][type='checkbox']").each(function () {
-      const fieldName = $(this).attr('name');
-      let defValue = getDefaultValueFor(fieldName);
-      $(this).prop('checked', defValue === null ? false : defValue);
-    });
-    editFieldSet.find("*[name][type!='checkbox']").each(function () {
-      const fieldName = $(this).attr('name');
-      let defValue = getDefaultValueFor(fieldName);
-      $(this).val(defValue === null ? '' : defValue);
-    });
+    setDefaultValuesInFieldset(fieldSet.find('fieldset'));
     fieldSet.find('.btn-list-apply').hide();
   }
   activeItem.remove();
@@ -217,18 +210,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
       const section = fieldSet.attr("section");
       // for complex lists also populate the edit fieldset
       if (!editable) {
-        const editFieldSet = fieldSet.find('fieldset');
-        // respect default value of fields
-        editFieldSet.find("*[name][type='checkbox']").each(function () {
-          const fieldName = $(this).attr('name');
-          let defValue = getDefaultValueFor(fieldName);
-          $(this).prop('checked', defValue === null ? false : defValue);
-        });
-        editFieldSet.find("*[name][type!='checkbox']").each(function () {
-          const fieldName = $(this).attr('name');
-          let defValue = getDefaultValueFor(fieldName);
-          $(this).val(defValue === null ? '' : defValue);
-        });
+        setDefaultValuesInFieldset(fieldSet.find('fieldset'));
         let data = $(this).data("listdata");
         for (const field in data) {
           fieldSet.setObjectFieldInForm(data, field, section);

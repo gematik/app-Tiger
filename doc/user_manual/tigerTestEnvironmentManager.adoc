@@ -1,0 +1,712 @@
+== Tiger test environment manager
+
+As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the test environment manager is one of the three core components of the Tiger test framework.
+Its main task is to start various test server nodes configured in the tiger-testenv.yaml configuration file and initialize the local Tiger Proxy for the test suite.
+To choose a different test environmental configuration file you may set the environment variable TIGER_TESTENV_CFGFILE.
+
+
+The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from tiger-testenv.yaml.
+If none of these files exist it will fail the start up.
+
+If the environment variable is not set, then the test environment manager first checks for a file named tiger-testenv-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named tiger-testenv.yaml.
+If none of these files exist it will fail the start up.
+
+In the startup phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
+
+To configure your test environment you can either compose the tiger-testenv.yaml file manually or much preferred
+use the xref:tiger_user_manual.adoc#_admin_ui[Tiger Admin UI].
+
+The nodes configured in the yaml file will be started asynchronously unless the dependsUpon property is set.
+
+=== Supported server nodes and their configuration
+
+The Tiger testenviroment manager currently supports the following list of server ndoes.
+
+* **Docker container** is a node based on instantiating a specific docker image that is either locally available or downloaded from a remote docker repo configured in the source property.
+* **Docker compose** is a node that you can use to start a group of services defined in one to several compose yaml files configured in the source list.
+* **External jar** is a node that is started by running `java -jar XXXX.jar` after downloading a Jar archive from the configured source URL.
+* **External URL** is a symbolic node that is actually maintained outside of the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.
+* **Tiger Proxy** is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
+
+==== YAML configuration files in a nutshell
+
+Before you start writing your own tiger-testenv.yaml configuration files, make sure you have worked with yaml files before and know its syntax and structure. If unsure take a https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06[20 minutes primer], although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.
+
+==== General properties
+
+The general properties apply to each node type.
+
+[source,yaml,title="General properties"]
+----
+serverKey_xxx:
+  # OPTIONAL host name of this node when accessing it via the test suite
+  # (rerouted via the local test suite Tiger Proxy).
+  # Defaults to the server key (serverKey_xxx)
+  hostname: string
+  # MANDATORY one of [tigerProxy|docker|compose|externalJar|externalUrl]
+  type: string
+  # OPTIONAL name of a template to apply.
+  # Default value is empty
+  template: string
+  # OPTIONAL comma separated list of keys of server nodes that must be started
+  # before this node is set up.
+  # Default value is empty
+  dependsUpon: csv string
+  # OPTIONAL duration in seconds to wait for a successful start up of the server node
+  # Default value is 20
+  startupTimeoutSec: int
+  # MANDATORY type specific property in that for some types it's a list,
+  # for some others it's a single URL
+  source:
+    - source entry 1
+    - source entry 2
+  # type specific property for Tiger Proxy and docker container nodes
+  version: string
+  # OPTIONAL list of pki certs and keys to initialize
+  # the local Tiger Proxy of the test suite with
+  # Default value is empty array
+  # For more details see "PKI configuration" section below
+  pkiKeys: []
+  # OPTIONAL type specific list of environmental variable assignments to be used
+  # when starting the server node.
+  # Each entry has to have the format ENVVARNAME=VALUE
+  # Has NO EFFECT on external Url nodes.
+  # Default value is empty array
+  environment:
+    - ENVVAR1=VALUE1
+    - ENVVAR2=VALUE2
+    - http://tsl --> https://download-ref.tsl.ti-dienste.de
+  # OPTIONAL list of routes to be added to the local Tiger Proxy of the test suite.
+  # Default value is empty array
+  urlMappings:
+    - https://www.orf.at --> https://eitzen.at
+  # OPTIONAL list of system properties that will be provided to following nodes.
+  # Each entry has to have the format system.property.name=VALUE
+  # Default value is empty array
+  exports:
+    - systemProp1=Value1
+    - systemProp2=Value2
+----
+
+The general properties are followed by the type specific substructures, which configure specific aspects of each node type.
+Their meaning and format are explained in the related section.
+
+[source,yaml,title="Type specific properties"]
+----
+  # type specific sub structure for external jar, external url and Tiger Proxy nodes
+  externalJarOptions:
+    # used by external jar and Tiger Proxy nodes
+    workingDir: string
+    # used by all node types
+    healthcheck: string
+    # only used by external jar nodes
+    options: []
+    # used by external jar and Tiger Proxy nodes
+    arguments: []
+
+  # type specific sub structure for Tiger Proxy nodes
+  tigerProxyCfg:
+    serverPort: int
+    proxiedServer: string
+    proxyPort: int
+    proxyProtocol: [HTTP|HTTPS]
+    # Here a normal Tiger Proxy configuration can be used.
+    # This is explained in more depth down below
+    proxyCfg:
+      proxyRoutes:
+          # defines a forward-proxy-route from this server
+        - from: http://foobar
+          # to this server
+          to: https://cryptic.backend/server/with/path
+
+  # type specific sub structure for docker container and compose nodes
+  dockerOptions:
+    # only used by docker compose nodes
+    serviceHealthchecks: []
+    # all properties below only used by docker container nodes
+    proxied: boolean
+    oneShot: boolean
+    entryPoint: string
+----
+
+The configuration of the Tiger Proxy is explained in detail in the section <<_configuring_the_local_test_suite_tiger_proxy>>
+
+==== PKI configuration in pkiKeys
+
+The pkiKeys property contains a list of certificates and keys to be provided to the local Tiger Proxy of the test suite.
+Each entry has to provide a unique id, type and pem property.
+
+[source,yaml,title="PKI configuration"]
+----
+  pkiKeys:
+      # MANDATORY unique key/certificate id
+    - id: disc_sig
+      # MANDATORY one of [Certificate|Key]
+      type: Certificate
+      # MANDATORY base64 encoded multiline string representing the certificate / key.
+      pem: "MIICsTCCAligAwIBAgIHA61I5ACUjTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMC
+  REUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtv
+  .....
+  xiKK4dW1R7MD334OpOPTFjeEhIVV"
+    - id: disc_enc
+      type: Key
+      pem: "ISUADOGBESBXEZOBXWEDHBXOU..."
+----
+
+==== Configuring PKI identities in Tiger Proxy's tls section
+
+PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8). In every place a string can be given. It could be one of
+
+* "my/file/name.p12;p12password"
+* "p12password;my/file/name.p12"
+* "cert.pem;key.pkcs8"
+* "rsaCert.pem;rsaKey.pkcs1"
+* "key/store.jks;key"
+* "key/store.jks;key1;key2"
+* "key/store.jks;jks;key"
+
+Each part can be one of:
+
+* filename
+* password
+* store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
+
+==== Docker Container node
+
+The docker container node allows to instantiate a local docker container from the configured image.
+The exposed port of the docker container is available as a special token in the substitution process of the exports entries.
+
+To customize the docker container you may alter the entry point command line and add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
+For containers that should exit after a single command you may enable the oneShot property.
+
+
+[source,yaml,title="Docker container configuration"]
+----
+dockerContainer_001:
+  hostname: myDockerContainer
+  type: docker
+  dependsUpon: csv string
+  startupTimeoutSec: int
+
+  # MANDATORY URL from where to download the docker image.
+  source:
+    - dockerhubrepo.somewhere.org/repo/project/docker.image
+  # OPTIONAL version of the docker image to download.
+  version: 0.1.2
+
+  dockerOptions:
+    # OPTIONAL Flag whether the container shall be modified by
+    # o adding the Tiger Proxy certificate to the container operating system.
+    # o adding docker.host.internal to the container's /etc/hosts file.
+    # Default value is true.
+    proxied: true
+    # OPTIONAL Flag whether the container is a one shot container or not.
+    # One shot meaning it will execute a command and then stop.
+    # Default value is false.
+    oneShot: false
+    # OPTIONAL The entry point command line to be used to start up this container
+    # overwriting any configured entry point in the docker image.
+    # Default value is empty meaning to use the configured entry point command line.
+    entryPoint: chmod a+x /startup.sh && /startup.sh
+
+  # The following properties are explained in the General properties section above
+  pkiKeys: []
+  environment: []
+  urlMappings: []
+  exports: []
+----
+
+==== Docker Compose node
+
+The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support. So many of the yaml compose files will need to be modified to work with the testcontainer library.
+
+For now we support the ePA2 FD module and the DEMIS Meldeportal.
+
+[source,yaml,title="Docker compose configuration"]
+----
+  type: compose
+  dependsUpon: csv string
+  startupTimeoutSec: int
+
+  # MANDATORY list of yaml files to use to start up the services.
+  # The entries can either be file paths or if starts with
+  # classpath:....  a reference to a yaml file contained in the class path
+  # (it could also be located inside a jar that is in the class path)
+  source:
+    - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
+    - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
+  dockerOptions:
+    # MANDATORY list of URLs to check for a successful start up
+    # of the docker compose's services
+    serviceHealthchecks:
+      - http://service1:8001/
+      - https://service2:9001/
+----
+
+[source,yaml,title="Demis docker compose example"]
+----
+demis_001:
+  type: compose
+  source:
+    - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
+  startupTimeoutSec: 180
+  dockerOptions:
+    serviceHealthchecks:
+      - http://notification-gateway:9042
+      - http://notification-portal:9041/welcome
+----
+
+==== External Jar node
+
+The External Jar node is along with the Docker container node the most important/used node for test environments. Any Jar archive executable which can be started with the `java -jar` command can be configured as an external Jar node.
+
+The options list are arguments added immediately after the java executable, while the arguments list is appended after the -jar argument.
+
+The working directory is the place where the jar file is downloaded to and executed from.
+So if your jar archive expects some configuration files make sure to choose the folder appropriately.
+
+[source,shell script]
+----
+java ${options} -jar externalJar.jar ${arguments}
+----
+
+[source,yaml,title="External jar configuration"]
+----
+externalJar_001:
+  hostname: mySpecialJar
+  type: externalJar
+  dependsUpon: csv string
+  startupTimeoutSec: int
+
+  # MANDATORY SINGLE ENTRY URL from where to download the Jar archive.
+  # If the entry starts with "local:" followed by a file path the jar archive
+  # is expected to be available at that location and no download is performed.
+  # Only one entry is expected for this node type. Additional entries are silently ignored.
+  source:
+    - http://myjars.download.org/myproject/myjar.jar
+
+  externalJarOptions:
+    # OPTIONAL folder from where to start the external jar.
+    # The downloaded jar file will be stored and executed from here
+    # The default value is empty, which means that the operating-system-specific
+    # temporary folder will be used.
+    workingDir: /home/user/test/myspecificjar
+    # MANDATORY URL to check for the successful startup of this node.
+    # A successful start is indicated by ANY answer on this URL.
+    # Any status is accepted as long as there is an answer.
+    # If set to "NONE" no check is performed and
+    # the test environment manager will wait for the startup timeout.
+    healthcheck: http://127.0.0.1:8080
+    # OPTIONAL Options to pass in to the java executable call.
+    options: []
+    # OPTIONAL provide additional arguments to the jar archive call.
+    # Default value is empty.
+    arguments:
+      - --testarg1
+      - -singledasharg2
+      - --paramarg3=testvalue1
+
+  # The following properties are explained in the General properties section above
+  pkiKeys: []
+  environment: []
+  urlMappings: []
+  exports: []
+----
+
+==== External URL node
+
+The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname. This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.
+
+So, in the following example, the test suite can send HTTP(S) requests to the server "http://myExternalServer" via the local Tiger Proxy, which will be rerouted to the external URL "https://www.medizin.de".
+If it is ever necessary to change the external URL, the test suite does not have to be modified, only the routing configuration for the node has to be changed.
+
+Given the nature of this type, the environment section has no effect and is not to be used.
+
+[source,yaml,title="External URL configuration"]
+----
+externalUrl_001:
+  hostname: myExternalServer
+  type: externalUrl
+  dependsUpon: csv string
+  startupTimeoutSec: int
+
+  # MANDATORY URL of the external server
+  source:
+    - https://www.medizin.de
+
+  externalJarOptions:
+    # OPTIONAL URL to check for successful startup of this node.
+    # A successful start is indicated by ANY answer on this URL.
+    # Any status is accepted as long as there is an answer.
+    # If the value is not set, then no health check is carried out
+    # in the startup phase, instead the startupTimeout is waited for.
+    # After this timeout it is assumed that the server is up.
+    healthcheck: https://www.medizin.de/healthyState.jsp
+
+  # The following properties are explained in the General properties section above
+  pkiKeys: []
+  # IGNORE for this type as it has no effect
+  environment: []
+  urlMappings: []
+  exports: []
+----
+
+
+==== Tiger Proxy node
+
+The most complex and versatile node type. It basically is a specialized External Jar node with additional configuration properties for the standalone Tiger Proxy to be instantiated.
+The test environment manager will download the standalone proxy jar and will create an `application-${hostname}.yaml` spring boot configuration yaml for each proxy node.
+
+Special notes to configuration properties:
+
+* source is not a URL, but a single entry that is either nexus or maven to specify, where to download the Tiger Proxy standalone jar from.
+The maven option is available for everyone, while the nexus option is only available for gematik internal use.
+In combination with the version property, the test environment manager will compose the correct URL
+to download the Tiger Proxy standalone jar.
+* arguments entries will be extended with `--spring.profiles.active=${hostname}` to ensure,
+the application yaml for this Tiger Proxy is specific even if multiple standalone proxies are started from the same working folder.
+* options are not supported for this node.
+
+[source,yaml,title="Tiger Proxy configuration"]
+----
+tigerProxy_001:
+  hostname: myTigerProxy
+  type: tigerProxy
+  dependsUpon: csv string
+  startupTimeoutSec: int
+
+  # MANDATORY one of [nexus|maven]
+  # decides from which repository server to download the standalone jar of the tiger.
+  source:
+    - nexus
+  # MANDATORY version of Tiger Proxy standalone jar to download
+  version: 0.17.1-288
+
+  externalJarOptions:
+    # OPTIONAL folder from where to start the Tiger Proxy from.
+    # The downloaded jar file will be stored and executed from here
+    # Default value is empty which means that the operating system specific
+    # temporary folder will be used.
+    workingDir: /home/user/test/tigerproxy
+    # OPTIONAL URL to check for the successful startup of this Tiger Proxy node
+    # Default value is http://127.0.0.1:[server port of this Tiger Proxy]
+    healthcheck: http://127.0.0.1:8080
+    # OPTIONAL provide additional arguments to the jar archive call.
+    # Can be used to provide ADDITIONAL spring boot parameters such as spring boot profiles.
+    # The default spring boot profile activated via command line is identical
+    # to the server key of the node.
+    # Default value is empty.
+    arguments:
+      - --testarg1
+      - -singledasharg2
+      - --paramarg3=testvalue1
+
+  tigerProxyCfg:
+    # OPTIONAL port of the web user interface and the proxy management
+    # (e.g. rbel-message forwarding)
+    # Default value is empty, which means a random port will be used.
+    serverPort: 8080
+    # OPTIONAL server key of the node this proxy shall be used as reverse proxy for.
+    # If set the routes in the proxyCfg section will be configured appropriately.
+    # Default value is empty.
+    proxiedServer: externalJar_001
+    # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
+    # Default value is empty, which means a random port will be used.
+    proxyPort: 3128
+    # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
+    # Default value is http
+    proxyProtocol: http
+    # configures the proxy itself. For more details
+    # please check the chapter about the local test suite Tiger Proxy below
+    proxyCfg:
+      ...
+      proxyRoutes:
+        - from: http://foobar
+          # defines a forward-proxy-route from this server...
+          to: https://cryptic.backend/server/with/path
+          # to this server
+      ...
+
+  # The following properties are explained in the General properties section above
+  pkiKeys: []
+  environment: []
+  urlMappings: []
+  exports: []
+----
+
+The configuration of the Tiger Proxy is explained in detail in the section <<_configuring_the_local_test_suite_tiger_proxy>>
+
+=== Provided node templates
+
+Besides these basic nodes we also support tailored templates for nodes like IDP, ePA, ERp and DEMIS.
+This should allow you to bring up project specific test environments very fast.
+
+All currently supported templates can be found in the tiger-testenv-mgr modul in the yaml file at /src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml
+
+To use such a template, just use the template attribute:
+
+[source,yaml]
+----
+myPersonalTestIDPInTheRU:
+  template: idp-rise-ru
+----
+
+or if you want to have an environment with a local reference implementation of the ERezept Fachdienst
+
+[source,yaml]
+----
+myLocalTestIDP:
+  template: idp-ref
+  hostname: idp
+
+myLocalTestERp:
+  template: erzpt-fd-ref
+  dependsUpon: myLocalTestIDP
+----
+
+==== Local IDP reference nodes
+
+This template provides the reference implementation of the IDP server as a local docker container. The docker image is loaded from a gematik internal docker registry server.
+
+The system property IDP_SERVER is set to the URL of the Discovery Document end point and is available for all subsequently initiated test environment nodes.
+
+==== External IDP RISE instance nodes
+
+The idp-rise-ru template provides the RU instance of RISE's IDP server as an "external URL".
+The system properties IDP_SERVER and GEMATIK_TESTCONFIG are set to the URL of the Discovery Document end point and a config-file for the IDP test suite respectively.
+They are available for all subsequently initiated test environment nodes.
+
+The idp-rise-tu template provides the TU instance accordingly.
+
+==== Local ERp reference nodes
+
+This template provides the reference implementation of the eRezept server as a local docker container. The docker image is loaded from a gematik internal docker registry server.
+Make sure that an IDP server node is instantiated before the ERp FD is started and that it is available under http://idp or adapt the environment variable configuration.
+
+A large list of environment variables is set. But dont worry, it is just the server that uses them.
+
+==== Local ePA2 reference nodes
+
+This template provides the gematik reference Aktensystem simulation as docker compose.
+
+==== Local PSSim node
+
+This template provides a Primärsystem simulation (as a jar), usable for ePA.
+See https://wiki.gematik.de/display/PTP/epa-ps for more information.
+
+==== Local KonSim node
+
+This template provides a Konnektor simulation (as external jar).
+See https://wiki.gematik.de/display/PTP/KonSim for more information.
+
+==== Local ePA FdV Sim
+
+This template provides FdV simulation, usable for ePA.
+
+==== Local DEMIS reference nodes
+
+This template provides the DEMIS Meldeportal as local docker compose.
+
+[#_configuring_the_local_test_suite_tiger_proxy]
+=== Configuring the local test suite Tiger Proxy
+
+The local Tiger Proxy for the test suite can be configured by using the following section(s) in the tiger-testenv.yaml file.
+For more information about what the tiger-proxy and how it works see the chapter <<Tiger Proxy>>
+
+[source,yaml]
+----
+# Flag whether to activate the local Tiger Proxy
+# Default value is true
+localProxyActive: true
+
+# the block where all the Tiger Proxy configuration properties are located
+tigerProxy:
+  # the port under which the server will be booted
+  port: 7777
+  # logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!
+  proxyLogLevel: TRACE
+  fileSaveInfo:
+    # should the cleartext http-traffic be logged to a file?
+    writeToFile: true
+    # configure the filename
+    filename: "foobar.tgr"
+    # default false
+    clearFileOnBoot: true
+  proxyRoutes:
+      # defines a forward-proxy-route from this server...
+    - from: http://foobar
+      # to this server
+      to: https://cryptic.backend/server/with/path
+      # reverse proxy-route. http://<tiger-proxy>/blub will be forwarded
+    - from: "/blub"
+      to: "https://another.de/server"
+      # the traffic for this route will NOT be logged (default is true)
+      activateRbelLogging: false
+
+  # a list of modifications that will be applied to every proxied request and response
+  modifications:
+    # a condition that needs to be fulfilled for the modification to be applied
+    # (uses JEXL grammar)
+  - condition: "isRequest"
+    # which element should be targeted?
+    targetElement: "$.header.user-agent"
+    # the replacement string to be filled in.
+    # This modification will replace the entire "user-agent" in all requests
+    replaceWith: "modified user-agent"
+
+  - condition: "isResponse && $.responseCode == 200"
+    targetElement: "$.body"
+    # The name of this modification.
+    # This can be used to identify, alter or remove this modification.
+    name: "body replacement modification"
+    # This will replace the body of every 200 response completely with the given json-string
+    # (This ignores the existing body. For example this could be an XML-body.
+    # Content-Type-headers will NOT be set accordingly).
+    replaceWith: "{\"another\":{\"node\":{\"path\":\"correctValue\"}}}"
+  - targetElement: "$.body"
+    # The given regex will be used to target only parts of targeted element.
+    regexFilter: "ErrorSeverityType:((Error)|(Warning))"
+    # This modification has no condition,
+    # so it will be applied to every request and every response
+    replaceWith: "ErrorSeverityType:Error"
+
+  # can be used if the target-server (to) is behind another proxy
+  forwardToProxy:
+    hostname: 192.168.110.10
+    port: 3128
+    type: HTTP
+  # The tiger-proxy will route google.com to google.com even if no route is set.
+  # The traffic routed via this "forwardAll"-routing will be logged by default
+  # (meaning it will show up in the Rbel-Logs and be fowarded to tracing-clients)
+  # This can be deactivated by setting this flag to false
+  activateForwardAllLogging: true
+  # Limits the rbel-Buffer to approximately this size.
+  # Note: When Rbel-Analysis is done the size WILL vastly exceed this limit!
+  rbelBufferSizeInMb: 1024
+  # If set to false disables traffic-analysis by Rbel.
+  # Deactivating will not impede proxy-forwarding nor
+  # the traffic-endpoints.
+  activateRbelParsing: true
+  # This will share the WebUI-Resources (various CSS-files) from the tiger-proxy
+  # locally, thus enabling usage when no internet connection exists
+  localResources: true
+
+  tls:
+    # Can be used to define a CA-Identity to be used with TLS. The tiger-proxy will
+    # generate an identity when queried by a client that matches the configured route.
+    # If the client then in turn trusts the CA this solution will provide you with a seamless
+    # TLS experience. It however requires access to the private-key of a trusted CA.
+    serverRootCa: "certificate.pem;privateKey.pem;PKCS8"
+    # Alternative solution: now all incoming TLS-traffic will be handled using this identity.
+    # This might be easier but requires a certificate
+    # which is valid for the configured routes
+    serverIdentity: "certificateAndKeyAndChain.p12;Password"
+    # Defines which SSL-Suites are allowed. This will delete all default-suites and only add
+    # the one defined here.
+    serverSslSuites:
+      - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+
+    # This identity will be used as a client-identity for mutual-TLS when forwarding to
+    # other servers. The information string can be
+    # "my/file/name.p12;p12password" or
+    # "p12password;my/file/name.p12" or
+    # "cert.pem;key.pkcs8" or
+    # "rsaCert.pem;rsaKey.pkcs1" or
+    # "key/store.jks;key" or
+    # "key/store.jks;key1;key2" or
+    # "key/store.jks;jks;key"
+    #
+    # Each part can be one of:
+    # * filename
+    # * password
+    # * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
+    forwardMutualTlsIdentity: "directory/where/another/identityResides.jks;changeit;JKS"
+    # domain which will be used as the server address in the TLS-certificate
+    domainName: deep.url.of.server.de
+    # Alternate names to be added to the TLS-certificate
+    # (localhost and 127.0.0.1 are added by default)
+    alternativeNames:
+      - localhost
+      - 63.54.54.43
+      - foo.bar.server.com
+
+  # the given folders are loaded into RBel for analysis. This is only necessary to decrypt
+  # traffic when analyzing it. It has no effect on the proxy-functions themselves.
+  keyFolders:
+  - .
+
+  # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
+  # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible
+  # the server will not boot. (fail fast, fail early)
+  trafficEndpoints:
+    - http://another.tiger.proxy:<proxyPort>
+  trafficEndpointConfiguration:
+    # the name for the traffic Endpoint. can be any string, which will be
+    # displayed at /tracingpoints
+    name: "tigerProxy Tracing Point"
+
+----
+
+=== Standalone mode vs. implicit startup with test suite
+
+If your test environment is very "expensive" to start or if you are developing your test suite scenarios
+thus starting many test runs in short time, you might want to keep your test environment running and not shut it down after each run.
+To do so, you need to create a customized test environment configuration file (call it tiger-testenv-standalone.yaml,
+set the env var TIGER_TESTENV_CFGFILE accordingly) containing all the server nodes needed and
+deactivate the local Tiger Proxy in this configuration file.
+Now download the
+https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/0.17.1/tiger-testenv-mgr-0.17.1-jar-with-all-dependencies.jar[tiger test environment jar-with-all-dependencies file v0.17.1]
+from maven or go to https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/[maven index folder] to choose a more recent version.
+
+If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or
+kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}. In the latter case it is not guaranteed that all processes are cleanly shut down. Please check your process list with operating system specific tools.
+
+[source,shell script]
+----
+export TIGER_TESTENV_CFGFILE=....../tiger-testenv-standalone.yaml
+java -jar tiger-testenv-mgr-${VERSION}-jar-with-all-dependencies.jar
+----
+
+Now before starting your test suite scenarios you need to
+
+* disable / remove the test nodes in your default tiger-testenv.yaml (either by setting the property active to false or remove the server node entry completely). If you forget to do this, two nodes will be instantiated (one from the standalone test environment manager and the second during test run from the test environment manager started via the test suite hooks).
+* and add routes for each node to the local Tiger Proxy. If you forget to do this, your test suite will not be able to access the test nodes under their configured hostname as this configuration is only known to the standalone test environment manager and NOT to the local tiger proxy started by the test suite hooks.
+
+Best practice is to have three test environment configuration files:
+
+* tiger-testenv-standalone.yaml to enable a persistent test environment during the development of test suite scenarios
+* tiger-testenv-nonodes.yaml for the test suite that will instantiate no nodes but only configure the routes to the nodes from the standalone test environment manager
+* tiger-testenv.yaml a complete configuration that can be used in CI or after the test suite development is completed.
+
+The first and the latter most of the time are identical besides the root level flag localProxyActive. So you may skip the first and just use it with two different values being set.
+
+=== Using Environment variables and system properties
+
+==== Token/variable substitution
+
+// TODO TGR-313 JULIAN check which properties exactly are substituted with tokens?
+// If i remember correctly you changed the code or?
+
+Entries in the exports list of a node will be parsed and specific tokens will be substituted:
+
+* ${PORT:xxxx} will be replaced with the port on the docker host interface
+* ${NAME} will be replaced with the hostname of the node
+
+All exports entries of a node will be present when subsequent nodesare instantiated and can be used in the following properties:
+
+Docker node:
+
+* source list
+* environment list
+
+Tiger Proxy node:
+
+* from/to route URLs
+
+External URL node:
+
+* source list
+
+External Jar node:
+
+* options list

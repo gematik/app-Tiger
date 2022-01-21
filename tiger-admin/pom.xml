@@ -5,20 +5,19 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.17.1</version>
+        <version>0.18.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-admin</artifactId>
-    <version>0.17.1</version>
+    <version>0.18.0</version>
     <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <springboot.version>2.5.0</springboot.version>
-        <thymeleaf.version>3.0.12.RELEASE</thymeleaf.version>
+        <springboot.version>2.6.2</springboot.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <encoding>UTF-8</encoding>
@@ -39,7 +38,7 @@
             </properties>
         </profile>
         <profile>
-            <id>WithUITests</id>
+            <id>WithUiTests</id>
             <properties>
                 <!--suppress UnresolvedMavenProperty -->
                 <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
@@ -107,12 +106,12 @@
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-common</artifactId>
-            <version>0.17.1</version>
+            <version>0.18.0</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-testenv-mgr</artifactId>
-            <version>0.17.1</version>
+            <version>0.18.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -123,7 +122,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test-autoconfigure</artifactId>
-            <version>${version.spring-boot-test}</version>
+            <version>${version.spring-boot}</version>
             <scope>test</scope>
         </dependency>
 
@@ -241,6 +240,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>2.6.2</version>
                 <configuration>
                     <mainClass>de.gematik.test.tiger.admin.TigerAdminApplication</mainClass>
                 </configuration>
@@ -309,6 +309,136 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>2.2.1</version>
+                <executions>
+                    <execution>
+                        <id>convert-to-pdf</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <backend>pdf</backend>
+                            <doctype>book</doctype>
+                            <sourceDirectory>${project.basedir}/../doc/user_manual</sourceDirectory>
+                            <sourceDocumentName>tiger_user_manual.adoc</sourceDocumentName>
+                            <outputDirectory>${project.build.directory}/adoc/user_manual</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../doc/examples</directory>
+                                    <targetPath>examples</targetPath>
+                                </resource>
+                                <resource>
+                                    <directory>../doc/user_manual/media</directory>
+                                    <targetPath>media</targetPath>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <attributes>
+                                <source-highlighter>coderay</source-highlighter>
+                                <!--<imagesdir>${project.basedir}/doc/images</imagesdir>-->
+                                <toc>left</toc>
+                                <icons>font</icons>
+                                <pagenums/>
+                            </attributes>
+
+                            <requires>
+                                <require>asciidoctor-diagram</require>
+                            </requires>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>convert-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <backend>html5</backend>
+                            <sourceDirectory>${project.basedir}/../doc/user_manual</sourceDirectory>
+                            <sourceDocumentName>tiger_user_manual.adoc</sourceDocumentName>
+                            <outputDirectory>${project.build.directory}/adoc/user_manual</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../doc/examples</directory>
+                                    <targetPath>examples</targetPath>
+                                </resource>
+                                <resource>
+                                    <directory>../doc/user_manual/media</directory>
+                                    <targetPath>media</targetPath>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <attributes>
+                                <source-highlighter>coderay</source-highlighter>
+                                <!--<imagesdir>${project.basedir}/doc/images</imagesdir>-->
+                                <toc>left</toc>
+                                <icons>font</icons>
+                                <pagenums/>
+                            </attributes>
+                            <requires>
+                                <require>asciidoctor-diagram</require>
+                            </requires>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram</artifactId>
+                        <version>2.2.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-pdf</artifactId>
+                        <version>1.6.0</version>
+                    </dependency>
+                    <!-- seems to be outdated / obsolete / not working with current version of asciidoctor.
+                         So as of now no way to support Gherkin blocks in asciidoc!
+                         Please do not DELETE as this is important knowledge
+                    <dependency>
+                        <groupId>com.github.domgold.doctools.asciidoctor</groupId>
+                        <artifactId>asciidoctor-gherkin-extension</artifactId>
+                        <version>1.0.1</version>
+                    </dependency>
+                    -->
+                </dependencies>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-manual-to-adminui</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/classes/static/manual</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>target/adoc/user_manual</directory>
+                                    <includes>
+                                        <include>media/**</include>
+                                        <include>*.html</include>
+                                        <include>*.svg</include>
+                                        <include>examples/**</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -43,7 +43,7 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     When he focuses on formular "tigerProxy_001"
-    Then he sees input field ".tigerProxyCfg.proxyPort"
+    Then he sees input field ".tigerProxyCfg.proxyCfg.port"
     And he sees select field ".tigerProxyCfg.proxiedServer"
     And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
     When he shows "Allgemeines" tab
@@ -122,7 +122,7 @@ Feature: Check input fields and sections for all server types
     And he doesn't see field "version"
     But he sees check field "localProxyActive"
     When he shows "TigerProxy" tab
-    Then he sees input field ".tigerProxyCfg.proxyPort"
+    Then he sees input field ".tigerProxyCfg.proxyCfg.port"
     And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
     But he doesn't see field ".tigerProxyCfg.proxiedServer"
 
@@ -134,7 +134,7 @@ Feature: Check input fields and sections for all server types
     And he doesn't see tab link "URL Mappings"
     And he doesn't see tab link "External"
 
-  Scenario Outline: Check PKI, Environment, URL Mappings tabs for all types
+  Scenario Outline: Check PKI, Environment, URL Mappings tabs for all types but compose
     Given Gerriet is on the homepage
     And he adds a "<type>" node via welcome screen
     When he focuses on formular "<type>_001"
@@ -152,7 +152,6 @@ Feature: Check input fields and sections for all server types
     Examples:
       | type        | envfield1 | envfield2   |
       | docker      | exports   | environment |
-      | compose     | exports   | environment |
       | tigerProxy  | exports   | environment |
       | externalJar | exports   | environment |
       | externalUrl | exports   | exports     |
@@ -160,3 +159,18 @@ Feature: Check input fields and sections for all server types
     # except for externalUrl here no environment makes sense
     # thus checking twice for exports to keep it
     # with one outline scenario
+
+  Scenario Outline: Check PKI, Environment, URL Mappings tabs for compose
+    Given Gerriet is on the homepage
+    And he adds a "compose" node via welcome screen
+    When he focuses on formular "compose_001"
+    And he shows "Allgemeines" tab
+    #Then he sees input field "hostname" not shown on compose
+    Then he sees check field "active"
+    When he shows "PKI" tab
+    Then he sees list field "pkiKeys"
+    When he shows "Environment" tab
+    Then he sees list field "exports"
+    And he sees list field "environment"
+    When he shows "URL Mappings" tab
+    Then he sees list field "urlMappings"

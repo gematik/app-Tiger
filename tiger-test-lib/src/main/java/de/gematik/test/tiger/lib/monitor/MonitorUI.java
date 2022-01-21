@@ -5,7 +5,6 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import java.awt.*;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -19,7 +18,7 @@ public class MonitorUI extends JFrame {
     private JLabel message;
     private JButton quitButton;
     private boolean clickedQuitBtn = false;
-    private Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
+    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
 
     public static Optional<MonitorUI> getMonitor()  {
         try {
@@ -32,22 +31,24 @@ public class MonitorUI extends JFrame {
     }
     private MonitorUI() {
         initUI();
-        EventQueue.invokeLater(() -> {
-            setVisible(true);
-        });
+        EventQueue.invokeLater(() -> setVisible(true));
     }
 
     private void initUI() {
         URL url = getClass().getResource("/tiger-500.png");
-        ImageIcon icon = new ImageIcon(url);
-        icon.setImage(icon.getImage().getScaledInstance(130, 130, Image.SCALE_DEFAULT));
         quitButton = new JButton("Quit");
         quitButton.addActionListener((event) -> clickedQuitBtn = true);
         message = new JLabel("Starting up ...");
         var pane = getContentPane();
         BorderLayout bl = new BorderLayout(5, 5);
         pane.setLayout(bl);
-        pane.add(new JLabel(icon), BorderLayout.WEST);
+        if (url != null) {
+            ImageIcon icon = new ImageIcon(url);
+            icon.setImage(icon.getImage().getScaledInstance(130, 130, Image.SCALE_DEFAULT));
+            pane.add(new JLabel(icon), BorderLayout.WEST);
+        } else {
+            pane.add(new JLabel("TIger"), BorderLayout.WEST);
+        }
         pane.add(message, BorderLayout.CENTER);
         setAlwaysOnTop(true);
         setMinimumSize(new Dimension(600, 150));

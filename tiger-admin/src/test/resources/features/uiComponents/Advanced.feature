@@ -13,7 +13,7 @@ Feature: Check advanced input fields and sections for all server types
     When he shows "Allgemeines" tab
     And he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
-    And he sees select field "dependsUpon"
+    And he sees multiselect field "dependsUpon"
     When he clicks on advanced icon in section "node-settings"
     Then he doesn't see field "startupTimeoutSec"
     And he doesn't see field "dependsUpon"
@@ -31,7 +31,7 @@ Feature: Check advanced input fields and sections for all server types
     And he shows "Allgemeines" tab
     When he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
-    And he sees select field "dependsUpon"
+    And he sees multiselect field "dependsUpon"
     When he clicks on advanced icon in section "node-settings"
     Then he doesn't see field "startupTimeoutSec"
     And he doesn't see field "dependsUpon"
@@ -81,9 +81,9 @@ Feature: Check advanced input fields and sections for all server types
     Then he sees list field ".tigerProxyCfg.proxyCfg.modifications"
 
     When he unfolds section ".tigerProxyCfg.proxyCfg.tls"
-    Then he sees input field ".tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation"
-    And he sees input field ".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation"
-    And he sees input field ".tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation"
+    Then he sees input field ".tigerProxyCfg.proxyCfg.tls.serverRootCa"
+    And he sees input field ".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity"
+    And he sees input field ".tigerProxyCfg.proxyCfg.tls.serverIdentity"
     And he sees input field ".tigerProxyCfg.proxyCfg.tls.domainName"
     And he sees list field ".tigerProxyCfg.proxyCfg.tls.alternativeNames"
     And he sees list field ".tigerProxyCfg.proxyCfg.tls.serverSslSuites"
@@ -143,9 +143,9 @@ Feature: Check advanced input fields and sections for all server types
     Then he sees list field ".tigerProxyCfg.proxyCfg.modifications"
 
     When he unfolds section ".tigerProxyCfg.proxyCfg.tls"
-    Then he sees input field ".tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation"
-    And he sees input field ".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation"
-    And he sees input field ".tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation"
+    Then he sees input field ".tigerProxyCfg.proxyCfg.tls.serverRootCa"
+    And he sees input field ".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity"
+    And he sees input field ".tigerProxyCfg.proxyCfg.tls.serverIdentity"
     And he sees input field ".tigerProxyCfg.proxyCfg.tls.domainName"
     And he sees list field ".tigerProxyCfg.proxyCfg.tls.alternativeNames"
     And he sees list field ".tigerProxyCfg.proxyCfg.tls.serverSslSuites"

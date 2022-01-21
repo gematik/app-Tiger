@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -198,7 +198,7 @@ public class RbelMessageValidator {
         } catch (final URISyntaxException e) {
             return false;
         } catch (PatternSyntaxException rte) {
-            log.error("Probable error while parsing regex!", rte);
+            log.error("Error while parsing regex!", rte);
             return false;
         }
     }

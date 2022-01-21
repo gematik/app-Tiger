@@ -1,0 +1,15 @@
+tigerProxy:
+
+servers:
+  testPkiKeysWithMissingCertificate:
+    hostname: missingCertificate
+    template: idp-ref
+    type: externalUrl
+    foo: barTemplate
+    source:
+      - yaml
+    active: true
+    pkiKeys:
+    - id: disc_sig
+      type: Certificate
+      pem:

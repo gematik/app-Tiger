@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,22 @@
 
 package de.gematik.test.tiger.common.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
+
+import java.io.File;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestTigerConfiguration {
 
+    @SneakyThrows
     @Test
-    public void readTestEnvYaml() {
-        assertThat(new TigerConfigurationHelper<TestCfg>().yamlReadOverwriteToConfig(
-            "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml",
-            "tiger", TestCfg.class))
+    public void readWithTigerConfiguration() {
+        TigerGlobalConfiguration.readFromYaml(
+            FileUtils.readFileToString(new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")), "tiger");
+        assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
             .extracting(TestCfg::getTemplates)
             .asList()
             .extracting("templateName")

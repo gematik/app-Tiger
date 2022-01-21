@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 gematik GmbH
+ * Copyright (c) 2022 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.util.SocketUtils;
 
 @Slf4j
@@ -31,7 +31,7 @@ public class TestSerenityRestSetup {
     public void useNonExistentProxy_ExceptionMessageShouldContainRequestInformation() throws Exception {
         withEnvironmentVariable("TIGER_ACTIVE", "1")
             .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")
-            .execute(() -> TigerDirector.beforeTestRun());
+            .execute(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()));
 
         final String proxy = "http://localhost:" + SocketUtils.findAvailableTcpPort();
         final String serverUrl = "http://localhost:5342/foobar";

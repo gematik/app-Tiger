@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-proxy</artifactId>
-    <version>0.17.1</version>
+    <version>0.18.0</version>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.17.1</version>
+        <version>0.18.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -163,11 +163,18 @@
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
             <artifactId>system-lambda</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
-            <version>${version.spring-boot-test}</version>
+            <version>${version.spring-boot}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.9.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
