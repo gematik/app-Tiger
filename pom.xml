@@ -57,6 +57,17 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <repositories>
+        <repository>
+            <id>001_jenkins-ci</id>
+            <url>https://repo.jenkins-ci.org/releases/</url>
+        </repository>
+        <repository>
+            <id>002_clojar</id>
+            <url>https://clojars.org/repo/</url>
+        </repository>
+    </repositories>
+
     <modules>
         <module>tiger-common</module>
         <module>tiger-proxy</module>
