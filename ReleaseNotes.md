@@ -1,5 +1,15 @@
 # Changelog Tiger Testplattform
 
+# Release 0.18.1
+
+## Bugfix
+* Tiger admin UI allow to rename nodes to ""
+
+## Features
+* TGR-50: Tiger test environment configuration now has an admin Web UI. Check out the tiger-admin module
+* TGR-306: Tiger admin UI now has "Duplicate node" feature
+
+
 # Release 0.18.0
 
 ## Breaking Change

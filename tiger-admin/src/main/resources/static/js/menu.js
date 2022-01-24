@@ -183,16 +183,7 @@ function populateServersFromYaml(testEnvYaml) {
   const serverList = Object.keys(testEnvYaml).sort();
   // update server list fields in all formulars, setting the value from testEnvYaml
   for (const serverKey in testEnvYaml) {
-    const form = $('#content_server_' + serverKey);
-    const serverList2 = [...serverList].filter(e => e !== serverKey);
-    if (testEnvYaml[serverKey].type === 'tigerProxy') {
-      form.updateServerList(serverList2, null, testEnvYaml[serverKey].tigerProxyCfg.proxiedServer);
-    }
-    form.updateDependsUponList(serverList2, null, "");
-    if (testEnvYaml[serverKey].dependsUpon) {
-      form.find('select[name="dependsUpon"]').val(testEnvYaml[serverKey].dependsUpon.split(','));
-      form.find('select[name="dependsUpon"]').bsMultiSelect("Update");
-    }
+    updateServerListFields(serverList, serverKey, testEnvYaml[serverKey]);
   }
 
 
@@ -201,8 +192,8 @@ function populateServersFromYaml(testEnvYaml) {
   }
   notifyChangesToTestenvData(false);
   snack(`Loaded yaml file`, 'success');
-
 }
+
 
 function addServer(serverKey, serverData) {
   const serverContent = $('.server-content');
@@ -258,6 +249,19 @@ function addServer(serverKey, serverData) {
       window.scrollTo(0, 0);
     });
 
+  }
+}
+
+function updateServerListFields(serverList, serverKey, serverData) {
+  const form = $('#content_server_' + serverKey);
+  const serverList2 = [...serverList].filter(e => e !== serverKey);
+  if (serverData.type === 'tigerProxy') {
+    form.updateServerList(serverList2, null, serverData.tigerProxyCfg.proxiedServer);
+  }
+  form.updateDependsUponList(serverList2, null, "");
+  if (serverData.dependsUpon) {
+    form.find('select[name="dependsUpon"]').val(serverData.dependsUpon.split(','));
+    form.find('select[name="dependsUpon"]').bsMultiSelect("Update");
   }
 }
 

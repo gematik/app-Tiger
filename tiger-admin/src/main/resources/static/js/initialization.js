@@ -19,7 +19,6 @@ $(document).ready(function () {
 
   // sidebar
 
-  // noinspection JSUnusedGlobalSymbols
   $.contextMenu({
     selector: '.context-menu-one',
     trigger: 'left',
@@ -32,6 +31,33 @@ $(document).ready(function () {
         case "restart":
         case "stop":
           danger('TODO feature ' + key + ' NOT implemented so far!');
+          break;
+        case "duplicate":
+          // get name for new node
+          // check if at least one digit is last char(s)
+          // parse to number and increase by one, check if exists repeat until non existing name found
+          let namePrefix = serverIndex + "_";
+          let ctr = 0;
+          let dash = serverIndex.lastIndexOf("_");
+          if (dash !== -1) {
+            ctr = Number(serverIndex.substr(dash+1));
+            namePrefix = serverIndex.substr(0, dash + 1);
+          }
+          const serverList = Object.keys(currEnvironment).sort();
+          ctr++;
+          while (serverList.includes(namePrefix + String(ctr).padStart(3, '0'))) {
+            ctr++;
+          }
+          // deep copy node
+          // check how to best do deep copy, maybe JSON.stringify? or lodash?
+          let newNode = JSON.parse(JSON.stringify(currEnvironment[serverIndex]));
+          const serverKey = namePrefix + String(ctr).padStart(3, '0');
+          newNode.hostname = serverKey;
+          currEnvironment[serverKey] = newNode;
+          // add new node
+          addServer(serverKey, newNode);
+          serverList.push(serverKey)
+          updateServerListFields(serverList, serverKey, newNode);
           break;
         case "delete":
           confirmNoDefault(true, 'Delete node ' + serverIndex, 'Do you really want to delete this node?', function() {
@@ -59,12 +85,8 @@ $(document).ready(function () {
       }
     },
     items: {
-      "start": {name: "Start", icon: "fas text-success fa-play ctxt-start"},
-      "restart": {name: "Restart", icon: "fas text-success fa-undo ctxt-restart"},
-      "stop": {name: "Stop", icon: "fas text-warning fa-stop ctxt-stop"},
-      "delete": {name: "Delete", icon: "fas text-danger fa-trash-alt ctxt-delete"},
-      /* TODO logging is way to go
-          "logs": {name: "Logs", icon: "fas fa-terminal"},*/
+      "duplicate": {name: "Duplicate", icon: "far text-success fa-clone ctxt-duplicate"},
+      "delete": {name: "Delete", icon: "fas text-danger fa-trash-alt ctxt-delete"}
     }
   });
 

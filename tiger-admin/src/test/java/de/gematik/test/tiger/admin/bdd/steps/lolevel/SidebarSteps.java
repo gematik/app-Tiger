@@ -3,9 +3,11 @@ package de.gematik.test.tiger.admin.bdd.steps.lolevel;
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.PerformDragAction;
 import de.gematik.test.tiger.admin.bdd.pages.AdminHomePage;
+import de.gematik.test.tiger.admin.bdd.pages.ServerFormular;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.ensure.Ensure;
 
 public class SidebarSteps {
@@ -49,6 +51,14 @@ public class SidebarSteps {
     public void triesToDragSidebarItemBelow(String srcNodeName, String destNodeName) {
         theActorInTheSpotlight().attemptsTo(
             PerformDragAction.dragsItemBelow(AdminHomePage.sidebarItemOf(srcNodeName), AdminHomePage.sidebarItemOf(destNodeName), 10)
+        );
+    }
+
+    @And("he duplicates node {string}")
+    public void heDuplicatesNode(String nodeName) {
+        theActorInTheSpotlight().attemptsTo(
+            Click.on(ServerFormular.sidebarItemContextMenu(nodeName)),
+            Click.on(ServerFormular.sidebarItemContextMenuEntry("duplicate"))
         );
     }
 }
