@@ -121,8 +121,7 @@ public class TigerProxyRoutingTest {
                 .extracting(TigerRouteDto::getFrom)
                 .contains("http://tiger.proxy", "http://myserv.er");
     }
-
-    @Disabled // fix with TGR-224
+    
     @Test
     public void testRouteUI() {
         mockServerClient.when(request()
