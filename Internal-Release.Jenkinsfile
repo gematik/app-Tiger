@@ -84,9 +84,11 @@ pipeline {
                     }
                 }
                 stage('deleteOldArtifacts') {
-                    steps {
-                        script {
-                            nexusDeleteArtifacts(RELEASE_VERSION, ARTIFACT_IDs, GROUP_ID)
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                        steps {
+                            script {
+                                nexusDeleteArtifacts(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID)
+                            }
                         }
                     }
                 }

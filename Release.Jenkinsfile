@@ -15,10 +15,16 @@ pipeline {
     parameters {
         string(name: 'NEW_VERSION', defaultValue: '', description: 'Bitte die nächste Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
         choice(name: 'DRY_RUN', choices: ['NO', 'YES'], description: 'Execute the preparing steps but do not push anything.')
+        choice(name: 'INTERNAL', choices: ['YES', 'NO'], description: 'Internes Release wird ausgeführt.')
+        choice(name: 'GITHUB', choices: ['YES', 'NO'], description: 'GitHub-Release wird ausgeführt.')
+        choice(name: 'MAVENCENTRAL', choices: ['YES', 'NO'], description: 'Maven-Central-Release wird ausgeführt.')
     }
 
     stages {
         stage('Internal-Release') {
+            when {
+                expression { params.INTERNAL == 'YES' }
+            }
             steps {
                 build job: 'Tiger-Internal-Release',
                 parameters: [
@@ -29,6 +35,9 @@ pipeline {
         }
 
         stage('GitHub-Release') {
+            when {
+                expression { params.GITHUB == 'YES' }
+            }
             steps {
                build job: 'Tiger-GitHub-Release',
                parameters: [
@@ -41,6 +50,9 @@ pipeline {
         }
 
         stage('Maven-Central-Release') {
+            when {
+                expression { params.MAVENCENTRAL == 'YES' }
+            }
             steps {
                 build job: 'Tiger-Maven-Central-Release'
             }
