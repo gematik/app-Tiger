@@ -14,7 +14,10 @@ public class NavigateTo {
     public static Performable adminUIHomePage() {
         return Task.where("{0} opens the Admin UI home page",
             Open.url("http://127.0.0.1:" + SpringBootDriver.getAdminPort()),
-            Ensure.that(AdminHomePage.WELCOME_CARD).isDisplayed()
+            Ensure.that(AdminHomePage.WELCOME_CARD).isDisplayed(),
+            Ensure.that(PerformActionsOnSnack.snackWithTextStartingWith("Templates loaded")).isDisplayed(),
+            Ensure.that(PerformActionsOnSnack.snackWithTextStartingWith("ConfigScheme loaded")).isDisplayed(),
+            Pause.pauseFor(500) // to allow initialization ajax calls to finish
         );
     }
 }
