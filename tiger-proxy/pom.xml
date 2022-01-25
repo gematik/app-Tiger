@@ -142,7 +142,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
-            <version>2.5.0</version>
+            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>org.awaitility</groupId>
