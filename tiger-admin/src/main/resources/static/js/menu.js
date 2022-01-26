@@ -583,7 +583,7 @@ function loadMetaDataFromServer() {
         addServerModal.find('.btn-add-server-ok').setEnabled(true);
         addServerModal.find('button.dropdown-toggle').html($(this).html());
       });
-      snack('Templates loaded', 'success', 1000);
+      snack('Templates loaded', 'success', 2000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);
@@ -598,7 +598,7 @@ function loadMetaDataFromServer() {
     dataType: 'json',
     success: function (res) {
       configScheme = res;
-      snack('ConfigScheme loaded', 'success', 1000);
+      snack('ConfigScheme loaded', 'success', 2000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);
