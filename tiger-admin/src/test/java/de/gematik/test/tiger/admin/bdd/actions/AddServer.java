@@ -3,10 +3,12 @@ package de.gematik.test.tiger.admin.bdd.actions;
 import static net.serenitybdd.screenplay.Tasks.instrumented;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.PerformActionsOnSnack;
 import de.gematik.test.tiger.admin.bdd.pages.AdminHomePage;
+import java.time.Duration;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.Performable;
 import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.ensure.Ensure;
+import net.serenitybdd.screenplay.targets.EnsureFieldVisible;
 import net.serenitybdd.screenplay.targets.Target;
 import net.thucydides.core.annotations.Step;
 
@@ -54,7 +56,7 @@ public class AddServer implements Performable {
             Ensure.that(addServerBtn).isEnabled(),
             // Actions
             Click.on(addServerBtn),
-            Ensure.that(MODAL_ADD_SERVER).isDisplayed(),
+            Ensure.that(MODAL_ADD_SERVER.waitingForNoMoreThan(Duration.ofSeconds(5))).isDisplayed(),
             Click.on(dropDownButton),
             Click.on(getNodeTypeListEntryFor(nodeType)),
             Click.on(BTN_ADD_SERVER_OK),
