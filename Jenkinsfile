@@ -13,7 +13,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
-    agent { label 'Docker-Maven' }
+    agent { label 'k8-maven' }
 
     tools {
         maven 'Default'
