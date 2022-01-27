@@ -265,16 +265,35 @@ https://github.com/xmlunit/user-guide/wiki/DiffBuilder[online documentation of t
 ===== JSONChecker
 
 Using the validation step `TGR current response at {string} matches as JSON` you are able to compare the content of any RbelPath node
-in the response to the doc string beneath the step applying the JSONChecker comparison algorithm.
+in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.
 
-The JSONChecker class performs a multilevel comparison of JSON structures, checking for identical existence of keys and matching values.
+The purpose of JSONChecker class is to compare JSON structures, including checking for the integrity of the whole RbelPath node, as well as matching values for particular keys.
 
-Values will be first checked for containing "${json-unit.ignore}" in which case the value comparison will default to true, then for equals and finally for regex matching.
+To make sure all the attributes in your JSON RbelPath structure are present, such features as ${json-unit.ignore}, $NULL, optional attributes, regular expressions and lenient mode can come in handy.
 
-JSON object attributes starting with four underscores "____" are optional and allow the doc string
-to contain attributes to be checked for value ONLY if it exists in the test JSON RBelPath node.
+${json-unit.ignore} is a parameter which allows to ignore certain values in your RbelPath node while comparing, and the result of such comparison always returns true.
+It also works when ${json-unit.ignore} is used in a JSON array or nested JSON object.
+This parameter should be placed as a value of a key.
+Also to ignore some attributes in the JSON structure, you can set a boolean value checkExtraAttributes as false.
+In this case if you miss one attribute in your doc string, the comparison will still be equal to true.
 
-JSON Arrays are compared in lenient mode (strict order not necessary).
+To check whether the value for a particular key is null, you can either use null or parameter $NULL at the place of the value.
+Checking whether a nested key is null also works with JSONChecker.
+
+Four underscores "____" before the JSON keys indicate that these keys are optional and will be checked for the value ONLY if the value exists in the test JSON RBelPath node.
+Please note that checking whether a nested key is optional, is not yet possible with JsonChecker.
+
+JSON Arrays are compared in lenient mode, meaning that the order of elements in JSON array doesn't matter.
+
+Identifying missing keys is made easy in JSONChecker with the help of parameter $REMOVE.
+
+If you specify the name of the key and then $REMOVE parameter as its value, the comparison will result in true, if the key is indeed missing and false, if the key is present.
+It is worth noting that even if the value of the key is null, the key doesn't count as missing.
+
+Last but not least, regular expressions, which can be used for matching the whole JSON element, as well as particular values.
+It will be first checked, whether the expected value is equal to the actual one, and only afterwards, if the actual value matches a regular expression.
+
+It should also be noted, that although JSONChecker can match multilevel JSON objects at a high level, it is not yet possible to access nested attributes out of the box. We are working on it :)
 
 .Simple adapted example from the IDP test suite
 [source, json]
@@ -282,7 +301,7 @@ JSON Arrays are compared in lenient mode (strict order not necessary).
   {
     "alg": "dir",
     "enc": "A256GCM",
-    "cty": "NJWT",
+    "cty": "$NULL",
     "exp": "[\\d]*",
     "____kid": ".*",
     "dummyentry": "${json-unit.ignore}",
@@ -293,9 +312,11 @@ JSON Arrays are compared in lenient mode (strict order not necessary).
 
 The example above shows three main features of the JSONChecker.
 
+* Value specified as $NULL, meaning this value of this key is equal to null.
 * Usage of regular expression (e.g. ".\*" and "[\\d]*") to match values.
 * Usage of "____" preceeding a json key.- This indicates that the entry is optional but if it exists it must match the given value.
 * if a value is specified as "${json-unit.ignore}", there is no check performed at all. This applies also to objects and arrays as seen in the dummyarray2 entry.
+* if we match key dummyEntry2 to the value of $REMOVE, it will return true, because this key does not exist.
 
 ===== Regex matching
 
