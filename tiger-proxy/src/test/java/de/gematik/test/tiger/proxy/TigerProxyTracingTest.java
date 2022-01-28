@@ -33,13 +33,12 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 @ExtendWith(SpringExtension.class)
-@ExtendWith(MockServerExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RequiredArgsConstructor
 public class TigerProxyTracingTest {
 
     private static final Duration DEFAULT_WAIT_TIME = Duration.of(20, ChronoUnit.SECONDS);
-    private final ClientAndServer mockServerClient;
+    private ClientAndServer mockServerClient = new ClientAndServer();
     private UnirestInstance unirestInstance;
     @Autowired
     private TigerProxy tigerProxy;
@@ -76,6 +75,7 @@ public class TigerProxyTracingTest {
     @AfterEach
     public void reset() {
         receivingTigerProxy.unsubscribe();
+        receivingTigerProxy.close();
         tigerProxy.clearAllRoutes();
         tigerProxy.getRbelLogger().getRbelConverter().getPostConversionListeners().clear();
     }

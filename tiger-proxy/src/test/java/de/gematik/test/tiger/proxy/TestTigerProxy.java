@@ -10,6 +10,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -43,11 +45,37 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockserver.client.MockServerClient;
 import org.mockserver.model.MediaType;
+import org.mockserver.model.SocketAddress;
+import org.mockserver.netty.MockServer;
 
 @Slf4j
 public class TestTigerProxy extends AbstractTigerProxyTest {
+
+    public MockServerClient forwardProxy;
+
+    @BeforeEach
+    public void setupForwardProxy() {
+        if (forwardProxy != null) {
+            return;
+        }
+
+        MockServer forwardProxyServer = new MockServer();
+
+        forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
+        log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
+
+        forwardProxy.when(request())
+            .forward(
+                req -> forwardOverriddenRequest(
+                    req.withSocketAddress(
+                        "localhost", fakeBackendServer.port(), SocketAddress.Scheme.HTTP
+                    ))
+                    .getHttpRequest());
+    }
 
     @Test
     public void useAsWebProxyServer_shouldForward() throws IOException {

@@ -8,8 +8,8 @@ def GITLAB_PROJECT_ID = '644'
 def TITLE_TEXT = 'Release'
 def GROUP_ID_PATH = "de/gematik/test"
 def GROUP_ID = "de.gematik.test"
-def ARTIFACT_ID = 'tiger-standalone-proxy'
-def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-bdd-driver-generator-maven-plugin,tiger-standalone-proxy,tiger-proxy,tiger-testenv-mgr,tiger-test-lib'
+def ARTIFACT_ID = 'tiger-testenv-mgr'
+def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-bdd-driver-generator-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib'
 def POM_PATH = 'pom.xml'
 def PACKAGING = "jar"
 

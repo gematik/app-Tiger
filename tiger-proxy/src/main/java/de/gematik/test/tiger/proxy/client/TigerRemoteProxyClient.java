@@ -240,13 +240,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         @Override
         public void handleException(StompSession stompSession, StompCommand stompCommand, StompHeaders stompHeaders,
             byte[] bytes, Throwable throwable) {
-            log.error("handle exception TigerRemoteProxy: {}, {}", new String(bytes), throwable);
+            log.error("handle exception with remote url '{}': {}, {}", remoteProxyUrl, new String(bytes), throwable);
             throw new TigerRemoteProxyClientException(throwable);
         }
 
         @Override
         public void handleTransportError(StompSession session, Throwable exception) {
-            log.error("handle transport Error TigerRemoteProxy: {}", exception);
+            log.error("handle transport error from url '{}': {}", remoteProxyUrl, exception);
             throw new TigerRemoteProxyClientException(exception);
         }
     }

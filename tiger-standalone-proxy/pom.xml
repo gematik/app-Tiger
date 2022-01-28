@@ -14,34 +14,6 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <properties>
-        <docker.image.name>tiger-proxy</docker.image.name>
-        <java.version>11</java.version>
-        <spring-native.version>0.9.1</spring-native.version>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <cucumber.filter.tags></cucumber.filter.tags>
-    </properties>
-
-    <profiles>
-        <profile>
-            <id>WithoutUiTests</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
-            </properties>
-        </profile>
-        <profile>
-            <id>WithUiTests</id>
-            <properties>
-                <!--suppress UnresolvedMavenProperty -->
-                <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
-            </properties>
-        </profile>
-    </profiles>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -56,125 +28,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>30.1.1-jre</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-proxy</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-ext</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <exclusions>
-                <exclusion>
-                    <artifactId>junit</artifactId>
-                    <groupId>junit</groupId>
-                </exclusion>
-            </exclusions>
-            <groupId>org.springframework.boot</groupId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility</artifactId>
-            <version>4.1.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- serenity needs vintage as its still based upon junit4 -->
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <version>${version.junit5}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.11.4</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.arkinator</groupId>
-            <artifactId>mockserver-junit-jupiter</artifactId>
-            <version>5.11.4</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-rest-assured</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-spring</artifactId>
-            <version>${version.serenity.core}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-screenplay</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -211,58 +67,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>de.gematik.test</groupId>
-                <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
-                <version>${project.version}</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <skip>false</skip>
-                            <templateFile>${project.basedir}/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
-                            <basedir>${project.basedir}/src/test/resources/features</basedir>
-                            <includes>
-                                <include>**/*.feature</include>
-                            </includes>
-                            <!-- mandatory -->
-                            <glues>
-                                <glue>de.gematik.test.tiger.proxy.ui.glue</glue>
-                            </glues>
-                            <!-- optional -->
-                            <driverPackage>de.gematik.test.tiger.admin.bdd.drivers</driverPackage>
-                            <!-- optional -->
-                            <driverClassName>Parallel${ctr}IT</driverClassName>
-                        </configuration>
-                        <phase>generate-test-sources</phase>
-                        <id>default-testSources</id>
-                        <goals>
-                            <goal>generate-drivers</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
-                <configuration>
-                    <includes>
-                        <include>**/Parallel*IT.java</include>
-                        <include>**/*Test.java</include>
-                        <exclude>**/UiTest.java</exclude>
-                    </includes>
-                    <environmentVariables>
-                        <MOZ_HEADLESS>1</MOZ_HEADLESS>
-                    </environmentVariables>
-                    <systemPropertyVariables>
-                        <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
-                    </systemPropertyVariables>
-                    <!-- TODO TGR-262 Julian this is workaround for java heap space issue -->
-                    <forkMode>always</forkMode>
-                    <testFailureIgnore>true</testFailureIgnore>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${version.spring-boot}</version>
@@ -275,47 +79,9 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>de.gematik.test.tiger.proxy.TigerStandaloneProxyApplication</mainClass>
+                    <mainClass>de.gematik.test.tiger.proxy.TigerProxyApplication</mainClass>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>net.serenity-bdd.maven.plugins</groupId>
-                <artifactId>serenity-maven-plugin</artifactId>
-                <version>${version.serenity.maven.plugin}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>net.serenity-bdd</groupId>
-                        <artifactId>serenity-core</artifactId>
-                        <version>${version.serenity.core}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>net.serenity-bdd</groupId>
-                        <artifactId>serenity-single-page-report</artifactId>
-                        <version>${version.serenity.maven.plugin}</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <reports>single-page-html</reports>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>serenity-reports</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>aggregate</goal>
-                            <goal>reports</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>serenity-check</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
-    </build>
+   </build>
 </project>

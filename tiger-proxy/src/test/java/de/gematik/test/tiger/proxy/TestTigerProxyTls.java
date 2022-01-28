@@ -33,7 +33,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class TestTigerProxyTls extends AbstractTigerProxyTest {

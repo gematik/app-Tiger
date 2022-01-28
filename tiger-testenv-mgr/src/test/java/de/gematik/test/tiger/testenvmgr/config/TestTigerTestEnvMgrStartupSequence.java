@@ -164,7 +164,7 @@ public class TestTigerTestEnvMgrStartupSequence {
     @ParameterizedTest
     @MethodSource("checkSuccessfullStartupSequencesParameters")
     public void checkSuccessfullStartupSequences(Map<String, TigerServer> serverMap,
-        List<List<String>> startupSequences) {
+                                                 List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
 
         envMgr.setUpEnvironment();

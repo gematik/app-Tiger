@@ -1,7 +1,8 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
-import de.gematik.test.tiger.common.config.CfgExternalJarOptions;
+import de.gematik.test.tiger.common.config.CfgTigerProxyOptions;
 import de.gematik.test.tiger.common.config.PkiType;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -11,12 +12,6 @@ import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.platform.commons.util.StringUtils;
-
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
@@ -27,8 +22,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.platform.commons.util.StringUtils;
+import org.springframework.util.SocketUtils;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -114,7 +113,8 @@ public abstract class TigerServer {
         if (configuration.getUrlMappings() != null) {
             configuration.getUrlMappings().forEach(mapping -> {
                 if (StringUtils.isBlank(mapping) || !mapping.contains("-->") || mapping.split(" --> ", 2).length != 2) {
-                    throw new TigerConfigurationException("The urlMappings configuration '" + mapping + "' is not correct. Please check your .yaml-file.");
+                    throw new TigerConfigurationException("The urlMappings configuration '" + mapping
+                        + "' is not correct. Please check your .yaml-file.");
                 }
 
                 String[] routeParts = mapping.split(" --> ", 2);
@@ -195,25 +195,23 @@ public abstract class TigerServer {
 
         assertCfgPropertySet(getConfiguration(), "type");
 
-        if (type != ServerType.EXTERNALJAR && type != ServerType.EXTERNALURL && type != ServerType.DOCKER_COMPOSE) {
+        if (type == ServerType.DOCKER) {
             assertCfgPropertySet(getConfiguration(), "version");
         }
 
-        // set default value for Tiger Proxy source
-        if (type == ServerType.TIGERPROXY && (getConfiguration().getSource() == null || getConfiguration().getSource()
-            .isEmpty())) {
-            log.info("Defaulting tiger proxy source to gematik nexus for " + serverId);
-            getConfiguration().setSource(new ArrayList<>(List.of("nexus")));
-        }
-        // set default value for Tiger Proxy external Jar options
-        if (type == ServerType.TIGERPROXY && getConfiguration().getExternalJarOptions() == null) {
-            getConfiguration().setExternalJarOptions(new CfgExternalJarOptions());
-        }
-
-        // set default value for Tiger Proxy healthcheck
-        if (type == ServerType.TIGERPROXY && getConfiguration().getExternalJarOptions().getHealthcheck() == null) {
-            getConfiguration().getExternalJarOptions()
-                .setHealthcheck("http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getServerPort());
+        // assert that server-port is set for the tiger-proxy
+        if (type == ServerType.TIGERPROXY) {
+            if (getConfiguration().getTigerProxyCfg() == null) {
+                getConfiguration().setTigerProxyCfg(new CfgTigerProxyOptions());
+            }
+            if (getConfiguration().getTigerProxyCfg().getServerPort() <= 0) {
+                getConfiguration().getTigerProxyCfg().setServerPort(SocketUtils.findAvailableTcpPort());
+            }
+            if (getConfiguration().getTigerProxyCfg().getProxyCfg() == null
+                || getConfiguration().getTigerProxyCfg().getProxyCfg().getPort() == null
+                || getConfiguration().getTigerProxyCfg().getProxyCfg().getPort() <= 0) {
+                throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getHostname() + "'");
+            }
         }
 
         // set default values for all types
@@ -223,7 +221,7 @@ public abstract class TigerServer {
         }
 
         // defaulting work dir to temp folder on system if not set in config
-        if (type == ServerType.EXTERNALJAR || type == ServerType.TIGERPROXY) {
+        if (type == ServerType.EXTERNALJAR) {
             String folder = getConfiguration().getExternalJarOptions().getWorkingDir();
             if (folder == null) {
                 folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile().getAbsolutePath();
@@ -243,7 +241,7 @@ public abstract class TigerServer {
         }
 
         if (type == ServerType.EXTERNALJAR) {
-            assertCfgPropertySet(getConfiguration().getExternalJarOptions(), "healthcheck");
+            assertCfgPropertySet(getConfiguration(), "externalJarOptions", "healthcheck");
         }
 
         if (type == ServerType.TIGERPROXY) {
@@ -254,30 +252,35 @@ public abstract class TigerServer {
     }
 
     @SneakyThrows
-    private void assertCfgPropertySet(Object srv, String propName) {
-        Method mthd = srv.getClass()
-            .getMethod("get" + Character.toUpperCase(propName.charAt(0)) + propName.substring(1));
-        Object value = mthd.invoke(srv);
-        if (value == null) {
-            throw new TigerTestEnvException("Server " + propName + " must be set and must not be NULL!");
-        }
-        if (value instanceof List) {
-            List<?> l = (List<?>) value;
-            if (l.isEmpty() ||
-                l.get(0) == null) {
-                throw new TigerTestEnvException(
-                    "Server " + propName + " list must be set and must contain at least one not empty entry!");
+    private void assertCfgPropertySet(Object target, String... propertyNames) {
+        for (int i = 0; i < propertyNames.length; i++) {
+            var propertyName = propertyNames[i];
+            Method mthd = target.getClass()
+                .getMethod("get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1));
+            target = mthd.invoke(target);
+            if (target == null) {
+                throw new TigerTestEnvException("Server " + propertyName + " must be set and must not be NULL!");
             }
-            if (l.get(0) instanceof String) {
-                if (((String) l.get(0)).isBlank()) {
+            if (target instanceof List) {
+                List<?> l = (List<?>) target;
+                if (l.isEmpty() ||
+                    l.get(0) == null) {
                     throw new TigerTestEnvException(
-                        "Server " + propName + " list must be set and must contain at least one not empty entry!");
+                        "Server " + propertyName + " list must be set and must contain at least one not empty entry!");
                 }
-            }
-        } else {
-            if (value instanceof String) {
-                if (((String) value).isBlank()) {
-                    throw new TigerTestEnvException("Server " + propName + " must be set and must not be empty!");
+                if (l.get(0) instanceof String) {
+                    if (((String) l.get(0)).isBlank()) {
+                        throw new TigerTestEnvException(
+                            "Server " + propertyName
+                                + " list must be set and must contain at least one not empty entry!");
+                    }
+                }
+            } else {
+                if (target instanceof String) {
+                    if (((String) target).isBlank()) {
+                        throw new TigerTestEnvException(
+                            "Server " + propertyName + " must be set and must not be empty!");
+                    }
                 }
             }
         }

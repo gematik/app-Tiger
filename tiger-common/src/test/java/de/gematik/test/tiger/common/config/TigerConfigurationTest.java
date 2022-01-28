@@ -372,7 +372,26 @@ public class TigerConfigurationTest {
             });
     }
 
+    @Test
+    public void buildSnapshotMap_shouldContainAllRelevantValuesButNoNullOrDefault() throws Exception {
+        withEnvironmentVariable("blub.blab.string", "stringValue")
+            .and("blub.blab.integer", "1234")
+            .and("blub.blab.nestedBean.foo", "schmar")
+            .and("blub.blab.nestedBean.bar", "420")
+            .execute(() -> {
+                TigerGlobalConfiguration.reset();
+                TigerGlobalConfiguration.initialize();
+                Map<String, String> map = TigerGlobalConfiguration.readMap("blub", "blab");
+                assertThat(map)
+                    .containsEntry("string", "stringValue")
+                    .containsEntry("integer", "1234")
+                    .containsEntry("nestedbean.foo", "schmar")
+                    .containsEntry("nestedbean.bar", "420");
+            });
+    }
+
     @Data
+    @Builder
     public static class DummyBean {
         private String string;
         private int integer;

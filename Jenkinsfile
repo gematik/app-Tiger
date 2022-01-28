@@ -6,8 +6,7 @@ def JIRA_PROJECT_ID = 'TGR'
 def GITLAB_PROJECT_ID = '644'
 def TAG_NAME = "ci/build"
 def POM_PATH = 'pom.xml'
-def POM_PATH_PRODUCT = 'tiger-standalone-proxy/pom.xml'
-
+def POM_PATH_PRODUCT = 'tiger-testenv-mgr/pom.xml'
 
 pipeline {
     options {

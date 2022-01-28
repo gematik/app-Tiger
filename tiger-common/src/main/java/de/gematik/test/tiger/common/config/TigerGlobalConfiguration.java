@@ -1,5 +1,7 @@
 package de.gematik.test.tiger.common.config;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,9 @@ public class TigerGlobalConfiguration {
 
         initialized = true;
         globalConfigurationLoader.initialize();
+
+        globalConfigurationLoader.loadSystemProperties();
+        globalConfigurationLoader.loadEnvironmentVariables();
     }
 
     public synchronized static String readString(String key) {
@@ -70,5 +75,13 @@ public class TigerGlobalConfiguration {
             TigerGlobalConfiguration.initialize();
             initialized = true;
         }
+    }
+
+    public static Map<String, String> readMap(String... baseKeys) {
+        return globalConfigurationLoader.readMap(baseKeys);
+    }
+
+    public static List<TigerConfigurationSource> listSources() {
+        return globalConfigurationLoader.listSources();
     }
 }

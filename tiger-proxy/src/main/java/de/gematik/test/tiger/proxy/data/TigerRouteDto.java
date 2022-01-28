@@ -23,10 +23,10 @@ public class TigerRouteDto {
 
     public static TigerRouteDto from(TigerRoute route) {
         return TigerRouteDto.builder()
-                .from(route.getFrom())
-                .to(route.getTo())
-                .id(route.getId())
-                .disableRbelLogging(route.isDisableRbelLogging())
-                .build();
+            .from(route.getFrom())
+            .to(route.getTo())
+            .id(route.getId())
+            .disableRbelLogging(route.isDisableRbelLogging())
+            .build();
     }
 }

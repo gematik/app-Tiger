@@ -1,33 +1,30 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.CfgTigerProxyOptions;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneServer;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.HashMap;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
 
 @Slf4j
-public class TigerProxyServer extends ExternalJarServer {
+public class TigerProxyServer extends AbstractExternalTigerServer {
+
+    private ConfigurableApplicationContext applicationContext;
 
     TigerProxyServer(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
-        super(serverId, configuration, tigerTestEnvMgr);
+        super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
     }
 
     @Override
@@ -52,41 +49,28 @@ public class TigerProxyServer extends ExternalJarServer {
             route.setTo(getTigerTestEnvMgr().replaceSysPropsInString(route.getTo()));
         });
 
-        final String downloadUrl;
-        final String jarFile = "tiger-standalone-proxy-" + getConfiguration().getVersion() + ".jar";
-        if (getConfiguration().getSource().get(0).equals("nexus")) {
-            downloadUrl =
-                "https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/test/tiger-standalone-proxy/"
-                    + getConfiguration().getVersion() + "/" + jarFile;
-        } else if (getConfiguration().getSource().get(0).equals("maven")) {
-            downloadUrl = "https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy/"
-                + getConfiguration().getVersion() + "/" + jarFile;
-        } else {
-            downloadUrl = getConfiguration().getSource().get(0);
-        }
-        final File folder = new File(getConfiguration().getExternalJarOptions().getWorkingDir());
-        getConfiguration().setSource(List.of(downloadUrl));
-        if (getConfiguration().getExternalJarOptions().getHealthcheck() == null) {
-            getConfiguration().getExternalJarOptions().setHealthcheck("http://127.0.0.1:" + reverseProxyCfg.getServerPort());
-        }
-        if (getConfiguration().getExternalJarOptions().getArguments() == null) {
-            getConfiguration().getExternalJarOptions().setArguments(new ArrayList<>());
-        }
-        getConfiguration().getExternalJarOptions().getArguments().add("--spring.profiles.active=" + getHostname());
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("server.port", reverseProxyCfg.getServerPort());
+        properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
 
-        writeTigerConfigurationToYamlFile(standaloneCfg, folder);
+        applicationContext = new SpringApplicationBuilder()
+            .properties(properties)
+            .sources(TigerProxyApplication.class)
+            .web(WebApplicationType.SERVLET)
+            .initializers()
+            .run();
 
-        super.performStartup();
+        waitForService(true);
+        if (getStatus() == TigerServerStatus.STARTING) {
+            waitForService(false);
+        }
     }
 
-    private void writeTigerConfigurationToYamlFile(CfgStandaloneProxy standaloneCfg, File folder) {
-        try {
-            ObjectMapper om = new ObjectMapper(new YAMLFactory());
-            om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            om.writeValue(Path.of(folder.getAbsolutePath(), "application-" + getHostname() + ".yaml").toFile(),
-                standaloneCfg);
-        } catch (IOException e) {
-            throw new TigerEnvironmentStartupException("Error while writing Tiger-Proxy YAML-File for " + getHostname(), e);
+    @Override
+    public void shutdown() {
+        if (applicationContext != null
+            && applicationContext.isRunning()) {
+            applicationContext.stop();
         }
     }
 
@@ -107,7 +91,8 @@ public class TigerProxyServer extends ExternalJarServer {
                         + "' make sure to start it first or have a valid healthcheck setting!");
                 } else {
                     destUrl =
-                        cfg.getProxyProtocol() + "://127.0.0.1:" + getConfiguration().getDockerOptions().getPorts().values()
+                        cfg.getProxyProtocol() + "://127.0.0.1:" + getConfiguration().getDockerOptions().getPorts()
+                            .values()
                             .iterator().next();
                 }
             } else {
@@ -138,5 +123,15 @@ public class TigerProxyServer extends ExternalJarServer {
         tigerRoute.setFrom("/");
         tigerRoute.setTo(destUrl);
         cfg.getProxyCfg().getProxyRoutes().add(tigerRoute);
+    }
+
+    @Override
+    String getHealthcheckUrl() {
+        return "http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getServerPort();
+    }
+
+    @Override
+    boolean isHealthCheckNone() {
+        return false;
     }
 }

@@ -1,6 +1,6 @@
 package de.gematik.test.tiger.proxy;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -39,6 +39,6 @@ public class TigerProxyStartupErrorsTest {
             .withInitializer(new ConfigDataApplicationContextInitializer())
             .withBean("webServerAppCtxt", ServletWebServerApplicationContext.class,
                 () -> mock(ServletWebServerApplicationContext.class))
-            .withConfiguration(AutoConfigurations.of(TigerStandaloneProxyApplication.class));
+            .withConfiguration(AutoConfigurations.of(TigerProxyApplication.class));
     }
 }

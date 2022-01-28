@@ -20,17 +20,17 @@ public class TigerConfigurationSource {
     public static final int SYSTEM_RUNTIME_EXPORT_ORDER = 50;
 
     private final List<TigerConfigurationKeyString> basePath;
-    private final Map<List<TigerConfigurationKeyString>, String> values;
+    private final Map<TigerConfigurationKey, String> values;
     private final int order;
 
-    public Map<List<TigerConfigurationKeyString>, String> applyTemplatesAndAddValuesToMap(List<TigerTemplateSource> loadedTemplates,
-                                                                                          Map<List<TigerConfigurationKeyString>, String> loadedAndSortedProperties) {
-        Map<List<TigerConfigurationKeyString>, String> finalValues = new HashMap<>();
+    public Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(List<TigerTemplateSource> loadedTemplates,
+                                                                                          Map<TigerConfigurationKey, String> loadedAndSortedProperties) {
+        Map<TigerConfigurationKey, String> finalValues = new HashMap<>();
 
         finalValues.putAll(loadedAndSortedProperties);
         finalValues.putAll(values);
 
-        final List<List<TigerConfigurationKeyString>> appliedTemplates = loadedTemplates.stream()
+        final List<TigerConfigurationKey> appliedTemplates = loadedTemplates.stream()
             .map(template -> template.applyToAllApplicable(this, finalValues))
             .flatMap(List::stream)
             .collect(Collectors.toList());

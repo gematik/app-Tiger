@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.exception;
+package de.gematik.test.tiger.proxy.exceptions;
 
 public class TigerProxyStartupException extends RuntimeException {
 

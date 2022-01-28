@@ -4,6 +4,11 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -11,6 +16,12 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -25,30 +36,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.mock.Expectation;
-import org.mockserver.model.Delay;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.SocketUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.mockserver.model.HttpRequest.request;
-
 // TGR-296 rewrite disabled tests and don't use separate java processes. if this isn't possibly, we need to change the jenkins-agent
 @Slf4j
 public class TestTigerTestEnvMgr {
+
+    MockServer mockServer;
+    MockServerClient mockServerClient;
+    Expectation downloadExpectation;
+    private byte[] winstoneBytes;
 
     static Stream<Arguments> cfgFileAndMandatoryPropertyProvider() {
         return Stream.of(
@@ -56,18 +56,12 @@ public class TestTigerTestEnvMgr {
             arguments("testDocker", "source"),
             arguments("testDocker", "version"),
             arguments("testTigerProxy", "type"),
-            arguments("testTigerProxy", "version"),
             arguments("testExternalJar", "type"),
             arguments("testExternalJar", "source"),
             arguments("testExternalUrl", "type"),
             arguments("testExternalUrl", "source")
         );
     }
-
-    MockServer mockServer;
-    MockServerClient mockServerClient;
-    Expectation downloadExpectation;
-    private byte[] winstoneBytes;
 
     @BeforeEach
     public void startServer() throws IOException {
@@ -130,13 +124,16 @@ public class TestTigerTestEnvMgr {
 
     @Test
     public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK() {
-        System.setProperty("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testTigerProxy.yaml");
         TigerGlobalConfiguration.initialize();
+        TigerGlobalConfiguration.readFromYaml(
+            "servers:\n" +
+                "  testTigerProxy:\n" +
+                "    type: tigerProxy\n" +
+                "    tigerProxyCfg:\n" +
+                "      serverPort: 9999", "tiger");
 
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-            srv.getTigerProxyCfg().setServerPort(-1);
             assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, null)
                 .assertThatConfigurationIsCorrect())
                 .isInstanceOf(TigerTestEnvException.class);
@@ -306,14 +303,14 @@ public class TestTigerTestEnvMgr {
             "   cfgfile: src/test/resources/tiger-testenv.yaml\n" +
             "servers:\n" +
             "  externalJarServer:\n" +
-                "    type: externalJar\n" +
-                "    source:\n" +
-                "      - \"http://localhost:${mockserver.port}/download\"\n" +
-                "    externalJarOptions:\n" +
-                "      healthcheck: http://127.0.0.1:" + port + "\n" +
-                "      arguments:\n" +
-                "        - \"--httpPort=" + port + "\"\n" +
-                "        - \"--webroot=.\"\n";
+            "    type: externalJar\n" +
+            "    source:\n" +
+            "      - \"http://localhost:${mockserver.port}/download\"\n" +
+            "    externalJarOptions:\n" +
+            "      healthcheck: http://127.0.0.1:" + port + "\n" +
+            "      arguments:\n" +
+            "        - \"--httpPort=" + port + "\"\n" +
+            "        - \"--webroot=.\"\n";
 
         TigerGlobalConfiguration.readFromYaml(yamlSource, "tiger");
         TigerGlobalConfiguration.initialize();

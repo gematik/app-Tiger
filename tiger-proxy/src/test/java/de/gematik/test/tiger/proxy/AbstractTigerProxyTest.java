@@ -8,11 +8,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
-import static org.mockserver.model.HttpRequest.request;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.matching.RequestPattern;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.RbelOptions;
@@ -22,28 +20,30 @@ import java.util.concurrent.ThreadLocalRandom;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Rule;
-import org.mockserver.junit.MockServerRule;
-import org.mockserver.model.SocketAddress;
+import org.junit.jupiter.api.BeforeEach;
 
 @Slf4j
 public abstract class AbstractTigerProxyTest {
 
-    @Rule
-    public MockServerRule forwardProxy = new MockServerRule(this);
-    @Rule
-    public WireMockRule fakeBackendServer = new WireMockRule(options()
-        .dynamicPort()
-        .dynamicHttpsPort());
+    public WireMockServer fakeBackendServer;
     public TigerProxy tigerProxy;
     public UnirestInstance proxyRest;
     public byte[] binaryMessageContent = new byte[100];
 
-    @Before
+    @BeforeEach
     public void setupBackendServer() {
-        log.info("Started Backend-Server on ports {} and {} (https)", fakeBackendServer.port(), fakeBackendServer.httpsPort());
-        log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
+        if (fakeBackendServer != null) {
+            return;
+        }
+
+        fakeBackendServer = new WireMockServer(
+            new WireMockConfiguration()
+                .dynamicPort()
+                .dynamicHttpsPort());
+        fakeBackendServer.start();
+
+        log.info("Started Backend-Server on ports {} and {} (https)", fakeBackendServer.port(),
+            fakeBackendServer.httpsPort());
 
         fakeBackendServer.stubFor(get(urlPathEqualTo("/foobar"))
             .willReturn(aResponse()
@@ -57,18 +57,11 @@ public abstract class AbstractTigerProxyTest {
                 .withStatusMessage("DEEPEREVIL")
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}")));
+
         ThreadLocalRandom.current().nextBytes(binaryMessageContent);
         fakeBackendServer.stubFor(post(urlPathEqualTo("/foobar"))
             .willReturn(aResponse()
                 .withBody(binaryMessageContent)));
-
-        forwardProxy.getClient().when(request())
-            .forward(
-                req -> forwardOverriddenRequest(
-                    req.withSocketAddress(
-                        "localhost", fakeBackendServer.port(), SocketAddress.Scheme.HTTP
-                    ))
-                    .getHttpRequest());
 
         RbelOptions.activateJexlDebugging();
         Unirest.config().reset();

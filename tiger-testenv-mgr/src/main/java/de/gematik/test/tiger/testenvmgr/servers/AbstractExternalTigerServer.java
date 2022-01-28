@@ -3,7 +3,6 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -13,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.SerializationUtils;
 import org.awaitility.core.ConditionTimeoutException;
 
 @Slf4j
@@ -61,9 +59,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             InsecureTrustAllManager.allowAllSsl(con);
             con.setConnectTimeout(1000);
             con.connect();
-            log.info("External node {} is online", getHostname());
-            log.info(Ansi.colorize("External server Startup OK for '" + getHostname() + "' downloaded from " + getConfiguration().getSource().get(0),
-                RbelAnsiColors.GREEN_BOLD));
+            printServerUpMessage();
             setStatus(TigerServerStatus.RUNNING);
         } catch (ConnectException | SocketTimeoutException cex) {
             if (!quiet) {
@@ -90,6 +86,15 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         }
     }
 
+    void printServerUpMessage() {
+        String message = "External server Startup OK for '" + getHostname();
+        if (getConfiguration().getSource() != null
+            && !getConfiguration().getSource().isEmpty()) {
+             message += "downloaded from" + getConfiguration().getSource().get(0);
+        }
+        log.info(Ansi.colorize(message, RbelAnsiColors.GREEN_BOLD));
+    }
+
     private void waitForConfiguredTimeAndSetRunning(long timeOutInMs) {
         log.info("Waiting {}s to get external server {} online...", (timeOutInMs / 1000L), getHostname());
         try {
@@ -114,7 +119,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         return getConfiguration().getExternalJarOptions().getHealthcheck();
     }
 
-    private boolean isHealthCheckNone() {
+    boolean isHealthCheckNone() {
         return getConfiguration().getExternalJarOptions() == null ||
             getConfiguration().getExternalJarOptions().getHealthcheck() == null ||
             getConfiguration().getExternalJarOptions().getHealthcheck().equals("NONE");

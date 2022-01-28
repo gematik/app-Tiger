@@ -12,7 +12,7 @@ import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
-import de.gematik.test.tiger.exception.TigerProxyStartupException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;

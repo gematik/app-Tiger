@@ -1,14 +1,10 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
-import de.gematik.test.tiger.proxy.data.ModificationDto;
 import java.util.List;
-import kong.unirest.GenericType;
-import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import static org.assertj.core.api.AssertionsForClassTypes.fail;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -36,16 +31,26 @@ public class TigerProxyModificationTest {
 
     @BeforeEach
     public void beforeEachLifecyleMethod() {
-        unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config()
-            .defaultBaseUrl("http://localhost:" + managementPort);
+        tigerProxy.getModifications().stream()
+            .map(RbelModificationDescription::getName)
+            .forEach(tigerProxy::removeModification);
 
         tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + managementPort,
             TigerProxyConfiguration.builder().build());
+
+        if (unirestInstance != null) {
+            return;
+        }
+
+        unirestInstance = Unirest.spawnInstance();
+        unirestInstance.config()
+            .defaultBaseUrl("http://localhost:" + managementPort);
     }
 
     @AfterEach
     public void reset() {
+        tigerRemoteProxyClient.unsubscribe();
+        tigerRemoteProxyClient.close();
         tigerRemoteProxyClient.getRbelLogger().getRbelModifier().deleteAllModifications();
         tigerProxy.getRbelLogger().getRbelModifier().deleteAllModifications();
     }

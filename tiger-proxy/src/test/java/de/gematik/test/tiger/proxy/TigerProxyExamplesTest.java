@@ -30,11 +30,10 @@ import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
-@ExtendWith(MockServerExtension.class)
 @RequiredArgsConstructor
 public class TigerProxyExamplesTest {
 
-    private final ClientAndServer mockServerClient;
+    private ClientAndServer mockServerClient = new ClientAndServer();
 
     @BeforeEach
     public void beforeEachLifecyleMethod() {
@@ -131,13 +130,13 @@ public class TigerProxyExamplesTest {
     public void forwardProxyRoute_sendMessage() {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://no.real.server")
+                .from("http://norealserver")
                 .to("http://localhost:" + mockServerClient.getPort())
                 .build()))
             .build());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().proxy("localhost", tigerProxy.getPort());
-        unirestInstance.get("http://no.real.server/foo").asString();
+        unirestInstance.get("http://norealserver/foo").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
             .get().getRawStringContent())
@@ -148,15 +147,15 @@ public class TigerProxyExamplesTest {
     public void forwardProxyRoute_waitForMessageSent() {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://no.real.server")
+                .from("http://norealserver")
                 .to("http://localhost:" + mockServerClient.getPort())
                 .build()))
             .build());
 
-        System.out.println("curl -v http://no.real.server/foo -x localhost:" + tigerProxy.getPort());
+        System.out.println("curl -v http://norealserver/foo -x localhost:" + tigerProxy.getPort());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().proxy("localhost", tigerProxy.getPort());
-        unirestInstance.get("http://no.real.server/foo").asString();
+        unirestInstance.get("http://norealserver/foo").asString();
 
         await().atMost(2, TimeUnit.SECONDS)
             .until(() -> tigerProxy.getRbelMessages().size() >= 2);
