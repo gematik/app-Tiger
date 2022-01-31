@@ -115,7 +115,9 @@ Here are a few things to know and ways in which to enable TLS:
 
 TLS can be done via a http- or a https-proxy. The proxy-protocol does NOT equate to the client-server-protocol. To minimize the headache in configuration it is therefore strongly recommended to simply always use the http-proxy (sidenote: using a http-proxy does NOT reduce the security of the overall protocol. The security still relies on server-certificate-verification.)
 
-If, however, you can not avoid using the https-proxy you have to make sure that you add the given certificate to your truststore. Currently, there is no tooling to simplify this task. If you need this please contact us.
+If, however, you can not avoid using the https-proxy you have to make sure that you add the given certificate to your truststore.
+In class TigerProxy.java in Tiger there are methods such as SSLContext getConfiguredTigerProxySslContext(), X509TrustManager buildTrustManagerForTigerProxy() and KeyStore buildTruststore() which can help you configure the SSLContext in your case, if you use HTTP 3rd party libraries (Unirest, okHttp, RestAssured, etc.) as well as vanilla Java.
+If you encounter any problems, please contact us.
 
 ==== Dynamic server identity
 
