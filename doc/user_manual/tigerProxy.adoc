@@ -315,12 +315,13 @@ The variables that can be used are listed below:
 Is `null` if not present
 * `message` contains the HTTP-Message under which this element was found
 * `request` is the corresponding HTTP-Request. If `message` is a response, then the corresponding Request will be returned.
+Response messages support so called "reason phrases" which are small text explanations to the response code, e.g. "200 OK", ("OK" is a reason phrase). You can add, modify and remove reason phrases.
 If `message` is a request, then `message` will be returned.
 * `key` is a string containing the key that the current element can be found under in the parent-element.
 * `path` contains the complete sequence of keys from `message` to `element`.
 * `type` is a string containing the class-name of `element` (eg `RbelJsonElement`).
 * `content` is a string describing the content of `element`. The actual representation
-dependens heavily on the type of `element`.
+depends heavily on the type of `element`.
 
 ==== Debugging Rbel-Expressions
 
