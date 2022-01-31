@@ -1,23 +1,58 @@
-
-= Tiger User Manual
-:toc: 1
+:version: 0.18.2
+:toc:
+:toc-title: Contents
+:toclevels: 2
+:text-align: justify
+:doctype: book
+:encoding: utf-8
+:orgname: gematik GmbH
+:author: TIGER@gematik.de
+:description: User Manual for Tiger
 :icons: font
 :icontype: svg
-:author: TIGER@gematik.de
+:source-highlighter: coderay
+:pygments-linenums-mode: table
+:coderay-linenums-mode: table
+:sectnums: {toclevels}
+:quick-uri: https://github.com/gematik/app-Tiger
+:hardbreaks:
 :numbered:
-:pdf-theme: themes/pdf-theme.yml
-:pdf-fontsdir: fonts
+:optimize: ebook
+:title-logo-image: image:media/tiger-plain.svg[width=100,top=5%,align="center"]
+:listing-caption: Listing
+:figure-caption: Figure
+:table-caption: Table
+:appendix-caption: Appendix
+:important-caption: Important
+:caution-caption: Caution
+:tip-caption: Suggestion
+:example-caption: Example
 
+= Tiger User Manual
+{author}
+Version {version} - {docdate}
+
+<<<
 
 include::overview.adoc[]
 
+<<<
+
 include::gettingStarted.adoc[]
+
+<<<
 
 include::tigerTestEnvironmentManager.adoc[]
 
+<<<
+
 include::tigerProxy.adoc[]
 
+<<<
+
 include::tigerTestLibrary.adoc[]
+
+<<<
 
 == Tiger User interfaces
 

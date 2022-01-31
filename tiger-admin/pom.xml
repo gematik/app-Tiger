@@ -24,6 +24,12 @@
         <tags></tags>
         <webdriver.base.url></webdriver.base.url>
         <cucumber.filter.tags></cucumber.filter.tags>
+
+        <version.asciidoctor.maven.plugin>2.2.1</version.asciidoctor.maven.plugin>
+        <version.asciidoctorj>2.5.2</version.asciidoctorj>
+        <version.asciidoctorj.pdf>1.6.0</version.asciidoctorj.pdf>
+        <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
+
     </properties>
 
     <profiles>
@@ -314,8 +320,31 @@
             <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
-                <version>2.2.1</version>
+                <version>${version.asciidoctor.maven.plugin}</version>
+                <dependencies>
+
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram</artifactId>
+                        <version>${version.asciidoctorj.diagram}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-pdf</artifactId>
+                        <version>${version.asciidoctorj.pdf}</version>
+                    </dependency>
+                    <!-- seems to be outdated / obsolete / not working with current version of asciidoctor.
+                         So as of now no way to support Gherkin blocks in asciidoc!
+                         Please do not DELETE as this is important knowledge
+                    <dependency>
+                        <groupId>com.github.domgold.doctools.asciidoctor</groupId>
+                        <artifactId>asciidoctor-gherkin-extension</artifactId>
+                        <version>1.0.1</version>
+                    </dependency>
+                    -->
+                </dependencies>
                 <executions>
+                    <!--
                     <execution>
                         <id>convert-to-pdf</id>
                         <phase>generate-resources</phase>
@@ -342,8 +371,10 @@
                                 </resource>
                             </resources>
                             <attributes>
+                                <pdf-stylesdir>${project.basedir}/../doc/user_manual/themes</pdf-stylesdir>
+                                <pdf-style>gematik-blue-theme.yml</pdf-style>
+                                <pdf-fontsdir>${project.basedir}/../doc/user_manual/fonts</pdf-fontsdir>
                                 <source-highlighter>coderay</source-highlighter>
-                                <!--<imagesdir>${project.basedir}/doc/images</imagesdir>-->
                                 <toc>left</toc>
                                 <icons>font</icons>
                                 <pagenums/>
@@ -354,6 +385,7 @@
                             </requires>
                         </configuration>
                     </execution>
+                    -->
                     <execution>
                         <id>convert-to-html</id>
                         <phase>generate-resources</phase>
@@ -391,27 +423,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-diagram</artifactId>
-                        <version>2.2.1</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-pdf</artifactId>
-                        <version>1.6.0</version>
-                    </dependency>
-                    <!-- seems to be outdated / obsolete / not working with current version of asciidoctor.
-                         So as of now no way to support Gherkin blocks in asciidoc!
-                         Please do not DELETE as this is important knowledge
-                    <dependency>
-                        <groupId>com.github.domgold.doctools.asciidoctor</groupId>
-                        <artifactId>asciidoctor-gherkin-extension</artifactId>
-                        <version>1.0.1</version>
-                    </dependency>
-                    -->
-                </dependencies>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>

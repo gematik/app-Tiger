@@ -2,10 +2,6 @@
 == Overview
 
 ifdef::backend-html5[]
-image:media/tiger2-plain.svg[200,200,role="thumb",float="right",title="Tiger logo"]
-endif::[]
-
-ifdef::backend-html5[]
 To get a quick introduction to the core concepts and features of the Tiger test framework check out our video
 endif::[]
 ifdef::backend-pdf[]

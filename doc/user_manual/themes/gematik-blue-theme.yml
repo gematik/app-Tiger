@@ -1,0 +1,11 @@
+extends: gematik-theme.yml
+title-page:
+  background-image: image:../images/title_blue.plain.svg[fit=contain]
+  title:
+    font-color: #ffffff
+  subtitle:
+    font-color: #00ff64
+  authors:
+    font-color: #00ff64
+  revision:
+    font-color: #00ff64

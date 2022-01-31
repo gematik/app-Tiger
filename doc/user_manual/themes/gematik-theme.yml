@@ -1,0 +1,135 @@
+page:
+  layout: portrait
+  margin: [2cm, 2.5cm, 2cm, 2.5cm]
+  size: A4
+font:
+  catalog:
+    merge: false
+    Verdana:
+      normal: verdana/verdana.ttf
+      italic: verdana/verdana-italic.ttf
+      bold: verdana/verdana-bold.ttf
+      bold_italic: verdana/verdana-bold-italic.ttf
+    FiraCode:
+      normal: firacode/FiraCode-Regular.ttf
+      italic: firacode/FiraCode-Light.ttf
+      bold: firacode/FiraCode-Bold.ttf
+      bold_italic: firacode/FiraCode-SemiBold.ttf
+base:
+  font-color: #000000
+  font-family: Verdana
+  font-style: normal
+  font-size: 11
+  align: justify
+link:
+  font-color: #00766e
+literal:
+  font-family: FiraCode
+  font-style: normal
+  font-size: 9
+  background-color: #E6E6E6
+  color: #FF0000
+caption:
+  font-family: Verdana
+  font-style: normal
+  font-size: 10
+  font-color: #000000
+  align: center
+blockquote:
+  font-family: Verdana
+  font-style: normal
+  font-size: 11
+  align: justify
+code:
+  font-family: FiraCode
+  font-style: normal
+  font-size: 7
+  background-color: #E6E6E6
+  border-color: #000E52
+  border-radius: 1.5
+  border-width: 0.35
+table:
+  background-color: $page_background-color
+  border-color: #000E52
+  border-width: 0.35
+  stripes: even
+  head:
+    font-style: bold
+  body:
+    stripe-background-color: #8da5c4
+  foot:
+    background-color: #E6E6E6
+  cell:
+    padding: [3, 3, 6, 3]
+toc:
+  line-height: 1.5
+  h2-font-color: #000E52
+  dot-leader:
+    font-color: #000E52
+footer:
+  height: 1.3cm
+  font-color: #000E52
+  font-size: 9
+  padding: [0.1cm,0cm,0.5cm,0cm]
+  recto:
+    right:
+      content: '{page-number} / {page-count}'
+    left:
+      content: image:../images/gematik.svg[width=70] {document-title}
+  verso:
+    right:
+      content: '{page-number}'
+    left:
+      content: image:../images/gematik.svg[width=70] {document-title}
+  border-color: #000E52
+  border-style: solid
+  border-width: 0.5
+heading:
+  font-style: bold
+  font-color: #000E52
+  font-size: 18
+  background-color: #FF0000
+heading-h2:
+  font-style: bold
+  font-color: #000E52
+  font-size: 16
+heading-h3:
+  font-style: bold
+  font-color: #225494
+  font-size: 14
+heading-h4:
+  font-style: bold
+  font-color: #225494
+  font-size: 12
+heading-h5:
+  font-style: bold
+  font-color: #225494
+  font-size: 12
+heading-h6:
+  font-style: bold
+  font-color: #225494
+  font-size: 12
+title-page:
+  background-image: image:../images/title_white.plain.svg[fit=contain]
+  title:
+    align: center
+    font-size: 36
+    font-style: bold
+    font-color: #000E52
+    line-height: 1
+    top: 20%
+  subtitle:
+    align: center
+    font-size: 24
+    font-style: bold
+    font-color: #000E52
+    line-height: 1
+  authors:
+    align: left
+    font-size: 14
+    font-color: #000E52
+  revision:
+    align: left
+    font-size: 14
+    font-color: #000E52
+    margin_top: $base_font-size * 1.25
