@@ -165,6 +165,17 @@ PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8). In 
 * "key/store.jks;key1;key2"
 * "key/store.jks;jks;key"
 
+Not supported pathname strings:
+
+* "D:\\myproject\\key\\store.jks;key"
+
+Supported pathname string on all platforms:
+
+* "myproject/key/store.jks;key"
+
+Please notice, that double backslashes ("\\") are not supported as file separators, since they are not accepted on all platforms.
+Invalid pathname strings will also produce an exception.
+
 Each part can be one of:
 
 * filename

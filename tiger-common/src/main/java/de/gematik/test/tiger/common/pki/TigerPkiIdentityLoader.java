@@ -2,6 +2,7 @@ package de.gematik.test.tiger.common.pki;
 
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
+import de.gematik.test.tiger.common.exceptions.TigerFileSeparatorException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -161,6 +162,9 @@ public class TigerPkiIdentityLoader {
         if (StringUtils.isEmpty(entityLocation)) {
             throw new IllegalArgumentException("Trying to load data from empty location! (value is '" + entityLocation + "')");
         }
+        if (entityLocation.contains("\\"))  {
+            throw new TigerFileSeparatorException("Please use forward slash (/) as a file separator");
+        }
         if (!entityLocation.startsWith("classpath:") && new File(entityLocation).exists()) {
             try {
                 return Optional.ofNullable(FileUtils.readFileToByteArray(new File(entityLocation)));
@@ -215,7 +219,7 @@ public class TigerPkiIdentityLoader {
         }
     }
 
-    private static class TigerPkiIdentityLoaderException extends RuntimeException {
+    public static class TigerPkiIdentityLoaderException extends RuntimeException {
         public TigerPkiIdentityLoaderException(String message, Exception e) {
             super(message, e);
         }
