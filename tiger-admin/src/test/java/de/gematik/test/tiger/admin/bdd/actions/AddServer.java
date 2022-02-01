@@ -61,7 +61,9 @@ public class AddServer implements Performable {
             Click.on(getNodeTypeListEntryFor(nodeType)),
             Click.on(BTN_ADD_SERVER_OK),
             // Verification
-            Ensure.that(PerformActionsOnSnack.snackWithTextStartingWith("Added node ")).isDisplayed(),
+            Ensure.that(PerformActionsOnSnack.snackWithTextStartingWith("Added node ")
+                .waitingForNoMoreThan(Duration.ofSeconds(5)))
+                .isDisplayed(),
             PerformActionsOnSnack.closeSnack(),
             Ensure.that(AdminHomePage.theNumberOfNodes()).isEqualTo(nodeCount + 1),
             Ensure.that(AdminHomePage.theLastFormularType()).isEqualTo(nodeType)

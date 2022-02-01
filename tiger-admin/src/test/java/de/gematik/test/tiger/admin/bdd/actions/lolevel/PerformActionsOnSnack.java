@@ -1,6 +1,7 @@
 package de.gematik.test.tiger.admin.bdd.actions.lolevel;
 
 import static net.serenitybdd.screenplay.Tasks.instrumented;
+import java.time.Duration;
 import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
 import net.serenitybdd.screenplay.Actor;
