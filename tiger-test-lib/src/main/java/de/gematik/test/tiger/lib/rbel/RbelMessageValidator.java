@@ -13,8 +13,8 @@ import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.context.TestContext;
-import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
+import de.gematik.test.tiger.lib.TigerLibraryException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -66,8 +66,7 @@ public class RbelMessageValidator {
         lastFilteredRequest = findRequestByDescription(path, rbelPath, value, startFromLastRequest);
         try {
             await("Waiting for matching response").atMost(waitsec, TimeUnit.SECONDS)
-                .pollInterval(200, TimeUnit.MILLISECONDS)
-                .pollDelay(200, TimeUnit.MILLISECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
                 .until(() -> getRbelMessages().stream()
                     .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
                     .filter(
@@ -91,8 +90,7 @@ public class RbelMessageValidator {
         AtomicReference<RbelElement> candidate = new AtomicReference<>();
         try {
             await("Waiting for matching request").atMost(waitsec, TimeUnit.SECONDS)
-                .pollInterval(200, TimeUnit.MILLISECONDS)
-                .pollDelay(200, TimeUnit.MILLISECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
                 .until(() -> {
                     Optional<RbelElement> found = filterRequests(path, rbelPath, value, startFromLastRequest,
                         threadLocalContext);
@@ -108,7 +106,7 @@ public class RbelMessageValidator {
             } else {
                 throw new AssertionError(
                     "No request with path '" + path + "' and rbelPath '" + rbelPath
-                        + "' matching '" + value + "' found in messages");
+                        + "' matching '" + StringUtils.abbreviate(value, 300) + "' found in messages");
             }
         }
         return candidate.get();
@@ -169,7 +167,8 @@ public class RbelMessageValidator {
                     Pattern.compile(value, Pattern.DOTALL).matcher(content).matches()) {
                     return Optional.of(candidateMessage);
                 } else {
-                    log.info("Found rbel node but \n'" + content + "' didnt match\n'" + value + "'");
+                    log.info("Found rbel node but \n'" + StringUtils.abbreviate(content, 300) + "' didnt match\n'"
+                        + StringUtils.abbreviate(value, 300) + "'");
                 }
             }
         }

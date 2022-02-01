@@ -8,12 +8,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.banner.Banner;
-import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibConfig;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
@@ -32,7 +30,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.Getter;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
@@ -199,7 +196,6 @@ public class TigerTestHooks {
         }
     }
 
-    @SneakyThrows
     @After
     public void saveRbelMessagesToFile(final Scenario scenario) {
         assertTigerActive();
@@ -247,6 +243,11 @@ public class TigerTestHooks {
             log.info("Saved HTML report to " + logFile.getAbsolutePath());
         } catch (final IOException e) {
             log.error("Unable to create/save rbel log for scenario " + scenario.getName());
+        }
+
+        // if this is the last entry -> reset so that next scenario outline parses new data in @Before
+        if (currentDataVariantIndex != -1 && currentDataVariantIndex+1 == currentDataVariant.size()) {
+            currentDataVariantIndex = -1;
         }
     }
 

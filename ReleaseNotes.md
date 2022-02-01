@@ -1,5 +1,10 @@
 # Changelog Tiger Testplattform
 
+# Release 0.18.2
+
+## Bugfix
+* TGR-350: Multiple Scenariooutlines in feature file break test execution
+
 # Release 0.18.1
 
 ## Bugfix
