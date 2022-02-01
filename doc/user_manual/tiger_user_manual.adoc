@@ -17,7 +17,6 @@
 :quick-uri: https://github.com/gematik/app-Tiger
 :hardbreaks:
 :numbered:
-:optimize: ebook
 :title-logo-image: image:media/tiger-plain.svg[width=100,top=5%,align="center"]
 :listing-caption: Listing
 :figure-caption: Figure
