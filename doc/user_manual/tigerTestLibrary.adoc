@@ -573,29 +573,8 @@ If you don't want to use the Tiger test framework but only pick a few helper cla
 
 NOTE: All classes listed here are part of the tiger-common module
 
-==== TigerConfigurationHelper
-
-This class supports reading YAML and JSON configuration files and mapping them to POJOs based upon Jackson and SnakeYaml.
-It also allows overwriting configured values via Java system properties and environment variables like in Spring Boot.
-For more details please check the code and its usages in the Tiger test framework.
-
-==== TestContext / TestVariables
-
-In BDD/Cucumber you will often find it difficult to share test data / state of the test run between steps or scnearios.
-These classes provide support in that they create and maintain static thread aware Hashmaps to store and retrieve data.
-For more details please check the code and its usages in the Tiger test framework.
-
-==== TokenSubstituteHelper
-
-Eases the task of replacing tokens with "configurable" patterns in a string with values from a map.
-For more details please check the code and its usages in the Tiger test framework.
-
 ==== Banner
 
 If you want to use large ASCII art style log banners you may find this class very helpful.
 Supports ANSI coloring and a set of different fonts.
 For more details please check the code and its usages in the Tiger test framework.
-
-
-// TODO TGR-312 JULIAN shall we keep this here or to be moved to the Tiger Proxy heading?
-// === Using Tiger Proxy in standalone mode to monitor traffic

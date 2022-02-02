@@ -6,9 +6,8 @@ package de.gematik.test.tiger.proxy.controller;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

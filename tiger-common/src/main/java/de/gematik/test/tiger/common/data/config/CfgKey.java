@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.common.config;
+package de.gematik.test.tiger.common.data.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;

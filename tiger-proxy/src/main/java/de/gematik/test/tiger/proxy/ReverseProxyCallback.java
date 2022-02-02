@@ -1,9 +1,8 @@
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 

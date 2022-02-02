@@ -7,7 +7,7 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 
 import java.security.Key;
 import java.util.List;

@@ -5,6 +5,7 @@ import io.cucumber.plugin.EventListener;
 import io.cucumber.plugin.event.EventPublisher;
 import io.cucumber.plugin.event.TestRunFinished;
 import io.cucumber.plugin.event.TestRunStarted;
+import io.cucumber.plugin.event.TestStepStarted;
 import java.util.Map;
 import java.util.SortedSet;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,10 @@ public class SpringBootStarterPlugin implements EventListener {
             if (ctx.isRunning()) {
                 ctx.stop();
             }
+        });
+
+        publisher.registerHandlerFor(TestStepStarted.class, event -> {
+            log.info("starting test-step");
         });
     }
 }

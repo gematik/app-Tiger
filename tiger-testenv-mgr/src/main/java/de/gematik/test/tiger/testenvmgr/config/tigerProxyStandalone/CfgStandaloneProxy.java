@@ -2,7 +2,7 @@ package de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import lombok.Data;
 
 @Data

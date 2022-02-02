@@ -3,7 +3,7 @@ package de.gematik.test.tiger.admin.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
-import de.gematik.test.tiger.common.config.CfgTemplate;
+import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;

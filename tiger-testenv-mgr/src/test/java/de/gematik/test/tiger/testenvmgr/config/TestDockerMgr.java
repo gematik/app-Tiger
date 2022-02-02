@@ -19,8 +19,10 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("de.gematik.test.tiger.common.LongrunnerTest")
 public class TestDockerMgr {
 
     private static final String TEST_IMAGE = "eitzenbe/test-containers:1.0.19";

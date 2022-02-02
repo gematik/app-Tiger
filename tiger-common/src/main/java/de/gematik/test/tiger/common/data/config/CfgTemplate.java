@@ -2,9 +2,9 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.common.config;
+package de.gematik.test.tiger.common.data.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.gematik.test.tiger.common.config.ServerType;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -24,7 +24,7 @@ public class CfgTemplate {
     private CfgTigerProxyOptions tigerProxyCfg;
 
     private final List<CfgKey> pkiKeys = new ArrayList<>();
-    /** list of env vars to be set for docker DONE, external Jar/TigerProxy TODO TGR-249 related to TGR-113 */
+    /** list of env vars to be set for docker, external Jar/TigerProxy */
     private List<String> environment = new ArrayList<>();
     /** mappings for local tiger proxy to be set when this server is active */
     private final List<String> urlMappings = new ArrayList<>();

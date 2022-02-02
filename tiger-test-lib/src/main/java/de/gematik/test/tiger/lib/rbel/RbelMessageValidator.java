@@ -12,7 +12,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-import de.gematik.test.tiger.common.context.TestContext;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import java.net.URI;
@@ -41,12 +41,19 @@ import org.xmlunit.diff.Difference;
 @Slf4j
 public class RbelMessageValidator {
 
+    private static final Map<String, Function<DiffBuilder, DiffBuilder>> diffOptionMap = new HashMap<>();
+
+    static {
+        diffOptionMap.put("nocomment", DiffBuilder::ignoreComments);
+        diffOptionMap.put("txtignoreempty", DiffBuilder::ignoreElementContentWhitespace);
+        diffOptionMap.put("txttrim", DiffBuilder::ignoreWhitespace);
+        diffOptionMap.put("txtnormalize", DiffBuilder::normalizeWhitespace);
+    }
+
     @Getter
     protected RbelElement lastFilteredRequest;
     @Getter
     protected RbelElement lastResponse;
-    @Getter
-    protected TestContext context = new TestContext("tiger");
 
     public RbelMessageValidator() {
 
@@ -62,7 +69,7 @@ public class RbelMessageValidator {
 
     public void filterRequestsAndStoreInContext(final String path, final String rbelPath, final String value,
         boolean startFromLastRequest) {
-        int waitsec = (int) context.getContext("tiger").computeIfAbsent("rbel.request.timeout", key -> 5);
+        int waitsec = TigerGlobalConfiguration.readIntegerOptional("tiger.rbel.request.timeout").orElse(5);
         lastFilteredRequest = findRequestByDescription(path, rbelPath, value, startFromLastRequest);
         try {
             await("Waiting for matching response").atMost(waitsec, TimeUnit.SECONDS)
@@ -83,17 +90,14 @@ public class RbelMessageValidator {
 
     protected RbelElement findRequestByDescription(final String path, final String rbelPath, final String value,
         boolean startFromLastRequest) {
-        int waitsec = (int) context.getContext("tiger").computeIfAbsent("rbel.request.timeout", key -> 5);
-
-        Map<String, Object> threadLocalContext = getContext().getContext("tiger");
+        int waitsec = TigerGlobalConfiguration.readIntegerOptional("tiger.rbel.request.timeout").orElse(5);
 
         AtomicReference<RbelElement> candidate = new AtomicReference<>();
         try {
             await("Waiting for matching request").atMost(waitsec, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .until(() -> {
-                    Optional<RbelElement> found = filterRequests(path, rbelPath, value, startFromLastRequest,
-                        threadLocalContext);
+                    Optional<RbelElement> found = filterRequests(path, rbelPath, value, startFromLastRequest);
                     found.ifPresent(candidate::set);
                     return found.isPresent();
                 });
@@ -113,7 +117,7 @@ public class RbelMessageValidator {
     }
 
     protected Optional<RbelElement> filterRequests(final String path, final String rbelPath, final String value,
-        boolean startFromLastRequest, Map<String, Object> context) {
+        boolean startFromLastRequest) {
 
         List<RbelElement> msgs = getRbelMessages();
         if (startFromLastRequest) {
@@ -128,8 +132,8 @@ public class RbelMessageValidator {
             msgs = new ArrayList<>(msgs.subList(idx + 2, msgs.size()));
         }
 
-        final String hostFilter = (String) context.get("rbel.request.filter.host");
-        final String methodFilter = (String) context.get("rbel.request.filter.method");
+        final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host");
+        final String methodFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method");
 
         final List<RbelElement> candidateMessages = msgs.stream()
             .filter(el -> el.hasFacet(RbelHttpRequestFacet.class))
@@ -248,15 +252,6 @@ public class RbelMessageValidator {
         compareXMLStructure(test, oracle, Collections.emptyList());
     }
 
-    private static final Map<String, Function<DiffBuilder, DiffBuilder>> diffOptionMap = new HashMap<>();
-
-    static {
-        diffOptionMap.put("nocomment", DiffBuilder::ignoreComments);
-        diffOptionMap.put("txtignoreempty", DiffBuilder::ignoreElementContentWhitespace);
-        diffOptionMap.put("txttrim", DiffBuilder::ignoreWhitespace);
-        diffOptionMap.put("txtnormalize", DiffBuilder::normalizeWhitespace);
-    }
-
     @SneakyThrows
     public void compareXMLStructure(String test, String oracle, String diffOptionCSV) {
         final List<Function<DiffBuilder, DiffBuilder>> diffOptions = new ArrayList<>();
@@ -289,5 +284,4 @@ public class RbelMessageValidator {
             throw new AssertionError("Unable to find element in last response for rbel path '" + rbelPath + "'");
         }
     }
-
 }

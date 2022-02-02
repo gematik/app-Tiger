@@ -1,9 +1,16 @@
 # Changelog Tiger Testplattform
 
-# Release 0.18.2
+# Release 0.19.0
+
+## Breaking Change
+* TGR-113: Test-Context and Test-Variables are deprecated. All values are now stored using `TigerGlobalConfiguration`. This supersedes all uses of domains and context, of which there are no known instances. If your migration is difficult, please contact the team.
+* The migration entails a complete rethink of configuration and value-stores in tiger. If you have any troubles please read the user-manual and don't hesitate to ask us.
 
 ## Bugfix
-* TGR-350: Multiple Scenariooutlines in feature file break test execution
+* TGR-350: Multiple Scenariooutlines in feature file break test execution.
+
+## Features
+* TGR-113: All placeholders in tiger-servers are now successfully resolved.
 
 # Release 0.18.1
 

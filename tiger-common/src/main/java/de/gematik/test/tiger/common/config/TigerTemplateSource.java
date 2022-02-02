@@ -20,7 +20,7 @@ public class TigerTemplateSource {
     private final List<TigerConfigurationKeyString> targetPath;
     private final Map<TigerConfigurationKey, String> values;
 
-    public List<TigerConfigurationKey> applyToAllApplicable(final TigerConfigurationSource tigerConfigurationSource,
+    public List<TigerConfigurationKey> applyToAllApplicable(final AbstractTigerConfigurationSource tigerConfigurationSource,
                                                                         final Map<TigerConfigurationKey, String> finalValues) {
         List<TigerConfigurationKey> appliedTemplateKeys = new ArrayList<>();
         var priorKeys = new HashSet<>(finalValues.keySet());

@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.common.config;
+package de.gematik.test.tiger.common.data.config;
 
 import java.util.ArrayList;
 import java.util.List;

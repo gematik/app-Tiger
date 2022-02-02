@@ -1,11 +1,16 @@
 package de.gematik.test.tiger.common.config;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.IteratorUtils;
@@ -18,17 +23,11 @@ import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.parser.ParserException;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
-
 @Slf4j
 public class TigerConfigurationLoader {
 
     private ObjectMapper objectMapper;
-    private List<TigerConfigurationSource> loadedSources;
+    private List<AbstractTigerConfigurationSource> loadedSources;
     private List<TigerTemplateSource> loadedTemplates;
 
     public TigerConfigurationLoader() {
@@ -70,18 +69,28 @@ public class TigerConfigurationLoader {
     public Optional<String> readStringOptional(String key) {
         TigerConfigurationKey splittedKey = new TigerConfigurationKey(key);
         return loadedSources.stream()
-            .sorted(Comparator.comparing(TigerConfigurationSource::getOrder))
+            .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
             .filter(source -> source.getValues().containsKey(splittedKey))
             .map(source -> source.getValues().get(splittedKey))
             .findFirst();
     }
+
     @SneakyThrows
     public <T extends Object> T instantiateConfigurationBean(Class<T> configurationBeanClass, String... baseKeys) {
         initialize();
 
         TreeNode targetTree = convertToTree();
-        for (TigerConfigurationKeyString key : new TigerConfigurationKey(baseKeys)) {
+        final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
+        TigerConfigurationKey usedKeys = new TigerConfigurationKey();
+        for (TigerConfigurationKeyString key : configurationKey) {
+            if (targetTree.get(key.getValue()) == null) {
+                throw new TigerConfigurationException(
+                    "Could not instantiate bean under key '" + configurationKey.downsampleKey()
+                        + "'. (Used keys '" + usedKeys.downsampleKey() + "'), available keys "
+                + IteratorUtils.toList(targetTree.fieldNames()));
+            }
             targetTree = targetTree.get(key.getValue());
+            usedKeys.add(key);
         }
         try {
             T resultObject = objectMapper.treeToValue(targetTree, configurationBeanClass);
@@ -89,7 +98,9 @@ public class TigerConfigurationLoader {
         } catch (JacksonException e) {
             log.debug("Error while converting the following tree: {}", objectMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(targetTree));
-            throw new TigerConfigurationException("Error while reading configuration for class " + configurationBeanClass.getName() + " with base-keys " + baseKeys, e);
+            throw new TigerConfigurationException(
+                "Error while reading configuration for class " + configurationBeanClass.getName() + " with base-keys "
+                    + baseKeys, e);
         }
     }
 
@@ -99,9 +110,9 @@ public class TigerConfigurationLoader {
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
         final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
         addYamlToMap(yaml.load(yamlSource), new TigerConfigurationKey(baseKeys), valueMap);
-        loadedSources.add(TigerConfigurationSource.builder()
+        loadedSources.add(BasicTigerConfigurationSource.builder()
             .values(valueMap)
-            .order(TigerConfigurationSource.SYSTEM_YAML_ORDER)
+            .sourceType(SourceType.YAML)
             .basePath(new TigerConfigurationKey(baseKeys))
             .build());
     }
@@ -129,7 +140,8 @@ public class TigerConfigurationLoader {
         if (!(loadedYaml instanceof Map)
             || (!((Map) loadedYaml).containsKey("templates"))
             || (!(((Map) loadedYaml).get("templates") instanceof List))) {
-            throw new TigerConfigurationException("Error while loading templates: Expected templates-nodes with list of templates");
+            throw new TigerConfigurationException(
+                "Error while loading templates: Expected templates-nodes with list of templates");
         }
 
         ((List) ((Map) loadedYaml).get("templates")).stream()
@@ -145,39 +157,39 @@ public class TigerConfigurationLoader {
 
     public void loadEnvironmentVariables() {
         loadedSources.stream()
-            .filter(source -> source.getOrder() == TigerConfigurationSource.SYSTEM_ENV_ORDER)
+            .filter(source -> source.getSourceType() == SourceType.ENV)
             .findAny().ifPresent(loadedSources::remove);
 
-        loadedSources.add(TigerConfigurationSource.builder()
-            .basePath(List.of())
+        loadedSources.add(BasicTigerConfigurationSource.builder()
+            .basePath(new TigerConfigurationKey())
             .values(System.getenv().entrySet().stream()
                 .collect(Collectors.toMap(
                     entry -> new TigerConfigurationKey(entry.getKey()),
                     Map.Entry::getValue)))
-            .order(TigerConfigurationSource.SYSTEM_ENV_ORDER)
+            .sourceType(SourceType.ENV)
             .build());
     }
 
     public void loadSystemProperties() {
         loadedSources.stream()
-            .filter(source -> source.getOrder() == TigerConfigurationSource.SYSTEM_PROPERTIES_ORDER)
+            .filter(source -> source.getSourceType() == SourceType.PROPERTIES)
             .findAny().ifPresent(loadedSources::remove);
 
-        loadedSources.add(TigerConfigurationSource.builder()
-            .basePath(List.of())
+        loadedSources.add(BasicTigerConfigurationSource.builder()
+            .basePath(new TigerConfigurationKey())
             .values(System.getProperties().entrySet().stream()
                 .collect(Collectors.toMap(
                     entry -> new TigerConfigurationKey(entry.getKey().toString()),
                     entry -> entry.getValue().toString())))
-            .order(TigerConfigurationSource.SYSTEM_PROPERTIES_ORDER)
+            .sourceType(SourceType.PROPERTIES)
             .build());
     }
 
     public Map<TigerConfigurationKey, String> retrieveMap() {
         Map<TigerConfigurationKey, String> loadedAndSortedProperties = new HashMap<>();
 
-        for (TigerConfigurationSource configurationSource : loadedSources.stream()
-            .sorted(Comparator.comparing(TigerConfigurationSource::getOrder).reversed())
+        for (AbstractTigerConfigurationSource configurationSource : loadedSources.stream()
+            .sorted(Comparator.comparing(AbstractTigerConfigurationSource::getSourceType))
             .collect(Collectors.toList())) {
             loadedAndSortedProperties = configurationSource.applyTemplatesAndAddValuesToMap(
                 loadedTemplates,
@@ -185,7 +197,9 @@ public class TigerConfigurationLoader {
             );
         }
 
-       return loadedAndSortedProperties;
+        replacePlaceholders(loadedAndSortedProperties);
+
+        return loadedAndSortedProperties;
     }
 
     private JsonNode convertToTree() {
@@ -198,19 +212,34 @@ public class TigerConfigurationLoader {
         return mapObjectsToArrayWhereApplicable(result, objectMapper.getNodeFactory());
     }
 
+    private void replacePlaceholders(Map<TigerConfigurationKey, String> loadedAndSortedProperties) {
+        final Map<TigerConfigurationKey, String> updatedValues = loadedAndSortedProperties.entrySet().stream()
+            .filter(entry -> entry.getValue().contains("${")
+                && entry.getValue().contains("}"))
+            .map(entry -> Pair.of(entry.getKey(),
+                TokenSubstituteHelper.substitute(entry.getValue(), this)))
+            .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+
+        updatedValues.entrySet().stream()
+            .forEach(entry -> loadedAndSortedProperties.put(entry.getKey(), entry.getValue()));
+    }
+
     private JsonNode mapObjectsToArrayWhereApplicable(JsonNode value, JsonNodeFactory nodeFactory) {
         if (value instanceof ObjectNode) {
             if (isArray((ObjectNode) value)) {
                 return new ArrayNode(nodeFactory,
-                    StreamSupport.stream(Spliterators.spliteratorUnknownSize(value.fields(), Spliterator.ORDERED), false)
+                    StreamSupport.stream(Spliterators.spliteratorUnknownSize(value.fields(), Spliterator.ORDERED),
+                            false)
                         .sorted(Comparator.comparing(Map.Entry::getKey))
                         .map(Map.Entry::getValue)
                         .map(node -> mapObjectsToArrayWhereApplicable(node, nodeFactory))
                         .collect(Collectors.toList()));
             } else {
                 return new ObjectNode(nodeFactory,
-                    StreamSupport.stream(Spliterators.spliteratorUnknownSize(value.fields(), Spliterator.ORDERED), false)
-                        .map(entry -> Pair.of(entry.getKey(), mapObjectsToArrayWhereApplicable(entry.getValue(), nodeFactory)))
+                    StreamSupport.stream(Spliterators.spliteratorUnknownSize(value.fields(), Spliterator.ORDERED),
+                            false)
+                        .map(entry -> Pair.of(entry.getKey(),
+                            mapObjectsToArrayWhereApplicable(entry.getValue(), nodeFactory)))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
             }
         } else {
@@ -264,7 +293,8 @@ public class TigerConfigurationLoader {
             if (!key.getValue().equalsIgnoreCase(toBeReplacedKey)) { // do we have a clash?
                 continue;
             }
-            if (!toBeReplacedKey.equals(toBeReplacedKey.toLowerCase())) { // only select cases where field is all lower case
+            if (!toBeReplacedKey.equals(
+                toBeReplacedKey.toLowerCase())) { // only select cases where field is all lower case
                 return toBeReplacedKey;
             }
             final JsonNode leaf = position.remove(toBeReplacedKey);
@@ -309,8 +339,30 @@ public class TigerConfigurationLoader {
                 e -> e.getValue()));
     }
 
-    public List<TigerConfigurationSource> listSources() {
+    public List<AbstractTigerConfigurationSource> listSources() {
         return Collections.unmodifiableList(loadedSources);
+    }
+
+    public void putValue(String key, String value) {
+        putValue(key, value, SourceType.RUNTIME_EXPORT);
+    }
+
+    public void putValue(String key, String value, SourceType sourceType) {
+        final Optional<AbstractTigerConfigurationSource> configurationSource = loadedSources.stream()
+            .filter(source -> source.getSourceType() == sourceType)
+            .findAny();
+        if (configurationSource.isEmpty()) {
+            final AbstractTigerConfigurationSource newSource;
+            if (sourceType == SourceType.THREAD_CONTEXT) {
+                newSource = new TigerThreadScopedConfigurationSource();
+            } else {
+                newSource = new BasicTigerConfigurationSource(sourceType);
+            }
+            loadedSources.add(newSource);
+            newSource.putValue(new TigerConfigurationKey(key), value);
+        } else {
+            configurationSource.get().getValues().put(new TigerConfigurationKey(key), value);
+        }
     }
 
     /**

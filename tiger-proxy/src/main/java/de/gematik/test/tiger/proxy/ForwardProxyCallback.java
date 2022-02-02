@@ -2,7 +2,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.SneakyThrows;

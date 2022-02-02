@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.common.config.tigerProxy;
+package de.gematik.test.tiger.common.data.config.tigerProxy;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;

@@ -8,7 +8,7 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.monitor.MonitorUI;
@@ -63,7 +63,7 @@ public class TigerDirector {
         }
 
         // set proxy to local tiger proxy for test suites
-        if (tigerTestEnvMgr.getLocalTigerProxy() != null && tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
+        if (tigerTestEnvMgr.isLocalTigerProxyActive()) {
             if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") != null) {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     RbelAnsiColors.RED_BOLD));

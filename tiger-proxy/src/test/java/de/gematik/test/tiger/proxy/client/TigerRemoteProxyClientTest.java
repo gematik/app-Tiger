@@ -4,16 +4,19 @@
 
 package de.gematik.test.tiger.proxy.client;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import java.util.List;
@@ -177,7 +180,7 @@ public class TigerRemoteProxyClientTest {
         "http://foo/, http://foo/",
         "https://foo, http://foo"
     })
-    public void addTwoCompetingRoutes_secondOneShouldFail(String firstRoute, String secondRoute, 
+    public void addTwoCompetingRoutes_secondOneShouldFail(String firstRoute, String secondRoute,
         WireMockRuntimeInfo remoteServer) {
         tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from(firstRoute)

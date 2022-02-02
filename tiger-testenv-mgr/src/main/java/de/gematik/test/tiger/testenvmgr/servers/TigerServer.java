@@ -1,12 +1,13 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.test.tiger.common.TokenSubstituteHelper;
-import de.gematik.test.tiger.common.config.CfgTigerProxyOptions;
-import de.gematik.test.tiger.common.config.PkiType;
 import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.data.config.CfgTigerProxyOptions;
+import de.gematik.test.tiger.common.data.config.PkiType;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -29,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.platform.commons.util.StringUtils;
 import org.springframework.util.SocketUtils;
 
-@RequiredArgsConstructor
 @Slf4j
 @Getter
 public abstract class TigerServer {
@@ -38,11 +39,19 @@ public abstract class TigerServer {
 
     private final String hostname;
     private final String serverId;
-    private final CfgServer configuration;
     private final List<String> environmentProperties = new ArrayList<>();
     private final List<TigerRoute> routes = new ArrayList<>();
     private final TigerTestEnvMgr tigerTestEnvMgr;
+    private CfgServer configuration;
     private TigerServerStatus status = TigerServerStatus.NEW;
+
+    public TigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr,
+        CfgServer configuration) {
+        this.hostname = hostname;
+        this.serverId = serverId;
+        this.tigerTestEnvMgr = tigerTestEnvMgr;
+        this.configuration = configuration;
+    }
 
     public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
         if (configuration.getType() == null) {
@@ -98,6 +107,8 @@ public abstract class TigerServer {
             this.status = TigerServerStatus.STARTING;
         }
 
+        reloadConfiguration();
+
         assertThatConfigurationIsCorrect();
 
         final ServerType type = configuration.getType();
@@ -105,9 +116,6 @@ public abstract class TigerServer {
         configuration.getEnvironment().stream()
             .map(testEnvMgr::replaceSysPropsInString)
             .forEach(environmentProperties::add);
-        configuration.setSource(configuration.getSource().stream()
-            .map(TokenSubstituteHelper::substitute)
-            .collect(Collectors.toList()));
 
         // apply routes to local proxy
         if (configuration.getUrlMappings() != null) {
@@ -130,9 +138,6 @@ public abstract class TigerServer {
 
         performStartup();
 
-        // TGR-284 set system properties from exports section and store the value in environmentVariables map
-        // replace ${NAME} with server host name
-        //
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);
             // ports substitution are only supported for docker based instances
@@ -143,12 +148,22 @@ public abstract class TigerServer {
             }
             kvp[1] = kvp[1].replace("${NAME}", getHostname());
 
-            log.info("  setting system property " + kvp[0] + "=" + kvp[1]);
-            System.setProperty(kvp[0], kvp[1]);
+            log.info("  setting global property " + kvp[0] + "=" + kvp[1]);
+            TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
         });
 
         synchronized (this) {
             this.status = TigerServerStatus.RUNNING;
+        }
+    }
+
+    private void reloadConfiguration() {
+        try {
+            this.configuration = TigerGlobalConfiguration.instantiateConfigurationBean(CfgServer.class,
+                "tiger", "servers", getServerId());
+            tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
+        } catch (TigerConfigurationException e) {
+            log.warn("Could not reload configuration for server {}", getServerId(), e);
         }
     }
 
@@ -188,7 +203,10 @@ public abstract class TigerServer {
 
     public void assertThatConfigurationIsCorrect() {
         var type = getConfiguration().getType();
-        assertThat(serverId).withFailMessage("Server Id must not be blank!").isNotBlank();
+        assertThat(serverId)
+            .withFailMessage("Server Id must not be blank!")
+            .isNotBlank();
+
         if (this instanceof DockerComposeServer && StringUtils.isNotBlank(getHostname())) {
             throw new TigerConfigurationException("Docker compose does not support a hostname for the node!");
         }

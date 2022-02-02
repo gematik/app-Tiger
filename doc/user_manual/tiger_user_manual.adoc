@@ -53,6 +53,10 @@ include::tigerTestLibrary.adoc[]
 
 <<<
 
+include::tigerConfiguration.adoc[]
+
+<<<
+
 == Tiger User interfaces
 
 [#_admin_ui]

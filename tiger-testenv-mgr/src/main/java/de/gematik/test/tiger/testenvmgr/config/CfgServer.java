@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.gematik.test.tiger.common.config.CfgTemplate;
+import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import lombok.Data;
 
 @Data

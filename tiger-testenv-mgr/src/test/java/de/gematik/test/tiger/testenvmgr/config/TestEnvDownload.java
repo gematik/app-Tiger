@@ -180,6 +180,8 @@ public class TestEnvDownload {
 
     private void loadConfigurationWithJarsLoadedFromUrls(String... jarDownloadUrl) {
         final Iterator<Integer> availableTcpPorts = SocketUtils.findAvailableTcpPorts(jarDownloadUrl.length).iterator();
+        System.clearProperty("TIGER_TESTENV_CFGFILE");
+        TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.initialize();
         String yamlSource = "testenv:\n" +
             "   cfgfile: src/test/resources/tiger-testenv.yaml\n" +

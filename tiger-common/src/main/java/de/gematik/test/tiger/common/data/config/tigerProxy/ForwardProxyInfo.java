@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.common.config.tigerProxy;
+package de.gematik.test.tiger.common.data.config.tigerProxy;
 
 import static org.mockserver.proxyconfiguration.ProxyConfiguration.Type.HTTP;
 import static org.mockserver.proxyconfiguration.ProxyConfiguration.proxyConfiguration;

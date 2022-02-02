@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

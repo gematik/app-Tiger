@@ -238,6 +238,7 @@ One of the fundamental features of the tiger-proxy is rbel-message forwarding. T
 [source,yaml]
 ----
 tigerProxy:
+    proxyId: IBM
     trafficEndpoints:
       - http://another.tiger.proxy:<serverPort>
     # A list of upstream tiger-proxies. This proxy will try to connect to all given sources to

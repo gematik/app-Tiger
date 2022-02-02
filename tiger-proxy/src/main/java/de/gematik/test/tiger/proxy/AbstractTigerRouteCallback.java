@@ -4,7 +4,7 @@ import static org.mockserver.model.Header.header;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

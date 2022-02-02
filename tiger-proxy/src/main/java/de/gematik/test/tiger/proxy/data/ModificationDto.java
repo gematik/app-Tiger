@@ -1,7 +1,6 @@
 package de.gematik.test.tiger.proxy.data;
 
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -2,8 +2,8 @@ package de.gematik.test.tiger.testenvmgr.servers;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.config.CfgDockerOptions;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import lombok.Builder;
@@ -16,7 +16,7 @@ public class DockerServer extends TigerServer {
 
     @Builder
     DockerServer(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
-        super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+        super(determineHostname(configuration, serverId), serverId, tigerTestEnvMgr, configuration);
     }
 
     @Override

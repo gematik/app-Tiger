@@ -1,0 +1,31 @@
+@startuml
+
+!include plantuml.style
+
+<style>
+  title {
+    margin 20
+  }
+</style>
+
+component "TigerGlobalConfiguration" as conf
+
+() "YAML sources" as source1
+() "Environment Variables" as source2
+() "System Properties" as source3
+() "CLI Parameters" as source4
+() "Manual configuration" as source5
+
+source1 -down-> conf <<NextRelease>>
+source2 -down-> conf <<NextRelease>>
+source3 -down-> conf <<NextRelease>>
+source4 -down-> conf <<NextRelease>>
+source5 -down-> conf <<NextRelease>>
+
+() "TigerGlobalConfiguration.readString("tiger.nested.property")" as target1
+() "TigerGlobalConfiguration.instantiateConfigurationBean(MyBean.class, "foo.bar")" as target2
+
+conf -down-> target1 <<NextRelease>>
+conf -down-> target2 <<NextRelease>>
+
+@enduml

@@ -19,7 +19,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
 
     AbstractExternalTigerServer(String hostname, String serverId, CfgServer configuration,
         TigerTestEnvMgr tigerTestEnvMgr) {
-        super(hostname, serverId, configuration, tigerTestEnvMgr);
+        super(hostname, serverId, tigerTestEnvMgr, configuration);
     }
 
     void waitForService(boolean quiet) {

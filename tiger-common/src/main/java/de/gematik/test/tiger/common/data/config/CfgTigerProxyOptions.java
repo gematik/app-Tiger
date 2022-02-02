@@ -1,6 +1,6 @@
-package de.gematik.test.tiger.common.config;
+package de.gematik.test.tiger.common.data.config;
 
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import lombok.Data;
 
 @Data

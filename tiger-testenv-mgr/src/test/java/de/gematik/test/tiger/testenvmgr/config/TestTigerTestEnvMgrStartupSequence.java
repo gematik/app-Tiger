@@ -211,12 +211,12 @@ public class TestTigerTestEnvMgrStartupSequence {
 
         public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr,
             String delayStartupUntilThisServerIsRunning) {
-            super(name, name, configuration, envMgr);
+            super(name, name, envMgr, configuration);
             this.delayStartupUntilThisServerIsRunning = Optional.ofNullable(delayStartupUntilThisServerIsRunning);
         }
 
         public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr) {
-            super(name, name, configuration, envMgr);
+            super(name, name, envMgr, configuration);
             this.delayStartupUntilThisServerIsRunning = Optional.empty();
         }
 

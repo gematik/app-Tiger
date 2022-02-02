@@ -35,7 +35,6 @@ In our first dive we focused on what Tiger should stand for and how we could imp
 * Reuse of cases/steps from existing test suites
 * (non Java test automation support is not implemented yet)
 
-
 image::media/tiger_use_cases.svg[title="Tiger use cases"]
 
 === Components

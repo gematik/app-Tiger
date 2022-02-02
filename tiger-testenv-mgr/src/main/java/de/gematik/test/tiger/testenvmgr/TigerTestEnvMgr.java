@@ -8,11 +8,11 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import de.gematik.test.tiger.common.config.TigerConfigurationSource;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -170,7 +170,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             cfgFile = new File(TIGER_TESTENV_YAML_FILENAME);
             if (!cfgFile.exists()
                 && TigerGlobalConfiguration.listSources().stream()
-                .noneMatch(src -> src.getOrder() == TigerConfigurationSource.SYSTEM_YAML_ORDER)) {
+                .noneMatch(src -> src.getSourceType() == SourceType.YAML)) {
                 throw new TigerEnvironmentStartupException("Could not find configuration-file '" + configFileLocation
                     + "' or '" + TIGER_TESTENV_YAML_FILENAME + "' fallback");
             }
@@ -178,7 +178,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (cfgFile.exists()) {
             log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());
             try {
-                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "tiger");
+                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8),
+                    "tiger");
             } catch (Exception e) {
                 throw new TigerEnvironmentStartupException(
                     "Error while reading configuration from file '" + cfgFile.getAbsolutePath() + "'", e);
@@ -266,7 +267,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     public String replaceSysPropsInString(String str) {
-        return TokenSubstituteHelper.substitute(str, "", environmentVariables);
+        return str;
     }
 
     @Override
@@ -284,5 +285,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     public Optional<TigerServer> findServer(String serverName) {
         return Optional.ofNullable(servers.get(serverName));
+    }
+
+    public boolean isLocalTigerProxyActive() {
+        if (configuration == null) {
+            return true;
+        }
+        return configuration.isLocalProxyActive();
     }
 }

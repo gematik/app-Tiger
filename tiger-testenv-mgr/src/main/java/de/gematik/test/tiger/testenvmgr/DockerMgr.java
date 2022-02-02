@@ -12,12 +12,24 @@ import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.ResponseItem;
 import de.gematik.test.tiger.common.OsEnvironment;
-import de.gematik.test.tiger.testenvmgr.config.CfgEnvSets;
-import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.servers.DockerComposeServer;
 import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -33,21 +45,6 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Getter
@@ -88,7 +85,9 @@ public class DockerMgr {
                 File tmpScriptFolder = Path.of("target", "tiger-testenv-mgr").toFile();
                 if (!tmpScriptFolder.exists()) {
                     if (!tmpScriptFolder.mkdirs()) {
-                        throw new TigerTestEnvException("Unable to create temp folder for modified startup script for server " + server.getHostname());
+                        throw new TigerTestEnvException(
+                            "Unable to create temp folder for modified startup script for server "
+                                + server.getHostname());
                     }
                 }
                 final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
@@ -103,17 +102,6 @@ public class DockerMgr {
             container.setLogConsumers(List.of(new Slf4jLogConsumer(log)));
             log.info("Passing in environment:");
             addEnvVarsToContainer(container, server.getEnvironmentProperties());
-            server.getEnvironmentProperties().stream()
-                .filter(i -> i.startsWith("${"))
-                .map(i -> i.substring(2, i.length() - 1))
-                .forEach(envsetName -> {
-                    List<String> envVars = server.getTigerTestEnvMgr().getConfiguration().getEnvSets().stream()
-                        .filter(envset -> envset.getName().equals(envsetName))
-                        .map(CfgEnvSets::getEnvVars)
-                        .findAny().orElseThrow(
-                            () -> new TigerTestEnvException("Unknown reference to testenv set '" + envsetName));
-                    addEnvVarsToContainer(container, envVars);
-                });
 
             if (server.getDockerOptions().isOneShot()) {
                 container.withStartupCheckStrategy(new OneShotStartupCheckStrategy());
@@ -129,7 +117,8 @@ public class DockerMgr {
             // maybe just make clear we support only single exported port
             container.getContainerInfo().getNetworkSettings().getPorts().getBindings().entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
-                .forEach(entry -> ports.put(entry.getKey().getPort(), Integer.valueOf(entry.getValue()[0].getHostPortSpec())));
+                .forEach(entry -> ports.put(entry.getKey().getPort(),
+                    Integer.valueOf(entry.getValue()[0].getHostPortSpec())));
             server.getDockerOptions().setPorts(ports);
         } catch (final DockerException de) {
             throw new TigerTestEnvException("Failed to start container for server " + server.getHostname(), de);
@@ -201,10 +190,10 @@ public class DockerMgr {
         envVars.stream()
             .filter(i -> i.contains("="))
             .map(i -> i.split("=", 2))
-            .forEach(envvar -> {
-                log.info("  * " + envvar[0] + "=" + envvar[1]);
-                container.addEnv(envvar[0], envvar[1]);
-            });
+            .peek(envvar -> log.info("  * " + envvar[0] + "=" + envvar[1]))
+            .forEach(envvar -> container.addEnv(
+                TigerGlobalConfiguration.resolvePlaceholders(envvar[0]),
+                TigerGlobalConfiguration.resolvePlaceholders(envvar[1])));
     }
 
     public void pullImage(final String imageName) {
@@ -251,7 +240,7 @@ public class DockerMgr {
     }
 
     private String createContainerStartupScript(TigerServer server, InspectImageResponse iiResponse, String[] startCmd,
-                                                String[] entryPointCmd) {
+        String[] entryPointCmd) {
         final ContainerConfig containerConfig = iiResponse.getConfig();
         if (containerConfig == null) {
             throw new TigerTestEnvException(
@@ -296,7 +285,6 @@ public class DockerMgr {
                 log.info("skipping etc hosts patch...");
             }
 
-
             // testing ca cert of proxy with openssl
             //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"
             //+ "openssl s_client -connect localhost:7000 -showcerts --proxy host.docker.internal:"
@@ -309,7 +297,6 @@ public class DockerMgr {
             content += getContainerWorkingDirectory(containerConfig)
                 + String.join(" ", entryPointCmd).replace("\t", " ")
                 + " " + String.join(" ", startCmd).replace("\t", " ") + "\n";
-
 
             FileUtils.writeStringToFile(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName).toFile(),
                 content, StandardCharsets.UTF_8);

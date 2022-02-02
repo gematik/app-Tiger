@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.18.2-SNAPSHOT</version>
+    <version>0.19.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
     <description>Short project description </description>
@@ -95,6 +95,23 @@
     </properties>
 
     <profiles>
+        <profile>
+            <id>NoLongrunner</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
+                <excludedTestGroups>de.gematik.test.tiger.common.LongrunnerTest</excludedTestGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>WithLongrunner</id>
+            <properties>
+                <!--suppress UnresolvedMavenProperty -->
+                <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
+            </properties>
+        </profile>
         <profile>
             <id>external</id>
             <build>
@@ -358,6 +375,7 @@
                             <value>org.sonar.java.jacoco.JUnitListener</value>
                         </property>
                     </properties>
+                    <excludedGroups>${excludedTestGroups}</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
