@@ -344,7 +344,6 @@
                     -->
                 </dependencies>
                 <executions>
-                    <!--
                     <execution>
                         <id>convert-to-pdf</id>
                         <phase>generate-resources</phase>
@@ -371,21 +370,16 @@
                                 </resource>
                             </resources>
                             <attributes>
-                                <pdf-stylesdir>${project.basedir}/../doc/user_manual/themes</pdf-stylesdir>
-                                <pdf-style>gematik-blue-theme.yml</pdf-style>
-                                <pdf-fontsdir>${project.basedir}/../doc/user_manual/fonts</pdf-fontsdir>
                                 <source-highlighter>coderay</source-highlighter>
                                 <toc>left</toc>
                                 <icons>font</icons>
                                 <pagenums/>
                             </attributes>
-
                             <requires>
                                 <require>asciidoctor-diagram</require>
                             </requires>
                         </configuration>
                     </execution>
-                    -->
                     <execution>
                         <id>convert-to-html</id>
                         <phase>generate-resources</phase>
