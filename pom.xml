@@ -74,8 +74,8 @@
         <encoding>UTF-8</encoding>
         <version.rbellogger>0.22.0</version.rbellogger>
         <version.cucumber>6.11.0</version.cucumber>
-        <version.serenity.core>3.0.5</version.serenity.core>
-        <version.serenity.maven.plugin>3.0.5</version.serenity.maven.plugin>
+        <version.serenity.core>3.1.15</version.serenity.core>
+        <version.serenity.maven.plugin>3.1.15</version.serenity.maven.plugin>
         <version.junit5>5.8.1</version.junit5>
         <version.assertj>3.21.0</version.assertj>
         <version.jackson>2.12.3</version.jackson>
@@ -83,7 +83,7 @@
         <version.junit4>4.13.2</version.junit4>
         <version.lombok>1.18.22</version.lombok>
         <version.mockserver>5.11.9</version.mockserver>
-        <version.spring-boot>2.6.2</version.spring-boot>
+        <version.spring-boot>2.6.3</version.spring-boot>
         <version.io.rest-assured>4.5.0</version.io.rest-assured>
 
         <htmlunit.version>3.55.0</htmlunit.version>
