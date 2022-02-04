@@ -9,6 +9,7 @@ import de.gematik.test.tiger.common.data.config.CfgTigerProxyOptions;
 import de.gematik.test.tiger.common.data.config.PkiType;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -23,9 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.platform.commons.util.StringUtils;
@@ -136,7 +135,13 @@ public abstract class TigerServer {
 
         loadPkiForProxy();
 
-        performStartup();
+        try {
+            performStartup();
+        } catch (RuntimeException e) {
+            log.warn("Error during startup of server {}. Used configuration was {}",
+                getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
+            throw e;
+        }
 
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);
@@ -348,6 +353,11 @@ public abstract class TigerServer {
                 .orElseThrow(() -> new TigerEnvironmentStartupException(
                     "Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
             .collect(Collectors.toUnmodifiableList());
+    }
+
+    public String getDestinationUrl(String fallbackProtocol) {
+        throw new TigerTestEnvException(
+            "Sophisticated reverse proxy for '" + getClass().getSimpleName() + "' is not supported!");
     }
 
     public void setStatus(TigerServerStatus newStatus) {

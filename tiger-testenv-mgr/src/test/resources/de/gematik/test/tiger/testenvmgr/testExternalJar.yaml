@@ -1,10 +1,5 @@
-tigerProxy:
-  forwardToProxy:
-    hostname: $SYSTEM
-
 servers:
   testExternalJar:
-    hostname: testExternalJar
     type: externalJar
     source:
       - http://localhost:${mockserver.port}/download

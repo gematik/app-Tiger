@@ -1,15 +1,20 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr.HTTP;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-
-import static de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr.HTTP;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 
 @Slf4j
 public class DockerServer extends TigerServer {
@@ -51,5 +56,32 @@ public class DockerServer extends TigerServer {
         log.info("Stopping docker container {}...", getHostname());
         removeAllRoutes();
         getTigerTestEnvMgr().getDockerManager().stopContainer(this);
+    }
+
+    @Override
+    public String getDestinationUrl(String fallbackProtocol) {
+        try {
+            final URIBuilder uriBuilder = new URIBuilder(guessAServerUrl()).setPath("");
+            if (StringUtils.isNotEmpty(fallbackProtocol)) {
+                uriBuilder.setScheme(fallbackProtocol);
+            }
+            return uriBuilder.build().toURL().toString();
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new TigerEnvironmentStartupException("Unable to build destination URL", e);
+        }
+    }
+
+    private String guessAServerUrl() {
+        if (StringUtils.isNotEmpty(getConfiguration().getExternalJarOptions().getHealthcheck())) {
+            return getConfiguration().getExternalJarOptions().getHealthcheck();
+        } else {
+            if (getStatus() != TigerServerStatus.RUNNING) {
+                throw new TigerTestEnvException("If reverse proxy is to be used with docker container '"
+                    + getHostname() + "' make sure to start it first or have a valid healthcheck setting!");
+            } else {
+                return "http://127.0.0.1:" + getConfiguration().getDockerOptions().getPorts().values()
+                    .iterator().next();
+            }
+        }
     }
 }

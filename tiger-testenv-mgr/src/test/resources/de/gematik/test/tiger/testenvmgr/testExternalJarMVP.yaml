@@ -12,6 +12,6 @@ servers:
     externalJarOptions:
       workingDir: target/jarDownloadTest
       arguments:
-        - --httpPort=19307
+        - --httpPort=${free.port.0}
         - --webroot=.
-      healthcheck: http://127.0.0.1:19307
+      healthcheck: http://127.0.0.1:${free.port.0}

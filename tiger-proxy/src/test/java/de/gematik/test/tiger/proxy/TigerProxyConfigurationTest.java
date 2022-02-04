@@ -122,7 +122,9 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @ParameterizedTest
-    @CsvSource(value = {"localhost, 80, username, password", "localhost, null, username, password"},
+    @CsvSource(value = {
+        "localhost, 80, username, password",
+        "localhost, null, username, password"},
         nullValues = {"null"})
     public void httpProxyWithAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
         String proxyUser, String proxyPassword, CapturedOutput capturedOutput) {

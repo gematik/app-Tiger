@@ -108,8 +108,7 @@ Their meaning and format are explained in the related section.
   tigerProxyCfg:
     serverPort: int
     proxiedServer: string
-    proxyPort: int
-    proxyProtocol: [HTTP|HTTPS]
+    proxiedServerProtocol: [HTTP|HTTPS]
     # Here a normal Tiger Proxy configuration can be used.
     # This is explained in more depth down below
     proxyCfg:

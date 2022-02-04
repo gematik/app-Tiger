@@ -4,14 +4,18 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.testenvmgr.InsecureTrustAllManager;
+import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import java.net.*;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.awaitility.core.ConditionTimeoutException;
 
 @Slf4j
@@ -117,6 +121,19 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
 
     String getHealthcheckUrl() {
         return getConfiguration().getExternalJarOptions().getHealthcheck();
+    }
+
+    @Override
+    public String getDestinationUrl(String fallbackProtocol) {
+        try {
+            final URIBuilder uriBuilder = new URIBuilder(getHealthcheckUrl()).setPath("");
+            if (StringUtils.isNotEmpty(fallbackProtocol)) {
+                uriBuilder.setScheme(fallbackProtocol);
+            }
+            return uriBuilder.build().toURL().toString();
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new TigerEnvironmentStartupException("Unable to build destination URL", e);
+        }
     }
 
     boolean isHealthCheckNone() {
