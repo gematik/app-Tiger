@@ -75,17 +75,17 @@ public class AdminHomePage extends PageObject {
     public static Question<List<String>> getSidebarItemNameList() {
         return Question.about("list of items' names in sidebar").answeredBy(actor ->
             sidebarItems().resolveAllFor(actor).stream()
-            .filter(WebElement::isDisplayed)
-            .map(item -> item.findElement(By.cssSelector(".server-label")).getText())
-            .collect(Collectors.toList()));
+                .filter(WebElement::isDisplayed)
+                .map(item -> item.findElement(By.cssSelector(".server-label")).getText())
+                .collect(Collectors.toList()));
     }
 
     public static Question<List<String>> getFormularNameList() {
         return Question.about("list of nodes' names in formular list").answeredBy(actor ->
             nodeFormulars().resolveAllFor(actor).stream()
-            .filter(WebElement::isDisplayed)
-            .map(item -> item.findElement(By.cssSelector(".server-key")).getText())
-            .collect(Collectors.toList()));
+                .filter(WebElement::isDisplayed)
+                .map(item -> item.findElement(By.cssSelector(".server-key")).getText())
+                .collect(Collectors.toList()));
     }
 
     private int getNodeCount() {

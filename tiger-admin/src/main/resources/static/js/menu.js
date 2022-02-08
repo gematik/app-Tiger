@@ -135,7 +135,9 @@ function saveYamlFile() {
     dataType: 'json',
     success: function () {
       notifyChangesToTestenvData(false);
-      snack(`Saved configuration to ${currFolder}${currFile}`, 'info', 3000, true);
+      let fileSeparator;
+      navigator.platform.includes("Win") ? fileSeparator = '\\' : fileSeparator = '/';
+      snack(`Saved configuration to ${currFolder}${fileSeparator}${currFile}`, 'info', 3000, true);
     },
     error: function (xhr) {
       /** @namespace xhr.responseJSON */
@@ -437,6 +439,14 @@ function openFileOpenDialog(okfunc) {
   navigateIntoFolder(currFolder, okfunc, true, 'open');
 }
 
+function pressEnterToConfirm(modal, okButton) {
+  modal.keydown(function(event) {
+    if (event.keyCode === 13) {
+      $(okButton).click();
+    }
+  });
+}
+
 function openFileSaveAsDialog(okfunc) {
   const filedlg = $('#file-navigation-modal');
   filedlg.find('.modal-title').text("Save file as ...");
@@ -451,6 +461,7 @@ function openFileSaveAsDialog(okfunc) {
   filedlg.modal('show');
   navigateIntoFolder(currFolder, okfunc, true, 'save');
   filedlg.find('.btn-filenav-ok').off('click');
+  pressEnterToConfirm(filedlg, ".btn-filenav-ok");
   filedlg.find('.btn-filenav-ok').click(function () {
     // get cfgfile from input field together with currentFolder and separator
     console.log(`Saving to file '${
@@ -582,6 +593,7 @@ function loadMetaDataFromServer() {
         addServerModal.find('.info-block').show();
         addServerModal.find('.btn-add-server-ok').setEnabled(true);
         addServerModal.find('button.dropdown-toggle').html($(this).html());
+        addServerModal.find('.btn-add-server-ok').focus();
       });
       snack('Templates loaded', 'success', 2000);
     },

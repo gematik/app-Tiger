@@ -3,9 +3,7 @@ package de.gematik.test.tiger.admin.bdd.steps;
 import static net.serenitybdd.screenplay.actors.OnStage.theActorCalled;
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
 import de.gematik.test.tiger.admin.bdd.actions.AddServer;
-import de.gematik.test.tiger.admin.bdd.actions.lolevel.NavigateTo;
-import de.gematik.test.tiger.admin.bdd.actions.lolevel.ShowTabInFormular;
-import de.gematik.test.tiger.admin.bdd.actions.lolevel.ToggleCollapseSection;
+import de.gematik.test.tiger.admin.bdd.actions.lolevel.*;
 import de.gematik.test.tiger.admin.bdd.pages.AdminHomePage;
 import de.gematik.test.tiger.admin.bdd.pages.ServerFormular;
 import io.cucumber.java.Before;
@@ -40,12 +38,24 @@ public class UseCaseSteps {
 
     @And("she/he adds a {string} node via welcome screen")
     public void addsANodeViaWelcomeScreen(String nodeType) {
-        theActorInTheSpotlight().attemptsTo(AddServer.ofTypeVia(nodeType, AddServer.BTN_ADD_SERVER_ON_WELCOME_CARD));
+        theActorInTheSpotlight().attemptsTo(
+            AddServer.ofTypeVia(nodeType, AddServer.BTN_ADD_SERVER_ON_WELCOME_CARD, false));
+    }
+
+    @And("she/he adds a {string} node via welcome screen with Enter")
+    public void addsANodeViaWelcomeScreenWithEnter(String nodeType) {
+        theActorInTheSpotlight().attemptsTo(
+            AddServer.ofTypeVia(nodeType, AddServer.BTN_ADD_SERVER_ON_WELCOME_CARD, true));
     }
 
     @And("she/he adds a {string} node via sidebar")
     public void addsANodeViaSidebar(String nodeType) {
-        theActorInTheSpotlight().attemptsTo(AddServer.ofTypeVia(nodeType, AddServer.BTN_ADD_SERVER_ON_SIDEBAR));
+        theActorInTheSpotlight().attemptsTo(AddServer.ofTypeVia(nodeType, AddServer.BTN_ADD_SERVER_ON_SIDEBAR, false));
+    }
+
+    @And("she/he adds a {string} node via sidebar with Enter")
+    public void addsANodeViaSidebarWithEnter(String nodeType) {
+        theActorInTheSpotlight().attemptsTo(AddServer.ofTypeVia(nodeType, AddServer.BTN_ADD_SERVER_ON_SIDEBAR, true));
     }
 
     @And("she/he focuses on formular {string}")
@@ -109,6 +119,7 @@ public class UseCaseSteps {
             Click.on(AdminHomePage.yesButtonOnConfirmModal())
         );
     }
+
     @When("she/he dismisses confirm modal")
     public void dismissesConfirmModal() {
         theActorInTheSpotlight().attemptsTo(
@@ -129,5 +140,15 @@ public class UseCaseSteps {
         theActorInTheSpotlight().attemptsTo(
             Ensure.that(AdminHomePage.sidebarHeader()).isNotDisplayed()
         );
+    }
+
+    @Then("she/he saves test environment as {string} using Enter")
+    public void clickOnSaveAsButton(String newSaveName) {
+        theActorInTheSpotlight().attemptsTo(SaveAsAction.ofTypeVia(newSaveName, true));
+    }
+
+    @Then("she/he verifies saved file {string} contains")
+    public void verifySavedContentMatches(String fileName, String docString) {
+        theActorInTheSpotlight().attemptsTo(VerifyFileContentAction.ofTypeVia(fileName, docString));
     }
 }

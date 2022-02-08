@@ -1,7 +1,6 @@
 package de.gematik.test.tiger.admin.bdd.actions.lolevel;
 
 import static net.serenitybdd.screenplay.Tasks.instrumented;
-import java.time.Duration;
 import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
 import net.serenitybdd.screenplay.Actor;
@@ -35,6 +34,11 @@ public class PerformActionsOnSnack implements Task {
     public static Target snackWithTextStartingWith(String startsWithText) {
         return Target.the("feedback snack starting with '" +  startsWithText + "'")
             .locatedBy("//div[contains(@class, 'toast') and starts-with(text(), '" + startsWithText + "')]");
+    }
+
+    public static Target snackWithTextContaining(String containsText) {
+        return Target.the("feedback snack containing '" +  containsText + "'")
+            .locatedBy("//div[contains(@class, 'toast') and contains(text(), '" + containsText + "')]");
     }
 
     // implementation

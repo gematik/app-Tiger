@@ -37,6 +37,15 @@ Feature: Node management
     Then nodes are ordered "Local Tiger proxy"
     And formulars are ordered "local_proxy"
 
+  Scenario: add server node via Enter
+    Given Gerriet is on the homepage
+    When he adds a "docker" node via welcome screen with Enter
+    And he adds a "compose" node via sidebar with Enter
+    And he adds a "tigerProxy" node via sidebar with Enter
+    And he adds a "externalJar" node via sidebar with Enter
+    Then nodes are ordered "Local Tiger proxy,docker_001,compose_001,tigerProxy_001,externalJar_001"
+    And formulars are ordered "local_proxy,docker_001,compose_001,tigerProxy_001,externalJar_001"
+
   Scenario: add server type twice and check index in server key is increased
     Given Gerriet is on the homepage
     When he adds a "docker" node via welcome screen
