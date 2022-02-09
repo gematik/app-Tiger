@@ -569,7 +569,7 @@ to perform demo transactions that will be logged and saved to HTML reports but a
 
 === Using Tiger test lib helper classes
 
-If you don't want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest for you:
+If you don't want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:
 
 NOTE: All classes listed here are part of the tiger-common module
 
@@ -578,3 +578,5 @@ NOTE: All classes listed here are part of the tiger-common module
 If you want to use large ASCII art style log banners you may find this class very helpful.
 Supports ANSI coloring and a set of different fonts.
 For more details please check the code and its usages in the Tiger test framework.
+
+// TODO TGR-347 document TigerSerializationUtil, TigertPkiIdentity

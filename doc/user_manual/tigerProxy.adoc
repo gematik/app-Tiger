@@ -33,15 +33,17 @@ A reverse proxy also terminates https, always. This is less of a problem with a 
 since it is technically not a man-in-the-middle attack, due to the traffic being addressed
 to the reverse proxy.
 
-=== Tiger-Proxy basics
+=== Tiger Proxy basics
 
-The tiger-proxy is a proxy-server. It has two types: tiger-proxy and tiger-standalone-proxy. Both types have a proxy-port (configurable via `tigerProxy.port`), which supports both http- and https-traffic (so you do not have to differentiate between the two).
+The Tiger Proxy is a proxy-server. It has two types: Tiger Proxy and Tiger Standalone Proxy. Both types have a proxy-port (configurable via `tigerProxy.port`),
+which supports both http- and https-traffic (so you do not have to differentiate between the two).
 
-The tiger-standalone-proxy has an admin-port on top (configurable via `server.port`). This provides a webui to monitor the traffic, a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple tiger-proxies.
+The Tiger Standalone Proxy has an admin-port on top (configurable via `server.port`). This provides a webui to monitor the traffic,
+a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.
 
 === Understanding routes
 
-Routes are the fundamental mechanic of how the tiger-proxy handles traffic. They can be for a forward-
+Routes are the fundamental mechanic of how the Tiger Proxy handles traffic. They can be for a forward-
 or reverse-proxy. A route has the following properties:
 
 ==== from
@@ -49,7 +51,7 @@ From where should the traffic be collected? This can either be an absolute URL (
 
 ==== to
 
-The target of the mapping. This has to be an absolute URL. The tiger-proxy will, upon receiving a request to this mapping, execute a matching request to the defined host.
+The target of the mapping. This has to be an absolute URL. The Tiger Proxy will, upon receiving a request to this mapping, execute a matching request to the defined host.
 
 An example. Consider the following route:
 
@@ -61,7 +63,7 @@ tigerProxy:
         to: http://orf.at/
 ----
 
-The "http://" in the **from property** indicates that we have a forward-proxy route defined. So when we execute: (assuming the tiger-proxy is started locally under the port 1234)
+The "http://" in the **from property** indicates that we have a forward-proxy route defined. So when we execute: (assuming the Tiger Proxy is started locally under the port 1234)
 
  curl -x http://localhost:1234 http://my.domain/news
 
@@ -93,9 +95,12 @@ You can add optional basic-auth configuration which will be added to the forward
 [source,yaml]
 ----
 tigerProxy:
-    basicAuth:
-        username: "test1"
-        password: "pwd2"
+    proxyRoutes:
+      - from: http://my.domain/deep/
+        to: http://orf.at/blub/
+        basicAuth:
+          username: "test1"
+          password: "pwd2"
 ----
 
 === TLS, keys, certificates a quick tour on proxies
@@ -121,11 +126,14 @@ If you encounter any problems, please contact us.
 
 ==== Dynamic server identity
 
-For successfully breaking into TLS traffic the tiger-proxy needs to present a certificate which features the domain-name of the server. Since the domain-names are known only at runtime, we  generate the needed certificate on-the-fly during the first connection.
+For successfully breaking into TLS traffic the Tiger Proxy needs to present a certificate which features the domain-name of the server. Since the domain-names are known only at runtime, we  generate the needed certificate on-the-fly during the first connection.
 
-For a forward-proxy this is easy: The client sends not only the path, but the complete URL to the proxy, letting him handle DNS-resolution. So when the tiger-proxy receives a new request the necessary domain-name is given by the client. A new, matching, certificate is generated (these are cached) and presented. To complete the setup the client-truststore needs to be patched. The default CA used by the tiger-proxy can be found here: https://github.com/gematik/app-Tiger/blob/master/tiger-standalone-proxy/src/main/resources/CertificateAuthorityCertificate.pem
+For a forward-proxy this is easy: The client sends not only the path, but the complete URL to the proxy, letting him handle DNS-resolution.
+So when the Tiger Proxy receives a new request the necessary domain-name is given by the client. A new, matching, certificate is generated (these are cached) and presented.
+To complete the setup the client-truststore needs to be patched.
+The default CA used by the Tiger Proxy can be found here: https://github.com/gematik/app-Tiger/blob/master/tiger-standalone-proxy/src/main/resources/CertificateAuthorityCertificate.pem
 
-For a reverse-proxy the domain name, which should be used, is unknown to the tiger-proxy (DNS-resolution is done on the client-side). Thus, a  domain-name needs to be provided which should be used for certificate-generation:
+For a reverse-proxy the domain name, which should be used, is unknown to the Tiger Proxy (DNS-resolution is done on the client-side). Thus, a  domain-name needs to be provided which should be used for certificate-generation:
 
 [source,yaml]
 ----
@@ -136,7 +144,8 @@ tigerProxy:
 
 ==== Client-sided truststore modification
 
-When using a non-default certificate (which will almost always be the case for the tiger-proxy) the modification of the client-truststore is necessary. For cases where the client is running in the same JVM as the target tiger-proxy (which is the typical case for a tiger-based testsuite) there exists helper method to make this task easier.
+When using a non-default certificate (which will almost always be the case for the Tiger Proxy) the modification of the client-truststore is necessary.
+For cases where the client is running in the same JVM as the target Tiger Proxy (which is the typical case for a tiger-based testsuite) there exists helper method to make this task easier.
 
 Depending on your HTTP- or REST- or SOAP-API you will need to choose the exact way yourself. The following two examples might give you some idea of what to do.
 
@@ -165,7 +174,7 @@ Unirest.config().sslContext(tigerProxy.buildSslContext());
 
 ==== Custom CA
 
-If you can not or don't want to alter the client-truststore you have two choices: You can either provide a custom CA to be used (and trusted by the client) or you can give the certificate to be used by the tiger-proxy. To set a custom CA to be used for certificate generation simply specify it:
+If you can not or don't want to alter the client-truststore you have two choices: You can either provide a custom CA to be used (and trusted by the client) or you can give the certificate to be used by the Tiger Proxy. To set a custom CA to be used for certificate generation simply specify it:
 
 [source,yaml]
 ----
@@ -231,9 +240,12 @@ tigerProxy:
 
 
 [#_mesh_setup_traffic_endpoints]
-=== RBel-Message forwarding
+=== Mesh set up
 
-One of the fundamental features of the tiger-proxy is rbel-message forwarding. This forwards the messages, which the proxy has logged, to other tiger-proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered tiger-proxies. Common scenario for this approach might be the use of multiple reverse-proxies on the root level (e.g. when the client only allows the configuration of the server IP or domain, but no path-prefix) or the aggregation of traffic across machine-boundaries (e.g. one constantly running tiger-proxy which is used by a testsuite on another machine).
+One of the fundamental features of the Tiger Proxy is mesh set up AKA rbel-message forwarding.
+This forwards the messages, which the proxy has logged, to other Tiger Proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered Tiger Proxies.
+Common scenario for this approach might be the use of multiple reverse-proxies on the root level (e.g. when the client only allows the configuration of the server IP or domain, but no path-prefix)
+or the aggregation of traffic across machine-boundaries (e.g. one constantly running Tiger Proxy which is used by a testsuite on another machine).
 
 [source,yaml]
 ----
@@ -241,14 +253,14 @@ tigerProxy:
     proxyId: IBM
     trafficEndpoints:
       - http://another.tiger.proxy:<serverPort>
-    # A list of upstream tiger-proxies. This proxy will try to connect to all given sources to
-    # gather traffic via the STOMP-protocol. If any of the given endpoints are not accesible the
+    # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
+    # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the
     # server will not boot. (fail fast, fail early)
 ----
 
 Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.port`). The traffic from routes with `activateRbelLogging: false` will not show up here.
 
-NOTE: If you are setting up a tiger-proxy to run constantly and simply forward traffic to a testsuite that is booted ad-hoc you might run into performance-problems. This is due to the Rbel-Logger being a very hungry beast. To stop Rbel from parsing all message simply add `tigerProxy.activateRbelParsing: false`. This will vastly reduce memory and CPU consumption of the application, while still forwarding logged traffic.
+NOTE: If you are setting up a Tiger Proxy to run constantly and simply forward traffic to a testsuite that is booted ad-hoc you might run into performance-problems. This is due to the Rbel-Logger being a very hungry beast. To stop Rbel from parsing all message simply add `tigerProxy.activateRbelParsing: false`. This will vastly reduce memory and CPU consumption of the application, while still forwarding logged traffic.
 
 === Understanding RBelPath
 

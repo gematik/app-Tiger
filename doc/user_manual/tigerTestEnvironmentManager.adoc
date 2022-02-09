@@ -364,18 +364,7 @@ externalUrl_001:
 
 ==== Tiger Proxy node
 
-The most complex and versatile node type. It basically is a specialized External Jar node with additional configuration properties for the standalone Tiger Proxy to be instantiated.
-The test environment manager will download the standalone proxy jar and will create an `application-${hostname}.yaml` spring boot configuration yaml for each proxy node.
-
-Special notes to configuration properties:
-
-* source is not a URL, but a single entry that is either nexus or maven to specify, where to download the Tiger Proxy standalone jar from.
-The maven option is available for everyone, while the nexus option is only available for gematik internal use.
-In combination with the version property, the test environment manager will compose the correct URL
-to download the Tiger Proxy standalone jar.
-* arguments entries will be extended with `--spring.profiles.active=${hostname}` to ensure,
-the application yaml for this Tiger Proxy is specific even if multiple standalone proxies are started from the same working folder.
-* options are not supported for this node.
+The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the startup time can be minimized, and it is always guaranteed to start the current version.
 
 [source,yaml,title="Tiger Proxy configuration"]
 ----
@@ -384,32 +373,6 @@ tigerProxy_001:
   type: tigerProxy
   dependsUpon: csv string
   startupTimeoutSec: int
-
-  # MANDATORY one of [nexus|maven]
-  # decides from which repository server to download the standalone jar of the tiger.
-  source:
-    - nexus
-  # MANDATORY version of Tiger Proxy standalone jar to download
-  version: 0.17.1-288
-
-  externalJarOptions:
-    # OPTIONAL folder from where to start the Tiger Proxy from.
-    # The downloaded jar file will be stored and executed from here
-    # Default value is empty which means that the operating system specific
-    # temporary folder will be used.
-    workingDir: /home/user/test/tigerproxy
-    # OPTIONAL URL to check for the successful startup of this Tiger Proxy node
-    # Default value is http://127.0.0.1:[server port of this Tiger Proxy]
-    healthcheck: http://127.0.0.1:8080
-    # OPTIONAL provide additional arguments to the jar archive call.
-    # Can be used to provide ADDITIONAL spring boot parameters such as spring boot profiles.
-    # The default spring boot profile activated via command line is identical
-    # to the server key of the node.
-    # Default value is empty.
-    arguments:
-      - --testarg1
-      - -singledasharg2
-      - --paramarg3=testvalue1
 
   tigerProxyCfg:
     # OPTIONAL port of the web user interface and the proxy management
@@ -521,7 +484,7 @@ This template provides the DEMIS Meldeportal as local docker compose.
 === Configuring the local test suite Tiger Proxy
 
 The local Tiger Proxy for the test suite can be configured by using the following section(s) in the tiger-testenv.yaml file.
-For more information about what the tiger-proxy and how it works see the chapter <<Tiger Proxy>>
+For more information about what the Tiger Proxy and how it works see the chapter <<Tiger Proxy>>
 
 [source,yaml]
 ----
@@ -585,7 +548,7 @@ tigerProxy:
     hostname: 192.168.110.10
     port: 3128
     type: HTTP
-  # The tiger-proxy will route google.com to google.com even if no route is set.
+  # The Tiger Proxy will route google.com to google.com even if no route is set.
   # The traffic routed via this "forwardAll"-routing will be logged by default
   # (meaning it will show up in the Rbel-Logs and be fowarded to tracing-clients)
   # This can be deactivated by setting this flag to false
@@ -597,12 +560,12 @@ tigerProxy:
   # Deactivating will not impede proxy-forwarding nor
   # the traffic-endpoints.
   activateRbelParsing: true
-  # This will share the WebUI-Resources (various CSS-files) from the tiger-proxy
+  # This will share the WebUI-Resources (various CSS-files) from the Tiger Proxy
   # locally, thus enabling usage when no internet connection exists
   localResources: true
 
   tls:
-    # Can be used to define a CA-Identity to be used with TLS. The tiger-proxy will
+    # Can be used to define a CA-Identity to be used with TLS. The Tiger Proxy will
     # generate an identity when queried by a client that matches the configured route.
     # If the client then in turn trusts the CA this solution will provide you with a seamless
     # TLS experience. It however requires access to the private-key of a trusted CA.

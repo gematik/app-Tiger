@@ -116,7 +116,7 @@
 * TGR-165 EPA VAU Schlüssel ist fest im Tiger Proxy hinterlegt
 * TGR-168 Proxy modifications unterstützt nun auch Query Parameter modifications
 * TGR-112 Dokumentation für Modifications Feature [Mehr Details...](tiger-standalone-proxy/README.md)
-* TGR-63  Exceptions, die in einem Upstream Tiger-Proxy auftreten werden über die WS-Schnittstelle an downstream Proxies
+* TGR-63  Exceptions, die in einem Upstream Tiger Proxy auftreten werden über die WS-Schnittstelle an downstream Proxies
   kommuniziert.
 
 ## Änderungen
@@ -188,7 +188,7 @@ WorkingDir wird automatisch angelegt
 * Manual Update-Bug fixed
 
 # Release 0.9.0
-* Longer chains are supported for Tiger-Proxy TSL-Identities
+* Longer chains are supported for Tiger Proxy TSL-Identities
 * Chains are verified on startup
 * Memory Management for tiger-standalone improved
 * support for demis docker compose

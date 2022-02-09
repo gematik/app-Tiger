@@ -17,7 +17,7 @@ public class CfgTigerProxyOptions {
     private String proxiedServer;
 
     /**
-     * Used to add a route to the tiger-proxy. By default, the healthcheck-url-protocol is used here, or http if none is
+     * Used to add a route to the Tiger Proxy. By default, the healthcheck-url-protocol is used here, or http if none is
      * present. If you want to override this you can do it using this field.
      */
     private String proxiedServerProtocol;
