@@ -28,7 +28,7 @@
             <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle menu-testenv" data-bs-toggle="dropdown" href="#"
                role="button">Testenvironment</a>
             <div class="dropdown-menu">
-              <a class="dropdown-item btn-new-testenv" href="#">New</a>
+              <a class="dropdown-item btn-new-testenv disabled" href="#">New</a>
               <a class="dropdown-item btn-open-testenv" href="#">Open...</a>
               <a class="dropdown-item btn-save-testenv disabled" href="#">Save</a>
               <a class="dropdown-item btn-save-as-testenv disabled" href="#">Save as...</a>
@@ -923,7 +923,7 @@
         </div>
         <div class="input-group filepath labels-col-1">
           <span class="input-group-text">Path</span>
-          <input class="form-control" name="file-navigation-path" type="text">
+          <input class="form-control" name="file-navigation-path" type="text" readonly>
         </div>
         <div class="modal-body">
           Loading file list...

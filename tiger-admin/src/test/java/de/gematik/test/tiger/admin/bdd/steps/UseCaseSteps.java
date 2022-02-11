@@ -11,6 +11,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.time.Duration;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.actions.Enter;
@@ -131,19 +132,25 @@ public class UseCaseSteps {
     @Then("she/he sees welcome screen")
     public void seesWelcomeScreen() {
         theActorInTheSpotlight().attemptsTo(
-            Ensure.that(AdminHomePage.WELCOME_CARD).isDisplayed()
+            Ensure.that(AdminHomePage.WELCOME_CARD).isDisplayed(),
+            Ensure.that(
+                    PerformActionsOnSnack.snackWithTextContaining(
+                            "Loaded yaml file")
+                        .waitingForNoMoreThan(Duration.ofSeconds(3)))
+                .isNotDisplayed(),
+            Ensure.that(AdminHomePage.testenvMenuItem("btn-new-testenv")).isDisabled()
         );
     }
 
     @And("she/he doesn't see sidebar header")
-    public void doesnTSeeSidebarHeader() {
+    public void doesntSeeSidebarHeader() {
         theActorInTheSpotlight().attemptsTo(
             Ensure.that(AdminHomePage.sidebarHeader()).isNotDisplayed()
         );
     }
 
     @Then("she/he saves test environment as {string} using Enter")
-    public void clickOnSaveAsButton(String newSaveName) {
+    public void savesTestEnvironmentUsingEnter(String newSaveName) {
         theActorInTheSpotlight().attemptsTo(SaveAsAction.ofTypeVia(newSaveName, true));
     }
 

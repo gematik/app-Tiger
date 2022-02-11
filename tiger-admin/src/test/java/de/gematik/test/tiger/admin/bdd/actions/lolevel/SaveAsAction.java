@@ -52,6 +52,7 @@ public class SaveAsAction implements Performable {
         String filePath = INPUT_FILE_NAVIGATION.resolveFor(t).getValue();
         t.remember("filepath", filePath);
         t.attemptsTo(
+            Ensure.that(INPUT_FILE_NAVIGATION).attribute("readonly").isEqualTo("true"),
             submitFormViaEnter ?
                 Enter.theValue(newSaveName).into(INPUT_SAVE_AS)
                     .thenHit(Keys.ENTER) :

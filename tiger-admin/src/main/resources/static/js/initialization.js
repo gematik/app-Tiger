@@ -132,10 +132,9 @@ $(document).ready(function () {
     confirmNoDefault(unsavedModifications, 'Unsaved Modifications',
         'Do you really want to discard current changes?',
         function () {
-          currEnvironment = {};
           $('.testenv-sidebar-header').fadeOut();
           setYamlFileName(null);
-          populateServersFromYaml(currEnvironment);
+          discardChanges();
           notifyChangesToTestenvData(false);
         });
   });

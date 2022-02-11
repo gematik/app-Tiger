@@ -60,6 +60,7 @@ function openYamlFile(path, separator, cfgfile) {
       }
       populateServersFromYaml(currEnvironment);
       setYamlFileName(cfgfile, path);
+      $('.btn-new-testenv').setEnabled(true);
       $('.btn-save-as-testenv').setEnabled(true);
       $('.btn-save-testenv').setEnabled(true);
     },
@@ -174,28 +175,27 @@ function removeNullPropertiesAndEmptyArraysOrObjects(data) {
 }
 
 function populateServersFromYaml(testEnvYaml) {
-  const serverContent = $('.server-content');
-  $('.sidebar').children().remove();
-  serverContent.children().remove();
-
   for (const serverKey in testEnvYaml) {
     addServer(serverKey, testEnvYaml[serverKey]);
   }
-
   const serverList = Object.keys(testEnvYaml).sort();
   // update server list fields in all formulars, setting the value from testEnvYaml
   for (const serverKey in testEnvYaml) {
     updateServerListFields(serverList, serverKey, testEnvYaml[serverKey]);
   }
-
-
-  if (!serverContent.children().length) {
-    showWelcomeCard();
-  }
   notifyChangesToTestenvData(false);
   snack(`Loaded yaml file`, 'success');
 }
 
+function discardChanges() {
+  const serverContent = $('.server-content');
+  $('.sidebar').children().remove();
+  serverContent.children().remove();
+
+  if (!serverContent.children().length) {
+    showWelcomeCard();
+  }
+}
 
 function addServer(serverKey, serverData) {
   const serverContent = $('.server-content');
@@ -301,6 +301,7 @@ function addSelectedServer() {
     delete currEnvironment[newKey].templateName;
   }
   addServer(newKey, {...currEnvironment[newKey]});
+  $('.btn-new-testenv').setEnabled(true);
   $('.btn-save-as-testenv').setEnabled(true);
   notifyChangesToTestenvData(true);
 
@@ -336,6 +337,7 @@ function handleOpenTestEnvironmentClick() {
 }
 
 function showWelcomeCard() {
+  $('.btn-new-testenv').setEnabled(false);
   $('.server-content').html($('#template-welcome-card').html());
   $('.server-content .btn-open-testenv').click(handleOpenTestEnvironmentClick);
   $('.server-content .btn-add-server').click(openAddServerModal);

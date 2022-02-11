@@ -16,6 +16,7 @@ public class NavigateTo {
         return Task.where("{0} opens the Admin UI home page",
             Open.url("http://127.0.0.1:" + SpringBootDriver.getAdminPort()),
             Ensure.that(AdminHomePage.WELCOME_CARD).isDisplayed(),
+            Ensure.that(AdminHomePage.testenvMenuItem("btn-new-testenv")).isDisabled(),
             Ensure.that(
                 PerformActionsOnSnack.snackWithTextStartingWith("Templates loaded")
                     .waitingForNoMoreThan(Duration.ofSeconds(5))).isDisplayed(),
