@@ -29,9 +29,9 @@ pipeline {
               }
           }
 
-          // TODO: JSL-122 "Funktion benötigt, um die beliebige Dependencies in pom verändern zu können"
           stage('Set Tiger version in IDP') {
               steps {
+                  // script to update the version of Tiger in IDP
                   sh "mvn versions:set-property -Dproperty=idp-global.tiger -DnewVersion=${TIGER_VERSION}"
               }
           }
