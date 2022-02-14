@@ -155,10 +155,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
+            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
