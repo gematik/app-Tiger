@@ -191,9 +191,32 @@ public class RBelValidatorGlue {
             .map(RbelElement::getRawStringContent)
             .map(String::trim)
             .collect(Collectors.joining());
-        final String key = "tiger." + varName;
+        final String key = varName;
         TigerGlobalConfiguration.putValue(key, text, SourceType.TEST_CONTEXT);
         log.info(String.format("Storing '%s' in variable '%s'", text, key));
+    }
+
+    // =================================================================================================================
+    //
+    //    M O D I F Y   S T O R E D   C O N T E N T
+    //
+    // =================================================================================================================
+
+    /**
+     * replace stored content with given regex
+     *
+     * @param regexPattern regular expression to search for
+     * @param replace string to replace all matches with
+     * @param varName  name of variable to store the node text value in
+     */
+    @Dann("TGR ersetze {string} mit {string} im Inhalt der Variable {string}")
+    @Then("TGR replace {string} with {string} in content of variable {string}")
+    public void replaceContentOfVariable(final String regexPattern, final String replace, final String varName) {
+        final String key = varName;
+        String content = TigerGlobalConfiguration.readString(key, null);
+        String newContent = content.replaceAll(regexPattern, replace);
+        TigerGlobalConfiguration.putValue(key, newContent, SourceType.TEST_CONTEXT);
+        log.info(String.format("Modified content in variable '%s' to '%s'", key, newContent));
     }
 
     // =================================================================================================================

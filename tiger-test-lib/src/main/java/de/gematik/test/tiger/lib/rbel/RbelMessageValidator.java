@@ -132,8 +132,8 @@ public class RbelMessageValidator {
             msgs = new ArrayList<>(msgs.subList(idx + 2, msgs.size()));
         }
 
-        final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host");
-        final String methodFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method");
+        final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
+        final String methodFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method", "");
 
         final List<RbelElement> candidateMessages = msgs.stream()
             .filter(el -> el.hasFacet(RbelHttpRequestFacet.class))
@@ -166,13 +166,17 @@ public class RbelMessageValidator {
                     .map(RbelElement::getRawStringContent)
                     .map(String::trim)
                     .collect(Collectors.joining());
-                if (content.equals(value) ||
-                    content.matches(value) ||
-                    Pattern.compile(value, Pattern.DOTALL).matcher(content).matches()) {
-                    return Optional.of(candidateMessage);
-                } else {
-                    log.info("Found rbel node but \n'" + StringUtils.abbreviate(content, 300) + "' didnt match\n'"
-                        + StringUtils.abbreviate(value, 300) + "'");
+                try {
+                    if (content.equals(value) ||
+                        content.matches(value) ||
+                        Pattern.compile(value, Pattern.DOTALL).matcher(content).matches()) {
+                        return Optional.of(candidateMessage);
+                    } else {
+                        log.info("Found rbel node but \n'" + StringUtils.abbreviate(content, 300) + "' didnt match\n'"
+                            + StringUtils.abbreviate(value, 300) + "'");
+                    }
+                } catch (Exception ex) {
+                    log.error("Failure while trying to apply regular expression '" + value + "'!", ex);
                 }
             }
         }

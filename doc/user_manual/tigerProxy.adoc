@@ -262,6 +262,37 @@ Please be advised to use the server-port (`server.port`) here, not the proxy-por
 
 NOTE: If you are setting up a Tiger Proxy to run constantly and simply forward traffic to a testsuite that is booted ad-hoc you might run into performance-problems. This is due to the Rbel-Logger being a very hungry beast. To stop Rbel from parsing all message simply add `tigerProxy.activateRbelParsing: false`. This will vastly reduce memory and CPU consumption of the application, while still forwarding logged traffic.
 
+==== Mesh API
+
+The Tiger Proxies use https://stomp.github.io/[STOMP] a simple/streaming text oriented messaging protocol via web socket to forward received traffic.
+For an external client to receive these traffic data, it must subscribe to the traces topic reachable at the subscription path /topic/traces.
+To do so the client must connect to the traffic endpoint URL of the Tiger Proxy. This is answered with HTTP status 100 and then redirected to web socket protocol via the same port.
+For each received traffic data pair (request/response) the Tiger Proxy will push a web socket message to all subscribed clients.
+
+This JSON encoded message consists of:
+* UUID string
+* http request as base64 encoded data
+* http response as base64 encoded data
+* hostname and port of sender (if retrievable, worst case only IP address or empty)
+* hostname and port of receiver (if retrievable, worst case only IP address or empty)
+
+[source, json]
+----
+{
+    "uuid": "UUID string",
+    "request": "base64 encoded http request",
+    "response": "base64 encoded http response",
+    "sender": {
+      "hostname": "hostname/ip address of sender",
+      "port": portAsInt
+    },
+    "reveiver": {
+      "hostname": "hostname/ip address of receiver",
+      "port": portAsInt
+    }
+}
+----
+
 === Understanding RBelPath
 
 RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of captured RBeL-Traffic (navigation of the RbelElement-tree).
