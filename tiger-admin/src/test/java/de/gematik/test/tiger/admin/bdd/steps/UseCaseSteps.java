@@ -138,7 +138,7 @@ public class UseCaseSteps {
                             "Loaded yaml file")
                         .waitingForNoMoreThan(Duration.ofSeconds(3)))
                 .isNotDisplayed(),
-            Ensure.that(AdminHomePage.testenvMenuItem("btn-new-testenv")).isDisabled()
+            Ensure.that(AdminHomePage.testenvMenuItem("btn-new-testenv")).attribute("disabled").isEqualTo("true")
         );
     }
 
