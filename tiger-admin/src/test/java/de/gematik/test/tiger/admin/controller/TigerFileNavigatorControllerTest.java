@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import java.io.File;
 import java.nio.file.Path;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,6 +22,7 @@ public class TigerFileNavigatorControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Disabled //TODO TGR-372
     @Test
     public void testMultipleConfigFiles() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get(

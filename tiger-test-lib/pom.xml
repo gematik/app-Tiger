@@ -215,7 +215,6 @@
                 </configuration>
             </plugin>
             <!-- end create reusable test jar part -->
-
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -275,5 +274,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -9,10 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import java.io.File;
 import java.nio.file.Path;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.testcontainers.shaded.com.github.dockerjava.core.MediaType;
@@ -29,6 +32,7 @@ public class TigerAdminUiControllerTest {
         this.mockMvc.perform(get("/")).andExpect(status().isOk());
     }
 
+    @Disabled //TODO TGR-372
     @Test
     public void testOpenYamlFile() throws Exception {
         String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test",
@@ -42,6 +46,7 @@ public class TigerAdminUiControllerTest {
             .andExpect(jsonPath("$.servers.testWinstone3.type").value(is("externalJar")));
     }
 
+    @Disabled //TODO TGR-372
     @Test
     public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
 
