@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import java.util.*;
 import lombok.Builder;
 import lombok.Data;
@@ -29,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 public class Configuration {
 
     private final Map<String, CfgServer> servers = new HashMap<>();
-    private final List<CfgEnvSets> envSets = new ArrayList<>();
     private boolean localProxyActive = true;
     private TigerProxyConfiguration tigerProxy;
 

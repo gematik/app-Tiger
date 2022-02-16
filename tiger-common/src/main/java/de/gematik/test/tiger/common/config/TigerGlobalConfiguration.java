@@ -1,5 +1,8 @@
 package de.gematik.test.tiger.common.config;
 
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,9 @@ public class TigerGlobalConfiguration {
 
         initialized = true;
         globalConfigurationLoader.initialize();
+
+        globalConfigurationLoader.loadSystemProperties();
+        globalConfigurationLoader.loadEnvironmentVariables();
     }
 
     public synchronized static String readString(String key) {
@@ -70,5 +76,46 @@ public class TigerGlobalConfiguration {
             TigerGlobalConfiguration.initialize();
             initialized = true;
         }
+    }
+
+    public static Map<String, String> readMap(String... baseKeys) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.readMap(baseKeys);
+    }
+
+    public static List<AbstractTigerConfigurationSource> listSources() {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.listSources();
+    }
+
+    public static void putValue(String key, String value) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, value);
+    }
+
+    public static void putValue(String key, Object value) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, value.toString());
+    }
+
+    public static void putValue(String key, String value, SourceType sourceType) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, value, sourceType);
+    }
+
+    public static void putValue(String key, Object value, SourceType sourceType) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, value.toString(), sourceType);
+    }
+
+    public static String resolvePlaceholders(String stringToSubstitute) {
+        assertGlobalConfigurationIsInitialized();
+        return TokenSubstituteHelper.substitute(stringToSubstitute, globalConfigurationLoader);
+    }
+
+    public static Optional<Integer> readIntegerOptional(String key) {
+        assertGlobalConfigurationIsInitialized();
+        return readStringOptional(key)
+            .map(Integer::parseInt);
     }
 }

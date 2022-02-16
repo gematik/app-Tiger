@@ -3,10 +3,10 @@ package de.gematik.test.tiger.admin.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
-import de.gematik.test.tiger.common.config.CfgTemplate;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
@@ -53,8 +53,9 @@ public class TigerAdminUiController {
 
 
     @GetMapping(value = "media/{mediafile}.svg", produces = "image/svg+xml")
-    public ResponseEntity<byte[]> getManualPageMediaSVG(@PathVariable("mediafile") String mediaFile) throws IOException {
-        try(InputStream is = getClass().getResourceAsStream("/static/manual/media/" + mediaFile  + ".svg")) {
+    public ResponseEntity<byte[]> getManualPageMediaSVG(@PathVariable("mediafile") String mediaFile)
+        throws IOException {
+        try (InputStream is = getClass().getResourceAsStream("/static/manual/media/" + mediaFile + ".svg")) {
             if (is == null) {
                 throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "media file " + mediaFile + " not found"
@@ -67,7 +68,7 @@ public class TigerAdminUiController {
 
     @GetMapping(value = "{svgfile}.svg", produces = "image/svg+xml")
     public ResponseEntity<byte[]> getManualPageSVG(@PathVariable("svgfile") String mediaFile) throws IOException {
-        try(InputStream is = getClass().getResourceAsStream("/static/manual/" + mediaFile  + ".svg")) {
+        try (InputStream is = getClass().getResourceAsStream("/static/manual/" + mediaFile + ".svg")) {
             if (is == null) {
                 throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "media file " + mediaFile + " not found"
@@ -78,8 +79,9 @@ public class TigerAdminUiController {
     }
 
     @GetMapping(value = "/media/{mediafile}.png", produces = "image/png")
-    public ResponseEntity<byte[]> getManualPageMediaPNG(@PathVariable("mediafile") String mediaFile) throws IOException {
-        try(InputStream is = getClass().getResourceAsStream("/static/manual/media/" + mediaFile + ".png")) {
+    public ResponseEntity<byte[]> getManualPageMediaPNG(@PathVariable("mediafile") String mediaFile)
+        throws IOException {
+        try (InputStream is = getClass().getResourceAsStream("/static/manual/media/" + mediaFile + ".png")) {
             if (is == null) {
                 throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "media file " + mediaFile + " not found"
@@ -90,8 +92,9 @@ public class TigerAdminUiController {
     }
 
     @GetMapping(value = "/examples/{examplefile}")
-    public ResponseEntity<byte[]> getManualPageExampleFile(@PathVariable("examplefile") String exampleFile) throws IOException {
-        try(InputStream is = getClass().getResourceAsStream("/static/manual/examples/" + exampleFile )) {
+    public ResponseEntity<byte[]> getManualPageExampleFile(@PathVariable("examplefile") String exampleFile)
+        throws IOException {
+        try (InputStream is = getClass().getResourceAsStream("/static/manual/examples/" + exampleFile)) {
             if (is == null) {
                 throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Example file " + exampleFile + " not found"
@@ -144,7 +147,8 @@ public class TigerAdminUiController {
                         try {
                             return getter.getRawMember().invoke(declaringClass.getConstructor().newInstance());
                         } catch (Exception ex) {
-                            throw new TigerConfigurationException("Unable to create instance for class " + declaringClass.getName(), ex);
+                            throw new TigerConfigurationException(
+                                "Unable to create instance for class " + declaringClass.getName(), ex);
                         }
                     }
                 }
@@ -172,13 +176,14 @@ public class TigerAdminUiController {
             options.setPrettyFlow(true);
             options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
             Yaml yaml = new Yaml(options);
-            FileUtils.writeStringToFile(cfgFile, yaml.dump(yaml.load(json.getJSONObject("config").toString(4))), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(cfgFile, yaml.dump(yaml.load(json.getJSONObject("config").toString(4))),
+                StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new TigerConfigurationException("Unable to save configuration to file " + cfgFile.getAbsolutePath());
         }
-        JSONObject jsonReesponse = new JSONObject();
-        jsonReesponse.put("state", "OK");
-        return jsonReesponse.toString();
+        JSONObject jsonResponse = new JSONObject();
+        jsonResponse.put("state", "OK");
+        return jsonResponse.toString();
     }
 
     private void loadTemplates() {
@@ -190,7 +195,7 @@ public class TigerAdminUiController {
             templatesYaml = IOUtils.toString(
                 Objects.requireNonNull(templatesUrl).toURI(),
                 StandardCharsets.UTF_8);
-        } catch (IOException|URISyntaxException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new TigerConfigurationException("Unable to initialize templates!", e);
         }
     }

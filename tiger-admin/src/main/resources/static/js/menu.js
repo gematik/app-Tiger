@@ -60,6 +60,7 @@ function openYamlFile(path, separator, cfgfile) {
       }
       populateServersFromYaml(currEnvironment);
       setYamlFileName(cfgfile, path);
+      $('.btn-new-testenv').setEnabled(true);
       $('.btn-save-as-testenv').setEnabled(true);
       $('.btn-save-testenv').setEnabled(true);
     },
@@ -135,7 +136,9 @@ function saveYamlFile() {
     dataType: 'json',
     success: function () {
       notifyChangesToTestenvData(false);
-      snack(`Saved configuration to ${currFolder}${currFile}`, 'info', 3000, true);
+      let fileSeparator;
+      navigator.platform.includes("Win") ? fileSeparator = '\\' : fileSeparator = '/';
+      snack(`Saved configuration to ${currFolder}${fileSeparator}${currFile}`, 'info', 3000, true);
     },
     error: function (xhr) {
       /** @namespace xhr.responseJSON */
@@ -172,36 +175,26 @@ function removeNullPropertiesAndEmptyArraysOrObjects(data) {
 }
 
 function populateServersFromYaml(testEnvYaml) {
+  for (const serverKey in testEnvYaml) {
+    addServer(serverKey, testEnvYaml[serverKey]);
+  }
+  const serverList = Object.keys(testEnvYaml).sort();
+  // update server list fields in all formulars, setting the value from testEnvYaml
+  for (const serverKey in testEnvYaml) {
+    updateServerListFields(serverList, serverKey, testEnvYaml[serverKey]);
+  }
+  notifyChangesToTestenvData(false);
+  snack(`Loaded yaml file`, 'success');
+}
+
+function discardChanges() {
   const serverContent = $('.server-content');
   $('.sidebar').children().remove();
   serverContent.children().remove();
 
-  for (const serverKey in testEnvYaml) {
-    addServer(serverKey, testEnvYaml[serverKey]);
-  }
-
-  const serverList = Object.keys(testEnvYaml).sort();
-  // update server list fields in all formulars, setting the value from testEnvYaml
-  for (const serverKey in testEnvYaml) {
-    const form = $('#content_server_' + serverKey);
-    const serverList2 = [...serverList].filter(e => e !== serverKey);
-    if (testEnvYaml[serverKey].type === 'tigerProxy') {
-      form.updateServerList(serverList2, null, testEnvYaml[serverKey].tigerProxyCfg.proxiedServer);
-    }
-    form.updateDependsUponList(serverList2, null, "");
-    if (testEnvYaml[serverKey].dependsUpon) {
-      form.find('select[name="dependsUpon"]').val(testEnvYaml[serverKey].dependsUpon.split(','));
-      form.find('select[name="dependsUpon"]').bsMultiSelect("Update");
-    }
-  }
-
-
   if (!serverContent.children().length) {
     showWelcomeCard();
   }
-  notifyChangesToTestenvData(false);
-  snack(`Loaded yaml file`, 'success');
-
 }
 
 function addServer(serverKey, serverData) {
@@ -261,6 +254,19 @@ function addServer(serverKey, serverData) {
   }
 }
 
+function updateServerListFields(serverList, serverKey, serverData) {
+  const form = $('#content_server_' + serverKey);
+  const serverList2 = [...serverList].filter(e => e !== serverKey);
+  if (serverData.type === 'tigerProxy') {
+    form.updateServerList(serverList2, null, serverData.tigerProxyCfg.proxiedServer);
+  }
+  form.updateDependsUponList(serverList2, null, "");
+  if (serverData.dependsUpon) {
+    form.find('select[name="dependsUpon"]').val(serverData.dependsUpon.split(','));
+    form.find('select[name="dependsUpon"]').bsMultiSelect("Update");
+  }
+}
+
 function addSelectedServer() {
   const addServerModal = $('#add-server-modal');
   const type = addServerModal.find('.list-server-types .active').attr('data-value');
@@ -295,6 +301,7 @@ function addSelectedServer() {
     delete currEnvironment[newKey].templateName;
   }
   addServer(newKey, {...currEnvironment[newKey]});
+  $('.btn-new-testenv').setEnabled(true);
   $('.btn-save-as-testenv').setEnabled(true);
   notifyChangesToTestenvData(true);
 
@@ -330,6 +337,7 @@ function handleOpenTestEnvironmentClick() {
 }
 
 function showWelcomeCard() {
+  $('.btn-new-testenv').setEnabled(false);
   $('.server-content').html($('#template-welcome-card').html());
   $('.server-content .btn-open-testenv').click(handleOpenTestEnvironmentClick);
   $('.server-content .btn-add-server').click(openAddServerModal);
@@ -433,6 +441,14 @@ function openFileOpenDialog(okfunc) {
   navigateIntoFolder(currFolder, okfunc, true, 'open');
 }
 
+function pressEnterToConfirm(modal, okButton) {
+  modal.keydown(function(event) {
+    if (event.keyCode === 13) {
+      $(okButton).click();
+    }
+  });
+}
+
 function openFileSaveAsDialog(okfunc) {
   const filedlg = $('#file-navigation-modal');
   filedlg.find('.modal-title').text("Save file as ...");
@@ -447,6 +463,7 @@ function openFileSaveAsDialog(okfunc) {
   filedlg.modal('show');
   navigateIntoFolder(currFolder, okfunc, true, 'save');
   filedlg.find('.btn-filenav-ok').off('click');
+  pressEnterToConfirm(filedlg, ".btn-filenav-ok");
   filedlg.find('.btn-filenav-ok').click(function () {
     // get cfgfile from input field together with currentFolder and separator
     console.log(`Saving to file '${
@@ -578,8 +595,9 @@ function loadMetaDataFromServer() {
         addServerModal.find('.info-block').show();
         addServerModal.find('.btn-add-server-ok').setEnabled(true);
         addServerModal.find('button.dropdown-toggle').html($(this).html());
+        addServerModal.find('.btn-add-server-ok').focus();
       });
-      snack('Templates loaded', 'success', 1000);
+      snack('Templates loaded', 'success', 2000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);
@@ -594,7 +612,7 @@ function loadMetaDataFromServer() {
     dataType: 'json',
     success: function (res) {
       configScheme = res;
-      snack('ConfigScheme loaded', 'success', 1000);
+      snack('ConfigScheme loaded', 'success', 2000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);

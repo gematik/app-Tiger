@@ -16,26 +16,20 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
-import de.gematik.test.tiger.common.banner.Banner;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.web.embedded.netty.NettyWebServer;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
@@ -47,8 +41,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.awaitility.Awaitility.await;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Getter
@@ -100,7 +97,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     public static void main(String[] args) {
-
         TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         try {
             envMgr.setUpEnvironment();
@@ -108,8 +104,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             log.error("Error while starting up stand alone tiger testenv mgr! ABORTING...", e);
             System.exit(1);
         }
-        log.info(
-            "\n" + Banner.toBannerStr("Tiger standalone test environment UP!", RbelAnsiColors.GREEN_BOLD.toString()));
+        log.info(Ansi.colorize("Tiger standalone test environment UP!", RbelAnsiColors.GREEN_BOLD));
         waitForQuit("TIGER standalone test environment");
         envMgr.shutDown();
         System.exit(0);
@@ -168,7 +163,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         TigerGlobalConfiguration.initialize();
         readTemplates();
         readTestenvYaml();
-        final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger");
+        final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class,
+            "tiger");
         for (CfgServer cfgServer : configuration.getServers().values()) {
             if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
                 throw new TigerConfigurationException("Could not resolve template '" + cfgServer.getTemplate() + "'");
@@ -184,17 +180,22 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         if (!cfgFile.exists()) {
             log.warn("Unable to read configuration from {}", cfgFile.getAbsolutePath());
             cfgFile = new File(TIGER_TESTENV_YAML_FILENAME);
-            if (!cfgFile.exists()) {
+            if (!cfgFile.exists()
+                && TigerGlobalConfiguration.listSources().stream()
+                .noneMatch(src -> src.getSourceType() == SourceType.YAML)) {
                 throw new TigerEnvironmentStartupException("Could not find configuration-file '" + configFileLocation
                     + "' or '" + TIGER_TESTENV_YAML_FILENAME + "' fallback");
             }
         }
-        log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());
-        try {
-            TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "tiger");
-        } catch (Exception e) {
-            throw new TigerEnvironmentStartupException(
-                "Error while reading configuration from file '" + cfgFile.getAbsolutePath() + "'", e);
+        if (cfgFile.exists()) {
+            log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());
+            try {
+                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8),
+                    "tiger");
+            } catch (Exception e) {
+                throw new TigerEnvironmentStartupException(
+                    "Error while reading configuration from file '" + cfgFile.getAbsolutePath() + "'", e);
+            }
         }
     }
 
@@ -278,7 +279,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     }
 
     public String replaceSysPropsInString(String str) {
-        return TokenSubstituteHelper.substitute(str, "", environmentVariables);
+        return str;
     }
 
     @Override
@@ -296,5 +297,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     public Optional<TigerServer> findServer(String serverName) {
         return Optional.ofNullable(servers.get(serverName));
+    }
+
+    public boolean isLocalTigerProxyActive() {
+        if (configuration == null) {
+            return true;
+        }
+        return configuration.isLocalProxyActive();
     }
 }

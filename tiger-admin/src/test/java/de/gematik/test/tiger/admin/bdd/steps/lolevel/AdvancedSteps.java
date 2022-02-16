@@ -17,6 +17,7 @@ public class AdvancedSteps {
         boolean active = icon.resolveFor(theActorInTheSpotlight()).hasClass("active");
         theActorInTheSpotlight().attemptsTo(
             Scroll.to(icon).andAlignToBottom(),
+            Pause.pauseFor(500),
             Click.on(icon),
             active?
                 Ensure.that(icon).not().hasCssClass("active") :

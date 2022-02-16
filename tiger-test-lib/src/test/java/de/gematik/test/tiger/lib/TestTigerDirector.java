@@ -94,10 +94,10 @@ public class TestTigerDirector {
         // so make sure we get ONE valid value here!
         // see https://github.com/testcontainers/testcontainers-java/issues/4489
         assertThat(
-            TigerDirector.getTigerTestEnvMgr().getConfiguration().getServers().get("idp2-simple").getDockerOptions()
+            TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
                 .getPorts()).hasSize(1);
         assertThat(
-            TigerDirector.getTigerTestEnvMgr().getConfiguration().getServers().get("idp2-simple").getDockerOptions()
+            TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
                 .getPorts().get(8080)).isNotNull();
     }
 

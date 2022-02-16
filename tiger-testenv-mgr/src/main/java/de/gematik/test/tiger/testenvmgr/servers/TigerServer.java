@@ -1,22 +1,19 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import de.gematik.test.tiger.common.TokenSubstituteHelper;
-import de.gematik.test.tiger.common.config.CfgExternalJarOptions;
-import de.gematik.test.tiger.common.config.PkiType;
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.data.config.CfgTigerProxyOptions;
+import de.gematik.test.tiger.common.data.config.PkiType;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.platform.commons.util.StringUtils;
-
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
@@ -27,10 +24,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.platform.commons.util.StringUtils;
+import org.springframework.util.SocketUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-@RequiredArgsConstructor
 @Slf4j
 @Getter
 public abstract class TigerServer {
@@ -39,11 +38,19 @@ public abstract class TigerServer {
 
     private final String hostname;
     private final String serverId;
-    private final CfgServer configuration;
     private final List<String> environmentProperties = new ArrayList<>();
     private final List<TigerRoute> routes = new ArrayList<>();
     private final TigerTestEnvMgr tigerTestEnvMgr;
+    private CfgServer configuration;
     private TigerServerStatus status = TigerServerStatus.NEW;
+
+    public TigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr,
+        CfgServer configuration) {
+        this.hostname = hostname;
+        this.serverId = serverId;
+        this.tigerTestEnvMgr = tigerTestEnvMgr;
+        this.configuration = configuration;
+    }
 
     public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
         if (configuration.getType() == null) {
@@ -99,6 +106,8 @@ public abstract class TigerServer {
             this.status = TigerServerStatus.STARTING;
         }
 
+        reloadConfiguration();
+
         assertThatConfigurationIsCorrect();
 
         final ServerType type = configuration.getType();
@@ -106,15 +115,13 @@ public abstract class TigerServer {
         configuration.getEnvironment().stream()
             .map(testEnvMgr::replaceSysPropsInString)
             .forEach(environmentProperties::add);
-        configuration.setSource(configuration.getSource().stream()
-            .map(TokenSubstituteHelper::substitute)
-            .collect(Collectors.toList()));
 
         // apply routes to local proxy
         if (configuration.getUrlMappings() != null) {
             configuration.getUrlMappings().forEach(mapping -> {
                 if (StringUtils.isBlank(mapping) || !mapping.contains("-->") || mapping.split(" --> ", 2).length != 2) {
-                    throw new TigerConfigurationException("The urlMappings configuration '" + mapping + "' is not correct. Please check your .yaml-file.");
+                    throw new TigerConfigurationException("The urlMappings configuration '" + mapping
+                        + "' is not correct. Please check your .yaml-file.");
                 }
 
                 String[] routeParts = mapping.split(" --> ", 2);
@@ -128,11 +135,14 @@ public abstract class TigerServer {
 
         loadPkiForProxy();
 
-        performStartup();
+        try {
+            performStartup();
+        } catch (RuntimeException e) {
+            log.warn("Error during startup of server {}. Used configuration was {}",
+                getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
+            throw e;
+        }
 
-        // TGR-284 set system properties from exports section and store the value in environmentVariables map
-        // replace ${NAME} with server host name
-        //
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);
             // ports substitution are only supported for docker based instances
@@ -143,12 +153,22 @@ public abstract class TigerServer {
             }
             kvp[1] = kvp[1].replace("${NAME}", getHostname());
 
-            log.info("  setting system property " + kvp[0] + "=" + kvp[1]);
-            System.setProperty(kvp[0], kvp[1]);
+            log.info("  setting global property " + kvp[0] + "=" + kvp[1]);
+            TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
         });
 
         synchronized (this) {
             this.status = TigerServerStatus.RUNNING;
+        }
+    }
+
+    private void reloadConfiguration() {
+        try {
+            this.configuration = TigerGlobalConfiguration.instantiateConfigurationBean(CfgServer.class,
+                "tiger", "servers", getServerId());
+            tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
+        } catch (TigerConfigurationException e) {
+            log.warn("Could not reload configuration for server {}", getServerId(), e);
         }
     }
 
@@ -188,32 +208,33 @@ public abstract class TigerServer {
 
     public void assertThatConfigurationIsCorrect() {
         var type = getConfiguration().getType();
-        assertThat(serverId).withFailMessage("Server Id must not be blank!").isNotBlank();
+        assertThat(serverId)
+            .withFailMessage("Server Id must not be blank!")
+            .isNotBlank();
+
         if (this instanceof DockerComposeServer && StringUtils.isNotBlank(getHostname())) {
             throw new TigerConfigurationException("Docker compose does not support a hostname for the node!");
         }
 
         assertCfgPropertySet(getConfiguration(), "type");
 
-        if (type != ServerType.EXTERNALJAR && type != ServerType.EXTERNALURL && type != ServerType.DOCKER_COMPOSE) {
+        if (type == ServerType.DOCKER) {
             assertCfgPropertySet(getConfiguration(), "version");
         }
 
-        // set default value for Tiger Proxy source
-        if (type == ServerType.TIGERPROXY && (getConfiguration().getSource() == null || getConfiguration().getSource()
-            .isEmpty())) {
-            log.info("Defaulting tiger proxy source to gematik nexus for " + serverId);
-            getConfiguration().setSource(new ArrayList<>(List.of("nexus")));
-        }
-        // set default value for Tiger Proxy external Jar options
-        if (type == ServerType.TIGERPROXY && getConfiguration().getExternalJarOptions() == null) {
-            getConfiguration().setExternalJarOptions(new CfgExternalJarOptions());
-        }
-
-        // set default value for Tiger Proxy healthcheck
-        if (type == ServerType.TIGERPROXY && getConfiguration().getExternalJarOptions().getHealthcheck() == null) {
-            getConfiguration().getExternalJarOptions()
-                .setHealthcheck("http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getServerPort());
+        // assert that server-port is set for the tiger-proxy
+        if (type == ServerType.TIGERPROXY) {
+            if (getConfiguration().getTigerProxyCfg() == null) {
+                getConfiguration().setTigerProxyCfg(new CfgTigerProxyOptions());
+            }
+            if (getConfiguration().getTigerProxyCfg().getServerPort() <= 0) {
+                getConfiguration().getTigerProxyCfg().setServerPort(SocketUtils.findAvailableTcpPort());
+            }
+            if (getConfiguration().getTigerProxyCfg().getProxyCfg() == null
+                || getConfiguration().getTigerProxyCfg().getProxyCfg().getPort() == null
+                || getConfiguration().getTigerProxyCfg().getProxyCfg().getPort() <= 0) {
+                throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getHostname() + "'");
+            }
         }
 
         // set default values for all types
@@ -223,7 +244,7 @@ public abstract class TigerServer {
         }
 
         // defaulting work dir to temp folder on system if not set in config
-        if (type == ServerType.EXTERNALJAR || type == ServerType.TIGERPROXY) {
+        if (type == ServerType.EXTERNALJAR) {
             String folder = getConfiguration().getExternalJarOptions().getWorkingDir();
             if (folder == null) {
                 folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile().getAbsolutePath();
@@ -243,7 +264,7 @@ public abstract class TigerServer {
         }
 
         if (type == ServerType.EXTERNALJAR) {
-            assertCfgPropertySet(getConfiguration().getExternalJarOptions(), "healthcheck");
+            assertCfgPropertySet(getConfiguration(), "externalJarOptions", "healthcheck");
         }
 
         if (type == ServerType.TIGERPROXY) {
@@ -254,30 +275,35 @@ public abstract class TigerServer {
     }
 
     @SneakyThrows
-    private void assertCfgPropertySet(Object srv, String propName) {
-        Method mthd = srv.getClass()
-            .getMethod("get" + Character.toUpperCase(propName.charAt(0)) + propName.substring(1));
-        Object value = mthd.invoke(srv);
-        if (value == null) {
-            throw new TigerTestEnvException("Server " + propName + " must be set and must not be NULL!");
-        }
-        if (value instanceof List) {
-            List<?> l = (List<?>) value;
-            if (l.isEmpty() ||
-                l.get(0) == null) {
-                throw new TigerTestEnvException(
-                    "Server " + propName + " list must be set and must contain at least one not empty entry!");
+    private void assertCfgPropertySet(Object target, String... propertyNames) {
+        for (int i = 0; i < propertyNames.length; i++) {
+            var propertyName = propertyNames[i];
+            Method mthd = target.getClass()
+                .getMethod("get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1));
+            target = mthd.invoke(target);
+            if (target == null) {
+                throw new TigerTestEnvException("Server " + propertyName + " must be set and must not be NULL!");
             }
-            if (l.get(0) instanceof String) {
-                if (((String) l.get(0)).isBlank()) {
+            if (target instanceof List) {
+                List<?> l = (List<?>) target;
+                if (l.isEmpty() ||
+                    l.get(0) == null) {
                     throw new TigerTestEnvException(
-                        "Server " + propName + " list must be set and must contain at least one not empty entry!");
+                        "Server " + propertyName + " list must be set and must contain at least one not empty entry!");
                 }
-            }
-        } else {
-            if (value instanceof String) {
-                if (((String) value).isBlank()) {
-                    throw new TigerTestEnvException("Server " + propName + " must be set and must not be empty!");
+                if (l.get(0) instanceof String) {
+                    if (((String) l.get(0)).isBlank()) {
+                        throw new TigerTestEnvException(
+                            "Server " + propertyName
+                                + " list must be set and must contain at least one not empty entry!");
+                    }
+                }
+            } else {
+                if (target instanceof String) {
+                    if (((String) target).isBlank()) {
+                        throw new TigerTestEnvException(
+                            "Server " + propertyName + " must be set and must not be empty!");
+                    }
                 }
             }
         }
@@ -327,6 +353,11 @@ public abstract class TigerServer {
                 .orElseThrow(() -> new TigerEnvironmentStartupException(
                     "Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
             .collect(Collectors.toUnmodifiableList());
+    }
+
+    public String getDestinationUrl(String fallbackProtocol) {
+        throw new TigerTestEnvException(
+            "Sophisticated reverse proxy for '" + getClass().getSimpleName() + "' is not supported!");
     }
 
     public void setStatus(TigerServerStatus newStatus) {

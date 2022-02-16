@@ -1,5 +1,32 @@
 # Changelog Tiger Testplattform
 
+# Release 0.19.0
+
+## Breaking Change
+* TGR-113: Test-Context, Test-Config and Test-Variables are deprecated. All values are now stored using `TigerGlobalConfiguration`. This supersedes all uses of domains and context, of which there are no known instances. If your migration is difficult, please contact the team.
+* The migration entails a complete rethink of configuration and value-stores in tiger. If you have any troubles please read the user-manual (Chapter 6) and don't hesitate to ask us.
+* TGR-299: The configuration flag `proxyProtocol` from the server-type tigerProxy has been renamed to `proxiedServerProtocol` to clarify usage and avoid confusion.
+* If a `proxiedServer` did have a Healthcheck-URL (or source-URL for `externalUrlServer`) previously the reverse-proxy would target the deep-path. Now it will target the domain only.
+* TGR-197: PKIIdentities must not any longer be specified using Windows specific paths. Please use linux "/" folder separator character and relative paths to ensure cross-platform support of your test environments.
+
+## Bugfix
+* TGR-350: Multiple Scenariooutlines in feature file break test execution.
+* RBEL-41: Too restrictive validation of hostnames in RbelHostname element
+
+## Features
+* TGR-113: Configuration has been refactored/simplified and all placeholders in tiger-servers are now successfully resolved.
+* TGR-332: Tiger proxies are no longer instantiated as external Jar downloaded from maven central but are started in process. This dramatically reduces startup time and reduces bandwidth demands.
+* TGR-341: Upgrade to Serenity BDD v3.1.16 and thus Selenium 4
+
+# Release 0.18.1
+
+## Bugfix
+* Tiger admin UI allow to rename nodes to ""
+
+## Features
+* TGR-50: Tiger test environment configuration now has an admin Web UI. Check out the tiger-admin module
+* TGR-306: Tiger admin UI now has "Duplicate node" feature
+
 # Release 0.18.0
 
 ## Breaking Change
@@ -91,7 +118,7 @@
 * TGR-165 EPA VAU Schlüssel ist fest im Tiger Proxy hinterlegt
 * TGR-168 Proxy modifications unterstützt nun auch Query Parameter modifications
 * TGR-112 Dokumentation für Modifications Feature [Mehr Details...](tiger-standalone-proxy/README.md)
-* TGR-63  Exceptions, die in einem Upstream Tiger-Proxy auftreten werden über die WS-Schnittstelle an downstream Proxies
+* TGR-63  Exceptions, die in einem Upstream Tiger Proxy auftreten werden über die WS-Schnittstelle an downstream Proxies
   kommuniziert.
 
 ## Änderungen
@@ -163,7 +190,7 @@ WorkingDir wird automatisch angelegt
 * Manual Update-Bug fixed
 
 # Release 0.9.0
-* Longer chains are supported for Tiger-Proxy TSL-Identities
+* Longer chains are supported for Tiger Proxy TSL-Identities
 * Chains are verified on startup
 * Memory Management for tiger-standalone improved
 * support for demis docker compose

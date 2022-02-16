@@ -3,12 +3,15 @@ package de.gematik.test.tiger.admin.bdd.actions;
 import static net.serenitybdd.screenplay.Tasks.instrumented;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.PerformActionsOnSnack;
 import de.gematik.test.tiger.admin.bdd.pages.AdminHomePage;
+import java.time.Duration;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.Performable;
 import net.serenitybdd.screenplay.actions.Click;
+import net.serenitybdd.screenplay.actions.Enter;
 import net.serenitybdd.screenplay.ensure.Ensure;
 import net.serenitybdd.screenplay.targets.Target;
 import net.thucydides.core.annotations.Step;
+import org.openqa.selenium.Keys;
 
 public class AddServer implements Performable {
 
@@ -23,18 +26,20 @@ public class AddServer implements Performable {
 
     private final String nodeType;
     private final Target addServerBtn;
+    private final boolean submitFormViaEnter;
 
-    public AddServer(String nodeType, Target addServerBtn) {
+    public AddServer(String nodeType, Target addServerBtn, boolean submitFormViaEnter) {
         this.nodeType = nodeType;
         this.addServerBtn = addServerBtn;
+        this.submitFormViaEnter = submitFormViaEnter;
     }
 
-    public static AddServer ofTypeVia(String nodeType, Target addServerBtn) {
-        return instrumented(AddServer.class, nodeType, addServerBtn);
+    public static AddServer ofTypeVia(String nodeType, Target addServerBtn, boolean submitFormViaEnter) {
+        return instrumented(AddServer.class, nodeType, addServerBtn, submitFormViaEnter);
     }
 
     private static final Target dropDownButton = Target.the("dropdown button of server types")
-            .locatedBy("#add-server-modal button.dropdown-toggle");
+        .locatedBy("#add-server-modal button.dropdown-toggle");
 
     private static Target getNodeTypeListEntryFor(String nodeType) {
         return Target.the("entry for " + nodeType)
@@ -54,12 +59,16 @@ public class AddServer implements Performable {
             Ensure.that(addServerBtn).isEnabled(),
             // Actions
             Click.on(addServerBtn),
-            Ensure.that(MODAL_ADD_SERVER).isDisplayed(),
+            Ensure.that(MODAL_ADD_SERVER.waitingForNoMoreThan(Duration.ofSeconds(5))).isDisplayed(),
             Click.on(dropDownButton),
             Click.on(getNodeTypeListEntryFor(nodeType)),
-            Click.on(BTN_ADD_SERVER_OK),
+            submitFormViaEnter ?
+                Enter.keyValues(Keys.ENTER).into(BTN_ADD_SERVER_OK) :
+                Click.on(BTN_ADD_SERVER_OK),
             // Verification
-            Ensure.that(PerformActionsOnSnack.snackWithTextStartingWith("Added node ")).isDisplayed(),
+            Ensure.that(PerformActionsOnSnack.snackWithTextStartingWith("Added node ")
+                    .waitingForNoMoreThan(Duration.ofSeconds(5)))
+                .isDisplayed(),
             PerformActionsOnSnack.closeSnack(),
             Ensure.that(AdminHomePage.theNumberOfNodes()).isEqualTo(nodeCount + 1),
             Ensure.that(AdminHomePage.theLastFormularType()).isEqualTo(nodeType)

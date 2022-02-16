@@ -18,11 +18,11 @@ public class TigerTemplateSource {
 
     private final String templateName;
     private final List<TigerConfigurationKeyString> targetPath;
-    private final Map<List<TigerConfigurationKeyString>, String> values;
+    private final Map<TigerConfigurationKey, String> values;
 
-    public List<List<TigerConfigurationKeyString>> applyToAllApplicable(final TigerConfigurationSource tigerConfigurationSource,
-                                                                        final Map<List<TigerConfigurationKeyString>, String> finalValues) {
-        List<List<TigerConfigurationKeyString>> appliedTemplateKeys = new ArrayList<>();
+    public List<TigerConfigurationKey> applyToAllApplicable(final AbstractTigerConfigurationSource tigerConfigurationSource,
+                                                                        final Map<TigerConfigurationKey, String> finalValues) {
+        List<TigerConfigurationKey> appliedTemplateKeys = new ArrayList<>();
         var priorKeys = new HashSet<>(finalValues.keySet());
         tigerConfigurationSource.getValues().entrySet().stream()
             .filter(entry -> entry.getKey().size() == targetPath.size() + 1 + 1) // basePath + serverName + "template"
@@ -30,8 +30,8 @@ public class TigerTemplateSource {
             .filter(entry -> entry.getKey().get(targetPath.size() + 1).getValue().equalsIgnoreCase("template"))
             .filter(entry -> entry.getValue().equals(templateName))
             .forEach(templateSelectionEntry -> {
-                for (Map.Entry<List<TigerConfigurationKeyString>, String> valueEntry : values.entrySet()) {
-                    var newKey = new ArrayList<TigerConfigurationKeyString>();
+                for (Map.Entry<TigerConfigurationKey, String> valueEntry : values.entrySet()) {
+                    var newKey = new TigerConfigurationKey();
                     newKey.addAll(targetPath);
                     newKey.add(templateSelectionEntry.getKey().get(targetPath.size())); //serverName
                     newKey.addAll(valueEntry.getKey());

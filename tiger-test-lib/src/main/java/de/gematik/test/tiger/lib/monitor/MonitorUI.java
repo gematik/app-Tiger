@@ -81,7 +81,7 @@ public class MonitorUI extends JFrame {
             }
             message.setText(m.group(4));
         }
-        if (stepText.endsWith("TGR warte auf Abbruch")) {
+        if (stepText.endsWith("TGR warte auf Abbruch") || stepText.endsWith("TGR wait for user abort")) {
             clickedQuitBtn = false;
             getContentPane().add(quitButton, BorderLayout.EAST);
             pack();

@@ -1,5 +1,5 @@
 Feature: Test Tiger BDD
 
   Scenario: Dummy Test
-    Given TGR set context domain to "testbdd"
-    And TGR set context entry "TEST1" to "Value1"
+    Given TGR set global variable "key01" to "value01"
+    When TGR assert variable "key01" matches "v.*\d\d"

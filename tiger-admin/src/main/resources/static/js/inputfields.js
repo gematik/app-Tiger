@@ -22,6 +22,12 @@ function initiateEditingServerKeyField(ev) {
 function handleKeysForServerKeyEditing(ev) {
   if (ev.keyCode === 13) {
     const text = $(this).text();
+    if (text.length === 0) {
+      snack(
+          'Empty node name not allowed!',
+          'warning');
+      return false;
+    }
     if (text.indexOf(' ') !== -1) {
       snack(
           'No SPACES allowed in server key!<br/>Replacing spaces with underscores!',

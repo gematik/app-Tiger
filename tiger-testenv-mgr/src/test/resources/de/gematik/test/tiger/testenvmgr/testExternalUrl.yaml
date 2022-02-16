@@ -4,7 +4,6 @@ tigerProxy:
 
 servers:
   testExternalUrl:
-    hostname: testExternalUrl
     type: externalUrl
     source:
       - https://www.orf.at

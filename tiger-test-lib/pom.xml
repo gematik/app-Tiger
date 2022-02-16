@@ -10,7 +10,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.18.1</version>
+        <version>0.19.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -215,7 +215,6 @@
                 </configuration>
             </plugin>
             <!-- end create reusable test jar part -->
-
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -275,5 +274,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -22,10 +22,12 @@ import de.gematik.test.tiger.lib.parser.model.TestResult;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class TestJUnitTestResultParser {
 
+    @Disabled //TODO TGR-373
     @Test
     void testJunitResultParseOK() {
         // avoid xerces bug not supporting accessEXternalDTD

@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.common.config.tigerProxy.TigerTlsConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -49,7 +49,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.mockserver.socket.tls.jdk.CertificateSigningRequest.NOT_AFTER;

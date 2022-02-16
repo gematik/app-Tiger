@@ -2,27 +2,26 @@
 == Overview
 
 ifdef::backend-html5[]
-image:media/tiger2-plain.svg[200,200,role="thumb",float="right",title="Tiger logo"]
+To get a quick introduction to the core concepts and features of the Tiger test framework check out our video
 endif::[]
-
-It all started with a crazy idea on the 1^st^ of April... +
-
-What if we could come up with something new
-
-* lightweight
-* flexible
-* customizable
-* fun to work with
-
-Something to make our life as testers easier? Using the latest technologies and **focusing on the needs of testing in an agile environment**?
-
-Quickly a small group of committed volunteers formed and began evolving the rough idea of an agile test framework for the German Telematik Infrastructure @ gematik GmbH.
-
-And so the **TIger project was started!**
-
 ifdef::backend-pdf[]
-image:media/tiger-500.png[250,250,role="thumb",title="Tiger logo"]
+To get a quick introduction to the core concepts and features of the Tiger test framework check out our video at
+https://youtu.be/eJJZDeuFlyI?autoplay
 endif::[]
+
+image::media/tiger-pitch-still.png[width="1024",title=Tiger product pitch video,align=center,link=https://youtu.be/eJJZDeuFlyI?autoplay]
+
+
+Tiger is a framework for interface-driven BDD black-box-testing.
+
+Tiger is a toolbox that supports and guides you when writing testsuites. It lets you focus on writing the tests  and solves typical problems that every team encounters (configuration, setting up the test environment, parametrization, result reporting, test running). How, you ask?
+
+* Tiger does not focus on components but on the interactions between them. The Tiger Proxy captures the traffic between components.
+* Tiger Proxy parses the traffic and builds a tree-structure which abstracts away the encoding (XML, JSON...) and lets you focus on the data.
+* The Tiger test environment manager handles dockers, JARs and external servers, boots the configured setup and routes the traffic, all with zero lines of Java, all in YAML only.
+* A complete configuration toolkit, which combines multiple source and supports custom configuration of your testsuite as well, again with zero lines of Java.
+* Common tasks (JSON-validation, message-filtering, scenario configuration, configuration of simulators...) can be performed with the Tiger test library, which can be seamlessly imported into BDD testsuites. This allows you to build mighty testsuites with zero lines of java.
+* If you want to write custom steps and glue code our Java-API has got you covered by supporting common tasks (crypto, serialization...) for you. So the little lines you have to write are be powerful and descriptive?!
 
 <<<
 === Use cases
@@ -36,28 +35,11 @@ In our first dive we focused on what Tiger should stand for and how we could imp
 * Reuse of cases/steps from existing test suites
 * (non Java test automation support is not implemented yet)
 
-
 image::media/tiger_use_cases.svg[title="Tiger use cases"]
 
-<<<
-=== Elevator pitch
-
-ifdef::backend-html5[]
-To get a quick introduction to the core concepts and features of the Tiger test framework check out our video
-endif::[]
-ifdef::backend-pdf[]
-To get a quick introduction to the core concepts and features of the Tiger test framework check out our video at
-https://youtu.be/eJJZDeuFlyI?autoplay
-endif::[]
-
-image::media/tiger-pitch-still.png[width="1024",title=Tiger product pitch video,align=center,link=https://youtu.be/eJJZDeuFlyI?autoplay]
-
-// TODO TGR-315 write down the pitch
-
-<<<
 === Components
 
-Tiger has a clear separation in three components, ech of them having a clear purpose, described in the next subsections:
+Tiger has a clear separation in three components, each of them having a clear purpose, described in the next subsections:
 
 * Tiger Proxy
 * Tiger Testenvironment Manager

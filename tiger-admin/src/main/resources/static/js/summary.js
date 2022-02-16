@@ -31,8 +31,7 @@ const summaryPatterns = {
   ],
   ".tigerProxyCfg": [
     ["single", "Proxied ", "$.tigerProxyCfg.proxiedServer", "@ "],
-    ["single", "", "$.tigerProxyCfg.proxyProtocol", "://localhost"],
-    ["single", ":", "$.tigerProxyCfg.proxyPort", "", "RANDOMPORT"],
+    ["single", "http(s)://localhost:", "$.tigerProxyCfg.proxyCfg.proxyPort", "", "RANDOMPORT"],
     "<br/>",
     ["single", "WebUI http://localhost:", "$.tigerProxyCfg.serverPort", "/webui<br/>"],
     ["single", "Loglevel ", "$.tigerProxyCfg.proxyCfg.proxyLogLevel", "<br/>"],

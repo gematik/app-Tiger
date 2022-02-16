@@ -62,13 +62,10 @@ interface {
     LineColor transparent
 }
 
-
 .Current {
   BackgroundColor White
   FontColor DarkRed
 }
-
-
 
 .File {
     LineColor SlateBlue

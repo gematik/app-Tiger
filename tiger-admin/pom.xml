@@ -5,19 +5,17 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.18.1</version>
+        <version>0.19.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-admin</artifactId>
-    <version>0.18.1</version>
     <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <springboot.version>2.6.2</springboot.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <encoding>UTF-8</encoding>
@@ -25,38 +23,96 @@
         <tags></tags>
         <webdriver.base.url></webdriver.base.url>
         <cucumber.filter.tags></cucumber.filter.tags>
-    </properties>
 
-    <profiles>
-        <profile>
-            <id>WithoutUiTests</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
-            </properties>
-        </profile>
-        <profile>
-            <id>WithUiTests</id>
-            <properties>
-                <!--suppress UnresolvedMavenProperty -->
-                <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
-            </properties>
-        </profile>
-    </profiles>
+        <version.asciidoctor.maven.plugin>2.2.1</version.asciidoctor.maven.plugin>
+        <version.asciidoctorj>2.5.2</version.asciidoctorj>
+        <version.asciidoctorj.pdf>1.6.0</version.asciidoctorj.pdf>
+        <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
+        <version.selenium>4.1.1</version.selenium>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-parent</artifactId>
-                <version>${springboot.version}</version>
+                <version>${version.spring-boot}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- we need this, because spring-boot-starter-parent uses an older version of selenium and we get it because of dependencyManagement -->
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-java</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-api</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-support</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-chrome-driver</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-firefox-driver</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-edge-driver</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-ie-driver</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-safari-driver</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-opera-driver</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-remote-driver</artifactId>
+                <version>${version.selenium}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <profiles>
+        <profile>
+            <id>NoLongrunner</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
+                <excludedTestGroups>de.gematik.test.tiger.common.LongrunnerTest</excludedTestGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>WithLongrunner</id>
+            <properties>
+                <!--suppress UnresolvedMavenProperty -->
+                <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>
@@ -67,13 +123,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${springboot.version}</version>
+            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
             <scope>compile</scope>
-            <version>${springboot.version}</version>
+            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
@@ -98,20 +154,22 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
+            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-common</artifactId>
-            <version>0.18.1</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-testenv-mgr</artifactId>
-            <version>0.18.1</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -188,7 +246,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.7</version>
+            <version>1.2.10</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
@@ -240,7 +298,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.6.2</version>
+                <version>${version.spring-boot}</version>
                 <configuration>
                     <mainClass>de.gematik.test.tiger.admin.TigerAdminApplication</mainClass>
                 </configuration>
@@ -253,9 +311,31 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <version>3.0.0-M5</version>
+                <executions>
+                    <execution>
+                        <id>run-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                    <argLine>${failsafe.jacoco.args}</argLine>
                     <includes>
                         <include>**/Parallel*IT.java</include>
                     </includes>
@@ -266,19 +346,10 @@
                         <webdriver.base.url>${webdriver.base.url}</webdriver.base.url>
                         <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>
-                       <parallel>classes</parallel>
-                    <forkCount>2</forkCount>
+                    <parallel>classes</parallel>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
+                    <forkCount>2</forkCount>
                     <testFailureIgnore>true</testFailureIgnore>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-                <configuration>
-                    <source>11</source>
-                    <target>11</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -305,7 +376,7 @@
                     </execution>
                     <execution>
                         <id>serenity-check</id>
-                        <phase>post-integration-test</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
@@ -315,7 +386,28 @@
             <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
-                <version>2.2.1</version>
+                <version>${version.asciidoctor.maven.plugin}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram</artifactId>
+                        <version>${version.asciidoctorj.diagram}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-pdf</artifactId>
+                        <version>${version.asciidoctorj.pdf}</version>
+                    </dependency>
+                    <!-- seems to be outdated / obsolete / not working with current version of asciidoctor.
+                         So as of now no way to support Gherkin blocks in asciidoc!
+                         Please do not DELETE as this is important knowledge
+                    <dependency>
+                        <groupId>com.github.domgold.doctools.asciidoctor</groupId>
+                        <artifactId>asciidoctor-gherkin-extension</artifactId>
+                        <version>1.0.1</version>
+                    </dependency>
+                    -->
+                </dependencies>
                 <executions>
                     <execution>
                         <id>convert-to-pdf</id>
@@ -344,12 +436,10 @@
                             </resources>
                             <attributes>
                                 <source-highlighter>coderay</source-highlighter>
-                                <!--<imagesdir>${project.basedir}/doc/images</imagesdir>-->
                                 <toc>left</toc>
                                 <icons>font</icons>
                                 <pagenums/>
                             </attributes>
-
                             <requires>
                                 <require>asciidoctor-diagram</require>
                             </requires>
@@ -392,27 +482,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-diagram</artifactId>
-                        <version>2.2.1</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-pdf</artifactId>
-                        <version>1.6.0</version>
-                    </dependency>
-                    <!-- seems to be outdated / obsolete / not working with current version of asciidoctor.
-                         So as of now no way to support Gherkin blocks in asciidoc!
-                         Please do not DELETE as this is important knowledge
-                    <dependency>
-                        <groupId>com.github.domgold.doctools.asciidoctor</groupId>
-                        <artifactId>asciidoctor-gherkin-extension</artifactId>
-                        <version>1.0.1</version>
-                    </dependency>
-                    -->
-                </dependencies>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>

@@ -125,7 +125,7 @@ All you need is to set up three files:
 * a `tiger-testenv.yaml` to declare your test environment (servers needed, proxy routes,...). This is currently "empty".
 * a `test.feature` file containing a test scenario and dummy test steps to be performed.
 
-[plantuml, "tigerOnly-file-structure", "svg", title="File structure of TigerOnly example porject"]
+[plantuml, "tigerOnly-file-structure", "svg", title="File structure of TigerOnly example project"]
 ----
 @startwbs
 !include ./plantuml.style

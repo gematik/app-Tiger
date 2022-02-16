@@ -3,8 +3,10 @@ package de.gematik.test.tiger.common.config;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ServerType {
-    DOCKER("docker"), DOCKER_COMPOSE("compose"),
-    EXTERNALJAR("externalJar"), EXTERNALURL("externalUrl"),
+    DOCKER("docker"),
+    DOCKER_COMPOSE("compose"),
+    EXTERNALJAR("externalJar"),
+    EXTERNALURL("externalUrl"),
     TIGERPROXY("tigerProxy");
 
     private final String name;

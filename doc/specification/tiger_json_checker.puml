@@ -1,0 +1,18 @@
+@startmindmap
+* JsonChecker Functions
+** ${json-unit.ignore}
+*** Fields which have ${json-unit.ignore} as a value, will be ignored
+** checkExtraAttributes = true
+*** When this boolean is set to true, the attributes, which miss from the doc string and are present in the RbelPath are ignored
+** Regular expressions
+*** Value or the key of the field can be checked using different regular expressions. First the value will be checked for equals and then for the regular expression
+** $REMOVE
+*** With $REMOVE, it can be checked that such key does not exist
+** $NULL
+*** When the value is equal to $NULL, it means that this key doesn't have any value
+** Lenient mode
+*** The order of attributes within the json array doesnt matter
+** Matching only a specific json key in the json object
+** Optional keys with ___ in oracle string
+*** Keys which have four underscores before them are optional and can be checked for the value ONLY if the value exists in the test JSON RBelPath node
+@endmindmap

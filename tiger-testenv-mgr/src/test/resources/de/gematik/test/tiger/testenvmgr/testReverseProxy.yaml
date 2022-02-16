@@ -1,33 +1,18 @@
-tigerProxy:
-  forwardToProxy:
-    hostname: $SYSTEM
-
 servers:
   testWinstone2:
-    hostname: testWinstone2
-    template: epa2-fdv
     type: externalJar
     source:
       - http://localhost:${mockserver.port}/download
-    startupTimeoutSec: 5
     externalJarOptions:
-      workingDir: WinstoneHTTPServer
       arguments:
-        - --httpPort=19107
+        - --httpPort=${free.ports.0}
         - --webroot=.
-        - --control-port=19000
-      healthcheck: http://127.0.0.1:19107
+      healthcheck: http://127.0.0.1:${free.ports.0}
 
   reverseproxy1:
-    hostname: reverseproxy1
     type: tigerProxy
-    source:
-      - nexus
-    version: 0.9.0-178
     tigerProxyCfg:
-      serverPort: 9999
+      serverPort: ${free.ports.2}
       proxiedServer: testWinstone2
       proxyCfg:
-        port: 10020
-
-
+        port: ${free.ports.3}

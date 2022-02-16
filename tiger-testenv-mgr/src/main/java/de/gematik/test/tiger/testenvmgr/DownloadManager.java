@@ -1,7 +1,7 @@
 package de.gematik.test.tiger.testenvmgr;
 
 import com.google.common.util.concurrent.Monitor;
-import de.gematik.test.tiger.common.config.CfgExternalJarOptions;
+import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.exceptions.TigerDownloadManagerException;
 import kong.unirest.Unirest;

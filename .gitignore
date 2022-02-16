@@ -10,8 +10,10 @@ application.yml
 tiger-testenv-mgr/WinstoneHTTPServer
 /tiger-admin/src/test/resources/webdriver
 
-Jenkinsfile-MR-CI
-Jenkinsfile_DeployGitlab
-Jenkinsfile_InternalRelease
-Jenkinsfile_PublishToMavenCentral
-
+GitHub-Release.Jenkinsfile
+Internal-Release.Jenkinsfile
+Jenkinsfile
+Maven-Central-Release.Jenkinsfile
+Nightly.Jenkinsfile
+Release.Jenkinsfile
+/tiger-integration-tests/

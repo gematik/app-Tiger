@@ -3,9 +3,9 @@ package de.gematik.test.tiger.proxy;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import de.gematik.test.tiger.common.config.tigerProxy.ForwardProxyInfo;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyType;
+import de.gematik.test.tiger.common.data.config.tigerProxy.ForwardProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import lombok.SneakyThrows;
@@ -122,7 +122,9 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @ParameterizedTest
-    @CsvSource(value = {"localhost, 80, username, password", "localhost, null, username, password"},
+    @CsvSource(value = {
+        "localhost, 80, username, password",
+        "localhost, null, username, password"},
         nullValues = {"null"})
     public void httpProxyWithAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
         String proxyUser, String proxyPassword, CapturedOutput capturedOutput) {

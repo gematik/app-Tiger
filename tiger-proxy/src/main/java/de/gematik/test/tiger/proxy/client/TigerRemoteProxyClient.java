@@ -19,8 +19,8 @@ package de.gematik.test.tiger.proxy.client;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -34,7 +34,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.lang.NonNullApi;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.util.Assert;
@@ -55,7 +54,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     @Getter
     private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
 
-    public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
+    public  TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
         final String tracingWebSocketUrl = remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
         this.remoteProxyUrl = remoteProxyUrl;
@@ -252,13 +251,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         @Override
         public void handleException(StompSession stompSession, StompCommand stompCommand, StompHeaders stompHeaders,
             byte[] bytes, Throwable throwable) {
-            log.error("handle exception TigerRemoteProxy: {}, {}", new String(bytes), throwable);
+            log.error("handle exception with remote url '{}': {}, {}", remoteProxyUrl, new String(bytes), throwable);
             throw new TigerRemoteProxyClientException(throwable);
         }
 
         @Override
         public void handleTransportError(StompSession session, Throwable exception) {
-            log.error("handle transport Error TigerRemoteProxy: {}", exception);
+            log.error("handle transport error from url '{}': {}", remoteProxyUrl, exception);
             throw new TigerRemoteProxyClientException(exception);
         }
     }

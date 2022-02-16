@@ -1,29 +1,38 @@
 @startmindmap
 
 <style>
+.root {
+    Margin 20
+    }
 mindmapDiagram {
     node {
       BackgroundColor DarkGray
       FontColor white
       Padding 20
-    }
-    boxless {
-      FontColor #333333
+      MaximumWidth 250
     }
     rootnode {
       BackgroundColor orange
       FontSize 32
       Padding 60
+      RoundCorner 300
     }
     :depth(1) {
       BackGroundColor Gray
       FontSize 20
+      Padding 40
+      RoundCorner 300
     }
     :depth(2) {
       FontSize 18
     }
+    boxless {
+      FontColor #333333
+      Padding 60
+    }
     .green {
       BackGroundColor Green
+      Padding 30
     }
     .blue {
       BackGroundColor SteelBlue
@@ -34,46 +43,118 @@ mindmapDiagram {
 }
 </style>
 
-
+title Tiger
 
 * Tiger
 ** Was ist der Mehrwert?
 *** Automatisierbarkeit <<green>>
-****_ Tiger test lib
-****_ Serenity BDD
-****_ Tiger test environment Manager
+****_:
+Das Tiger Framework, welches mit Serenity BDD integriert ist, bildet ein komfortables Testautomatisierungs- und Reporting Framework.
+
+Mit dem Tiger test environment Manager können automatisiert Testumgebungen effizient erstellt werden.
+;
 *** Fehlerszenarien\neinfach erstellen <<green>>
-****_ BDD/Cucumber Scenario outlines
+****_:
+Cucumber Scenario outlines erlauben es, Testfälle auf einfache Weise mit unterschiedlichen Testdaten auszuführen.
+
+Die Tiger Proxy modifications ermöglichen es den Datenverkehr zur Laufzeit ohne Programmierung an definierten Stellen abzuändern,
+um so Fehlerwirkungen hervorzurufen.
+;
 *** Wiederverwendbarkeit <<green>>
-****_ Tiger BDD steps
-****_ Tiger test environment templates
-****_ Screenplay pattern
+****_:
+Mit Tiger BDD steps können Validierungs- und Filterfunktionen projektübergreifend genutzt werden.
+
+Durch die Nutzung von Vorlagen können bestimmte Testumgebungen, wie z.B. das E-Rezept mit wenigen Konfigurationszeilen erstellt werden
+
+Das Screenplay Pattern ist ein Architekturpattern,\nwelches die Erstellung wartungsarmer,\nwiederverwendbarer Testsuiten ermöglicht.
+;
 *** Umfangreiche\nFunktionalität\nout-of-the-box <<green>>
-****_ Tiger core features see manual chapter XXXX
+****_ Die Tiger core features hier zu beschreiben sprengt den Rahmen. Alle Infos findet ihr im Tiger user manual.
 *** Ansprechende,\ngut strukturierte und\ndetaillierte Reports <<green>>
-****_ Serenity BDD
-****_ RBel logs
+****_:
+Serenity BDD ist ein ausgezeichnetes Reporting Framework und ermöglicht ansprechende, aber auch detaillierte Berichte.
+
+RBel logs stellen die Nachrichten, welche während eines Testlaufs verschickt und empfangen wurden, detailliert, strukturiert und übersichtlich dar.
+;
 *** Einfache Analyse <<green>>
-****_ Serenity BDD
-****_ RBel logs
+****_:
+Durch die detaillierten Testberichte und protokollierten Nachrichten können Fehlerwirkungen schnell und effizient dingfest gemacht werden.
+;
 *** Gute Dokumentation\ndes Frameworks <<green>>
-****_ Tiger user manual
-****_ Javadoc Tiger BDD steps
+****_:
+Das Tiger user manual mit über 50 Seiten gut strukturierter Hilfestellung,
+aber auch die in Javadoc gut dokumentierten Tiger BDD steps, machen die Nutzung des Tigers auch für Anfänger:innen einfach.
+;
 *** Projektübergreifender\nWissensaufbau <<green>>
-****_ Process pattern (EAU Validierung)
+****_:
+Die Filter- und Validierungsschritte des Tigers ermöglichen kundenseitiges Testen von Funktionalitäten und
+eine schnelle, einfache Anpassung der Validierungs- und Filterschritte in den Validierungssuiten.
+;
+
 left side
 
 ** Welche Probleme werden gelöst?
 *** Überlast bei Personal <<blue>>
-*** Mangelndes Entwicklungs-\nKnowhow <<blue>>
-*** Kompliziertes Konfigurieren <<blue>>
-*** Unübersichtliche Traffic-\nProtokollierung/-Spezifikation <<blue>>
+****_:
+Testteams stehen in agilen Entwicklungen stark unter Last und müssen meist Testautomatisierungen durchführen,
+bei denen auf eine Tester:in zwei oder mehr Entwickler:innen kommen.
 
+Daher ist es extrem wichtig die Entwicklung und das Durchführen von Testsuiten bezüglich Effizienz zu optimieren.
+;
+*** Mangelndes Entwicklungs-\nKnowhow <<blue>>
+****_:
+Während in der Entwicklung der Fokus auf dem Erlernen neuer Coding Techniken und Technologien liegt,
+ist im Testbereich selten fundiertes Wissen über zeitgemäße zukunftsfähige Softwareentwicklung mit aktuellen Technologien gegeben.
+
+Dies führt zu wenig wartbarem, modularen und auf alten Technologien aufsetzenden Testcode.
+;
+*** Kompliziertes Konfigurieren <<blue>>
+****_:
+Ohne projektübergreifende verallgemeinerte Regeln und Konzepte entsteht ein Wildwuchs an unterschiedlichen Konfigurationsdateien, -formaten und -verzeichnissen.
+Da auch die Dokumentation häufig nur rudimentär vorhanden ist bzw. gepflegt wird, ist eine Anpassung der Testsuite oder
+eine Einphasung neuer Mitarbeiter:innen mit erheblichen Aufwänden verbunden.
+;
+*** Unübersichtliche Traffic-\nProtokollierung/-Spezifikation <<blue>>
+****_:
+Das Durchforsten von Log Dateien ist eine äußerst ineffiziente Form der Fehleranalyse.
+Meist gibt es auch keine projektübergreifenden Konzepte für das Loggen von Nachrichten.
+
+Bei der Verwendung von Verschlüsselung (SSL, VAU, JWT/JWE) ist eine Analyse ohne entsprechende Unterstützungstools gar nicht möglich.
+;
 ** Aufwand für MVP Tiger-Testsuite / Wie
 *** User-Manual &\nStartprojekt <<rose>>
+****_:
+Das User-Manual mit über 50 Seiten ist zwar sehr detailliert aber auch den einzelnen Kernfunktionalitäten des Tiger Frameworks klar zugeordnet.
+Das Beispielprojekt ist ein minimales Setup eines Projekts.
+
+Ausgehend von diesem Beispielprojekt, können unter Verwendung von SOLID und Screenplay Patterns eigene wartungsarme Testsuiten erstellt werden.
+Durch maven test-jar Artefakte können Testschritte aus anderen Testsuiten wiederverwendet werden.
+;
 *** Systemvoraussetzungen <<rose>>
-*** Testarchitektur\n(wo können Proxies hin?\nTesttreiber? PKI? ...) <<rose>>
-*** Projektspezifische Testschritte\n(BDD Steps) implementieren <<rose>>
-*** Testfälle implementieren <<rose>>
+****_:
+Java 11, Maven, IntelliJ
+;
+*** Aufwände, welche auch ohne Tiger anfallen <<rose>>
+**** Testarchitektur\n(wo können Proxies hin?\nTesttreiber? PKI? ...) <<rose>>
+*****_:
+Dieser Aufwand ist eigentlich unabhängig vom Tiger und muss für ein Testkonzept auf alle Fälle erstellt werden.
+Durch die Nutzung des Tiger Testenvironment Managers können hier aber fertige Bausteine/Konzepte wiederverwendet werden.
+;
+**** Projektspezifische\nTestschritte(BDD Steps)\nimplementieren\n <<rose>>
+*****_:
+Durch die Nutzung des Screenplay / SOLID Patterns können Funktionalitäten anderer Testsuites wiederverwendet werden und
+in Kopplung mit 3-Amigo Sessions entstehen gut wartbare modulare Testsuiten.
+;
+**** Testfälle konzeptionieren <<rose>>
+*****_:
+Durch 3-Amigo Sessions und die Nutzung von BDD/Cucumber entstehen aber abgestimmte Testfälle die im Team erarbeitet wurden.
+Missverständnisse und offene Fragen werden früh erkannt und geklärt.
+Durch die Verwendung von Fachsprache in den Testfälle können diese auch von PO/dem Fachbereich gelesen und verstanden werden.
+;
 *** Regelmäßige Updates\nvon Tiger <<rose>>
+****_:
+Tiger ist ein noch junges Framework. Aufgrund der schnellen und effizienten Entwicklung erstellen wir derzeit ca. 1-2 Releases pro Monat.
+Bei einigen Releases ist mit Breaking Changes zu rechnen, also mit einer Änderung an der Konfiguration oder der Funktionalität
+die eine Anpassung in den, den Tiger verwendenden Testsuiten bedingt. Für jeden Breaking change gibt es entsprechende Hinweise / Hilfestellungen in den Release Notes.
+;
 @endmindmap

@@ -16,10 +16,21 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,20 +40,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
-
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
 
 @Slf4j
 public class TestTigerTestEnvMgrStartupSequence {
@@ -153,22 +150,22 @@ public class TestTigerTestEnvMgrStartupSequence {
     }
 
     private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon,
-                                                                               String delayStartupUntilThisServerIsRunning) {
+        String delayStartupUntilThisServerIsRunning) {
         final CfgServer configuration = new CfgServer();
         configuration.setDependsUpon(dependsUpon);
         configuration.setType(ServerType.EXTERNALURL);
         configuration.setSource(List.of("blub"));
-        final TigerServer server = new MockTigerServer(name, configuration, envMgr, delayStartupUntilThisServerIsRunning);
+        final TigerServer server = new MockTigerServer(name, configuration, envMgr,
+            delayStartupUntilThisServerIsRunning);
 
         return Pair.of(name, server);
     }
 
-    private static TigerTestEnvMgr buildTestEnvMgr() throws Exception {
-        AtomicReference<TigerTestEnvMgr> env = new AtomicReference<>();
-        withEnvironmentVariable("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testNoTigerProxy.yaml")
-            .execute(() -> env.set(new TigerTestEnvMgr()));
-        return env.get();
+    private static TigerTestEnvMgr buildTestEnvMgr() {
+        TigerGlobalConfiguration.readFromYaml(
+            "cfgfile: \"src/test/resources/de/gematik/test/tiger/testenvmgr/testNoTigerProxy.yaml\"",
+            "tiger", "testenv");
+        return new TigerTestEnvMgr();
     }
 
     @BeforeEach
@@ -224,13 +221,14 @@ public class TestTigerTestEnvMgrStartupSequence {
 
         private final Optional<String> delayStartupUntilThisServerIsRunning;
 
-        public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr, String delayStartupUntilThisServerIsRunning) {
-            super(name, name, configuration, envMgr);
+        public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr,
+            String delayStartupUntilThisServerIsRunning) {
+            super(name, name, envMgr, configuration);
             this.delayStartupUntilThisServerIsRunning = Optional.ofNullable(delayStartupUntilThisServerIsRunning);
         }
 
         public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr) {
-            super(name, name, configuration, envMgr);
+            super(name, name, envMgr, configuration);
             this.delayStartupUntilThisServerIsRunning = Optional.empty();
         }
 

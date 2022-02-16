@@ -1,11 +1,13 @@
 package de.gematik.test.tiger.common.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -15,6 +17,7 @@ import java.util.Map;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TigerConfigurationTest {
 
@@ -372,7 +375,85 @@ public class TigerConfigurationTest {
             });
     }
 
+    /**
+     *
+     * ${ENV => GlobalConfigurationHelper.getString()
+     * ${json-unit.ignore} => interessiert dann folglich nicht
+     * ${VAR.foobar} => GlobalConfigurationHelper.getSourceByName("VAR").getString()
+     *
+     * ${ENV.foo.bar} ${ENV.FOO_BAR}
+     * FOO_GITHUBBAR => foo.githubBar
+     *
+     * FOO{
+     *     private String githubBar;
+     * }
+     */
+    @SneakyThrows
+    @Test
+    public void replacePlaceholdersInValuesDuringReadIn() {
+        withEnvironmentVariable("myEnvVar", "valueToBeAsserted")
+            .execute(() -> {
+                TigerGlobalConfiguration.reset();
+                TigerGlobalConfiguration.readFromYaml(
+            "foo: ${myEnvVar}", "nestedBean");
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                assertThat(dummyBean.getNestedBean().getFoo())
+                    .isEqualTo("valueToBeAsserted");
+            });
+    }
+
+    @SneakyThrows
+    @Test
+    public void placeNewValue_shouldFindValueAgain() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.putValue("foo.value", "bar");
+        assertThat(TigerGlobalConfiguration.readString("foo.value"))
+            .isEqualTo("bar");
+    }
+
+    @SneakyThrows
+    @Test
+    @DisplayName("I place a new value in the thread local store. A different thread should NOT see the value")
+    public void placeNewValueThreadLocal_differentThreadShouldNotFindValueAgain() {
+        TigerGlobalConfiguration.reset();
+        final Thread thread =
+            new Thread(() -> {
+                TigerGlobalConfiguration.putValue("foo.value", "bar", SourceType.THREAD_CONTEXT);
+
+                assertThat(TigerGlobalConfiguration.readString("foo.value"))
+                    .isEqualTo("bar");
+            });
+        thread.start();
+        thread.join();
+
+        assertThat(TigerGlobalConfiguration.readStringOptional("foo.value"))
+            .isEmpty();
+    }
+
+    @SneakyThrows
+    @Test
+    public void readWithTigerConfiguration() {
+        TigerGlobalConfiguration.readFromYaml(
+            FileUtils.readFileToString(new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")), "tiger");
+        assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
+            .extracting(TestCfg::getTemplates)
+            .asList()
+            .extracting("templateName")
+            .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
+    }
+
+    @SneakyThrows
+    @Test
+    public void readNullObject() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.putValue("no.real.other", "foo");
+        assertThatThrownBy(() -> TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class, "no.real.key.to.see"))
+            .hasMessageContaining("'no.real.key.to.see'")
+            .hasMessageContaining("'no.real'");
+    }
+
     @Data
+    @Builder
     public static class DummyBean {
         private String string;
         private int integer;
@@ -388,5 +469,12 @@ public class TigerConfigurationTest {
         private final String template;
         @JsonProperty
         private List<NestedBean> array;
+    }
+
+    @Data
+    public static class TestCfg {
+        @JsonProperty
+        private List<CfgTemplate> templates;
+
     }
 }

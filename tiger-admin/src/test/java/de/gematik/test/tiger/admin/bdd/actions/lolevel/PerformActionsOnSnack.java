@@ -36,6 +36,11 @@ public class PerformActionsOnSnack implements Task {
             .locatedBy("//div[contains(@class, 'toast') and starts-with(text(), '" + startsWithText + "')]");
     }
 
+    public static Target snackWithTextContaining(String containsText) {
+        return Target.the("feedback snack containing '" +  containsText + "'")
+            .locatedBy("//div[contains(@class, 'toast') and contains(text(), '" + containsText + "')]");
+    }
+
     // implementation
 
     public <T extends Actor> void closeSnack(T actor) {

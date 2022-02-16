@@ -1,5 +1,3 @@
-tigerProxy:
-
 servers:
   testDemis:
     hostname: testDemis
