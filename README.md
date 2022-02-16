@@ -22,6 +22,13 @@ For non BDD test suites it must be easily possible to utilize most of the featur
 
 * External product teams, which need to do automated IOP/E2E testing for their health applications.
 
+## Tiger-User-Manual
+
+Every information at one place: check out our Tiger-User-Manual!
+
+* [Tiger-User-Manual](https://gematik.github.io/app-Tiger/Tiger-User-Manual.html) (HTML-Version)
+* [Tiger-User-Manual](https://gematik.github.io/app-Tiger/Tiger-User-Manual.pdf) (PDF-Version)
+
 ## Use cases
 
 ![UseCaseDiagramme](doc/specification/tiger_use_cases.white.svg)

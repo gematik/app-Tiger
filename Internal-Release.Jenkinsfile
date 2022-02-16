@@ -33,6 +33,7 @@ pipeline {
         stage('Initialise') {
             steps {
                 checkVersion(NEW_VERSION) // Eingabe erfolgt über Benutzerinteraktion beim Start des Jobs
+                gitSetIdentity()
             }
         }
 
@@ -74,7 +75,21 @@ pipeline {
                 stage('prepare external release') {
                     steps {
                         mavenSetVersion("${RELEASE_VERSION}")
-                        gitCommitAndTag("IDP-SERVER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                        //GH Pages
+                        mavenBuild(POM_PATH)
+                        sh label: 'renameManualsAndAddToRoot', script: """
+                            cp ./tiger-admin/target/adoc/user_manual/tiger_user_manual.html ./Tiger-User-Manual.html
+                            cp ./tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf ./Tiger-User-Manual.pdf
+                            """
+                        stash includes: 'Tiger-User-Manual.html,Tiger-User-Manual.pdf', name: 'manual'
+                        gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                        sh label: 'checkoutGhPages', script: """
+                            git checkout gh-pages
+                            git clean -df
+                            """
+                        unstash 'manual'
+                        gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                        sh "git checkout master"
                     }
                 }
                 stage('UpdateProject with new Version') {
@@ -84,11 +99,9 @@ pipeline {
                     }
                 }
                 stage('deleteOldArtifacts') {
-                    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                        steps {
-                            script {
-                                nexusDeleteArtifacts(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID)
-                            }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            nexusDeleteArtifacts(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID)
                         }
                     }
                 }
