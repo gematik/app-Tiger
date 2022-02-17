@@ -1,5 +1,10 @@
 # Changelog Tiger Testplattform
 
+# Release 0.19.1
+
+## Bugfix
+* Fixing module with incomplete -sources and -javadoc JAR files
+
 # Release 0.19.0
 
 ## Breaking Change
