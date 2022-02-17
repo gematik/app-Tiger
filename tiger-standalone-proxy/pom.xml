@@ -35,35 +35,23 @@
 
     <build>
         <plugins>
+            <!-- We must generate a -javadoc JAR file to publish on Maven Central -->
             <plugin>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok-maven-plugin</artifactId>
-                <version>1.18.18.0</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
+                        <id>empty-javadoc-jar</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>delombok</goal>
+                            <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <encoding>UTF-8</encoding>
-                            <addOutputDirectory>false</addOutputDirectory>
-                            <sourceDirectory>src/main/java</sourceDirectory>
-                            <outputDirectory>
-                                ${project.build.directory}/delombok
-                            </outputDirectory>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${basedir}/javadoc</classesDirectory>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <doclint>none</doclint>
-                    <sourcepath>${project.build.directory}/delombok</sourcepath>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
