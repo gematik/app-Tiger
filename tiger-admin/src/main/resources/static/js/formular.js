@@ -40,14 +40,14 @@ $.fn.initFormular = function (serverKey, serverData) {
   const sourceFieldType = {
     docker: '#template-source-single',
     externalUrl: '#template-source-single',
-    externalJar: '#template-source-single',
-    tigerProxy: '#template-source-select',
+    externalJar: '#template-source-single'
   }
   switch (serverData.type) {
     case 'compose':
       // empty on purpose as for compose we use the editable list already present
       break;
     case 'localProxy':
+    case 'tigerProxy':
       this.showFieldset('source-settings', false);
       break;
     default:
@@ -179,8 +179,7 @@ $.fn.initFormular = function (serverKey, serverData) {
   }
   this.showTab(defaultTabs[serverData.type]);
   this.showTabLink(defaultTabs[serverData.type], true);
-  this.showTabLink('externalJarOptions',
-      defaultTabs[serverData.type] === 'externalJarOptions' || serverData.type === 'tigerProxy');
+  this.showTabLink('externalJarOptions', defaultTabs[serverData.type] === 'externalJarOptions');
   this.showTabLink('tigerProxy', serverData.type === 'localProxy' || serverData.type === 'tigerProxy');
 
   //
@@ -192,8 +191,8 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.showFieldset('.dockerOptions.serviceHealthchecks', serverData.type === 'compose');
   // show template only if set
   this.showInputGroup('template', serverData.template);
-  // show version only for tigerProxy and docker
-  this.showInputGroup('version', ['tigerProxy', 'docker'].includes(serverData.type));
+  // show version only for docker
+  this.showInputGroup('version', ['docker'].includes(serverData.type));
   // initialize multiselects
   this.find('select[name="dependsUpon"]').bsMultiSelect();
 
