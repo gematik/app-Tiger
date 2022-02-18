@@ -8,6 +8,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import net.serenitybdd.screenplay.actions.Click;
+import net.serenitybdd.screenplay.actions.ScrollToTarget;
 import net.serenitybdd.screenplay.ensure.Ensure;
 
 public class SidebarSteps {
@@ -15,14 +16,22 @@ public class SidebarSteps {
     @And("she/he drags sidebar item {string} below {string}")
     public void dragsSidebarItemBelow(String srcNodeName, String destNodeName) {
         theActorInTheSpotlight().attemptsTo(
-            PerformDragAction.dragsItemBelow(AdminHomePage.dragHandleOfSidebarItem(srcNodeName), AdminHomePage.sidebarItemOf(destNodeName), 10)
+            new ScrollToTarget(AdminHomePage.sidebarHeader()).andAlignToTop(),
+            PerformDragAction.dragsItemBelow(
+                AdminHomePage.dragHandleOfSidebarItem(srcNodeName),
+                AdminHomePage.sidebarItemOf(destNodeName),
+                10)
         );
     }
 
     @And("she/he drags sidebar item {string} above {string}")
     public void dragsSidebarItemAbove(String srcNodeName, String destNodeName) {
         theActorInTheSpotlight().attemptsTo(
-            PerformDragAction.dragsItemAbove(AdminHomePage.dragHandleOfSidebarItem(srcNodeName), AdminHomePage.sidebarItemOf(destNodeName), -10)
+            new ScrollToTarget(AdminHomePage.sidebarHeader()).andAlignToTop(),
+            PerformDragAction.dragsItemAbove(
+                AdminHomePage.dragHandleOfSidebarItem(srcNodeName),
+                AdminHomePage.sidebarItemOf(destNodeName),
+                -10)
         );
     }
 
@@ -33,6 +42,7 @@ public class SidebarSteps {
                 .isEqualTo(nodeNamesCSV)
         );
     }
+
     @Then("formulars are ordered {string}")
     public void formularsAreOrdered(String nodeNamesCSV) {
         theActorInTheSpotlight().attemptsTo(
@@ -44,19 +54,29 @@ public class SidebarSteps {
     @When("she/he tries to drag sidebar item {string} above {string}")
     public void triesToDragSidebarItemAbove(String srcNodeName, String destNodeName) {
         theActorInTheSpotlight().attemptsTo(
-            PerformDragAction.dragsItemAbove(AdminHomePage.sidebarItemOf(srcNodeName), AdminHomePage.sidebarItemOf(destNodeName), -10)
+            new ScrollToTarget(AdminHomePage.sidebarHeader()).andAlignToTop(),
+            PerformDragAction.dragsItemAbove(
+                AdminHomePage.sidebarItemOf(srcNodeName),
+                AdminHomePage.sidebarItemOf(destNodeName),
+                -10)
         );
     }
+
     @When("she/he tries to drag sidebar item {string} below {string}")
     public void triesToDragSidebarItemBelow(String srcNodeName, String destNodeName) {
         theActorInTheSpotlight().attemptsTo(
-            PerformDragAction.dragsItemBelow(AdminHomePage.sidebarItemOf(srcNodeName), AdminHomePage.sidebarItemOf(destNodeName), 10)
+            new ScrollToTarget(AdminHomePage.sidebarHeader()).andAlignToTop(),
+            PerformDragAction.dragsItemBelow(
+                AdminHomePage.sidebarItemOf(srcNodeName),
+                AdminHomePage.sidebarItemOf(destNodeName),
+                10)
         );
     }
 
     @And("he duplicates node {string}")
     public void heDuplicatesNode(String nodeName) {
         theActorInTheSpotlight().attemptsTo(
+            new ScrollToTarget(AdminHomePage.sidebarHeader()).andAlignToTop(),
             Click.on(ServerFormular.sidebarItemContextMenu(nodeName)),
             Click.on(ServerFormular.sidebarItemContextMenuEntry("duplicate"))
         );

@@ -107,12 +107,16 @@ public class TigerAdminUiController {
     @GetMapping(value = "/openYamlFile", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Configuration openYamlFile(@RequestParam("cfgfile") String file) throws IOException {
-        loadTemplates();
-        String yamlString = IOUtils.toString(new File(file).toURI(), StandardCharsets.UTF_8);
-        var configurationLoader = new TigerConfigurationLoader();
-        configurationLoader.readTemplates(templatesYaml, "tiger", "servers");
-        configurationLoader.readFromYaml(yamlString, "tiger");
-        return configurationLoader.instantiateConfigurationBean(Configuration.class, "tiger");
+        try {
+            loadTemplates();
+            String yamlString = IOUtils.toString(new File(file).toURI(), StandardCharsets.UTF_8);
+            var configurationLoader = new TigerConfigurationLoader();
+            configurationLoader.readTemplates(templatesYaml, "tiger", "servers");
+            configurationLoader.readFromYaml(yamlString, "tiger");
+            return configurationLoader.instantiateConfigurationBean(Configuration.class, "tiger");
+        } catch (Exception e) {
+            throw new TigerConfigurationException("Unable to load testenv yaml file", e);
+        }
     }
 
     @GetMapping(value = "/getTemplates", produces = MediaType.APPLICATION_JSON_VALUE)

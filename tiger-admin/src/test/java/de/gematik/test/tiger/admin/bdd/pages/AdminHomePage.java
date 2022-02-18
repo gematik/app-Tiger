@@ -35,7 +35,7 @@ public class AdminHomePage extends PageObject {
 
     public static Target sidebarHeader() {
         return Target.the("sidebar header")
-            .locatedBy(".server-container.sidebar .testenv-sidebar-header");
+            .locatedBy(".sidebar-col .testenv-sidebar-header");
     }
 
     public static Target nodeFormulars() {

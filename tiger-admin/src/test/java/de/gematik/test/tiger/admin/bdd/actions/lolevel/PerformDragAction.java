@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.Task;
 import net.serenitybdd.screenplay.actions.PerformActions;
+import net.serenitybdd.screenplay.actions.ScrollTo;
+import net.serenitybdd.screenplay.actions.ScrollToTarget;
 import net.serenitybdd.screenplay.targets.Target;
 import net.thucydides.core.annotations.Step;
 import org.openqa.selenium.InvalidArgumentException;

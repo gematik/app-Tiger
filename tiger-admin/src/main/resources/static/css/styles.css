@@ -692,7 +692,7 @@ i.btn-list-delete {
 }
 
 .sidebar-col {
-    position: fixed;
+    position: absolute;
     padding-left: 3rem;
     padding-right: 0;
 }
@@ -770,4 +770,25 @@ p.list-server-types-example {
 
 #modal-1  .border-dark {
     border-color: var(--bs-gray-300) !important;
+}
+
+
+
+.sidebar-bottom-toolbar {
+    position: fixed;
+    padding: 1rem;
+    bottom: 0;
+    left: 0;
+    z-index:2000;
+    width: 4.5rem;
+}
+
+
+.sidebar-bottom-toolbar > button {
+    margin-bottom: 0.5rem;
+}
+
+.col-0 {
+    width: 0;
+    display: none;
 }

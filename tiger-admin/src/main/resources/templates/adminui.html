@@ -57,7 +57,11 @@
     </div>
   </nav>
   <div class="row top-margin">
-    <div class="col-sm-3 col-md-3 sidebar-col">
+    <div class="sidebar-bottom-toolbar hidden">
+      <button class="btn form-control btn-outline-secondary btn-scroll-top"><i class="fas fa-angle-double-up"></i></button>
+      <button class="btn form-control btn-outline-secondary btn-toggle-sidebar"><i class="fas fa-angle-double-left"></i></button>
+    </div>
+    <div class="col-3 sidebar-col hidden">
       <div class="testenv-sidebar-header hidden">
         <div class="row box-config-file server-label mb-3">
           <strong class="cfg-file-label">Unsaved test environment</strong>
@@ -81,7 +85,7 @@
       <div class="container sidebar server-container">
       </div>
     </div>
-    <div class="col-sm-9 col-md-9 offset-3">
+    <div class="col-9 offset-3 content-col">
       <div class="text-end mb-5">
         <button class="hidden btn btn-lg btn-primary btn-save-testenv px-5" title="Speichern" type="button">
           <span>Speichern</span>
