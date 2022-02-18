@@ -498,13 +498,16 @@ tigerProxy:
   port: 7777
   # logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
+  # section to configure whether and where the proxy should dump
+  # a traffic HTML report on shutdown
   fileSaveInfo:
     # should the cleartext http-traffic be logged to a file?
     writeToFile: true
-    # configure the filename
+    # configure the file name
     filename: "foobar.tgr"
     # default false
     clearFileOnBoot: true
+  # a list of routing entries the proxy should apply to traffic
   proxyRoutes:
       # defines a forward-proxy-route from this server...
     - from: http://foobar
@@ -550,11 +553,11 @@ tigerProxy:
     type: HTTP
   # The Tiger Proxy will route google.com to google.com even if no route is set.
   # The traffic routed via this "forwardAll"-routing will be logged by default
-  # (meaning it will show up in the Rbel-Logs and be fowarded to tracing-clients)
+  # (meaning it will show up in the Rbel-Logs and be forwarded to tracing-clients)
   # This can be deactivated by setting this flag to false
   activateForwardAllLogging: true
   # Limits the rbel-Buffer to approximately this size.
-  # Note: When Rbel-Analysis is done the size WILL vastly exceed this limit!
+  # Note: When Rbel debugging is activated the size WILL vastly exceed this limit!
   rbelBufferSizeInMb: 1024
   # If set to false disables traffic-analysis by Rbel.
   # Deactivating will not impede proxy-forwarding nor

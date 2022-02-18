@@ -580,3 +580,19 @@ Supports ANSI coloring and a set of different fonts.
 For more details please check the code and its usages in the Tiger test framework.
 
 // TODO TGR-347 document TigerSerializationUtil, TigertPkiIdentity
+
+
+=== Test library configuration
+
+To configure your test library add a tiger.yaml file to the project root.
+The following configuration properties are supported:
+
+[source, yaml]
+----
+# flag whether to activate monitoring UI
+activateMonitorUI: false
+# flag whether to activate rbel path debugging
+rbelPathDebugging: false
+# flag whether to print rbel dumps to console using ANSI color codes or not
+rbelAnsiColors: true
+----

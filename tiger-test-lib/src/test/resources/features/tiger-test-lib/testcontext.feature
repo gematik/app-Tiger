@@ -1,4 +1,4 @@
-Feature: Provide a test context to testsuites to maintain data between steps
+Feature: Provide a test context to test suites to maintain data between steps
 
   Scenario: Set and get data for context and variables
     Given TGR set global variable "key01" to "value01"
