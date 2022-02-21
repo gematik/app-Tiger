@@ -29,6 +29,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -638,11 +640,13 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         secondInstance.config().proxy("localhost", tigerProxy.getPort());
         secondInstance.get("http://backend/foobar").asString();
 
-        assertThat(extractHostnames(RbelTcpIpMessageFacet::getSenderHostname))
-            .containsExactly("localhost", "backend", "localhost", "backend");
-        assertThat(extractHostnames(RbelTcpIpMessageFacet::getReceiverHostname))
-            .containsExactly("backend", "localhost", "backend", "localhost");
+        List<String> hostnameSenderList = new ArrayList<>();
+        hostnameSenderList.addAll(Arrays.asList("localhost|view-localhost", "backend", "localhost|view-localhost", "backend"));
 
+        List<String> hostnameReceiverList = new ArrayList<>();
+        hostnameReceiverList.addAll(Arrays.asList("backend", "localhost|view-localhost", "backend", "localhost|view-localhost"));
+
+        checkClientAddresses(hostnameSenderList, hostnameReceiverList);
         checkPortsAreCorrect();
     }
 
@@ -661,10 +665,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         final UnirestInstance secondInstance = Unirest.spawnInstance();
         secondInstance.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
 
-        assertThat(extractHostnames(RbelTcpIpMessageFacet::getSenderHostname))
-            .containsExactly("localhost", "localhost", "localhost", "localhost");
-        assertThat(extractHostnames(RbelTcpIpMessageFacet::getReceiverHostname))
-            .containsExactly("localhost", "localhost", "localhost", "localhost");
+        List<String> hostnameList = new ArrayList<>();
+        hostnameList.addAll(Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost"));
+
+        checkClientAddresses(hostnameList, hostnameList);
 
         checkPortsAreCorrect();
     }
@@ -681,12 +685,25 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         secondInstance.config().proxy("localhost", tigerProxy.getPort());
         secondInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
-        assertThat(extractHostnames(RbelTcpIpMessageFacet::getSenderHostname))
-            .containsExactly("localhost", "localhost", "localhost", "localhost");
-        assertThat(extractHostnames(RbelTcpIpMessageFacet::getReceiverHostname))
-            .containsExactly("localhost", "localhost", "localhost", "localhost");
+        List<String> hostnameList = new ArrayList<>();
+        hostnameList.addAll(Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost"));
+
+        checkClientAddresses(hostnameList, hostnameList);
 
         checkPortsAreCorrect();
+    }
+
+    // AKR: we need the 'localhost|view-localhost' because of mockserver for all checkClientAddresses-tests.
+    private void checkClientAddresses(List<String> hostnameSenderList, List<String> hostnameReceiverList) {
+        for (int i = 0; i < hostnameSenderList.size(); i++) {
+            int index = i;
+            assertThat(extractHostnames(RbelTcpIpMessageFacet::getSenderHostname)).matches(
+                value -> value.get(index).matches(hostnameSenderList.get(
+                    index)));
+            assertThat(extractHostnames(RbelTcpIpMessageFacet::getReceiverHostname)).matches(
+                value -> value.get(index).matches(hostnameReceiverList.get(
+                    index)));
+        }
     }
 
     private void checkPortsAreCorrect() {
