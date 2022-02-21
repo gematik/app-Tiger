@@ -68,7 +68,7 @@ public class TestRbelMessageProvider {
                 e.printStackTrace();
                 Thread.currentThread().interrupt();
             }
-            rmProvider.startStep();
+            rmProvider.clearMessageQueue();
         }).start();
 
         List<RbelElement> msgs = rmProvider.getMessages();
@@ -91,7 +91,7 @@ public class TestRbelMessageProvider {
         assertThat(msgs.get(0).getRawStringContent()).contains("TestMessage1");
         assertThat(msgs.get(1).getRawStringContent()).contains("TestMessage2");
 
-        rmProvider.startStep();
+        rmProvider.clearMessageQueue();
         msgs = rmProvider.getMessages();
         assertThat(msgs).isEmpty();
     }

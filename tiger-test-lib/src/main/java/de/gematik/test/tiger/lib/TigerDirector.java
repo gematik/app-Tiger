@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.lib;
 
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -15,16 +16,23 @@ import de.gematik.test.tiger.lib.monitor.MonitorUI;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.RestAssured;
-import lombok.extern.slf4j.Slf4j;
-
-import java.awt.*;
+import java.awt.HeadlessException;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 /**
  * The TigerDirector is the public interface of the high level features of the Tiger test framework.
  * <ul>
+ *     <li>read and apply Tiger test framework configuration from tiger.yaml</li>
+ *     <li>start monitoring UI, Tiger test environment manager and local Tiger Proxy</li>
  *     <li>Sync test cases with Polarion</li>
  *     <li>Sync test reports with Aurora and Polarion</li>
  *     <li>Create requirement coverage report based on @Afo annotations and requirements downloaded from Polarion</li>
@@ -40,6 +48,47 @@ public class TigerDirector {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
     private static boolean initialized = false;
+
+    public static synchronized TigerLibConfig readConfiguration() {
+        if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO", false)) {
+            try {
+                log.info("\n" + IOUtils.toString(
+                    Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
+                    StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new TigerStartupException("Unable to read tiger logo!");
+            }
+        }
+        log.info("\n" + Banner.toBannerStr("READING TIGER LIB CONFIG...", RbelAnsiColors.BLUE_BOLD.toString()));
+        File cfgFile = new File("tiger.yml");
+        if (!cfgFile.exists()) {
+            cfgFile = new File("tiger.yaml");
+        }
+        if (!cfgFile.exists()) {
+            log.warn("No Tiger configuration file found (tiger.yaml, tiger.yml)! Continuing with default values");
+            return new TigerLibConfig();
+        } else {
+            try {
+                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "TIGER_LIB");
+                return TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
+            } catch (IOException e) {
+                throw new TigerStartupException("Error while reading configuration file '" + cfgFile.getAbsolutePath(), e);
+            }
+        }
+    }
+
+    public static void applyTestLibConfig(TigerLibConfig config) {
+        if (config.isRbelPathDebugging()) {
+            RbelOptions.activateRbelPathDebugging();
+        } else {
+            RbelOptions.deactivateRbelPathDebugging();
+        }
+        if (config.isRbelAnsiColors()) {
+            RbelOptions.activateAnsiColors();
+        } else {
+            RbelOptions.deactivateAnsiColors();
+        }
+    }
 
     public static synchronized void startMonitorUITestEnvMgrAndTigerProxy(TigerLibConfig config) {
         TigerTestHooks.assertTigerActive();

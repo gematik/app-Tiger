@@ -18,10 +18,6 @@ import org.awaitility.core.ConditionTimeoutException;
 @Slf4j
 public class RbelMessageProvider implements IRbelMessageListener {
 
-    // TODO TGR-280 how to make it safe for multithreaded test scenarios
-    // use multiple proxies, one for each THREAD!
-    // Derzeit unterstützen wir nur single THREAD test runs, in der Docu klarmachen!
-
     private final List<RbelElement> messages = new ArrayList<>();
 
     private long timeoutms = 5000;
@@ -34,7 +30,7 @@ public class RbelMessageProvider implements IRbelMessageListener {
         wait = false;
     }
 
-    public void waitForMessage() {
+    public synchronized void waitForMessage() {
         wait = true;
         try  {
             await().atMost(timeoutms, TimeUnit.MILLISECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
@@ -44,7 +40,7 @@ public class RbelMessageProvider implements IRbelMessageListener {
         }
     }
 
-    public RbelElement pullMessage() {
+    public synchronized RbelElement pullMessage() {
         if (messages.isEmpty()) {
             waitForMessage();
         }
@@ -57,7 +53,7 @@ public class RbelMessageProvider implements IRbelMessageListener {
         return Collections.unmodifiableList(messages);
     }
 
-    public void startStep() {
+    public void clearMessageQueue() {
         messages.clear();
         wait = false;
     }

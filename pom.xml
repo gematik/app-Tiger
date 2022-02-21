@@ -181,8 +181,8 @@
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-rest-assured</artifactId>
-                <scope>test</scope>
                 <version>${version.serenity.core}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
@@ -193,14 +193,14 @@
             <dependency>
                 <groupId>io.cucumber</groupId>
                 <artifactId>datatable</artifactId>
-                <scope>test</scope>
                 <version>3.5.0</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.cucumber</groupId>
                 <artifactId>datatable-matchers</artifactId>
-                <scope>test</scope>
                 <version>3.5.0</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
