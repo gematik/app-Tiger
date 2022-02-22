@@ -32,7 +32,6 @@ public class TigerAdminUiControllerTest {
         this.mockMvc.perform(get("/")).andExpect(status().isOk());
     }
 
-    @Disabled //TODO TGR-372
     @Test
     public void testOpenYamlFile() throws Exception {
         String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test",
@@ -46,7 +45,6 @@ public class TigerAdminUiControllerTest {
             .andExpect(jsonPath("$.servers.testWinstone3.type").value(is("externalJar")));
     }
 
-    @Disabled //TODO TGR-372
     @Test
     public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
 
@@ -56,11 +54,11 @@ public class TigerAdminUiControllerTest {
                 .param("cfgfile", relPath + File.separator + "testInvalidType.yaml"))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.mainCause").value(containsString(
-                "Failed to convert given JSON string to config object of class de.gematik.test.tiger.testenvmgr.config.Configuration!")))
-            .andExpect(jsonPath("$.causes").value(hasSize(1)))
+                "Unable to load testenv yaml file")))
+            .andExpect(jsonPath("$.causes").value(hasSize(2)))
             .andExpect(jsonPath("$.causes[0]").value(containsString(
-                "Cannot deserialize value of type `de.gematik.test.tiger.common.config.ServerType` from String \"NOTEXISTING\": ")))
-            .andExpect(jsonPath("$.causes[0]").value(containsString(
+                "Error while reading configuration for class de.gematik.test.tiger.testenvmgr.config.Configuration with base-keys")))
+            .andExpect(jsonPath("$.causes[1]").value(containsString(
                 "not one of the values accepted for Enum class: [externalJar, compose, externalUrl, tigerProxy, docker]")));
     }
 

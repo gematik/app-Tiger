@@ -1,6 +1,6 @@
 tigerProxy:
   forwardToProxy:
-    hostname: ${myHostname}
+    hostname: $SYSTEM
 
 servers:
   testWinstone3:
@@ -13,7 +13,7 @@ servers:
     externalJarOptions:
       workingDir: WinstoneHTTPServer
       arguments:
-        - --httpPort=
+        - --httpPort=19207
         - --webroot=.
         - --control-port=19000
       healthcheck: http://127.0.0.1:19207

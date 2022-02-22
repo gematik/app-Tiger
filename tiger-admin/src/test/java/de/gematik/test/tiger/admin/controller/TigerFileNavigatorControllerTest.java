@@ -4,9 +4,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.google.common.io.PatternFilenameFilter;
 import java.io.File;
 import java.nio.file.Path;
-import org.junit.jupiter.api.Disabled;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,20 +19,21 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 @AutoConfigureMockMvc
 public class TigerFileNavigatorControllerTest {
 
-    private static final String slash = File.separator;
     @Autowired
     private MockMvc mockMvc;
 
-    @Disabled //TODO TGR-372
     @Test
     public void testMultipleConfigFiles() throws Exception {
+        File[] files = new File("../tiger-testenv-mgr/src/test/resources/de/gematik/test/tiger/testenvmgr").listFiles(
+            new PatternFilenameFilter(".*\\.yaml"));
+        Arrays.sort(files);
         this.mockMvc.perform(MockMvcRequestBuilders.get(
                 "/navigator/folder?current=../tiger-testenv-mgr/src/test/resources/de/gematik/test/tiger/testenvmgr"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.folders").value(hasSize(1)))
-            .andExpect(jsonPath("$.cfgfiles").value(hasSize(16)))
-            .andExpect(jsonPath("$.cfgfiles[0]").value(is("testAdminUI.yaml")))
-            .andExpect(jsonPath("$.cfgfiles[15]").value(is("testUnknownTemplate.yaml")));
+            .andExpect(jsonPath("$.cfgfiles").value(hasSize(files.length)))
+            .andExpect(jsonPath("$.cfgfiles[0]").value(is(files[0].getName())))
+            .andExpect(jsonPath("$.cfgfiles[15]").value(is(files[15].getName())));
     }
 
     @Test
