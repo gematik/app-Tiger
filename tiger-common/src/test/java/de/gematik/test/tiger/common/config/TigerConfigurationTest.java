@@ -2,6 +2,8 @@ package de.gematik.test.tiger.common.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
+import java.io.IOException;
+import java.net.ServerSocket;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -450,6 +452,18 @@ public class TigerConfigurationTest {
         assertThatThrownBy(() -> TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class, "no.real.key.to.see"))
             .hasMessageContaining("'no.real.key.to.see'")
             .hasMessageContaining("'no.real'");
+    }
+
+    @Test
+    public void testFreeSockets() throws IOException {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration
+            .readFromYaml(
+                "integer: ${free.port.224}\n");
+        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+        final ServerSocket actual = new ServerSocket(dummyBean.getInteger());
+        assertThat(actual).isNotNull();
+        assertThat(actual.getLocalPort()).isNotZero();
     }
 
     @Data

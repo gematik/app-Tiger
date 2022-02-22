@@ -6,7 +6,7 @@
 
 So you heard there is a new tool in the house? But what is tiger for?
 
-Take a look at our short pitch video explaining the basic ideo of Tiger
+Take a look at our short pitch video explaining the basic idea of Tiger
 
 [![](doc/images/tiger-promo-screenie.png)](https://youtu.be/eJJZDeuFlyI)
 

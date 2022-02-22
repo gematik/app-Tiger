@@ -13,6 +13,7 @@
 ## Features
 
 * Sidebar in Admin UI is now collapsable
+* TGR-394: Added configuration variables for free ports (${free.port.0-255})
 
 # Release 0.19.1
 

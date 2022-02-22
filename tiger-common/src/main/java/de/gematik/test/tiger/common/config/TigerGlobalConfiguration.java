@@ -1,6 +1,10 @@
 package de.gematik.test.tiger.common.config;
 
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import io.netty.util.internal.SocketUtils;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.net.ServerSocket;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +32,22 @@ public class TigerGlobalConfiguration {
 
         globalConfigurationLoader.loadSystemProperties();
         globalConfigurationLoader.loadEnvironmentVariables();
+
+        addFreePortVariables();
+    }
+
+    private static void addFreePortVariables() {
+        for (int i = 0; i < 256; i++) {
+            try {
+                final ServerSocket serverSocket = new ServerSocket(0);
+                globalConfigurationLoader.putValue("free.port." + i,
+                    Integer.toString(serverSocket.getLocalPort()),
+                    SourceType.RUNTIME_EXPORT);
+                serverSocket.close();
+            } catch (IOException e) {
+                throw new TigerConfigurationException("Exception while trying to add free port variables", e);
+            }
+        }
     }
 
     public synchronized static String readString(String key) {
