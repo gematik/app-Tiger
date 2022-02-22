@@ -47,6 +47,9 @@ provides those messages via a getter method to the Tiger filter and validation s
 The @Before method calls the TigerDirector once
 to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the monitoring UI and parses the current scenario / feature file.
 It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.
+Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter,
+parses the details and adds a curl Command details button to the Serenity BDD report.
+The curl command shown in this section allows to repeat the performed REST request, for manual test failure analysis.
 
 The @After method saves all collected RbelMessages as HTML file to the `target/rbellogs` folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (scucess/failed rate) to the console.
 
@@ -579,6 +582,16 @@ For more details please check the code and its usages in the Tiger test framewor
 
 // TODO TGR-347 document TigerSerializationUtil, TigertPkiIdentity
 
+==== Performing REST calls with Tiger
+
+Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the `SerenityRest` helper class, you will get detailed information about each call inside the test report.
+The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.
+
+For more information about REST testing in Tiger/SerenityBDD please check these two documents:
+
+ * https://serenity-bdd.github.io/theserenitybook/latest/serenity-rest.html[Serenity REST]
+ * https://serenity-bdd.github.io/theserenitybook/latest/serenity-screenplay-rest.html[Serenity Screenplay REST]
+
 
 === Test library configuration
 
@@ -593,4 +606,7 @@ activateMonitorUI: false
 rbelPathDebugging: false
 # flag whether to print rbel dumps to console using ANSI color codes or not
 rbelAnsiColors: true
+# flag whether to add a curl command details button to SerenityRest Restassured calls
+# in the Serenity BDD report
+addCurlCommandsForRaCallsToReport: true
 ----

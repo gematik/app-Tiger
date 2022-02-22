@@ -19,4 +19,6 @@ public class TigerLibConfig {
     private boolean rbelPathDebugging = false;
     @Builder.Default
     private boolean rbelAnsiColors = true;
+    @Builder.Default
+    private boolean addCurlCommandsForRaCallsToReport = true;
 }

@@ -137,6 +137,18 @@
             <version>${version.spring-boot}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-rest-assured</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock-jre8</artifactId>
+            <version>2.32.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

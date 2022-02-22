@@ -48,7 +48,7 @@ public class TestTigerDirector {
         System.setProperty("TIGER_ACTIVE", "0");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
 
-        assertThatThrownBy(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()))
+        assertThatThrownBy(TigerDirector::startMonitorUITestEnvMgrAndTigerProxy)
             .isInstanceOf(TigerStartupException.class);
         assertThat(TigerDirector.isInitialized()).isFalse();
         assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
@@ -69,7 +69,7 @@ public class TestTigerDirector {
     public void testDirectorSimpleIdp() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp2.yaml");
-        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy();
 
         assertThat(TigerDirector.isInitialized()).isTrue();
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
@@ -94,7 +94,7 @@ public class TestTigerDirector {
     public void testDirectorDisabledProxy(CapturedOutput capturedOutput) {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyDisabled.yaml");
-        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy();
 
         System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
 
@@ -123,7 +123,7 @@ public class TestTigerDirector {
     public void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
-        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy();
 
         System.out.println(
             "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
@@ -143,7 +143,7 @@ public class TestTigerDirector {
     public void testDirectorFalsePathToYaml() {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "non/existing/file.yaml");
-        assertThatThrownBy(() -> TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig()))
+        assertThatThrownBy(TigerDirector::startMonitorUITestEnvMgrAndTigerProxy)
             .isInstanceOf(TigerEnvironmentStartupException.class)
             .hasMessageContaining("non/existing/file.yaml");
     }
@@ -154,7 +154,7 @@ public class TestTigerDirector {
                                                  CapturedOutput capturedOutput) {
         System.setProperty("TIGER_ACTIVE", "1");
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
-        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(new TigerLibConfig());
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy();
 
         System.out.println("TIGER_ACTIVE " + System.getProperty("TIGER_ACTIVE"));
 

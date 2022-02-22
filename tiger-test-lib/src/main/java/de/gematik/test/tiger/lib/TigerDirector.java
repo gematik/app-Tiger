@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -49,7 +50,10 @@ public class TigerDirector {
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
     private static boolean initialized = false;
 
-    public static synchronized TigerLibConfig readConfiguration() {
+    @Getter
+    private static TigerLibConfig libConfig = new TigerLibConfig();
+
+    public static synchronized void readConfiguration() {
         if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO", false)) {
             try {
                 log.info("\n" + IOUtils.toString(
@@ -66,34 +70,34 @@ public class TigerDirector {
         }
         if (!cfgFile.exists()) {
             log.warn("No Tiger configuration file found (tiger.yaml, tiger.yml)! Continuing with default values");
-            return new TigerLibConfig();
+            libConfig = new TigerLibConfig();
         } else {
             try {
                 TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "TIGER_LIB");
-                return TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
+                libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
             } catch (IOException e) {
                 throw new TigerStartupException("Error while reading configuration file '" + cfgFile.getAbsolutePath(), e);
             }
         }
     }
 
-    public static void applyTestLibConfig(TigerLibConfig config) {
-        if (config.isRbelPathDebugging()) {
+    public static void applyTestLibConfig() {
+        if (libConfig.isRbelPathDebugging()) {
             RbelOptions.activateRbelPathDebugging();
         } else {
             RbelOptions.deactivateRbelPathDebugging();
         }
-        if (config.isRbelAnsiColors()) {
+        if (libConfig.isRbelAnsiColors()) {
             RbelOptions.activateAnsiColors();
         } else {
             RbelOptions.deactivateAnsiColors();
         }
     }
 
-    public static synchronized void startMonitorUITestEnvMgrAndTigerProxy(TigerLibConfig config) {
+    public static synchronized void startMonitorUITestEnvMgrAndTigerProxy() {
         TigerTestHooks.assertTigerActive();
 
-        if (config.activateMonitorUI) {
+        if (libConfig.activateMonitorUI) {
             try {
                 optionalMonitorUI = MonitorUI.getMonitor();
             } catch (HeadlessException hex) {

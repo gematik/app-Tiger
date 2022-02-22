@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.hooks;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -19,20 +20,26 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.Feature;
 import de.gematik.test.tiger.lib.parser.model.gherkin.ScenarioOutline;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.BeforeStep;
-import io.cucumber.java.Scenario;
+import de.gematik.test.tiger.lib.reports.RestAssuredLogToCurlCommandParser;
+import de.gematik.test.tiger.lib.reports.SerenityReportUtils;
+import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
+import io.cucumber.java.*;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.filter.log.RequestLoggingFilter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
+import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -48,8 +55,8 @@ import org.apache.commons.io.FileUtils;
  * At the end of each scenario dumps all rbel messages to the file system and attaches it to the SerenityBDD report as test evidence.
  * <p>
  * <b>ATTENTION!</b> As of now Tiger does not support collecting Rbel messages in a "thread safe" way,
- * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test execution,
- * you must deal with concurrency of RBel messages yourself.
+ * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test execution, you must deal
+ * with concurrency of RBel messages yourself.
  */
 @SuppressWarnings("unused")
 @Slf4j
@@ -131,6 +138,8 @@ public class TigerTestHooks {
      */
     private static TigerLibConfig config;
 
+    private static Optional<TigerRestAssuredCurlLoggingFilter> curlLoggingFilter = Optional.empty();
+
     /**
      * Initializes Tiger and rbel message listener and parses feature file and scenario steps.
      * <p>
@@ -143,8 +152,8 @@ public class TigerTestHooks {
 
         assertTigerActive();
         if (!tigerInitialized) {
-            initializeTiger();
             tigerInitialized = true;
+            initializeTiger();
         }
 
         if (!rbelListenerAdded && TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy() != null) {
@@ -181,9 +190,16 @@ public class TigerTestHooks {
     }
 
     private void initializeTiger() {
-        config = TigerDirector.readConfiguration();
-        TigerDirector.applyTestLibConfig(config);
-        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy(config);
+        TigerDirector.readConfiguration();
+        TigerDirector.applyTestLibConfig();
+        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy();
+    }
+
+    public static void registerRestAssuredFilter() {
+        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()) {
+            curlLoggingFilter = Optional.of(new TigerRestAssuredCurlLoggingFilter());
+            SerenityRest.filters(curlLoggingFilter.get());
+        }
     }
 
     private void processDataVariantsForScenarioOutlines(de.gematik.test.tiger.lib.parser.model.gherkin.Scenario tigerScenario) {
@@ -232,14 +248,16 @@ public class TigerTestHooks {
         currentStepIndex++;
     }
 
-    /**
-     * Dumps current status of run test scenarios.
-     * <p>
-     * Saves all received rbel messages to RbelLog Html file (in folder target/rbellogs) Attaches the RbelLog Html file as evidence to
-     * current scenario / data variant in the SerenityBDD reports.
-     *
-     * @param scenario Current scenario. Might be null if used by non BDD technologies (e.g. JUnit/TestNG tests).
-     */
+    @AfterStep
+    public synchronized void addRestAssuredRequestsToReport(final Scenario scenario) {
+        assertTigerActive();
+        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()) {
+            curlLoggingFilter.ifPresent(
+                curlFilter -> curlFilter.printToReport()
+            );
+        }
+    }
+
     @After
     public void saveRbelMessagesToFile(final Scenario scenario) {
         assertTigerActive();
