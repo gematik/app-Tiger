@@ -31,8 +31,9 @@ pipeline {
 
           stage('Set Tiger version in IDP') {
               steps {
-                  // script to update the version of Tiger in IDP
-                  sh "mvn versions:set-property -Dproperty=idp-global.tiger -DnewVersion=${TIGER_VERSION}"
+                  // use sed command to replace the previous version of tiger with a newest one, where @ is a delimiter
+                  // between a replaced element and a new element. parameter "s" refers to substitution
+                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
               }
           }
 
