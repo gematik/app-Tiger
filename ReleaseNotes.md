@@ -16,6 +16,7 @@
 * Sidebar in Admin UI is now collapsable
 * TGR-394: Added configuration variables for free ports (${free.port.0-255})
 * TGR-388: add curl command details to REST calls in the SerenityBDD report
+* TGR-395: TIGER_ACTIVE is no longer necessary
 
 # Release 0.19.1
 

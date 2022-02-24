@@ -149,8 +149,6 @@ public class TigerTestHooks {
      */
     @Before(order = 100)
     public void parseFeatureFileAndResetRbelLog(final Scenario scenario) {
-
-        assertTigerActive();
         if (!tigerInitialized) {
             tigerInitialized = true;
             initializeTiger();
@@ -227,7 +225,6 @@ public class TigerTestHooks {
      */
     @BeforeStep
     public void forwardToUiMonitor(final Scenario scenario) {
-        assertTigerActive();
         if (scenario != null && config.isActivateMonitorUI()) {
             Step currentStep = scenarioStepsMap.get(scenario.getId()).get(currentStepIndex);
             if (currentDataVariantIndex != -1) {
@@ -250,7 +247,6 @@ public class TigerTestHooks {
 
     @AfterStep
     public synchronized void addRestAssuredRequestsToReport(final Scenario scenario) {
-        assertTigerActive();
         if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()) {
             curlLoggingFilter.ifPresent(
                 curlFilter -> curlFilter.printToReport()
@@ -260,8 +256,6 @@ public class TigerTestHooks {
 
     @After
     public void saveRbelMessagesToFile(final Scenario scenario) {
-        assertTigerActive();
-
         // for non BDD integrations there is nothing to do here
         if (scenario == null) {
             return;
@@ -318,13 +312,6 @@ public class TigerTestHooks {
         // if this is the last entry -> reset so that next scenario outline parses new data in @Before
         if (currentDataVariantIndex != -1 && currentDataVariantIndex + 1 == currentDataVariant.size()) {
             currentDataVariantIndex = -1;
-        }
-    }
-
-    public static void assertTigerActive() {
-        if (!TigerGlobalConfiguration.readBoolean("TIGER_ACTIVE")) {
-            log.error(Ansi.colorize("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!", RbelAnsiColors.RED_BOLD_BRIGHT));
-            throw new TigerStartupException("TIGER_ACTIVE is not set to '1'. ABORTING Tiger hook!");
         }
     }
 }

@@ -173,7 +173,6 @@ To be able to successfully start scenarios/features you first need to configure 
 * VM Options:
     ** Java proxy system properties (see <<Proxy configuration>> below)
 * Environment variables:
-    ** TIGER_ACTIVE=1
     ** Proxy environment variables (see <<Proxy configuration>> below)
 
 

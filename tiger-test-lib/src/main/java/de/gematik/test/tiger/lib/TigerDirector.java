@@ -95,8 +95,6 @@ public class TigerDirector {
     }
 
     public static synchronized void startMonitorUITestEnvMgrAndTigerProxy() {
-        TigerTestHooks.assertTigerActive();
-
         if (libConfig.activateMonitorUI) {
             try {
                 optionalMonitorUI = MonitorUI.getMonitor();
@@ -213,10 +211,6 @@ public class TigerDirector {
     }
 
     private static void assertThatTigerIsInitialized() {
-        if (!TigerGlobalConfiguration.readBoolean("TIGER_ACTIVE")) {
-            throw new TigerStartupException("Tiger test environment has not been initialized,"
-                + "as the TIGER_ACTIVE environment variable is not set to '1'.");
-        }
         if (!initialized) {
             throw new TigerStartupException("Tiger test environment has not been initialized. "
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
@@ -227,7 +221,6 @@ public class TigerDirector {
         initialized = false;
         tigerTestEnvMgr = null;
 
-        System.clearProperty("TIGER_ACTIVE");
         System.clearProperty("TIGER_TESTENV_CFGFILE");
         System.clearProperty("http.proxyHost");
         System.clearProperty("https.proxyHost");

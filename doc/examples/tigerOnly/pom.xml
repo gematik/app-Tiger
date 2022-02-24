@@ -117,9 +117,6 @@
                         <!-- adapt to the class names of your driver classes -->
                         <include>**/Parallel*IT.java</include>
                     </includes>
-                    <systemPropertyVariables>
-                        <TIGER_ACTIVE>1</TIGER_ACTIVE>
-                    </systemPropertyVariables>
                     <!-- on purpose, to ensure the serenity plugin is called afterwards.
                     It's check goal wil bail out in case of test failures,
                     AFTER the serenity report has been generated -->

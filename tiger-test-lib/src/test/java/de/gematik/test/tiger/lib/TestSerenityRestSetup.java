@@ -17,8 +17,7 @@ public class TestSerenityRestSetup {
 
     @Test
     public void useNonExistentProxy_ExceptionMessageShouldContainRequestInformation() throws Exception {
-        withEnvironmentVariable("TIGER_ACTIVE", "1")
-            .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")
+        withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")
             .execute(TigerDirector::startMonitorUITestEnvMgrAndTigerProxy);
 
         final String proxy = "http://localhost:" + SocketUtils.findAvailableTcpPort();
