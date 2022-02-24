@@ -1,3 +1,4 @@
+@SingleBrowser
 @FullTests @UnitTest
 Feature: Test functionality of complex lists
 
