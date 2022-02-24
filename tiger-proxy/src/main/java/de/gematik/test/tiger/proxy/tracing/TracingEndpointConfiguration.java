@@ -3,7 +3,9 @@ package de.gematik.test.tiger.proxy.tracing;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -34,5 +36,10 @@ public class TracingEndpointConfiguration implements WebSocketMessageBrokerConfi
         registry.addEndpoint(tigerProxyConfiguration.getTrafficEndpointConfiguration().getWsEndpoint())
             .setHandshakeHandler(new DefaultHandshakeHandler(upgradeStrategy))
             .setAllowedOrigins("*");
+    }
+
+    @Override
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        registration.taskExecutor(new ThreadPoolTaskExecutor());
     }
 }

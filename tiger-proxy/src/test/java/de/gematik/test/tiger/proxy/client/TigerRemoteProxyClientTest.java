@@ -19,6 +19,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
+import de.gematik.test.tiger.proxy.tracing.TracingPushController;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -156,14 +157,19 @@ public class TigerRemoteProxyClientTest {
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
+        final String body = RandomStringUtils.randomAlphanumeric(TracingPushController.MAX_MESSAGE_SIZE * 2);
         unirestInstance.post("http://myserv.er/foo")
-            .body(RandomStringUtils.randomAlphanumeric(1024 * 10))
+            .body(body)
             .asString()
             .ifFailure(response -> fail(""));
 
         await()
-            .atMost(2, TimeUnit.SECONDS)
+            .atMost(20, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
+
+        assertThat(new String(tigerRemoteProxyClient.getRbelMessages().get(tigerRemoteProxyClient.getRbelMessages().size() - 2)
+            .findElement("$.body").get().getRawContent()))
+            .isEqualTo(body);
     }
 
     @ParameterizedTest

@@ -9,7 +9,10 @@ import lombok.Data;
 
 @Data
 @Builder
-public class TracingMessage {
+public class TracingMessagePart {
 
-    private byte[] rawContent;
+    private String uuid;
+    private int index;
+    private int numberOfMessages;
+    private byte[] data;
 }

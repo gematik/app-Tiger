@@ -9,6 +9,7 @@
 * TGR-319: Fixed admin UI sidebar is not scrollable
 * TGR-367: Show file dialog in admin UI only if backend is available
 * TGR-360: Save as... is not disabled on new testenv in admin UI
+* TGR-399: Large messages will now be split in tracing
 
 ## Features
 

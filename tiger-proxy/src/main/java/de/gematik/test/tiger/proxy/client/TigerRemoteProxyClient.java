@@ -10,14 +10,18 @@ import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
 import kong.unirest.Unirest;
+import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +30,6 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.util.Assert;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
@@ -36,13 +39,16 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCloseable {
 
     public static final String WS_TRACING = "/topic/traces";
+    public static final String WS_DATA = "/topic/data";
     public static final String WS_ERRORS = "/topic/errors";
     private final String remoteProxyUrl;
     private final WebSocketStompClient tigerProxyStompClient;
     @Getter
     private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
+    private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
+    private StompSession stompSession;
 
-    public  TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
+    public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
         final String tracingWebSocketUrl = remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
         this.remoteProxyUrl = remoteProxyUrl;
@@ -50,8 +56,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
         container.setDefaultMaxTextMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
-        WebSocketClient webSocketClient = new SockJsClient(
+        SockJsClient webSocketClient = new SockJsClient(
             List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
+        webSocketClient.stop();
 
         tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(new MappingJackson2MessageConverter());
@@ -60,8 +67,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
             tracingWebSocketUrl, tigerStompSessionHandler);
 
-        connectFuture.addCallback(stompSession -> log.info("Succesfully opened stomp session {} to url",
-                stompSession.getSessionId(), tracingWebSocketUrl),
+        connectFuture.addCallback(stompSession -> {
+                log.info("Succesfully opened stomp session {} to url",
+                    stompSession.getSessionId(), tracingWebSocketUrl);
+                this.stompSession = stompSession;
+            },
             throwable -> {
                 throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
                     + tracingWebSocketUrl, throwable);
@@ -165,11 +175,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
     }
 
-    private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, TracingMessage tracingMessage) {
-        byte[] messageBytes = tracingMessage.getRawContent();
-
+    private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver,
+        byte[] messageBytes) {
         if (messageBytes != null) {
-            log.info("Received new message {}", new String(messageBytes));
+            log.trace("Received new message...", new String(messageBytes));
 
             final RbelElement rbelMessage = getRbelLogger().getRbelConverter()
                 .parseMessage(messageBytes, sender, receiver);
@@ -181,6 +190,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     public void unsubscribe() {
+        if (stompSession != null && stompSession.isConnected()) {
+            stompSession.disconnect();
+        }
         tigerProxyStompClient.stop();
     }
 
@@ -208,10 +220,43 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                     public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
                         if (frameContent instanceof TigerTracingDto) {
                             final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
-                            propagateNewRbelMessage(tigerTracingDto.getSender(), tigerTracingDto.getReceiver(),
-                                tigerTracingDto.getRequest());
-                            propagateNewRbelMessage(tigerTracingDto.getReceiver(), tigerTracingDto.getSender(),
-                                tigerTracingDto.getResponse());
+                            TracingMessagePair messagePair = new TracingMessagePair();
+                            messagePair.setRequest(new PartialTracingMessage(tigerTracingDto,
+                                tigerTracingDto.getReceiver(), tigerTracingDto.getSender(), messagePair));
+                            messagePair.setResponse(new PartialTracingMessage(tigerTracingDto,
+                                tigerTracingDto.getSender(), tigerTracingDto.getReceiver(), messagePair));
+                            partiallyReceivedMessageMap.put(tigerTracingDto.getRequestUuid(),
+                                messagePair.getRequest());
+                            partiallyReceivedMessageMap.put(tigerTracingDto.getResponseUuid(),
+                                messagePair.getResponse());
+                        }
+                    }
+                }
+            );
+            stompSession.subscribe(WS_DATA, new StompFrameHandler() {
+                    @Override
+                    public Type getPayloadType(StompHeaders stompHeaders) {
+                        return TracingMessagePart.class;
+                    }
+
+                    @Override
+                    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
+                        if (frameContent instanceof TracingMessagePart) {
+                            final TracingMessagePart tracingMessagePart = (TracingMessagePart) frameContent;
+                            log.trace("Received part {} of {} for UUID {}",
+                                tracingMessagePart.getIndex(), tracingMessagePart.getNumberOfMessages(),
+                                tracingMessagePart.getUuid());
+                            if (!partiallyReceivedMessageMap.containsKey(tracingMessagePart.getUuid())) {
+                                log.error("Received stray message part with UUID {}", tracingMessagePart.getUuid());
+                            } else {
+                                final PartialTracingMessage tracingMessage = partiallyReceivedMessageMap.get(
+                                    tracingMessagePart.getUuid());
+                                tracingMessage.getMessageParts().add(tracingMessagePart);
+                                if (tracingMessage.isComplete()) {
+                                    tracingMessage.getMessagePair().checkForCompletePairAndPropagateIfComplete();
+                                    partiallyReceivedMessageMap.remove(tracingMessagePart.getUuid());
+                                }
+                            }
                         }
                     }
                 }
@@ -250,10 +295,50 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         }
     }
 
-    private class TigerReceivedRemoteException extends RuntimeException {
+    @Data
+    private class PartialTracingMessage {
 
-        public TigerReceivedRemoteException(String message) {
-            super(message);
+        private final TigerTracingDto tracingDto;
+        private final RbelHostname sender;
+        private final RbelHostname receiver;
+        private final TracingMessagePair messagePair;
+        private final List<TracingMessagePart> messageParts = new ArrayList<>();
+
+        public boolean isComplete() {
+            return !messageParts.isEmpty()
+                && messageParts.get(0).getNumberOfMessages() == messageParts.size();
+        }
+
+        public byte[] buildCompleteContent() {
+            byte[] result = new byte[messageParts.stream()
+                .map(TracingMessagePart::getData)
+                .mapToInt(Array::getLength)
+                .sum()];
+            int resultIndex = 0;
+            for (int i = 0; i < messageParts.size(); i++) {
+                System.arraycopy(messageParts.get(i).getData(), 0,
+                    result, resultIndex, messageParts.get(i).getData().length);
+                resultIndex += messageParts.get(i).getData().length;
+            }
+            return result;
+        }
+    }
+
+    @Data
+    public class TracingMessagePair {
+
+        private PartialTracingMessage request;
+        private PartialTracingMessage response;
+
+        public void checkForCompletePairAndPropagateIfComplete() {
+            if (request != null && response != null
+                && request.isComplete() && response.isComplete()) {
+                propagateNewRbelMessage(request.getSender(), request.getReceiver(),
+                    request.buildCompleteContent());
+                propagateNewRbelMessage(response.getSender(), response.getReceiver(),
+                    response.buildCompleteContent());
+            }
+
         }
     }
 }

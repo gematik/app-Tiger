@@ -13,8 +13,8 @@ import lombok.Data;
 public class TigerTracingDto {
 
     private final String uuid;
-    private final TracingMessage request;
-    private final TracingMessage response;
+    private final String requestUuid;
+    private final String responseUuid;
     private final RbelHostname sender;
     private final RbelHostname receiver;
 }

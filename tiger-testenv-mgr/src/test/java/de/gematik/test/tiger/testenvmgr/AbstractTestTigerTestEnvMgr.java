@@ -4,40 +4,27 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.ThrowingConsumer;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.SocketUtils;
 
 @Slf4j
@@ -49,6 +36,11 @@ public abstract class AbstractTestTigerTestEnvMgr {
     private Expectation downloadExpectation;
     private byte[] winstoneBytes;
     private List<Integer> freePorts;
+
+    @AfterAll
+    public static void resetProperties() {
+        System.clearProperty("mockserver.port");
+    }
 
     @BeforeEach
     public void findFreePorts() {
@@ -98,11 +90,6 @@ public abstract class AbstractTestTigerTestEnvMgr {
     @AfterEach
     public void resetConfiguration() {
         TigerGlobalConfiguration.reset();
-    }
-
-    @AfterAll
-    public static void resetProperties() {
-        System.clearProperty("mockserver.port");
     }
 
     // -----------------------------------------------------------------------------------------------------------------

@@ -10,20 +10,21 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerExceptionDto;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.client.TigerTracingDto;
-import de.gematik.test.tiger.proxy.client.TracingMessage;
+import de.gematik.test.tiger.proxy.client.TracingMessagePart;
+import java.util.Arrays;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TracingPushController {
 
+    public static final int MAX_MESSAGE_SIZE = 512 * 1024;
     public final SimpMessagingTemplate template;
     public final TigerProxy tigerProxy;
 
@@ -63,7 +64,7 @@ public class TracingPushController {
         RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
         final RbelHostname sender = rbelTcpIpMessageFacet.getSender().seekValue(RbelHostname.class).orElse(null);
         final RbelHostname receiver = rbelTcpIpMessageFacet.getReceiver().seekValue(RbelHostname.class).orElse(null);
-        log.info("Propagating new request/response pair (from {} to {}, path {}, status {})",
+        log.debug("Propagating new request/response pair (from {} to {}, path {}, status {})",
             sender, receiver,
             rbelHttpResponse.getRequest().getFacetOrFail(RbelHttpRequestFacet.class)
                 .getPath().getRawStringContent(),
@@ -73,9 +74,12 @@ public class TracingPushController {
                 .uuid(msg.getUuid())
                 .receiver(receiver)
                 .sender(sender)
-                .response(mapMessage(msg))
-                .request(mapMessage(rbelHttpResponse.getRequest()))
+                .responseUuid(msg.getUuid())
+                .requestUuid(rbelHttpResponse.getRequest().getUuid())
                 .build());
+
+        mapRbelMessageAndSent(msg);
+        mapRbelMessageAndSent(rbelHttpResponse.getRequest());
     }
 
     private void propagateException(Throwable exception) {
@@ -88,13 +92,27 @@ public class TracingPushController {
         );
     }
 
-    private TracingMessage mapMessage(RbelElement rbelHttpMessage) {
+    private void mapRbelMessageAndSent(RbelElement rbelHttpMessage) {
         if (rbelHttpMessage == null) {
-            return TracingMessage.builder()
-                .build();
+            return;
         }
-        return TracingMessage.builder()
-            .rawContent(rbelHttpMessage.getRawContent())
-            .build();
+
+        final int numberOfParts = rbelHttpMessage.getRawContent().length / MAX_MESSAGE_SIZE + 1;
+        for (int i = 0; i < numberOfParts; i++) {
+            byte[] partContent = Arrays.copyOfRange(
+                rbelHttpMessage.getRawContent(),
+                i * MAX_MESSAGE_SIZE,
+                Math.min((i + 1) * MAX_MESSAGE_SIZE,  rbelHttpMessage.getRawContent().length)
+            );
+
+            log.trace("Sending part {} of {} for UUID {}...", i, numberOfParts, rbelHttpMessage.getUuid());
+            template.convertAndSend(TigerRemoteProxyClient.WS_DATA,
+                TracingMessagePart.builder()
+                    .data(partContent)
+                    .index(i)
+                    .uuid(rbelHttpMessage.getUuid())
+                    .numberOfMessages(numberOfParts)
+                    .build());
+        }
     }
 }
