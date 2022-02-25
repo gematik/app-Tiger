@@ -5,42 +5,31 @@
 package de.gematik.test.tiger.hooks;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.lib.TigerLibConfig;
-import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Feature;
 import de.gematik.test.tiger.lib.parser.model.gherkin.ScenarioOutline;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
-import de.gematik.test.tiger.lib.reports.RestAssuredLogToCurlCommandParser;
-import de.gematik.test.tiger.lib.reports.SerenityReportUtils;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import io.cucumber.java.*;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.log.RequestLoggingFilter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 /**
  * This class integrates SerenityBDD and the Tiger test framework.
@@ -133,11 +122,9 @@ public class TigerTestHooks {
      */
     private static List<Map<String, String>> currentDataVariant = null;
 
-    /**
-     * Tiger test lib configuration as read from tiger.yaml|yml.
-     */
-    private static TigerLibConfig config;
+    private static String bulmaModalJSScript = null;
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static Optional<TigerRestAssuredCurlLoggingFilter> curlLoggingFilter = Optional.empty();
 
     /**
@@ -225,7 +212,7 @@ public class TigerTestHooks {
      */
     @BeforeStep
     public void forwardToUiMonitor(final Scenario scenario) {
-        if (scenario != null && config.isActivateMonitorUI()) {
+        if (scenario != null && TigerDirector.getLibConfig().isActivateMonitorUI()) {
             Step currentStep = scenarioStepsMap.get(scenario.getId()).get(currentStepIndex);
             if (currentDataVariantIndex != -1) {
                 List<String> parsedLines = currentStep.getLines().stream().map(
@@ -249,7 +236,7 @@ public class TigerTestHooks {
     public synchronized void addRestAssuredRequestsToReport(final Scenario scenario) {
         if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()) {
             curlLoggingFilter.ifPresent(
-                curlFilter -> curlFilter.printToReport()
+                TigerRestAssuredCurlLoggingFilter::printToReport
             );
         }
     }
@@ -280,13 +267,33 @@ public class TigerTestHooks {
             }
         }
 
-        // TODO TGR-294 add currentdatavariantvalues to report in the header section
         try {
             var rbelRenderer = new RbelHtmlRenderer();
             rbelRenderer.setSubTitle(
-                "<p><b>" + scenario.getName() + "</b>&nbsp&nbsp;<u>" + (currentDataVariantIndex + 1) + "</u></p>"
-                    + "<p><i>" + scenario.getUri() + "</i></p>");
+                "<p><b>" + scenario.getName() + "</b>&nbsp&nbsp;"
+                    + (currentDataVariantIndex != -1 ?
+                    "<button class=\"js-modal-trigger\" data-target=\"modal-data-variant\">Variant " + (
+                        currentDataVariantIndex + 1) + "</button>" :
+                    "")
+                    + "</p><p><i>" + scenario.getUri() + "</i></p>");
             String html = rbelRenderer.doRender(rbelMessages);
+
+            if (currentDataVariantIndex != -1) {
+                StringBuilder modal = new StringBuilder("<div id=\"modal-data-variant\" class=\"modal\">\n"
+                    + "  <div class=\"modal-background\"></div>\n"
+                    + "  <div class=\"modal-content\">\n"
+                    + "    <div class=\"box\"><h2>Scenario Data</h2><table class=\"table is-striped is-hoverable is-fullwidth\">\n");
+                for (Entry<String, String> entry : currentDataVariant.get(currentDataVariantIndex).entrySet()) {
+                    modal.append("<tr><th>").append(entry.getKey()).append("</th><td>").append(entry.getValue()).append("</td></tr>");
+                }
+                modal.append("    </table></div>\n</div>\n</div>\n");
+
+                if (bulmaModalJSScript == null) {
+                    bulmaModalJSScript = IOUtils.toString(getClass().getResourceAsStream("/js/bulma-modal.js"), StandardCharsets.UTF_8);
+                }
+                html = html.substring(0, html.indexOf("</html>")) +
+                    "<script>" + bulmaModalJSScript + "</script>" + modal + "</html>";
+            }
             String name = scenario.getName();
             final String map = "äaÄAöoÖOüuÜUßs _(_)_[_]_{_}_<_>_|_$_%_&_/_\\_?_:_*_\"_";
             for (int i = 0; i < map.length(); i += 2) {

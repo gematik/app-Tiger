@@ -1,5 +1,14 @@
 # Changelog Tiger Testplattform
 
+# Release 0.19.3
+
+## Bugfix
+* Tiger hook causes null pointer exception before steps execution
+
+## Features
+
+* TGR-294 Rbel Log html page now shows data variant values when clicking on button in subtitle section
+
 # Release 0.19.2
 
 ## Bugfix
