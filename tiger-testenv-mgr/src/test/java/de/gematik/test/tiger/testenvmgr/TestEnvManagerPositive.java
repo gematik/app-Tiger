@@ -152,9 +152,9 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             + "    workingDir: 'target/'\n"
             + "    externalJarOptions:\n"
             + "      arguments:\n"
-            + "        - --httpPort=${free.ports.0}\n"
+            + "        - --httpPort=${free.port.0}\n"
             + "        - --webroot=.\n"
-            + "      healthcheck: http://127.0.0.1:${free.ports.0}\n", "tiger");
+            + "      healthcheck: http://127.0.0.1:${free.port.0}\n", "tiger");
 
         createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
     }

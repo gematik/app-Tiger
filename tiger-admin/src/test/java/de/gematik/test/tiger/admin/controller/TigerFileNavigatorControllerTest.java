@@ -1,12 +1,29 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.gematik.test.tiger.admin.controller;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.google.common.io.PatternFilenameFilter;
 import java.io.File;
 import java.nio.file.Path;
-import org.junit.jupiter.api.Disabled;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,20 +35,21 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 @AutoConfigureMockMvc
 public class TigerFileNavigatorControllerTest {
 
-    private static final String slash = File.separator;
     @Autowired
     private MockMvc mockMvc;
 
-    @Disabled //TODO TGR-372
     @Test
     public void testMultipleConfigFiles() throws Exception {
+        File[] files = new File("../tiger-testenv-mgr/src/test/resources/de/gematik/test/tiger/testenvmgr").listFiles(
+            new PatternFilenameFilter(".*\\.yaml"));
+        Arrays.sort(files);
         this.mockMvc.perform(MockMvcRequestBuilders.get(
                 "/navigator/folder?current=../tiger-testenv-mgr/src/test/resources/de/gematik/test/tiger/testenvmgr"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.folders").value(hasSize(1)))
-            .andExpect(jsonPath("$.cfgfiles").value(hasSize(16)))
-            .andExpect(jsonPath("$.cfgfiles[0]").value(is("testAdminUI.yaml")))
-            .andExpect(jsonPath("$.cfgfiles[15]").value(is("testUnknownTemplate.yaml")));
+            .andExpect(jsonPath("$.cfgfiles").value(hasSize(files.length)))
+            .andExpect(jsonPath("$.cfgfiles[0]").value(is(files[0].getName())))
+            .andExpect(jsonPath("$.cfgfiles[15]").value(is(files[15].getName())));
     }
 
     @Test

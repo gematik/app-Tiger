@@ -1,3 +1,4 @@
+@SingleBrowser
 @FullTests @UnitTest
 Feature: Check input fields and sections for all server types
 
@@ -47,26 +48,16 @@ Feature: Check input fields and sections for all server types
     And he sees select field ".tigerProxyCfg.proxiedServer"
     And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
     When he shows "Allgemeines" tab
-    Then he sees select field "source"
-    And he sees input field "version"
-    When he shows "External" tab
-    Then he sees input field ".externalJarOptions.workingDir"
-    And he sees input field ".externalJarOptions.healthcheck"
-    But he doesn't see field ".dockerOptions.serviceHealthchecks"
-    And he doesn't see field ".externalJarOptions.options"
-    And he doesn't see field ".externalJarOptions.arguments"
-    When he unfolds section ".externalJarOptions.options"
-    Then he sees list field ".externalJarOptions.options"
-    When he unfolds section ".externalJarOptions.arguments"
-    Then he sees list field ".externalJarOptions.arguments"
+    Then he doesn't see field "source"
+    And he doesn't see field "version"
 
     And he sees tab link "Allgemeines"
     And he sees tab link "PKI"
     And he sees tab link "Environment"
     And he sees tab link "URL Mappings"
-    And he sees tab link "External"
     And he sees tab link "TigerProxy"
     But he doesn't see tab link "Docker"
+    And he doesn't see tab link "External"
 
   Scenario: Check externalJar type
     Given Gerriet is on the homepage
@@ -160,7 +151,7 @@ Feature: Check input fields and sections for all server types
     # thus checking twice for exports to keep it
     # with one outline scenario
 
-  Scenario Outline: Check PKI, Environment, URL Mappings tabs for compose
+  Scenario: Check PKI, Environment, URL Mappings tabs for compose
     Given Gerriet is on the homepage
     And he adds a "compose" node via welcome screen
     When he focuses on formular "compose_001"

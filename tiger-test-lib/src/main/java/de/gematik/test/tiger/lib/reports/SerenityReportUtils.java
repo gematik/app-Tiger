@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.client;
+package de.gematik.test.tiger.lib.reports;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import net.serenitybdd.core.Serenity;
+import net.thucydides.core.steps.StepEventBus;
 
-@Data
-@Builder
-public class TracingMessage {
+@Slf4j
+public class SerenityReportUtils {
 
-    private byte[] rawContent;
+    public static void addCustomData(final String title, final String content) {
+        if (StepEventBus.getEventBus().isBaseStepListenerRegistered()) {
+            Serenity.recordReportData().withTitle(title).andContents(content);
+        }
+        log.info(String.format("%s: %s", title, content));
+    }
 }

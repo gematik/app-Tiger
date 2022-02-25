@@ -1,5 +1,23 @@
 # Changelog Tiger Testplattform
 
+# Release 0.19.2
+
+## Bugfix
+
+* TGR-381: Opening new testenv does not clear previous testenv nodes in admin UI
+* TGR-379: Exception on admin UI backend are not handled appropriately
+* TGR-319: Fixed admin UI sidebar is not scrollable
+* TGR-367: Show file dialog in admin UI only if backend is available
+* TGR-360: Save as... is not disabled on new testenv in admin UI
+* TGR-399: Large messages will now be split in tracing
+
+## Features
+
+* Sidebar in Admin UI is now collapsable
+* TGR-394: Added configuration variables for free ports (${free.port.0-255})
+* TGR-388: add curl command details to REST calls in the SerenityBDD report
+* TGR-395: TIGER_ACTIVE is no longer necessary
+
 # Release 0.19.1
 
 ## Bugfix

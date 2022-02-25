@@ -1,4 +1,5 @@
 @FullTests @UiTests
+@SingleBrowser
 Feature: Check dependsUpon and proxiedServer fields are managed correctly
 
   Scenario: Add server and check server lists are updated

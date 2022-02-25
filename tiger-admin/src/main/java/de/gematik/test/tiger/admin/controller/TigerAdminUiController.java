@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.gematik.test.tiger.admin.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -107,12 +123,16 @@ public class TigerAdminUiController {
     @GetMapping(value = "/openYamlFile", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Configuration openYamlFile(@RequestParam("cfgfile") String file) throws IOException {
-        loadTemplates();
-        String yamlString = IOUtils.toString(new File(file).toURI(), StandardCharsets.UTF_8);
-        var configurationLoader = new TigerConfigurationLoader();
-        configurationLoader.readTemplates(templatesYaml, "tiger", "servers");
-        configurationLoader.readFromYaml(yamlString, "tiger");
-        return configurationLoader.instantiateConfigurationBean(Configuration.class, "tiger");
+        try {
+            loadTemplates();
+            String yamlString = IOUtils.toString(new File(file).toURI(), StandardCharsets.UTF_8);
+            var configurationLoader = new TigerConfigurationLoader();
+            configurationLoader.readTemplates(templatesYaml, "tiger", "servers");
+            configurationLoader.readFromYaml(yamlString, "tiger");
+            return configurationLoader.instantiateConfigurationBean(Configuration.class, "tiger");
+        } catch (Exception e) {
+            throw new TigerConfigurationException("Unable to load testenv yaml file", e);
+        }
     }
 
     @GetMapping(value = "/getTemplates", produces = MediaType.APPLICATION_JSON_VALUE)

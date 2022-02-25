@@ -134,5 +134,11 @@ Now we want to assert that the reply coming from the server has the correct back
 
 The glue-code in Tiger automatically resolves the placeholders.
 
+=== Pre-Defined values
+
+Tiger adds some pre-defined values to make your life easier configuring the environment. Currently these are:
+
+* `free.port.0` - `free.port.255`: Free ports that are randomly determined at startup but stay fixed during the execution. This enables side effect free execution of the testsuite.
+
 //TODO when screenplay: Please use Serenity-BDD-Screenplay Actor (to avoid thread-pooled misshaps)
 

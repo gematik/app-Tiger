@@ -44,12 +44,14 @@ That's why it is mandatory to add the package de.gematik.test.tiger.hooks to the
 The TigerTestHooks class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and
 provides those messages via a getter method to the Tiger filter and validation steps.
 
-The @Before method parses the current scenario / feature file and calls the TigerDirectors set up method `beforeTestRun` once
-to initiate the Tiger test environment manager and the local Tiger Proxy.
-It adds a RbelMessage Listener once and also clears the RbelMessages queue before each scenario / scenario outline variant.
+The @Before method calls the TigerDirector once
+to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the monitoring UI and parses the current scenario / feature file.
+It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.
+Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter,
+parses the details and adds a curl Command details button to the Serenity BDD report.
+The curl command shown in this section allows to repeat the performed REST request, for manual test failure analysis.
 
-The @After method saves all collected RbelMessages as HTML file to the `target/rbellogs` folder and
-logs out the current test run state (scucess/failed rate) to the console.
+The @After method saves all collected RbelMessages as HTML file to the `target/rbellogs` folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (scucess/failed rate) to the console.
 
 The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.
 Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports,
@@ -64,13 +66,12 @@ in the TigerTestHooks class at the appropriate times.
 
 * The @Before method must be called before each Test scenario
 * The @BeforeStep method MIGHT be called before each test step
-* The @AfterStep method MIGHT be called after each test step
 * The @After method MIGHT be called after each Test scenario
 
-If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all four methods.
-Else you just pass in a null Scenario to the @Before method and do not call the other three methods in your test run.
+If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all methods.
+Else you just pass in a null Scenario to the methods or do not call the other methods in your test run.
 
-But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files for each scenario.
+But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files.
 As a workaround you might use the TigerDirector to manually trigger UI Monitor popups via its method `updateStepInMonitor(Step step)`.
 
 === Using the Cucumber Tiger validation steps
@@ -580,3 +581,32 @@ Supports ANSI coloring and a set of different fonts.
 For more details please check the code and its usages in the Tiger test framework.
 
 // TODO TGR-347 document TigerSerializationUtil, TigertPkiIdentity
+
+==== Performing REST calls with Tiger
+
+Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the `SerenityRest` helper class, you will get detailed information about each call inside the test report.
+The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.
+
+For more information about REST testing in Tiger/SerenityBDD please check these two documents:
+
+ * https://serenity-bdd.github.io/theserenitybook/latest/serenity-rest.html[Serenity REST]
+ * https://serenity-bdd.github.io/theserenitybook/latest/serenity-screenplay-rest.html[Serenity Screenplay REST]
+
+
+=== Test library configuration
+
+To configure your test library add a tiger.yaml file to the project root.
+The following configuration properties are supported:
+
+[source, yaml]
+----
+# flag whether to activate monitoring UI
+activateMonitorUI: false
+# flag whether to activate rbel path debugging
+rbelPathDebugging: false
+# flag whether to print rbel dumps to console using ANSI color codes or not
+rbelAnsiColors: true
+# flag whether to add a curl command details button to SerenityRest Restassured calls
+# in the Serenity BDD report
+addCurlCommandsForRaCallsToReport: true
+----

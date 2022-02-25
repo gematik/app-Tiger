@@ -1,3 +1,4 @@
+@SingleBrowser
 @FullTests @UiTests
 Feature: Node management
 

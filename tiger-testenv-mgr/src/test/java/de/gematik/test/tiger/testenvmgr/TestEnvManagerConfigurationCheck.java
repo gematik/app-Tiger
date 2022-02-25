@@ -122,7 +122,6 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
 
     @Test
     public void testPlaceholderAndExports() {
-        var freePorts = IteratorUtils.toList(SocketUtils.findAvailableTcpPorts(4).iterator());
         String yamlSource =
             "servers:\n" +
                 "  tigerServer1:\n"
@@ -146,10 +145,6 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
                 + "        port: ${free.port.4}\n";
 
         TigerGlobalConfiguration.readFromYaml(yamlSource, "tiger");
-        TigerGlobalConfiguration.putValue("free.port.1", freePorts.get(0));
-        TigerGlobalConfiguration.putValue("free.port.2", freePorts.get(1));
-        TigerGlobalConfiguration.putValue("free.port.3", freePorts.get(2));
-        TigerGlobalConfiguration.putValue("free.port.4", freePorts.get(3));
         TigerGlobalConfiguration.putValue("custom.value", "ftp");
 
         TigerGlobalConfiguration.initialize();
@@ -158,9 +153,9 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
 
             final TigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
             assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getServerPort())
-                .isEqualTo(freePorts.get(2));
+                .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
             assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyCfg().getPort())
-                .isEqualTo(freePorts.get(3));
+                .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.4").get());
             assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
                 .isEqualTo("ftp");
         });

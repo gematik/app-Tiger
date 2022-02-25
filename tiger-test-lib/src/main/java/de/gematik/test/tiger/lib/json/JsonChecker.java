@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/*
- */
-
 package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThat;

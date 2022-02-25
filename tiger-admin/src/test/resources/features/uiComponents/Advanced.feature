@@ -1,3 +1,4 @@
+@SingleBrowser
 @FullTests @UnitTest
 Feature: Check advanced input fields and sections for all server types
 

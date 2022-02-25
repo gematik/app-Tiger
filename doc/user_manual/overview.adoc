@@ -14,13 +14,14 @@ image::media/tiger-pitch-still.png[width="1024",title=Tiger product pitch video,
 
 Tiger is a framework for interface-driven BDD black-box-testing.
 
-Tiger is a toolbox that supports and guides you when writing testsuites. It lets you focus on writing the tests  and solves typical problems that every team encounters (configuration, setting up the test environment, parametrization, result reporting, test running). How, you ask?
+Tiger is a toolbox that supports and guides you when writing test suites. It lets you focus on writing the tests  and solves typical problems that every team encounters (configuration, setting up the test environment, parametrization, result reporting, test running). How, you ask?
 
 * Tiger does not focus on components but on the interactions between them. The Tiger Proxy captures the traffic between components.
 * Tiger Proxy parses the traffic and builds a tree-structure which abstracts away the encoding (XML, JSON...) and lets you focus on the data.
 * The Tiger test environment manager handles dockers, JARs and external servers, boots the configured setup and routes the traffic, all with zero lines of Java, all in YAML only.
 * A complete configuration toolkit, which combines multiple source and supports custom configuration of your testsuite as well, again with zero lines of Java.
-* Common tasks (JSON-validation, message-filtering, scenario configuration, configuration of simulators...) can be performed with the Tiger test library, which can be seamlessly imported into BDD testsuites. This allows you to build mighty testsuites with zero lines of java.
+* Common tasks (JSON-validation, message-filtering, scenario configuration, configuration of simulators...) can be performed with the Tiger test library, which can be seamlessly imported into BDD test suites.
+This allows you to build mighty test suites with zero lines of java.
 * If you want to write custom steps and glue code our Java-API has got you covered by supporting common tasks (crypto, serialization...) for you. So the little lines you have to write are be powerful and descriptive?!
 
 <<<

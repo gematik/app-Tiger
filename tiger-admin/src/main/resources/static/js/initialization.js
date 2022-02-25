@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 // =============================================================================
 //
 // initialization.js
@@ -133,10 +149,32 @@ $(document).ready(function () {
         'Do you really want to discard current changes?',
         function () {
           $('.testenv-sidebar-header').fadeOut();
+          $('.sidebar-bottom-toolbar').toggleClass('hidden', true);
           setYamlFileName(null);
           discardChanges();
           notifyChangesToTestenvData(false);
         });
+  });
+
+
+  $('.btn-scroll-top').click(function() {
+    window.scrollTo(0, 0);
+  });
+
+  $('.btn-toggle-sidebar').click(function() {
+    const sidebarCol = $('.sidebar-col');
+    const btnIcon = $(this).find('i');
+    const contentCol = $('.content-col');
+    const expanded = sidebarCol.hasClass('col-3');
+    sidebarCol.toggleClass('col-3', !expanded);
+    sidebarCol.toggleClass('col-0', expanded);
+    sidebarCol.toggle(!expanded);
+    contentCol.toggleClass('col-12', expanded);
+    contentCol.toggleClass('col-9', !expanded);
+    contentCol.toggleClass('offset-0', expanded);
+    contentCol.toggleClass('offset-3', !expanded);
+    btnIcon.toggleClass('fa-angle-double-right', expanded);
+    btnIcon.toggleClass('fa-angle-double-left', !expanded);
   });
 
   $('.btn-add-server').click(function () {

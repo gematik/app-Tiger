@@ -5,14 +5,14 @@ servers:
       - http://localhost:${mockserver.port}/download
     externalJarOptions:
       arguments:
-        - --httpPort=${free.ports.0}
+        - --httpPort=${free.port.0}
         - --webroot=.
-      healthcheck: http://127.0.0.1:${free.ports.0}
+      healthcheck: http://127.0.0.1:${free.port.0}
 
   reverseproxy1:
     type: tigerProxy
     tigerProxyCfg:
-      serverPort: ${free.ports.2}
+      serverPort: ${free.port.2}
       proxiedServer: testWinstone2
       proxyCfg:
-        port: ${free.ports.3}
+        port: ${free.port.3}

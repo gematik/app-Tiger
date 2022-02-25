@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.lib;
 
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -25,18 +26,27 @@ import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.monitor.MonitorUI;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
+import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.RestAssured;
-import lombok.extern.slf4j.Slf4j;
-
-import java.awt.*;
+import java.awt.HeadlessException;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 /**
  * The TigerDirector is the public interface of the high level features of the Tiger test framework.
  * <ul>
+ *     <li>read and apply Tiger test framework configuration from tiger.yaml</li>
+ *     <li>start monitoring UI, Tiger test environment manager and local Tiger Proxy</li>
  *     <li>Sync test cases with Polarion</li>
  *     <li>Sync test reports with Aurora and Polarion</li>
  *     <li>Create requirement coverage report based on @Afo annotations and requirements downloaded from Polarion</li>
@@ -53,10 +63,52 @@ public class TigerDirector {
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
     private static boolean initialized = false;
 
-    public static synchronized void startMonitorUITestEnvMgrAndTigerProxy(TigerLibConfig config) {
-        TigerTestHooks.assertTigerActive();
+    @Getter
+    private static TigerLibConfig libConfig = new TigerLibConfig();
 
-        if (config.activateMonitorUI) {
+    public static synchronized void readConfiguration() {
+        if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO", false)) {
+            try {
+                log.info("\n" + IOUtils.toString(
+                    Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
+                    StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new TigerStartupException("Unable to read tiger logo!");
+            }
+        }
+        log.info("\n" + Banner.toBannerStr("READING TIGER LIB CONFIG...", RbelAnsiColors.BLUE_BOLD.toString()));
+        File cfgFile = new File("tiger.yml");
+        if (!cfgFile.exists()) {
+            cfgFile = new File("tiger.yaml");
+        }
+        if (!cfgFile.exists()) {
+            log.warn("No Tiger configuration file found (tiger.yaml, tiger.yml)! Continuing with default values");
+            libConfig = new TigerLibConfig();
+        } else {
+            try {
+                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "TIGER_LIB");
+                libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
+            } catch (IOException e) {
+                throw new TigerStartupException("Error while reading configuration file '" + cfgFile.getAbsolutePath(), e);
+            }
+        }
+    }
+
+    public static void applyTestLibConfig() {
+        if (libConfig.isRbelPathDebugging()) {
+            RbelOptions.activateRbelPathDebugging();
+        } else {
+            RbelOptions.deactivateRbelPathDebugging();
+        }
+        if (libConfig.isRbelAnsiColors()) {
+            RbelOptions.activateAnsiColors();
+        } else {
+            RbelOptions.deactivateAnsiColors();
+        }
+    }
+
+    public static synchronized void startMonitorUITestEnvMgrAndTigerProxy() {
+        if (libConfig.activateMonitorUI) {
             try {
                 optionalMonitorUI = MonitorUI.getMonitor();
             } catch (HeadlessException hex) {
@@ -86,7 +138,7 @@ public class TigerDirector {
                 System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
                 System.setProperty("https.proxyHost", "localhost");
                 System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
-                setupSerenityRest();
+                SerenityRestUtils.setupSerenityRest();
             }
         } else {
             log.info(Ansi.colorize("SKIPPING TIGER PROXY settings...", RbelAnsiColors.RED_BOLD));
@@ -98,21 +150,6 @@ public class TigerDirector {
 
         initialized = true;
         log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
-    }
-
-    private static void setupSerenityRest() {
-        RestAssured.filters((requestSpec, responseSpec, ctx) -> {
-            try {
-                log.trace("Sending Request "
-                    + requestSpec.getMethod() + " " + requestSpec.getURI()
-                    + " via proxy " + requestSpec.getProxySpecification());
-                return ctx.next(requestSpec, responseSpec);
-            } catch (Exception e) {
-                throw new TigerSerenityRestException("Error while retrieving "
-                    + requestSpec.getMethod() + " " + requestSpec.getURI()
-                    + " via proxy " + requestSpec.getProxySpecification(), e);
-            }
-        });
     }
 
     public static synchronized boolean isInitialized() {
@@ -172,10 +209,6 @@ public class TigerDirector {
     }
 
     private static void assertThatTigerIsInitialized() {
-        if (!TigerGlobalConfiguration.readBoolean("TIGER_ACTIVE")) {
-            throw new TigerStartupException("Tiger test environment has not been initialized,"
-                + "as the TIGER_ACTIVE environment variable is not set to '1'.");
-        }
         if (!initialized) {
             throw new TigerStartupException("Tiger test environment has not been initialized. "
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
@@ -186,7 +219,6 @@ public class TigerDirector {
         initialized = false;
         tigerTestEnvMgr = null;
 
-        System.clearProperty("TIGER_ACTIVE");
         System.clearProperty("TIGER_TESTENV_CFGFILE");
         System.clearProperty("http.proxyHost");
         System.clearProperty("https.proxyHost");
@@ -194,12 +226,5 @@ public class TigerDirector {
         System.clearProperty("https.proxyPort");
 
         TigerGlobalConfiguration.reset();
-    }
-
-    private static class TigerSerenityRestException extends RuntimeException {
-
-        public TigerSerenityRestException(String s, Exception e) {
-            super(s, e);
-        }
     }
 }

@@ -1,10 +1,11 @@
+@SingleBrowser
 @FullTests @UnitTest
 Feature: Test functionality of simple lists
 
   Scenario: Test simple list item management
     Given Gerriet is on the homepage
-    And he adds a "tigerProxy" node via welcome screen
-    And he focuses on formular "tigerProxy_001"
+    And he adds a "externalJar" node via welcome screen
+    And he focuses on formular "externalJar_001"
     And he shows "External" tab
     And he unfolds section ".externalJarOptions.options"
     And he tests list ".externalJarOptions.options"
@@ -77,8 +78,8 @@ Feature: Test functionality of simple lists
 
   Scenario: Drag items in simple list
     Given Gerriet is on the homepage
-    And he adds a "tigerProxy" node via welcome screen
-    And he focuses on formular "tigerProxy_001"
+    And he adds a "externalJar" node via welcome screen
+    And he focuses on formular "externalJar_001"
     And he shows "External" tab
     And he unfolds section ".externalJarOptions.options"
     And he tests list ".externalJarOptions.options"

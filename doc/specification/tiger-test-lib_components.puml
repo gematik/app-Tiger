@@ -41,18 +41,19 @@ skinparam interface {
         supports Context and Variables in docstrings
 
       ]
-      component ctxt [Context
+      component tgcfg [TigerGlobalConfiguration
         ===
-        provides a map to store values between bdd steps
-        is thread safe by using the thread id as key
-        supports domains to allow separation of data
+        provides a map to store configuration properties,
+        contextual values, test execution variables
+        in a "world object" to be available between bdd steps.
+
+        can be used thread safe by using appropriate SourceType
+
+        supports hierarchical domains to allow separation of data
         from different suites
       ]
-      component var [Variables
-        ===
-        similar to Context provides a map based storage for
-        variables that can be used with ${VAR.xxxxx} in steps
-      ]
+'        similar to Context provides a map based storage for
+'        variables that can be used with ${VAR.xxxxx} in steps
       component rbelcli [Rbel Messaging Client
         ===
         connects to the Tiger proxy and receives all traffic
@@ -71,34 +72,35 @@ skinparam interface {
         ===
         supports parsing Serenity JSON and JUNIT xml results
       ]
-      component serint [SerenityIntegration
+      component serint [SerenityBDDIntegration
         ===
-        integrates the afo coverage report into serenity overview HTML
         attaches the RBel messages as test evidence to scenarios in serenity report
-        attaches curl calls to steps in serenity report
+        allows to attach curl call descriptions to steps in SerenityBDD report
+        integrates the afo coverage report to SerenityBDD report
       ]
       component banner [ASCII banner
-              ===
-              allows to display large ascii banners in console/log output
-              for ansi color compliant consoles also coloring is supported
-            ]
-            component testcfg [TestConfig
-                    ===
-                    provides support for maintaining test configuration in property, yaml or xml files.
-                    manages multiple sets of config files so its easy to switch from RU to TU test config.
-                  ]
+        ===
+        allows to display large ascii banners in console/log output
+        for ansi color compliant consoles also coloring is supported
+      ]
+      component testcfg [TigerSerializationUtils
+        ===
+        provides support for parsing and mapping yaml or JSON files.
+        allows to manage multiple sets of config files,
+        so its easy to e.g. switch from RU to TU test config.
+      ]
 
-          note as n1
-            SerenityIntegration, Rbel Messaging Client,
-            Context, Variables and TestConfig
-            are all created automatically at
-            initialisation time of the BDD test run
-            utilizing static initializers.
-            Behaviour can be configured via properties
-            files and environment variables
-          end note
-
-
+      component tth [TigerTesthook
+        ===
+        SerenityIntegration, Rbel Messaging Client,
+        Context, Variables and TestConfig via
+        TigerGlobalConfiguration
+        are all created automatically at
+        initialisation time of the BDD test run
+        utilizing the TigerTestHook class.
+        Behaviour can be configured via properties
+        files and environment variables
+      ]
     }
 
     aforep -down-> codepars : parse test scenarios
@@ -108,9 +110,8 @@ skinparam interface {
 
     serint -down-> aforep : trigger afo report generation
 
-    bs -down-> ctxt : use
-    bs -down-> var : use
-    bs -down-> jsonchck : use
+    bs -down-> tgcfg : use
+    bs -down--> jsonchck : use
     bs -left-> serint : use
 
     bs -down-> tem : create test system instances at runtime
@@ -118,4 +119,7 @@ skinparam interface {
     bs <-right- rbelcli
     tp -left-> rbelcli
 
+    tth --> codepars: use
+    tth -up-> serint : triggers
+    tth --> tgcfg: use
 @enduml

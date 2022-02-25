@@ -1,3 +1,4 @@
+@SingleBrowser
 @FullTests @UnitTest
 Feature: Summary feature
 

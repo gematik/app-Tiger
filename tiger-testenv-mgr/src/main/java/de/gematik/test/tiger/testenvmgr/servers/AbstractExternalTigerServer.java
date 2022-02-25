@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.awaitility.Awaitility.await;
@@ -30,33 +46,24 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         final long timeOutInMs = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L;
         if (isHealthCheckNone()) {
             waitForConfiguredTimeAndSetRunning(timeOutInMs);
-            return;
-        }
-
-        if (!quiet) {
-            log.info("  Checking {} instance '{}' is available ...", getClass().getSimpleName(), getHostname());
-        }
-        try {
-            await().atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
-                .pollInterval(750, TimeUnit.MILLISECONDS)
-                .until(() -> {
-                    updateStatus(quiet);
-                    if (getStatus() != TigerServerStatus.STARTING) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-            return;
-        } catch (ConditionTimeoutException cte) {
+        } else {
             if (!quiet) {
-                throw new TigerTestEnvException("Timeout waiting for external server to respond at '"
-                    + getConfiguration().getExternalJarOptions().getHealthcheck() + "'!");
+                log.info("  Checking {} instance '{}' is available ...", getClass().getSimpleName(), getHostname());
+            }
+            try {
+                await().atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
+                    .pollInterval(750, TimeUnit.MILLISECONDS)
+                    .until(() -> updateStatus(quiet) != TigerServerStatus.STARTING);
+            } catch (ConditionTimeoutException cte) {
+                if (!quiet) {
+                    throw new TigerTestEnvException("Timeout waiting for external server to respond at '"
+                        + getConfiguration().getExternalJarOptions().getHealthcheck() + "'!");
+                }
             }
         }
     }
 
-    public void updateStatus(boolean quiet) {
+    public TigerServerStatus updateStatus(boolean quiet) {
         var url = buildHealthcheckUrl();
         try {
             URLConnection con = url.openConnection();
@@ -88,6 +95,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
                 log.error("Failed to connect - " + e.getMessage(), e);
             }
         }
+        return getStatus();
     }
 
     void printServerUpMessage() {
@@ -100,7 +108,8 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     private void waitForConfiguredTimeAndSetRunning(long timeOutInMs) {
-        log.info("Waiting {}s to get external server {} online...", (timeOutInMs / 1000L), getHostname());
+        log.warn("No health check URL configured! Resorting to simple wait with timeout {}s", (timeOutInMs / 1000L));
+        log.info("Waiting {}s for external server {}...", (timeOutInMs / 1000L), getHostname());
         try {
             Thread.sleep(timeOutInMs);
         } catch (InterruptedException e) {
@@ -139,6 +148,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     boolean isHealthCheckNone() {
         return getConfiguration().getExternalJarOptions() == null ||
             getConfiguration().getExternalJarOptions().getHealthcheck() == null ||
+            getConfiguration().getExternalJarOptions().getHealthcheck().isEmpty() ||
             getConfiguration().getExternalJarOptions().getHealthcheck().equals("NONE");
     }
 }

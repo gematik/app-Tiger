@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.gematik.test.tiger.admin.controller;
 
 import static org.hamcrest.Matchers.containsString;
@@ -32,7 +48,6 @@ public class TigerAdminUiControllerTest {
         this.mockMvc.perform(get("/")).andExpect(status().isOk());
     }
 
-    @Disabled //TODO TGR-372
     @Test
     public void testOpenYamlFile() throws Exception {
         String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test",
@@ -46,7 +61,6 @@ public class TigerAdminUiControllerTest {
             .andExpect(jsonPath("$.servers.testWinstone3.type").value(is("externalJar")));
     }
 
-    @Disabled //TODO TGR-372
     @Test
     public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
 
@@ -56,11 +70,11 @@ public class TigerAdminUiControllerTest {
                 .param("cfgfile", relPath + File.separator + "testInvalidType.yaml"))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.mainCause").value(containsString(
-                "Failed to convert given JSON string to config object of class de.gematik.test.tiger.testenvmgr.config.Configuration!")))
-            .andExpect(jsonPath("$.causes").value(hasSize(1)))
+                "Unable to load testenv yaml file")))
+            .andExpect(jsonPath("$.causes").value(hasSize(2)))
             .andExpect(jsonPath("$.causes[0]").value(containsString(
-                "Cannot deserialize value of type `de.gematik.test.tiger.common.config.ServerType` from String \"NOTEXISTING\": ")))
-            .andExpect(jsonPath("$.causes[0]").value(containsString(
+                "Error while reading configuration for class de.gematik.test.tiger.testenvmgr.config.Configuration with base-keys")))
+            .andExpect(jsonPath("$.causes[1]").value(containsString(
                 "not one of the values accepted for Enum class: [externalJar, compose, externalUrl, tigerProxy, docker]")));
     }
 

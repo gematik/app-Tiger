@@ -1,8 +1,3 @@
-/*! jQuery UI - v1.12.1 - 2016-09-16
- * http://jqueryui.com
- * Includes: position.js
- * Copyright jQuery Foundation and other contributors; Licensed MIT */
-
 (function( factory ) {
     if ( typeof define === "function" && define.amd ) {
 

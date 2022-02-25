@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 let currEnvironment = {};
 /** @namespace currEnvironment.tigerProxyCfg.proxiedServer */
 /** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls */
@@ -58,8 +74,11 @@ function openYamlFile(path, separator, cfgfile) {
       for (const key in res.servers) {
         currEnvironment[key] = res.servers[key];
       }
+      discardChanges();
       populateServersFromYaml(currEnvironment);
       setYamlFileName(cfgfile, path);
+      removeWelcomeCardAndShowSidebar();
+
       $('.btn-new-testenv').setEnabled(true);
       $('.btn-save-as-testenv').setEnabled(true);
       $('.btn-save-testenv').setEnabled(true);
@@ -195,6 +214,7 @@ function discardChanges() {
   if (!serverContent.children().length) {
     showWelcomeCard();
   }
+  $('.btn-save-as-testenv').setEnabled(false);
 }
 
 function addServer(serverKey, serverData) {
@@ -276,7 +296,6 @@ function addSelectedServer() {
       type: 'localProxy'
     };
     addServer('local_proxy', currEnvironment.local_proxy);
-    $('.server-content > .card-body').remove();
   }
 
   let index = 1;
@@ -301,6 +320,7 @@ function addSelectedServer() {
     delete currEnvironment[newKey].templateName;
   }
   addServer(newKey, {...currEnvironment[newKey]});
+  removeWelcomeCardAndShowSidebar();
   $('.btn-new-testenv').setEnabled(true);
   $('.btn-save-as-testenv').setEnabled(true);
   notifyChangesToTestenvData(true);
@@ -338,9 +358,16 @@ function handleOpenTestEnvironmentClick() {
 
 function showWelcomeCard() {
   $('.btn-new-testenv').setEnabled(false);
+  $('.sidebar-col').hide();
   $('.server-content').html($('#template-welcome-card').html());
   $('.server-content .btn-open-testenv').click(handleOpenTestEnvironmentClick);
   $('.server-content .btn-add-server').click(openAddServerModal);
+}
+
+function removeWelcomeCardAndShowSidebar() {
+  $('.sidebar-col').show();
+  $('.sidebar-bottom-toolbar').toggleClass('hidden', false);
+  $('.server-content > .card-body').remove();
 }
 
 function confirmNoDefault(flag, title, content, yesfunc) {
@@ -437,7 +464,6 @@ function openFileOpenDialog(okfunc) {
   filedlg.find('.btn-filenav-cancel').click(function () {
     filedlg.modal('hide');
   });
-  filedlg.modal('show');
   navigateIntoFolder(currFolder, okfunc, true, 'open');
 }
 
@@ -460,7 +486,6 @@ function openFileSaveAsDialog(okfunc) {
   filedlg.find('.btn-filenav-cancel').click(function () {
     filedlg.modal('hide');
   });
-  filedlg.modal('show');
   navigateIntoFolder(currFolder, okfunc, true, 'save');
   filedlg.find('.btn-filenav-ok').off('click');
   pressEnterToConfirm(filedlg, ".btn-filenav-ok");
@@ -538,6 +563,9 @@ function navigateIntoFolder(folder, okfunc, addroots, mode) {
             navigateIntoFolder($(this).text(), okfunc, false, mode);
           });
         }
+      }
+      if (!filedlg.is(':visible')) {
+        filedlg.modal('show');
       }
     },
     error: function (xhr) {

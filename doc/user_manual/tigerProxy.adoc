@@ -374,6 +374,13 @@ If `message` is a request, then the `message` itself will be returned.
 
 To help users create RbelPath-Expressions there is a Debug-Functionality which produces log message designed to help. These can be activated by `RbelOptions.activateRbelPathDebugging();`. Please note that this is strictly intended for development purposes and will flood the log with quite a lot of messages. Act accordingly!
 
+When you want to debug RbelPath in BDD test suites, you can add a tiger.yaml file to your project root and add the following property:
+
+[source,yaml]
+----
+rbelPathDebugging: true
+----
+
 To get a better feel for a RbelElement (whether it being a complete message or just a part) you can print the tree with the `RbelElementTreePrinter`. It brings various options:
 
 [source,java]
@@ -387,7 +394,15 @@ RbelElementTreePrinter.builder()
     .execute();
 ----
 
-//TODO TGR-312 localResources: true muss erklärt werden
-//TODO TGR-312 rbelBufferSizeInMb: 1024  muss erklärt werden
-//TODO TGR-312 activateForwardAllLogging: true  muss erklärt werden
-//TODO TGR-312 fileSaveInfo  muss erklärt werden
+=== Running Tiger Proxy as standalone JAR
+
+If you only want to run a Tiger Proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups). A fat JAR is available via maven central.
+
+Supplying an application.yaml file allows you to configure the standalone proxy just like an instance started by the test environment manager. All properties can be used the same way as described in xref:tigerTestEnvironmentManager.adoc#_configuring_the_local_test_suite_tiger_proxy[this chapter]. There is however one additional property for the standalone proxy specifically:
+
+[source,yaml]
+----
+# flag whether to load all resources (js,css) locally or via CDN/internet.
+# useful if you have no access to the internet in your environment
+localResources: false
+----

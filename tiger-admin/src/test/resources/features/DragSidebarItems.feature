@@ -1,3 +1,4 @@
+@SingleBrowser
 @FullTests @UiTests
 Feature: Check sidebar drag n drop of nodes
 
