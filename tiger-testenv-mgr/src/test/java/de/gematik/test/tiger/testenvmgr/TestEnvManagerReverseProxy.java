@@ -38,23 +38,23 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
                 + "      - http://localhost:${mockserver.port}/download\n"
                 + "    externalJarOptions:\n"
                 + "      arguments:\n"
-                + "        - --httpPort=${free.ports.0}\n"
+                + "        - --httpPort=${free.port.0}\n"
                 + "        - --webroot=.\n"
-                + "      healthcheck: http://127.0.0.1:${free.ports.0}\n"
+                + "      healthcheck: http://127.0.0.1:${free.port.0}\n"
                 + "\n"
                 + "  reverseproxy1:\n"
                 + "    type: tigerProxy\n"
                 + "    tigerProxyCfg:\n"
-                + "      serverPort: ${free.ports.2}\n"
+                + "      serverPort: ${free.port.2}\n"
                 + "      proxiedServer: testWinstone2\n"
                 + "      proxyCfg:\n"
-                + "        port: ${free.ports.3}\n",
+                + "        port: ${free.port.3}\n",
             "tiger");
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
 
             final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
-                "http://127.0.0.1:" + getFreePorts().get(3)).asString();
+                "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();
             assertThat(httpResponse.getBody().trim())
                 .withFailMessage("Expected to receive folder index page from Winstone server, but got HTTP " +
                     httpResponse.getStatus() + " with body \n" + httpResponse.getBody())
@@ -70,7 +70,7 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
             envMgr.setUpEnvironment();
 
             final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
-                "http://127.0.0.1:" + getFreePorts().get(2)).asString();
+                "http://127.0.0.1:" +TigerGlobalConfiguration.readStringOptional("free.port.2").get()).asString();
             assertThat(httpResponse.getBody().trim())
                 .withFailMessage("Expected to receive folder index page from Winstone server, but got HTTP " +
                     httpResponse.getStatus() + " with body \n" + httpResponse.getBody())
@@ -89,23 +89,23 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
                 + "      - http://localhost:${mockserver.port}/download\n"
                 + "    externalJarOptions:\n"
                 + "      arguments:\n"
-                + "        - --httpPort=${free.ports.0}\n"
+                + "        - --httpPort=${free.port.0}\n"
                 + "        - --webroot=..\n"
-                + "      healthcheck: http://127.0.0.1:${free.ports.0}/foo/bar/stuff"
+                + "      healthcheck: http://127.0.0.1:${free.port.0}/foo/bar/stuff"
                 + "\n"
                 + "  reverseproxy1:\n"
                 + "    type: tigerProxy\n"
                 + "    tigerProxyCfg:\n"
-                + "      serverPort: ${free.ports.2}\n"
+                + "      serverPort: ${free.port.2}\n"
                 + "      proxiedServer: testWinstone2\n"
                 + "      proxyCfg:\n"
-                + "        port: ${free.ports.3}\n",
+                + "        port: ${free.port.3}\n",
             "tiger");
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
 
             final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
-                "http://127.0.0.1:" + getFreePorts().get(3)).asString();
+                "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();
             assertThat(httpResponse.getBody())
                 .contains("<TITLE>Directory: /</TITLE>");
         });

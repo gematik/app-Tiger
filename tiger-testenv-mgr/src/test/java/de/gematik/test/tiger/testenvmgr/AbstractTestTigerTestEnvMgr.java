@@ -35,19 +35,10 @@ public abstract class AbstractTestTigerTestEnvMgr {
     private MockServerClient mockServerClient;
     private Expectation downloadExpectation;
     private byte[] winstoneBytes;
-    private List<Integer> freePorts;
 
     @AfterAll
     public static void resetProperties() {
         System.clearProperty("mockserver.port");
-    }
-
-    @BeforeEach
-    public void findFreePorts() {
-        freePorts = IteratorUtils.toList(SocketUtils.findAvailableTcpPorts(5).iterator());
-
-        IntStream.range(0, freePorts.size())
-            .forEach(i -> TigerGlobalConfiguration.putValue("free.ports." + i, freePorts.get(i)));
     }
 
     @BeforeEach

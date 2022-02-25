@@ -14,6 +14,7 @@ import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.monitor.MonitorUI;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
+import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.RestAssured;
 import java.awt.HeadlessException;
@@ -125,7 +126,7 @@ public class TigerDirector {
                 System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
                 System.setProperty("https.proxyHost", "localhost");
                 System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
-                setupSerenityRest();
+                SerenityRestUtils.setupSerenityRest();
             }
         } else {
             log.info(Ansi.colorize("SKIPPING TIGER PROXY settings...", RbelAnsiColors.RED_BOLD));
@@ -137,21 +138,6 @@ public class TigerDirector {
 
         initialized = true;
         log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
-    }
-
-    private static void setupSerenityRest() {
-        RestAssured.filters((requestSpec, responseSpec, ctx) -> {
-            try {
-                log.trace("Sending Request "
-                    + requestSpec.getMethod() + " " + requestSpec.getURI()
-                    + " via proxy " + requestSpec.getProxySpecification());
-                return ctx.next(requestSpec, responseSpec);
-            } catch (Exception e) {
-                throw new TigerSerenityRestException("Error while retrieving "
-                    + requestSpec.getMethod() + " " + requestSpec.getURI()
-                    + " via proxy " + requestSpec.getProxySpecification(), e);
-            }
-        });
     }
 
     public static synchronized boolean isInitialized() {
@@ -228,12 +214,5 @@ public class TigerDirector {
         System.clearProperty("https.proxyPort");
 
         TigerGlobalConfiguration.reset();
-    }
-
-    private static class TigerSerenityRestException extends RuntimeException {
-
-        public TigerSerenityRestException(String s, Exception e) {
-            super(s, e);
-        }
     }
 }
