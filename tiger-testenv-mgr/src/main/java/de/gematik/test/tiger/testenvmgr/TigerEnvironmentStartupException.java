@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.testenvmgr;
 
 public class TigerEnvironmentStartupException extends RuntimeException {

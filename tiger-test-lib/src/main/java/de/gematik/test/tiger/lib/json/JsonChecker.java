@@ -2,10 +2,6 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-/*
- * ${GEMATIK_COPYRIGHT_STATEMENT}
- */
-
 package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThat;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.admin.bdd;
 
 import de.gematik.test.tiger.admin.TigerAdminApplication;

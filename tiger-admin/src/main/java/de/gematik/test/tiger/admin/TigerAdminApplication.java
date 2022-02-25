@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import de.gematik.test.tiger.common.data.config.CfgTigerProxyOptions;

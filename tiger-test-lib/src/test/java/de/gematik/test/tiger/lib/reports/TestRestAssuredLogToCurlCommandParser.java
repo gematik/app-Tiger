@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.lib.reports;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;

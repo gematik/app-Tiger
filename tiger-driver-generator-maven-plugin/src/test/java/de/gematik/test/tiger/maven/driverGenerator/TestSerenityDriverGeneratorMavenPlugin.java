@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.maven.driverGenerator;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

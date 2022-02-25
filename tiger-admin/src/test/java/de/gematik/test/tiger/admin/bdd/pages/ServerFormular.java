@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.admin.bdd.pages;
 
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.admin.helper.exceptions;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationException;

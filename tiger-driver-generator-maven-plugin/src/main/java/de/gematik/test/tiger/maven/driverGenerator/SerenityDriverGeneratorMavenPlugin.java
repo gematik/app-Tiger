@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.maven.driverGenerator;
 
 import com.google.code.maven_replacer_plugin.file.FileUtils;

@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# ${GEMATIK_COPYRIGHT_STATEMENT}
+#
+
 echo STARTED
 sleep 5s
 touch healthy.txt

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.proxy.controller;
 
 import de.gematik.rbellogger.modifier.RbelModificationDescription;

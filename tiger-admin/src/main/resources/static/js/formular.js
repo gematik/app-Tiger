@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 // TODO recheck modification detection on complex lists once default values are implemented
 // as of now the yaml from the server does only contain attributes which have a value (null are not added)
 // so in routes if id is not set its not forwarded at all in the serverYaml struct

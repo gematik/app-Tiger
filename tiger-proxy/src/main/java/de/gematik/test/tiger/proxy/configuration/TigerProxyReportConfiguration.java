@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.proxy.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 <script>
   const tigerProxyPort = ${ProxyPort};
   const tigerProxyFilenamePattern = "${FilenamePattern}";

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 let currEnvironment = {};
 /** @namespace currEnvironment.tigerProxyCfg.proxiedServer */
 /** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls */

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.testenvmgr;
 
 import com.google.common.util.concurrent.Monitor;

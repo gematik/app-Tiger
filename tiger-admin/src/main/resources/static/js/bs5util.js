@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 // noinspection CommaExpressionJS,JSUnusedGlobalSymbols
 
 "use strict";

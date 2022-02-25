@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package drivers;
 
 import io.cucumber.junit.CucumberOptions;

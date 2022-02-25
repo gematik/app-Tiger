@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.common.pki;
 
 import static org.assertj.core.api.Assertions.assertThat;

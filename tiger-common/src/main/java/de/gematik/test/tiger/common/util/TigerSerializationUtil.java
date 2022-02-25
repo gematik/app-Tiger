@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.common.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
