@@ -532,7 +532,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.19.1 - 2022-02-17</span>
+<span id="revdate">Version 0.19.1 - 2022-02-25</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -571,6 +571,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_modifications">4.5. Modifications</a></li>
 <li><a href="#_mesh_setup_traffic_endpoints">4.6. Mesh set up</a></li>
 <li><a href="#_understanding_rbelpath">4.7. Understanding RBelPath</a></li>
+<li><a href="#_running_tiger_proxy_as_standalone_jar">4.8. Running Tiger Proxy as standalone JAR</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_test_library_2">5. Tiger Test library</a>
@@ -579,6 +580,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_cucumber_and_tigertesthooks">5.2. Cucumber and TigerTestHooks</a></li>
 <li><a href="#_using_the_cucumber_tiger_validation_steps">5.3. Using the Cucumber Tiger validation steps</a></li>
 <li><a href="#_using_tiger_test_lib_helper_classes">5.4. Using Tiger test lib helper classes</a></li>
+<li><a href="#_test_library_configuration">5.5. Test library configuration</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -588,6 +590,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_thread_based_configuration">6.3. Thread-based configuration</a></li>
 <li><a href="#_placeholders">6.4. Placeholders</a></li>
 <li><a href="#_examples">6.5. Examples</a></li>
+<li><a href="#_pre_defined_values">6.6. Pre-Defined values</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_user_interfaces">7. Tiger User interfaces</a>
@@ -624,7 +627,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <p>Tiger is a framework for interface-driven BDD black-box-testing.</p>
 </div>
 <div class="paragraph">
-<p>Tiger is a toolbox that supports and guides you when writing testsuites. It lets you focus on writing the tests  and solves typical problems that every team encounters (configuration, setting up the test environment, parametrization, result reporting, test running). How, you ask?</p>
+<p>Tiger is a toolbox that supports and guides you when writing test suites. It lets you focus on writing the tests  and solves typical problems that every team encounters (configuration, setting up the test environment, parametrization, result reporting, test running). How, you ask?</p>
 </div>
 <div class="ulist">
 <ul>
@@ -641,7 +644,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <p>A complete configuration toolkit, which combines multiple source and supports custom configuration of your testsuite as well, again with zero lines of Java.</p>
 </li>
 <li>
-<p>Common tasks (JSON-validation, message-filtering, scenario configuration, configuration of simulators&#8230;&#8203;) can be performed with the Tiger test library, which can be seamlessly imported into BDD testsuites. This allows you to build mighty testsuites with zero lines of java.</p>
+<p>Common tasks (JSON-validation, message-filtering, scenario configuration, configuration of simulators&#8230;&#8203;) can be performed with the Tiger test library, which can be seamlessly imported into BDD test suites.<br>
+This allows you to build mighty test suites with zero lines of java.</p>
 </li>
 <li>
 <p>If you want to write custom steps and glue code our Java-API has got you covered by supporting common tasks (crypto, serialization&#8230;&#8203;) for you. So the little lines you have to write are be powerful and descriptive?!</p>
@@ -1026,9 +1030,6 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
                         <span class="comment">&lt;!-- adapt to the class names of your driver classes --&gt;</span>
                         <span class="tag">&lt;include&gt;</span>**/Parallel*IT.java<span class="tag">&lt;/include&gt;</span>
                     <span class="tag">&lt;/includes&gt;</span>
-                    <span class="tag">&lt;systemPropertyVariables&gt;</span>
-                        <span class="tag">&lt;TIGER_ACTIVE&gt;</span>1<span class="tag">&lt;/TIGER_ACTIVE&gt;</span>
-                    <span class="tag">&lt;/systemPropertyVariables&gt;</span>
                     <span class="comment">&lt;!-- on purpose, to ensure the serenity plugin is called afterwards.
                     It's check goal wil bail out in case of test failures,
                     AFTER the serenity report has been generated --&gt;</span>
@@ -1333,9 +1334,6 @@ It is important to activate the <strong>testFailureIgnore</strong> property, to 
                         <span class="comment">&lt;!-- adapt to the class names of your driver classes --&gt;</span>
                         <span class="tag">&lt;include&gt;</span>**/Parallel*IT.java<span class="tag">&lt;/include&gt;</span>
                     <span class="tag">&lt;/includes&gt;</span>
-                    <span class="tag">&lt;systemPropertyVariables&gt;</span>
-                        <span class="tag">&lt;TIGER_ACTIVE&gt;</span>1<span class="tag">&lt;/TIGER_ACTIVE&gt;</span>
-                    <span class="tag">&lt;/systemPropertyVariables&gt;</span>
                     <span class="comment">&lt;!-- on purpose, to ensure the serenity plugin is called afterwards.
                     It's check goal wil bail out in case of test failures,
                     AFTER the serenity report has been generated --&gt;</span>
@@ -1540,9 +1538,6 @@ if you are using the screenplay pattern (PREFERRED!)</p>
 <p>Environment variables:</p>
 <div class="ulist">
 <ul>
-<li>
-<p>TIGER_ACTIVE=1</p>
-</li>
 <li>
 <p>Proxy environment variables (see <a href="#_proxy_configuration">Proxy configuration</a> below)</p>
 </li>
@@ -2210,13 +2205,16 @@ For more information about what the Tiger Proxy and how it works see the chapter
   <span class="key">port</span>: <span class="string"><span class="content">7777</span></span>
   <span class="comment"># logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!</span>
   <span class="key">proxyLogLevel</span>: <span class="string"><span class="content">TRACE</span></span>
+  <span class="comment"># section to configure whether and where the proxy should dump</span>
+  <span class="comment"># a traffic HTML report on shutdown</span>
   <span class="key">fileSaveInfo</span>:
     <span class="comment"># should the cleartext http-traffic be logged to a file?</span>
     <span class="key">writeToFile</span>: <span class="string"><span class="content">true</span></span>
-    <span class="comment"># configure the filename</span>
+    <span class="comment"># configure the file name</span>
     <span class="key">filename</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">foobar.tgr</span><span class="delimiter">&quot;</span></span>
     <span class="comment"># default false</span>
     <span class="key">clearFileOnBoot</span>: <span class="string"><span class="content">true</span></span>
+  <span class="comment"># a list of routing entries the proxy should apply to traffic</span>
   <span class="key">proxyRoutes</span>:
       <span class="comment"># defines a forward-proxy-route from this server...</span>
     - <span class="string"><span class="content">from: http://foobar</span></span>
@@ -2262,11 +2260,11 @@ For more information about what the Tiger Proxy and how it works see the chapter
     <span class="key">type</span>: <span class="string"><span class="content">HTTP</span></span>
   <span class="comment"># The Tiger Proxy will route google.com to google.com even if no route is set.</span>
   <span class="comment"># The traffic routed via this &quot;forwardAll&quot;-routing will be logged by default</span>
-  <span class="comment"># (meaning it will show up in the Rbel-Logs and be fowarded to tracing-clients)</span>
+  <span class="comment"># (meaning it will show up in the Rbel-Logs and be forwarded to tracing-clients)</span>
   <span class="comment"># This can be deactivated by setting this flag to false</span>
   <span class="key">activateForwardAllLogging</span>: <span class="string"><span class="content">true</span></span>
   <span class="comment"># Limits the rbel-Buffer to approximately this size.</span>
-  <span class="comment"># Note: When Rbel-Analysis is done the size WILL vastly exceed this limit!</span>
+  <span class="comment"># Note: When Rbel debugging is activated the size WILL vastly exceed this limit!</span>
   <span class="key">rbelBufferSizeInMb</span>: <span class="string"><span class="content">1024</span></span>
   <span class="comment"># If set to false disables traffic-analysis by Rbel.</span>
   <span class="comment"># Deactivating will not impede proxy-forwarding nor</span>
@@ -2975,6 +2973,14 @@ If <code>message</code> is a request, then the <code>message</code> itself will 
 <p>To help users create RbelPath-Expressions there is a Debug-Functionality which produces log message designed to help. These can be activated by <code>RbelOptions.activateRbelPathDebugging();</code>. Please note that this is strictly intended for development purposes and will flood the log with quite a lot of messages. Act accordingly!</p>
 </div>
 <div class="paragraph">
+<p>When you want to debug RbelPath in BDD test suites, you can add a tiger.yaml file to your project root and add the following property:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">rbelPathDebugging</span>: <span class="string"><span class="content">true</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>To get a better feel for a RbelElement (whether it being a complete message or just a part) you can print the tree with the <code>RbelElementTreePrinter</code>. It brings various options:</p>
 </div>
 <div class="listingblock">
@@ -2988,8 +2994,24 @@ If <code>message</code> is a request, then the <code>message</code> itself will 
     .execute();</code></pre>
 </div>
 </div>
-<div style="page-break-after: always;"></div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_running_tiger_proxy_as_standalone_jar">4.8. Running Tiger Proxy as standalone JAR</h3>
+<div class="paragraph">
+<p>If you only want to run a Tiger Proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups). A fat JAR is available via maven central.</p>
+</div>
+<div class="paragraph">
+<p>Supplying an application.yaml file allows you to configure the standalone proxy just like an instance started by the test environment manager. All properties can be used the same way as described in <a href="#_configuring_the_local_test_suite_tiger_proxy">this chapter</a>. There is however one additional property for the standalone proxy specifically:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="comment"># flag whether to load all resources (js,css) locally or via CDN/internet.</span>
+<span class="comment"># useful if you have no access to the internet in your environment</span>
+<span class="key">localResources</span>: <span class="string"><span class="content">false</span></span></code></pre>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
@@ -3055,13 +3077,15 @@ in the TigerTestHooks class.</p>
 provides those messages via a getter method to the Tiger filter and validation steps.</p>
 </div>
 <div class="paragraph">
-<p>The @Before method parses the current scenario / feature file and calls the TigerDirectors set up method <code>beforeTestRun</code> once<br>
-to initiate the Tiger test environment manager and the local Tiger Proxy.<br>
-It adds a RbelMessage Listener once and also clears the RbelMessages queue before each scenario / scenario outline variant.</p>
+<p>The @Before method calls the TigerDirector once<br>
+to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the monitoring UI and parses the current scenario / feature file.<br>
+It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.<br>
+Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter,<br>
+parses the details and adds a curl Command details button to the Serenity BDD report.<br>
+The curl command shown in this section allows to repeat the performed REST request, for manual test failure analysis.</p>
 </div>
 <div class="paragraph">
-<p>The @After method saves all collected RbelMessages as HTML file to the <code>target/rbellogs</code> folder and<br>
-logs out the current test run state (scucess/failed rate) to the console.</p>
+<p>The @After method saves all collected RbelMessages as HTML file to the <code>target/rbellogs</code> folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (scucess/failed rate) to the console.</p>
 </div>
 <div class="paragraph">
 <p>The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.<br>
@@ -3095,19 +3119,16 @@ in the TigerTestHooks class at the appropriate times.</p>
 <p>The @BeforeStep method MIGHT be called before each test step</p>
 </li>
 <li>
-<p>The @AfterStep method MIGHT be called after each test step</p>
-</li>
-<li>
 <p>The @After method MIGHT be called after each Test scenario</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all four methods.<br>
-Else you just pass in a null Scenario to the @Before method and do not call the other three methods in your test run.</p>
+<p>If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all methods.<br>
+Else you just pass in a null Scenario to the methods or do not call the other methods in your test run.</p>
 </div>
 <div class="paragraph">
-<p>But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files for each scenario.<br>
+<p>But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files.<br>
 As a workaround you might use the TigerDirector to manually trigger UI Monitor popups via its method <code>updateStepInMonitor(Step step)</code>.</p>
 </div>
 </div>
@@ -3642,8 +3663,48 @@ All classes listed here are part of the tiger-common module
 Supports ANSI coloring and a set of different fonts.<br>
 For more details please check the code and its usages in the Tiger test framework.</p>
 </div>
-<div style="page-break-after: always;"></div>
 </div>
+<div class="sect3">
+<h4 id="_performing_rest_calls_with_tiger">5.4.2. Performing REST calls with Tiger</h4>
+<div class="paragraph">
+<p>Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the <code>SerenityRest</code> helper class, you will get detailed information about each call inside the test report.<br>
+The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.</p>
+</div>
+<div class="paragraph">
+<p>For more information about REST testing in Tiger/SerenityBDD please check these two documents:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://serenity-bdd.github.io/theserenitybook/latest/serenity-rest.html">Serenity REST</a></p>
+</li>
+<li>
+<p><a href="https://serenity-bdd.github.io/theserenitybook/latest/serenity-screenplay-rest.html">Serenity Screenplay REST</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_test_library_configuration">5.5. Test library configuration</h3>
+<div class="paragraph">
+<p>To configure your test library add a tiger.yaml file to the project root.<br>
+The following configuration properties are supported:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="comment"># flag whether to activate monitoring UI</span>
+<span class="key">activateMonitorUI</span>: <span class="string"><span class="content">false</span></span>
+<span class="comment"># flag whether to activate rbel path debugging</span>
+<span class="key">rbelPathDebugging</span>: <span class="string"><span class="content">false</span></span>
+<span class="comment"># flag whether to print rbel dumps to console using ANSI color codes or not</span>
+<span class="key">rbelAnsiColors</span>: <span class="string"><span class="content">true</span></span>
+<span class="comment"># flag whether to add a curl command details button to SerenityRest Restassured calls</span>
+<span class="comment"># in the Serenity BDD report</span>
+<span class="key">addCurlCommandsForRaCallsToReport</span>: <span class="string"><span class="content">true</span></span></code></pre>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
@@ -3855,8 +3916,21 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <div class="paragraph">
 <p>The glue-code in Tiger automatically resolves the placeholders.</p>
 </div>
-<div style="page-break-after: always;"></div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_pre_defined_values">6.6. Pre-Defined values</h3>
+<div class="paragraph">
+<p>Tiger adds some pre-defined values to make your life easier configuring the environment. Currently these are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>free.port.0</code> - <code>free.port.255</code>: Free ports that are randomly determined at startup but stay fixed during the execution. This enables side effect free execution of the testsuite.</p>
+</li>
+</ul>
+</div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
@@ -4041,7 +4115,7 @@ Till then there is not much more than in the <a href="#_workflow_ui">Workflow UI
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-17 12:39:12 +0100
+Last updated 2022-02-25 09:49:20 +0100
 </div>
 </div>
 </body>
