@@ -4,6 +4,7 @@
 
 ## Bugfix
 * Tiger hook causes null pointer exception before steps execution
+* Tiger-User-Manual (HTML) now has pictures
 
 ## Features
 

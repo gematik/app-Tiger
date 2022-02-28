@@ -75,19 +75,21 @@ pipeline {
                 stage('prepare external release') {
                     steps {
                         mavenSetVersion("${RELEASE_VERSION}")
+                        gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
                         //GH Pages
                         mavenBuild(POM_PATH)
-                        sh label: 'renameManualsAndAddToRoot', script: """
-                            cp ./tiger-admin/target/adoc/user_manual/tiger_user_manual.html ./Tiger-User-Manual.html
-                            cp ./tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf ./Tiger-User-Manual.pdf
-                            """
-                        stash includes: 'Tiger-User-Manual.html,Tiger-User-Manual.pdf', name: 'manual'
-                        gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                        stash includes: '/tiger-admin/target/adoc/user_manual/tiger_user_manual.html,/tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf,/tiger-admin/target/adoc/user_manual/examples/**/*,/tiger-admin/target/adoc/user_manual/media/**/*', name: 'manual'
                         sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages
                             git clean -df
                             """
                         unstash 'manual'
+                        sh label: 'moveManualsToRoot', script: """
+                            mv ./tiger-admin/target/adoc/user_manual/tiger_user_manual.html ./Tiger-User-Manual.html
+                            mv ./tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf ./Tiger-User-Manual.pdf
+                            mv ./tiger-admin/target/adoc/user_manual/examples ./examples
+                            mv ./tiger-admin/target/adoc/user_manual/media ./media
+                            """
                         gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
                         sh "git checkout master"
                     }
