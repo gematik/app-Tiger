@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 class TestJUnitTestResultParser {
 
-    @Disabled //TODO TGR-373
     @Test
     void testJunitResultParseOK() {
         // avoid xerces bug not supporting accessEXternalDTD

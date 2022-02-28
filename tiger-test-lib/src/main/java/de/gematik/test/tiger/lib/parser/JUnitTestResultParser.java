@@ -16,6 +16,7 @@ import java.util.Objects;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.*;
 
 import de.gematik.test.tiger.lib.parser.model.Result;
@@ -63,7 +64,7 @@ public class JUnitTestResultParser implements ITestResultParser {
     }
 
     private void parseTestSuite(final Element suite, final Map<String, TestResult> results) {
-        // TODO TGR-278 workaround for now, how to get start datetime for test run from junit results
+        //TODO TGR-278 workaround for now, how to get start datetime for test run from junit results
         LocalDateTime start = null;
         if (suite.hasAttribute("timestamp")) {
             start = LocalDateTime.parse(suite.getAttribute("timestamp").split(" ")[0],
@@ -83,10 +84,7 @@ public class JUnitTestResultParser implements ITestResultParser {
                     tr.setStartms(0);
                     tr.setEndms(0);
                 }
-                // TODO TGR-279 workaround for now we assume junit methods have to pass in the polarion ID as test method name
-                // Later on parse test case json and look for annotations by matching the test class and method name
-                // in Doku klarstellen
-                tr.setPolarionID(tr.getMethod());
+                tr.setPolarionID(StringUtils.substringBefore(tr.getMethod(), "__"));
                 results.put(tr.getClazz() + ":" + tr.getMethod(), tr);
             }
         }
