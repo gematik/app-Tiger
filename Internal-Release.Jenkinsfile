@@ -100,7 +100,7 @@ pipeline {
                 }
                 stage('deleteOldArtifacts') {
                     steps {
-                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                             nexusDeleteArtifacts(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID)
                         }
                     }
