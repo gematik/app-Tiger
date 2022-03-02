@@ -3,12 +3,13 @@
 # Release 0.19.3
 
 ## Bugfix
-* Tiger hook causes null pointer exception before steps execution
-* Tiger-User-Manual (HTML) now has pictures
+* TGR-294: Tiger hook causes null pointer exception before steps execution
+* TGR-380: Tiger-User-Manual (HTML) now has pictures
 
 ## Features
 
-* TGR-294 Rbel Log html page now shows data variant values when clicking on button in subtitle section
+* TGR-294: Rbel Log html page now shows data variant values when clicking on button in subtitle section
+* TGR-389: EPA-VAU messages are now always tagged with the target account KVNR (only when tigerProxy.activateVauAnalysis is activated)
 
 # Release 0.19.2
 
