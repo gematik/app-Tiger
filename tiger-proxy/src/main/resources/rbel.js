@@ -5,6 +5,7 @@
 "strict";
 
 let lastUuid = "";
+let filterCriterion = "";
 let rootEl;
 
 let updateTimeout = 0;
@@ -14,6 +15,9 @@ let resetBtn;
 let saveBtn;
 let uploadBtn;
 let quitBtn;
+
+let setFilterCriterionBtn;
+let setFilterCriterionInput;
 
 let btnOpenRouteModal;
 let fieldRouteTo;
@@ -48,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function () {
   uploadBtn = document.getElementById("uploadMsgs");
   quitBtn = document.getElementById("quitProxy");
 
+  setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
+  setFilterCriterionInput = document.getElementById("setFilterCriterionInput");
+
   btnOpenRouteModal = document.getElementById("routeModalBtn");
   fieldRouteFrom = document.getElementById("addNewRouteFromField");
   fieldRouteTo = document.getElementById("addNewRouteToField");
@@ -67,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
   enableCollapseExpandAll();
 
   updateBtn.addEventListener('click', pollMessages);
+  setFilterCriterionBtn.addEventListener('click', setFilterCriterion);
   quitBtn.addEventListener('click', quitProxy);
   resetBtn.addEventListener('click', resetMessages);
   saveBtn.addEventListener('click', saveToLocal);
@@ -240,7 +248,9 @@ function pollMessages() {
   document.getElementById("updateLed").classList.remove("lederror");
   document.getElementById("updateLed").classList.add("ledactive");
   const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/webui/getMsgAfter?lastMsgUuid=" + lastUuid, true);
+  xhttp.open("GET", "/webui/getMsgAfter"
+      + "?lastMsgUuid=" + lastUuid
+      + "&filterCriterion=" + filterCriterion, true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
@@ -259,6 +269,14 @@ function pollMessages() {
   xhttp.send();
 }
 
+function resetAllReceivedMessages() {
+  lastUuid = "";
+  const sidebarMenu = document.getElementById("sidebar-menu")
+  sidebarMenu.innerHTML = "";
+  const listDiv = getAll('.msglist')[0];
+  listDiv.innerHTML = "";
+}
+
 function resetMessages() {
   resetBtn.disabled = true;
   const xhttp = new XMLHttpRequest();
@@ -271,11 +289,7 @@ function resetMessages() {
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
       }
-      lastUuid = "";
-      const sidebarMenu = document.getElementById("sidebar-menu")
-      sidebarMenu.innerHTML = "";
-      const listDiv = getAll('.msglist')[0];
-      listDiv.innerHTML = "";
+      resetAllReceivedMessages();
       setTimeout(() => {
         resetBtn.blur();
         resetBtn.disabled = false;
@@ -312,6 +326,12 @@ function quitProxy() {
     }
   }
   xhttp.send();
+}
+
+function setFilterCriterion() {
+  filterCriterion = setFilterCriterionInput.value;
+  resetAllReceivedMessages();
+  pollMessages();
 }
 
 function uploadReport() {

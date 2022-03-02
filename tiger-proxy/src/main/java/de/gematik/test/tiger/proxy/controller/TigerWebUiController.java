@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy.controller;
 
 import static j2html.TagCreator.*;
+import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
@@ -43,7 +44,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -61,8 +61,8 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer = new RbelHtmlRenderer();
-    private ApplicationContext applicationContext;
     private final ApplicationConfiguration applicationConfiguration;
+    private ApplicationContext applicationContext;
 
     @Override
     public void setApplicationContext(ApplicationContext appContext) throws BeansException {
@@ -78,7 +78,8 @@ public class TigerWebUiController implements ApplicationContextAware {
             log.info("Running with local resources...");
             html = html
                 .replace("https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css", "/webui/css/bulma.min.css")
-                .replace("https://jenil.github.io/bulmaswatch/simplex/bulmaswatch.min.css", "/webui/css/bulmaswatch.min.css")
+                .replace("https://jenil.github.io/bulmaswatch/simplex/bulmaswatch.min.css",
+                    "/webui/css/bulmaswatch.min.css")
                 .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
                     "/webui/css/all.min.css");
         }
@@ -97,6 +98,25 @@ public class TigerWebUiController implements ApplicationContextAware {
                         button().withId("scrollLockBtn").withClass("button is-dark").with(
                             div().withId("scrollLockLed").withClass("led"),
                             span("Scroll Lock")
+                        )
+                    ),
+                    div().withClass("navbar-item").with(
+                        div().withClass("field").with(
+                            p().withClass("control has-icons-left").with(
+                                input().withClass("input is-rounded has-text-dark")
+                                    .withType("text")
+                                    .withPlaceholder("RbelPath filter criterion")
+                                    .withId("setFilterCriterionInput"),
+                                span().withClass("icon is-small is-left").with(
+                                    i().withClass("fa-solid fa-searchengine")
+                                )
+                            )
+                        )
+                    ),
+                    div().withClass("navbar-item").with(
+                        button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success").with(
+                            i().withClass("far fa-searchengin"),
+                            span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
                         )
                     )
                 ),
@@ -150,11 +170,11 @@ public class TigerWebUiController implements ApplicationContextAware {
         if (applicationConfiguration.getReport() == null) {
             applicationConfiguration.setReport(new TigerProxyReportConfiguration());
         }
-        if (getClass().getResourceAsStream("/config.js") == null) {
+        if (getClass().getResourceAsStream("/configScript.html") == null) {
             throw new TigerProxyConfigurationException("Unable to locate config js template!");
         }
         String configJSSnippetStr = IOUtils
-            .toString(getClass().getResourceAsStream("/config.js"), StandardCharsets.UTF_8)
+            .toString(getClass().getResourceAsStream("/configScript.html"), StandardCharsets.UTF_8)
             .replace("${ProxyPort}", String.valueOf(tigerProxy.getPort()))
             .replace("${FilenamePattern}", applicationConfiguration.getReport().getFilenamePattern())
             .replace("${UploadUrl}", applicationConfiguration.getReport().getUploadUrl());
@@ -164,7 +184,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "/css/{cssfile}", produces = "text/css")
     public String getCSS(@PathVariable("cssfile") String cssFile) throws IOException {
-        try(InputStream is = getClass().getResourceAsStream("/css/" + cssFile)) {
+        try (InputStream is = getClass().getResourceAsStream("/css/" + cssFile)) {
             if (is == null) {
                 throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "css file " + cssFile + " not found"
@@ -176,7 +196,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "/webfonts/{fontfile}", produces = "text/css")
     public ResponseEntity<byte[]> getWebFont(@PathVariable("fontfile") String fontFile) throws IOException {
-        try(InputStream is = getClass().getResourceAsStream("/webfonts/" + fontFile)) {
+        try (InputStream is = getClass().getResourceAsStream("/webfonts/" + fontFile)) {
             if (is == null) {
                 throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "webfont file " + fontFile + " not found"
@@ -189,37 +209,37 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/getMsgAfter", produces = MediaType.APPLICATION_JSON_VALUE)
     public GetMessagesAfterDto getMessagesAfter(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
-        @RequestParam(name = "maxMsgs", required = false) final Integer maxMsgs) {
-        log.debug("requesting messages since " + lastMsgUuid + " (max. " + maxMsgs + ")");
+        @RequestParam(name = "filterCriterion", required = false) final String filterCriterion) {
+        log.debug("requesting messages since " + lastMsgUuid + " (filtered by . " + filterCriterion + ")");
 
-        List<RbelElement> msgs = new ArrayList<>(tigerProxy.getRbelLogger().getMessageHistory());
-        int start = lastMsgUuid == null || lastMsgUuid.isBlank() ?
-            -1 :
-            (int) msgs.stream()
-                .map(RbelElement::getUuid)
-                .takeWhile(uuid -> !uuid.equals(lastMsgUuid))
-                .count();
-        // -1 as we get the uuid of the last response
-        int end = msgs.size();
-        if (maxMsgs != null && maxMsgs > 0 && end - start > maxMsgs) {
-            end = start + 1 + maxMsgs;
-        }
+        var jexlExecutor = new RbelJexlExecutor();
+
+        List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory().stream()
+            .dropWhile(element -> {
+                if (StringUtils.isEmpty(lastMsgUuid)) {
+                    return false;
+                } else {
+                    return !element.getUuid().equals(lastMsgUuid);
+                }
+            })
+            .filter(element -> {
+                if (StringUtils.isEmpty(filterCriterion)) {
+                    return true;
+                }
+                return jexlExecutor.matchesAsJexlExpression(element, filterCriterion, Optional.empty());
+            })
+            .collect(Collectors.toList());
+
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);
-        if (start < msgs.size()) {
-            log.debug("returning msgs > " + start + " of total " + msgs.size());
-            List<RbelElement> retMsgs = new ArrayList<>(msgs.subList(start + 1, end));
-            result.setHtmlMsgList(retMsgs.stream()
-                .map(msg -> new RbelHtmlRenderingToolkit(renderer)
-                    .convert(msg, Optional.empty()).render())
-                .collect(Collectors.toList()));
-            result.setMetaMsgList(retMsgs.stream()
-                .map(this::getMetaData)
-                .collect(Collectors.toList()));
-        } else {
-            result.setHtmlMsgList(List.of());
-            result.setMetaMsgList(List.of());
-        }
+        log.debug("returning {} messages of total {}", msgs.size(), tigerProxy.getRbelMessages().size());
+        result.setHtmlMsgList(msgs.stream()
+            .map(msg -> new RbelHtmlRenderingToolkit(renderer)
+                .convert(msg, Optional.empty()).render())
+            .collect(Collectors.toList()));
+        result.setMetaMsgList(msgs.stream()
+            .map(this::getMetaData)
+            .collect(Collectors.toList()));
         return result;
     }
 
@@ -250,7 +270,8 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @PostMapping(value = "/uploadReport", produces = MediaType.APPLICATION_JSON_VALUE)
     public void uploadReport(@RequestBody String htmlReport) {
-        if (applicationConfiguration.getReport() == null || applicationConfiguration.getReport().getUploadUrl().equals("UNDEFINED")) {
+        if (applicationConfiguration.getReport() == null || applicationConfiguration.getReport().getUploadUrl()
+            .equals("UNDEFINED")) {
             throw new TigerProxyConfigurationException("Upload feature is not configured!");
         }
         log.info("uploading report...");
