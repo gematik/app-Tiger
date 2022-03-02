@@ -42,6 +42,8 @@ public class TigerProxyConfiguration {
     private boolean skipTrafficEndpointsSubscription = false;
     private List<String> trafficEndpoints;
     @Builder.Default
+    private String trafficEndpointFilterString = "";
+    @Builder.Default
     private int connectionTimeoutInSeconds = 10;
     @Builder.Default
     private int stompClientBufferSizeInMb = 1;

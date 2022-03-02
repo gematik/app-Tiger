@@ -8,6 +8,7 @@
 
 ## Features
 
+* TGR-357: Tiger-Proxy traffic endpoints can now filter incoming traffic (reducing load, improving usability)
 * TGR-294: Rbel Log html page now shows data variant values when clicking on button in subtitle section
 * TGR-389: EPA-VAU messages are now always tagged with the target account KVNR (only when tigerProxy.activateVauAnalysis is activated)
 

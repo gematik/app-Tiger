@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
@@ -12,10 +13,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
@@ -25,6 +23,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
@@ -175,18 +174,31 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
     }
 
-    private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver,
-        byte[] messageBytes) {
+    private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes) {
         if (messageBytes != null) {
             log.trace("Received new message...", new String(messageBytes));
 
             final RbelElement rbelMessage = getRbelLogger().getRbelConverter()
                 .parseMessage(messageBytes, sender, receiver);
 
-            super.triggerListener(rbelMessage);
+            if (messageMatchesFilterCriterion(rbelMessage)) {
+                super.triggerListener(rbelMessage);
+            } else {
+                getRbelLogger().getMessageHistory().remove(rbelMessage);
+            }
         } else {
             log.warn("Received message with content 'null'. Skipping parsing...");
         }
+    }
+
+    private boolean messageMatchesFilterCriterion(RbelElement rbelMessage) {
+        if (StringUtils.isEmpty(getTigerProxyConfiguration().getTrafficEndpointFilterString())) {
+            return true;
+        }
+        return new RbelJexlExecutor().matchesAsJexlExpression(
+            rbelMessage,
+            getTigerProxyConfiguration().getTrafficEndpointFilterString(),
+            Optional.empty());
     }
 
     public void unsubscribe() {
