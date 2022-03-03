@@ -5,6 +5,7 @@
 ## Bugfix
 * TGR-294: Tiger hook causes null pointer exception before steps execution
 * TGR-380: Tiger-User-Manual (HTML) now has pictures
+* TGR-415: Potential memory-leaks in Tiger-Proxy fixed
 
 ## Features
 
