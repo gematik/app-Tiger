@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import lombok.Data;
 
@@ -12,8 +11,13 @@ import lombok.Data;
 public class CfgServer extends CfgTemplate {
 
     private String hostname;
+    /**
+     * References a template to set up the server. You can override properties.
+     */
     private String template;
+    /**
+     * References another server which has to be booted prior to this. Multiple servers can be referenced, divided by
+     * comma.
+     */
     private String dependsUpon;
-    @JsonIgnore
-    private boolean started = false;
 }
