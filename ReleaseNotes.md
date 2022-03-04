@@ -3,6 +3,7 @@
 # Release 0.19.3
 
 ## Bugfix
+
 * TGR-294: Tiger hook causes null pointer exception before steps execution
 * TGR-380: Tiger-User-Manual (HTML) now has pictures
 * TGR-415: Potential memory-leaks in Tiger-Proxy fixed
@@ -13,6 +14,7 @@
 * TGR-294: Rbel Log html page now shows data variant values when clicking on button in subtitle section
 * TGR-389: EPA-VAU messages are now always tagged with the target account KVNR (only when tigerProxy.activateVauAnalysis is activated)
 * TGR-358: Tiger-Proxy WebUI can now filter messages
+* TGR-416: Traffic-Log can now be downloaded in the Tiger-Proxy WebUI
 
 # Release 0.19.2
 

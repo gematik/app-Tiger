@@ -15,6 +15,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
@@ -26,11 +27,15 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import j2html.tags.ContainerTag;
 import java.io.*;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -38,6 +43,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
@@ -69,6 +75,13 @@ public class TigerWebUiController implements ApplicationContextAware {
         this.applicationContext = appContext;
     }
 
+    @GetMapping(value = "/trafficLog.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public String downloadTraffic() {
+        return tigerProxy.getRbelMessages().stream()
+            .map(RbelFileWriterUtils::convertToRbelFileString)
+            .collect(Collectors.joining("\n\n"));
+    }
+
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI() throws IOException {
         String html = renderer.getEmptyPage()
@@ -88,7 +101,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                 div().withClass("navbar-start").with(
                     div().withClass("navbar-item").with(
                         button().withId("routeModalBtn")
-                            .withClass("button is-dark modal-button")
+                            .withClass("button is-dark")
                             .attr("data-target", "routeModalDialog").with(
                                 div().withId("routeModalLed").withClass("led"),
                                 span("Routes")
@@ -161,25 +174,26 @@ public class TigerWebUiController implements ApplicationContextAware {
             )
         ).render();
 
-        if (getClass().getResourceAsStream("/routeModal.html") == null) {
-            throw new TigerProxyConfigurationException("Unable to locate route modal html template!");
-        }
-        String routeModalHtml = IOUtils
-            .toString(getClass().getResourceAsStream("/routeModal.html"), StandardCharsets.UTF_8);
+        String routeModalHtml = loadResourceToString("/routeModal.html");
+        String saveModalHtml = loadResourceToString("/saveModal.html");
 
         if (applicationConfiguration.getReport() == null) {
             applicationConfiguration.setReport(new TigerProxyReportConfiguration());
         }
-        if (getClass().getResourceAsStream("/configScript.html") == null) {
-            throw new TigerProxyConfigurationException("Unable to locate config js template!");
-        }
-        String configJSSnippetStr = IOUtils
-            .toString(getClass().getResourceAsStream("/configScript.html"), StandardCharsets.UTF_8)
+        String configJSSnippetStr = loadResourceToString("/configScript.html")
             .replace("${ProxyPort}", String.valueOf(tigerProxy.getPort()))
             .replace("${FilenamePattern}", applicationConfiguration.getReport().getFilenamePattern())
             .replace("${UploadUrl}", applicationConfiguration.getReport().getUploadUrl());
-        return html.replace("<div id=\"navbardiv\"></div>", navbar + routeModalHtml)
+        return html.replace("<div id=\"navbardiv\"></div>", navbar + routeModalHtml + saveModalHtml)
             .replace("</body>", configJSSnippetStr + "</body>");
+    }
+
+    private String loadResourceToString(String filename) throws IOException {
+        final InputStream resource = getClass().getResourceAsStream(filename);
+        if (resource == null) {
+            throw new TigerProxyConfigurationException("Unable to load resource '" + filename + "' !");
+        }
+        return IOUtils.toString(resource, StandardCharsets.UTF_8);
     }
 
     @GetMapping(value = "/css/{cssfile}", produces = "text/css")

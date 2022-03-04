@@ -61,6 +61,8 @@ document.addEventListener('DOMContentLoaded', function () {
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
   ledScrollLock = document.getElementById("scrollLockLed");
+  btnOpenRouteModal.addEventListener('click', showModalsCB);
+  saveBtn.addEventListener('click', showModalSave);
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -77,17 +79,32 @@ document.addEventListener('DOMContentLoaded', function () {
   setFilterCriterionBtn.addEventListener('click', setFilterCriterion);
   quitBtn.addEventListener('click', quitProxy);
   resetBtn.addEventListener('click', resetMessages);
-  saveBtn.addEventListener('click', saveToLocal);
-
   if (tigerProxyUploadUrl === "UNDEFINED") {
     uploadBtn.classList.add("is-hidden");
   } else {
     uploadBtn.addEventListener('click', uploadReport);
   }
 
+  document.getElementById("saveHtmlBtn")
+    .addEventListener('click', e => {
+      closeModals();
+      saveHtmlToLocal();
+    });
+  document.getElementById("saveTrafficBtn")
+    .addEventListener('click', e => {
+      e.preventDefault();
+      closeModals();
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = "/webui/trafficLog.tgr";
+      a.download = 'trafficLog.tgr';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    });
   btnOpenRouteModal.addEventListener('click',
       e => {
-        document.getElementById("routeModalBtn").disabled = true;
+        btnOpenRouteModal.disabled = true;
         getRoutes();
         updateAddRouteBtnState();
       });
@@ -146,21 +163,23 @@ function htmlToElement(html) {
 
 function enableModals() {
   // Modals
-  let $modalButtons = getAll('.modal-button');
   let $modalCloses = getAll(
       '.modal-background, .modal-close, .message-header .delete, .modal-card-foot .button');
 
-  if ($modalButtons.length > 0) {
-    $modalButtons.forEach(function ($el) {
-      $el.addEventListener('click', showModalsCB);
-    });
-  }
 
   if ($modalCloses.length > 0) {
     $modalCloses.forEach(function ($el) {
       $el.addEventListener('click', closeModals);
     });
   }
+}
+
+function showModalSave(e) {
+  const $target = document.getElementById("saveModalDialog");
+  rootEl.classList.add('is-clipped');
+  $target.classList.add('is-active');
+  e.preventDefault();
+  return false;
 }
 
 function showModalsCB(e) {
@@ -177,7 +196,7 @@ function closeModals() {
   $modals.forEach(function ($el) {
     $el.classList.remove('is-active');
   });
-  document.getElementById("routeModalBtn").disabled = false;
+  btnOpenRouteModal.disabled = false;
   document.getElementById("routeModalLed").classList.remove("ledactive");
   document.getElementById("routeModalLed").classList.remove("lederror");
 }
@@ -355,10 +374,10 @@ function uploadReport() {
     }
   }
   xhttp.send( encodeURIComponent(document.querySelector("html").innerHTML));
-
 }
 
-function saveToLocal() {
+
+function saveHtmlToLocal() {
   document.querySelector(".navbar").classList.add("is-hidden");
   const text = document.querySelector("html").innerHTML;
   const now = new Date();
