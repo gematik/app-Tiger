@@ -6,7 +6,6 @@ package de.gematik.test.tiger.admin.bdd.pages;
 
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 import java.util.List;
 import net.serenitybdd.core.pages.PageObject;
 import net.serenitybdd.screenplay.Actor;
@@ -44,6 +43,7 @@ public class ServerFormular extends PageObject {
         return Target.the("input field " + name)
             .locatedBy(css(actor) + " *[name='" + name + "']");
     }
+
     public static Target getMultiSelectField(Actor actor, String name) {
         return Target.the("multi select field " + name)
             .locatedBy(css(actor) + " *[name='" + name + "'] + div.dashboardcode-bsmultiselect");
@@ -54,7 +54,6 @@ public class ServerFormular extends PageObject {
             .located(By.xpath(xPath() + "//*[@name='" + fieldName + "']/following::div[1]"
                 + "//label[contains(@class,'form-check-label') and text()='" + entryText + "']"));
     }
-
 
 
     public static Target getSection(String section) {
@@ -100,7 +99,7 @@ public class ServerFormular extends PageObject {
 
     public static Target sidebarItemContextMenu(String nodeName) {
         return Target.the("context menu in sidebar of node " + nodeName)
-            .locatedBy("#sidebar_server_" +nodeName + " .context-menu-one");
+            .locatedBy("#sidebar_server_" + nodeName + " .context-menu-one");
     }
 
     public static Target sidebarItemContextMenuEntry(String entry) {

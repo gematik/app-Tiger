@@ -7,10 +7,8 @@ package de.gematik.test.tiger.admin.bdd.actions.lolevel;
 import static net.serenitybdd.screenplay.Tasks.instrumented;
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
 import de.gematik.test.tiger.admin.bdd.pages.ServerFormular;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +21,7 @@ import net.serenitybdd.screenplay.ensure.Ensure;
 import net.serenitybdd.screenplay.targets.Target;
 import net.thucydides.core.annotations.Step;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.openqa.selenium.By;
 import org.openqa.selenium.InvalidArgumentException;
 import org.openqa.selenium.Keys;
@@ -33,14 +32,14 @@ public class PerformActionsOnList implements Task {
     private final Action action;
     private final int row;
     private final String itemText;
-    private final boolean hitEnter;
+    private final boolean hitApply;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String stepDescription;
 
-    public PerformActionsOnList(String itemText, int row, boolean hitEnter, Action action) {
+    public PerformActionsOnList(String itemText, int row, boolean hitApply, Action action) {
         this.itemText = itemText;
         this.row = row;
-        this.hitEnter = hitEnter;
+        this.hitApply = hitApply;
         this.action = action;
         this.stepDescription = action.descriptionOf(this);
     }
@@ -52,8 +51,8 @@ public class PerformActionsOnList implements Task {
 
 
     @SuppressWarnings("unused")
-    public PerformActionsOnList(String itemText, boolean hitEnter, Action action) {
-        this(itemText, -1, hitEnter, action);
+    public PerformActionsOnList(String itemText, boolean hitApply, Action action) {
+        this(itemText, -1, hitApply, action);
     }
 
     @SuppressWarnings("unused")
@@ -133,7 +132,8 @@ public class PerformActionsOnList implements Task {
 
     public static Target listApplyButton() {
         return Target.the("apply button for list " + theActorInTheSpotlight().recall("listName"))
-            .locatedBy(listGroupUlXpath() + "/parent::div/parent::div/parent::fieldset//button[contains(@class, 'btn-list-apply')]");
+            .locatedBy(listGroupUlXpath()
+                + "/parent::div/parent::div/parent::fieldset//button[contains(@class, 'btn-list-apply')]");
     }
 
     public static Target listEditingRow() {
@@ -171,7 +171,7 @@ public class PerformActionsOnList implements Task {
         actor.attemptsTo(
             Click.on(listAddButton()),
             Ensure.that(editingLine).isDisplayed(),
-            hitEnter ?
+            hitApply ?
                 SendKeys.of(itemText).into(editingLine).thenHit(Keys.ENTER) :
                 SendKeys.of(itemText).into(editingLine)
         );
@@ -189,7 +189,7 @@ public class PerformActionsOnList implements Task {
             // Actions
             Ensure.that(listItem).isDisplayed(),
             Click.on(listItem),
-            hitEnter ?
+            hitApply ?
                 Enter.theValue(itemText).into(listItem).thenHit(Keys.ENTER) :
                 Enter.theValue(itemText).into(listItem)
         );
@@ -218,15 +218,51 @@ public class PerformActionsOnList implements Task {
 
         List<Performable> actions = new ArrayList<>();
         actions.add(Click.on(listAddButton()));
-        fields.forEach((key, value) -> actions.add(
-            Ensure.that(ServerFormular.getInputField(actor, listName + "." + key)).isEnabled()));
-        fields.forEach((key, value) -> actions.add(
-            Enter.theValue(value).into(ServerFormular.getInputField(actor, listName + "." + key))));
-        if (hitEnter) {
+
+        Map<String, Target> mapWithValuesAsTargets = new HashMap<>();
+        fields.keySet()
+            .forEach(key -> mapWithValuesAsTargets.put(key, ServerFormular.getInputField(actor, listName + "." + key)));
+
+        Map<String, Target> mapWithSelects = getMapWithElementsOfOneTag(actor,
+            mapWithValuesAsTargets, "select");
+        Map<String, Target> mapWithInputs = getMapWithElementsOfOneTag(actor,
+            mapWithValuesAsTargets, "input");
+        Map<String, Target> mapWithTextareas = getMapWithElementsOfOneTag(actor,
+            mapWithValuesAsTargets, "textarea");
+
+        enterValuesIntoSelectElements(fields, actions, mapWithValuesAsTargets, mapWithSelects);
+        enterValuesIntoTextareaAndInputElements(fields, actions, mapWithInputs);
+        enterValuesIntoTextareaAndInputElements(fields, actions, mapWithTextareas);
+
+        if (hitApply) {
             actions.add(Scroll.to(listApplyButton()).andAlignToTop());
             actions.add(Click.on(listApplyButton()));
         }
         actor.attemptsTo(actions.toArray(new Performable[0]));
+    }
+
+    private void enterValuesIntoSelectElements(Map<String, String> fields, List<Performable> actions,
+        Map<String, Target> mapWithValuesAsTargets, Map<String, Target> mapWithSelects) {
+        mapWithSelects.keySet().forEach(
+            key -> actions.add((SelectFromOptions.byValue(fields.get(key)).from(mapWithValuesAsTargets.get(key)))));
+    }
+
+    private void enterValuesIntoTextareaAndInputElements(Map<String, String> fields, List<Performable> actions,
+        Map<String, Target> mapWithElements) {
+        mapWithElements.forEach((key, element) -> {
+                actions.add(Ensure.that(element).isEnabled());
+                actions.add(Enter.theValue(fields.get(key)).into(element));
+            }
+        );
+    }
+
+    @NotNull
+    private Map<String, Target> getMapWithElementsOfOneTag(Actor actor, Map<String, Target> mapWithValuesAsTargets,
+        String tagName) {
+        return mapWithValuesAsTargets.entrySet()
+            .stream()
+            .filter(pair -> pair.getValue().resolveFor(actor).getTagName().equalsIgnoreCase(tagName))
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     private void setsValueForActiveComplexItemTo(Actor actor) {
@@ -237,7 +273,7 @@ public class PerformActionsOnList implements Task {
         List<Performable> actions = new ArrayList<>();
         fields.forEach((key, value) -> actions.add(
             Enter.theValue(value).into(ServerFormular.getInputField(actor, listName + "." + key))));
-        if (hitEnter) {
+        if (hitApply) {
             actions.add(Click.on(listApplyButton()));
         }
         actor.attemptsTo(actions.toArray(new Performable[0]));
@@ -280,14 +316,15 @@ public class PerformActionsOnList implements Task {
                 case addsComplexItem:
                     return "adds a new complex item " + instance.itemText.replace("\n", ", ") + hitEnter(instance);
                 case setsValueForActiveComplexItemTo:
-                    return " sets the value for the active complex item to " + instance.itemText.replace("\n", ", ") + hitEnter(instance);
+                    return " sets the value for the active complex item to " + instance.itemText.replace("\n", ", ")
+                        + hitEnter(instance);
                 default:
                     throw new InvalidArgumentException("Unknown action " + instance.action);
             }
         }
 
         private String hitEnter(PerformActionsOnList instance) {
-            return (instance.hitEnter ? " and hits ENTER" : "");
+            return (instance.hitApply ? " and hits ENTER" : "");
         }
 
     }

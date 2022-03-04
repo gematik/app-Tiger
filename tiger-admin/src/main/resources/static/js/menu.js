@@ -73,7 +73,8 @@ function openYamlFile(path, separator, cfgfile) {
     },
     error: function (xhr) {
       /** @namespace xhr.responseJSON */
-      showError(`We are sorry, but we were unable to load your configuration file '${cfgfile}'!`,
+      showError(
+          `We are sorry, but we were unable to load your configuration file '${cfgfile}'!`,
           xhr.responseJSON);
     }
   });
@@ -84,7 +85,13 @@ function setYamlFileName(cfgfile, path) {
   if (!cfgfile) {
     $('.cfg-file-label').text("Unsaved test environment");
     document.title = "Tiger Admin";
-  } else {
+  }
+  else if (!currFile.endsWith(".yaml") || currFile.length <= ".yaml".length) {
+    $('.cfg-file-label').text("Unsaved test environment");
+    document.title = "Tiger Admin";
+    showError("Please specify a filename with a yaml extension")
+  }
+  else {
     $('.cfg-file-label').text(cfgfile);
     document.title = `Tiger Admin - ${path}${fsSeparator}${cfgfile}`;
     currFolder = path;
@@ -94,36 +101,41 @@ function setYamlFileName(cfgfile, path) {
 function saveYamlFile() {
   const data = {servers: {}};
 
-  $(".server-content.server-container .server-formular").each(function (idx, node) {
-    const serverKey = $(node).attr("id").substring("content_server_".length);
-    data.servers[serverKey] = {};
-    $(node).find("*[name]").each(function (idx, field) {
-      const $field = $(field);
-      if (!$field.hasClass("hidden") && !$field.hasClass("disabled")) {
-        $field.saveInputValueInData(null, data.servers[serverKey], false, true);
-      }
-    });
+  $(".server-content.server-container .server-formular").each(
+      function (idx, node) {
+        const serverKey = $(node).attr("id").substring(
+            "content_server_".length);
+        data.servers[serverKey] = {};
+        $(node).find("*[name]").each(function (idx, field) {
+          const $field = $(field);
+          if (!$field.hasClass("hidden") && !$field.hasClass("disabled")) {
+            $field.saveInputValueInData(null, data.servers[serverKey], false,
+                true);
+          }
+        });
 
-    // remove null properties and properties only containing [] or {}
-    removeNullPropertiesAndEmptyArraysOrObjects(data);
+        // remove null properties and properties only containing [] or {}
+        removeNullPropertiesAndEmptyArraysOrObjects(data);
 
-    // special handling of some fields
-    if (data.servers[serverKey].dependsUpon) {
-      if (data.servers[serverKey].dependsUpon.length) {
-        data.servers[serverKey].dependsUpon = data.servers[serverKey].dependsUpon.toString();
-      } else {
-        delete data.servers[serverKey].dependsUpon;
-      }
-    }
-    if (data.servers[serverKey].source && !Array.isArray(data.servers[serverKey].source)) {
-      data.servers[serverKey].source = [ data.servers[serverKey].source];
-    }
+        // special handling of some fields
+        if (data.servers[serverKey].dependsUpon) {
+          if (data.servers[serverKey].dependsUpon.length) {
+            data.servers[serverKey].dependsUpon = data.servers[serverKey].dependsUpon.toString();
+          } else {
+            delete data.servers[serverKey].dependsUpon;
+          }
+        }
+        if (data.servers[serverKey].source && !Array.isArray(
+            data.servers[serverKey].source)) {
+          data.servers[serverKey].source = [data.servers[serverKey].source];
+        }
 
-    delete data.servers[serverKey].enableForwardProxy;
-  });
+        delete data.servers[serverKey].enableForwardProxy;
+      });
 
   // special handling for local proxy
-  if (data.servers["local_proxy"] && data.servers["local_proxy"].tigerProxyCfg) {
+  if (data.servers["local_proxy"]
+      && data.servers["local_proxy"].tigerProxyCfg) {
     data.tigerProxy = data.servers["local_proxy"].tigerProxyCfg.proxyCfg;
   }
   if (data.servers["local_proxy"]) {
@@ -134,7 +146,7 @@ function saveYamlFile() {
     delete data.tigerProxy.localProxyActive;
   }
 
-  $.ajax({
+    $.ajax({
     url: "/saveYamlFile",
     contentType: "application/json",
     type: "POST",
@@ -142,14 +154,17 @@ function saveYamlFile() {
     data: JSON.stringify({folder: currFolder, file: currFile, config: data}),
     dataType: 'json',
     success: function () {
-      notifyChangesToTestenvData(false);
-      let fileSeparator;
-      navigator.platform.includes("Win") ? fileSeparator = '\\' : fileSeparator = '/';
-      snack(`Saved configuration to ${currFolder}${fileSeparator}${currFile}`, 'info', 3000, true);
+        notifyChangesToTestenvData(false);
+        let fileSeparator;
+        navigator.platform.includes("Win") ? fileSeparator = '\\'
+            : fileSeparator = '/';
+        snack(`Saved configuration to ${currFolder}${fileSeparator}${currFile}`,
+            'info', 3000, true);
     },
     error: function (xhr) {
       /** @namespace xhr.responseJSON */
-      showError(`We are sorry, but we were unable to save your configuration to file '${currFile}'!`,
+      showError(
+          `We are sorry, but we were unable to save your configuration to file '${currFile}'!`,
           xhr.responseJSON);
     }
   });
@@ -161,7 +176,7 @@ function isObject(objValue) {
 }
 
 function removeNullPropertiesAndEmptyArraysOrObjects(data) {
-  Object.keys(data).forEach(function(key) {
+  Object.keys(data).forEach(function (key) {
     if (Array.isArray(data[key])) {
       if (data[key].length === 0) {
         delete data[key];
@@ -250,8 +265,10 @@ function addServer(serverKey, serverData) {
     $(`#sidebar_server_${serverKey} .server-label`).parent().parent().click(
         function (ev) {
           const target = $(ev.target);
-          if (!target.hasClass("fa-ellipsis-v") && !target.hasClass("context-menu-one")) {
-            window.scrollTo(0, formular.position().top - $('.navbar').outerHeight() - 10);
+          if (!target.hasClass("fa-ellipsis-v") && !target.hasClass(
+              "context-menu-one")) {
+            window.scrollTo(0,
+                formular.position().top - $('.navbar').outerHeight() - 10);
           }
         });
   } else {
@@ -266,18 +283,21 @@ function updateServerListFields(serverList, serverKey, serverData) {
   const form = $('#content_server_' + serverKey);
   const serverList2 = [...serverList].filter(e => e !== serverKey);
   if (serverData.type === 'tigerProxy') {
-    form.updateServerList(serverList2, null, serverData.tigerProxyCfg.proxiedServer);
+    form.updateServerList(serverList2, null,
+        serverData.tigerProxyCfg.proxiedServer);
   }
   form.updateDependsUponList(serverList2, null, "");
   if (serverData.dependsUpon) {
-    form.find('select[name="dependsUpon"]').val(serverData.dependsUpon.split(','));
+    form.find('select[name="dependsUpon"]').val(
+        serverData.dependsUpon.split(','));
     form.find('select[name="dependsUpon"]').bsMultiSelect("Update");
   }
 }
 
 function addSelectedServer() {
   const addServerModal = $('#add-server-modal');
-  const type = addServerModal.find('.list-server-types .active').attr('data-value');
+  const type = addServerModal.find('.list-server-types .active').attr(
+      'data-value');
   // hide welcome card
   if (!Object.keys(currEnvironment).length) {
     currEnvironment['local_proxy'] = {
@@ -338,7 +358,8 @@ function notifyChangesToTestenvData(bModifications) {
 }
 
 function handleOpenTestEnvironmentClick() {
-  confirmNoDefault(unsavedModifications, 'Unsaved Modifications', 'Do you really want to discard current changes?',
+  confirmNoDefault(unsavedModifications, 'Unsaved Modifications',
+      'Do you really want to discard current changes?',
       function () {
         openFileOpenDialog(openYamlFile);
       });
@@ -456,7 +477,7 @@ function openFileOpenDialog(okfunc) {
 }
 
 function pressEnterToConfirm(modal, okButton) {
-  modal.keydown(function(event) {
+  modal.keydown(function (event) {
     if (event.keyCode === 13) {
       $(okButton).click();
     }
@@ -484,10 +505,11 @@ function openFileSaveAsDialog(okfunc) {
         '.file-navigation-save input').val()
     }`);
     notifyChangesToTestenvData(false);
-    setYamlFileName(filedlg.find('.file-navigation-save input').val(),
-        currFolder);
-    filedlg.modal('hide');
-    saveYamlFile();
+    setYamlFileName(filedlg.find('.file-navigation-save input').val(), currFolder);
+    if(currFile.length > ".yaml".length && currFile.endsWith(".yaml")) {
+      saveYamlFile();
+      filedlg.modal('hide');
+    }
   });
 }
 
@@ -590,16 +612,19 @@ function loadMetaDataFromServer() {
       let html = '<li class="p-2 text-center text-success">Servertypen</li>'
       for (let icon in serverIcons) {
         if (icon !== 'localProxy') {
-          html += '<li class="dropdown-item p-2 text-success" data-value="' + icon + '">'
+          html += '<li class="dropdown-item p-2 text-success" data-value="'
+              + icon + '">'
               + '<i class="server-icon ' + serverIcons[icon] + '"></i>'
               + serverTypeNames[icon] + '</li>';
         }
       }
       html += '<li class="p-2 text-center text-secondary">Testvorlagen</li>';
       currTemplates.templates.forEach(function (template) {
-        html += '<li class="dropdown-item p-2 text-secondary" data-value="' + template.templateName + '">'
+        html += '<li class="dropdown-item p-2 text-secondary" data-value="'
+            + template.templateName + '">'
             + '<i class="server-icon ' + serverIcons[template.type] + '"></i>'
-            + template.templateName[0].toUpperCase() + template.templateName.substr(1) + '</li>';
+            + template.templateName[0].toUpperCase()
+            + template.templateName.substr(1) + '</li>';
 
       })
       dropdown.prepend($(html));
@@ -607,7 +632,8 @@ function loadMetaDataFromServer() {
       dropdown.find('li.dropdown-item').click(function () {
         $(this).parent().find('.active').removeClass('active');
         $(this).addClass('active');
-        addServerModal.find('.info-block').html($('#add-server-modal .info-' + $(this).attr('data-value')).html());
+        addServerModal.find('.info-block').html(
+            $('#add-server-modal .info-' + $(this).attr('data-value')).html());
         addServerModal.find('.info-block').show();
         addServerModal.find('.btn-add-server-ok').setEnabled(true);
         addServerModal.find('button.dropdown-toggle').html($(this).html());
