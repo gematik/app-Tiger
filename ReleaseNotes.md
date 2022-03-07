@@ -15,6 +15,7 @@
 * TGR-389: EPA-VAU messages are now always tagged with the target account KVNR (only when tigerProxy.activateVauAnalysis is activated)
 * TGR-358: Tiger-Proxy WebUI can now filter messages
 * TGR-416: Traffic-Log can now be downloaded in the Tiger-Proxy WebUI
+* TGR-420: Jexl-Debugging dialog added to Tiger-Proxy WebUI
 
 # Release 0.19.2
 

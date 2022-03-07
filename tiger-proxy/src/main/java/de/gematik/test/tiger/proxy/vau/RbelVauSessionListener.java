@@ -28,6 +28,10 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
 
     @Override
     public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
+        if (rbelElement.hasFacet(VauSessionFacet.class)) {
+            return;
+        }
+
         safeExecute(() -> tagVauClientHello(rbelElement));
         safeExecute(() -> tagVauServerHello(rbelElement));
         safeExecute(() -> tagVauClientSigFin(rbelElement));

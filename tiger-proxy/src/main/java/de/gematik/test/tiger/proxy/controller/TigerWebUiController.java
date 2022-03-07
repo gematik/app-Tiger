@@ -5,6 +5,8 @@
 package de.gematik.test.tiger.proxy.controller;
 
 import static j2html.TagCreator.*;
+import com.google.common.html.HtmlEscapers;
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -13,29 +15,28 @@ import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.configuration.TigerProxyReportConfiguration;
 import de.gematik.test.tiger.proxy.data.GetMessagesAfterDto;
+import de.gematik.test.tiger.proxy.data.JexlQueryResponseDto;
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
 import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import j2html.tags.ContainerTag;
 import java.io.*;
 import java.net.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -43,7 +44,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
@@ -113,23 +113,24 @@ public class TigerWebUiController implements ApplicationContextAware {
                             span("Scroll Lock")
                         )
                     ),
-                    div().withClass("navbar-item").with(
-                        div().withClass("field").with(
-                            p().withClass("control has-icons-left").with(
-                                input().withClass("input is-rounded has-text-dark")
-                                    .withType("text")
-                                    .withPlaceholder("RbelPath filter criterion")
-                                    .withId("setFilterCriterionInput"),
-                                span().withClass("icon is-small is-left").with(
-                                    i().withClass("fa-solid fa-searchengine")
+                    form().attr("onSubmit", "return false;")
+                        .with(
+                        div().withClass("navbar-item").with(
+                            div().withClass("field").with(
+                                p().withClass("control has-icons-left").with(
+                                    input().withClass("input is-rounded has-text-dark")
+                                        .withType("text")
+                                        .withPlaceholder("RbelPath filter criterion")
+                                        .withId("setFilterCriterionInput")
+                                        .attr("autocomplete", "on")
                                 )
                             )
-                        )
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success").with(
-                            i().withClass("far fa-searchengin"),
-                            span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
+                        ),
+                        div().withClass("navbar-item").with(
+                            button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success").with(
+                                i().withClass("fas fa-filter"),
+                                span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
+                            )
                         )
                     )
                 ),
@@ -174,9 +175,6 @@ public class TigerWebUiController implements ApplicationContextAware {
             )
         ).render();
 
-        String routeModalHtml = loadResourceToString("/routeModal.html");
-        String saveModalHtml = loadResourceToString("/saveModal.html");
-
         if (applicationConfiguration.getReport() == null) {
             applicationConfiguration.setReport(new TigerProxyReportConfiguration());
         }
@@ -184,7 +182,10 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("${ProxyPort}", String.valueOf(tigerProxy.getPort()))
             .replace("${FilenamePattern}", applicationConfiguration.getReport().getFilenamePattern())
             .replace("${UploadUrl}", applicationConfiguration.getReport().getUploadUrl());
-        return html.replace("<div id=\"navbardiv\"></div>", navbar + routeModalHtml + saveModalHtml)
+        return html.replace("<div id=\"navbardiv\"></div>", navbar +
+                loadResourceToString("/routeModal.html") +
+                loadResourceToString("/jexlModal.html") +
+                loadResourceToString("/saveModal.html"))
             .replace("</body>", configJSSnippetStr + "</body>");
     }
 
@@ -208,6 +209,33 @@ public class TigerWebUiController implements ApplicationContextAware {
         }
     }
 
+    @GetMapping(value = "/testJexlQuery", produces = MediaType.APPLICATION_JSON_VALUE)
+    public JexlQueryResponseDto testJexlQuery(
+        @RequestParam(name = "msgUuid") final String msgUuid,
+        @RequestParam(name = "query") final String query) {
+        RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
+        final RbelElement targetMessage = getTigerProxy().getRbelMessages().stream()
+            .filter(msg -> msg.getUuid().equals(msgUuid))
+            .findFirst().orElseThrow();
+        final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
+        final RbelElementTreePrinter treePrinter = RbelElementTreePrinter.builder()
+            .rootElement(targetMessage)
+            .printFacets(false)
+            .build();
+        return JexlQueryResponseDto.builder()
+            .matchSuccessful(jexlExecutor.matchesAsJexlExpression(targetMessage, query))
+            .messageContext(messageContext)
+            .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
+                .replace(RbelAnsiColors.RESET.toString(),"</span>")
+                .replace(RbelAnsiColors.RED_BOLD.toString(),"<span class='has-text-danger'>")
+                .replace(RbelAnsiColors.CYAN.toString(),"<span class='has-text-info'>")
+                .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),"<span class='has-text-primary has-text-weight-bold'>")
+                .replace(RbelAnsiColors.GREEN.toString(),"<span class='has-text-warning'>")
+                .replace(RbelAnsiColors.BLUE.toString(),"<span class='has-text-success'>")
+                .replace("\n", "<br/>"))
+            .build();
+    }
+
     @GetMapping(value = "/webfonts/{fontfile}", produces = "text/css")
     public ResponseEntity<byte[]> getWebFont(@PathVariable("fontfile") String fontFile) throws IOException {
         try (InputStream is = getClass().getResourceAsStream("/webfonts/" + fontFile)) {
@@ -216,7 +244,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                     HttpStatus.NOT_FOUND, "webfont file " + fontFile + " not found"
                 );
             }
-            return new ResponseEntity<byte[]>(IOUtils.toByteArray(is), HttpStatus.OK);
+            return new ResponseEntity<>(IOUtils.toByteArray(is), HttpStatus.OK);
         }
     }
 
