@@ -54,7 +54,7 @@ public class TigerProxyApplication {
     @Bean
     public SimpleModule rbelElementDeserializer() {
         SimpleModule module = new SimpleModule();
-        module.addSerializer(RbelElement.class, new JsonSerializer<RbelElement>() {
+        module.addSerializer(RbelElement.class, new JsonSerializer<>() {
             @Override
             public void serialize(RbelElement value, JsonGenerator gen, SerializerProvider serializers)
                 throws IOException {

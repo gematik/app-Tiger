@@ -6,6 +6,7 @@
 
 * TGR-294: Tiger hook causes null pointer exception before steps execution
 * TGR-380: Tiger-User-Manual (HTML) now has pictures
+* TGR-419: Tiger-Proxy WebUI now also functions in Test-Env Standalone configuration
 * TGR-415: Potential memory-leaks in Tiger-Proxy fixed
 
 ## Features

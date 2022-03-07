@@ -29,6 +29,7 @@ import de.gematik.test.tiger.proxy.data.JexlQueryResponseDto;
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
 import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import j2html.tags.ContainerTag;
 import java.io.*;
 import java.net.*;
@@ -46,6 +47,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Element;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
@@ -84,8 +88,8 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI() throws IOException {
-        String html = renderer.getEmptyPage()
-            .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">");
+        String html = replaceScript(renderer.getEmptyPage()
+            .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">"));
 
         if (applicationConfiguration.isLocalResources()) {
             log.info("Running with local resources...");
@@ -189,12 +193,25 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("</body>", configJSSnippetStr + "</body>");
     }
 
-    private String loadResourceToString(String filename) throws IOException {
-        final InputStream resource = getClass().getResourceAsStream(filename);
+    private String replaceScript(String replace) {
+        var jsoup = Jsoup.parse(renderer.getEmptyPage()
+            .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">"));
+        final Element script = jsoup.select("script").get(0);
+        script.dataNodes().get(0).replaceWith(
+            new DataNode(loadResourceToString("/tigerProxy.js")));
+        return jsoup.html();
+    }
+
+    private String loadResourceToString(String resourceName) {
+        final InputStream resource = getClass().getResourceAsStream(resourceName);
         if (resource == null) {
-            throw new TigerProxyConfigurationException("Unable to load resource '" + filename + "' !");
+            throw new TigerProxyConfigurationException("Unable to load resource '" + resourceName + "' !");
         }
-        return IOUtils.toString(resource, StandardCharsets.UTF_8);
+        try {
+            return IOUtils.toString(resource, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new TigerProxyWebUiException("Exception while loading resource '" + resourceName + "'", e);
+        }
     }
 
     @GetMapping(value = "/css/{cssfile}", produces = "text/css")

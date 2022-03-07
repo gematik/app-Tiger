@@ -462,13 +462,13 @@ function executeJexlQuery() {
         jexlInspectionContextParentDiv.classList.remove("is-hidden");
         jexlInspectionNoContextDiv.classList.add("is-hidden");
         if (response.matchSuccessful) {
-          jexlInspectionResultDiv.innerHTML = "<b>Condition is true:</b>"
+          jexlInspectionResultDiv.innerHTML = "<b>Condition is true: </b>"
               + "<code class='has-background-dark has-text-danger'>" + jexlQuery+ "</code>";
           jexlInspectionResultDiv.classList.add("has-background-success");
           jexlInspectionResultDiv.classList.remove("has-background-primary");
           jexlInspectionResultDiv.classList.remove("is-hidden");
         } else {
-          jexlInspectionResultDiv.innerHTML = "<b>Condition is false (or invalid):</b>"
+          jexlInspectionResultDiv.innerHTML = "<b>Condition is false (or invalid): </b>"
               + "<code class='has-background-dark has-text-danger'>" + jexlQuery + "</code>";
           jexlInspectionResultDiv.classList.remove("has-background-success");
           jexlInspectionResultDiv.classList.add("has-background-primary");
