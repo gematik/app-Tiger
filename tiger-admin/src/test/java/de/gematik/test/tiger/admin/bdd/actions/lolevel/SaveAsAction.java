@@ -39,17 +39,25 @@ public class SaveAsAction implements Performable {
         .locatedBy(".btn-filenav-ok");
     public static final Target INPUT_FILE_NAVIGATION = Target.the("Path")
         .locatedBy("//*[@id='file-navigation-modal']//input[@name='file-navigation-path']");
+    public static final Target ALERT_VALIDATION_WRONG_FILENAME = Target.the("bg-danger")
+        .locatedBy("//*[@id='modal-1']/div/div/div[2]/div");
+    public static final Target BTN_CANCEL = Target.the("btn-filenav-cancel")
+        .locatedBy(".btn-filenav-cancel");
+    public static final Target MODAL_FILE_NAV = Target.the("file-navigation-modal")
+        .locatedBy("//*[@id='file-navigation-modal']/div/div");
 
     private final boolean submitFormViaEnter;
     private final String newSaveName;
+    private final boolean cancelTheSaving;
 
-    public SaveAsAction(String newSaveName, boolean submitFormViaEnter) {
+    public SaveAsAction(String newSaveName, boolean submitFormViaEnter, boolean cancelTheSaving) {
         this.newSaveName = newSaveName;
         this.submitFormViaEnter = submitFormViaEnter;
+        this.cancelTheSaving = cancelTheSaving;
     }
 
-    public static SaveAsAction ofTypeVia(String newSaveName, boolean submitFormViaEnter) {
-        return instrumented(SaveAsAction.class, newSaveName, submitFormViaEnter);
+    public static SaveAsAction ofTypeVia(String newSaveName, boolean submitFormViaEnter, boolean cancelTheSaving) {
+        return instrumented(SaveAsAction.class, newSaveName, submitFormViaEnter, cancelTheSaving);
     }
 
     @SneakyThrows
@@ -67,19 +75,28 @@ public class SaveAsAction implements Performable {
         );
         String filePath = INPUT_FILE_NAVIGATION.resolveFor(t).getValue();
         t.remember("filepath", filePath);
-        t.attemptsTo(
-            Ensure.that(INPUT_FILE_NAVIGATION).attribute("readonly").isEqualTo("true"),
-            submitFormViaEnter ?
-                Enter.theValue(newSaveName).into(INPUT_SAVE_AS)
-                    .thenHit(Keys.ENTER) :
-                Enter.theValue(newSaveName).into(INPUT_SAVE_AS).then(Click.on(BTN_SAVE_AS)),
-            // Verification
-            Ensure.that(
-                    PerformActionsOnSnack.snackWithTextContaining(
-                            "Saved configuration to " + filePath + File.separator + newSaveName)
-                        .waitingForNoMoreThan(Duration.ofSeconds(3)))
-                .isDisplayed(),
-            PerformActionsOnSnack.closeSnack()
-        );
+        if (cancelTheSaving) {
+            t.attemptsTo(
+                Click.on(BTN_CANCEL),
+                Pause.pauseFor(1000),
+                Ensure.that(MODAL_FILE_NAV).isNotDisplayed()
+            );
+        } else {
+            t.attemptsTo(
+                Ensure.that(INPUT_FILE_NAVIGATION).attribute("readonly").isEqualTo("true"),
+                submitFormViaEnter ?
+                    Enter.theValue(newSaveName).into(INPUT_SAVE_AS)
+                        .thenHit(Keys.ENTER) :
+                    Enter.theValue(newSaveName).into(INPUT_SAVE_AS).then(Click.on(BTN_SAVE_AS)),
+                // Verification
+                newSaveName.endsWith(".yaml") && newSaveName.length() > ".yaml".length() ?
+                    Ensure.that(
+                            PerformActionsOnSnack.snackWithTextContaining(
+                                    "Saved configuration to " + filePath + File.separator + newSaveName)
+                                .waitingForNoMoreThan(Duration.ofSeconds(3)))
+                        .isDisplayed() :
+                    Ensure.that(ALERT_VALIDATION_WRONG_FILENAME).isDisplayed()
+            );
+        }
     }
 }

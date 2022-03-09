@@ -17,7 +17,9 @@
 "strict";
 
 let lastUuid = "";
+let filterCriterion = "";
 let rootEl;
+let jexlQueryElementUuid = "";
 
 let updateTimeout = 0;
 let updateHandler = null;
@@ -26,6 +28,15 @@ let resetBtn;
 let saveBtn;
 let uploadBtn;
 let quitBtn;
+
+let jexlInspectionResultDiv;
+let jexlInspectionContextDiv;
+let jexlInspectionTreeDiv;
+let jexlInspectionContextParentDiv;
+let jexlInspectionNoContextDiv;
+
+let setFilterCriterionBtn;
+let setFilterCriterionInput;
 
 let btnOpenRouteModal;
 let fieldRouteTo;
@@ -59,6 +70,14 @@ document.addEventListener('DOMContentLoaded', function () {
   saveBtn = document.getElementById("saveMsgs");
   uploadBtn = document.getElementById("uploadMsgs");
   quitBtn = document.getElementById("quitProxy");
+  jexlInspectionResultDiv = document.getElementById("jexlResult");
+  jexlInspectionContextDiv = document.getElementById("jexlContext");
+  jexlInspectionTreeDiv = document.getElementById("rbelTree");
+  jexlInspectionContextParentDiv = document.getElementById("contextParent");
+  jexlInspectionNoContextDiv = document.getElementById("jexlNoContext");
+
+  setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
+  setFilterCriterionInput = document.getElementById("setFilterCriterionInput");
 
   btnOpenRouteModal = document.getElementById("routeModalBtn");
   fieldRouteFrom = document.getElementById("addNewRouteFromField");
@@ -66,6 +85,8 @@ document.addEventListener('DOMContentLoaded', function () {
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
   ledScrollLock = document.getElementById("scrollLockLed");
+  btnOpenRouteModal.addEventListener('click', showModalsCB);
+  saveBtn.addEventListener('click', showModalSave);
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -79,19 +100,37 @@ document.addEventListener('DOMContentLoaded', function () {
   enableCollapseExpandAll();
 
   updateBtn.addEventListener('click', pollMessages);
+  setFilterCriterionBtn.addEventListener('click', setFilterCriterion);
   quitBtn.addEventListener('click', quitProxy);
   resetBtn.addEventListener('click', resetMessages);
-  saveBtn.addEventListener('click', saveToLocal);
-
+  document.getElementById("executeJexlQuery")
+  .addEventListener('click', executeJexlQuery)
   if (tigerProxyUploadUrl === "UNDEFINED") {
     uploadBtn.classList.add("is-hidden");
   } else {
     uploadBtn.addEventListener('click', uploadReport);
   }
 
+  document.getElementById("saveHtmlBtn")
+  .addEventListener('click', e => {
+    closeModals();
+    saveHtmlToLocal();
+  });
+  document.getElementById("saveTrafficBtn")
+  .addEventListener('click', e => {
+    e.preventDefault();
+    closeModals();
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = "/webui/trafficLog.tgr";
+    a.download = 'trafficLog.tgr';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+  });
   btnOpenRouteModal.addEventListener('click',
       e => {
-        document.getElementById("routeModalBtn").disabled = true;
+        btnOpenRouteModal.disabled = true;
         getRoutes();
         updateAddRouteBtnState();
       });
@@ -121,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
   });
 
-  document.getElementById("update5").click();
+  document.getElementById("noupdate").click();
 
   btnAddRoute.addEventListener("click", addRoute);
   fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
@@ -150,21 +189,22 @@ function htmlToElement(html) {
 
 function enableModals() {
   // Modals
-  let $modalButtons = getAll('.modal-button');
   let $modalCloses = getAll(
       '.modal-background, .modal-close, .message-header .delete, .modal-card-foot .button');
-
-  if ($modalButtons.length > 0) {
-    $modalButtons.forEach(function ($el) {
-      $el.addEventListener('click', showModalsCB);
-    });
-  }
 
   if ($modalCloses.length > 0) {
     $modalCloses.forEach(function ($el) {
       $el.addEventListener('click', closeModals);
     });
   }
+}
+
+function showModalSave(e) {
+  const $target = document.getElementById("saveModalDialog");
+  rootEl.classList.add('is-clipped');
+  $target.classList.add('is-active');
+  e.preventDefault();
+  return false;
 }
 
 function showModalsCB(e) {
@@ -181,9 +221,12 @@ function closeModals() {
   $modals.forEach(function ($el) {
     $el.classList.remove('is-active');
   });
-  document.getElementById("routeModalBtn").disabled = false;
+  btnOpenRouteModal.disabled = false;
   document.getElementById("routeModalLed").classList.remove("ledactive");
   document.getElementById("routeModalLed").classList.remove("lederror");
+  jexlInspectionResultDiv.classList.add("is-hidden");
+  jexlInspectionContextParentDiv.classList.add("is-hidden");
+  jexlInspectionNoContextDiv.classList.remove("is-hidden");
 }
 
 function enableCardToggles() {
@@ -252,7 +295,9 @@ function pollMessages() {
   document.getElementById("updateLed").classList.remove("lederror");
   document.getElementById("updateLed").classList.add("ledactive");
   const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/webui/getMsgAfter?lastMsgUuid=" + lastUuid, true);
+  xhttp.open("GET", "/webui/getMsgAfter"
+      + "?lastMsgUuid=" + lastUuid
+      + "&filterCriterion=" + filterCriterion, true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
@@ -271,6 +316,14 @@ function pollMessages() {
   xhttp.send();
 }
 
+function resetAllReceivedMessages() {
+  lastUuid = "";
+  const sidebarMenu = document.getElementById("sidebar-menu")
+  sidebarMenu.innerHTML = "";
+  const listDiv = getAll('.msglist')[0];
+  listDiv.innerHTML = "";
+}
+
 function resetMessages() {
   resetBtn.disabled = true;
   const xhttp = new XMLHttpRequest();
@@ -283,11 +336,7 @@ function resetMessages() {
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
       }
-      lastUuid = "";
-      const sidebarMenu = document.getElementById("sidebar-menu")
-      sidebarMenu.innerHTML = "";
-      const listDiv = getAll('.msglist')[0];
-      listDiv.innerHTML = "";
+      resetAllReceivedMessages();
       setTimeout(() => {
         resetBtn.blur();
         resetBtn.disabled = false;
@@ -300,7 +349,7 @@ function resetMessages() {
 function quitProxy() {
   quitBtn.disabled = true;
   const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/webui/quit" +  testQuitParam, true);
+  xhttp.open("GET", "/webui/quit" + testQuitParam, true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 0) {
@@ -326,6 +375,12 @@ function quitProxy() {
   xhttp.send();
 }
 
+function setFilterCriterion() {
+  filterCriterion = setFilterCriterionInput.value;
+  resetAllReceivedMessages();
+  pollMessages();
+}
+
 function uploadReport() {
   uploadBtn.disabled = true;
   const xhttp = new XMLHttpRequest();
@@ -346,11 +401,10 @@ function uploadReport() {
       }
     }
   }
-  xhttp.send( encodeURIComponent(document.querySelector("html").innerHTML));
-
+  xhttp.send(encodeURIComponent(document.querySelector("html").innerHTML));
 }
 
-function saveToLocal() {
+function saveHtmlToLocal() {
   document.querySelector(".navbar").classList.add("is-hidden");
   const text = document.querySelector("html").innerHTML;
   const now = new Date();
@@ -375,41 +429,123 @@ function saveToLocal() {
   document.body.removeChild(element);
 }
 
+function addQueryBtn(reqEl) {
+  let titleDiv = getAll(".card-header-title", reqEl)[0].childNodes[0];
+  let titleSpan = getAll("span", titleDiv)[0];
+  let msgUuid = getAll("a", titleDiv)[0].getAttribute("name");
+
+  let queryBtn = document.createElement('a');
+  queryBtn.innerHTML =
+      "<span>Inspect with JEXL</span>";
+  queryBtn.setAttribute("class", "button modal-button is-pulled-right mx-3");
+  queryBtn.setAttribute("data-target", msgUuid);
+  queryBtn.addEventListener("click", function (e) {
+    const $target = document.getElementById("jexlQueryModal");
+    jexlQueryElementUuid = msgUuid;
+    rootEl.classList.add('is-clipped');
+    $target.classList.add('is-active');
+    e.preventDefault();
+    return false;
+  });
+  titleSpan.appendChild(queryBtn);
+}
+
+function executeJexlQuery() {
+  const xhttp = new XMLHttpRequest();
+  let jexlQuery = document.getElementById("jexlQueryInput").value;
+  xhttp.open("GET", "/webui/testJexlQuery"
+      + "?msgUuid=" + jexlQueryElementUuid
+      + "&query=" + encodeURIComponent(jexlQuery),
+      true);
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status === 200) {
+        const response = JSON.parse(this.responseText);
+
+        jexlInspectionTreeDiv.innerHTML =
+            "<h3 class='is-size-4'>Rbel Tree</h3>"
+            + "<pre id='shell'>" + response.rbelTreeHtml + "</pre>";
+        shortenStrings(response);
+        jexlInspectionContextDiv.innerHTML =
+            "<h3 class='is-size-4'>JEXL context</h3>"
+            + "<pre id='json'>"
+            + JSON.stringify(response.messageContext, null, 6)
+            + "</pre>";
+        jexlInspectionContextParentDiv.classList.remove("is-hidden");
+        jexlInspectionNoContextDiv.classList.add("is-hidden");
+        if (response.matchSuccessful) {
+          jexlInspectionResultDiv.innerHTML = "<b>Condition is true: </b>"
+              + "<code class='has-background-dark has-text-danger'>" + jexlQuery+ "</code>";
+          jexlInspectionResultDiv.classList.add("has-background-success");
+          jexlInspectionResultDiv.classList.remove("has-background-primary");
+          jexlInspectionResultDiv.classList.remove("is-hidden");
+        } else {
+          jexlInspectionResultDiv.innerHTML = "<b>Condition is false (or invalid): </b>"
+              + "<code class='has-background-dark has-text-danger'>" + jexlQuery + "</code>";
+          jexlInspectionResultDiv.classList.remove("has-background-success");
+          jexlInspectionResultDiv.classList.add("has-background-primary");
+          jexlInspectionResultDiv.classList.remove("is-hidden");
+        }
+      } else {
+        console.log("ERROR " + this.status + " " + this.responseText);
+      }
+    }
+  }
+  xhttp.send();
+}
+
+function shortenStrings(obj) {
+  for (var property in obj) {
+    if (obj.hasOwnProperty(property)) {
+      if (typeof obj[property] == "object") {
+        shortenStrings(obj[property]);
+      } else {
+        if (typeof obj[property] === 'string' || obj[property]
+            instanceof String) {
+          obj[property] = (obj[property].length > 50) ?
+              obj[property].substr(0, 49) + '...'
+              : obj[property];
+        }
+      }
+    }
+  }
+}
+
+function addSingleMessage(msgMetaData, msgHtmlData) {
+  const listDiv = getAll('.msglist')[0];
+
+  let isRequest = msgMetaData.path;
+  const reqEl = htmlToElement(msgHtmlData);
+  let span = getAll(".msg-sequence", reqEl)[0];
+  span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
+  span.textContent = msgMetaData.sequenceNumber + 1;
+  addQueryBtn(reqEl);
+  listDiv.appendChild(reqEl);
+
+  if (isRequest) {
+    const menuReq = menuReqHtmlTemplate
+    .replace("${uuid}", msgMetaData.uuid)
+    .replace("${sequence}", msgMetaData.sequenceNumber + 1)
+    .replace("${methodNUrl}", msgMetaData.method + "\n" + msgMetaData.path);
+    document.getElementById("sidebar-menu").appendChild(
+        htmlToElement(menuReq));
+  } else {
+    const menuRes = menuResHtmlTemplate
+    .replace("${uuid}", msgMetaData.uuid)
+    .replace("${sequence}", msgMetaData.sequenceNumber + 1)
+    document.getElementById("sidebar-menu").appendChild(
+        htmlToElement(menuRes));
+  }
+}
+
 function updateMessageList(json) {
   if (json.metaMsgList.length === 0) {
     return;
   }
   let i = 0;
-  const listDiv = getAll('.msglist')[0];
   while (i < json.htmlMsgList.length) {
-    const req = json.metaMsgList[i];
-    if (req.path) {
-      const reqEl = htmlToElement(json.htmlMsgList[i]);
-      let span = getAll(".msg-sequence", reqEl)[0];
-      span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
-      span.textContent = req.sequenceNumber + 1;
-      listDiv.appendChild(reqEl);
-      const resEl = htmlToElement(json.htmlMsgList[i + 1]);
-      const res = json.metaMsgList[i + 1];
-      span = getAll(".msg-sequence", resEl)[0];
-      span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
-      span.textContent = res.sequenceNumber + 1;
-      listDiv.appendChild(resEl);
-
-      const menuReq = menuReqHtmlTemplate
-      .replace("${uuid}", req.uuid)
-      .replace("${sequence}", req.sequenceNumber + 1)
-      .replace("${methodNUrl}", req.method + "\n" + req.path);
-      document.getElementById("sidebar-menu").appendChild(
-          htmlToElement(menuReq));
-
-      const menuRes = menuResHtmlTemplate
-      .replace("${uuid}", res.uuid)
-      .replace("${sequence}", res.sequenceNumber + 1)
-      document.getElementById("sidebar-menu").appendChild(
-          htmlToElement(menuRes));
-    }
-    i = i + 2;
+    addSingleMessage(json.metaMsgList[i], json.htmlMsgList[i]);
+    i = i + 1;
   }
   lastUuid = json.metaMsgList[json.metaMsgList.length - 1].uuid;
 
@@ -420,8 +556,10 @@ function updateMessageList(json) {
     const msgListDiv = sidebar.nextElementSibling;
     sidebar.children[sidebar.children.length - 1].scrollIntoView(
         {behaviour: "smooth", block: "end"});
-    msgListDiv.children[msgListDiv.children.length - 1].scrollIntoView(
-        {behaviour: "smooth", block: "end"});
+    if (msgListDiv.children[msgListDiv.children.length - 1] !== undefined) {
+      msgListDiv.children[msgListDiv.children.length - 1].scrollIntoView(
+          {behaviour: "smooth", block: "end"});
+    }
   }
 }
 
@@ -517,5 +655,5 @@ function addRoute() {
 }
 
 function testActivateNoSystemExitOnQuit() {
-  testQuitParam='?noSystemExit=true';
+  testQuitParam = '?noSystemExit=true';
 }

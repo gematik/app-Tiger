@@ -167,11 +167,26 @@ public class UseCaseSteps {
 
     @Then("she/he saves test environment as {string} using Enter")
     public void savesTestEnvironmentUsingEnter(String newSaveName) {
-        theActorInTheSpotlight().attemptsTo(SaveAsAction.ofTypeVia(newSaveName, true));
+        theActorInTheSpotlight().attemptsTo(SaveAsAction.ofTypeVia(newSaveName, true, false));
+    }
+
+    @Then("she/he saves test environment as {string}")
+    public void savesTestEnvironmentWithoutEnter(String newSaveName) {
+        theActorInTheSpotlight().attemptsTo(SaveAsAction.ofTypeVia(newSaveName, false, false));
     }
 
     @Then("she/he verifies saved file {string} contains")
     public void verifySavedContentMatches(String fileName, String docString) {
         theActorInTheSpotlight().attemptsTo(VerifyFileContentAction.ofTypeVia(fileName, docString));
+    }
+
+    @Then("she/he doesn't save test environment as {string}")
+    public void testEnvironmentIsNotSaved(String newSaveName) {
+        theActorInTheSpotlight().attemptsTo(SaveAsAction.ofTypeVia(newSaveName, false, false));
+    }
+
+    @Then("she/he cancels the saving of the file with the name {string}")
+    public void heCancelsTheSavingOfTheTestEnvironment(String newSaveName) {
+        theActorInTheSpotlight().attemptsTo(SaveAsAction.ofTypeVia(newSaveName, false, true));
     }
 }

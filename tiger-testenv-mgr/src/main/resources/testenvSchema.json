@@ -1,0 +1,750 @@
+{
+  "$schema" : "http://json-schema.org/draft-07/schema#",
+  "definitions" : {
+
+    "TigerConfigurationPkiIdentity" : {
+      "type" : "object",
+      "properties" : {
+        "certificate" : {
+          "$ref" : "#/definitions/X509Certificate"
+        },
+        "certificateChain" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/X509Certificate"
+          }
+        },
+        "fileLoadingInformation" : {
+          "type" : "string"
+        }
+      }
+    },
+    "X509Certificate" : {
+      "type" : "object",
+      "properties" : {
+        "hash" : {
+          "type" : "integer"
+        },
+        "type" : {
+          "type" : "string"
+        }
+      }
+    }
+  },
+  "type" : "object",
+  "properties" : {
+    "localProxyActive" : {
+      "type" : "boolean"
+    },
+    "servers" : {
+      "type" : "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "templateName": {
+            "type": "string",
+            "description": ""
+          },
+          "type": {
+            "enum": ["docker", "compose", "externalJar", "externalUrl", "tigerProxy"],
+            "description": ""
+          },
+          "source": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The source-URLs"
+          },
+          "version": {
+            "type": "string",
+            "description": ""
+          },
+          "startupTimeoutSec": {
+            "type": "integer",
+            "description": ""
+          },
+          "active": {
+            "type": "boolean",
+            "description": ""
+          },
+          "externalJarOptions": {
+            "type": "object",
+            "properties": {
+              "workingDir": {
+                "type": "string",
+                "description": ""
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": ""
+              },
+              "arguments": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": ""
+              },
+              "healthcheck": {
+                "type": "string",
+                "description": ""
+              }
+            },
+            "description": ""
+          },
+          "dockerOptions": {
+            "type": "object",
+            "properties": {
+              "serviceHealthchecks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": ""
+              },
+              "proxied": {
+                "type": "boolean",
+                "description": "whether to start container with unmodified entrypoint, or whether to modify by adding pki and other stuff,\n      rewriting the entrypoint"
+              },
+              "oneShot": {
+                "type": "boolean",
+                "description": "For docker type to trigger OneShotStartupStrategy"
+              },
+              "entryPoint": {
+                "type": "string",
+                "description": "for docker types allows to overwrite the entrypoint cmd configured with in the container"
+              },
+              "ports": {
+                "type": "object",
+                "properties": {},
+                "description": "used only by docker"
+              }
+            },
+            "description": ""
+          },
+          "tigerProxyCfg": {
+            "type": "object",
+            "properties": {
+              "serverPort": {
+                "type": "integer",
+                "description": "Management-port of the Tiger Proxy."
+              },
+              "proxiedServer": {
+                "type": "string",
+                "description": "used to overwrite proxyCfg with values that allow to reverse proxy the given server node."
+              },
+              "proxiedServerProtocol": {
+                "type": "string",
+                "description": "Used to add a route to the Tiger Proxy. By default, the healthcheck-url-protocol is used here, or http if none is\n      present. If you want to override this you can do it using this field."
+              },
+              "proxyCfg": {
+                "type": "object",
+                "properties": {
+                  "proxyRoutes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": ""
+                        },
+                        "from": {
+                          "type": "string",
+                          "description": ""
+                        },
+                        "to": {
+                          "type": "string",
+                          "description": ""
+                        },
+                        "internalRoute": {
+                          "type": "boolean",
+                          "description": ""
+                        },
+                        "disableRbelLogging": {
+                          "type": "boolean",
+                          "description": ""
+                        },
+                        "basicAuth": {
+                          "type": "object",
+                          "properties": {
+                            "username": {
+                              "type": "string",
+                              "description": ""
+                            },
+                            "password": {
+                              "type": "string",
+                              "description": ""
+                            }
+                          },
+                          "description": ""
+                        }
+                      }
+                    },
+                    "description": ""
+                  },
+                  "forwardToProxy": {
+                    "type": "object",
+                    "properties": {
+                      "hostname": {
+                        "type": "string",
+                        "description": ""
+                      },
+                      "port": {
+                        "type": "integer",
+                        "description": ""
+                      },
+                      "type": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": ""
+                          },
+                          "ordinal": {
+                            "type": "integer",
+                            "description": ""
+                          }
+                        },
+                        "description": ""
+                      },
+                      "username": {
+                        "type": "string",
+                        "description": ""
+                      },
+                      "password": {
+                        "type": "string",
+                        "description": ""
+                      }
+                    },
+                    "description": ""
+                  },
+                  "proxyLogLevel": {
+                    "type": "string",
+                    "description": ""
+                  },
+                  "tls": {
+                    "type": "object",
+                    "properties": {
+                      "serverRootCa": {
+                        "type": "object",
+                        "properties": {
+                          "certificate": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "privateKey": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "keyId": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "certificateChain": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {}
+                            },
+                            "description": ""
+                          },
+                          "fileLoadingInformation": {
+                            "type": "string",
+                            "description": ""
+                          }
+                        },
+                        "description": ""
+                      },
+                      "forwardMutualTlsIdentity": {
+                        "type": "object",
+                        "properties": {
+                          "certificate": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "privateKey": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "keyId": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "certificateChain": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {}
+                            },
+                            "description": ""
+                          },
+                          "fileLoadingInformation": {
+                            "type": "string",
+                            "description": ""
+                          }
+                        },
+                        "description": ""
+                      },
+                      "serverIdentity": {
+                        "type": "object",
+                        "properties": {
+                          "certificate": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "privateKey": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "keyId": {
+                            "type": "object",
+                            "properties": {},
+                            "description": ""
+                          },
+                          "certificateChain": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {}
+                            },
+                            "description": ""
+                          },
+                          "fileLoadingInformation": {
+                            "type": "string",
+                            "description": ""
+                          }
+                        },
+                        "description": ""
+                      },
+                      "domainName": {
+                        "type": "string",
+                        "description": ""
+                      },
+                      "alternativeNames": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": ""
+                      },
+                      "serverSslSuites": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "localhost will be part of the certificates twice by default. This is done in case someone just sets the url and assumes localhost will still be supported "
+                      }
+                    },
+                    "description": ""
+                  },
+                  "keyFolders": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": ""
+                  },
+                  "activateRbelEndpoint": {
+                    "type": "boolean",
+                    "description": ""
+                  },
+                  "activateAsn1Parsing": {
+                    "type": "boolean",
+                    "description": ""
+                  },
+                  "activateForwardAllLogging": {
+                    "type": "boolean",
+                    "description": ""
+                  },
+                  "fileSaveInfo": {
+                    "type": "object",
+                    "properties": {
+                      "writeToFile": {
+                        "type": "boolean",
+                        "description": ""
+                      },
+                      "filename": {
+                        "type": "string",
+                        "description": ""
+                      },
+                      "clearFileOnBoot": {
+                        "type": "boolean",
+                        "description": ""
+                      }
+                    },
+                    "description": ""
+                  },
+                  "port": {
+                    "type": "integer",
+                    "description": ""
+                  },
+                  "skipTrafficEndpointsSubscription": {
+                    "type": "boolean",
+                    "description": ""
+                  },
+                  "trafficEndpoints": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": ""
+                  },
+                  "trafficEndpointFilterString": {
+                    "type": "string",
+                    "description": ""
+                  },
+                  "connectionTimeoutInSeconds": {
+                    "type": "integer",
+                    "description": ""
+                  },
+                  "stompClientBufferSizeInMb": {
+                    "type": "integer",
+                    "description": ""
+                  },
+                  "perMessageBufferSizeInMb": {
+                    "type": "integer",
+                    "description": ""
+                  },
+                  "rbelBufferSizeInMb": {
+                    "type": "integer",
+                    "description": ""
+                  },
+                  "activateRbelParsing": {
+                    "type": "boolean",
+                    "description": ""
+                  },
+                  "activateVauAnalysis": {
+                    "type": "boolean",
+                    "description": ""
+                  },
+                  "trafficEndpointConfiguration": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": ""
+                      },
+                      "wsEndpoint": {
+                        "type": "string",
+                        "description": ""
+                      },
+                      "stompTopic": {
+                        "type": "string",
+                        "description": ""
+                      }
+                    },
+                    "description": ""
+                  },
+                  "modifications": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": ""
+                        },
+                        "condition": {
+                          "type": "string",
+                          "description": ""
+                        },
+                        "targetElement": {
+                          "type": "string",
+                          "description": ""
+                        },
+                        "replaceWith": {
+                          "type": "string",
+                          "description": ""
+                        },
+                        "regexFilter": {
+                          "type": "string",
+                          "description": ""
+                        }
+                      }
+                    },
+                    "description": ""
+                  }
+                },
+                "description": ""
+              }
+            },
+            "description": ""
+          },
+          "pkiKeys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": ""
+                },
+                "pem": {
+                  "type": "string",
+                  "description": ""
+                },
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": ""
+                    },
+                    "ordinal": {
+                      "type": "integer",
+                      "description": ""
+                    }
+                  },
+                  "description": ""
+                }
+              }
+            },
+            "description": ""
+          },
+          "environment": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "list of env vars to be set for docker, external JarTigerProxy"
+          },
+          "urlMappings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "mappings for local tiger proxy to be set when this server is active"
+          },
+          "exports": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "properties to be exported to subsequent nodes as env vars and set as system properties to current jvm"
+          },
+          "hostname": {
+            "type": "string",
+            "description": ""
+          },
+          "template": {
+            "type": "string",
+            "description": "References a template to set up the server. You can override properties."
+          },
+          "dependsUpon": {
+            "type": "string",
+            "description": "References another server which has to be booted prior to this. Multiple servers can be referenced, divided by comma.",
+            "pattern": "^\\w*(,( )?\\w*)*$"
+          },
+          "started": {
+            "type": "boolean",
+            "description": ""
+          }
+        }
+      }
+      }
+    },
+    "tigerProxy" : {
+      "type" : "object",
+      "properties" : {
+        "activateAsn1Parsing" : {
+          "type" : "boolean"
+        },
+        "activateForwardAllLogging" : {
+          "type" : "boolean"
+        },
+        "activateRbelEndpoint" : {
+          "type" : "boolean"
+        },
+        "activateRbelParsing" : {
+          "type" : "boolean"
+        },
+        "activateVauAnalysis" : {
+          "type" : "boolean"
+        },
+        "connectionTimeoutInSeconds" : {
+          "type" : "integer"
+        },
+        "fileSaveInfo" : {
+          "type" : "object",
+          "properties" : {
+            "clearFileOnBoot" : {
+              "type" : "boolean"
+            },
+            "filename" : {
+              "type" : "string"
+            },
+            "writeToFile" : {
+              "type" : "boolean"
+            }
+          }
+        },
+        "forwardToProxy" : {
+          "type" : "object",
+          "properties" : {
+            "hostname" : {
+              "type" : "string"
+            },
+            "password" : {
+              "type" : "string"
+            },
+            "port" : {
+              "type" : "integer"
+            },
+            "type" : {
+              "type" : "string"
+            },
+            "username" : {
+              "type" : "string"
+            }
+          }
+        },
+        "keyFolders" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "modifications" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "properties" : {
+              "condition" : {
+                "type" : "string"
+              },
+              "name" : {
+                "type" : "string"
+              },
+              "regexFilter" : {
+                "type" : "string"
+              },
+              "replaceWith" : {
+                "type" : "string"
+              },
+              "targetElement" : {
+                "type" : "string"
+              }
+            }
+          }
+        },
+        "perMessageBufferSizeInMb" : {
+          "type" : "integer"
+        },
+        "port" : {
+          "type" : "integer"
+        },
+        "proxyLogLevel" : {
+          "type" : "string"
+        },
+        "proxyRoutes" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "properties" : {
+              "basicAuth" : {
+                "type" : "object",
+                "properties" : {
+                  "password" : {
+                    "type" : "string"
+                  },
+                  "username" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "disableRbelLogging" : {
+                "type" : "boolean"
+              },
+              "from" : {
+                "type" : "string"
+              },
+              "id" : {
+                "type" : "string"
+              },
+              "internalRoute" : {
+                "type" : "boolean"
+              },
+              "to" : {
+                "type" : "string"
+              }
+            }
+          }
+        },
+        "rbelBufferSizeInMb" : {
+          "type" : "integer"
+        },
+        "skipTrafficEndpointsSubscription" : {
+          "type" : "boolean"
+        },
+        "stompClientBufferSizeInMb" : {
+          "type" : "integer"
+        },
+        "tls" : {
+          "type" : "object",
+          "properties" : {
+            "alternativeNames" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            },
+            "domainName" : {
+              "type" : "string"
+            },
+            "forwardMutualTlsIdentity" : {
+              "$ref" : "#/definitions/TigerConfigurationPkiIdentity"
+            },
+            "serverIdentity" : {
+              "$ref" : "#/definitions/TigerConfigurationPkiIdentity"
+            },
+            "serverRootCa" : {
+              "$ref" : "#/definitions/TigerConfigurationPkiIdentity"
+            },
+            "serverSslSuites" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        },
+        "trafficEndpointConfiguration" : {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string"
+            },
+            "stompTopic" : {
+              "type" : "string"
+            },
+            "wsEndpoint" : {
+              "type" : "string"
+            }
+          }
+        },
+        "trafficEndpointFilterString" : {
+          "type" : "string"
+        },
+        "trafficEndpoints" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}

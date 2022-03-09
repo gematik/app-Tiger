@@ -27,6 +27,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -179,8 +180,9 @@ public class TigerRemoteProxyClientTest {
             .atMost(20, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
 
-        assertThat(new String(tigerRemoteProxyClient.getRbelMessages().get(tigerRemoteProxyClient.getRbelMessages().size() - 2)
-            .findElement("$.body").get().getRawContent()))
+        assertThat(
+            new String(tigerRemoteProxyClient.getRbelMessages().get(tigerRemoteProxyClient.getRbelMessages().size() - 2)
+                .findElement("$.body").get().getRawContent()))
             .isEqualTo(body);
     }
 
@@ -279,5 +281,33 @@ public class TigerRemoteProxyClientTest {
         await()
             .atMost(2, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
+    }
+
+    @Test
+    public void downstreamTigerProxyWithFilterCriterion_shouldOnlyShowMatchingMessages() {
+        var filteredTigerProxy = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder()
+                .proxyLogLevel("WARN")
+                .trafficEndpointFilterString("request.url =$ 'faa'")
+                .build());
+
+        AtomicInteger listenerCallCounter = new AtomicInteger(0);
+        filteredTigerProxy.addRbelMessageListener(message -> {
+            if (message.getFacetOrFail(RbelHttpRequestFacet.class)
+                .getPath().getRawStringContent().endsWith("faa")) {
+                // this ensures we only leave the wait after the /faa call
+                listenerCallCounter.incrementAndGet();
+            }
+        });
+
+        unirestInstance.get("http://myserv.er/foo").asString();
+        unirestInstance.get("http://myserv.er/faa").asString();
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> listenerCallCounter.get() > 0);
+
+        assertThat(filteredTigerProxy.getRbelMessages())
+            .hasSize(2);
     }
 }

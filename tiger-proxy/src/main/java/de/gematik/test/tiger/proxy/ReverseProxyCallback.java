@@ -88,6 +88,7 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
                 log.error("RBel FAILED!", e);
             }
         }
+        getTigerProxy().manageRbelBufferSize();
         return httpResponse;
     }
 }

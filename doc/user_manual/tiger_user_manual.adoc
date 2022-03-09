@@ -134,6 +134,18 @@ The displayed buttons can trigger the following actions:
 
 == FAQs
 
-This chapter will be filled with the most relevant questions and answers to it that we will receive after the release of this manual.
+
+### docker container creation fails
+Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.
+```
+docker system prune
+```
+Last resort:
+```
+netcfg -d
+```
+and restart docker
+
+
 
 // TODO TGR-316== Glossar

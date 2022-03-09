@@ -1,5 +1,23 @@
 # Changelog Tiger Testplattform
 
+# Release 0.19.3
+
+## Bugfix
+
+* TGR-294: Tiger hook causes null pointer exception before steps execution
+* TGR-380: Tiger-User-Manual (HTML) now has pictures
+* TGR-419: Tiger-Proxy WebUI now also functions in Test-Env Standalone configuration
+* TGR-415: Potential memory-leaks in Tiger-Proxy fixed
+
+## Features
+
+* TGR-357: Tiger-Proxy traffic endpoints can now filter incoming traffic (reducing load, improving usability)
+* TGR-294: Rbel Log html page now shows data variant values when clicking on button in subtitle section
+* TGR-389: EPA-VAU messages are now always tagged with the target account KVNR (only when tigerProxy.activateVauAnalysis is activated)
+* TGR-358: Tiger-Proxy WebUI can now filter messages
+* TGR-416: Traffic-Log can now be downloaded in the Tiger-Proxy WebUI
+* TGR-420: Jexl-Debugging dialog added to Tiger-Proxy WebUI
+
 # Release 0.19.2
 
 ## Bugfix

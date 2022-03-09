@@ -331,7 +331,7 @@ public class RBelValidatorGlue {
                     .withFailMessage("Node '" + rbelPath + "' is not XML")
                     .isTrue();
                 rbelValidator.compareXMLStructure(
-                    el.getFacetOrFail(RbelXmlFacet.class).getSourceElement().asXML(),
+                    el.getRawStringContent(),
                     parsedOracleDocStr);
 
         }
@@ -361,7 +361,7 @@ public class RBelValidatorGlue {
         final String parsedXmlDocStr = TigerGlobalConfiguration.resolvePlaceholders(xmlDocStr);
         final RbelElement el = rbelValidator.findElemInLastResponse(parsedRbelPath);
         assertThat(el.hasFacet(RbelXmlFacet.class)).withFailMessage("Node '" + rbelPath + "' is not XML").isTrue();
-        rbelValidator.compareXMLStructure(el.getFacetOrFail(RbelXmlFacet.class).getSourceElement().asXML(),
+        rbelValidator.compareXMLStructure(el.getRawStringContent(),
             parsedXmlDocStr,
             diffOptionsCSV);
     }

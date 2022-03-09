@@ -70,7 +70,6 @@ public class JsonChecker {
                 compareJSON(expected.getJSONObject(0), actual.getJSONObject(0));
                 return;
             }
-            // TODO TGR-254 LOW PRIO make it without unique key based approach
             super.compareJSONArrayOfJsonObjects(key, expected, actual, result);
         }
     };
@@ -147,7 +146,6 @@ public class JsonChecker {
                     assertJsonObjectShouldMatchOrContainInAnyOrder(json.get(jsonKey).toString(),
                         oracle.get(oracleKey).toString(), true);
                 } else if (json.get(jsonKey) instanceof JSONArray) {
-                    // TODO TGR-254 shouldn't this call assertJsonArrayShouldMatchInAnyOrder?
                     JSONAssert.assertEquals(oracle.get(oracleKey).toString(), json.get(jsonKey).toString(),
                         customComparator);
                 } else {

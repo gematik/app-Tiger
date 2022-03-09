@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.testenvmgr.config;
+package de.gematik.test.tiger.proxy.exceptions;
 
-import de.gematik.test.tiger.common.data.config.CfgTemplate;
-import lombok.Data;
+public class TigerProxyWebUiException extends RuntimeException {
 
-@Data
-public class CfgServer extends CfgTemplate {
+    public TigerProxyWebUiException(String message, Exception exception) {
+        super(message, exception);
+    }
 
-    private String hostname;
-    /**
-     * References a template to set up the server. You can override properties.
-     */
-    private String template;
-    /**
-     * References another server which has to be booted prior to this. Multiple servers can be referenced, divided by
-     * comma.
-     */
-    private String dependsUpon;
+    public TigerProxyWebUiException(String message) {
+        super(message);
+    }
 }

@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
@@ -80,6 +81,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         final RbelConfiguration rbelConfiguration = new RbelConfiguration();
         if (configuration.getKeyFolders() != null) {
             configuration.getKeyFolders().forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
+        }
+        if (configuration.isActivateVauAnalysis()) {
+            rbelConfiguration.addPostConversionListener(new RbelVauSessionListener());
         }
         rbelConfiguration.setFileSaveInfo(configuration.getFileSaveInfo());
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());

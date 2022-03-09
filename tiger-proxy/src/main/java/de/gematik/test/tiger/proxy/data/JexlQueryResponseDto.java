@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
-<script>
-  const tigerProxyPort = ${ProxyPort};
-  const tigerProxyFilenamePattern = "${FilenamePattern}";
-  const tigerProxyUploadUrl = "${UploadUrl}";
-  const tigerProxyGematikAccount = "${GematikAccount}";
-</script>
+package de.gematik.test.tiger.proxy.data;
+
+import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+@AllArgsConstructor
+public class JexlQueryResponseDto {
+
+    private final boolean matchSuccessful;
+    private final Map<String, Object> messageContext;
+    private final String rbelTreeHtml;
+}

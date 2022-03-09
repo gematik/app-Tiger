@@ -54,6 +54,8 @@ public class TigerProxyConfiguration {
     private boolean skipTrafficEndpointsSubscription = false;
     private List<String> trafficEndpoints;
     @Builder.Default
+    private String trafficEndpointFilterString = "";
+    @Builder.Default
     private int connectionTimeoutInSeconds = 10;
     @Builder.Default
     private int stompClientBufferSizeInMb = 1;
@@ -63,6 +65,8 @@ public class TigerProxyConfiguration {
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
     private boolean activateRbelParsing = true;
+    @Builder.Default
+    private boolean activateVauAnalysis = false;
     @Builder.Default
     private TrafficEndpointConfiguration trafficEndpointConfiguration = new TrafficEndpointConfiguration();
     @Builder.Default

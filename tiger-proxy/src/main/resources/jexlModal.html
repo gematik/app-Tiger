@@ -1,0 +1,92 @@
+<!--
+  ~ Copyright (c) 2022 gematik GmbH
+  ~ 
+  ~ Licensed under the Apache License, Version 2.0 (the License);
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ 
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~ 
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an 'AS IS' BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="modal" id="jexlQueryModal" xmlns="http://www.w3.org/1999/html">
+  <div class="modal-background"></div>
+  <button class="modal-close is-large" aria-label="close"></button>
+  <div class="modal-content" style="width: 85%">
+    <article class="message">
+      <div class="message-header"><h2>JEXL Debugging</h2>
+        <button class="delete" aria-label="delete"></button>
+      </div>
+      <div class="message-body">
+        <div class="box">
+          <form id="jexlInspectionForm" onSubmit="return false;" >
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Execute Jexl on selected message</label>
+              </div>
+              <div class="field-body">
+                <div class="control">
+                  <input class="input" size="100%" type="text" id="jexlQueryInput"
+                         value='"RbelHttpMessageFacet" =~facets'>
+                </div>
+              </div>
+            </div>
+            <div class="control buttons is-right">
+              <button class="button mt-3 is-success" id="executeJexlQuery">Execute</button>
+            </div>
+          </form>
+        </div>
+        <div>
+          <div class="box is-size-6">
+            <p>
+              The JEXL syntax is described in detail
+              <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html">here</a>.
+            </p> <p>
+              When executing a JEXL-Expression the context is initialized with a multitude of values, helping you write short
+              and powerful JEXL-Expressions. In addition, you can always use RbelPath expression, which are described
+              <a href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_understanding_rbelpath">here</a>. When
+              using RbelPath make sure to add spaces before and after!
+            </p> <p>
+              <b>Some examples:</b>
+              <ul>
+                <li><code class='has-background-dark has-text-danger'>"RbelHttpMessageFacet" =~ facets</code>
+                  Checks if the message has the "RbelHttpMessageFacet" facet.
+                  <code class='has-background-dark has-text-danger'>facets</code> is an array which contains all facets
+                  recognized by the RbelConverter.
+                </li>
+                <li><code class='has-background-dark has-text-danger'>isRequest</code>
+                  Checks if the message is a request.
+                </li>
+                <li><code class='has-background-dark has-text-danger'>$.body.recordId == "X12349035"</code>
+                  Checks for the recordId of a decrypted EPA-VAU-message.
+                </li>
+                <li><code class='has-background-dark has-text-danger'>$.header.Content-Type == "application/json"</code>
+                  Check if the message is a JSON-message.
+                </li>
+                <li><code class='has-background-dark has-text-danger'>charset =~ "UTF-.*"</code>
+                  Check the charset with a regex.
+                </li>
+              </ul>
+            </p>
+          </div>
+          <div class="box is-hidden" id="jexlResult">
+          </div>
+          <div class="columns is-hidden" id="contextParent">
+            <div class="box" id="jexlContext" style="width: 50%">
+            </div>
+            <div class="box" id="rbelTree" style="width: 50%">
+            </div>
+          </div>
+          <div class="box is-hidden" id="jexlNoContext">
+            To see the context for the current element please first execute an expression!
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
