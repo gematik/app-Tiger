@@ -532,7 +532,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.19.1 - 2022-02-25</span>
+<span id="revdate">Version 0.19.1 - 2022-03-09</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -572,6 +572,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_mesh_setup_traffic_endpoints">4.6. Mesh set up</a></li>
 <li><a href="#_understanding_rbelpath">4.7. Understanding RBelPath</a></li>
 <li><a href="#_running_tiger_proxy_as_standalone_jar">4.8. Running Tiger Proxy as standalone JAR</a></li>
+<li><a href="#_additional_configuration">4.9. Additional configuration</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_test_library_2">5. Tiger Test library</a>
@@ -601,7 +602,11 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 </ul>
 </li>
 <li><a href="#_links_to_test_relevant_topics">8. Links to test relevant topics</a></li>
-<li><a href="#_faqs">9. FAQs</a></li>
+<li><a href="#_faqs">9. FAQs</a>
+<ul class="sectlevel2">
+<li><a href="#_docker_container_creation_fails">9.1. docker container creation fails</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -3011,7 +3016,45 @@ If <code>message</code> is a request, then the <code>message</code> itself will 
 <span class="key">localResources</span>: <span class="string"><span class="content">false</span></span></code></pre>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_additional_configuration">4.9. Additional configuration</h3>
+<div class="paragraph">
+<p>There are some additional configuration-flags in the tiger-proxy:</p>
+</div>
+<div class="sect3">
+<h4 id="_performance">4.9.1. Performance</h4>
+<div class="paragraph">
+<p>Below some properties along with their respective default values:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">tigerProxy</span>:
+    <span class="key">activateRbelParsing</span>: <span class="string"><span class="content">true</span></span>
+    <span class="key">activateAsn1Parsing</span>: <span class="string"><span class="content">false</span></span>
+    <span class="key">activateVauAnalysis</span>: <span class="string"><span class="content">false</span></span></code></pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_activaterbelparsing">activateRbelParsing</h5>
+<div class="paragraph">
+<p>Deactivating this flag turns off all Rbel-Analysis of the incoming traffic. This is a huge deal in terms of memory- and CPU-consumption but you will loose all benefit of performing Rbel-Analysis.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_activateasn1parsing">activateAsn1Parsing</h5>
+<div class="paragraph">
+<p>This is off by default. ASN.1 objects are very common in crypto applications. While parsing them will enable you to directly have a look inside certificates it comes with a penalty in performance and also clutters the object-tree. Often it&#8217;s enough to know that there is a certificate, only in some scenarios is the content of interest. If the latter is of interest to you activate ASN.1 parsing.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_activatevauanalysis">activateVauAnalysis</h5>
+<div class="paragraph">
+<p>VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze EPA-VAU messages leave this option turned off. If you do enabling it will give you additional information about the messages.</p>
+</div>
 <div style="page-break-after: always;"></div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -4107,15 +4150,34 @@ Till then there is not much more than in the <a href="#_workflow_ui">Workflow UI
 <div class="sect1">
 <h2 id="_faqs">9. FAQs</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_docker_container_creation_fails">9.1. docker container creation fails</h3>
 <div class="paragraph">
-<p>This chapter will be filled with the most relevant questions and answers to it that we will receive after the release of this manual.</p>
+<p>Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>docker system prune</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Last resort:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>netcfg -d</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and restart docker</p>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-25 09:49:20 +0100
+Last updated 2022-03-09 10:01:45 +0100
 </div>
 </div>
 </body>

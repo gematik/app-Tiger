@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
+  - ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1206px" preserveAspectRatio="none" style="width:833px;height:1206px;background:#FFFFF0;" version="1.1" viewBox="0 0 833 1206" width="833px" zoomAndPan="magnify"><defs><filter height="300%" id="fhs4xivbff7j0" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><rect fill="#FFFFFF" height="54.9219" rx="10" ry="10" style="stroke:#808080;stroke-width:1.0;" width="770" x="30" y="30"/><text fill="#333333" font-family="sans-serif" font-size="30" font-weight="bold" lengthAdjust="spacing" textLength="570" x="130" y="67.8467">Tiger EAU Konnektorfarm process</text><ellipse cx="407.5" cy="95.9219" fill="#808080" filter="url(#fhs4xivbff7j0)" rx="10" ry="10" style="stroke:none;stroke-width:1.0;"/><rect fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" height="33.9688" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="248" x="283.5" y="125.9219"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="228" x="293.5" y="147.0605">Installation of openJDK11 and maven.</text><rect fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" height="47.9375" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="427" x="194" y="179.8906"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="407" x="204" y="201.0293">Cloning github repo https://github.com/gematik/tiger-eau-proxy.git</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="242" x="286.5" y="214.998">into a folder on the customers machine.</text><rect fill="#98FB98" filter="url(#fhs4xivbff7j0)" height="47.9375" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="217" x="299" y="247.8281"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="197" x="309" y="268.9668">starting Tiger validation suite via</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="81" x="365" y="282.9355">mvn -P Test</text><rect fill="#98FB98" filter="url(#fhs4xivbff7j0)" height="47.9375" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="365" x="225" y="315.7656"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="251" x="282" y="336.9043">Tiger test environment manager starts all</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="345" x="235" y="350.873">Tiger proxies (reverse, aggregating, local) will be started.</text><rect fill="#98FB98" filter="url(#fhs4xivbff7j0)" height="61.9063" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="248" x="283.5" y="427.7031"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="152" x="331.5" y="448.8418">The validation feature file</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="228" x="293.5" y="462.8105">part of the github repo will be started</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="169" x="339" y="476.7793">waiting for the first request.</text><rect fill="#000000" filter="url(#fhs4xivbff7j0)" height="6" rx="2.5" ry="2.5" style="stroke:#000000;stroke-width:1.0;" width="620" x="97.5" y="509.6094"/><rect fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" height="89.8438" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="344" x="111.5" y="535.6094"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="324" x="121.5" y="556.748">The Primärsystem sends requests to the Konnektoren</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="205" x="181" y="570.7168">via the local reverse Tiger proxies.</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="272" x="147.5" y="584.6855">It follows either manually by human tester or</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="200" x="183.5" y="598.6543">via test scripts the test work flow</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="147" x="210" y="612.623">as specified by Gematik.</text><rect fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" height="33.9688" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="324" x="121.5" y="660.4531"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="304" x="131.5" y="681.5918">The test work flow has been completed or aborted</text><rect fill="#98FB98" filter="url(#fhs4xivbff7j0)" height="89.8438" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="220" x="483.5" y="570.0938"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="190" x="498.5" y="591.2324">The validation test suite checks</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="193" x="497" y="605.2012">that all requests and responses,</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="200" x="493.5" y="619.1699">matching the specified work flow</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="169" x="509" y="633.1387">have been received in order</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="152" x="517.5" y="647.1074">and do match all criteria.</text><rect fill="#000000" filter="url(#fhs4xivbff7j0)" height="6" rx="2.5" ry="2.5" style="stroke:#000000;stroke-width:1.0;" width="620" x="97.5" y="714.4219"/><rect fill="#98FB98" filter="url(#fhs4xivbff7j0)" height="47.9375" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="307" x="254" y="740.4219"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="6" x="264" y="761.5605">"</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="281" x="270" y="761.5605">mvn serenity:aggregate serenity:reports</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="154" x="330.5" y="775.5293">create a local test report"</text><polygon fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" points="350,815.8906,465,815.8906,477,827.8906,465,839.8906,350,839.8906,338,827.8906,350,815.8906" style="stroke:#808080;stroke-width:1.5;"/><text fill="#333333" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="115" x="350" y="831.6987">all steps successful?</text><text fill="#008000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="20" x="290" y="825.2964">yes</text><text fill="#008000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="14" x="505" y="825.2964">no</text><rect fill="#98FB98" filter="url(#fhs4xivbff7j0)" height="75.875" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="339" x="64" y="849.8906"/><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="144" x="161.5" y="871.0293">mvn assembly:single</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="194" x="138.5" y="884.998">creates a ZIP archive containing</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="259" x="104" y="898.9668">all relevant data, the TITUS platform needs</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="319" x="74" y="912.9355">to perfomr the next steps in the certification process</text><rect fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" height="61.9063" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="245" x="111" y="960.7656"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="225" x="121" y="981.9043">The ZIP archive is uploaded manually</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="212" x="127.5" y="995.873">by the Primärsystem manufacturer</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="130" x="168.5" y="1009.8418">to the TITUS platform</text><rect fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" height="47.9375" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="253" x="107" y="1042.6719"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="122" x="172.5" y="1063.8105">The next step in the</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="233" x="117" y="1077.7793">certification process can be performed</text><ellipse cx="233.5" cy="1120.6094" fill="#FFFFFF" filter="url(#fhs4xivbff7j0)" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;"/><line style="stroke:#808080;stroke-width:2.5;" x1="227.3128" x2="239.6872" y1="1114.4222" y2="1126.7966"/><line style="stroke:#808080;stroke-width:2.5;" x1="239.6872" x2="227.3128" y1="1114.4222" y2="1126.7966"/><rect fill="#98FB98" filter="url(#fhs4xivbff7j0)" height="33.9688" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="317" x="423" y="849.8906"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="297" x="433" y="871.0293">The local test report contains detailed failure logs</text><rect fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" height="47.9375" rx="10" ry="10" style="stroke:#808080;stroke-width:1.5;" width="288" x="437.5" y="918.8594"/><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="268" x="447.5" y="939.998">Primärsystem manufacturer adapts his code</text><text fill="#333333" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="127" x="518" y="953.9668">to address the issues</text><polygon fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" points="407.5,383.7031,419.5,395.7031,407.5,407.7031,395.5,395.7031,407.5,383.7031" style="stroke:#808080;stroke-width:1.5;"/><polygon fill="#FFFFF0" filter="url(#fhs4xivbff7j0)" points="382,1150.6094,433,1150.6094,445,1162.6094,433,1174.6094,382,1174.6094,370,1162.6094,382,1150.6094" style="stroke:#808080;stroke-width:1.5;"/><text fill="#333333" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="51" x="382" y="1166.4175">next try?</text><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="105.9219" y2="125.9219"/><polygon fill="#90EE90" points="403.5,115.9219,407.5,125.9219,411.5,115.9219,407.5,119.9219" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="159.8906" y2="179.8906"/><polygon fill="#90EE90" points="403.5,169.8906,407.5,179.8906,411.5,169.8906,407.5,173.8906" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="227.8281" y2="247.8281"/><polygon fill="#90EE90" points="403.5,237.8281,407.5,247.8281,411.5,237.8281,407.5,241.8281" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="295.7656" y2="315.7656"/><polygon fill="#90EE90" points="403.5,305.7656,407.5,315.7656,411.5,305.7656,407.5,309.7656" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="283.5" x2="283.5" y1="625.4531" y2="660.4531"/><polygon fill="#90EE90" points="279.5,650.4531,283.5,660.4531,287.5,650.4531,283.5,654.4531" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="283.5" x2="283.5" y1="515.6094" y2="535.6094"/><polygon fill="#90EE90" points="279.5,525.6094,283.5,535.6094,287.5,525.6094,283.5,529.6094" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="593.5" x2="593.5" y1="515.6094" y2="570.0938"/><polygon fill="#90EE90" points="589.5,560.0938,593.5,570.0938,597.5,560.0938,593.5,564.0938" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="283.5" x2="283.5" y1="694.4219" y2="714.4219"/><polygon fill="#90EE90" points="279.5,704.4219,283.5,714.4219,287.5,704.4219,283.5,708.4219" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="593.5" x2="593.5" y1="659.9375" y2="714.4219"/><polygon fill="#90EE90" points="589.5,704.4219,593.5,714.4219,597.5,704.4219,593.5,708.4219" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="489.6094" y2="509.6094"/><polygon fill="#90EE90" points="403.5,499.6094,407.5,509.6094,411.5,499.6094,407.5,503.6094" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="720.4219" y2="740.4219"/><polygon fill="#90EE90" points="403.5,730.4219,407.5,740.4219,411.5,730.4219,407.5,734.4219" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="233.5" x2="233.5" y1="925.7656" y2="960.7656"/><polygon fill="#90EE90" points="229.5,950.7656,233.5,960.7656,237.5,950.7656,233.5,954.7656" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="233.5" x2="233.5" y1="1022.6719" y2="1042.6719"/><polygon fill="#90EE90" points="229.5,1032.6719,233.5,1042.6719,237.5,1032.6719,233.5,1036.6719" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="233.5" x2="233.5" y1="1090.6094" y2="1110.6094"/><polygon fill="#90EE90" points="229.5,1100.6094,233.5,1110.6094,237.5,1100.6094,233.5,1104.6094" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="581.5" x2="581.5" y1="883.8594" y2="918.8594"/><polygon fill="#90EE90" points="577.5,908.8594,581.5,918.8594,585.5,908.8594,581.5,912.8594" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="338" x2="233.5" y1="827.8906" y2="827.8906"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="233.5" x2="233.5" y1="827.8906" y2="849.8906"/><polygon fill="#90EE90" points="229.5,839.8906,233.5,849.8906,237.5,839.8906,233.5,843.8906" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="477" x2="581.5" y1="827.8906" y2="827.8906"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="581.5" x2="581.5" y1="827.8906" y2="849.8906"/><polygon fill="#90EE90" points="577.5,839.8906,581.5,849.8906,585.5,839.8906,581.5,843.8906" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="581.5" x2="581.5" y1="966.7969" y2="1135.6094"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="581.5" x2="407.5" y1="1135.6094" y2="1135.6094"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="1135.6094" y2="1150.6094"/><polygon fill="#90EE90" points="403.5,1140.6094,407.5,1150.6094,411.5,1140.6094,407.5,1144.6094" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="788.3594" y2="815.8906"/><polygon fill="#90EE90" points="403.5,805.8906,407.5,815.8906,411.5,805.8906,407.5,809.8906" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="407.7031" y2="427.7031"/><polygon fill="#90EE90" points="403.5,417.7031,407.5,427.7031,411.5,417.7031,407.5,421.7031" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="445" x2="754" y1="1162.6094" y2="1162.6094"/><polygon fill="#90EE90" points="750,795.8906,754,785.8906,758,795.8906,754,791.8906" style="stroke:#90EE90;stroke-width:1.5;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="754" x2="754" y1="395.7031" y2="1162.6094"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="754" x2="419.5" y1="395.7031" y2="395.7031"/><polygon fill="#90EE90" points="429.5,391.7031,419.5,395.7031,429.5,399.7031,425.5,395.7031" style="stroke:#90EE90;stroke-width:1.0;"/><line style="stroke:#90EE90;stroke-width:1.5;" x1="407.5" x2="407.5" y1="363.7031" y2="383.7031"/><polygon fill="#90EE90" points="403.5,373.7031,407.5,383.7031,411.5,373.7031,407.5,377.7031" style="stroke:#90EE90;stroke-width:1.0;"/><!--MD5=[77f7c0c4d3547d017831eca4d2e2607c]
+@startuml
+
+!include plantuml.style
+
+title Tiger EAU Konnektorfarm process
+
+start
+
+:Installation of openJDK11 and maven.;
+
+:Cloning github repo https://github.com/gematik/tiger-eau-proxy.git\ninto a folder on the customers machine.;
+
+
+#palegreen:starting Tiger validation suite via\n**mvn -P Test **;
+
+#palegreen:Tiger test environment manager starts all\nTiger proxies (reverse, aggregating, local) will be started.;
+
+repeat
+    #palegreen:The validation feature file\npart of the github repo will be started\n        waiting for the first request.;
+
+    fork
+        :The Primärsystem sends requests to the Konnektoren\nvia the local reverse Tiger proxies.\nIt follows either manually by human tester or\nvia test scripts the test work flow\nas specified by Gematik.;
+
+        :The test work flow has been completed or aborted;
+
+    fork again
+        #palegreen:The validation test suite checks\nthat all requests and responses,\nmatching the specified work flow\nhave been received in order\nand do match all criteria.;
+    end fork
+
+    #palegreen:"**mvn serenity:aggregate serenity:reports**\ncreate a local test report";
+
+    if (all steps successful?) then (yes       )
+
+        #palegreen:**mvn assembly:single**\n creates a ZIP archive containing\nall relevant data, the TITUS platform needs\nto perfomr the next steps in the certification process;
+
+        :The ZIP archive is uploaded manually\nby the Primärsystem manufacturer\nto the TITUS platform;
+
+        :The next step in the\ncertification process can be performed;
+
+        end
+    else (       no)
+        #palegreen:The local test report contains detailed failure logs;
+
+        :Primärsystem manufacturer adapts his code\nto address the issues;
+    endif
+repeat while (next try?)
+
+
+@enduml
+
+@startuml
+
+<style>
+root {
+    Margin 30
+    BackgroundColor #fffff0
+    RoundCorner 20
+    FontColor #333
+    LineColor Gray
+    BorderColor Gray
+    HorizontalAlignment center
+    ImagePosition center
+}
+
+title {
+  FontSize 30
+  Margin 0
+  Padding 10 100
+  BackgroundColor White
+}
+
+arrow {
+    LineColor LightGreen
+    FontColor Green
+    LineThickness 2
+}
+
+.Package {
+    BackGroundColor White
+}
+
+.Rect {
+    LineColor Blue
+}
+
+.Tiger {
+    BackgroundColor LightGreen
+    FontColor Green
+    LineColor Green
+}
+
+.Other {
+    BackgroundColor LightSkyBlue
+    LineColor Blue
+}
+
+.NextRelease  {
+    BackgroundColor LightGray
+    FontColor Gray
+    LineColor Gray
+}
+
+interface {
+    FontColor DarkGreen
+}
+
+.HTTP {
+    LineColor Red
+    FontColor Red
+    LineThickness 2
+}
+
+.HTTP2 {
+    LineColor transparent
+}
+
+
+.Current {
+  BackgroundColor White
+  FontColor DarkRed
+}
+
+
+
+.File {
+    LineColor SlateBlue
+    BackgroundColor LightSkyBlue
+    FontColor SlateBlue
+}
+
+.Folder {
+    FontColor Gray
+    BackgroundColor White
+}
+</style>
+
+title Tiger EAU Konnektorfarm process
+
+start
+
+:Installation of openJDK11 and maven.;
+
+:Cloning github repo https://github.com/gematik/tiger-eau-proxy.git\ninto a folder on the customers machine.;
+
+
+#palegreen:starting Tiger validation suite via\n**mvn -P Test **;
+
+#palegreen:Tiger test environment manager starts all\nTiger proxies (reverse, aggregating, local) will be started.;
+
+repeat
+    #palegreen:The validation feature file\npart of the github repo will be started\n        waiting for the first request.;
+
+    fork
+        :The Primärsystem sends requests to the Konnektoren\nvia the local reverse Tiger proxies.\nIt follows either manually by human tester or\nvia test scripts the test work flow\nas specified by Gematik.;
+
+        :The test work flow has been completed or aborted;
+
+    fork again
+        #palegreen:The validation test suite checks\nthat all requests and responses,\nmatching the specified work flow\nhave been received in order\nand do match all criteria.;
+    end fork
+
+    #palegreen:"**mvn serenity:aggregate serenity:reports**\ncreate a local test report";
+
+    if (all steps successful?) then (yes       )
+
+        #palegreen:**mvn assembly:single**\n creates a ZIP archive containing\nall relevant data, the TITUS platform needs\nto perfomr the next steps in the certification process;
+
+        :The ZIP archive is uploaded manually\nby the Primärsystem manufacturer\nto the TITUS platform;
+
+        :The next step in the\ncertification process can be performed;
+
+        end
+    else (       no)
+        #palegreen:The local test report contains detailed failure logs;
+
+        :Primärsystem manufacturer adapts his code\nto address the issues;
+    endif
+repeat while (next try?)
+
+
+@enduml
+
+PlantUML version 1.2021.11(Sat Oct 02 15:26:11 CEST 2021)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.gematik.test.tiger.examples</groupId>
+    <artifactId>TigerTestBDD</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+
+        <!-- please adapt Tiger version property to the most current one obtained from -->
+        <!-- maven central:
+          https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
+          or from gematik internal Nexus
+          https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
+        -->
+        <version.tiger>0.19.1</version.tiger>
+        <version.serenity.core>3.1.16</version.serenity.core>
+        <version.serenity.maven.plugin>3.1.16</version.serenity.maven.plugin>
+    </properties>
+
+    <!-- tag::dependencies[] -->
+    <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-test-lib</artifactId>
+            <version>${version.tiger}</version>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-test-lib</artifactId>
+            <version>${version.tiger}</version>
+        </dependency>
+        <!-- Optional if you have JUnit5 dependencies
+        but use JUnit4 for your driver classes
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>5.8.2</version>
+        </dependency>
+        -->
+        <!-- needed for the JUnit driver class @CucumberOptions annotation -->
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-cucumber</artifactId>
+            <version>${version.serenity.core}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <!-- end::dependencies[] -->
+
+    <build>
+        <plugins>
+            <!-- tag::generator-plugin[] -->
+            <!-- optional plugin to dynamically create JUnit driver classes on the fly.
+            You may omit this plugin if you have written your driver classes manually.
+            -->
+            <plugin>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+                <version>${version.tiger}</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <skip>false</skip>
+                            <!-- optional, defaults to the templated located at
+                            /src/main/resources/driverClassTemplate.jtmpl
+                            in the tiger-driver-generator-maven-plugin module.
+                            Use separate template file if you have spring boot apps to test
+                            or need to do some more fancy set up stuff.
+                            <templateFile>${project.basedir}/..../XXXX.jtmpl</templateFile>
+                            -->
+                            <!-- optional -->
+                            <basedir>${project.basedir}/src/test/resources/features</basedir>
+                            <!-- mandatory -->
+                            <includes>
+                                <include>**/*.feature</include>
+                            </includes>
+                            <!-- mandatory -->
+                            <glues>
+                                <glue>de.gematik.test.tiger.hooks</glue>
+                                <glue>de.gematik.test.tiger.glue</glue>
+                                <!-- add your packages here -->
+                            </glues>
+                            <!-- optional -->
+                            <driverPackage>
+                                de.gematik.test.tiger.examples.bdd.drivers
+                            </driverPackage>
+                            <!-- optional -->
+                            <!--suppress UnresolvedMavenProperty -->
+                            <driverClassName>Parallel${ctr}IT</driverClassName>
+                        </configuration>
+                        <phase>generate-test-sources</phase>
+                        <id>default-testSources</id>
+                        <goals>
+                            <goal>generate-drivers</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- end::generator-plugin[] -->
+
+            <!-- tag::surefire-plugin[] -->
+            <!-- Runs the tests by calling the JUnit driver classes -->
+            <!-- To filter features / scenarios use the system property
+                 -Dcucumber.filter.tags -->
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <includes>
+                        <!-- adapt to the class names of your driver classes -->
+                        <include>**/Parallel*IT.java</include>
+                    </includes>
+                    <!-- on purpose, to ensure the serenity plugin is called afterwards.
+                    It's check goal wil bail out in case of test failures,
+                    AFTER the serenity report has been generated -->
+                    <testFailureIgnore>true</testFailureIgnore>
+                </configuration>
+            </plugin>
+            <!-- end::surefire-plugin[] -->
+
+            <!-- tag::serenity-plugin[] -->
+            <!-- Creates the SerenityBDD test report and
+                 fails the build if there were test failures -->
+            <plugin>
+                <groupId>net.serenity-bdd.maven.plugins</groupId>
+                <artifactId>serenity-maven-plugin</artifactId>
+                <version>${version.serenity.maven.plugin}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.serenity-bdd</groupId>
+                        <artifactId>serenity-core</artifactId>
+                        <version>${version.serenity.core}</version>
+                    </dependency>
+                    <!-- Optional if you want to also have a single HTML page mailable report
+                    -->
+                    <dependency>
+                        <groupId>net.serenity-bdd</groupId>
+                        <artifactId>serenity-single-page-report</artifactId>
+                        <version>${version.serenity.core}</version>
+                    </dependency>
+                </dependencies>
+                <!-- Optional if you want to also have a single HTML page mailable report -->
+                <configuration>
+                    <reports>single-page-html</reports>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>serenity-reports</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>aggregate</goal>
+                            <goal>reports</goal>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- end::serenity-plugin[] -->
+        </plugins>
+    </build>
+</project>
