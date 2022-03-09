@@ -84,7 +84,7 @@ pipeline {
     post {
         always {
             sendEMailNotification(getTigerEMailList())
-            showJUnitAsXUnitResult()
+            showJUnitAsXUnitResult("**/target/*-reports/TEST-*.xml")
         }
     }
 }

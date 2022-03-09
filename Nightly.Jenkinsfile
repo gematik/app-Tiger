@@ -68,7 +68,7 @@ pipeline {
     post {
         always {
             sendEMailNotification(getTigerEMailList())
-            showJUnitAsXUnitResult()
+            showJUnitAsXUnitResult("**/target/*-reports/TEST-*.xml")
             archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-admin/target/site/serenity/**/*', fingerprint: false
             publishHTML (target: [
                 allowMissing: false,
