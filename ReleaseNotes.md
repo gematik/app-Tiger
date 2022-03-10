@@ -5,6 +5,7 @@
 ## Bugfix
 
 * TGR-424: Disabled Rbel-Parsing will no longer impact traffic forwarding
+* TGR-427: JSON-Checker now correctly reports mismatched types and ill-formatted JSONs
 
 ## Features
 
