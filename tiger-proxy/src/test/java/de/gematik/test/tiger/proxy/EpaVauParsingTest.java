@@ -9,10 +9,12 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,21 +30,24 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
     })
 @RequiredArgsConstructor
 @TestConfiguration()
-public class EpaVauParsingTest {
+class EpaVauParsingTest {
 
     @Autowired
     private TigerProxy tigerProxy;
 
     @Test
-    public void shouldAddRecordIdFacetToAllHandshakeMessages() throws IOException {
-        String rawSavedVauMessages = FileUtils.readFileToString(new File("src/test/resources/vauEpa2Flow.rawHttpDump"));
+    // TODO: marmer 10.03.2022 Julian kümmert sich und weiß bescheid. Ticket: TGR-429
+    @Disabled("Julian kümmert sich und weiß bescheid. Ticket: TGR-429")
+    void shouldAddRecordIdFacetToAllHandshakeMessages() throws IOException {
+        final String rawSavedVauMessages = FileUtils.readFileToString(
+            new File("src/test/resources/vauEpa2Flow.rawHttpDump"), StandardCharsets.UTF_8);
         Stream.of(rawSavedVauMessages.split("\n\n"))
             .map(Base64.getDecoder()::decode)
             .forEach(msgBytes -> tigerProxy.getRbelLogger()
                 .getRbelConverter().parseMessage(msgBytes, null, null));
 
         FileUtils.writeStringToFile(new File("target/vauFlow.html"),
-            RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory()));
+            RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory()), StandardCharsets.UTF_8);
 
         assertThat(tigerProxy.getRbelMessages().get(24).findElement("$.body.recordId"))
             .get()

@@ -24,7 +24,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RequiredArgsConstructor
-public class TigerProxyModificationTest {
+class TigerProxyModificationTest {
 
     @Autowired
     private TigerProxy tigerProxy;
@@ -53,19 +53,18 @@ public class TigerProxyModificationTest {
 
     @AfterEach
     public void reset() {
-        tigerRemoteProxyClient.unsubscribe();
         tigerRemoteProxyClient.close();
         tigerRemoteProxyClient.getRbelLogger().getRbelModifier().deleteAllModifications();
         tigerProxy.getRbelLogger().getRbelModifier().deleteAllModifications();
     }
 
     @Test
-    public void addModification_shouldWork() {
-        RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
+    void addModification_shouldWork() {
+        final RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
             .condition("isRequest").targetElement("$.header.user-agent").replaceWith("modified user-agent").build();
         tigerRemoteProxyClient.addModificaton(modificationDescription);
 
-        RbelModificationDescription modification = tigerProxy.getRbelLogger()
+        final RbelModificationDescription modification = tigerProxy.getRbelLogger()
             .getRbelModifier().getModifications().get(0);
 
         assertThat(modification.getCondition()).isEqualTo("isRequest");
@@ -75,9 +74,9 @@ public class TigerProxyModificationTest {
     }
 
     @Test
-    public void getModifications_shouldGiveAllModifications() {
-        RbelModificationDescription modification1 = RbelModificationDescription.builder().name("test1").build();
-        RbelModificationDescription modification2 = RbelModificationDescription.builder().name("test2").build();
+    void getModifications_shouldGiveAllModifications() {
+        final RbelModificationDescription modification1 = RbelModificationDescription.builder().name("test1").build();
+        final RbelModificationDescription modification2 = RbelModificationDescription.builder().name("test2").build();
 
         tigerRemoteProxyClient.addModificaton(modification1);
         tigerRemoteProxyClient.addModificaton(modification2);
@@ -88,11 +87,11 @@ public class TigerProxyModificationTest {
     }
 
     @Test
-    public void deleteModification_shouldWork() {
-        RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
+    void deleteModification_shouldWork() {
+        final RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
             .condition("isRequest").targetElement("$.header.user-agent").replaceWith("modified user-agent").name("blub")
             .build();
-        String modificationName = tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
+        final String modificationName = tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
 
         assertThat(modificationName).isEqualTo("blub");
 
@@ -103,10 +102,10 @@ public class TigerProxyModificationTest {
     }
 
     @Test
-    public void deleteModificationWithoutName_shouldWork() {
-        RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
+    void deleteModificationWithoutName_shouldWork() {
+        final RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
             .condition("isRequest").targetElement("$.header.user-agent").replaceWith("modified user-agent").build();
-        String modificationName = tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
+        final String modificationName = tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
 
         assertThat(modificationName).isNotNull();
 

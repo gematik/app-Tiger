@@ -57,6 +57,8 @@
                             <glues>
                                 <glue>de.gematik.test.tiger.hooks</glue>
                                 <glue>de.gematik.test.tiger.glue</glue>
+                                <!-- custom -->
+                                <glue>de.gematik.test.tiger.integration.example</glue>
                             </glues>
                             <driverPackage>
                                 de.gematik.test.tiger.examples.bdd.drivers
@@ -72,14 +74,50 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
+                <!-- FIXME: marmer 10.03.2022 Fieser Hack, mus weg (mit tiger-testenv-yml -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.jenkins-ci</groupId>
+                                    <artifactId>winstone</artifactId>
+                                    <version>5.24</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <destFileName>winstone.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
                     <includes>
                         <include>**/Parallel*IT.java</include>
                     </includes>
-                    <testFailureIgnore>true</testFailureIgnore>
+                    <testFailureIgnore>false</testFailureIgnore>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
@@ -112,34 +150,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <artifactItems>
-                        <artifactItem>
-                            <groupId>org.jenkins-ci</groupId>
-                            <artifactId>winstone</artifactId>
-                            <version>4.1</version>
-                            <type>jar</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <destFileName>winstone.jar</destFileName>
-                        </artifactItem>
-                    </artifactItems>
-                </configuration>
-            </plugin>
-            <!-- We must generate a -javadoc JAR file to publish on Maven Central -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
