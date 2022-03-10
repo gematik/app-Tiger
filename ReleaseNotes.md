@@ -1,5 +1,11 @@
 # Changelog Tiger Testplattform
 
+# Release 0.19.4
+
+## Bugfix
+
+* TGR-424: Disabled Rbel-Parsing will no longer impact traffic forwarding
+
 # Release 0.19.3
 
 ## Bugfix

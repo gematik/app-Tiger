@@ -58,7 +58,6 @@ public class TracingPushController {
 
     private void propagateRbelMessage(RbelElement msg) {
         if (!msg.hasFacet(RbelHttpResponseFacet.class)
-            || !msg.hasFacet(RbelHttpMessageFacet.class)
             || !msg.hasFacet(RbelTcpIpMessageFacet.class)) {
             log.trace("Skipping propagation, not a response");
             return;
