@@ -6,6 +6,10 @@
 
 * TGR-424: Disabled Rbel-Parsing will no longer impact traffic forwarding
 
+## Features
+
+* TGR-414: Add an example project for the use of tiger
+
 # Release 0.19.3
 
 ## Bugfix

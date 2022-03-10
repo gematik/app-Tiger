@@ -9,7 +9,7 @@ def TITLE_TEXT = 'Release'
 def GROUP_ID_PATH = "de/gematik/test"
 def GROUP_ID = "de.gematik.test"
 def ARTIFACT_ID = 'tiger-testenv-mgr'
-def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-bdd-driver-generator-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib'
+def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-bdd-driver-generator-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib,tiger-integration-example'
 def POM_PATH = 'pom.xml'
 def PACKAGING = "jar"
 

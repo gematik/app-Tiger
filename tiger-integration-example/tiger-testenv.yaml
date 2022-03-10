@@ -1,0 +1,12 @@
+servers:
+  winstone:
+    hostname: winstone
+    source:
+      - https://repo.jenkins-ci.org/incrementals/org/jenkins-ci/winstone/5.24-rc690.c7f2ccfd4a_e7/winstone-5.24-rc690.c7f2ccfd4a_e7.jar
+    type: externalJar
+    externalJarOptions:
+      healthcheck: http://localhost:${free.port.0}
+      workingDir: target/
+      arguments:
+        - --httpPort=${free.port.0}
+        - --webroot=.
