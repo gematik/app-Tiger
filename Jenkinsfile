@@ -42,9 +42,7 @@ pipeline {
         stage('Test') {
             steps {
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    dockerLogin()
                     mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PNoLongrunner")
-                    dockerLogout()
                 }
             }
         }

@@ -460,7 +460,6 @@ public class TigerProxy extends AbstractTigerProxy {
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             TrustManager[] trustManagers = tmf.getTrustManagers();
-            log.info("our trust managers: " + trustManagers);
             sslContext.init(null, trustManagers, null);
 
             HttpClient httpClient = HttpClients.custom()
