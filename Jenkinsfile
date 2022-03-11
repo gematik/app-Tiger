@@ -42,14 +42,14 @@ pipeline {
         stage('Test') {
             steps {
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PNoLongrunner")
+                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -P=NoLongrunner,dev")
                 }
             }
         }
 
         stage('Sonar') {
             when {
-                not { 
+                not {
                     branch BRANCH
                 }
             }

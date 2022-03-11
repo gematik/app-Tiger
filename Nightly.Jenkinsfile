@@ -43,7 +43,7 @@ pipeline {
         stage('Test') {
             steps {
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithLongrunner")
+                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -P=WithLongrunner,dev")
                 }
             }
         }
@@ -53,7 +53,7 @@ pipeline {
                 mavenOwaspScan(POM_PATH)
             }
         }
-        
+
         stage('Sonar') {
              environment {
                 BRANCH_NAME = "${BRANCH}"
