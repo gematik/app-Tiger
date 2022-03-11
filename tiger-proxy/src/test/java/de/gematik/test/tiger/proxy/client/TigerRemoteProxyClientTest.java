@@ -296,7 +296,8 @@ public class TigerRemoteProxyClientTest {
 
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         filteredTigerProxy.addRbelMessageListener(message -> {
-            if (message.getFacetOrFail(RbelHttpRequestFacet.class)
+            if (message.hasFacet(RbelHttpRequestFacet.class)
+                && message.getFacetOrFail(RbelHttpRequestFacet.class)
                 .getPath().getRawStringContent().endsWith("faa")) {
                 // this ensures we only leave the wait after the /faa call
                 listenerCallCounter.incrementAndGet();
