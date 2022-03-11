@@ -68,4 +68,19 @@ class EpaVauParsingTest {
             .extracting(RbelElement::getRawStringContent)
             .isEqualTo("X114428539");
     }
+
+    @Test
+    void verifyRiseTraffic() {
+        var tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .fileSaveInfo(TigerFileSaveInfo.builder()
+                .sourceFile("src/test/resources/rise-vau-log.tgr")
+                .build())
+            .activateVauAnalysis(true)
+            .build());
+
+        assertThat(tigerProxy.getRbelMessages().get(15).findElement("$.body.recordId"))
+            .get()
+            .extracting(RbelElement::getRawStringContent)
+            .isEqualTo("Y243631459");
+    }
 }

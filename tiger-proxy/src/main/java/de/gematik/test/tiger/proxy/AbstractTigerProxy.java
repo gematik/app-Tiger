@@ -80,7 +80,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
             .build();
         final RbelKey rbelPrivateVauKey = RbelKey.builder()
             .keyName("fixVauKey_public")
-            .key(keyPair.getPublic())
+            .key(keyPair.getPrivate())
             .precedence(0)
             .matchingPublicKey(rbelPublicVauKey)
             .build();
