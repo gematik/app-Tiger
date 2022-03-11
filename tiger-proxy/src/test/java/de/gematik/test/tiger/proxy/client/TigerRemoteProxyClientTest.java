@@ -15,6 +15,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
@@ -94,6 +95,9 @@ public class TigerRemoteProxyClientTest {
         remoteServer.getWireMock().register(post("/foo")
             .willReturn(aResponse()
                 .withBody("bar")));
+        remoteServer.getWireMock().register(get("/")
+            .willReturn(aResponse()
+                .withBody("emptyPath!!!")));
 
         log.info("Configuring routes...");
         try {
@@ -119,6 +123,7 @@ public class TigerRemoteProxyClientTest {
         tigerRemoteProxyClient.unsubscribe();
         tigerRemoteProxyClient.close();
         tigerProxy.clearAllRoutes();
+        tigerProxy.getRbelLogger().getMessageHistory().clear();
         log.info("Messages {}", tigerProxy.getRbelMessages().size());
         tigerRemoteProxyClient = null;
         unirestInstance.shutDown();
@@ -284,6 +289,23 @@ public class TigerRemoteProxyClientTest {
         await()
             .atMost(2, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
+    }
+
+    @Test
+    public void requestToBaseUrl_shouldBeForwarded() {
+        AtomicInteger listenerCallCounter = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+
+        unirestInstance.get("http://myserv.er").asString();
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> listenerCallCounter.get() > 0);
+
+        assertThat(tigerRemoteProxyClient.getRbelMessages().get(0).findElement("$.path"))
+            .get()
+            .extracting(RbelElement::getRawStringContent)
+            .isEqualTo("/");
     }
 
     @Test

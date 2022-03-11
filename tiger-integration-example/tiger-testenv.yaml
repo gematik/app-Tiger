@@ -1,3 +1,11 @@
+remoteTigerProxyPort: ${free.port.1}
+remoteTigerServerPort: ${free.port.2}
+
+tigerProxy:
+  skipTrafficEndpointsSubscription: true
+  trafficEndpoints:
+    - http://localhost:${free.port.2}
+
 servers:
   winstone:
     hostname: winstone
@@ -10,3 +18,16 @@ servers:
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.
+
+  remoteTigerProxy:
+    type: tigerProxy
+    tigerProxyCfg:
+      serverPort: ${tiger.remoteTigerServerPort}
+      proxyCfg:
+        activateRbelParsing: false
+        rbelBufferSizeInMb: 0
+        port: ${tiger.remoteTigerProxyPort}
+        proxyRoutes:
+          - from: http://winstone
+            to: http://localhost:${free.port.0}
+            disableRbelLogging: false

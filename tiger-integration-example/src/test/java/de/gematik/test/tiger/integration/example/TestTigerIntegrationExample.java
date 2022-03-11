@@ -6,6 +6,7 @@ package de.gematik.test.tiger.integration.example;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import io.cucumber.java.en.When;
 import kong.unirest.HttpResponse;
@@ -17,10 +18,12 @@ public class TestTigerIntegrationExample {
 
   @When("User requests the startpage")
   public void userRequestsStartpage() {
-    Unirest.config()
-        .proxy("127.0.0.1", TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getPort());
-    final String url = "http://winstone";
-    final HttpResponse<String> httpResponse = Unirest.get(url).asString();
+    var rest = Unirest.spawnInstance();
+    rest.config().proxy("127.0.0.1",
+        TigerGlobalConfiguration.readIntegerOptional("free.port.1")
+            .orElseThrow());
+
+    final HttpResponse<String> httpResponse = rest.get("http://winstone").asString();
 
     assertNotNull(httpResponse);
     assertEquals("Response code not 200", 200, httpResponse.getStatus());
