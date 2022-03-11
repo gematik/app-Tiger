@@ -6,21 +6,28 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
+import de.gematik.rbellogger.util.RbelFileWriterUtils;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
+import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Data
@@ -46,6 +53,22 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         }
         addFixVauKey();
         this.tigerProxyConfiguration = configuration;
+        if (configuration.getFileSaveInfo() != null
+            && StringUtils.isNotEmpty(configuration.getFileSaveInfo().getSourceFile())) {
+            readTrafficFromSourceFile(configuration.getFileSaveInfo().getSourceFile());
+        }
+    }
+
+    protected void readTrafficFromSourceFile(String sourceFile) {
+        try {
+            log.info("Trying to read traffic from file '{}'...", sourceFile);
+            RbelFileWriterUtils.convertFromRbelFile(Files.readString(
+                Path.of(sourceFile), StandardCharsets.UTF_8
+            ), getRbelLogger().getRbelConverter());
+            log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
+        } catch (IOException e) {
+            throw new TigerProxyStartupException("Error while reading from file '" + sourceFile + "'", e);
+        }
     }
 
     private void addFixVauKey() {
@@ -68,12 +91,15 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
         final RbelConfiguration rbelConfiguration = new RbelConfiguration();
         if (configuration.getKeyFolders() != null) {
-            configuration.getKeyFolders().forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
+            configuration.getKeyFolders()
+                .forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
         }
         if (configuration.isActivateVauAnalysis()) {
             rbelConfiguration.addPostConversionListener(new RbelVauSessionListener());
         }
-        rbelConfiguration.setFileSaveInfo(configuration.getFileSaveInfo());
+        rbelConfiguration.setFileSaveInfo(Optional.ofNullable(configuration.getFileSaveInfo())
+            .map(TigerFileSaveInfo::toRbelFileSaveInfo)
+            .orElse(null));
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
         return rbelConfiguration;
     }

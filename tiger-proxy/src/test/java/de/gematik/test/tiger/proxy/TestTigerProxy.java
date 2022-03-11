@@ -403,7 +403,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .from("http://backend")
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
-            .fileSaveInfo(RbelFileSaveInfo.builder()
+            .fileSaveInfo(TigerFileSaveInfo.builder()
                 .writeToFile(true)
                 .clearFileOnBoot(true)
                 .filename(filename)
@@ -422,7 +422,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         final String filename = "target/test-log.tgr";
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .activateForwardAllLogging(true)
-            .fileSaveInfo(RbelFileSaveInfo.builder()
+            .fileSaveInfo(TigerFileSaveInfo.builder()
                 .writeToFile(true)
                 .clearFileOnBoot(true)
                 .filename(filename)

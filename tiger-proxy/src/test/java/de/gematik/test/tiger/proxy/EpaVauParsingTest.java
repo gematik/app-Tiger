@@ -5,12 +5,16 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
@@ -22,29 +26,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {
-        "tigerProxy.activateVauAnalysis = true",
-        "tigerProxy.keyFolders.0 = src/test/resources"
-    })
-@RequiredArgsConstructor
-@TestConfiguration()
 class EpaVauParsingTest {
 
-    @Autowired
-    private TigerProxy tigerProxy;
-
     @Test
-    // TODO: marmer 10.03.2022 Julian kümmert sich und weiß bescheid. Ticket: TGR-429
-    @Disabled("Julian kümmert sich und weiß bescheid. Ticket: TGR-429")
     void shouldAddRecordIdFacetToAllHandshakeMessages() throws IOException {
-        final String rawSavedVauMessages = FileUtils.readFileToString(
-            new File("src/test/resources/vauEpa2Flow.rawHttpDump"), StandardCharsets.UTF_8);
-        Stream.of(rawSavedVauMessages.split("\n\n"))
-            .map(Base64.getDecoder()::decode)
-            .forEach(msgBytes -> tigerProxy.getRbelLogger()
-                .getRbelConverter().parseMessage(msgBytes, null, null));
+        var tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+            .fileSaveInfo(TigerFileSaveInfo.builder()
+                .sourceFile("src/test/resources/vauEpa2Flow.tgr")
+                .build())
+            .keyFolders(List.of("src/test/resources"))
+            .activateVauAnalysis(true)
+            .build());
 
         FileUtils.writeStringToFile(new File("target/vauFlow.html"),
             RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory()), StandardCharsets.UTF_8);

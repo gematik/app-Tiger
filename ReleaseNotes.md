@@ -12,6 +12,7 @@
 ## Features
 
 * TGR-414: Add an example project for the use of tiger
+* TGR-431: Tiger can now also read traffic-files on startup
 
 # Release 0.19.3
 
