@@ -82,7 +82,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
-        <version.rbellogger>0.22.3</version.rbellogger>
+        <version.rbellogger>0.23</version.rbellogger>
         <version.cucumber>6.11.0</version.cucumber>
         <version.serenity.core>3.2.0</version.serenity.core>
         <version.serenity.maven.plugin>3.2.0</version.serenity.maven.plugin>
