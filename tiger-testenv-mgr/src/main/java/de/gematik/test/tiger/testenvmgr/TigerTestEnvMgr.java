@@ -41,7 +41,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
-    private static final String TIGER_TESTENV_YAML_FILENAME = "tiger-testenv.yaml";
     private final Configuration configuration;
     private final DockerMgr dockerManager;
     private final Map<String, Object> environmentVariables;
@@ -56,20 +55,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         dockerManager = new DockerMgr();
 
-        if (configuration.getTigerProxy() == null) {
-            configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
-        }
-        TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
-        if (proxyConfig.getProxyRoutes() == null) {
-            proxyConfig.setProxyRoutes(List.of());
-        }
-        if (proxyConfig.getTls().getServerRootCa() == null) {
-            proxyConfig.getTls().setServerRootCa(new TigerConfigurationPkiIdentity(
-                "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
-        }
-        localTigerProxy = new TigerProxy(configuration.getTigerProxy());
+        localTigerProxy = startLocalTigerProxy(configuration);
+
         if (configuration.isLocalProxyActive()) {
-            log.info("Started local docker tiger proxy on port " + localTigerProxy.getPort() + "...");
+            log.info("Started local tiger proxy on port " + localTigerProxy.getPort() + "...");
             environmentVariables = new HashMap<>(
                 Map.of("PROXYHOST", "host.docker.internal",
                     "PROXYPORT", localTigerProxy.getPort()));
@@ -82,6 +71,24 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         createServerObjects();
 
         log.info("Tiger Testenv mgr created OK");
+    }
+
+    private TigerProxy startLocalTigerProxy(Configuration configuration) {
+        final TigerProxy localTigerProxy;
+        if (configuration.getTigerProxy() == null) {
+            configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
+        }
+        TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
+        proxyConfig.setSkipTrafficEndpointsSubscription(true);
+        if (proxyConfig.getProxyRoutes() == null) {
+            proxyConfig.setProxyRoutes(List.of());
+        }
+        if (proxyConfig.getTls().getServerRootCa() == null) {
+            proxyConfig.getTls().setServerRootCa(new TigerConfigurationPkiIdentity(
+                "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
+        }
+        localTigerProxy = new TigerProxy(configuration.getTigerProxy());
+        return localTigerProxy;
     }
 
     public static void main(String[] args) {
@@ -139,18 +146,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
     }
 
-    private static String getComputerName() {
-        try {
-            return InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            return InetAddress.getLoopbackAddress().getHostName();
-        }
-    }
-
     private static Configuration readConfiguration() {
         TigerGlobalConfiguration.initialize();
         readTemplates();
-        readTestenvYaml();
         final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class,
             "tiger");
         for (CfgServer cfgServer : configuration.getServers().values()) {
@@ -159,32 +157,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             }
         }
         return configuration;
-    }
-
-    private static void readTestenvYaml() {
-        final String configFileLocation = TigerGlobalConfiguration.readString(
-            "TIGER_TESTENV_CFGFILE", "tiger-testenv-" + getComputerName() + ".yaml");
-        var cfgFile = new File(configFileLocation);
-        if (!cfgFile.exists()) {
-            log.warn("Unable to read configuration from {}", cfgFile.getAbsolutePath());
-            cfgFile = new File(TIGER_TESTENV_YAML_FILENAME);
-            if (!cfgFile.exists()
-                && TigerGlobalConfiguration.listSources().stream()
-                .noneMatch(src -> src.getSourceType() == SourceType.YAML)) {
-                throw new TigerEnvironmentStartupException("Could not find configuration-file '" + configFileLocation
-                    + "' or '" + TIGER_TESTENV_YAML_FILENAME + "' fallback");
-            }
-        }
-        if (cfgFile.exists()) {
-            log.info("Reading configuration from {}...", cfgFile.getAbsolutePath());
-            try {
-                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8),
-                    "tiger");
-            } catch (Exception e) {
-                throw new TigerEnvironmentStartupException(
-                    "Error while reading configuration from file '" + cfgFile.getAbsolutePath() + "'", e);
-            }
-        }
     }
 
     private void assertNoCyclesInGraph() {
@@ -236,6 +208,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
         initialServersToBoot.parallelStream()
             .forEach(this::startServer);
+
+        localTigerProxy.subscribeToTrafficEndpoints(configuration.getTigerProxy());
 
         log.info(Ansi.colorize("finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
     }

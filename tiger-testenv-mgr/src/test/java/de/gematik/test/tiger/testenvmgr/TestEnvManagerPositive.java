@@ -8,10 +8,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -19,7 +21,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.util.SocketUtils;
 
 @Slf4j
 @Getter
@@ -35,8 +36,8 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     @ParameterizedTest
     @ValueSource(strings = {"testDocker", "testTigerProxy", "testExternalJar", "testExternalUrl"})
     public void testCheckCfgPropertiesMinimumConfigPasses_OK(String cfgFileName) {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml"));
 
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFileName);
@@ -48,8 +49,8 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     @ParameterizedTest
     @ValueSource(strings = {"testDockerMVP", "testTigerProxy", "testExternalJarMVP", "testExternalUrl"})
     public void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) throws IOException {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml"));
 
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
         createTestEnvMgrSafelyAndExecute(envMgr -> {
@@ -60,8 +61,8 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
     @Test
     public void testHostnameIsAutosetIfMissingK() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testServerWithNoHostname.yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testServerWithNoHostname.yaml"));
 
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
@@ -72,8 +73,8 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
     @Test
     public void testHostnameForDockerComposeNotAllowed_NOK() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testComposeWithHostname.yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testComposeWithHostname.yaml"));
 
         createTestEnvMgrSafelyAndExecute(envMgr ->
             assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerConfigurationException.class));
@@ -86,10 +87,9 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
     @Test
     public void testCreateDockerNonExistingVersion() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDockerMVP.yaml");
-        TigerGlobalConfiguration.putValue("tiger.servers.testDockerMVP.version",
-            "200.200.200-2000");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+                "src/test/resources/de/gematik/test/tiger/testenvmgr/testDockerMVP.yaml",
+            "tiger.servers.testDockerMVP.version", "200.200.200-2000"));
         createTestEnvMgrSafelyAndExecute(envMgr ->
             assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class));
     }
@@ -102,49 +102,60 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     @Test
     @Disabled("TGR-296 tests fail due to proxy on jenkins. issue seems to be ((HttpsURLConnection) con).usingProxy() == false")
     public void testExternalUrlViaProxy() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml");
-        createTestEnvMgrSafelyAndExecute(envMgr -> envMgr.setUpEnvironment());
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml"));
+        createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
     }
-
 
     @ParameterizedTest
     @ValueSource(strings = {"withPkiKeys", "withUrlMappings"})
     public void testExternalUrl_withDetails(String cfgFileName) {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_" + cfgFileName + ".yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_" + cfgFileName + ".yaml"));
         createTestEnvMgrSafelyAndExecute(envMgr -> envMgr.setUpEnvironment());
     }
 
     @Test
-    public void testExternalUrlInternalUrl() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrlInternalServer.yaml");
-
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
-            envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
-            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
-            srv.getSource().set(0, "https://build.top.local");
-            envMgr.setUpEnvironment();
-        });
+    @TigerTest(cfgFilePath = "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrlInternalServer.yaml",
+        skipEnvironmentSetup = true)
+    public void testExternalUrlInternalUrl(TigerTestEnvMgr envMgr) {
+        envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
+        CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
+        srv.getSource().set(0, "https://build.top.local");
+        envMgr.setUpEnvironment();
     }
 
     @Test
-    public void testCreateExternalJarRelativePath() {
-        TigerGlobalConfiguration.readFromYaml("servers:\n"
-            + "  testExternalJarMVP:\n"
-            + "    hostname: testExternalJarMVP\n"
-            + "    type: externalJar\n"
-            + "    source:\n"
-            + "      - local://download\n"
-            + "    workingDir: 'target/'\n"
-            + "    externalJarOptions:\n"
-            + "      arguments:\n"
-            + "        - --httpPort=${free.port.0}\n"
-            + "        - --webroot=.\n"
-            + "      healthcheck: http://127.0.0.1:${free.port.0}\n", "tiger");
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  testExternalJarMVP:\n"
+        + "    type: externalJar\n"
+        + "    source:\n"
+        + "      - local:winstone.jar\n"
+        + "    externalJarOptions:\n"
+        + "      workingDir: 'target/'\n"
+        + "      arguments:\n"
+        + "        - --httpPort=${free.port.0}\n"
+        + "        - --webroot=.\n"
+        + "      healthcheck: http://127.0.0.1:${free.port.0}\n",
+        skipEnvironmentSetup = true)
+    public void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
+        envMgr.setUpEnvironment();
+    }
 
-        createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
+    @Test
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  testExternalJarMVP:\n"
+        + "    type: externalJar\n"
+        + "    source:\n"
+        + "      - local:target/winstone.jar\n"
+        + "    externalJarOptions:\n"
+        + "      arguments:\n"
+        + "        - --httpPort=${free.port.0}\n"
+        + "        - --webroot=.\n"
+        + "      healthcheck: http://127.0.0.1:${free.port.0}\n",
+        skipEnvironmentSetup = true)
+    public void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
+        envMgr.setUpEnvironment();
     }
 
     @Disabled
@@ -171,46 +182,32 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    public void workingDirNotSet_ShouldDefaultToOsTempDirectory() {
-        final Integer port = SocketUtils.findAvailableTcpPorts(1).first();
-        String yamlSource = "testenv:\n" +
-            "   cfgfile: src/test/resources/tiger-testenv.yaml\n" +
-            "servers:\n" +
-            "  externalJarServer:\n" +
-            "    type: externalJar\n" +
-            "    source:\n" +
-            "      - \"http://localhost:${mockserver.port}/download\"\n" +
-            "    externalJarOptions:\n" +
-            "      healthcheck: http://127.0.0.1:" + port + "\n" +
-            "      arguments:\n" +
-            "        - \"--httpPort=" + port + "\"\n" +
-            "        - \"--webroot=.\"\n";
-
-        TigerGlobalConfiguration.readFromYaml(yamlSource, "tiger");
-
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
-            envMgr.setUpEnvironment();
-            final String workingDir = envMgr.getServers().get("externalJarServer")
-                .getConfiguration().getExternalJarOptions().getWorkingDir();
-            assertThat(new File(workingDir))
-                .exists()
-                .isDirectoryContaining(file -> file.getName().equals("download"))
-                .isDirectoryContaining(file -> file.getName().equals("download.dwnProps"));
-        });
+    @TigerTest(tigerYaml = "servers:\n" +
+        "  externalJarServer:\n" +
+        "    type: externalJar\n" +
+        "    source:\n" +
+        "      - \"http://localhost:${mockserver.port}/download\"\n" +
+        "    externalJarOptions:\n" +
+        "      healthcheck: http://127.0.0.1:${free.port.0}\n" +
+        "      arguments:\n" +
+        "        - \"--httpPort=${free.port.0}\"\n" +
+        "        - \"--webroot=.\"\n")
+    public void workingDirNotSet_ShouldDefaultToOsTempDirectory(TigerTestEnvMgr envMgr) {
+        final String workingDir = envMgr.getServers().get("externalJarServer")
+            .getConfiguration().getExternalJarOptions().getWorkingDir();
+        assertThat(new File(workingDir))
+            .exists()
+            .isDirectoryContaining(file -> file.getName().equals("download"))
+            .isDirectoryContaining(file -> file.getName().equals("download.dwnProps"));
     }
 
     @Test
-    public void testCreateExternalJarRelativePathFileNotFound() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
-        TigerGlobalConfiguration.putValue("tiger.servers.testExternalJarMVP.source.0",
-            "local://miniJarWHICHDOESNOTEXIST.jar");
-        TigerGlobalConfiguration.putValue("tiger.servers.testExternalJarMVP.externalJarOptions.workingDir",
-            "src/test/resources");
-
-        createTestEnvMgrSafelyAndExecute(envMgr ->
-            assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
-                .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!"));
+    @TigerTest(cfgFilePath = "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml",
+        additionalProperties = {"tiger.servers.testExternalJarMVP.source.0=local://miniJarWHICHDOESNOTEXIST.jar",
+            "tiger.servers.testExternalJarMVP.externalJarOptions.workingDir=src/test/resources"},
+        skipEnvironmentSetup = true)
+    public void testCreateExternalJarRelativePathFileNotFound(TigerTestEnvMgr envMgr) {
+        assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
+            .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
     }
-
 }

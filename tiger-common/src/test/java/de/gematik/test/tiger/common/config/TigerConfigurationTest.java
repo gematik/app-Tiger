@@ -4,10 +4,16 @@
 
 package de.gematik.test.tiger.common.config;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -15,15 +21,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TigerConfigurationTest {
 
@@ -327,7 +324,8 @@ public class TigerConfigurationTest {
                         "        - foo: yamlEntry0\n" +
                         "        - foo: yamlEntry1", "nestedBean");
                 TigerGlobalConfiguration.readTemplates(
-                    FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
+                    FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"),
+                        StandardCharsets.UTF_8),
                     "nestedBean.array");
                 var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
                 assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
@@ -352,7 +350,8 @@ public class TigerConfigurationTest {
                         "        - foo: yamlEntry0\n" +
                         "        - foo: yamlEntry1", "nestedBean");
                 TigerGlobalConfiguration.readTemplates(
-                    FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
+                    FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"),
+                        StandardCharsets.UTF_8),
                     "nestedBean.array");
                 var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
                 assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
@@ -373,7 +372,8 @@ public class TigerConfigurationTest {
                         "  -\n" +
                         "    foo: fooYaml", "nestedBean");
                 TigerGlobalConfiguration.readTemplates(
-                    FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
+                    FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"),
+                        StandardCharsets.UTF_8),
                     "nestedBean.array");
                 var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
                 assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
@@ -382,17 +382,12 @@ public class TigerConfigurationTest {
     }
 
     /**
-     *
-     * ${ENV => GlobalConfigurationHelper.getString()
-     * ${json-unit.ignore} => interessiert dann folglich nicht
+     * ${ENV => GlobalConfigurationHelper.getString() ${json-unit.ignore} => interessiert dann folglich nicht
      * ${VAR.foobar} => GlobalConfigurationHelper.getSourceByName("VAR").getString()
-     *
-     * ${ENV.foo.bar} ${ENV.FOO_BAR}
-     * FOO_GITHUBBAR => foo.githubBar
-     *
-     * FOO{
-     *     private String githubBar;
-     * }
+     * <p>
+     * ${ENV.foo.bar} ${ENV.FOO_BAR} FOO_GITHUBBAR => foo.githubBar
+     * <p>
+     * FOO{ private String githubBar; }
      */
     @SneakyThrows
     @Test
@@ -401,7 +396,7 @@ public class TigerConfigurationTest {
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
                 TigerGlobalConfiguration.readFromYaml(
-            "foo: ${myEnvVar}", "nestedBean");
+                    "foo: ${myEnvVar}", "nestedBean");
                 var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
                 assertThat(dummyBean.getNestedBean().getFoo())
                     .isEqualTo("valueToBeAsserted");
@@ -440,7 +435,9 @@ public class TigerConfigurationTest {
     @Test
     public void readWithTigerConfiguration() {
         TigerGlobalConfiguration.readFromYaml(
-            FileUtils.readFileToString(new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")), "tiger");
+            FileUtils.readFileToString(
+                new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
+            "tiger");
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
             .extracting(TestCfg::getTemplates)
             .asList()
@@ -453,9 +450,9 @@ public class TigerConfigurationTest {
     public void readNullObject() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("no.real.other", "foo");
-        assertThatThrownBy(() -> TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class, "no.real.key.to.see"))
-            .hasMessageContaining("'no.real.key.to.see'")
-            .hasMessageContaining("'no.real'");
+        assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(
+            DummyBean.class, "no.real.key.to.see"))
+            .isInstanceOf(DummyBean.class);
     }
 
     @Test
@@ -473,6 +470,7 @@ public class TigerConfigurationTest {
     @Data
     @Builder
     public static class DummyBean {
+
         private String string;
         private int integer;
         private NestedBean nestedBean;
@@ -481,6 +479,7 @@ public class TigerConfigurationTest {
     @Data
     @Builder
     public static class NestedBean {
+
         private final String foo;
         private final int bar;
         private final NestedBean inner;
@@ -491,6 +490,7 @@ public class TigerConfigurationTest {
 
     @Data
     public static class TestCfg {
+
         @JsonProperty
         private List<CfgTemplate> templates;
 

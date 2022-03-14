@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -247,12 +248,25 @@ public abstract class TigerServer {
             getConfiguration().setStartupTimeoutSec(20);
         }
 
+        if (type != ServerType.TIGERPROXY) {
+            assertCfgPropertySet(getConfiguration(), "source");
+        }
+
         // defaulting work dir to temp folder on system if not set in config
         if (type == ServerType.EXTERNALJAR) {
             String folder = getConfiguration().getExternalJarOptions().getWorkingDir();
             if (folder == null) {
-                folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile().getAbsolutePath();
-                log.info("Defaulting to temp folder '" + folder + "' as work dir for server " + serverId);
+                if (getConfiguration().getSource().get(0).startsWith("local:")) {
+                    final String jarPath = getConfiguration().getSource().get(0).split("local:")[1];
+                    folder = Paths.get(jarPath).toAbsolutePath().getParent().toString();
+                    getConfiguration().getSource().add(0,
+                        "local:" + jarPath.substring(jarPath.lastIndexOf('/')));
+                    log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, serverId);
+                } else {
+                    folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile()
+                        .getAbsolutePath();
+                    log.info("Defaulting to temp folder '{}' as working directory for server {}", folder, serverId);
+                }
                 getConfiguration().getExternalJarOptions().setWorkingDir(folder);
             }
             File f = new File(folder);
@@ -261,10 +275,6 @@ public abstract class TigerServer {
                     throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
                 }
             }
-        }
-
-        if (type != ServerType.TIGERPROXY) {
-            assertCfgPropertySet(getConfiguration(), "source");
         }
 
         if (type == ServerType.EXTERNALJAR) {

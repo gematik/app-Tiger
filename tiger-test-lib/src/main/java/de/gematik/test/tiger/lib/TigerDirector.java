@@ -10,15 +10,12 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.monitor.MonitorUI;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import io.restassured.RestAssured;
 import java.awt.HeadlessException;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,7 +24,6 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 /**
@@ -52,9 +48,33 @@ public class TigerDirector {
     private static boolean initialized = false;
 
     @Getter
-    private static TigerLibConfig libConfig = new TigerLibConfig();
+    private static TigerLibConfig libConfig;
 
-    public static synchronized void readConfiguration() {
+    public static void start() {
+        if (initialized) {
+            log.info("Tiger Director already started, skipping");
+            return;
+        }
+
+        TigerGlobalConfiguration.setRequireTigerYaml(true);
+
+        showTigerBanner();
+
+        readConfiguration();
+        applyTestLibConfig();
+        startMonitorUi();
+        startTestEnvMgr();
+        setDefaultProxyToLocalTigerProxy();
+
+        initialized = true;
+        log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
+    }
+
+    private static synchronized void readConfiguration() {
+        libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
+    }
+
+    private static void showTigerBanner() {
         if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO", false)) {
             try {
                 log.info("\n" + IOUtils.toString(
@@ -64,25 +84,9 @@ public class TigerDirector {
                 throw new TigerStartupException("Unable to read tiger logo!");
             }
         }
-        log.info("\n" + Banner.toBannerStr("READING TIGER LIB CONFIG...", RbelAnsiColors.BLUE_BOLD.toString()));
-        File cfgFile = new File("tiger.yml");
-        if (!cfgFile.exists()) {
-            cfgFile = new File("tiger.yaml");
-        }
-        if (!cfgFile.exists()) {
-            log.warn("No Tiger configuration file found (tiger.yaml, tiger.yml)! Continuing with default values");
-            libConfig = new TigerLibConfig();
-        } else {
-            try {
-                TigerGlobalConfiguration.readFromYaml(FileUtils.readFileToString(cfgFile, StandardCharsets.UTF_8), "TIGER_LIB");
-                libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
-            } catch (IOException e) {
-                throw new TigerStartupException("Error while reading configuration file '" + cfgFile.getAbsolutePath(), e);
-            }
-        }
     }
 
-    public static void applyTestLibConfig() {
+    private static void applyTestLibConfig() {
         if (libConfig.isRbelPathDebugging()) {
             RbelOptions.activateRbelPathDebugging();
         } else {
@@ -95,7 +99,7 @@ public class TigerDirector {
         }
     }
 
-    public static synchronized void startMonitorUITestEnvMgrAndTigerProxy() {
+    private static synchronized void startMonitorUi() {
         if (libConfig.activateMonitorUI) {
             try {
                 optionalMonitorUI = MonitorUI.getMonitor();
@@ -103,17 +107,16 @@ public class TigerDirector {
                 log.error("Unable to start Monitor UI on a headless server!", hex);
             }
         }
+    }
 
+    private static synchronized void startTestEnvMgr() {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
         tigerTestEnvMgr = new TigerTestEnvMgr();
         tigerTestEnvMgr.setUpEnvironment();
+    }
 
+    private static synchronized void setDefaultProxyToLocalTigerProxy() {
         TigerProxyConfiguration tpCfg = tigerTestEnvMgr.getConfiguration().getTigerProxy();
-        if (tpCfg.isSkipTrafficEndpointsSubscription()) {
-            log.info("Trying to late connect to traffic endpoints...");
-            tigerTestEnvMgr.getLocalTigerProxy().subscribeToTrafficEndpoints(tpCfg);
-        }
-
         // set proxy to local tiger proxy for test suites
         if (tigerTestEnvMgr.isLocalTigerProxyActive()) {
             if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") != null) {
@@ -135,9 +138,6 @@ public class TigerDirector {
         // TODO TGR-295 DO NOT DELETE!
         // set proxy to local tigerproxy for erezept idp client
         // Unirest.config().proxy("localhost", TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
-
-        initialized = true;
-        log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
     }
 
     public static synchronized boolean isInitialized() {

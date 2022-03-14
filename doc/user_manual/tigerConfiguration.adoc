@@ -17,7 +17,7 @@ The following inlets are considered in the TigerGlobalConfiguration (ordered fro
 * Command-line properties
 * System-Properties (System.setProperty)
 * Environment-Variables (export "FOO_BAR" = 42)
-* YAML-Files (tiger-testenv.yaml)
+* YAML-Files (tiger.yaml)
 
 === Key-translation
 
@@ -89,7 +89,7 @@ Some examples to clarify:
 
 Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:
 
-[source,YAML,title="tiger-testenv.yaml with the Tiger Proxy routing everything to the local server"]
+[source,YAML,title="tiger.yaml with the Tiger Proxy routing everything to the local server"]
 ----
 tigerProxy:
     proxyRoutes:
@@ -108,7 +108,7 @@ export TIGERPROXY_PROXYROUTES_0_TO = "http://real.server"
 
 In the above example let's say you only want to customize the port. This can be done by using placeholders:
 
-[source,YAML,title="tiger-testenv.yaml with the Tiger Proxy routing everything to the local server"]
+[source,YAML,title="tiger.yaml with the Tiger Proxy routing everything to the local server"]
 ----
 tigerProxy:
     proxyRoutes:

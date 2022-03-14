@@ -21,7 +21,7 @@ public class TigerConfigurationHelper<T> {
      * @return JSON object representing the yaml content
      */
     public static JSONObject yamlStringToJson(String yamlStr) {
-        Yaml yaml = new Yaml(new TigerConfigurationLoader.DuplicateMapKeysForbiddenConstructor());
+        Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
         Map<String, Object> map = yaml.load(yamlStr);
         return new JSONObject(map);
     }

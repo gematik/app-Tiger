@@ -2,6 +2,10 @@
 
 # Release 0.19.4
 
+## Breaking Changes
+
+* TGR-188: tiger-testenv.yaml wird nun zunächst in der tiger.yaml gesucht. Um den Umstieg zu erleichtern wird die tiger-testenv.yaml weiterhin eingelesen aber eine Warnung ausgeben. Probleme gibt es nur für Nutzer, die schon vorher eine tiger.yaml (oder tiger.yml) in ihrem Projekt liegen haben: Diese muss umbenannt werden.
+
 ## Bugfix
 
 * TGR-430: Requests without Deep-Paths are now forwarded from remote Tiger-Proxies
@@ -13,6 +17,7 @@
 
 ## Features
 
+* TGR-188: TigerTest-Extension for JUnit-Jupiter added
 * TGR-414: Add an example project for the use of tiger
 * TGR-431: Tiger can now also read traffic-files on startup
 

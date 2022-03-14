@@ -10,7 +10,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum SourceType {
-    YAML(90),
+    YAML(100),
+    TEST_YAML(90),
     ENV(80),
     PROPERTIES(70),
     CLI(60),
