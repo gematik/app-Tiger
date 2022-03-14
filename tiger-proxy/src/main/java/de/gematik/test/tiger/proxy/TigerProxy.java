@@ -9,6 +9,7 @@ import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
@@ -17,6 +18,7 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyStore;
@@ -68,7 +70,7 @@ public class TigerProxy extends AbstractTigerProxy {
     private final MockServerToRbelConverter mockServerToRbelConverter;
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
 
-    public TigerProxy(TigerProxyConfiguration configuration) {
+    public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
 
         KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
@@ -82,7 +84,7 @@ public class TigerProxy extends AbstractTigerProxy {
         }
         customizeSslSuitesIfApplicable(configuration);
 
-        Optional<ProxyConfiguration> forwardProxyConfig = configuration.convertForwardProxyConfigurationToMockServerConfiguration();
+        final Optional<ProxyConfiguration> forwardProxyConfig = configuration.convertForwardProxyConfigurationToMockServerConfiguration();
         outputForwardProxyConfigLogs(forwardProxyConfig);
 
         mockServer = forwardProxyConfig
@@ -90,9 +92,13 @@ public class TigerProxy extends AbstractTigerProxy {
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
 
+        if (configuration.getPortAsArray() == null) {
+            TigerGlobalConfiguration.putValue("tigerProxy.port", mockServer.getLocalPort());
+        }
+
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         if (configuration.getProxyRoutes() != null) {
-            for (TigerRoute tigerRoute : configuration.getProxyRoutes()) {
+            for (final TigerRoute tigerRoute : configuration.getProxyRoutes()) {
                 addRoute(tigerRoute);
             }
         }
@@ -106,7 +112,7 @@ public class TigerProxy extends AbstractTigerProxy {
 
         if (configuration.getModifications() != null) {
             int counter = 0;
-            for (RbelModificationDescription modification : configuration.getModifications()) {
+            for (final RbelModificationDescription modification : configuration.getModifications()) {
                 if (modification.getName() == null) {
                     modification.setName("TigerModification #" + counter++);
                 }
@@ -132,7 +138,7 @@ public class TigerProxy extends AbstractTigerProxy {
                                 req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":"
                                     + req.getSocketAddress().getPort(), req.getClientAddress()));
                             manageRbelBufferSize();
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             log.error("RBel FAILED!", e);
                         }
                         return resp;
@@ -140,7 +146,7 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    private void customizeSslSuitesIfApplicable(TigerProxyConfiguration configuration) {
+    private void customizeSslSuitesIfApplicable(final TigerProxyConfiguration configuration) {
         if (configuration.getTls().getServerSslSuites() != null) {
             NettySslContextFactory.sslServerContextBuilderCustomizer = builder -> {
                 builder.ciphers(configuration.getTls().getServerSslSuites());
@@ -190,14 +196,14 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    public void subscribeToTrafficEndpoints(TigerProxyConfiguration configuration) {
+    public void subscribeToTrafficEndpoints(final TigerProxyConfiguration configuration) {
         Optional.of(configuration)
             .filter(Objects::nonNull)
             .map(TigerProxyConfiguration::getTrafficEndpoints)
             .ifPresent(this::subscribeToTrafficEndpoints);
     }
 
-    public void subscribeToTrafficEndpoints(List<String> trafficEndpointUrls) {
+    public void subscribeToTrafficEndpoints(final List<String> trafficEndpointUrls) {
         Optional.of(trafficEndpointUrls)
             .filter(Objects::nonNull)
             .stream()
@@ -242,7 +248,7 @@ public class TigerProxy extends AbstractTigerProxy {
     }
 
     @Override
-    public RbelModificationDescription addModificaton(RbelModificationDescription modification) {
+    public RbelModificationDescription addModificaton(final RbelModificationDescription modification) {
         getRbelLogger().getRbelModifier().addModification(modification);
         return modification;
     }
@@ -253,7 +259,7 @@ public class TigerProxy extends AbstractTigerProxy {
     }
 
     @Override
-    public void removeModification(String modificationId) {
+    public void removeModification(final String modificationId) {
         getRbelLogger().getRbelModifier().deleteModification(modificationId);
     }
 
@@ -285,27 +291,27 @@ public class TigerProxy extends AbstractTigerProxy {
         return createdTigerRoute;
     }
 
-    private boolean uriEquals(String value1, String value2) {
+    private boolean uriEquals(final String value1, final String value2) {
         try {
             return new URI(value1).equals(new URI(value2));
-        } catch (URISyntaxException e) {
+        } catch (final URISyntaxException e) {
             return false;
         }
     }
 
-    private boolean uriTwoIsBelowUriOne(String value1, String value2) {
+    private boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
         try {
             final URI uri1 = new URI(value1);
             final URI uri2WithUri1Scheme = new URIBuilder(value2)
                 .setScheme(uri1.getScheme()).build();
             return !new URI(value1)
                 .relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
-        } catch (URISyntaxException e) {
+        } catch (final URISyntaxException e) {
             return false;
         }
     }
 
-    private Expectation[] buildRouteAndReturnExpectation(TigerRoute tigerRoute) {
+    private Expectation[] buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
         if (UriUtil.hasScheme(tigerRoute.getFrom())) {
             return buildForwardProxyRoute(tigerRoute);
         } else {
@@ -313,21 +319,21 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    private Expectation[] buildReverseProxyRoute(TigerRoute tigerRoute) {
+    private Expectation[] buildReverseProxyRoute(final TigerRoute tigerRoute) {
         return mockServerClient.when(request()
                 .withPath(tigerRoute.getFrom() + ".*"))
             .forward(new ReverseProxyCallback(this, tigerRoute));
     }
 
-    private Expectation[] buildForwardProxyRoute(TigerRoute tigerRoute) {
+    private Expectation[] buildForwardProxyRoute(final TigerRoute tigerRoute) {
         return mockServerClient.when(request()
                 .withHeader("Host", tigerRoute.getFrom().split("://")[1])
                 .withSecure(tigerRoute.getFrom().startsWith("https://")))
             .forward(new ForwardProxyCallback(this, tigerRoute));
     }
 
-    public void addAlternativeName(String host) {
-        List<String> newAlternativeNames = new ArrayList<>();
+    public void addAlternativeName(final String host) {
+        final List<String> newAlternativeNames = new ArrayList<>();
         if (getTigerProxyConfiguration().getTls() != null
             && getTigerProxyConfiguration().getTls().getAlternativeNames() != null) {
             newAlternativeNames.addAll(getTigerProxyConfiguration().getTls().getAlternativeNames());
@@ -335,7 +341,7 @@ public class TigerProxy extends AbstractTigerProxy {
         newAlternativeNames.add(host);
         getTigerProxyConfiguration().getTls().setAlternativeNames(newAlternativeNames);
 
-        for (TigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
+        for (final TigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
             tlsFactory.addAlternativeName(host);
             tlsFactory.resetEeCertificate();
         }
@@ -363,7 +369,7 @@ public class TigerProxy extends AbstractTigerProxy {
     }
 
     @Override
-    public void removeRoute(String routeId) {
+    public void removeRoute(final String routeId) {
         mockServerClient.clear(new ExpectationId().withId(routeId));
         final TigerRoute route = tigerRouteMap.remove(routeId);
 
@@ -374,12 +380,12 @@ public class TigerProxy extends AbstractTigerProxy {
 
     public SSLContext getConfiguredTigerProxySslContext() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, new TrustManager[]{buildTrustManagerForTigerProxy()}, null);
 
             SSLContext.setDefault(sslContext);
             return sslContext;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new TigerProxyTrustManagerBuildingException("Error while configuring SSL Context for tiger-proxy",
                 e);
         }
@@ -387,8 +393,8 @@ public class TigerProxy extends AbstractTigerProxy {
 
     public X509TrustManager buildTrustManagerForTigerProxy() {
         try {
-            X509TrustManager defaultTrustManager = extractTrustManager(null);
-            X509TrustManager customTrustManager = extractTrustManager(buildTruststore());
+            final X509TrustManager defaultTrustManager = extractTrustManager(null);
+            final X509TrustManager customTrustManager = extractTrustManager(buildTruststore());
             return new X509TrustManager() {
                 @Override
                 public X509Certificate[] getAcceptedIssuers() {
@@ -396,29 +402,30 @@ public class TigerProxy extends AbstractTigerProxy {
                 }
 
                 @Override
-                public void checkServerTrusted(X509Certificate[] chain,
-                    String authType) throws CertificateException {
+                public void checkServerTrusted(final X509Certificate[] chain,
+                    final String authType) throws CertificateException {
                     try {
                         customTrustManager.checkServerTrusted(chain, authType);
-                    } catch (CertificateException e) {
+                    } catch (final CertificateException e) {
                         defaultTrustManager.checkServerTrusted(chain, authType);
                     }
                 }
 
                 @Override
-                public void checkClientTrusted(X509Certificate[] chain,
-                    String authType) throws CertificateException {
+                public void checkClientTrusted(final X509Certificate[] chain,
+                    final String authType) throws CertificateException {
                     defaultTrustManager.checkClientTrusted(chain, authType);
                 }
             };
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new TigerProxyTrustManagerBuildingException("Error while building TrustManager for tiger-proxy",
                 e);
         }
     }
 
-    private X509TrustManager extractTrustManager(KeyStore keystore) throws NoSuchAlgorithmException, KeyStoreException {
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+    private X509TrustManager extractTrustManager(final KeyStore keystore)
+        throws NoSuchAlgorithmException, KeyStoreException {
+        final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
             TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(keystore);
 
@@ -431,7 +438,7 @@ public class TigerProxy extends AbstractTigerProxy {
 
     public KeyStore buildTruststore() {
         try {
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null);
             final TigerPkiIdentity serverIdentity = determineServerRootCa()
                 .or(() -> Optional.ofNullable(getTigerProxyConfiguration().getTls())
@@ -442,11 +449,11 @@ public class TigerProxy extends AbstractTigerProxy {
 
             ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
             int chainCertCtr = 0;
-            for (X509Certificate chainCert : serverIdentity.getCertificateChain()) {
+            for (final X509Certificate chainCert : serverIdentity.getCertificateChain()) {
                 ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
             }
             return ks;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy",
                 e);
         }
@@ -454,15 +461,16 @@ public class TigerProxy extends AbstractTigerProxy {
 
     public SSLContext buildSslContext() {
         try {
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
             tmf.init(buildTruststore());
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             TrustManager[] trustManagers = tmf.getTrustManagers();
+            log.info("our trust managers: " + trustManagers);
             sslContext.init(null, trustManagers, null);
 
-            HttpClient httpClient = HttpClients.custom()
+            final HttpClient httpClient = HttpClients.custom()
                 .setSSLContext(sslContext)
                 .setSSLHostnameVerifier(new DefaultHostnameVerifier())
                 .build();
@@ -471,17 +479,17 @@ public class TigerProxy extends AbstractTigerProxy {
                 .config()
                 .httpClient(config -> ApacheClient.builder(httpClient).apply(config));
             return sslContext;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy",
                 e);
         }
     }
 
-    private void outputForwardProxyConfigLogs(Optional<ProxyConfiguration> forwardProxyConfig) {
+    private void outputForwardProxyConfigLogs(final Optional<ProxyConfiguration> forwardProxyConfig) {
         if (forwardProxyConfig.isEmpty()) {
             log.info("Tigerproxy has NO forward proxy configured!");
         } else {
-            ProxyConfiguration configNotEmpty = forwardProxyConfig.get();
+            final ProxyConfiguration configNotEmpty = forwardProxyConfig.get();
             if (configNotEmpty.getUsername() == null) {
                 log.info("Forward proxy is set to " +
                     configNotEmpty.getType() + "://"
@@ -498,12 +506,12 @@ public class TigerProxy extends AbstractTigerProxy {
         }
     }
 
-    public void propagateException(Throwable exception) {
+    public void propagateException(final Throwable exception) {
         exceptionListeners
             .forEach(consumer -> consumer.accept(exception));
     }
 
-    public void addNewExceptionConsumer(Consumer<Throwable> newConsumer) {
+    public void addNewExceptionConsumer(final Consumer<Throwable> newConsumer) {
         exceptionListeners.add(newConsumer);
     }
 
@@ -514,11 +522,11 @@ public class TigerProxy extends AbstractTigerProxy {
 
     private class TigerProxyTrustManagerBuildingException extends RuntimeException {
 
-        public TigerProxyTrustManagerBuildingException(String s, Exception e) {
+        public TigerProxyTrustManagerBuildingException(final String s, final Exception e) {
             super(s, e);
         }
 
-        public TigerProxyTrustManagerBuildingException(String s) {
+        public TigerProxyTrustManagerBuildingException(final String s) {
             super(s);
         }
     }

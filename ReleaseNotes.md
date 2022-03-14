@@ -8,6 +8,7 @@
 * TGR-424: Disabled Rbel-Parsing will no longer impact traffic forwarding
 * TGR-422: Find request to path "http://server" now also matches "/"
 * TGR-427: JSON-Checker now correctly reports mismatched types and ill-formatted JSONs
+* TGR-425: Configuration Property for the local tigerProxy.port added when using free ports
 * TGR-423: Default-VAU-Key now correctly included
 
 ## Features
@@ -28,7 +29,8 @@
 
 * TGR-357: Tiger-Proxy traffic endpoints can now filter incoming traffic (reducing load, improving usability)
 * TGR-294: Rbel Log html page now shows data variant values when clicking on button in subtitle section
-* TGR-389: EPA-VAU messages are now always tagged with the target account KVNR (only when tigerProxy.activateVauAnalysis is activated)
+* TGR-389: EPA-VAU messages are now always tagged with the target account KVNR (only when tigerProxy.activateVauAnalysis
+  is activated)
 * TGR-358: Tiger-Proxy WebUI can now filter messages
 * TGR-416: Traffic-Log can now be downloaded in the Tiger-Proxy WebUI
 * TGR-420: Jexl-Debugging dialog added to Tiger-Proxy WebUI
@@ -54,112 +56,141 @@
 # Release 0.19.1
 
 ## Bugfix
+
 * Fixing module with incomplete -sources and -javadoc JAR files
 
 # Release 0.19.0
 
 ## Breaking Change
-* TGR-113: Test-Context, Test-Config and Test-Variables are deprecated. All values are now stored using `TigerGlobalConfiguration`. This supersedes all uses of domains and context, of which there are no known instances. If your migration is difficult, please contact the team.
-* The migration entails a complete rethink of configuration and value-stores in tiger. If you have any troubles please read the user-manual (Chapter 6) and don't hesitate to ask us.
-* TGR-299: The configuration flag `proxyProtocol` from the server-type tigerProxy has been renamed to `proxiedServerProtocol` to clarify usage and avoid confusion.
-* If a `proxiedServer` did have a Healthcheck-URL (or source-URL for `externalUrlServer`) previously the reverse-proxy would target the deep-path. Now it will target the domain only.
-* TGR-197: PKIIdentities must not any longer be specified using Windows specific paths. Please use linux "/" folder separator character and relative paths to ensure cross-platform support of your test environments.
+
+* TGR-113: Test-Context, Test-Config and Test-Variables are deprecated. All values are now stored
+  using `TigerGlobalConfiguration`. This supersedes all uses of domains and context, of which there are no known
+  instances. If your migration is difficult, please contact the team.
+* The migration entails a complete rethink of configuration and value-stores in tiger. If you have any troubles please
+  read the user-manual (Chapter 6) and don't hesitate to ask us.
+* TGR-299: The configuration flag `proxyProtocol` from the server-type tigerProxy has been renamed
+  to `proxiedServerProtocol` to clarify usage and avoid confusion.
+* If a `proxiedServer` did have a Healthcheck-URL (or source-URL for `externalUrlServer`) previously the reverse-proxy
+  would target the deep-path. Now it will target the domain only.
+* TGR-197: PKIIdentities must not any longer be specified using Windows specific paths. Please use linux "/" folder
+  separator character and relative paths to ensure cross-platform support of your test environments.
 
 ## Bugfix
+
 * TGR-350: Multiple Scenariooutlines in feature file break test execution.
 * RBEL-41: Too restrictive validation of hostnames in RbelHostname element
 
 ## Features
-* TGR-113: Configuration has been refactored/simplified and all placeholders in tiger-servers are now successfully resolved.
-* TGR-332: Tiger proxies are no longer instantiated as external Jar downloaded from maven central but are started in process. This dramatically reduces startup time and reduces bandwidth demands.
+
+* TGR-113: Configuration has been refactored/simplified and all placeholders in tiger-servers are now successfully
+  resolved.
+* TGR-332: Tiger proxies are no longer instantiated as external Jar downloaded from maven central but are started in
+  process. This dramatically reduces startup time and reduces bandwidth demands.
 * TGR-341: Upgrade to Serenity BDD v3.1.16 and thus Selenium 4
 
 # Release 0.18.1
 
 ## Bugfix
+
 * Tiger admin UI allow to rename nodes to ""
 
 ## Features
+
 * TGR-50: Tiger test environment configuration now has an admin Web UI. Check out the tiger-admin module
 * TGR-306: Tiger admin UI now has "Duplicate node" feature
 
 # Release 0.18.0
 
 ## Breaking Change
-* TGR-113: Major rework in TigerConfiguration. The Blackbox behavior is unchanged in all known cases. However the API changed a lot! TigerConfigurationHelper was deleted. 
-* If you want to read configuration files please use `TigerGlobalConfiguration` (in cases where you want to use the global configuration store) or instantiate a new `TigerConfigurationLoader` (in cases where you only need the configuration functionality and not the actual global configuration).
-* The serialization/deserialization Utils from TigerConfigurationHelper please refer to TigerSerializationUtil (JSON/YAML conversion).
+
+* TGR-113: Major rework in TigerConfiguration. The Blackbox behavior is unchanged in all known cases. However the API
+  changed a lot! TigerConfigurationHelper was deleted.
+* If you want to read configuration files please use `TigerGlobalConfiguration` (in cases where you want to use the
+  global configuration store) or instantiate a new `TigerConfigurationLoader` (in cases where you only need the
+  configuration functionality and not the actual global configuration).
+* The serialization/deserialization Utils from TigerConfigurationHelper please refer to TigerSerializationUtil (
+  JSON/YAML conversion).
 
 ## Bugfix
+
 * TGR-288: Make snakeyaml/jackson work with default values in Configuration object
 * TGR-305: Concurrent downloads of the same external JAR can now coexist peacefully
 * TGR-325: Parallel startup now waits correctly for long-running startups
 
 ## Features
+
 * TGR-42: Make Proxy Cert available at runtime
 * TGR-264: add support for reason phrases in RBEL
 
 # Release 0.17.1
 
 ## Bugfix
+
 * TGR-222: Trustmanager im AbstractExternalTigerServer lokal begrenzen
 
 ## Features
+
 * TGR-269: Configuration for HTTPS forward proxy
 
 ## Enhancements
-* TGR-250: Tests überarbeiten in TestTokenSubstituteHelper
 
+* TGR-250: Tests überarbeiten in TestTokenSubstituteHelper
 
 # Release 0.17.0
 
 ## Breaking Changes
-* TGR-208: The startup-order of the servers is now ONLY determined by the "dependsUpon"-Flag. This can give a 
- comma separated list of servers that need to be started prior to the given server. Please review & change all 
- testenv.ymls accordingly.
-* TGR-193: 
-  * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
-  * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
+
+* TGR-208: The startup-order of the servers is now ONLY determined by the "dependsUpon"-Flag. This can give a comma
+  separated list of servers that need to be started prior to the given server. Please review & change all testenv.ymls
+  accordingly.
+* TGR-193:
+    * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
+    * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
 
 ## Features
+
 * TGR-208: Refactoring Testenv-Mgr
 * TGR-208: Startup of services by Testenv-Mgr can now be parallel and in given sequence (dependsUpon-Flag added)
 * TGR-218 added REST-Interface for Modifications
 * TGR-96: support basic auth for forward proxy
 * TGR-226: Set proxy username, proxy password as environment variables
 * TGR-238: Additional TGR step to store value of rbel path node to context
-* TGR-238: Support TGR validation steps to support "${..}" tokens in TGR verification steps 
-
+* TGR-238: Support TGR validation steps to support "${..}" tokens in TGR verification steps
 
 ## Bugfix
-* TGR-171: Banner Helper Klasse unterstützt keine deutschen Umlaute
 
+* TGR-171: Banner Helper Klasse unterstützt keine deutschen Umlaute
 
 # Release 0.16.4
 
 ## Bugfix
-* TGR-219 bdd driver generator plugin created invalid feature path on windows 
+
+* TGR-219 bdd driver generator plugin created invalid feature path on windows
 
 # Release 0.16.2
 
 ## Bugfix
+
 * TGR-212 Content-Length now correctly after Rbel-Modifications
 
 # Release 0.16.0
 
 ## Features
+
 * TGR-136 Client-addresses are now correctly set in Rbel-messages
 * TGR-120 The SSL-Suits of the servers are now configurable
 
 # Release 0.15.0
 
 ## Features
+
 * TGR-136 Client-addresses are now correctly set in Rbel-Messages
 * TGR-186 First version of an UI test run monitor, displaying all banner and text messages to guide manual testers.
 
 ## Bugfixes
+
 * TGR-183 German keyword "Gegeben sei" was not correctly detected by FeatureParser
-* TGR-41  Competing routes are now correctly identified and refused when adding
+* TGR-41 Competing routes are now correctly identified and refused when adding
 * TGR-179 TGR Step "show color text" failed with unknown color name
 
 # Release 0.14.0
@@ -167,26 +198,27 @@
 ## Neues
 
 * TGR-173 Die TGR BDD Testschritte stehen nun auch auf Deutsch zur Verfügung
-* TGR-131 Der RbelPath Executor unterstützt nun einen Debug Modus um bei fehlerhaften RbelPath Ausdrücken 
-  die Fehlersuche zu erleichtern. [Mehr Details...](doc/testlib-config.md)
+* TGR-131 Der RbelPath Executor unterstützt nun einen Debug Modus um bei fehlerhaften RbelPath Ausdrücken die
+  Fehlersuche zu erleichtern. [Mehr Details...](doc/testlib-config.md)
 * TGR-133 Release des mvn plugins um die Generierung der Treiberklassen für die Serenity tests auch in nicht englischer
   Sprache zu unterstützen. [Mehr Details...](tiger-driver-generator-maven-plugin/README.md)
 * TGR-165 EPA VAU Schlüssel ist fest im Tiger Proxy hinterlegt
 * TGR-168 Proxy modifications unterstützt nun auch Query Parameter modifications
 * TGR-112 Dokumentation für Modifications Feature [Mehr Details...](tiger-standalone-proxy/README.md)
-* TGR-63  Exceptions, die in einem Upstream Tiger Proxy auftreten werden über die WS-Schnittstelle an downstream Proxies
+* TGR-63 Exceptions, die in einem Upstream Tiger Proxy auftreten werden über die WS-Schnittstelle an downstream Proxies
   kommuniziert.
 
 ## Änderungen
 
-* **BREAKING** TGR-87 Die Serverliste im tiger-testenv.yml wurde angepasst. Das Attribut 'name' wurde entfernt und durch das optionale Attribut 'hostname' ersetzt.
-  Sollte 'hostname' nicht definiert werden, wird es auf den Keywert des Mapeintrages gesetzt. Diese Änderung bedeutet, dass zwar der Hostname bei mehreren
-  Servereinträgen identisch sein kann, allerdings muss der Keywert **eindeutig** sein.
-  Details zu der Migration befinden sich weiter unten.
+* **BREAKING** TGR-87 Die Serverliste im tiger-testenv.yml wurde angepasst. Das Attribut 'name' wurde entfernt und durch
+  das optionale Attribut 'hostname' ersetzt. Sollte 'hostname' nicht definiert werden, wird es auf den Keywert des
+  Mapeintrages gesetzt. Diese Änderung bedeutet, dass zwar der Hostname bei mehreren Servereinträgen identisch sein
+  kann, allerdings muss der Keywert **eindeutig** sein. Details zu der Migration befinden sich weiter unten.
 
 ## Entfernt
 
-* TGR-173 Die Ausgabe der Testschritte erfolgt nun nicht mehr über Tiger, sondern kann im [serenity.properties](https://serenity-bdd.github.io/theserenitybook/latest/serenity-system-properties.html)  
+* TGR-173 Die Ausgabe der Testschritte erfolgt nun nicht mehr über Tiger, sondern kann
+  im [serenity.properties](https://serenity-bdd.github.io/theserenitybook/latest/serenity-system-properties.html)  
   über serenity.logging=VERBOSE aktiviert werden.
 
 ## Fehlerbehebungen
@@ -202,50 +234,53 @@ Aufgrund des breaking changes sind **ALLE** tiger-testenv.yml Dateien im Bereich
 tigerProxy:
   ...
 servers:
-# ALTE VERSION
+  # ALTE VERSION
   - name: idp
-# NEUE VERSION
+  # NEUE VERSION
   idp1:
-   hostname: idp
-#
-   type: externalUrl
-    ...
-    active: true
+    hostname: idp
+    #
+    type: externalUrl
+      ...
+      active: true
 
-# ALTE VERSION
-  - name: idp
-# NEUE VERSION
+    # ALTE VERSION
+    - name: idp
+  # NEUE VERSION
   idp2:
     hostname: idp
-#
+    #
     type: docker
     ...
     active: false  
 ```
 
 # Release 0.13.0
+
 * Modifications added to tiger-proxy (Documentation still outstanding)
 * Fixed binary-transmission bug
 * Documentation added
 
 # Release 0.12.0
+
 * Bugfix tiger-proxy: ASN1.Encodable parsing
 * Extended TLS-configuration (now supports custom domain-names, useful for a reverse-proxy-setup)
 * TLS-properties moved to tigerProxy.tls (will give error on startup if missused)
 * Reverse-proxy-routes give the target-server as receiver/sender
 
 # Release 0.11.0
-Bug fix Release
-Lokale Resources fix (routeModal.html)
-Messagelist index fixed im Webui
-WorkingDir wird automatisch angelegt
+
+Bug fix Release Lokale Resources fix (routeModal.html)
+Messagelist index fixed im Webui WorkingDir wird automatisch angelegt
 
 # Release 0.10.0
+
 * Memory-Leak fixed
 * UI Sequence-numbers fixed
 * Manual Update-Bug fixed
 
 # Release 0.9.0
+
 * Longer chains are supported for Tiger Proxy TSL-Identities
 * Chains are verified on startup
 * Memory Management for tiger-standalone improved
@@ -256,19 +291,25 @@ WorkingDir wird automatisch angelegt
 * TigerProxy as type in TestEnv
 
 # Release 0.8.1
+
 Javadoc Fix
 
 # Release 0.8.0
+
 * Bugfix TigerRoute YAML instantiation
 
 # Release 0.7.0
+
 mvn deploy fix
 
 # Release 0.5.0
+
 mvn deploy fix
 
 # Release 0.4.0
+
 mvn central deploy fix
 
 # Release 0.3.0
+
 Initial release

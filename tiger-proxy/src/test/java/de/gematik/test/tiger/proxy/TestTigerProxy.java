@@ -10,15 +10,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
-import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
@@ -53,6 +55,7 @@ import org.mockserver.client.MockServerClient;
 import org.mockserver.model.MediaType;
 import org.mockserver.model.SocketAddress;
 import org.mockserver.netty.MockServer;
+import org.springframework.util.SocketUtils;
 
 @Slf4j
 public class TestTigerProxy extends AbstractTigerProxyTest {
@@ -65,7 +68,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             return;
         }
 
-        MockServer forwardProxyServer = new MockServer();
+        final MockServer forwardProxyServer = new MockServer();
 
         forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
         log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
@@ -97,7 +100,8 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(
             tigerProxy.getRbelMessages().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname())
             .isEqualTo(new RbelHostname("backend", 80));
-        assertThat(tigerProxy.getRbelMessages().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname())
+        assertThat(
+            tigerProxy.getRbelMessages().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname())
             .isEqualTo(new RbelHostname("backend", 80));
 
         FileUtils.writeStringToFile(new File("target/out.html"),
@@ -196,19 +200,22 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build())
             .build());
 
-        AtomicBoolean verifyWasCalledSuccesfully = new AtomicBoolean(false);
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+        final AtomicBoolean verifyWasCalledSuccesfully = new AtomicBoolean(false);
+        final SSLContext ctx = SSLContext.getInstance("TLSv1.2");
         ctx.init(null, new TrustManager[]{
                 new X509TrustManager() {
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    @Override
+                    public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
                     }
 
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    @Override
+                    public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
                         assertThat(chain[0].getSubjectDN().getName())
                             .contains("muahaha");
                         verifyWasCalledSuccesfully.set(true);
                     }
 
+                    @Override
                     public X509Certificate[] getAcceptedIssuers() {
                         return new X509Certificate[0];
                     }
@@ -345,7 +352,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        AtomicInteger callCounter = new AtomicInteger(0);
+        final AtomicInteger callCounter = new AtomicInteger(0);
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
         proxyRest.get("http://backend/foobar").asString().getBody();
@@ -355,7 +362,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
     @Test
     public void implicitReverseProxy_shouldForwardReqeust() {
-        AtomicInteger callCounter = new AtomicInteger(0);
+        final AtomicInteger callCounter = new AtomicInteger(0);
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
@@ -378,7 +385,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
     @Test
     public void blanketReverseProxy_shouldForwardReqeust() {
-        AtomicInteger callCounter = new AtomicInteger(0);
+        final AtomicInteger callCounter = new AtomicInteger(0);
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
@@ -544,7 +551,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         BrainpoolCurves.init();
         final Key key = KeyMgr.readKeyFromPem(FileUtils.readFileToString(new File("src/test/resources/fixVauKey.pem")));
 
-        JsonWebSignature jws = new JsonWebSignature();
+        final JsonWebSignature jws = new JsonWebSignature();
         jws.setKey(key);
         jws.setPayload("foobar");
         jws.setAlgorithmHeaderValue("BP256R1");
@@ -640,11 +647,13 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         secondInstance.config().proxy("localhost", tigerProxy.getPort());
         secondInstance.get("http://backend/foobar").asString();
 
-        List<String> hostnameSenderList = new ArrayList<>();
-        hostnameSenderList.addAll(Arrays.asList("localhost|view-localhost", "backend", "localhost|view-localhost", "backend"));
+        final List<String> hostnameSenderList = new ArrayList<>();
+        hostnameSenderList.addAll(
+            Arrays.asList("localhost|view-localhost", "backend", "localhost|view-localhost", "backend"));
 
-        List<String> hostnameReceiverList = new ArrayList<>();
-        hostnameReceiverList.addAll(Arrays.asList("backend", "localhost|view-localhost", "backend", "localhost|view-localhost"));
+        final List<String> hostnameReceiverList = new ArrayList<>();
+        hostnameReceiverList.addAll(
+            Arrays.asList("backend", "localhost|view-localhost", "backend", "localhost|view-localhost"));
 
         checkClientAddresses(hostnameSenderList, hostnameReceiverList);
         checkPortsAreCorrect();
@@ -665,8 +674,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         final UnirestInstance secondInstance = Unirest.spawnInstance();
         secondInstance.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
 
-        List<String> hostnameList = new ArrayList<>();
-        hostnameList.addAll(Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost"));
+        final List<String> hostnameList = new ArrayList<>();
+        hostnameList.addAll(
+            Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost",
+                "localhost|view-localhost"));
 
         checkClientAddresses(hostnameList, hostnameList);
 
@@ -685,18 +696,46 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         secondInstance.config().proxy("localhost", tigerProxy.getPort());
         secondInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
-        List<String> hostnameList = new ArrayList<>();
-        hostnameList.addAll(Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost"));
+        final List<String> hostnameList = new ArrayList<>();
+        hostnameList.addAll(
+            Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost",
+                "localhost|view-localhost"));
 
         checkClientAddresses(hostnameList, hostnameList);
 
         checkPortsAreCorrect();
     }
 
+    @Test
+    public void checkNotSetTigerProxyPort_ShouldImplicitBeSetToTheChosenFreePort() {
+        TigerGlobalConfiguration.reset();
+        spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+        final String port = TigerGlobalConfiguration.readString("tigerProxy.port");
+
+        assertNotNull(port);
+        assertThat(TigerGlobalConfiguration.readIntegerOptional("tigerProxy.port")
+            .get())
+            .isBetween(10000, 100000);
+    }
+
+    @Test
+    public void checkGetNotSetTigerProxyPort_ShouldThrowTigerConfigurationException() {
+        TigerGlobalConfiguration.reset();
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .port(SocketUtils.findAvailableTcpPort())
+            .build());
+
+        assertThatThrownBy(() -> {
+            TigerGlobalConfiguration.readString("tigerProxy.port");
+        })
+            .isInstanceOf(TigerConfigurationException.class)
+            .hasMessageContaining("Could not find value for 'tigerProxy.port'");
+    }
+
     // AKR: we need the 'localhost|view-localhost' because of mockserver for all checkClientAddresses-tests.
-    private void checkClientAddresses(List<String> hostnameSenderList, List<String> hostnameReceiverList) {
+    private void checkClientAddresses(final List<String> hostnameSenderList, final List<String> hostnameReceiverList) {
         for (int i = 0; i < hostnameSenderList.size(); i++) {
-            int index = i;
+            final int index = i;
             assertThat(extractHostnames(RbelTcpIpMessageFacet::getSenderHostname)).matches(
                 value -> value.get(index).matches(hostnameSenderList.get(
                     index)));
@@ -722,7 +761,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     }
 
     @NotNull
-    private Stream<String> extractHostnames(Function<RbelTcpIpMessageFacet, RbelHostname> hostnameExtractor) {
+    private Stream<String> extractHostnames(final Function<RbelTcpIpMessageFacet, RbelHostname> hostnameExtractor) {
         return tigerProxy.getRbelMessages().stream()
             .map(msg -> msg.getFacetOrFail(RbelTcpIpMessageFacet.class))
             .map(hostnameExtractor)
