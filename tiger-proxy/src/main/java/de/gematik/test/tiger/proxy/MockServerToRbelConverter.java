@@ -29,6 +29,7 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Arrays;
 import org.mockserver.model.*;
 
@@ -129,7 +130,11 @@ public class MockServerToRbelConverter {
 
     private String getRequestUrl(HttpRequest request) {
         StringJoiner pathToQueryJoiner = new StringJoiner("?");
-        pathToQueryJoiner.add(request.getPath().getValue());
+        if (StringUtils.isEmpty(request.getPath().getValue())) {
+            pathToQueryJoiner.add("/");
+        } else {
+            pathToQueryJoiner.add(request.getPath().getValue());
+        }
 
         if (request.getQueryStringParameters() != null
             && request.getQueryStringParameters().getEntries() != null) {

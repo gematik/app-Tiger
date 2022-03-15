@@ -19,55 +19,22 @@ package de.gematik.test.tiger.testenvmgr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.mockserver.model.HttpRequest.request;
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import kong.unirest.Unirest;
+import java.util.Map;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.IteratorUtils;
-import org.apache.commons.io.FileUtils;
-import org.assertj.core.api.ThrowingConsumer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.mock.Expectation;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.netty.MockServer;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.SocketUtils;
 
 @Slf4j
 @Getter
 public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
-
-    static Stream<Arguments> cfgFileAndMandatoryPropertyProvider() {
-        return Stream.of(
-            arguments("testDocker", "type"),
-            arguments("testDocker", "source"),
-            arguments("testDocker", "version"),
-            arguments("testTigerProxy", "type"),
-            arguments("testExternalJar", "type"),
-            arguments("testExternalJar", "source"),
-            arguments("testExternalUrl", "type"),
-            arguments("testExternalUrl", "source")
-        );
-    }
 
     // -----------------------------------------------------------------------------------------------------------------
     //
@@ -76,89 +43,78 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     //
     // -----------------------------------------------------------------------------------------------------------------
     @ParameterizedTest
-    @MethodSource("cfgFileAndMandatoryPropertyProvider")
+    @CsvSource({
+        "testDocker,type",
+        "testDocker,source",
+        "testDocker,version",
+        "testTigerProxy,type",
+        "testExternalJar,type",
+        "testExternalJar,source",
+        "testExternalUrl,type",
+        "testExternalUrl,source"})
     public void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop) {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml");
-
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
-            CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
-            ReflectionTestUtils.setField(srv, prop, null);
-            assertThatThrownBy(() -> TigerServer.create("blub", srv, null)
-                .assertThatConfigurationIsCorrect())
-                .isInstanceOf(TigerTestEnvException.class);
-        });
+        createTestEnvMgrSafelyAndExecute(
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml",
+            envMgr -> {
+                CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
+                ReflectionTestUtils.setField(srv, prop, null);
+                assertThatThrownBy(() -> TigerServer.create("blub", srv, null)
+                    .assertThatConfigurationIsCorrect())
+                    .isInstanceOf(TigerTestEnvException.class);
+            });
     }
 
     @Test
-    public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK() {
-        TigerGlobalConfiguration.initialize();
-        TigerGlobalConfiguration.readFromYaml(
-            "servers:\n" +
-                "  testTigerProxy:\n" +
-                "    type: tigerProxy\n" +
-                "    tigerProxyCfg:\n" +
-                "      serverPort: 9999", "tiger");
-
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
-            CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-            assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, null)
-                .assertThatConfigurationIsCorrect())
-                .isInstanceOf(TigerTestEnvException.class);
-        });
+    @TigerTest(tigerYaml = "servers:\n" +
+        "  testTigerProxy:\n" +
+        "    type: tigerProxy\n" +
+        "    tigerProxyCfg:\n" +
+        "      serverPort: 9999", skipEnvironmentSetup = true)
+    public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
+        CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
+        assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, null)
+            .assertThatConfigurationIsCorrect())
+            .isInstanceOf(TigerTestEnvException.class);
     }
 
     @Test
     public void testCheckDoubleKey_NOK() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDoubleKey.yaml");
-
-        assertThatThrownBy(TigerTestEnvMgr::new)
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDoubleKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
             .hasRootCauseMessage("Duplicate keys in yaml file ('serverDouble')!");
     }
 
-
-
     @Test
-    public void testPlaceholderAndExports() {
-        String yamlSource =
-            "servers:\n" +
-                "  tigerServer1:\n"
-                + "    hostname: testReverseProxy\n"
-                + "    type: tigerProxy\n"
-                + "    exports: \n"
-                + "      - FOO_BAR=${custom.value}\n"
-                + "      - OTHER_PORT=${FREE_PORT_3}\n"
-                + "    tigerProxyCfg:\n"
-                + "      serverPort: ${FREE_PORT_1}\n"
-                + "      proxyCfg:\n"
-                + "        port: ${FREE_PORT_2}\n"
-                + "  tigerServer2:\n"
-                + "    hostname: ${foo.bar}\n"
-                + "    type: tigerProxy\n"
-                + "    dependsUpon: tigerServer1\n"
-                + "    tigerProxyCfg:\n"
-                + "      serverPort: ${free.port.3}\n"
-                + "      proxiedServerProtocol: ${FOO_BAR}\n"
-                + "      proxyCfg:\n"
-                + "        port: ${free.port.4}\n";
-
-        TigerGlobalConfiguration.readFromYaml(yamlSource, "tiger");
-        TigerGlobalConfiguration.putValue("custom.value", "ftp");
-
-        TigerGlobalConfiguration.initialize();
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
-            envMgr.setUpEnvironment();
-
-            final TigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
-            assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getServerPort())
-                .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
-            assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyCfg().getPort())
-                .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.4").get());
-            assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
-                .isEqualTo("ftp");
-        });
+    @TigerTest(tigerYaml = "servers:\n" +
+        "  tigerServer1:\n"
+        + "    hostname: testReverseProxy\n"
+        + "    type: tigerProxy\n"
+        + "    exports: \n"
+        + "      - FOO_BAR=${custom.value}\n"
+        + "      - OTHER_PORT=${FREE_PORT_3}\n"
+        + "    tigerProxyCfg:\n"
+        + "      serverPort: ${FREE_PORT_1}\n"
+        + "      proxyCfg:\n"
+        + "        port: ${FREE_PORT_2}\n"
+        + "  tigerServer2:\n"
+        + "    hostname: ${foo.bar}\n"
+        + "    type: tigerProxy\n"
+        + "    dependsUpon: tigerServer1\n"
+        + "    tigerProxyCfg:\n"
+        + "      serverPort: ${free.port.3}\n"
+        + "      proxiedServerProtocol: ${FOO_BAR}\n"
+        + "      proxyCfg:\n"
+        + "        port: ${free.port.4}\n",
+        additionalProperties = {"custom.value = ftp"})
+    public void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
+        final TigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
+        assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getServerPort())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
+        assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyCfg().getPort())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.4").get());
+        assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
+            .isEqualTo("ftp");
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -169,11 +125,12 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     @Test
     public void testCreateInvalidInstanceType() {
         TigerGlobalConfiguration.readFromYaml("servers:\n"
-            + "  testInvalidType:\n"
-            + "    type: NOTEXISTING\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/",
+                + "  testInvalidType:\n"
+                + "    type: NOTEXISTING\n"
+                + "    source:\n"
+                + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/",
             "tiger");
+        TigerGlobalConfiguration.setRequireTigerYaml(false);
 
         assertThatThrownBy(() -> {
             final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
@@ -183,12 +140,13 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
 
     @Test
     public void testCreateUnknownTemplate() {
+        TigerGlobalConfiguration.setRequireTigerYaml(false);
         TigerGlobalConfiguration.readFromYaml("servers:\n"
-            + "  unknownTemplate:\n"
-            + "    template: some_template_that_does_not_exist\n"
-            + "    type: externalUrl\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/",
+                + "  unknownTemplate:\n"
+                + "    template: some_template_that_does_not_exist\n"
+                + "    type: externalUrl\n"
+                + "    source:\n"
+                + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/",
             "tiger");
         TigerGlobalConfiguration.initialize();
         assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
@@ -196,15 +154,15 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
 
     @Test
     public void testCreateInvalidPkiKeys_wrongType() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_wrongType.yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_wrongType.yaml"));
         assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
     }
 
     @Test
     public void testCreateInvalidPkiKeys_missingCertificate() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_missingCertificate.yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_missingCertificate.yaml"));
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
@@ -214,8 +172,8 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
 
     @Test
     public void testCreateInvalidPkiKeys_emptyCertificate() {
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_emptyCertificate.yaml");
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_emptyCertificate.yaml"));
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
         assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
@@ -225,13 +183,14 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
 
     @Test
     public void testInvalidUrlMappings_noArrow() {
+        TigerGlobalConfiguration.setRequireTigerYaml(false);
         TigerGlobalConfiguration.readFromYaml("servers:\n"
-            + "  testInvalidUrlMappings_noArrow:\n"
-            + "    type: externalUrl\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/\n"
-            + "    urlMappings:\n"
-            + "      - https://bla\n",
+                + "  testInvalidUrlMappings_noArrow:\n"
+                + "    type: externalUrl\n"
+                + "    source:\n"
+                + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/\n"
+                + "    urlMappings:\n"
+                + "      - https://bla\n",
             "tiger");
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
@@ -242,13 +201,14 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
 
     @Test
     public void testInvalidUrlMappings_noDestinationRoute() {
+        TigerGlobalConfiguration.setRequireTigerYaml(false);
         TigerGlobalConfiguration.readFromYaml("servers:\n"
-            + "  testInvalidUrlMappings_noDestinationRoute:\n"
-            + "    type: externalUrl\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/\n"
-            + "    urlMappings:\n"
-            + "      - https://bla -->",
+                + "  testInvalidUrlMappings_noDestinationRoute:\n"
+                + "    type: externalUrl\n"
+                + "    source:\n"
+                + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/\n"
+                + "    urlMappings:\n"
+                + "      - https://bla -->",
             "tiger");
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();

@@ -41,6 +41,7 @@ import org.xmlunit.builder.DiffBuilder;
 // IMPORTANT!
 // IMPORTANT!
 
+
 @Slf4j
 public class RBelValidatorGlue {
 
@@ -313,7 +314,7 @@ public class RBelValidatorGlue {
      * @param oracleDocStr value / regex that should equal or match as JSON or XML content
      * @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
      */
-    @Dann("TGR prüfe aktuelle Antwort im Knoten stimmt als {word} überein mit:")
+    @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {word} überein mit:")
     @Then("TGR current response at {string} matches as {word}")
     public void currentResponseAtMatchesAsJson(final String rbelPath, final String mode, final String oracleDocStr) {
         final String parsedRbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);

@@ -33,11 +33,6 @@ import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-import org.yaml.snakeyaml.nodes.MappingNode;
-import org.yaml.snakeyaml.nodes.ScalarNode;
-import org.yaml.snakeyaml.parser.ParserException;
 
 @Slf4j
 public class TigerConfigurationLoader {
@@ -92,25 +87,19 @@ public class TigerConfigurationLoader {
     }
 
     @SneakyThrows
-    public <T extends Object> T instantiateConfigurationBean(Class<T> configurationBeanClass, String... baseKeys) {
+    public <T> T instantiateConfigurationBean(Class<T> configurationBeanClass, String... baseKeys) {
         initialize();
 
         TreeNode targetTree = convertToTree();
         final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
-        TigerConfigurationKey usedKeys = new TigerConfigurationKey();
         for (TigerConfigurationKeyString key : configurationKey) {
             if (targetTree.get(key.getValue()) == null) {
-                throw new TigerConfigurationException(
-                    "Could not instantiate bean under key '" + configurationKey.downsampleKey()
-                        + "'. (Used keys '" + usedKeys.downsampleKey() + "'), available keys "
-                + IteratorUtils.toList(targetTree.fieldNames()));
+                return objectMapper.readValue("{}", configurationBeanClass);
             }
             targetTree = targetTree.get(key.getValue());
-            usedKeys.add(key);
         }
         try {
-            T resultObject = objectMapper.treeToValue(targetTree, configurationBeanClass);
-            return resultObject;
+            return objectMapper.treeToValue(targetTree, configurationBeanClass);
         } catch (JacksonException e) {
             log.debug("Error while converting the following tree: {}", objectMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(targetTree));
@@ -121,6 +110,10 @@ public class TigerConfigurationLoader {
     }
 
     public void readFromYaml(String yamlSource, String... baseKeys) {
+        readFromYaml(yamlSource, SourceType.YAML, baseKeys);
+    }
+
+    public void readFromYaml(String yamlSource, SourceType sourceType, String... baseKeys) {
         initialize();
 
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
@@ -128,7 +121,7 @@ public class TigerConfigurationLoader {
         addYamlToMap(yaml.load(yamlSource), new TigerConfigurationKey(baseKeys), valueMap);
         loadedSources.add(BasicTigerConfigurationSource.builder()
             .values(valueMap)
-            .sourceType(SourceType.YAML)
+            .sourceType(sourceType)
             .basePath(new TigerConfigurationKey(baseKeys))
             .build());
     }
@@ -236,8 +229,7 @@ public class TigerConfigurationLoader {
                 TokenSubstituteHelper.substitute(entry.getValue(), this)))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
 
-        updatedValues.entrySet().stream()
-            .forEach(entry -> loadedAndSortedProperties.put(entry.getKey(), entry.getValue()));
+        loadedAndSortedProperties.putAll(updatedValues);
     }
 
     private JsonNode mapObjectsToArrayWhereApplicable(JsonNode value, JsonNodeFactory nodeFactory) {
@@ -381,37 +373,4 @@ public class TigerConfigurationLoader {
         }
     }
 
-    /**
-     * A specialized {@link Constructor} that checks for duplicate keys.
-     */
-    public static class DuplicateMapKeysForbiddenConstructor extends SafeConstructor {
-
-        @Override
-        protected Map<Object, Object> constructMapping(MappingNode node) {
-            try {
-                List<String> keys = node.getValue().stream().map(v -> ((ScalarNode) v.getKeyNode()).getValue()).collect(
-                    Collectors.toList());
-                Set<String> duplicates = findDuplicates(keys);
-                if (!duplicates.isEmpty()) {
-                    throw new TigerConfigurationException(
-                        "Duplicate keys in yaml file ('" + String.join(",", duplicates) + "')!");
-                }
-            } catch (Exception e) {
-                throw new TigerConfigurationException("Duplicate keys in yaml file!", e);
-            }
-            try {
-                return super.constructMapping(node);
-            } catch (IllegalStateException e) {
-                throw new ParserException("while parsing MappingNode",
-                    node.getStartMark(), e.getMessage(), node.getEndMark());
-            }
-        }
-
-        private <T> Set<T> findDuplicates(Collection<T> collection) {
-            Set<T> uniques = new HashSet<>();
-            return collection.stream()
-                .filter(e -> !uniques.add(e))
-                .collect(Collectors.toSet());
-        }
-    }
 }

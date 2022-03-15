@@ -187,9 +187,7 @@ public class TigerTestHooks {
     }
 
     private void initializeTiger() {
-        TigerDirector.readConfiguration();
-        TigerDirector.applyTestLibConfig();
-        TigerDirector.startMonitorUITestEnvMgrAndTigerProxy();
+        TigerDirector.start();
     }
 
     public static void registerRestAssuredFilter() {

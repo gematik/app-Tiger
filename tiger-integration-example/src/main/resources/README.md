@@ -1,0 +1,1 @@
+<!-- We must generate a -source JAR file to publish on Maven Central -->

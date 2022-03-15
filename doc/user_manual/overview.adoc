@@ -81,7 +81,7 @@ The Tiger test library provides the following core features:
 
 ==== Working together
 
-The Testenvironment Manager instantiates all test nodes configured in the `tiger-testenv.yaml` config file.
+The Testenvironment Manager instantiates all test nodes configured in the `tiger.yaml` config file.
 It also instantiates one local Tiger Proxy for the current test suite.
 This Tiger Proxy instance (and others created in the test environment if using a mesh setup) traces all requests and responses
 forwarded via this proxy and provides them to the test suite for further validation.

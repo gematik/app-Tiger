@@ -57,7 +57,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     @Getter
     private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
     private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
-    private StompSession stompSession;
 
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
@@ -81,7 +80,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         connectFuture.addCallback(stompSession -> {
                 log.info("Succesfully opened stomp session {} to url",
                     stompSession.getSessionId(), tracingWebSocketUrl);
-                this.stompSession = stompSession;
             },
             throwable -> {
                 throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
@@ -214,9 +212,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     public void unsubscribe() {
-        if (stompSession != null && stompSession.isConnected()) {
-            stompSession.disconnect();
-        }
         tigerProxyStompClient.stop();
     }
 

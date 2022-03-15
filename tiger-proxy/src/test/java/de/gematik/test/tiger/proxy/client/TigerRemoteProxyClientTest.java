@@ -27,6 +27,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
@@ -53,11 +54,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 @WireMockTest
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(
+    properties = {"tigerProxy.activateRbelParsing: false"})
 @RequiredArgsConstructor
 @DirtiesContext
 @Slf4j
@@ -91,7 +95,9 @@ public class TigerRemoteProxyClientTest {
     @BeforeEach
     public void setup(WireMockRuntimeInfo remoteServer) {
         log.info("Setup remote client... {}, {}", tigerRemoteProxyClient, tigerProxy);
-        TigerProxyConfiguration cfg = TigerProxyConfiguration.builder().proxyLogLevel("WARN").build();
+        TigerProxyConfiguration cfg = TigerProxyConfiguration.builder()
+            .proxyLogLevel("WARN")
+            .build();
         tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
             cfg);
 
@@ -101,6 +107,9 @@ public class TigerRemoteProxyClientTest {
         remoteServer.getWireMock().register(post("/foo")
             .willReturn(aResponse()
                 .withBody("bar")));
+        remoteServer.getWireMock().register(get("/")
+            .willReturn(aResponse()
+                .withBody("emptyPath!!!")));
 
         log.info("Configuring routes...");
         try {
@@ -126,6 +135,7 @@ public class TigerRemoteProxyClientTest {
         tigerRemoteProxyClient.unsubscribe();
         tigerRemoteProxyClient.close();
         tigerProxy.clearAllRoutes();
+        tigerProxy.getRbelLogger().getMessageHistory().clear();
         log.info("Messages {}", tigerProxy.getRbelMessages().size());
         tigerRemoteProxyClient = null;
         unirestInstance.shutDown();
@@ -142,6 +152,16 @@ public class TigerRemoteProxyClientTest {
         await()
             .atMost(2, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
+
+        // assert that only two messages are present
+        assertThat(tigerProxy.getRbelMessages())
+            .hasSize(2);
+        // assert that the messages only have rudimentary information
+        // (no parsing did take place on the sending tigerProxy)
+        assertThat(tigerProxy.getRbelMessages().get(0).findRbelPathMembers("$..*"))
+            .hasSize(4);
+        assertThat(tigerProxy.getRbelMessages().get(1).findRbelPathMembers("$..*"))
+            .hasSize(4);
     }
 
     @Test
@@ -284,6 +304,23 @@ public class TigerRemoteProxyClientTest {
     }
 
     @Test
+    public void requestToBaseUrl_shouldBeForwarded() {
+        AtomicInteger listenerCallCounter = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+
+        unirestInstance.get("http://myserv.er").asString();
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> listenerCallCounter.get() > 0);
+
+        assertThat(tigerRemoteProxyClient.getRbelMessages().get(0).findElement("$.path"))
+            .get()
+            .extracting(RbelElement::getRawStringContent)
+            .isEqualTo("/");
+    }
+
+    @Test
     public void downstreamTigerProxyWithFilterCriterion_shouldOnlyShowMatchingMessages() {
         var filteredTigerProxy = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
             TigerProxyConfiguration.builder()
@@ -293,7 +330,8 @@ public class TigerRemoteProxyClientTest {
 
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         filteredTigerProxy.addRbelMessageListener(message -> {
-            if (message.getFacetOrFail(RbelHttpRequestFacet.class)
+            if (message.hasFacet(RbelHttpRequestFacet.class)
+                && message.getFacetOrFail(RbelHttpRequestFacet.class)
                 .getPath().getRawStringContent().endsWith("faa")) {
                 // this ensures we only leave the wait after the /faa call
                 listenerCallCounter.incrementAndGet();

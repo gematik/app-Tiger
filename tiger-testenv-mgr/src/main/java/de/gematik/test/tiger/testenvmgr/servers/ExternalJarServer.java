@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 @Slf4j
@@ -53,7 +54,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
     @Override
     public void performStartup() {
         final CfgExternalJarOptions externalJarOptions = getConfiguration().getExternalJarOptions();
-        final String workingDir = externalJarOptions.getWorkingDir();
+        final String workingDir = getConfiguration().getExternalJarOptions().getWorkingDir();
         log.info(Ansi.colorize("starting external jar instance {} in folder {}...", RbelAnsiColors.GREEN_BOLD),
             getHostname(), workingDir);
 
@@ -61,8 +62,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         var jarUrl = getConfiguration().getSource().get(0);
 
         if (jarUrl.startsWith("local:")) {
-            var jarName = jarUrl.substring(jarUrl.lastIndexOf("/") + 1);
-            jarFile = Paths.get(externalJarOptions.getWorkingDir(), jarName).toFile();
+            var jarName = jarUrl.replaceFirst("local:", "").split("/");
+            jarFile = Paths.get(externalJarOptions.getWorkingDir(), jarName[jarName.length - 1]).toFile();
             if (!jarFile.exists()) {
                 throw new TigerTestEnvException("Local jar " + jarFile.getAbsolutePath() + " not found!");
             }
@@ -80,7 +81,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         options.add(jarFile.getName());
         options.addAll(externalJarOptions.getArguments());
         log.info("executing '" + String.join(" ", options));
-        log.info("in working dir: " + new File(externalJarOptions.getWorkingDir()).getAbsolutePath());
+        log.info("in working dir: " + new File(workingDir).getAbsolutePath());
         Runtime.getRuntime().addShutdownHook(new Thread(this::stopExternalProcess));
 
         final AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -90,7 +91,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             try {
                 processReference.set(new ProcessBuilder()
                     .command(options.toArray(String[]::new))
-                    .directory(new File(externalJarOptions.getWorkingDir()))
+                    .directory(new File(workingDir))
                     .inheritIO()
                     .start());
                 log.info("New process started (pid={})", processReference.get().pid());

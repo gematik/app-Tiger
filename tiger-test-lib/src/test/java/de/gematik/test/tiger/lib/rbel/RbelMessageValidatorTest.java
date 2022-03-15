@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 public class RbelMessageValidatorTest {
 
@@ -66,8 +68,8 @@ public class RbelMessageValidatorTest {
             .isFalse();
     }
 
-    private RbelElement buildRequestWithPath(String path) {
-        RbelElement rbelElement = new RbelElement(null, null);
+    private RbelElement buildRequestWithPath(final String path) {
+        final RbelElement rbelElement = new RbelElement(null, null);
         rbelElement.addFacet(RbelHttpRequestFacet.builder()
             .path(new RbelElement(path.getBytes(), null))
             .build());
@@ -138,5 +140,21 @@ public class RbelMessageValidatorTest {
         new RbelMessageValidator().compareXMLStructure(
             "<root><header></header><body attr1='1'   attr2='2'></body></root>",
             "<root><header></header><body attr2='2' attr1='1'></body></root>");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"http://server, ''", "http://server/, /", "http://server, /", "http://server/, ''"})
+    public void testEmptyPathMatching(final String url, final String path) {
+        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+            buildRequestWithPath(url), path))
+            .isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"http://server/blu/, /", "http://server/, /bla", "http://server/bla, ''"})
+    public void testPathOfMessageMatch_NOK(final String url, final String path) {
+        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+            buildRequestWithPath(url), path))
+            .isFalse();
     }
 }

@@ -19,7 +19,9 @@ package de.gematik.test.tiger.testenvmgr.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -31,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeAll;
@@ -139,16 +142,21 @@ public class TestTigerTestEnvMgrStartupSequence {
         );
     }
 
+    @SneakyThrows
     private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon) {
         final CfgServer configuration = new CfgServer();
         configuration.setDependsUpon(dependsUpon);
         configuration.setType(ServerType.EXTERNALURL);
         configuration.setSource(List.of("blub"));
         final TigerServer server = new MockTigerServer(name, configuration, envMgr);
+        TigerGlobalConfiguration.readFromYaml(new ObjectMapper().writeValueAsString(configuration),
+            SourceType.TEST_CONTEXT,
+            "tiger", "servers", name);
 
         return Pair.of(name, server);
     }
 
+    @SneakyThrows
     private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon,
         String delayStartupUntilThisServerIsRunning) {
         final CfgServer configuration = new CfgServer();
@@ -157,6 +165,9 @@ public class TestTigerTestEnvMgrStartupSequence {
         configuration.setSource(List.of("blub"));
         final TigerServer server = new MockTigerServer(name, configuration, envMgr,
             delayStartupUntilThisServerIsRunning);
+        TigerGlobalConfiguration.readFromYaml(new ObjectMapper().writeValueAsString(configuration),
+            SourceType.TEST_CONTEXT,
+            "tiger", "servers", name);
 
         return Pair.of(name, server);
     }
@@ -176,7 +187,7 @@ public class TestTigerTestEnvMgrStartupSequence {
     @ParameterizedTest
     @MethodSource("checkSuccessfullStartupSequencesParameters")
     public void checkSuccessfullStartupSequences(Map<String, TigerServer> serverMap,
-                                                 List<List<String>> startupSequences) {
+        List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
 
         envMgr.setUpEnvironment();

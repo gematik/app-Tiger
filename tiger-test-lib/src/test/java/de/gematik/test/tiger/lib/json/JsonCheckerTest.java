@@ -17,12 +17,14 @@
 package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import de.gematik.test.tiger.lib.json.JsonChecker.JsonCheckerConversionException;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @Slf4j
@@ -66,11 +68,11 @@ public class JsonCheckerTest {
 
             Arguments.of("Match json: invalid oracle string",
                 "{ attr1: 'val1', attr3: 'val3' }",
-                "{ attr1: 'val1', ____attr2: 'val2' ::::  }", Optional.of(AssertionError.class), false),
+                "{ attr1: 'val1', ____attr2: 'val2' ::::  }", Optional.of(JsonCheckerConversionException.class), false),
 
             Arguments.of("Match json: invalid json",
                 "{ attr1: 'val1', attr3: 'val3' :::: }",
-                "{ attr1: 'val1', ____attr2: 'val2'  }", Optional.of(AssertionError.class), false),
+                "{ attr1: 'val1', ____attr2: 'val2'  }", Optional.of(JsonCheckerConversionException.class), false),
 
             Arguments.of("Match json: null value is equal to $NULL",
                 "{ attr1: 'val1', attr3: null }",
@@ -183,23 +185,6 @@ public class JsonCheckerTest {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource("provideDataForMatchingJsonObjects")
-    public void testMatchOContainInAnyOrderJsonObjects(String testInfo, String jsonStr, String oracleStr,
-        Optional<Class<Error>> exception, boolean checkExtraAttributes) {
-        log.info(testInfo);
-        if (exception.isEmpty()) {
-            check.assertJsonObjectShouldMatchOrContainInAnyOrder(
-                jsonStr,
-                oracleStr, checkExtraAttributes);
-        } else {
-            assertThatThrownBy(() -> check.assertJsonObjectShouldMatchOrContainInAnyOrder(
-                jsonStr,
-                oracleStr, checkExtraAttributes))
-                .isInstanceOf(exception.get());
-        }
-    }
-
     private static Stream<Arguments> provideDataForMatchingJsonAttributes() {
         return Stream.of(
             Arguments.of("Match value to key: absolute match",
@@ -296,24 +281,6 @@ public class JsonCheckerTest {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource("provideDataForMatchingJsonAttributes")
-    public void testJsonAttributeShouldMatch(String testInfo, String jsonObject, String claimName, String
-        regex,
-        Optional<Class<Error>> exception) {
-        log.info(testInfo);
-        if (exception.isEmpty()) {
-            check.assertJsonAttributeShouldMatch(
-                new JSONObject(jsonObject),
-                claimName, regex);
-        } else {
-            assertThatThrownBy(() -> check.assertJsonAttributeShouldMatch(
-                new JSONObject(jsonObject),
-                claimName, regex))
-                .isInstanceOf(exception.get());
-        }
-    }
-
     private static Stream<Arguments> provideDataForNotMatchingJsonAttributes() {
         return Stream.of(
             Arguments.of("Not match value to key: key matches value",
@@ -365,6 +332,41 @@ public class JsonCheckerTest {
     }
 
     @ParameterizedTest
+    @MethodSource("provideDataForMatchingJsonObjects")
+    public void testMatchOContainInAnyOrderJsonObjects(String testInfo, String jsonStr, String oracleStr,
+        Optional<Class<Error>> exception, boolean checkExtraAttributes) {
+        log.info(testInfo);
+        if (exception.isEmpty()) {
+            check.assertJsonObjectShouldMatchOrContainInAnyOrder(
+                jsonStr,
+                oracleStr, checkExtraAttributes);
+        } else {
+            assertThatThrownBy(() -> check.assertJsonObjectShouldMatchOrContainInAnyOrder(
+                jsonStr,
+                oracleStr, checkExtraAttributes))
+                .isInstanceOf(exception.get());
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideDataForMatchingJsonAttributes")
+    public void testJsonAttributeShouldMatch(String testInfo, String jsonObject, String claimName, String
+        regex,
+        Optional<Class<Error>> exception) {
+        log.info(testInfo);
+        if (exception.isEmpty()) {
+            check.assertJsonAttributeShouldMatch(
+                new JSONObject(jsonObject),
+                claimName, regex);
+        } else {
+            assertThatThrownBy(() -> check.assertJsonAttributeShouldMatch(
+                new JSONObject(jsonObject),
+                claimName, regex))
+                .isInstanceOf(exception.get());
+        }
+    }
+
+    @ParameterizedTest
     @MethodSource("provideDataForNotMatchingJsonAttributes")
     public void testJsonAttributeShouldNotMatch(String testInfo, String jsonObject, String claimName, String
         regex,
@@ -380,5 +382,20 @@ public class JsonCheckerTest {
                 claimName, regex))
                 .isInstanceOf(exception.get());
         }
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"N_o_T a {{{ j[[son; {\"correct\":\"json\"}; N_o_T",
+        "{\"correct\":\"json\"}; N_o_T a {{{ j[[son; N_o_T",
+        "{\"array\":\"json\"}; {\"array\":[1,2,3]}; Expected an 'JSONArray' at key 'array', but found 'String'",
+        "{\"array\":[1,2,3]}; {\"array\":\"json\"}; Expected an 'String' at key 'array', but found 'JSONArray'"
+    },
+        delimiter = ';')
+    public void testMatchOContainInAnyOrderJsonObjects(String jsonStr, String oracleStr,
+        String exceptionShouldContain) {
+        assertThatThrownBy(() -> check.assertJsonObjectShouldMatchOrContainInAnyOrder(
+            jsonStr,
+            oracleStr, true))
+            .hasMessageContaining(exceptionShouldContain);
     }
 }

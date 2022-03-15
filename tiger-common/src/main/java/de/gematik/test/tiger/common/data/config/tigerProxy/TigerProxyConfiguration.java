@@ -31,7 +31,6 @@ import org.mockserver.proxyconfiguration.ProxyConfiguration;
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
 @Builder
-@ToString
 @JsonInclude(Include.NON_NULL)
 public class TigerProxyConfiguration {
 
@@ -48,7 +47,7 @@ public class TigerProxyConfiguration {
     private boolean activateAsn1Parsing = false;
     @Builder.Default
     private boolean activateForwardAllLogging = true;
-    private RbelFileSaveInfo fileSaveInfo;
+    private TigerFileSaveInfo fileSaveInfo;
     private Integer port;
     @Builder.Default
     private boolean skipTrafficEndpointsSubscription = false;

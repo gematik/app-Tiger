@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.OPTIONAL;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.RestAssured;
@@ -50,12 +51,13 @@ public class TestRestAssuredLogToCurlCommandParser {
         remoteServer.getWireMock().register(post("/fyy")
             .willReturn(aResponse()
                 .withBody("byy")));
+
+        TigerDirector.start();
     }
 
     @Test
     public void testMultipleRequestsSplitCorrectly(WireMockRuntimeInfo remoteServer) {
-
-        TigerDirector.readConfiguration();
+        TigerDirector.start();
         TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
         TigerTestHooks.registerRestAssuredFilter();
 
@@ -70,8 +72,7 @@ public class TestRestAssuredLogToCurlCommandParser {
 
     @Test
     public void testSingleRequestsSplitCorrectly(WireMockRuntimeInfo remoteServer) {
-
-        TigerDirector.readConfiguration();
+        TigerDirector.start();
         TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
         TigerTestHooks.registerRestAssuredFilter();
 
@@ -83,7 +84,7 @@ public class TestRestAssuredLogToCurlCommandParser {
 
     @Test
     public void testPostToCurl(WireMockRuntimeInfo remoteServer) {
-        TigerDirector.readConfiguration();
+        TigerDirector.start();
         TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
         TigerTestHooks.registerRestAssuredFilter();
 
@@ -101,7 +102,7 @@ public class TestRestAssuredLogToCurlCommandParser {
 
     @Test
     public void testGetToCurl(WireMockRuntimeInfo remoteServer) {
-        TigerDirector.readConfiguration();
+        TigerDirector.start();
         TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
         TigerTestHooks.registerRestAssuredFilter();
 

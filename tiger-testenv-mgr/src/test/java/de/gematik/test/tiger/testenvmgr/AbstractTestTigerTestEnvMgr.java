@@ -22,12 +22,12 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.IntStream;
+import java.util.Map;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -75,19 +75,6 @@ public abstract class AbstractTestTigerTestEnvMgr {
                 .withBody(winstoneBytes))[0];
 
         System.setProperty("mockserver.port", Integer.toString(mockServer.getLocalPort()));
-        TigerGlobalConfiguration.reset();
-        TigerGlobalConfiguration.initialize();
-    }
-
-    @BeforeEach
-    public void printName(TestInfo testInfo) {
-        TigerGlobalConfiguration.reset();
-        if (testInfo.getTestMethod().isPresent()) {
-            log.info(Ansi.colorize("Starting " + testInfo.getTestMethod().get().getName(), RbelAnsiColors.GREEN_BOLD));
-        } else {
-            log.warn(Ansi.colorize("Starting UNKNOWN step", RbelAnsiColors.GREEN_BOLD));
-        }
-        System.clearProperty("TIGER_TESTENV_CFGFILE");
     }
 
     @AfterEach
@@ -101,16 +88,27 @@ public abstract class AbstractTestTigerTestEnvMgr {
     //
     // -----------------------------------------------------------------------------------------------------------------
 
-    public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
+    public void createTestEnvMgrSafelyAndExecute(String configurationFilePath,
+        ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
         TigerTestEnvMgr envMgr = null;
         try {
-            TigerGlobalConfiguration.initialize();
+            if (StringUtils.isEmpty(configurationFilePath)) {
+                TigerGlobalConfiguration.initialize();
+            } else {
+                TigerGlobalConfiguration.initializeWithCliProperties(
+                    Map.of("TIGER_TESTENV_CFGFILE", configurationFilePath));
+            }
             envMgr = new TigerTestEnvMgr();
             testEnvMgrConsumer.accept(envMgr);
         } finally {
             if (envMgr != null) {
                 envMgr.shutDown();
+                TigerGlobalConfiguration.reset();
             }
         }
+    }
+
+    public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
+        createTestEnvMgrSafelyAndExecute("", testEnvMgrConsumer);
     }
 }

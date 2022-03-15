@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package de.gematik.test.tiger.integration.example;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.lib.TigerDirector;
+import io.cucumber.java.en.When;
+import kong.unirest.HttpResponse;
+import kong.unirest.Unirest;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class TestTigerIntegrationExample {
+
+  @When("User requests the startpage")
+  public void userRequestsStartpage() {
+    var rest = Unirest.spawnInstance();
+    rest.config().proxy("127.0.0.1",
+        TigerGlobalConfiguration.readIntegerOptional("free.port.1")
+            .orElseThrow());
+
+    final HttpResponse<String> httpResponse = rest.get("http://winstone").asString();
+
+    assertNotNull(httpResponse);
+    assertEquals("Response code not 200", 200, httpResponse.getStatus());
+  }
+}

@@ -17,20 +17,30 @@
 package de.gematik.test.tiger.common.config;
 
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
-import io.netty.util.internal.SocketUtils;
+import java.io.File;
 import java.io.IOException;
-import java.io.InvalidObjectException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class TigerGlobalConfiguration {
 
     private static TigerConfigurationLoader globalConfigurationLoader = new TigerConfigurationLoader();
+    @Getter @Setter
+    private static boolean requireTigerYaml = false;
     private static boolean initialized = false;
 
     public synchronized static void reset() {
@@ -38,7 +48,11 @@ public class TigerGlobalConfiguration {
         initialized = false;
     }
 
-    public synchronized static void initialize() {
+    public static void initialize() {
+        initializeWithCliProperties(Map.of());
+    }
+
+    public static void initializeWithCliProperties(Map<String, String> additionalProperties) {
         if (initialized) {
             return;
         }
@@ -49,7 +63,13 @@ public class TigerGlobalConfiguration {
         globalConfigurationLoader.loadSystemProperties();
         globalConfigurationLoader.loadEnvironmentVariables();
 
+        if (additionalProperties != null) {
+            additionalProperties
+                .forEach((key, value) -> TigerGlobalConfiguration.putValue(key, value, SourceType.CLI));
+        }
+
         addFreePortVariables();
+        readYamlFiles();
     }
 
     private static void addFreePortVariables() {
@@ -82,7 +102,8 @@ public class TigerGlobalConfiguration {
     }
 
     @SneakyThrows
-    public synchronized static <T extends Object> T instantiateConfigurationBean(Class<T> configurationBeanClass, String... baseKeys) {
+    public synchronized static <T extends Object> T instantiateConfigurationBean(Class<T> configurationBeanClass,
+        String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanClass, baseKeys);
     }
@@ -90,6 +111,11 @@ public class TigerGlobalConfiguration {
     public synchronized static void readFromYaml(String yamlSource, String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         globalConfigurationLoader.readFromYaml(yamlSource, baseKeys);
+    }
+
+    public synchronized static void readFromYaml(String yamlSource, SourceType sourceType, String... baseKeys) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.readFromYaml(yamlSource, sourceType, baseKeys);
     }
 
     public synchronized static boolean readBoolean(String key) {
@@ -153,5 +179,74 @@ public class TigerGlobalConfiguration {
         assertGlobalConfigurationIsInitialized();
         return readStringOptional(key)
             .map(Integer::parseInt);
+    }
+
+    private static void readYamlFiles() {
+        TigerGlobalConfiguration.readStringOptional("TIGER_YAML")
+            .ifPresent(s -> globalConfigurationLoader.readFromYaml(s, SourceType.TEST_YAML, "tiger"));
+
+        final Optional<File> customCfgFile = TigerGlobalConfiguration.readStringOptional(
+                "TIGER_TESTENV_CFGFILE")
+            .map(File::new);
+        if (customCfgFile.isPresent()) {
+            if (customCfgFile.get().exists()) {
+                readYamlFile(customCfgFile.get());
+                return;
+            } else {
+                throw new TigerConfigurationException("Could not find configuration-file '"
+                    + customCfgFile.get().getAbsolutePath() + "'.");
+            }
+        }
+
+        String computerName = getComputerName();
+
+        final Optional<File> cfgFile = Stream.of(
+                TigerGlobalConfiguration.readStringOptional("TIGER_TESTENV_CFGFILE").orElse(null),
+                "tiger-" + computerName + ".yaml", "tiger-" + computerName + ".yml",
+                "tiger.yaml", "tiger.yml")
+            .filter(Objects::nonNull)
+            .map(File::new)
+            .filter(File::exists)
+            .findFirst();
+        if (cfgFile.isPresent()) {
+            readYamlFile(cfgFile.get());
+            return;
+        }
+
+        final Optional<File> oldCfgFile = Stream.of(
+                TigerGlobalConfiguration.readStringOptional("TIGER_TESTENV_CFGFILE").orElse(null),
+                "tiger-testenv-" + computerName + ".yaml", "tiger-testenv-" + computerName + ".yml",
+                "tiger-testenv.yaml", "tiger-testenv.yml")
+            .filter(Objects::nonNull)
+            .map(File::new)
+            .filter(File::exists)
+            .findFirst();
+        if (oldCfgFile.isPresent()) {
+            log.warn("Older file format detected! Will be deprecated in upcoming versions. Please use tiger.yaml!");
+            readYamlFile(oldCfgFile.get());
+            return;
+        }
+
+        if (requireTigerYaml) {
+            throw new TigerConfigurationException("Could not find configuration-file 'tiger.yaml'.");
+        }
+    }
+
+    private static String getComputerName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            return InetAddress.getLoopbackAddress().getHostName();
+        }
+    }
+
+    private static void readYamlFile(File file) {
+        try {
+            log.info("Reading configuration from file '{}'", file.getAbsolutePath());
+            readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), "tiger");
+        } catch (IOException | RuntimeException e) {
+            throw new TigerConfigurationException(
+                "Error while reading configuration from file '" + file.getAbsolutePath() + "'", e);
+        }
     }
 }
