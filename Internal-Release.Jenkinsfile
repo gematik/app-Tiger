@@ -78,10 +78,7 @@ pipeline {
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
                         //GH Pages
                         mavenBuild(POM_PATH)
-                        stash includes: 'tiger-admin/target/adoc/user_manual/tiger_user_manual.html,
-                        tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf,
-                        tiger-admin/target/adoc/user_manual/examples/**/*,
-                        tiger-admin/target/adoc/user_manual/media/**/*', name: 'manual'
+                        stash includes: 'tiger-admin/target/adoc/user_manual/tiger_user_manual.html,tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf,tiger-admin/target/adoc/user_manual/examples/**/*,tiger-admin/target/adoc/user_manual/media/**/*', name: 'manual'
                         sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages
                             git clean -df
