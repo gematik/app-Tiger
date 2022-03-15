@@ -532,7 +532,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.19.1 - 2022-03-09</span>
+<span id="revdate">Version 0.19.1 - 2022-03-15</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -788,7 +788,7 @@ accessing server instances via external URL configurations</p>
 <div class="sect3">
 <h4 id="_working_together">1.2.4. Working together</h4>
 <div class="paragraph">
-<p>The Testenvironment Manager instantiates all test nodes configured in the <code>tiger-testenv.yaml</code> config file.<br>
+<p>The Testenvironment Manager instantiates all test nodes configured in the <code>tiger.yaml</code> config file.<br>
 It also instantiates one local Tiger Proxy for the current test suite.<br>
 This Tiger Proxy instance (and others created in the test environment if using a mesh setup) traces all requests and responses<br>
 forwarded via this proxy and provides them to the test suite for further validation.</p>
@@ -1463,7 +1463,7 @@ fail the maven job if any test run via the surefire plugin failed.</p>
 <p>a Maven <code>pom.xml</code> file to declare the dependencies and the plugins needed</p>
 </li>
 <li>
-<p>a <code>tiger-testenv.yaml</code> to declare your test environment (servers needed, proxy routes,&#8230;&#8203;). This is currently "empty".</p>
+<p>a <code>tiger.yaml</code> to declare your test environment (servers needed, proxy routes,&#8230;&#8203;). This is currently "empty".</p>
 </li>
 <li>
 <p>a <code>test.feature</code> file containing a test scenario and dummy test steps to be performed.</p>
@@ -1596,22 +1596,22 @@ BOTH settings (environment variables and system properties) are required as Mave
 <div class="sectionbody">
 <div class="paragraph">
 <p>As outlined in <a href="#_overview">the overview section</a> the test environment manager is one of the three core components of the Tiger test framework.<br>
-Its main task is to start various test server nodes configured in the tiger-testenv.yaml configuration file and initialize the local Tiger Proxy for the test suite.<br>
+Its main task is to start various test server nodes configured in the tiger.yaml configuration file and initialize the local Tiger Proxy for the test suite.<br>
 To choose a different test environmental configuration file you may set the environment variable TIGER_TESTENV_CFGFILE.</p>
 </div>
 <div class="paragraph">
-<p>The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from tiger-testenv.yaml.<br>
+<p>The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from tiger.yaml.<br>
 If none of these files exist it will fail the start up.</p>
 </div>
 <div class="paragraph">
-<p>If the environment variable is not set, then the test environment manager first checks for a file named tiger-testenv-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named tiger-testenv.yaml.<br>
+<p>If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named tiger.yaml.<br>
 If none of these files exist it will fail the start up.</p>
 </div>
 <div class="paragraph">
 <p>In the startup phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.</p>
 </div>
 <div class="paragraph">
-<p>To configure your test environment you can either compose the tiger-testenv.yaml file manually or much preferred<br>
+<p>To configure your test environment you can either compose the tiger.yaml file manually or much preferred<br>
 use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 </div>
 <div class="paragraph">
@@ -1644,7 +1644,7 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 <div class="sect3">
 <h4 id="_yaml_configuration_files_in_a_nutshell">3.1.1. YAML configuration files in a nutshell</h4>
 <div class="paragraph">
-<p>Before you start writing your own tiger-testenv.yaml configuration files, make sure you have worked with yaml files before and know its syntax and structure. If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06">20 minutes primer</a>, although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.</p>
+<p>Before you start writing your own tiger.yaml configuration files, make sure you have worked with yaml files before and know its syntax and structure. If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06">20 minutes primer</a>, although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.</p>
 </div>
 </div>
 <div class="sect3">
@@ -2195,7 +2195,7 @@ See <a href="https://wiki.gematik.de/display/PTP/KonSim" class="bare">https://wi
 <div class="sect2">
 <h3 id="_configuring_the_local_test_suite_tiger_proxy">3.3. Configuring the local test suite Tiger Proxy</h3>
 <div class="paragraph">
-<p>The local Tiger Proxy for the test suite can be configured by using the following section(s) in the tiger-testenv.yaml file.<br>
+<p>The local Tiger Proxy for the test suite can be configured by using the following section(s) in the tiger.yaml file.<br>
 For more information about what the Tiger Proxy and how it works see the chapter <a href="#_tiger_proxy">Tiger Proxy</a></p>
 </div>
 <div class="listingblock">
@@ -2340,7 +2340,7 @@ For more information about what the Tiger Proxy and how it works see the chapter
 <div class="paragraph">
 <p>If your test environment is very "expensive" to start or if you are developing your test suite scenarios<br>
 thus starting many test runs in short time, you might want to keep your test environment running and not shut it down after each run.<br>
-To do so, you need to create a customized test environment configuration file (call it tiger-testenv-standalone.yaml,<br>
+To do so, you need to create a customized test environment configuration file (call it tiger-standalone.yaml,<br>
 set the env var TIGER_TESTENV_CFGFILE accordingly) containing all the server nodes needed and<br>
 deactivate the local Tiger Proxy in this configuration file.<br>
 Now download the<br>
@@ -2363,7 +2363,7 @@ java -jar tiger-testenv-mgr-${VERSION}-jar-with-all-dependencies.jar</code></pre
 <div class="ulist">
 <ul>
 <li>
-<p>disable / remove the test nodes in your default tiger-testenv.yaml (either by setting the property active to false or remove the server node entry completely). If you forget to do this, two nodes will be instantiated (one from the standalone test environment manager and the second during test run from the test environment manager started via the test suite hooks).</p>
+<p>disable / remove the test nodes in your default tiger.yaml (either by setting the property active to false or remove the server node entry completely). If you forget to do this, two nodes will be instantiated (one from the standalone test environment manager and the second during test run from the test environment manager started via the test suite hooks).</p>
 </li>
 <li>
 <p>and add routes for each node to the local Tiger Proxy. If you forget to do this, your test suite will not be able to access the test nodes under their configured hostname as this configuration is only known to the standalone test environment manager and NOT to the local tiger proxy started by the test suite hooks.</p>
@@ -2376,13 +2376,13 @@ java -jar tiger-testenv-mgr-${VERSION}-jar-with-all-dependencies.jar</code></pre
 <div class="ulist">
 <ul>
 <li>
-<p>tiger-testenv-standalone.yaml to enable a persistent test environment during the development of test suite scenarios</p>
+<p>tiger-standalone.yaml to enable a persistent test environment during the development of test suite scenarios</p>
 </li>
 <li>
-<p>tiger-testenv-nonodes.yaml for the test suite that will instantiate no nodes but only configure the routes to the nodes from the standalone test environment manager</p>
+<p>tiger-nonodes.yaml for the test suite that will instantiate no nodes but only configure the routes to the nodes from the standalone test environment manager</p>
 </li>
 <li>
-<p>tiger-testenv.yaml a complete configuration that can be used in CI or after the test suite development is completed.</p>
+<p>tiger.yaml a complete configuration that can be used in CI or after the test suite development is completed.</p>
 </li>
 </ul>
 </div>
@@ -3799,7 +3799,7 @@ The following configuration properties are supported:</p>
 <p>Environment-Variables (export "FOO_BAR" = 42)</p>
 </li>
 <li>
-<p>YAML-Files (tiger-testenv.yaml)</p>
+<p>YAML-Files (tiger.yaml)</p>
 </li>
 </ul>
 </div>
@@ -3905,7 +3905,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. tiger-testenv.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 16. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -3928,7 +3928,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>In the above example let&#8217;s say you only want to customize the port. This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. tiger-testenv.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 17. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -4177,7 +4177,7 @@ Till then there is not much more than in the <a href="#_workflow_ui">Workflow UI
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-09 10:01:45 +0100
+Last updated 2022-03-15 08:24:13 +0100
 </div>
 </div>
 </body>
