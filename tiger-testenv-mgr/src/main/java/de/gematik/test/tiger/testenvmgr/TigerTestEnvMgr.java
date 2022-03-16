@@ -246,6 +246,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
 
     @Override
     public void shutDown() {
+        log.info("Shutting down local tiger proxy...");
+        localTigerProxy.shutdown();
         log.info("Shutting down server all servers...");
         servers.values().stream().forEach(TigerServer::shutdown);
     }

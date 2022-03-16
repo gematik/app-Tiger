@@ -14,10 +14,10 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyStore;
@@ -68,7 +68,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     @Getter
     private final MockServerToRbelConverter mockServerToRbelConverter;
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
-    private List<TigerRemoteProxyClient> remoteProxyClients;
+    private List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
 
     public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
@@ -204,7 +204,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     public void subscribeToTrafficEndpoints(final List<String> trafficEndpointUrls) {
-        remoteProxyClients = Optional.of(trafficEndpointUrls)
+        remoteProxyClients.addAll(Optional.of(trafficEndpointUrls)
             .filter(Objects::nonNull)
             .stream()
             .flatMap(List::stream)
@@ -213,7 +213,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 remoteClient.setRbelLogger(getRbelLogger());
                 remoteClient.addRbelMessageListener(this::triggerListener);
             })
-            .collect(Collectors.toList());
+            .collect(Collectors.toList()));
     }
 
     private void addRbelTrafficEndpoint() {
@@ -363,6 +363,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     @Override
     public void removeRoute(final String routeId) {
+        if (mockServerClient.hasStopped()) {
+            return;
+        }
         mockServerClient.clear(new ExpectationId().withId(routeId));
         final TigerRoute route = tigerRouteMap.remove(routeId);
 
