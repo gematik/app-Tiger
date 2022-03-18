@@ -8,9 +8,9 @@ import static java.time.LocalDateTime.now;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
-import de.gematik.test.tiger.testenvmgr.DownloadManager;
-import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
+import de.gematik.test.tiger.testenvmgr.env.DownloadManager;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import java.io.File;
@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 @Slf4j

@@ -12,6 +12,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.Map;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

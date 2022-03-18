@@ -2,11 +2,13 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.testenvmgr;
+package de.gematik.test.tiger.testenvmgr.env;
 
 import com.google.common.util.concurrent.Monitor;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.exceptions.TigerDownloadManagerException;
 import kong.unirest.Unirest;
 import lombok.Builder;

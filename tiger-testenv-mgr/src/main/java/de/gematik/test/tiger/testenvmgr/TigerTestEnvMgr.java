@@ -7,8 +7,6 @@ package de.gematik.test.tiger.testenvmgr;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.TokenSubstituteHelper;
-import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -17,12 +15,15 @@ import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.env.DockerMgr;
+import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import java.io.*;
-import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -31,13 +32,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Getter
-public class TigerTestEnvMgr implements ITigerTestEnvMgr {
+public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
@@ -49,6 +49,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
     private final Map<String, TigerServer> servers = new HashMap<>();
     private final ExecutorService executor = Executors
         .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    private List<TigerUpdateListener> listeners = new ArrayList<>();
 
     public TigerTestEnvMgr() {
         Configuration configuration = readConfiguration();
@@ -89,20 +90,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         }
         localTigerProxy = new TigerProxy(configuration.getTigerProxy());
         return localTigerProxy;
-    }
-
-    public static void main(String[] args) {
-        TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        try {
-            envMgr.setUpEnvironment();
-        } catch (Exception e) {
-            log.error("Error while starting up stand alone tiger testenv mgr! ABORTING...", e);
-            System.exit(1);
-        }
-        log.info(Ansi.colorize("Tiger standalone test environment UP!", RbelAnsiColors.GREEN_BOLD));
-        waitForQuit("TIGER standalone test environment");
-        envMgr.shutDown();
-        System.exit(0);
     }
 
     public static void waitForQuit(String appName) {
@@ -252,6 +239,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
         servers.values().stream().forEach(TigerServer::shutdown);
     }
 
+    public void receiveTestEnvUpdate(TigerStatusUpdate statusUpdate) {
+        log.info("Status in TestEnvMgr: {}", statusUpdate.getStatusMessage());
+        listeners.forEach(listener -> listener.receiveTestEnvUpdate(statusUpdate));
+    }
+
     public List<TigerRoute> getRoutes() {
         return servers.values().stream()
             .map(TigerServer::getRoutes)
@@ -268,5 +260,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr {
             return true;
         }
         return configuration.isLocalProxyActive();
+    }
+
+    @Override
+    public void registerNewListener(TigerUpdateListener listener) {
+        listeners.add(listener);
     }
 }

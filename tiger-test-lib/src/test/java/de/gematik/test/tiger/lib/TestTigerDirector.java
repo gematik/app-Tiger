@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
-import de.gematik.test.tiger.testenvmgr.InsecureTrustAllManager;
+import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.net.URL;
 import java.net.URLConnection;

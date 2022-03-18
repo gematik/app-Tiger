@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.testenvmgr;
+package de.gematik.test.tiger.testenvmgr.util;
 
 import java.net.URLConnection;
 import java.security.KeyManagementException;

@@ -63,6 +63,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
                 .withBody(winstoneBytes))[0];
 
         System.setProperty("mockserver.port", Integer.toString(mockServer.getLocalPort()));
+        TigerGlobalConfiguration.reset();
     }
 
     @AfterEach

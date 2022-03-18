@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.testenvmgr;
+package de.gematik.test.tiger.testenvmgr.env;
 
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectImageResponse;
@@ -13,6 +13,7 @@ import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.ResponseItem;
 import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.servers.DockerComposeServer;
 import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;

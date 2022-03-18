@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.config;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
