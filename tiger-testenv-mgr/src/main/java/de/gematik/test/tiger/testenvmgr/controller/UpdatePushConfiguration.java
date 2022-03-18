@@ -29,12 +29,10 @@ public class UpdatePushConfiguration implements WebSocketMessageBrokerConfigurer
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/envStatus")
-            .withSockJS();
-
-        registry.addEndpoint("/envStatus")
+        registry.addEndpoint("/testEnv")
             .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
-            .setAllowedOrigins("*");
+            .setAllowedOrigins("*")
+            .withSockJS();
     }
 
     @Override
