@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,13 @@ public class TestTigerTestEnvMgrStartupSequence {
     private static TigerTestEnvMgr envMgr;
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    public static void setUp() {
         envMgr = buildTestEnvMgr();
+    }
+
+    @AfterAll
+    public static void tearDown() {
+        TigerGlobalConfiguration.reset();
     }
 
     public static Stream<Arguments> checkSuccessfullStartupSequencesParameters() {

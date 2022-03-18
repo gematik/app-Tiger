@@ -40,6 +40,8 @@ public class TigerTestEnvMgrApplication implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         log.info("Initiating testenv-mgr shutdown...");
-        testEnvMgr.shutDown();
+        if (testEnvMgr != null) {
+            testEnvMgr.shutDown();
+        }
     }
 }
