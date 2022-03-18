@@ -104,6 +104,9 @@
         <sonar.coverage.jacoco.xmlReportPaths>
             ${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
+
+        <!-- skipts the usermanual creation per default. Acrivate with -Dasciidoctor.skip=false -->
+        <asciidoctor.skip>true</asciidoctor.skip>
     </properties>
 
     <profiles>
@@ -136,6 +139,9 @@
         </profile>
         <profile>
             <id>external</id>
+            <properties>
+                <asciidoctor.skip>false</asciidoctor.skip>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
