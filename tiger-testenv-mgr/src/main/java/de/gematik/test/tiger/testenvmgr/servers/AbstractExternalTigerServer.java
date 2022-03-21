@@ -7,11 +7,11 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import java.net.*;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
@@ -52,12 +52,14 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
 
     public TigerServerStatus updateStatus(boolean quiet) {
         var url = buildHealthcheckUrl();
+        statusMessage("Waiting for URL '" + url + "' to be healthy...");
         try {
             URLConnection con = url.openConnection();
             InsecureTrustAllManager.allowAllSsl(con);
             con.setConnectTimeout(1000);
             con.connect();
             printServerUpMessage();
+            statusMessage("Server up & healthy");
             setStatus(TigerServerStatus.RUNNING);
         } catch (ConnectException | SocketTimeoutException cex) {
             if (!quiet) {
@@ -66,6 +68,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         } catch (SSLHandshakeException sslhe) {
             log.warn(Ansi.colorize("SSL handshake but server at least seems to be up!" + sslhe.getMessage(),
                 RbelAnsiColors.YELLOW_BOLD));
+            statusMessage("Server up & healthy");
             setStatus(TigerServerStatus.RUNNING);
         } catch (SSLException sslex) {
             if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
@@ -89,7 +92,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         String message = "External server Startup OK for '" + getHostname();
         if (getConfiguration().getSource() != null
             && !getConfiguration().getSource().isEmpty()) {
-             message += "downloaded from" + getConfiguration().getSource().get(0);
+            message += "downloaded from" + getConfiguration().getSource().get(0);
         }
         log.info(Ansi.colorize(message, RbelAnsiColors.GREEN_BOLD));
     }

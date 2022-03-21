@@ -47,7 +47,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
             return;
         }
         log.info("Booting MockServer...");
-        mockServer = new MockServer(SocketUtils.findAvailableTcpPorts(1).first());
+        mockServer = new MockServer(TigerGlobalConfiguration.readIntegerOptional("free.port.200").orElseThrow());
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
         final File winstoneFile = new File("target/winstone.jar");

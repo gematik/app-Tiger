@@ -29,9 +29,6 @@ public class TigerTestEnvMgrApplication implements ServletContextListener {
     @Bean
     public TigerTestEnvMgr tigerTestEnvMgr() {
         TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
-            envMgr.setUpEnvironment();
-        }
         log.info(Ansi.colorize("Tiger standalone test environment UP!", RbelAnsiColors.GREEN_BOLD));
         this.testEnvMgr = envMgr;
         return envMgr;

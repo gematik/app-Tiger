@@ -30,6 +30,7 @@ public class DockerComposeServer extends TigerServer {
     public void performStartup() {
         log.info(Ansi.colorize("Starting docker compose for {} :{}", RbelAnsiColors.GREEN_BOLD),
             getHostname(), getDockerSource());
+        statusMessage("Starting docker compose");
         getTigerTestEnvMgr().getDockerManager().startComposition(this);
 
         // add routes needed for each server to local docker proxy
@@ -43,6 +44,7 @@ public class DockerComposeServer extends TigerServer {
         }
         log.info(Ansi.colorize("Docker compose Startup for {} : {} OK", RbelAnsiColors.GREEN_BOLD),
             getHostname(), getDockerSource());
+        statusMessage("Docker compose started");
     }
 
     public String getDockerSource() {

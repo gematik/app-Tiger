@@ -14,10 +14,14 @@ import de.gematik.test.tiger.common.data.config.PkiType;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
-import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
+import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
@@ -26,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,7 +42,7 @@ import org.springframework.util.SocketUtils;
 
 @Slf4j
 @Getter
-public abstract class TigerServer {
+public abstract class TigerServer implements TigerEnvUpdateSender {
 
     public static final int DEFAULT_STARTUP_TIMEOUT_IN_SECONDS = 20;
 
@@ -46,11 +51,11 @@ public abstract class TigerServer {
     private final List<String> environmentProperties = new ArrayList<>();
     private final List<TigerRoute> routes = new ArrayList<>();
     private final TigerTestEnvMgr tigerTestEnvMgr;
+    private final List<TigerUpdateListener> listeners = new ArrayList<>();
     private CfgServer configuration;
     private TigerServerStatus status = TigerServerStatus.NEW;
 
-    public TigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr,
-        CfgServer configuration) {
+    public TigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
         this.hostname = hostname;
         this.serverId = serverId;
         this.tigerTestEnvMgr = tigerTestEnvMgr;
@@ -105,11 +110,12 @@ public abstract class TigerServer {
 
     public void start(TigerTestEnvMgr testEnvMgr) {
         synchronized (this) {
-            if (this.status != TigerServerStatus.NEW) {
+            if (getStatus() != TigerServerStatus.NEW) {
                 throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
             }
-            this.status = TigerServerStatus.STARTING;
+            setStatus(TigerServerStatus.STARTING);
         }
+        statusMessage("Starting server...");
 
         reloadConfiguration();
 
@@ -147,6 +153,7 @@ public abstract class TigerServer {
                 getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
             throw e;
         }
+        statusMessage("Server started, setting routes...");
 
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);
@@ -163,8 +170,9 @@ public abstract class TigerServer {
         });
 
         synchronized (this) {
-            this.status = TigerServerStatus.RUNNING;
+            setStatus(TigerServerStatus.RUNNING);
         }
+        statusMessage("Server started & running");
     }
 
     private void reloadConfiguration() {
@@ -263,7 +271,7 @@ public abstract class TigerServer {
                         "local:" + jarPath.substring(jarPath.lastIndexOf('/')));
                     log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, serverId);
                 } else {
-                    folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_downloads").toFile()
+                    folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile()
                         .getAbsolutePath();
                     log.info("Defaulting to temp folder '{}' as working directory for server {}", folder, serverId);
                 }
@@ -375,10 +383,25 @@ public abstract class TigerServer {
     }
 
     public void setStatus(TigerServerStatus newStatus) {
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .status(newStatus)
+            .build());
         this.status = newStatus;
     }
 
-    public enum TigerServerStatus {
-        NEW, STARTING, RUNNING, STOPPED
+    public void registerNewListener(TigerUpdateListener listener) {
+        this.listeners.add(listener);
+    }
+
+    public void statusMessage(String statusMessage) {
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .statusMessage(statusMessage)
+            .build());
+    }
+
+    void publishNewStatusUpdate(TigerServerStatusUpdate update) {
+        listeners.parallelStream().forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+            .serverUpdate(Map.of(serverId, update))
+            .build()));
     }
 }

@@ -3,3 +3,4 @@ servers:
     type: externalUrl
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    startupTimeoutSec: 1

@@ -7,9 +7,23 @@ package de.gematik.test.tiger.testenvmgr.env;
 import com.google.common.util.concurrent.Monitor;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.testenvmgr.exceptions.TigerDownloadManagerException;
+import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import de.gematik.test.tiger.testenvmgr.exceptions.TigerDownloadManagerException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 import kong.unirest.Unirest;
 import lombok.Builder;
 import lombok.Data;
@@ -18,63 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
-
-import static org.awaitility.Awaitility.await;
-
 @Slf4j
 public class DownloadManager {
+
     private static final String DOWNLOAD_PROPERTIES_SUFFIX = ".dwnProps";
     private static final Set<File> RESERVED_FILES = ConcurrentHashMap.newKeySet();
     private static final Set<String> DOWNLOADING_URLS = ConcurrentHashMap.newKeySet();
-    private static final Monitor monitor = new Monitor();
-
-    @SneakyThrows
-    public static File downloadJarAndReturnFile(CfgExternalJarOptions externalJarOptions, String jarUrl,
-                                                String hostname) {
-        var jarName = jarUrl
-            .substring(jarUrl.lastIndexOf("/") + 1)
-            .replaceAll("\\W+", "");
-
-
-        Monitor.Guard jarCurrentlyNotDownloading = monitor.newGuard(
-            () -> !DOWNLOADING_URLS.contains(jarUrl));
-        log.trace("{} tries to enter the monitor...", hostname);
-        synchronized (monitor) {
-            monitor.enterWhen(jarCurrentlyNotDownloading);
-        }
-        log.trace("{} has entered the monitor!", hostname);
-
-        try {
-            return streamOfCandidateFiles(externalJarOptions, jarName)
-                .filter(path -> isJarDownloadedFromUrl(path, jarUrl))
-                .map(Path::toFile)
-                .findAny()
-                .orElseGet(() -> {
-                    File jarFile = seekNewUniqueFile(externalJarOptions, jarName);
-
-                    downloadJar(externalJarOptions, jarUrl, jarFile, hostname);
-
-                    return jarFile;
-                });
-        } finally {
-            log.trace("{} tries to leave the monitor...", hostname);
-            monitor.leave();
-            log.trace("{} has left the monitor!", hostname);
-        }
-    }
-
+    private final Monitor monitor = new Monitor();
 
     private static Stream<Path> streamOfCandidateFiles(CfgExternalJarOptions externalJarOptions, String jarName) {
         try {
@@ -145,8 +109,10 @@ public class DownloadManager {
                     || (bytesWritten - 10_000_000) > lastSizePrinted.get()) {
                     final Duration downloadDuration = Duration.between(firstTimePrinted, LocalDateTime.now());
                     var speedInBytesPerMilliSecond = ((double) bytesWritten / downloadDuration.toMillis());
-                    var remainingTime = Duration.ofMillis((long) ((totalBytes - bytesWritten) / speedInBytesPerMilliSecond));
-                    log.info("Downloading jar for {}. {} kb of {} kb completed (Elapsed time {}, estimated {} till completion)",
+                    var remainingTime = Duration.ofMillis(
+                        (long) ((totalBytes - bytesWritten) / speedInBytesPerMilliSecond));
+                    log.info(
+                        "Downloading jar for {}. {} kb of {} kb completed (Elapsed time {}, estimated {} till completion)",
                         hostname, bytesWritten / 1000, totalBytes / 1000,
                         prettyPrintDuration(downloadDuration), prettyPrintDuration(remainingTime));
                     lastTimePrinted.set(LocalDateTime.now());
@@ -165,7 +131,8 @@ public class DownloadManager {
                     }
                 })
             .ifFailure(errorResponse -> {
-                throw new TigerEnvironmentStartupException("Error during jar-file download (status " + errorResponse.getStatus() + ")");
+                throw new TigerEnvironmentStartupException(
+                    "Error during jar-file download (status " + errorResponse.getStatus() + ")");
             });
     }
 
@@ -181,6 +148,58 @@ public class DownloadManager {
                 .downloadUrl(url)
                 .build())
             .getBytes(StandardCharsets.UTF_8);
+    }
+
+    public File downloadJarAndReturnFile(ExternalJarServer externalJarServer, String jarUrl) {
+        if (jarUrl.startsWith("local:")) {
+            var jarName = jarUrl.replaceFirst("local:", "").split("/");
+            var jarFile = Paths.get(
+                externalJarServer.getConfiguration().getExternalJarOptions().getWorkingDir(),
+                jarName[jarName.length - 1]).toFile();
+            if (!jarFile.exists()) {
+                throw new TigerTestEnvException("Local jar " + jarFile.getAbsolutePath() + " not found!");
+            }
+            externalJarServer.statusMessage("Starting from local JAR-File '" + jarFile.getAbsolutePath() + "'");
+            return jarFile;
+        } else {
+            externalJarServer.statusMessage("Downloading JAR-File from '" + jarUrl + "'...");
+            return executeDownload(externalJarServer.getConfiguration().getExternalJarOptions(), jarUrl,
+                externalJarServer.getHostname());
+        }
+    }
+
+    @SneakyThrows
+    private File executeDownload(CfgExternalJarOptions externalJarOptions, String jarUrl,
+        String hostname) {
+        var jarName = jarUrl
+            .substring(jarUrl.lastIndexOf("/") + 1)
+            .replaceAll("\\W+", "");
+
+        Monitor.Guard jarCurrentlyNotDownloading = monitor.newGuard(
+            () -> !DOWNLOADING_URLS.contains(jarUrl));
+        log.trace("{} tries to enter the monitor...", hostname);
+        synchronized (monitor) {
+            monitor.enterWhen(jarCurrentlyNotDownloading);
+        }
+        log.trace("{} has entered the monitor!", hostname);
+
+        try {
+            return streamOfCandidateFiles(externalJarOptions, jarName)
+                .filter(path -> isJarDownloadedFromUrl(path, jarUrl))
+                .map(Path::toFile)
+                .findAny()
+                .orElseGet(() -> {
+                    File jarFile = seekNewUniqueFile(externalJarOptions, jarName);
+
+                    downloadJar(externalJarOptions, jarUrl, jarFile, hostname);
+
+                    return jarFile;
+                });
+        } finally {
+            log.trace("{} tries to leave the monitor...", hostname);
+            monitor.leave();
+            log.trace("{} has left the monitor!", hostname);
+        }
     }
 
     @Data

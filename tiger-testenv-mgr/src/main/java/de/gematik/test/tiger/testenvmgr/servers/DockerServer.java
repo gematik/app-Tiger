@@ -32,6 +32,7 @@ public class DockerServer extends TigerServer {
     public void performStartup() {
         log.info(Ansi.colorize("Starting docker container for {} :{}", RbelAnsiColors.GREEN_BOLD),
             getHostname(), getDockerSource());
+        statusMessage("Starting docker container");
         getTigerTestEnvMgr().getDockerManager().startContainer(this);
 
         // add routes needed for each server to local docker proxy
@@ -45,6 +46,7 @@ public class DockerServer extends TigerServer {
         }
         log.info(Ansi.colorize("Docker container Startup for {} : {} OK", RbelAnsiColors.GREEN_BOLD),
             getHostname(), getDockerSource());
+        statusMessage("Docker container started");
     }
 
     public String getDockerSource() {

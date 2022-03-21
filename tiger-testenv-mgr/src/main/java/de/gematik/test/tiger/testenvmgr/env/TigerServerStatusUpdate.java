@@ -4,14 +4,14 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
-import java.util.Map;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class TigerStatusUpdate {
+public class TigerServerStatusUpdate {
 
+    private TigerServerStatus status;
     private String statusMessage;
-    private Map<String, TigerServerStatusUpdate> serverUpdate;
 }

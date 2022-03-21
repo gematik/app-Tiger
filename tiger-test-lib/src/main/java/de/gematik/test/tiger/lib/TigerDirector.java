@@ -123,7 +123,8 @@ public class TigerDirector {
     private static synchronized void startTestEnvMgr() {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
         envMgrApplicationContext = new SpringApplicationBuilder()
-            .properties(Map.of("server.port", "0"))
+            .properties(Map.of("server.port",
+                TigerGlobalConfiguration.readIntegerOptional("free.port.255").orElse(0)))
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .initializers()

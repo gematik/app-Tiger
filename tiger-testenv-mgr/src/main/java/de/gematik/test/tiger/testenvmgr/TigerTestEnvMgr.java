@@ -15,11 +15,9 @@ import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
-import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
-import de.gematik.test.tiger.testenvmgr.env.DockerMgr;
-import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
+import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import java.io.*;
 import java.net.URISyntaxException;
@@ -50,6 +48,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private final ExecutorService executor = Executors
         .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
     private List<TigerUpdateListener> listeners = new ArrayList<>();
+    private DownloadManager downloadManager = new DownloadManager();
 
     public TigerTestEnvMgr() {
         Configuration configuration = readConfiguration();
@@ -171,8 +170,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private void createServerObjects() {
         for (Map.Entry<String, CfgServer> serverEntry : configuration.getServers().entrySet()) {
             if (serverEntry.getValue().isActive()) {
-                servers.put(serverEntry.getKey(),
-                    TigerServer.create(serverEntry.getKey(), serverEntry.getValue(), this));
+                final TigerServer server = TigerServer.create(serverEntry.getKey(), serverEntry.getValue(), this);
+                servers.put(serverEntry.getKey(), server);
+                server.registerNewListener(this);
             }
         }
     }
@@ -209,7 +209,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private void startServer(TigerServer server) {
         synchronized (server) { //NOSONAR
             // we REALLY want to synchronize ONLY on the server!
-            if (server.getStatus() != TigerServer.TigerServerStatus.NEW) {
+            if (server.getStatus() != TigerServerStatus.NEW) {
                 return;
             }
             server.start(this);
@@ -218,9 +218,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         servers.values().parallelStream()
             .peek(toBeStartedServer -> log.debug("Considering starting server {} with status {}...",
                 toBeStartedServer.getHostname(), toBeStartedServer.getStatus()))
-            .filter(candidate -> candidate.getStatus() == TigerServer.TigerServerStatus.NEW)
+            .filter(candidate -> candidate.getStatus() == TigerServerStatus.NEW)
             .filter(candidate -> candidate.getDependUponList().stream()
-                .filter(depending -> depending.getStatus() != TigerServer.TigerServerStatus.RUNNING)
+                .filter(depending -> depending.getStatus() != TigerServerStatus.RUNNING)
                 .findAny().isEmpty())
             .peek(toBeStartedServer -> log.info("About to start server {} with status {}",
                 toBeStartedServer.getHostname(), toBeStartedServer.getStatus()))
@@ -240,7 +240,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     }
 
     public void receiveTestEnvUpdate(TigerStatusUpdate statusUpdate) {
-        log.info("Status in TestEnvMgr: {}", statusUpdate.getStatusMessage());
         listeners.forEach(listener -> listener.receiveTestEnvUpdate(statusUpdate));
     }
 
