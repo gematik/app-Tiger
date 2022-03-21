@@ -62,7 +62,7 @@
             -->
             <plugin>
                 <groupId>de.gematik.test</groupId>
-                <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+                <artifactId>tiger-maven-plugin</artifactId>
                 <version>${version.tiger}</version>
                 <executions>
                     <execution>
@@ -70,7 +70,7 @@
                             <skip>false</skip>
                             <!-- optional, defaults to the templated located at
                             /src/main/resources/driverClassTemplate.jtmpl
-                            in the tiger-driver-generator-maven-plugin module.
+                            in the tiger-maven-plugin module.
                             Use separate template file if you have spring boot apps to test
                             or need to do some more fancy set up stuff.
                             <templateFile>${project.basedir}/..../XXXX.jtmpl</templateFile>

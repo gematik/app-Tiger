@@ -1,10 +1,22 @@
 # Changelog Tiger Testplattform
 
+# Release 0.19.5
+
+## Breaking Changes
+
+* TGR-392: Maven Plugin tiger-bdd-driver-generator-maven-plugin wird nun ersetzt durch
+  tiger-maven-plugin.
+  * Die Konfiguration ist abwärtskompatibel
+  * Die Konfiguration ist nicht mehr zwingend erforderlich. Hier gilt Convention over Configuration
+
 # Release 0.19.4
 
 ## Breaking Changes
 
-* TGR-188: tiger-testenv.yaml wird nun zunächst in der tiger.yaml gesucht. Um den Umstieg zu erleichtern wird die tiger-testenv.yaml weiterhin eingelesen aber eine Warnung ausgeben. Probleme gibt es nur für Nutzer, die schon vorher eine tiger.yaml (oder tiger.yml) in ihrem Projekt liegen haben: Diese muss umbenannt werden.
+* TGR-188: tiger-testenv.yaml wird nun zunächst in der tiger.yaml gesucht. Um den Umstieg zu
+  erleichtern wird die tiger-testenv.yaml weiterhin eingelesen aber eine Warnung ausgeben. Probleme
+  gibt es nur für Nutzer, die schon vorher eine tiger.yaml (oder tiger.yml) in ihrem Projekt liegen
+  haben: Diese muss umbenannt werden.
 
 ## Bugfix
 
@@ -206,7 +218,7 @@
 * TGR-131 Der RbelPath Executor unterstützt nun einen Debug Modus um bei fehlerhaften RbelPath Ausdrücken die
   Fehlersuche zu erleichtern. [Mehr Details...](doc/testlib-config.md)
 * TGR-133 Release des mvn plugins um die Generierung der Treiberklassen für die Serenity tests auch in nicht englischer
-  Sprache zu unterstützen. [Mehr Details...](tiger-driver-generator-maven-plugin/README.md)
+  Sprache zu unterstützen. [Mehr Details...](tiger-maven-plugin/README.md)
 * TGR-165 EPA VAU Schlüssel ist fest im Tiger Proxy hinterlegt
 * TGR-168 Proxy modifications unterstützt nun auch Query Parameter modifications
 * TGR-112 Dokumentation für Modifications Feature [Mehr Details...](tiger-standalone-proxy/README.md)
@@ -249,8 +261,8 @@ servers:
       ...
       active: true
 
-    # ALTE VERSION
-    - name: idp
+      # ALTE VERSION
+      - name: idp
   # NEUE VERSION
   idp2:
     hostname: idp

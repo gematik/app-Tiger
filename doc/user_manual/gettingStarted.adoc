@@ -70,7 +70,7 @@ don't bother to understand all the bits / properties and settings just skip this
 
 // ==== Tiger driver generator plugin
 
-include::../../tiger-driver-generator-maven-plugin/README.adoc[leveloffset=+3]
+include::../../tiger-maven-plugin/README.adoc[leveloffset=+3]
 
 ==== SureFire plugin
 

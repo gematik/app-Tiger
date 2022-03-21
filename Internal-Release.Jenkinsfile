@@ -1,6 +1,6 @@
 @Library('gematik-jenkins-shared-library') _
 
-def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'																   
+def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def REPO_URL = createGitUrl('git/Testtools/tiger')
 def BRANCH = 'master'
 def JIRA_PROJECT_ID = 'TGR'
@@ -9,7 +9,7 @@ def TITLE_TEXT = 'Release'
 def GROUP_ID_PATH = "de/gematik/test"
 def GROUP_ID = "de.gematik.test"
 def ARTIFACT_ID = 'tiger-testenv-mgr'
-def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-bdd-driver-generator-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib,tiger-integration-example'
+def ARTIFACT_IDs = 'tiger,tiger-admin,tiger-aforeporter-plugin,tiger-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib,tiger-integration-example'
 def POM_PATH = 'pom.xml'
 def PACKAGING = "jar"
 
@@ -77,7 +77,7 @@ pipeline {
                         mavenSetVersion("${RELEASE_VERSION}")
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
                         //GH Pages
-                        mavenBuild(POM_PATH)
+                        mavenBuild(POM_PATH, "-Dasciidoctor.skip=false")
                         stash includes: 'tiger-admin/target/adoc/user_manual/tiger_user_manual.html,tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf,tiger-admin/target/adoc/user_manual/examples/**/*,tiger-admin/target/adoc/user_manual/media/**/*', name: 'manual'
                         sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages

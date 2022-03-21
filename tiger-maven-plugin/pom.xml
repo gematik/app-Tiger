@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+    <artifactId>tiger-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <description>
         This plugin supports generating custom Junit4 driver classes for Serenity test runs.
@@ -27,19 +27,19 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.8.1</version>
+            <version>3.8.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.6.1</version>
+            <version>3.6.4</version>
             <scope>provided</scope>
         </dependency>
         <!-- needed for MavenProject class -->
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.8.1</version>
+            <version>3.8.4</version>
         </dependency>
         <!-- we dont need any packages here from but it triggers to correct / compliant versions of needed poms
          like commons io/lang/..., junit5
@@ -63,6 +63,24 @@
             <version>${version.assertj}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>4.3.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>4.3.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.24.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -74,7 +92,7 @@
                 <executions>
                     <execution>
                         <configuration>
-                            <goalPrefix>tigerbdd</goalPrefix>
+                            <goalPrefix>tiger</goalPrefix>
                         </configuration>
                         <id>default-descriptor</id>
                         <phase>process-classes</phase>

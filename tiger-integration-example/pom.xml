@@ -13,6 +13,7 @@
 
     <packaging>jar</packaging>
 
+    <groupId>de.gematik.test.tiger.integration.example</groupId>
     <artifactId>tiger-integration-example</artifactId>
 
     <properties>
@@ -44,26 +45,26 @@
         <plugins>
             <plugin>
                 <groupId>de.gematik.test</groupId>
-                <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+                <artifactId>tiger-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <executions>
                     <execution>
                         <configuration>
-                            <skip>false</skip>
-                            <basedir>${project.basedir}/src/test/resources/features</basedir>
-                            <includes>
-                                <include>**/*.feature</include>
-                            </includes>
-                            <glues>
-                                <glue>de.gematik.test.tiger.hooks</glue>
-                                <glue>de.gematik.test.tiger.glue</glue>
-                                <!-- custom -->
-                                <glue>de.gematik.test.tiger.integration.example</glue>
-                            </glues>
-                            <driverPackage>
-                                de.gematik.test.tiger.examples.bdd.drivers
-                            </driverPackage>
-                            <driverClassName>Parallel${ctr}IT</driverClassName>
+                            <!-- Optional Example Configuration which shows all optional properties with its default configuration -->
+                            <!--       <skip>false</skip>-->
+                            <!--       <featuresDir>${basedir}</featuresDir>-->
+                            <!--       <includes>-->
+                            <!--           <include>**/*.feature</include>-->
+                            <!--       </includes>-->
+                            <!--       <excludes></excludes>-->
+                            <!--       <glues>-->
+                            <!--           <glue>${project.groupId}</glue>-->
+                            <!--       </glues>-->
+                            <!--       <driverPackage>-->
+                            <!--           de.gematik.test.tiger.serenity.drivers-->
+                            <!--       </driverPackage>-->
+                            <!--       <driverClassName>Parallel${ctr}IT</driverClassName>-->
+                            <!--       <targetFolder>${project.build.directory}</targetFolder>-->
                         </configuration>
                         <phase>generate-test-sources</phase>
                         <id>default-testSources</id>
@@ -104,12 +105,6 @@
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.0.0-M5</version>
-                <configuration>
-                    <includes>
-                        <include>**/Parallel*IT.java</include>
-                    </includes>
-                    <testFailureIgnore>false</testFailureIgnore>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>

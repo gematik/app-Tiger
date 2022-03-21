@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
+            <artifactId>tiger-maven-plugin</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

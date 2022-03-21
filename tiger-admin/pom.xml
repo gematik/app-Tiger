@@ -265,37 +265,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>de.gematik.test</groupId>
-                <artifactId>tiger-bdd-driver-generator-maven-plugin</artifactId>
-                <version>${project.version}</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <skip>false</skip>
-                            <templateFile>${project.basedir}/src/test/jtmpl/SpringBootDriver.jtmpl</templateFile>
-                            <basedir>${project.basedir}/src/test/resources/features</basedir>
-                            <includes>
-                                <include>**/*.feature</include>
-                            </includes>
-                            <!-- mandatory -->
-                            <glues>
-                                <glue>de.gematik.test.tiger.admin.bdd.steps</glue>
-                            </glues>
-                            <!-- optional -->
-                            <driverPackage>de.gematik.test.tiger.admin.bdd.drivers</driverPackage>
-                            <!-- optional -->
-                            <!--suppress UnresolvedMavenProperty -->
-                            <driverClassName>Parallel${ctr}IT</driverClassName>
-                        </configuration>
-                        <phase>generate-test-sources</phase>
-                        <id>default-testSources</id>
-                        <goals>
-                            <goal>generate-drivers</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${version.spring-boot}</version>
