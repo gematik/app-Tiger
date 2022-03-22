@@ -363,7 +363,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     @Override
     public void removeRoute(final String routeId) {
-        if (mockServerClient.hasStopped()) {
+        if (!mockServer.isRunning()) {
             return;
         }
         mockServerClient.clear(new ExpectationId().withId(routeId));

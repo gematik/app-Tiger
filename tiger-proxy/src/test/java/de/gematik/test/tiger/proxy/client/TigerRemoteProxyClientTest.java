@@ -213,12 +213,12 @@ public class TigerRemoteProxyClientTest {
         tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from(firstRoute)
             .to("http://localhost:" + remoteServer.getHttpPort())
-            .build()).getId();
+            .build());
 
         assertThatThrownBy(() -> tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from(secondRoute)
             .to("http://localhost:" + remoteServer.getHttpPort())
-            .build()).getId()).isInstanceOf(RuntimeException.class);
+            .build())).isInstanceOf(RuntimeException.class);
     }
 
     @Test
