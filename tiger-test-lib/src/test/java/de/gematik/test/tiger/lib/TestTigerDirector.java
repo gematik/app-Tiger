@@ -7,13 +7,16 @@ package de.gematik.test.tiger.lib;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
-import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,21 +28,21 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
 @ExtendWith(OutputCaptureExtension.class)
-public class TestTigerDirector {
+class TestTigerDirector {
 
     @BeforeEach
-    public void init() {
+    void init() {
         TigerDirector.testUninitialize();
     }
 
     @AfterEach
-    public void clearProperties() {
+    void clearProperties() {
         System.clearProperty("TIGER_TESTENV_CFGFILE");
         TigerGlobalConfiguration.reset();
     }
 
     @Test
-    public void tigerActiveNotSet_TigerDirectorShouldThrowException() {
+    void tigerActiveNotSet_TigerDirectorShouldThrowException() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
 
         assertThat(TigerDirector.isInitialized()).isFalse();
@@ -48,7 +51,7 @@ public class TestTigerDirector {
     }
 
     @Test
-    public void testDirectorSimpleIdp() {
+    void testDirectorSimpleIdp() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp2.yaml");
         TigerDirector.start();
 
@@ -72,7 +75,7 @@ public class TestTigerDirector {
 
     @SneakyThrows
     @Test
-    public void testDirectorDisabledProxy(CapturedOutput capturedOutput) {
+    void testDirectorDisabledProxy(final CapturedOutput capturedOutput) {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyDisabled.yaml");
         TigerDirector.start();
 
@@ -85,9 +88,9 @@ public class TestTigerDirector {
         assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
         assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
 
-        var url = new URL("http://idp-rise-tu-noproxy");
+        final var url = new URL("http://idp-rise-tu-noproxy");
 
-        URLConnection con = url.openConnection();
+        final URLConnection con = url.openConnection();
         InsecureTrustAllManager.allowAllSsl(con);
 
         con.setConnectTimeout(1000);
@@ -98,7 +101,7 @@ public class TestTigerDirector {
 
     @SneakyThrows
     @Test
-    public void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
+    void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
         TigerDirector.start();
 
@@ -107,9 +110,9 @@ public class TestTigerDirector {
         System.out.println(
             "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
 
-        var url = new URL("https://github.com/");
+        final var url = new URL("https://github.com/");
 
-        URLConnection con = url.openConnection();
+        final URLConnection con = url.openConnection();
         InsecureTrustAllManager.allowAllSsl(con);
 
         con.connect();
@@ -117,17 +120,19 @@ public class TestTigerDirector {
 
     @SneakyThrows
     @Test
-    public void testDirectorFalsePathToYaml() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "non/existing/file.yaml");
+    void testDirectorFalsePathToYaml() {
+        final Path nonExistingPath = Paths.get("non", "existing", "file.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", nonExistingPath.toString());
         assertThatThrownBy(TigerDirector::start)
             .isInstanceOf(TigerConfigurationException.class)
-            .hasMessageContaining("non/existing/file.yaml");
+            .hasMessageContaining(nonExistingPath.toString());
     }
 
     @ParameterizedTest
     @CsvSource(value = {"http.proxyHost, https.proxyHost, http.proxyPort, https.proxyPort"})
-    public void testLocalProxyActiveSetByDefault(String httpHost, String httpsHost, String httpPort, String httpsPort,
-        CapturedOutput capturedOutput) {
+    void testLocalProxyActiveSetByDefault(final String httpHost, final String httpsHost, final String httpPort,
+        final String httpsPort,
+        final CapturedOutput capturedOutput) {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
         TigerDirector.start();
 
@@ -148,7 +153,7 @@ public class TestTigerDirector {
     }
 
     @Test
-    public void checkComplexKeyOverriding() throws Exception {
+    void checkComplexKeyOverriding() throws Exception {
         final Configuration config = withEnvironmentVariable(
             "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
             .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/idpError.yaml")
