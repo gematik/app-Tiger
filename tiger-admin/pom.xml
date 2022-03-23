@@ -264,6 +264,32 @@
 
     <build>
         <plugins>
+
+            <plugin>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <templateFile>
+                                ${project.basedir}/src/test/jtmpl/SpringBootDriver.jtmpl
+                            </templateFile>
+                            <!-- mandatory -->
+                            <glues>
+                                <glue>de.gematik.test.tiger.admin.bdd.steps</glue>
+                            </glues>
+                            <!-- optional -->
+                            <driverPackage>de.gematik.test.tiger.admin.bdd.drivers</driverPackage>
+                        </configuration>
+                        <phase>generate-test-sources</phase>
+                        <id>default-testSources</id>
+                        <goals>
+                            <goal>generate-drivers</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

@@ -67,9 +67,10 @@
                             <!--       <targetFolder>${project.build.directory}</targetFolder>-->
                         </configuration>
                         <phase>generate-test-sources</phase>
-                        <id>default-testSources</id>
+                        <id>prepare-and-verify-tiger-tests-and-results</id>
                         <goals>
                             <goal>generate-drivers</goal>
+                            <goal>generate-serenity-reports</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -110,37 +111,6 @@
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>net.serenity-bdd.maven.plugins</groupId>
-                <artifactId>serenity-maven-plugin</artifactId>
-                <version>${version.serenity.maven.plugin}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>net.serenity-bdd</groupId>
-                        <artifactId>serenity-core</artifactId>
-                        <version>${version.serenity.core}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>net.serenity-bdd</groupId>
-                        <artifactId>serenity-single-page-report</artifactId>
-                        <version>${version.serenity.core}</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <reports>single-page-html</reports>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>serenity-reports</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>aggregate</goal>
-                            <goal>reports</goal>
-                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
