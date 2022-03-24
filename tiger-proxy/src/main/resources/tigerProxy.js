@@ -93,6 +93,10 @@ document.addEventListener('DOMContentLoaded', function () {
   resetBtn.addEventListener('click', resetMessages);
   document.getElementById("executeJexlQuery")
   .addEventListener('click', executeJexlQuery)
+  document.getElementById("testRbelExpression")
+  .addEventListener('click', testRbelExpression)
+  document.getElementById("copyToFilter")
+  .addEventListener('click', copyToFilter)
   if (tigerProxyUploadUrl === "UNDEFINED") {
     uploadBtn.classList.add("is-hidden");
   } else {
@@ -438,6 +442,26 @@ function addQueryBtn(reqEl) {
   titleSpan.appendChild(queryBtn);
 }
 
+function openTab(sender, tabName) {
+  var i, x, tablinks;
+  x = document.getElementsByClassName("content-tab");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tab");
+  for (i = 0; i < x.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace("is-active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  sender.className += " is-active";
+}
+
+function copyToFilter() {
+  let jexlQuery = document.getElementById("jexlQueryInput").value;
+  document.getElementById("setFilterCriterionInput").value = jexlQuery;
+  setFilterCriterion();
+}
+
 function executeJexlQuery() {
   const xhttp = new XMLHttpRequest();
   let jexlQuery = document.getElementById("jexlQueryInput").value;
@@ -450,9 +474,6 @@ function executeJexlQuery() {
       if (this.status === 200) {
         const response = JSON.parse(this.responseText);
 
-        jexlInspectionTreeDiv.innerHTML =
-            "<h3 class='is-size-4'>Rbel Tree</h3>"
-            + "<pre id='shell'>" + response.rbelTreeHtml + "</pre>";
         shortenStrings(response);
         jexlInspectionContextDiv.innerHTML =
             "<h3 class='is-size-4'>JEXL context</h3>"
@@ -474,6 +495,35 @@ function executeJexlQuery() {
           jexlInspectionResultDiv.classList.add("has-background-primary");
           jexlInspectionResultDiv.classList.remove("is-hidden");
         }
+      } else {
+        console.log("ERROR " + this.status + " " + this.responseText);
+      }
+    }
+  }
+  xhttp.send();
+}
+
+function testRbelExpression() {
+  const xhttp = new XMLHttpRequest();
+  let rbelPath = document.getElementById("rbelExpressionInput").value;
+  xhttp.open("GET", "/webui/testRbelExpression"
+      + "?msgUuid=" + jexlQueryElementUuid
+      + "&rbelPath=" + encodeURIComponent(rbelPath),
+      true);
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status === 200) {
+        const response = JSON.parse(this.responseText);
+
+        document.getElementById("rbelTestTree").innerHTML =
+            "<h3 class='is-size-4'>Rbel Tree</h3>"
+            + "<pre id='shell'>" + response.rbelTreeHtml + "</pre>";
+        let rbelResultTree = "<h3 class='is-size-4'>Matching Elements</h3>";
+        response.elements.forEach(key => {
+          rbelResultTree += "<div >" + key + "</div>";
+        });
+        document.getElementById("rbelResult").innerHTML =
+            rbelResultTree;
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
       }

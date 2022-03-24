@@ -4,19 +4,21 @@
 
 ## Breaking Changes
 
-* TGR-392: Maven Plugin tiger-bdd-driver-generator-maven-plugin wird nun ersetzt durch
-  tiger-maven-plugin.
+* TGR-392: Maven Plugin tiger-bdd-driver-generator-maven-plugin wird nun ersetzt durch tiger-maven-plugin.
   * Die Konfiguration ist abwärtskompatibel
   * Die Konfiguration ist nicht mehr zwingend erforderlich. Hier gilt Convention over Configuration
+
+## Features
+
+* TGR-438: Verbesserte JEXL-Debugging-Dialog
 
 # Release 0.19.4
 
 ## Breaking Changes
 
-* TGR-188: tiger-testenv.yaml wird nun zunächst in der tiger.yaml gesucht. Um den Umstieg zu
-  erleichtern wird die tiger-testenv.yaml weiterhin eingelesen aber eine Warnung ausgeben. Probleme
-  gibt es nur für Nutzer, die schon vorher eine tiger.yaml (oder tiger.yml) in ihrem Projekt liegen
-  haben: Diese muss umbenannt werden.
+* TGR-188: tiger-testenv.yaml wird nun zunächst in der tiger.yaml gesucht. Um den Umstieg zu erleichtern wird die
+  tiger-testenv.yaml weiterhin eingelesen aber eine Warnung ausgeben. Probleme gibt es nur für Nutzer, die schon vorher
+  eine tiger.yaml (oder tiger.yml) in ihrem Projekt liegen haben: Diese muss umbenannt werden.
 
 ## Bugfix
 

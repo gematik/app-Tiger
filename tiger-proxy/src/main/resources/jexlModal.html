@@ -6,75 +6,167 @@
   <div class="modal-background"></div>
   <button class="modal-close is-large" aria-label="close"></button>
   <div class="modal-content" style="width: 85%">
-    <article class="message">
-      <div class="message-header"><h2>JEXL Debugging</h2>
+    <div class="message">
+      <div class="message-header">
         <button class="delete" aria-label="delete"></button>
       </div>
       <div class="message-body">
-        <div class="box">
-          <form id="jexlInspectionForm" onSubmit="return false;" >
-            <div class="field is-horizontal">
-              <div class="field-label is-normal">
-                <label class="label">Execute Jexl on selected message</label>
+        <div class="tabs is-centered is-large">
+          <ul>
+            <li class="is-active tab" onclick="openTab(this,'rbelTab')">
+              <a>
+                <span class="icon is-small"><i class="fas fa-folder-tree"></i></span>
+                <span>RbelPath</span>
+              </a>
+            </li>
+            <li class="tab" onclick="openTab(this,'jexlTab')">
+              <a>
+                <span class="icon is-small"><i class="fas fa-magnifying-glass"></i></span>
+                <span>JEXL Debugging</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="container section">
+          <div id="rbelTab" class="content-tab">
+            <h2 class="is-size-2">RbelPath Debugging</h2>
+            <div>
+              <div class="box">
+                <form id="jexlInspectionForm" onSubmit="return false;">
+                  <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                      <label class="label">Execute RbelPath on selected message</label>
+                    </div>
+                    <div class="field-body">
+                      <div class="control">
+                        <input class="input" size="100%" type="text" id="rbelExpressionInput"
+                               value='$.body'>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="control buttons is-right">
+                    <button class="button mt-3 is-success" id="testRbelExpression">Test RbelPath</button>
+                  </div>
+                </form>
               </div>
-              <div class="field-body">
-                <div class="control">
-                  <input class="input" size="100%" type="text" id="jexlQueryInput"
-                         value='"RbelHttpMessageFacet" =~facets'>
+              <div>
+                <div class="box is-size-6">
+                  <p>
+                    RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of
+                    captured RBeL-Traffic (navigation of the RbelElement-tree).
+                    It is described in detail
+                    <a href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_understanding_rbelpath">here</a>.
+                  </p>
+                  <p>
+                    <b>Some examples:</b>
+                  <ul>
+                    <li><code class='has-background-dark has-text-danger'>$.body</code>
+                      The body of the message
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>$..Action</code>
+                      All nodes named "Action" (searches the whole tree)
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>$.body..Action</code>
+                      All nodes named "Action" in the body.
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>$..[?(content =~ "UTF-.*")]</code>
+                      All nodes matching the given JEXL-Expression. (Here: All nodes that have text starting with
+                      "UTF-")
+                    </li>
+                  </ul>
+                  </p>
+                </div>
+                <div class="box" id="rbelResult">
+                </div>
+                <div class="box" id="rbelTestTree">
                 </div>
               </div>
             </div>
-            <div class="control buttons is-right">
-              <button class="button mt-3 is-success" id="executeJexlQuery">Execute</button>
-            </div>
-          </form>
-        </div>
-        <div>
-          <div class="box is-size-6">
-            <p>
-              The JEXL syntax is described in detail
-              <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html">here</a>.
-            </p> <p>
-              When executing a JEXL-Expression the context is initialized with a multitude of values, helping you write short
-              and powerful JEXL-Expressions. In addition, you can always use RbelPath expression, which are described
-              <a href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_understanding_rbelpath">here</a>. When
-              using RbelPath make sure to add spaces before and after!
-            </p> <p>
-              <b>Some examples:</b>
-              <ul>
-                <li><code class='has-background-dark has-text-danger'>"RbelHttpMessageFacet" =~ facets</code>
-                  Checks if the message has the "RbelHttpMessageFacet" facet.
-                  <code class='has-background-dark has-text-danger'>facets</code> is an array which contains all facets
-                  recognized by the RbelConverter.
-                </li>
-                <li><code class='has-background-dark has-text-danger'>isRequest</code>
-                  Checks if the message is a request.
-                </li>
-                <li><code class='has-background-dark has-text-danger'>$.body.recordId == "X12349035"</code>
-                  Checks for the recordId of a decrypted EPA-VAU-message.
-                </li>
-                <li><code class='has-background-dark has-text-danger'>$.header.Content-Type == "application/json"</code>
-                  Check if the message is a JSON-message.
-                </li>
-                <li><code class='has-background-dark has-text-danger'>charset =~ "UTF-.*"</code>
-                  Check the charset with a regex.
-                </li>
-              </ul>
-            </p>
           </div>
-          <div class="box is-hidden" id="jexlResult">
-          </div>
-          <div class="columns is-hidden" id="contextParent">
-            <div class="box" id="jexlContext" style="width: 50%">
+
+          <div id="jexlTab" style="display: none" class="content-tab">
+            <h2 class="is-size-2">Jexl Debugging</h2>
+            <div>
+              <div class="box">
+                <form id="rbelTestForm" onSubmit="return false;">
+                  <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                      <label class="label">Execute Jexl on selected message</label>
+                    </div>
+                    <div class="field-body">
+                      <div class="control">
+                        <input class="input" size="100%" type="text" id="jexlQueryInput"
+                               value='"RbelHttpMessageFacet" =~facets'>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="control buttons is-right">
+                    <button class="button mt-3 is-success" id="executeJexlQuery">Execute</button>
+                    <button class="button mt-3 is-info" id="copyToFilter">Use as filter</button>
+                  </div>
+                </form>
+              </div>
+              <div>
+                <div class="box is-size-6">
+                  <p>
+                    The JEXL syntax is described in detail
+                    <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html">here</a>.
+                  </p>
+                  <p>
+                    When executing a JEXL-Expression the context is initialized with a multitude of values, helping you
+                    write short
+                    and powerful JEXL-Expressions. In addition, you can always use RbelPath expression, which are
+                    described
+                    <a href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_understanding_rbelpath">here</a>.
+                    When
+                    using RbelPath make sure to add spaces before and after!
+                  </p>
+                  <p>
+                    <b>Some examples:</b>
+                  <ul>
+                    <li><code class='has-background-dark has-text-danger'>"RbelHttpMessageFacet" =~ facets</code>
+                      Checks if the message has the "RbelHttpMessageFacet" facet.
+                      <code class='has-background-dark has-text-danger'>facets</code> is an array which contains all
+                      facets
+                      recognized by the RbelConverter.
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>isRequest</code>
+                      Checks if the message is a request.
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>$.body.recordId == "X12349035"</code>
+                      Checks for the recordId of a decrypted EPA-VAU-message.
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>$.header.Content-Type ==
+                      "application/json"</code>
+                      Check if the message is a JSON-message.
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>charset =~ "UTF-.*"</code>
+                      Check the charset with a regex.
+                    </li>
+                    <li><code class='has-background-dark has-text-danger'>$.body.recordId == "Y243631459" && charset ==
+                      "UTF-8"</code>
+                      Combines the two criterions.
+                    </li>
+                  </ul>
+                  </p>
+                </div>
+                <div class="box is-hidden" id="jexlResult">
+                </div>
+                <div class="columns is-hidden" id="contextParent">
+                  <div class="box" id="jexlContext" style="width: 50%">
+                  </div>
+                  <div class="box" id="rbelTree" style="width: 50%">
+                  </div>
+                </div>
+                <div class="box is-hidden" id="jexlNoContext">
+                  To see the context for the current element please first execute an expression!
+                </div>
+              </div>
             </div>
-            <div class="box" id="rbelTree" style="width: 50%">
-            </div>
-          </div>
-          <div class="box is-hidden" id="jexlNoContext">
-            To see the context for the current element please first execute an expression!
           </div>
         </div>
       </div>
-    </article>
+    </div>
   </div>
 </div>
