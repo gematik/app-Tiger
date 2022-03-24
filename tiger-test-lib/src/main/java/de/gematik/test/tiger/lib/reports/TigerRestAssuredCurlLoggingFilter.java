@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.lib.reports;
 
+import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.filter.Filter;
 import io.restassured.filter.FilterContext;
 import io.restassured.filter.log.LogDetail;
@@ -44,7 +45,9 @@ public class TigerRestAssuredCurlLoggingFilter implements Filter {
             String curlCommand = RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(callLog);
             log.info("cURL command: " + curlCommand);
             log.debug("RestAssured details:\n" + callLog);
-            SerenityReportUtils.addCustomData(title, curlCommand);
+            if (TigerDirector.isSerenityAvailable(true)) {
+                SerenityReportUtils.addCustomData(title, curlCommand);
+            }
         }
         outputStream.reset();
 

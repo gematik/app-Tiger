@@ -67,8 +67,6 @@ public class TigerDirector {
             return;
         }
 
-        TigerGlobalConfiguration.setRequireTigerYaml(true);
-
         showTigerBanner();
 
         readConfiguration();
@@ -235,8 +233,23 @@ public class TigerDirector {
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
         }
     }
+    public static boolean isSerenityAvailable() {
+        return TigerDirector.isSerenityAvailable(false);
+    }
 
-    static void testUninitialize() {
+    public static boolean isSerenityAvailable(boolean quiet) {
+        try {
+            Class.forName("net.serenitybdd.core.Serenity");
+            return true;
+        } catch (ClassNotFoundException e) {
+            if (!quiet) {
+                log.warn("Trying to use Serenity functionality, but Serenity BDD packages are not declared as runtime dependency.", e);
+            }
+            return false;
+        }
+    }
+
+    public static void testUninitialize() {
         initialized = false;
         tigerTestEnvMgr = null;
 

@@ -8,16 +8,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.OPTIONAL;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.RestAssured;
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -40,14 +35,15 @@ public class TestRestAssuredLogToCurlCommandParser {
             .willReturn(aResponse()
                 .withBody("byy")));
 
+        TigerDirector.testUninitialize();
+        TigerTestHooks.unregisterRestAssuredFilter();
         TigerDirector.start();
+        TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
+        TigerTestHooks.registerRestAssuredFilter();
     }
 
     @Test
     public void testMultipleRequestsSplitCorrectly(WireMockRuntimeInfo remoteServer) {
-        TigerDirector.start();
-        TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
-        TigerTestHooks.registerRestAssuredFilter();
 
         RestAssured.with().get(remoteServer.getHttpBaseUrl() + "/foo").andReturn();
         RestAssured.with().post(remoteServer.getHttpBaseUrl() + "/fuu").andReturn();
@@ -60,10 +56,6 @@ public class TestRestAssuredLogToCurlCommandParser {
 
     @Test
     public void testSingleRequestsSplitCorrectly(WireMockRuntimeInfo remoteServer) {
-        TigerDirector.start();
-        TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
-        TigerTestHooks.registerRestAssuredFilter();
-
         RestAssured.with().get(remoteServer.getHttpBaseUrl() + "/foo").andReturn();
 
         assertThat(RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(getCurlLog()))
@@ -72,9 +64,6 @@ public class TestRestAssuredLogToCurlCommandParser {
 
     @Test
     public void testPostToCurl(WireMockRuntimeInfo remoteServer) {
-        TigerDirector.start();
-        TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
-        TigerTestHooks.registerRestAssuredFilter();
 
         RestAssured.with().post(remoteServer.getHttpBaseUrl() + "/fuu").
             andReturn();
@@ -85,15 +74,11 @@ public class TestRestAssuredLogToCurlCommandParser {
         assertThat(curlCmd).isEqualTo(
             "curl -v -H \"Accept: */*\" "
                 + "-H \"Content-Type: application/x-www-form-urlencoded; charset=ISO-8859-1\" "
-                + "-X POST \""+ remoteServer.getHttpBaseUrl() +"/fuu\" ");
+                + "-X POST \"" + remoteServer.getHttpBaseUrl() + "/fuu\" ");
     }
 
     @Test
     public void testGetToCurl(WireMockRuntimeInfo remoteServer) {
-        TigerDirector.start();
-        TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
-        TigerTestHooks.registerRestAssuredFilter();
-
         RestAssured.with().get(remoteServer.getHttpBaseUrl() + "/foo").
             andReturn();
 
@@ -102,14 +87,13 @@ public class TestRestAssuredLogToCurlCommandParser {
         String curlCmd = RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(log);
         assertThat(curlCmd).isEqualTo(
             "curl -v -H \"Accept: */*\" "
-                + "-X GET \""+ remoteServer.getHttpBaseUrl() +"/foo\" ");
+                + "-X GET \"" + remoteServer.getHttpBaseUrl() + "/foo\" ");
     }
 
     private String getCurlLog() {
-        return String.valueOf(((Optional) ReflectionTestUtils.getField(TigerTestHooks.class, "curlLoggingFilter"))
-            .map(o -> ReflectionTestUtils.getField(o, TigerRestAssuredCurlLoggingFilter.class, "outputStream"))
-            .map(Object::toString)
-            .orElseThrow());
+        Object tigerHooksCurlLoggingFilter = ReflectionTestUtils.getField(TigerTestHooks.class, "curlLoggingFilter");
+        return String.valueOf(ReflectionTestUtils.getField(
+            tigerHooksCurlLoggingFilter, TigerRestAssuredCurlLoggingFilter.class, "outputStream").toString());
     }
 
     // TODO TGR-398 zusätzliche Tests implementieren

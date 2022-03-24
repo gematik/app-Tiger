@@ -7,6 +7,7 @@ package de.gematik.test.tiger.hooks;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
 import de.gematik.test.tiger.lib.parser.TestParserException;
@@ -124,8 +125,7 @@ public class TigerTestHooks {
 
     private static String bulmaModalJSScript = null;
 
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private static Optional<TigerRestAssuredCurlLoggingFilter> curlLoggingFilter = Optional.empty();
+    private static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
 
     /**
      * Initializes Tiger and rbel message listener and parses feature file and scenario steps.
@@ -175,14 +175,23 @@ public class TigerTestHooks {
     }
 
     private void initializeTiger() {
+        TigerGlobalConfiguration.setRequireTigerYaml(true);
         TigerDirector.start();
+        registerRestAssuredFilter();
     }
 
-    public static void registerRestAssuredFilter() {
-        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()) {
-            curlLoggingFilter = Optional.of(new TigerRestAssuredCurlLoggingFilter());
-            SerenityRest.filters(curlLoggingFilter.get());
+    public static synchronized void registerRestAssuredFilter() {
+        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport() && curlLoggingFilter == null) {
+            curlLoggingFilter = new TigerRestAssuredCurlLoggingFilter();
+            SerenityRest.filters(curlLoggingFilter);
         }
+    }
+
+    public static synchronized void unregisterRestAssuredFilter() {
+        if (curlLoggingFilter != null) {
+            SerenityRest.replaceFiltersWith(new ArrayList<>());
+        }
+        curlLoggingFilter = null;
     }
 
     private void processDataVariantsForScenarioOutlines(de.gematik.test.tiger.lib.parser.model.gherkin.Scenario tigerScenario) {
@@ -232,10 +241,10 @@ public class TigerTestHooks {
 
     @AfterStep
     public synchronized void addRestAssuredRequestsToReport(final Scenario scenario) {
-        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()) {
-            curlLoggingFilter.ifPresent(
-                TigerRestAssuredCurlLoggingFilter::printToReport
-            );
+        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport() && TigerDirector.isSerenityAvailable()) {
+            if (curlLoggingFilter != null) {
+                curlLoggingFilter.printToReport();
+            }
         }
     }
 
@@ -305,8 +314,10 @@ public class TigerTestHooks {
             }
             final File logFile = Paths.get("target", "rbellogs", name + ".html").toFile();
             FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
-            (Serenity.recordReportData().asEvidence().withTitle("RBellog " + (currentDataVariantIndex + 1))).downloadable()
-                .fromFile(logFile.toPath());
+            if (TigerDirector.isSerenityAvailable()) {
+                (Serenity.recordReportData().asEvidence().withTitle("RBellog " + (currentDataVariantIndex + 1))).downloadable()
+                    .fromFile(logFile.toPath());
+            }
             log.info("Saved HTML report to " + logFile.getAbsolutePath());
         } catch (final IOException e) {
             log.error("Unable to create/save rbel log for scenario " + scenario.getName());

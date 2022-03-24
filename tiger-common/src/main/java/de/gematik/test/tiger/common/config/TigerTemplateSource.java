@@ -4,16 +4,15 @@
 
 package de.gematik.test.tiger.common.config;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.math.NumberUtils;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.math.NumberUtils;
 
 @Builder
 @Slf4j
@@ -74,7 +73,7 @@ public class TigerTemplateSource {
                 continue;
             }
             if (pathContainedNumber || NumberUtils.isDigits(newKeyPart.getValue())) {
-                log.info("Skipping {} due to {}", newKey.stream()
+                log.debug("Skipping {} due to {}", newKey.stream()
                     .map(TigerConfigurationKeyString::getValue)
                     .collect(Collectors.joining(",")), existingKey.stream()
                     .map(TigerConfigurationKeyString::getValue)
