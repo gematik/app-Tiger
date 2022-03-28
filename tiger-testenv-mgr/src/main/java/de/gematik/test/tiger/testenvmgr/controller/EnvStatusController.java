@@ -27,7 +27,7 @@ public class EnvStatusController implements TigerUpdateListener {
 
     private final TigerEnvStatusDto tigerEnvStatus = new TigerEnvStatusDto();
 
-    public EnvStatusController(TigerTestEnvMgr tigerTestEnvMgr) {
+    public EnvStatusController(final TigerTestEnvMgr tigerTestEnvMgr) {
         tigerTestEnvMgr.registerNewListener(this);
         if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
             log.info("Starting Test-Env setup");
@@ -36,7 +36,7 @@ public class EnvStatusController implements TigerUpdateListener {
     }
 
     @Override
-    public void receiveTestEnvUpdate(TigerStatusUpdate update) {
+    public void receiveTestEnvUpdate(final TigerStatusUpdate update) {
         tigerEnvStatus.setCurrentStatusMessage(update.getStatusMessage());
         Optional.ofNullable(update.getServerUpdate())
             .map(Map::entrySet)
@@ -45,7 +45,7 @@ public class EnvStatusController implements TigerUpdateListener {
             .forEach(entry -> receiveServerStatusUpdate(entry.getKey(), entry.getValue()));
     }
 
-    private void receiveServerStatusUpdate(String serverName, TigerServerStatusUpdate statusUpdate) {
+    private void receiveServerStatusUpdate(final String serverName, final TigerServerStatusUpdate statusUpdate) {
         final TigerServerStatusDto serverStatus = tigerEnvStatus.getServers()
             .getOrDefault(serverName, new TigerServerStatusDto());
         serverStatus.setName(serverName);
@@ -54,10 +54,12 @@ public class EnvStatusController implements TigerUpdateListener {
         }
         if (statusUpdate.getStatusMessage() != null) {
             serverStatus.setStatusMessage(statusUpdate.getStatusMessage());
+            serverStatus.getStatusUpdates().add(statusUpdate.getStatusMessage());
         }
         tigerEnvStatus.getServers().put(serverName, serverStatus);
     }
 
+    
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public TigerEnvStatusDto getStatus() {
         return tigerEnvStatus;

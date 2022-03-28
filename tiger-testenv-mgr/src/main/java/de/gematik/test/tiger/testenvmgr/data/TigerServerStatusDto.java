@@ -6,16 +6,15 @@ package de.gematik.test.tiger.testenvmgr.data;
 
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
+import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 public class TigerServerStatusDto {
 
     private String name;
@@ -23,5 +22,5 @@ public class TigerServerStatusDto {
     private ServerType type;
     private TigerServerStatus status;
     private String statusMessage;
-    private List<String> statusUpdates;
+    private List<String> statusUpdates = new ArrayList<>();
 }
