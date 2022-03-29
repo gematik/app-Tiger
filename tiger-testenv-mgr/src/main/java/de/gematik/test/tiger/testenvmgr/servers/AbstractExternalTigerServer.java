@@ -43,8 +43,13 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
                     .until(() -> updateStatus(quiet) != TigerServerStatus.STARTING);
             } catch (ConditionTimeoutException cte) {
                 if (!quiet) {
-                    throw new TigerTestEnvException("Timeout waiting for external server to respond at '"
-                        + getConfiguration().getExternalJarOptions().getHealthcheck() + "'!");
+                    final String healthcheckUrl = getConfiguration() != null ?
+                        getConfiguration().getExternalJarOptions() != null ?
+                            getConfiguration().getExternalJarOptions().getHealthcheck()
+                            : "<null>"
+                        : "<null>";
+                    throw new TigerTestEnvException("Timeout waiting for external server '"
+                        + getServerId() + "' to respond at '" + healthcheckUrl + "'!");
                 }
             }
         }
@@ -89,10 +94,10 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     void printServerUpMessage() {
-        String message = "External server Startup OK for '" + getHostname();
+        String message = "External server Startup OK for '" + getHostname() + "'";
         if (getConfiguration().getSource() != null
             && !getConfiguration().getSource().isEmpty()) {
-            message += "downloaded from" + getConfiguration().getSource().get(0);
+            message += " downloaded from '" + getConfiguration().getSource().get(0) + "'";
         }
         log.info(Ansi.colorize(message, RbelAnsiColors.GREEN_BOLD));
     }

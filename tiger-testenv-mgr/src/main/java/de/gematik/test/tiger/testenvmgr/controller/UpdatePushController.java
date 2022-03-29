@@ -6,8 +6,8 @@ package de.gematik.test.tiger.testenvmgr.controller;
 
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.TestEnvStatusDto;
-import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class UpdatePushController implements TigerUpdateListener {
 
     @Override
     public void receiveTestEnvUpdate(TigerStatusUpdate update) {
-        log.info("Propagating status udpate");
+        log.trace("Propagating status udpate");
         template.convertAndSend("/topic/envStatus", TestEnvStatusDto.createFrom(update));
     }
 }

@@ -12,6 +12,11 @@
 
 * TGR-438: Verbesserte JEXL-Debugging-Dialog
 
+## Bugfixes
+
+* TigerProxy-WebUI lädt nicht mehr schon vorhandene Nachrichten nach
+* ExternalJar-Server setzt interne System-Properties korrekt
+
 # Release 0.19.4
 
 ## Breaking Changes

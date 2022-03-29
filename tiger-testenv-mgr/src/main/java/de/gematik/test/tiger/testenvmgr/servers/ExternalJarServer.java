@@ -16,6 +16,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,11 +50,12 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         jarFile = getTigerTestEnvMgr().getDownloadManager().downloadJarAndReturnFile(this, jarUrl);
 
         log.info("creating cmd line...");
-        List<String> options = externalJarOptions.getOptions().stream()
-            .map(getTigerTestEnvMgr()::replaceSysPropsInString)
-            .collect(Collectors.toList());
+        List<String> options = new ArrayList<>();
         String javaExe = findJavaExecutable();
-        options.add(0, javaExe);
+        options.add(javaExe);
+        options.addAll(externalJarOptions.getOptions().stream()
+            .map(getTigerTestEnvMgr()::replaceSysPropsInString)
+            .collect(Collectors.toList()));
         options.add("-jar");
         options.add(jarFile.getName());
         options.addAll(externalJarOptions.getArguments());
@@ -67,11 +69,20 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         getTigerTestEnvMgr().getExecutor().submit(() -> {
             try {
                 statusMessage("Starting local JAR-File '" + javaExe + "'");
-                processReference.set(new ProcessBuilder()
+                final ProcessBuilder processBuilder = new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(workingDir))
-                    .inheritIO()
-                    .start());
+                    .inheritIO();
+
+                processBuilder.environment().putAll(getEnvironmentProperties().stream()
+                    .map(str -> str.split("=", 2))
+                    .filter(ar -> ar.length == 2)
+                    .collect(Collectors.toMap(
+                        ar -> ar[0].trim(),
+                        ar -> ar[1].trim()
+                    )));
+
+                processReference.set(processBuilder.start());
                 statusMessage("Started JAR-File '" + javaExe + "' with PID '" + processReference.get().pid() + "'");
                 log.info("New process started (pid={})", processReference.get().pid());
             } catch (Throwable t) {

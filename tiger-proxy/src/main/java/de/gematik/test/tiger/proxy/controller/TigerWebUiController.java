@@ -309,18 +309,19 @@ public class TigerWebUiController implements ApplicationContextAware {
         var jexlExecutor = new RbelJexlExecutor();
 
         List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory().stream()
-            .dropWhile(element -> {
+            .dropWhile(msg -> {
                 if (StringUtils.isEmpty(lastMsgUuid)) {
                     return false;
                 } else {
-                    return !element.getUuid().equals(lastMsgUuid);
+                    return !msg.getUuid().equals(lastMsgUuid);
                 }
             })
-            .filter(element -> {
+            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
+            .filter(msg -> {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
                 }
-                return jexlExecutor.matchesAsJexlExpression(element, filterCriterion, Optional.empty());
+                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty());
             })
             .collect(Collectors.toList());
 
