@@ -264,7 +264,6 @@
 
     <build>
         <plugins>
-
             <plugin>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
@@ -332,7 +331,7 @@
                     <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                     <argLine>${failsafe.jacoco.args}</argLine>
                     <includes>
-                        <include>**/Parallel*IT.java</include>
+                        <include>**/Driver*IT.java</include>
                     </includes>
                     <environmentVariables>
                         <MOZ_HEADLESS>1</MOZ_HEADLESS>
@@ -489,7 +488,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${basedir}/target/classes/static/manual</outputDirectory>
+                            <outputDirectory>${project.basedir}/target/classes/static/manual</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>target/adoc/user_manual</directory>

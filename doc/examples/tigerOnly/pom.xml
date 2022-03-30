@@ -76,7 +76,7 @@
                             <templateFile>${project.basedir}/..../XXXX.jtmpl</templateFile>
                             -->
                             <!-- optional -->
-                            <basedir>${project.basedir}/src/test/resources/features</basedir>
+                            <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
                             <!-- mandatory -->
                             <includes>
                                 <include>**/*.feature</include>
@@ -93,7 +93,7 @@
                             </driverPackage>
                             <!-- optional -->
                             <!--suppress UnresolvedMavenProperty -->
-                            <driverClassName>Parallel${ctr}IT</driverClassName>
+                            <driverClassName>Driver${ctr}IT</driverClassName>
                         </configuration>
                         <phase>generate-test-sources</phase>
                         <id>default-testSources</id>
@@ -115,7 +115,7 @@
                 <configuration>
                     <includes>
                         <!-- adapt to the class names of your driver classes -->
-                        <include>**/Parallel*IT.java</include>
+                        <include>**/Driver*IT.java</include>
                     </includes>
                     <!-- on purpose, to ensure the serenity plugin is called afterwards.
                     It's check goal wil bail out in case of test failures,

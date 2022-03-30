@@ -245,23 +245,15 @@
                     <argLine>${failsafe.jacoco.args}</argLine>
                     <includes>
                         <include>**/Parallel*IT.java</include>
-                        <!--<include>**/TigerBDDDriver.java</include>-->
                     </includes>
-                    <!--<parallel>classes</parallel>
-                    <perCoreThreadCount>true</perCoreThreadCount>-->
                     <skipITs>false</skipITs>
                     <systemPropertyVariables>
                         <TIGER_TESTENV_CFGFILE>src/test/resources/testdata/noServersActive.yaml</TIGER_TESTENV_CFGFILE>
-                        <!--
-                        <cucumber.filter.tags>@Approval and not @OpenBug and not @WiP and not @LongRunning
-                        </cucumber.filter.tags>
-                        -->
                     </systemPropertyVariables>
                     <threadCount>16</threadCount>
                     <forkCount>2</forkCount>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
                 <artifactId>serenity-maven-plugin</artifactId>

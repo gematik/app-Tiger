@@ -41,9 +41,8 @@ public class GenerateDriverMojo extends AbstractMojo {
     private boolean skip = false;
 
     /**
-     * Optional base directory for each file to replace. Path to base relative feature files from.
-     * This feature is useful for multi-module projects. Default "." which is the default Maven
-     * basedir.
+     * Optional base directory for each file to replace. Path to base relative feature files from. This feature is
+     * useful for multi-module projects. Default "." which is the default Maven basedir.
      */
     @Parameter(alias = "basedir", defaultValue = "${basedir}")
     private String featuresDir;
@@ -75,7 +74,7 @@ public class GenerateDriverMojo extends AbstractMojo {
 
     /**
      * Optional name of the driver class. MUST contain the token '${ctr}' which gets replaced on execution with a unique
-     * counter increented for each feature file. Default is "Junit4SerenityTestDriver${ctr}"
+     * counter incremented for each feature file. Default is "Driver${ctr}"
      */
     @Parameter(defaultValue = "Driver${ctr}IT")
     private String driverClassName;

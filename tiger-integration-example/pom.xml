@@ -52,7 +52,7 @@
                         <configuration>
                             <!-- Optional Example Configuration which shows all optional properties with its default configuration -->
                             <!--       <skip>false</skip>-->
-                            <!--       <featuresDir>${basedir}</featuresDir>-->
+                            <!--       <featuresDir>${project.basedir}</featuresDir>-->
                             <!--       <includes>-->
                             <!--           <include>**/*.feature</include>-->
                             <!--       </includes>-->
@@ -63,7 +63,7 @@
                             <!--       <driverPackage>-->
                             <!--           de.gematik.test.tiger.serenity.drivers-->
                             <!--       </driverPackage>-->
-                            <!--       <driverClassName>Parallel${ctr}IT</driverClassName>-->
+                            <!--       <driverClassName>Driver${ctr}IT</driverClassName>-->
                             <!--       <targetFolder>${project.build.directory}</targetFolder>-->
                         </configuration>
                         <phase>generate-test-sources</phase>
@@ -128,7 +128,7 @@
                         </goals>
                         <configuration>
                             <classifier>javadoc</classifier>
-                            <classesDirectory>${basedir}/src/test/java/</classesDirectory>
+                            <classesDirectory>${project.basedir}/src/test/java/</classesDirectory>
                         </configuration>
                     </execution>
                 </executions>

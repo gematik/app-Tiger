@@ -19,7 +19,7 @@ list of include patterns for feature files in Ant format (directory/**.feature)
 list of packages to be included as glue or hooks code
 
 .Optional configuration properties or properties with default values
-* String basedir (default: local working directory) +
+* String featuresDir (default: local working directory) +
 root folder from where to apply includes and excludes
 * List[exclude] excludes (default: empty) +
 list of exclusion patterns for feature files in Ant format (directory/**.feature)
@@ -27,7 +27,7 @@ list of exclusion patterns for feature files in Ant format (directory/**.feature
 flag whether to skip the execution of this plugin
 * String driverPackage (default: de.gematik.test.tiger.serenity.drivers) +
 package of the to be generated driver class
-* String driverClassName (default: Junit4SerenityTestDriver${ctr}) +
+* String driverClassName (default: Driver${ctr}) +
 Name of the to be generated driver class.
 
 NOTE:  The ctr token ${ctr} is mandatory! For more details see section below
@@ -65,7 +65,7 @@ import org.junit.runner.RunWith;
     monochrome = false,
     glue = {"de.gematik.test.tiger.hooks", "de.gematik.test.tiger.glue",
         "ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code"})
-public class Parallel1IT {
+public class Driver1IT {
 
 }
 ```
