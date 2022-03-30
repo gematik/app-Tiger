@@ -125,7 +125,9 @@ export BACKEND_SERVER_PORT = "8080"
 
 ==== Example 3
 
-Now we want to assert that the reply coming from the server has the correct backend-url in the XML that is returned to the sender. To do this we have to reference the configured URL from above, since the value could be different on every execution. We can solve this using placeholders:
+Now we want to assert that the reply coming from the server has the correct backend-url in the XML that is returned to the sender.
+To do this we have to reference the configured URL from above, since the value could be different on every execution.
+We can solve this using placeholders:
 
 [source,Gherkin,title="The testsuite"]
 ----
@@ -136,9 +138,60 @@ The glue-code in Tiger automatically resolves the placeholders.
 
 === Pre-Defined values
 
-Tiger adds some pre-defined values to make your life easier configuring the environment. Currently these are:
+Tiger adds some pre-defined values to make your life easier configuring the environment.
+Currently these are:
 
-* `free.port.0` - `free.port.255`: Free ports that are randomly determined at startup but stay fixed during the execution. This enables side effect free execution of the testsuite.
+* `free.port.0` - `free.port.255`: Free ports that are randomly determined at startup but stay fixed during the execution.
+This enables side effect free execution of the testsuite.
 
 //TODO when screenplay: Please use Serenity-BDD-Screenplay Actor (to avoid thread-pooled misshaps)
 
+=== Inline JEXL
+
+In addition to the `${foo.bar}` syntax allowing the retrieval of configuration values there exists the `!{'foo' != 'bar'}` syntax allowing the execution of JEXL expressions.
+The JEXL-syntax is described in more depth here: https://commons.apache.org/proper/commons-jexl/reference/syntax.html
+
+To give you more power and flexibility when creating inline-JEXL-expression you can access several namespaces from inside the JEXL expression.
+You will find two predefined namespaces and also the ability to add your own, allowing further customization.
+
+==== The default namespace
+
+The default-namespace of the inline JEXL-expression carries the following functions:
+
+* `file(<filename>)` loads the given file and returns it as a UTF-8 parsed string.
+* `sha256` returns the HEX-encoded SHA256-value of the given string.
+* `sha256Base64` returns the Base64-encoded SHA256-value of the given string.
+* `sha512` returns the HEX-encoded SHA512-value of the given string.
+* `sha512Base64` returns the Base64-encoded SHA512-value of the given string.
+* `md5` returns the HEX-encoded MD5-value of the given string.
+* `md5Base64` returns the Base64-encoded MD5-value of the given string.
+* `base64Encode` returns the Base64-Encoding of the given string (non-url safe).
+* `base64UrlEncode` returns the Base64-URL-Encoding of the given string.
+* `base64Decode` decodes the given Base64-String (URL and non-url) and converts it into a UTF-8 string.
+
+An example of a function-invocation in the default namespace:
+
+```
+!{file('src/test/resources/testMessage.json')}
+```
+
+This will load the given file and replace any placeholders found in it.
+
+==== The rbel namespace
+
+To give you direct access to the messages sent please use the rbel-namespace:
+
+* `lastResponse` returns the last response, optionally filtered by a given Rbel-path
+* `lastResponseAsString` returns the string-representation of the last response, optionally filtered by a given Rbel-path
+
+This can be done like so
+
+```
+!{rbel:lastResponseAsString('$.body.html.head.link.href')}
+```
+
+This will immediately return the `href`-attribute of the link in question as a string.
+
+==== Adding custom namespaces
+
+You can easily register additional namespaces by calling `TigerJexlExecutor.registerAdditionalNamespace(<namespace-prefix>, <namespace class or object)`.

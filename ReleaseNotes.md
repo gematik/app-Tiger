@@ -4,18 +4,20 @@
 
 ## Breaking Changes
 
-* TGR-392: Maven Plugin tiger-bdd-driver-generator-maven-plugin wird nun ersetzt durch tiger-maven-plugin.
-  * Die Konfiguration ist abwärtskompatibel
-  * Die Konfiguration ist nicht mehr zwingend erforderlich. Hier gilt Convention over Configuration
+* TGR-392: The tiger-bdd-driver-generator-maven-plugin is being replaced by the tiger-maven-plugin.
+  * The configuration is downward compatible
+  * The configuration is no longer strictly required. Sane defaults are supplied and can be used by convention over
+    configuration.
 
 ## Features
 
-* TGR-438: Verbesserte JEXL-Debugging-Dialog
+* TGR-438: Improved JEXL-Debugging-Dialog
+* TGR-448: Inline-JEXL-expressions added
 
 ## Bugfixes
 
-* TigerProxy-WebUI lädt nicht mehr schon vorhandene Nachrichten nach
-* ExternalJar-Server setzt interne System-Properties korrekt
+* TigerProxy-WebUI no longer reloads already loaded messages
+* ExternalJar-Server now correctly configures internal system properties
 
 # Release 0.19.4
 
