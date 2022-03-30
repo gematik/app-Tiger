@@ -8,12 +8,12 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
+import java.net.MalformedURLException;
+import java.net.URL;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 
 @Slf4j
 public class ExternalUrlServer extends AbstractExternalTigerServer {
@@ -29,6 +29,9 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
 
         final var url = buildUrl();
         addServerToLocalProxyRouteMap(url);
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .baseUrl(extractBaseUrl(url))
+            .build());
 
         log.info("  Waiting 50% of start up time for external URL instance  {} to come up ...", getHostname());
 

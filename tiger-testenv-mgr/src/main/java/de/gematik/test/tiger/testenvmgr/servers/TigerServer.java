@@ -60,6 +60,9 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         this.serverId = serverId;
         this.tigerTestEnvMgr = tigerTestEnvMgr;
         this.configuration = configuration;
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(configuration.getType())
+            .build());
     }
 
     public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
@@ -172,7 +175,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         synchronized (this) {
             setStatus(TigerServerStatus.RUNNING);
         }
-        statusMessage("Server started & running");
+        statusMessage("Server " + hostname + " started & running");
     }
 
     private void reloadConfiguration() {
@@ -336,15 +339,20 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     void addServerToLocalProxyRouteMap(URL url) {
+        addRoute(TigerRoute.builder()
+            .from(TigerTestEnvMgr.HTTP + getHostname())
+            .to(extractBaseUrl(url))
+            .build());
+    }
+
+    String extractBaseUrl(URL url) {
         try {
             int port = url.getPort();
             if (port == -1) {
                 port = url.getDefaultPort();
             }
-            addRoute(TigerRoute.builder()
-                .from(TigerTestEnvMgr.HTTP + getHostname())
-                .to(url.toURI().getScheme() + "://" + url.getHost() + ":" + port)
-                .build());
+            final String targetUrl = url.toURI().getScheme() + "://" + url.getHost() + ":" + port;
+            return targetUrl;
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Error while convert to URI: '" + url + "'", e);
         }
@@ -383,10 +391,10 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     public void setStatus(TigerServerStatus newStatus) {
+        this.status = newStatus;
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .status(newStatus)
             .build());
-        this.status = newStatus;
     }
 
     public void registerNewListener(TigerUpdateListener listener) {
@@ -394,14 +402,18 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     public void statusMessage(String statusMessage) {
+        log.info(statusMessage);
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .statusMessage(statusMessage)
             .build());
     }
 
     void publishNewStatusUpdate(TigerServerStatusUpdate update) {
-        listeners.parallelStream().forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-            .serverUpdate(Map.of(serverId, update))
-            .build()));
+        tigerTestEnvMgr.getExecutor().submit(
+            () -> listeners.parallelStream()
+                .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                    .serverUpdate(Map.of(serverId, update))
+                    .build()))
+        );
     }
 }

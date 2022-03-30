@@ -57,7 +57,7 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
 
     private void assertInitialized(ExtensionContext extensionContext) {
         if (tigerTestEnvMgr == null) {
-            log.info("TigerTest Entering setup");
+            log.info("TigerTest entering setup");
             TigerGlobalConfiguration.reset();
             final TigerTest tigerAnnotation = findTigerAnnotation(extensionContext);
             Map<String, String> additionalProperties = new HashMap<>();
@@ -89,8 +89,7 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
                 .run();
 
             tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
-            log.info("TigerTest Exiting setup with envMgr {}", tigerTestEnvMgr);
+            log.info("TigerTest initialized, commencing actual test");
         }
-        log.info("TigerTest initialized, commencing actual test");
     }
 }

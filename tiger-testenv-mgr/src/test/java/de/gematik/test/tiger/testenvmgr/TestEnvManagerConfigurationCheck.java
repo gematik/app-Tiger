@@ -9,8 +9,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.Map;
@@ -47,7 +47,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
             envMgr -> {
                 CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
                 ReflectionTestUtils.setField(srv, prop, null);
-                assertThatThrownBy(() -> TigerServer.create("blub", srv, null)
+                assertThatThrownBy(() -> TigerServer.create("blub", srv, mockTestEnvMgr())
                     .assertThatConfigurationIsCorrect())
                     .isInstanceOf(TigerTestEnvException.class);
             });
@@ -61,7 +61,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "      serverPort: 9999", skipEnvironmentSetup = true)
     public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-        assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, null)
+        assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, mockTestEnvMgr())
             .assertThatConfigurationIsCorrect())
             .isInstanceOf(TigerTestEnvException.class);
     }

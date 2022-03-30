@@ -9,14 +9,13 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.DownloadManager;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,8 +64,7 @@ class EnvStatusControllerTest {
         ReflectionTestUtils.setField(envMgr, "downloadManager", mockDownloadManager);
         when(mockDownloadManager.downloadJarAndReturnFile(any(), any())).thenAnswer(
             (Answer<File>) invocation -> {
-                await()
-                    .until(downloadShouldProceed::get);
+                await().until(downloadShouldProceed::get);
                 return new File("target/winstone.jar");
             });
 
@@ -77,14 +75,15 @@ class EnvStatusControllerTest {
 
         executorService.submit(envMgr::setUpEnvironment);
 
-        assertThat(envStatusController.getStatus().getServers())
-            .extractingByKey("winstoneServer")
-            .isEqualTo(TigerServerStatusDto.builder()
-                .name("winstoneServer")
-                .status(TigerServerStatus.STARTING)
-                .statusMessage("Starting server...")
-                .statusUpdates(Arrays.asList(("Starting server...")))
-                .build());
+        await()
+            .until(() -> envStatusController.getStatus().getServers().containsKey("winstoneServer")
+                && envStatusController.getStatus().getServers().get("winstoneServer").getStatus()
+                == TigerServerStatus.STARTING);
+
+        assertThat(envStatusController.getStatus().getServers().get("winstoneServer"))
+            .hasFieldOrPropertyWithValue("name", "winstoneServer")
+            .hasFieldOrPropertyWithValue("status", TigerServerStatus.STARTING)
+            .hasFieldOrPropertyWithValue("statusMessage", "Starting server...");
 
         downloadShouldProceed.set(true);
 
@@ -92,9 +91,12 @@ class EnvStatusControllerTest {
             .until(() -> envStatusController.getStatus().getServers()
                 .get("winstoneServer")
                 .getStatus() == TigerServerStatus.RUNNING);
-        assertThat(envStatusController.getStatus().getServers()
-            .get("winstoneServer")
-            .getStatusMessage())
-            .isEqualTo("Server started & running");
+
+        assertThat(envStatusController.getStatus().getServers().get("winstoneServer"))
+            .hasFieldOrPropertyWithValue("name", "winstoneServer")
+            .hasFieldOrPropertyWithValue("status", TigerServerStatus.RUNNING)
+            .hasFieldOrPropertyWithValue("statusMessage", "Server winstoneServer started & running")
+            .hasFieldOrPropertyWithValue("baseUrl",
+                TigerGlobalConfiguration.resolvePlaceholders("http://127.0.0.1:${free.port.0}"));
     }
 }

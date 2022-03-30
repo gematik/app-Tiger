@@ -45,12 +45,19 @@ public class EnvStatusController implements TigerUpdateListener {
             .forEach(entry -> receiveServerStatusUpdate(entry.getKey(), entry.getValue()));
     }
 
-    private void receiveServerStatusUpdate(final String serverName, final TigerServerStatusUpdate statusUpdate) {
+    private synchronized void receiveServerStatusUpdate(final String serverName,
+        final TigerServerStatusUpdate statusUpdate) {
         final TigerServerStatusDto serverStatus = tigerEnvStatus.getServers()
             .getOrDefault(serverName, new TigerServerStatusDto());
         serverStatus.setName(serverName);
         if (statusUpdate.getStatus() != null) {
             serverStatus.setStatus(statusUpdate.getStatus());
+        }
+        if (statusUpdate.getType() != null) {
+            serverStatus.setType(statusUpdate.getType());
+        }
+        if (statusUpdate.getBaseUrl() != null) {
+            serverStatus.setBaseUrl(statusUpdate.getBaseUrl());
         }
         if (statusUpdate.getStatusMessage() != null) {
             serverStatus.setStatusMessage(statusUpdate.getStatusMessage());

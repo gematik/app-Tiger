@@ -10,6 +10,7 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
@@ -59,8 +60,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         options.add("-jar");
         options.add(jarFile.getName());
         options.addAll(externalJarOptions.getArguments());
-        log.info("executing '" + String.join(" ", options));
-        log.info("in working dir: " + new File(workingDir).getAbsolutePath());
+        statusMessage("About to run '" + String.join(" ", options)
+            + "' in folder '" + new File(workingDir).getAbsolutePath() + "'");
         Runtime.getRuntime().addShutdownHook(new Thread(this::stopExternalProcess));
 
         final AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -84,7 +85,6 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
                 processReference.set(processBuilder.start());
                 statusMessage("Started JAR-File '" + javaExe + "' with PID '" + processReference.get().pid() + "'");
-                log.info("New process started (pid={})", processReference.get().pid());
             } catch (Throwable t) {
                 log.error("Failed to start process", t);
                 exception.set(t);
@@ -96,6 +96,9 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             log.warn("Healthcheck is not configured, so unable to add route to local proxy!");
         } else {
             addServerToLocalProxyRouteMap(buildHealthcheckUrl());
+            publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+                .baseUrl(extractBaseUrl(buildHealthcheckUrl()))
+                .build());
         }
 
         if (exception.get() != null) {

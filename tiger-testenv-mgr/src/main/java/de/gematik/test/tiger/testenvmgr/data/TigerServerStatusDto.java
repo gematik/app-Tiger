@@ -18,7 +18,7 @@ import lombok.*;
 public class TigerServerStatusDto {
 
     private String name;
-    private String hostname;
+    private String baseUrl;
     private ServerType type;
     private TigerServerStatus status;
     private String statusMessage;

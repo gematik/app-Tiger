@@ -4,28 +4,26 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockserver.model.HttpRequest.request;
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
-import org.springframework.util.SocketUtils;
 
 @Slf4j
 @Getter
@@ -99,5 +97,12 @@ public abstract class AbstractTestTigerTestEnvMgr {
 
     public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
         createTestEnvMgrSafelyAndExecute("", testEnvMgrConsumer);
+    }
+
+    public TigerTestEnvMgr mockTestEnvMgr() {
+        final TigerTestEnvMgr mockMgr = mock(TigerTestEnvMgr.class);
+        doReturn(mock(ThreadPoolExecutor.class))
+            .when(mockMgr).getExecutor();
+        return mockMgr;
     }
 }

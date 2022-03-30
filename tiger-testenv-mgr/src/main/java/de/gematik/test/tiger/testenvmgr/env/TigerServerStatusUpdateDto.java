@@ -4,6 +4,8 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,10 +18,16 @@ import lombok.RequiredArgsConstructor;
 public class TigerServerStatusUpdateDto {
 
     private String statusMessage;
+    private ServerType type;
+    private String baseUrl;
+    private TigerServerStatus status;
 
     public static TigerServerStatusUpdateDto fromUpdate(final TigerServerStatusUpdate value) {
         return TigerServerStatusUpdateDto.builder()
             .statusMessage(value.getStatusMessage())
+            .type(value.getType())
+            .status(value.getStatus())
+            .baseUrl(value.getBaseUrl())
             .build();
     }
 }
