@@ -3,7 +3,7 @@ import TigerServerStatus from "./TigerServerStatus";
 
 interface TigerServerStatusDto {
   name: string;
-  hostname: string;
+  baseUrl: string;
   type: ServerType;
   status: TigerServerStatus;
   statusMessage: string;
