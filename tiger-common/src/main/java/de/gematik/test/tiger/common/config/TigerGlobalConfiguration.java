@@ -4,7 +4,9 @@
 
 package de.gematik.test.tiger.common.config;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -21,13 +23,13 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class TigerGlobalConfiguration {
 
     private static TigerConfigurationLoader globalConfigurationLoader = new TigerConfigurationLoader();
-    @Getter @Setter
+    @Getter
+    @Setter
     private static boolean requireTigerYaml = false;
     private static boolean initialized = false;
 
@@ -58,6 +60,8 @@ public class TigerGlobalConfiguration {
 
         addFreePortVariables();
         readYamlFiles();
+
+        readAdditionalYamlFiles();
     }
 
     private static void addFreePortVariables() {
@@ -217,6 +221,21 @@ public class TigerGlobalConfiguration {
 
         if (requireTigerYaml) {
             throw new TigerConfigurationException("Could not find configuration-file 'tiger.yaml'.");
+        }
+    }
+
+    private static void readAdditionalYamlFiles() {
+        final List<AdditionalYamlProperty> additionalYamls = globalConfigurationLoader.instantiateConfigurationBean(
+            new TypeReference<>() {
+            }, "tiger", "additionalYamls");
+
+        for (AdditionalYamlProperty additionalYaml : additionalYamls) {
+            readYamlFile(Optional.ofNullable(additionalYaml.getFilename())
+                .filter(Objects::nonNull)
+                .map(File::new)
+                .filter(File::exists)
+                .orElseThrow(() -> new TigerConfigurationException(
+                    "Unable to locate file from configuration " + additionalYaml)));
         }
     }
 

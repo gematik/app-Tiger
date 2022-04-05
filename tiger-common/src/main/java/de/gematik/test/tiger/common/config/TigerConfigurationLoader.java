@@ -7,6 +7,7 @@ package de.gematik.test.tiger.common.config;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -94,6 +95,29 @@ public class TigerConfigurationLoader {
             throw new TigerConfigurationException(
                 "Error while reading configuration for class " + configurationBeanClass.getName() + " with base-keys "
                     + baseKeys, e);
+        }
+    }
+
+    @SneakyThrows
+    public <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType, String... baseKeys) {
+        initialize();
+
+        TreeNode targetTree = convertToTree();
+        final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
+        for (TigerConfigurationKeyString key : configurationKey) {
+            if (targetTree.get(key.getValue()) == null) {
+                return objectMapper.readValue("[]", configurationBeanType);
+            }
+            targetTree = targetTree.get(key.getValue());
+        }
+        try {
+            return objectMapper.treeAsTokens(targetTree).readValueAs(configurationBeanType);
+        } catch (JacksonException e) {
+            log.debug("Error while converting the following tree: {}", objectMapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(targetTree));
+            throw new TigerConfigurationException(
+                "Error while reading configuration for class " + configurationBeanType.getType().getTypeName()
+                    + " with base-keys " + baseKeys, e);
         }
     }
 

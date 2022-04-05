@@ -492,6 +492,14 @@ For more information about what the Tiger Proxy and how it works see the chapter
 # Default value is true
 localProxyActive: true
 
+# Specifiy additional yaml-files to read in during startup
+additionalYamls:
+  -
+    # the path to the file to read
+    filename: specialEnvironment.yaml
+    # the key to which to map the given file. "tiger" is the base-key for the tiger.yaml-file
+    baseKey: tiger
+
 # the block where all the Tiger Proxy configuration properties are located
 tigerProxy:
   # the port under which the server will be booted

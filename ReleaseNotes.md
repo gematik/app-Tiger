@@ -12,6 +12,7 @@
 ## Features
 
 * TGR-438: Improved JEXL-Debugging-Dialog
+* TGR-453: Additional YAML-files can be loaded when references in tiger.yaml
 * TGR-448: Inline-JEXL-expressions added
 
 ## Bugfixes
