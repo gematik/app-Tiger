@@ -6,8 +6,9 @@ Feature: Test functionality of complex lists
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
+    And he shows "TigerProxy" tab
     And he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    And he checks list add button is enabled
+    And he checks that add button for complex list is enabled
 
   #Scenario: Adding and inserting an entry to list
     When he adds complex list item
@@ -45,7 +46,7 @@ Feature: Test functionality of complex lists
     """
     Then he checks list item in row 2 has value "entry3: [user3@pwd3] from3 ↦ to3"
 
-  # Scenario: Abort editing an entry via ESC
+  # Scenario: Auto apply an entry when clicking on another one
     Given he selects list item in row 1
     When he enters values to the active complex list item
     """
@@ -56,16 +57,15 @@ Feature: Test functionality of complex lists
       basicAuth.password: pwd4
     """
     And he selects list item in row 2
-    And he closes open snack
     And he selects list item in row 1
-    Then complex list item field "id" has value "entry1"
-    And complex list item field "from" has value "from1"
-    And complex list item field "to" has value "to1"
-    And complex list item field "basicAuth.username" has value "user1"
-    And complex list item field "basicAuth.password" has value "pwd1"
-    And he checks list item in row 1 has value "entry1: [user1@pwd1] from1 ↦ to1"
+    Then complex list item field "id" has value "entry4"
+    And complex list item field "from" has value "from4"
+    And complex list item field "to" has value "to4"
+    And complex list item field "basicAuth.username" has value "user4"
+    And complex list item field "basicAuth.password" has value "pwd4"
+    And he checks list item in row 1 has value "entry4: [user4@pwd4] from4 ↦ to4"
 
-  # Scenario: Abort editing an entry via add button
+  # Scenario: Auto apply an entry via add button
     When he selects list item in row 1
     And he enters values to the active complex list item
     """
@@ -83,15 +83,14 @@ Feature: Test functionality of complex lists
       basicAuth.username: user5
       basicAuth.password: pwd5
     """
-    And he closes open snack
-    Then he checks list item in row 1 has value "entry1: [user1@pwd1] from1 ↦ to1"
+    Then he checks list item in row 1 has value "entry4: [user4@pwd4] from4 ↦ to4"
     And he checks list item in row 2 has value "entry5: [user5@pwd5] from5 ↦ to5"
 
   # TODO add snack detection?
 
 
 
-  # Scenario: Abort editing an entry via select other item
+  # Scenario: Auto apply an entry via select other item
     When he selects list item in row 2
     And he enters values to the active complex list item
     """
@@ -102,21 +101,20 @@ Feature: Test functionality of complex lists
       basicAuth.password: pwd6
     """
     And he selects list item in row 1
-    And he closes open snack
-    Then he checks list item in row 2 has value "entry5: [user5@pwd5] from5 ↦ to5"
+    Then he checks list item in row 2 has value "entry6: [user6@pwd6] from6 ↦ to6"
 
   # Scenario: Abort editing an entry via delete button
     When he selects list item in row 1
     And he enters values to the active complex list item
     """
-      id: entry6
-      from: from6
-      to: to6
-      basicAuth.username: user6
-      basicAuth.password: pwd6
+      id: entry7
+      from: from7
+      to: to7
+      basicAuth.username: user7
+      basicAuth.password: pwd7
     """
     And he deletes active list item
-    Then he checks list item in row 1 has value "entry5: [user5@pwd5] from5 ↦ to5"
+    Then he checks list item in row 1 has value "entry6: [user6@pwd6] from6 ↦ to6"
 
   # Scenario: Deleting an existing entry
     Given he checks list length is 2
@@ -129,11 +127,11 @@ Feature: Test functionality of complex lists
   # Scenario: check if i delete last entry in list then previous prelast is active
     Given he adds complex list item
      """
-      id: entry7
-      from: from7
-      to: to7
-      basicAuth.username: user7
-      basicAuth.password: pwd7
+      id: entry9
+      from: from9
+      to: to9
+      basicAuth.username: user9
+      basicAuth.password: pwd9
     """
     And he adds complex list item
      """
@@ -156,6 +154,7 @@ Feature: Test functionality of complex lists
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
+    And he shows "TigerProxy" tab
     And he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
     And he adds complex list item
       """
@@ -207,8 +206,9 @@ Feature: Test functionality of complex lists
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
+    And he shows "TigerProxy" tab
     And he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    And he checks list add button is enabled
+    And he checks that add button for complex list is enabled
 
     When he adds complex list item
     """

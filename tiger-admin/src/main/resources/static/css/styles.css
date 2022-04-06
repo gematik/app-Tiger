@@ -53,9 +53,22 @@ span.fieldset-summary {
     margin-left: 1rem;
 }
 
+/* move checkbox control to left of label */
+.form-switch .form-check-input {
+    margin-right: 1rem !important;
+    margin-left: 1rem !important;
+}
+
+.form-check.form-switch > input {
+    float: left !important;
+}
+
+
+
 .btn-group-vertical button {
     margin-bottom: 0.25rem !important;
 }
+
 
 .btn-list-apply {
     float: right;
@@ -156,6 +169,7 @@ i.btn-advanced {
 .fa-toolbox.btn-advanced {
     font-size: 1rem;
 }
+
 .fa-toolbox.btn-advanced.active {
     color: var(--bs-primary);
     background: transparent;
@@ -269,7 +283,6 @@ i.btn-advanced {
 }
 
 
-
 .form-control, .form-select {
     padding: 0.5rem;
 }
@@ -307,12 +320,20 @@ div.local_proxy_info {
 
 /*  Validierungsstyling undo greenish bs5 stuff */
 
-.was-validated .form-select:valid, .form-select.is-valid {
+.was-validated .form-select:valid, .form-select.is-valid, .was-validated .form-control:valid, .form-control.is-valid {
     /* Neutral/300 */
     border: 1px solid #D0D5DD;
+    background-image: none !important;
 }
 
-.form-check-input.is-valid ~ .form-check-label, .was-validated .form-check-input:valid ~ .form-check-label {
+.was-validated .form-select:invalid, .form-select.is-invalid, .was-validated .form-control:invalid, .form-control.is-invalid {
+    /* Neutral/300 */
+    border: 1px solid #D0D5DD;
+    background-image: none !important;
+}
+
+.form-check-input.is-valid ~ .form-check-label, .was-validated .form-check-input:valid ~ .form-check-label,
+.form-check-input.is-invalid ~ .form-check-label, .was-validated .form-check-input:invalid ~ .form-check-label {
     color: #333;
 }
 
@@ -340,54 +361,65 @@ div.local_proxy_info {
 }
 
 
+.list-empty-info {
+    margin: auto;
+    color: #6c757d;
+}
+
 /** ============================================== */
 
 
 @font-face {
-    font-family:euclid-regular;
-    src:url(../fonts/EuclidCircularB-Regular-WebXL.woff2) format("woff2"),
+    font-family: euclid-regular;
+    src: url(../fonts/EuclidCircularB-Regular-WebXL.woff2) format("woff2"),
     url(../fonts/EuclidCircularB-Regular-WebXL.woff) format("woff");
-    font-weight:400;
-    font-style:normal
+    font-weight: 400;
+    font-style: normal
 }
+
 @font-face {
-    font-family:euclid-medium;
-    src:url(../fonts/EuclidCircularB-Medium-WebXL.woff2) format("woff2"),
+    font-family: euclid-medium;
+    src: url(../fonts/EuclidCircularB-Medium-WebXL.woff2) format("woff2"),
     url(../fonts/EuclidCircularB-Medium-WebXL.woff) format("woff");
-    font-weight:400;
-    font-style:normal
+    font-weight: 400;
+    font-style: normal
 }
+
 @font-face {
-    font-family:euclid-semibold;
-    src:url(../fonts/EuclidCircularB-Semibold-WebXL.woff2) format("woff2"),
+    font-family: euclid-semibold;
+    src: url(../fonts/EuclidCircularB-Semibold-WebXL.woff2) format("woff2"),
     url(../fonts/EuclidCircularB-Semibold-WebXL.woff) format("woff");
-    font-weight:400;
-    font-style:normal
+    font-weight: 400;
+    font-style: normal
 }
+
 @font-face {
-    font-family:euclid-bold;
-    src:url(../fonts/EuclidCircularB-Bold-WebXL.woff2) format("woff2"),
+    font-family: euclid-bold;
+    src: url(../fonts/EuclidCircularB-Bold-WebXL.woff2) format("woff2"),
     url(../fonts/EuclidCircularB-Bold-WebXL.woff) format("woff");
-    font-weight:400;
-    font-style:normal
+    font-weight: 400;
+    font-style: normal
 }
+
 @font-face {
-    font-family:apercu-light;
-    src:url(../fonts/Apercu-Light.otf) format("opentype");
-    font-weight:300;
-    font-style:normal
+    font-family: apercu-light;
+    src: url(../fonts/Apercu-Light.otf) format("opentype");
+    font-weight: 300;
+    font-style: normal
 }
+
 @font-face {
-    font-family:apercu-regular;
-    src:url(../fonts/Apercu-Regular.otf) format("opentype");
-    font-weight:400;
-    font-style:normal
+    font-family: apercu-regular;
+    src: url(../fonts/Apercu-Regular.otf) format("opentype");
+    font-weight: 400;
+    font-style: normal
 }
+
 @font-face {
-    font-family:apercu-bold;
-    src:url(../fonts/Apercu-Bold.otf) format("opentype");
-    font-weight:400;
-    font-style:normal
+    font-family: apercu-bold;
+    src: url(../fonts/Apercu-Bold.otf) format("opentype");
+    font-weight: 400;
+    font-style: normal
 }
 
 body {
@@ -496,7 +528,7 @@ legend, .legend {
     padding: 0;
     /* Neutral/500 */
     color: #667085;
-    font-family: apercu-regular,sans-serif;
+    font-family: apercu-regular, sans-serif;
     font-weight: bold;
     font-size: 14px;
     line-height: 20px;
@@ -521,13 +553,12 @@ legend, .legend {
 }
 
 fieldset > .row > .col-6 > .input-group:not([style*="display: none"]):first-of-type,
-fieldset > .input-group:not([style*="display: none"]):first-of-type
-{
+fieldset > .input-group:not([style*="display: none"]):first-of-type {
     border-radius: 0.5rem 0.5rem 0 0;
 }
 
 fieldset > .row > .col-6 > .input-group:not([style*="display: none"]):last-of-type,
-fieldset > .input-group:not([style*="display: none"]):last-of-type{
+fieldset > .input-group:not([style*="display: none"]):last-of-type {
     border-radius: 0 0 0.5rem 0.5rem;
 }
 
@@ -580,10 +611,8 @@ input, select, .form-control, .form-select {
 }
 
 .form-check.form-switch > input {
-    float:right;
+    float: right;
 }
-
-
 
 
 li.list-group-item > span {
@@ -630,7 +659,7 @@ fieldset.subset .col {
 }
 
 fieldset.subset .col:last-child {
-    margin-right:0;
+    margin-right: 0;
 }
 
 fieldset.subset .input-group {
@@ -651,7 +680,7 @@ fieldset.subset .input-group {
     border: 1px solid #E4E7EC;
     box-sizing: border-box;
     border-radius: 8px;
-    min-height: 12rem;
+    min-height: 3rem;
     overflow-y: auto;
     max-height: 20rem;
 }
@@ -672,6 +701,7 @@ fieldset .list-group .list-group-item > span {
     background: #E4E7EC;
     /* Neutral/300 */
     border: 1px solid #D0D5DD;
+    background-image: none !important;
 }
 
 
@@ -729,7 +759,7 @@ i.btn-list-delete {
     text-overflow: ellipsis;
     overflow: hidden;
     line-break: anywhere;
-    font-size:20px;
+    font-size: 20px;
     font-weight: 700;
 }
 
@@ -765,13 +795,11 @@ p.list-server-types-example {
 }
 
 
-
 /* confirm modal */
 
-#modal-1  .border-dark {
+#modal-1 .border-dark {
     border-color: var(--bs-gray-300) !important;
 }
-
 
 
 .sidebar-bottom-toolbar {
@@ -779,7 +807,7 @@ p.list-server-types-example {
     padding: 1rem;
     bottom: 0;
     left: 0;
-    z-index:2000;
+    z-index: 2000;
     width: 4.5rem;
 }
 

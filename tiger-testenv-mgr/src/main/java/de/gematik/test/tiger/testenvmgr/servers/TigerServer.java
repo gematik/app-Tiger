@@ -301,8 +301,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
 
     @SneakyThrows
     private void assertCfgPropertySet(Object target, String... propertyNames) {
-        for (int i = 0; i < propertyNames.length; i++) {
-            var propertyName = propertyNames[i];
+        for (String propertyName : propertyNames) {
             Method mthd = target.getClass()
                 .getMethod("get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1));
             target = mthd.invoke(target);
@@ -351,8 +350,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             if (port == -1) {
                 port = url.getDefaultPort();
             }
-            final String targetUrl = url.toURI().getScheme() + "://" + url.getHost() + ":" + port;
-            return targetUrl;
+            return url.toURI().getScheme() + "://" + url.getHost() + ":" + port;
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Error while convert to URI: '" + url + "'", e);
         }
@@ -409,11 +407,13 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     void publishNewStatusUpdate(TigerServerStatusUpdate update) {
-        tigerTestEnvMgr.getExecutor().submit(
-            () -> listeners.parallelStream()
-                .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                    .serverUpdate(Map.of(serverId, update))
-                    .build()))
-        );
+        if (tigerTestEnvMgr.getExecutor() != null) {
+            tigerTestEnvMgr.getExecutor().submit(
+                () -> listeners.parallelStream()
+                    .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                        .serverUpdate(Map.of(serverId, update))
+                        .build()))
+            );
+        }
     }
 }

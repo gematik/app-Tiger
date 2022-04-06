@@ -8,7 +8,7 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
-  <title>Tiger Admin</title>
+  <title>Tiger Administration</title>
   <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
   <script th:src="@{/webjars/jquery-ui/1.13.0/jquery-ui.min.js}"></script>
   <link rel="stylesheet" th:href="@{/webjars/font-awesome/5.15.4/css/all.css}">
@@ -72,8 +72,8 @@
         </div>
         <div class="row">
           <div class="sidebar-toolbar border-primary btn-group-horizontal btn-group" role="group">
-            <div class="legend">Server & Testvorlagen</div>
-            <button class="btn btn-right btn-add-server" title="Server & Testvorlagen" type="button">
+            <div class="legend">Server & Templates</div>
+            <button class="btn btn-right btn-add-server" title="Server & Templates" type="button">
               <i class="fas fa-plus fa-lg"></i>
             </button>
           </div>
@@ -91,8 +91,8 @@
     </div>
     <div class="col-9 offset-3 content-col">
       <div class="text-end mb-5">
-        <button class="hidden btn btn-lg btn-primary btn-save-testenv px-5" title="Speichern" type="button">
-          <span>Speichern</span>
+        <button class="hidden btn btn-lg btn-primary btn-save-testenv px-5" title="Save" type="button">
+          <span>Save</span>
         </button>
       </div>
       <div class="server-content server-container centered">
@@ -109,13 +109,13 @@
         <div class="container">
           <div class="row">
             <div class="col text-center">
-              <h1 class="mb-1">TIger</h1>
-              <p class="text-muted mb-5">Agiles Testen in der Telematik-Infrastruktur</p>
+              <h1 class="mb-1">Tiger</h1>
+              <p class="text-muted mb-5">Agile Testing within the telematics infrastructure</p>
               <p>
-                <button class="btn btn-outline-primary btn-lg btn-add-server w-50" type="button">Server hinzufügen...</button>
+                <button class="btn btn-outline-primary btn-lg btn-add-server w-50" type="button">Add Server...</button>
               </p>
               <p>
-                <button class="btn btn-outline-secondary btn-lg btn-open-testenv w-50" type="button">Projekt laden...</button>
+                <button class="btn btn-outline-secondary btn-lg btn-open-testenv w-50" type="button">Load Project...</button>
               </p>
             </div>
             <div class="col">
@@ -138,7 +138,7 @@
           <span class="server-key"></span>
           <i class="server-formular-collapse-icon fas fa-angle-down"></i>
           <button class="btn btn-outline-primary btn-advanced global">
-            <i class="fas fa-toolbox"></i>&nbsp;&nbsp;Erweiterte Einstellungen
+            <i class="fas fa-toolbox"></i>&nbsp;&nbsp;Advanced Settings
           </button>
         </h1>
       </div>
@@ -150,7 +150,7 @@
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation" tab="general"
                 title="All general settings of a node">
-              <a class="nav-link" data-bs-toggle="tab" role="tab">Allgemeines</a>
+              <a class="nav-link" data-bs-toggle="tab" role="tab">General</a>
             </li>
             <li class="nav-item" role="presentation" tab="dockerOptions"
                 title="All settings related to your docker container or composition">
@@ -241,8 +241,6 @@
               <div class="col align-items-stretch">
                 <ul class="list-group" name="source"></ul>
               </div>
-              <div class="col-auto col-list-btns">
-              </div>
             </div>
             <div class="input-group">
               <span class="input-group-text">Version</span>
@@ -315,8 +313,6 @@
             <div class="col align-items-stretch">
               <ul class="list-group" name=".dockerOptions.serviceHealthchecks"></ul>
             </div>
-            <div class="col-auto col-list-btns">
-            </div>
           </div>
         </fieldset>
       </div>
@@ -354,8 +350,6 @@
             <div class="col align-items-stretch">
               <ul class="list-group" name=".externalJarOptions.options"></ul>
             </div>
-            <div class="col-auto col-list-btns">
-            </div>
           </div>
         </fieldset>
         <fieldset class="editableList start-collapsed" section=".externalJarOptions.arguments">
@@ -371,8 +365,6 @@
           <div class="row">
             <div class="col align-items-stretch">
               <ul class="list-group" name=".externalJarOptions.arguments"></ul>
-            </div>
-            <div class="col-auto col-list-btns">
             </div>
           </div>
         </fieldset>
@@ -461,13 +453,6 @@
               </div>
             </div>
             <div class="row">
-              <div class="col align-items-stretch">
-                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes"></ul>
-              </div>
-              <div class="col-auto col-list-btns">
-              </div>
-            </div>
-            <div class="row">
               <div class="col">
                 <fieldset class="subset subset-below">
                   <div class="row">
@@ -503,7 +488,7 @@
                       </div>
                     </div>
                     <div class="col">
-                      <label class="form-label">Authentication</label>
+                      <label class="form-label">Basic HTTP authentication</label>
                       <div class="input-group input-group">
                         <span class="input-group-text">Username</span>
                         <input class="form-control" name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.username"
@@ -521,6 +506,11 @@
                 </fieldset>
               </div>
             </div>
+            <div class="row">
+              <div class="col align-items-stretch">
+                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes"></ul>
+              </div>
+            </div>
           </fieldset>
           <fieldset class="labels-col-4 forwardToProxy advanced start-collapsed"
                     section=".tigerProxyCfg.proxyCfg.forwardToProxy">
@@ -529,6 +519,12 @@
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
               <span class="fieldset-summary fs-6"></span>
             </legend>
+            <div class="row">
+              <div class="col form-text">
+                If you are located behind a company proxy and your test suite needs to reach the internet, you may configure the proxy here.
+              </div>
+            </div>
+
             <div class="form-check form-switch">
               <input class="form-check-input" name="enableForwardProxy" type="checkbox">
               <label class="form-check-label">Activate forward proxy</label>
@@ -582,8 +578,6 @@
               <div class="col align-items-stretch">
                 <ul class="list-group" name=".tigerProxyCfg.proxyCfg.trafficEndpoints"></ul>
               </div>
-              <div class="col-auto col-list-btns">
-              </div>
             </div>
             <div class="row mt-3">
               <div class="col">
@@ -627,13 +621,6 @@
               </div>
             </div>
             <div class="row">
-              <div class="col align-items-stretch">
-                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications"></ul>
-              </div>
-              <div class="col-auto col-list-btns">
-              </div>
-            </div>
-            <div class="row">
               <div class="col">
                 <fieldset class="subset subset-below">
                   <div class="row">
@@ -665,6 +652,11 @@
                     </div>
                   </div>
                 </fieldset>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col align-items-stretch">
+                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications"></ul>
               </div>
             </div>
           </fieldset>
@@ -707,15 +699,11 @@
               <div class="col align-items-stretch">
                 <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.alternativeNames"></ul>
               </div>
-              <div class="col-auto col-list-btns">
-              </div>
             </div>
             <label class="form-label" style="margin-top: 1rem;">Server SSL Suites</label>
             <div class="row">
               <div class="col align-items-stretch">
                 <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.serverSslSuites"></ul>
-              </div>
-              <div class="col-auto col-list-btns">
               </div>
             </div>
           </fieldset>
@@ -723,7 +711,7 @@
       </div>
       <!-- PKIKEYS Panel -->
       <div class="tab-pane fade pkiKeys" id="tab-13" role="tabpanel">
-        <fieldset class="complex-list" section="pkiKeys">
+        <fieldset class="complex-list" section=".pkiKeys">
           <legend>
             PKI Keys
             <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -735,39 +723,37 @@
             </div>
           </div>
           <div class="row">
-            <div class="col align-items-stretch">
-              <ul class="list-group" name="pkiKeys"></ul>
-            </div>
-            <div class="col-auto col-list-btns">
-            </div>
-          </div>
-          <div class="row">
             <div class="col">
               <fieldset class="subset subset-below">
                 <div class="row">
                   <div class="col">
                     <div class="input-group input-group">
-                      <span class="input-group-text" style="width:15%;">Pem</span>
-                      <textarea class="form-control" name="pkiKeys.pem" rows="6">
-                          </textarea>
-                    </div>
-                  </div>
-                  <div class="col">
-                    <div class="input-group input-group">
                       <span class="input-group-text">Id</span>
-                      <input class="form-control" name="pkiKeys.id" type="text">
+                      <input class="form-control" name=".pkiKeys.id" type="text">
                     </div>
                     <div class="input-group input-group">
                       <span class="input-group-text">Type</span>
-                      <select class="form-select" name="pkiKeys.type"
+                      <select class="form-select" name=".pkiKeys.type"
                               title="Select the type of the PKI item">
                         <option value="Certificate">Certificate</option>
                         <option value="Key">Key</option>
                       </select>
                     </div>
                   </div>
+                  <div class="col">
+                    <div class="input-group input-group">
+                      <span class="input-group-text" style="width:15%;">Pem</span>
+                      <textarea class="form-control" name=".pkiKeys.pem" rows="6">
+                          </textarea>
+                    </div>
+                  </div>
                 </div>
               </fieldset>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col align-items-stretch">
+              <ul class="list-group" name=".pkiKeys"></ul>
             </div>
           </div>
         </fieldset>
@@ -791,8 +777,6 @@
             <div class="col align-items-stretch">
               <ul class="list-group" name="environment"></ul>
             </div>
-            <div class="col-auto col-list-btns">
-            </div>
           </div>
         </fieldset>
         <fieldset class="always-shown editableList" section="exports">
@@ -812,8 +796,6 @@
           <div class="row">
             <div class="col align-items-stretch">
               <ul class="list-group" name="exports"></ul>
-            </div>
-            <div class="col-auto col-list-btns">
             </div>
           </div>
         </fieldset>
@@ -836,8 +818,6 @@
             <div class="col align-items-stretch">
               <ul class="list-group" name="urlMappings"></ul>
             </div>
-            <div class="col-auto col-list-btns">
-            </div>
           </div>
         </fieldset>
       </div>
@@ -852,8 +832,8 @@
 
   <div id="template-list-all-buttons">
     <p class="text-end">
-      <button class="btn btn-right text-primary btn-list-add" title="Hinzufügen" type="button">
-        <i class="fas fa-plus"></i> Hinzufügen
+      <button class="btn btn-right text-primary btn-list-add" title="Add entry to list" type="button">
+        <i class="fas fa-plus"></i> Add entry
       </button>
     </p>
   </div>
@@ -868,8 +848,6 @@
     <div class="row">
       <div class="col align-items-stretch">
         <ul class="list-group" name="source"></ul>
-      </div>
-      <div class="col-auto col-list-btns">
       </div>
     </div>
     <div class="input-group" style="margin-top: 1rem;">
@@ -961,14 +939,19 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Server hinzufügen</h5>
+          <h5 class="modal-title">Add Server</h5>
         </div>
         <div class="modal-body">
           <div class="row h-100">
             <div class="col">
-              <p class="text-neutral-500">Wählen Sie zunächst einen Servertyp oder eine Testvorlage aus. Sie können Ihrem Projekt später weitere Typen und Vorlagen hinzufügen.</p>
+              <p class="text-neutral-500">
+                Please first choose a server type or a template. Later on you can add additional types and templates.
+              </p>
+              <p class="text-neutral-500">
+                The test suite's local Tiger Proxy will be added automatically with the first server node added.
+              </p>
               <div class="dropdown list-server-types btn-group w-50">
-                <button class="btn text-start p-3 dropdown-toggle" type="button" data-bs-toggle="dropdown" >Bitte wählen</button>
+                <button class="btn text-start p-3 dropdown-toggle" type="button" data-bs-toggle="dropdown" >Please choose</button>
                 <ul class="dropdown-menu w-50">
                 </ul>
               </div>
@@ -1137,8 +1120,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-add-server-cancel" title="Abbrechen und Dialog schließen" type="button">Abbrechen</button>
-          <button class="btn btn-primary btn-add-server-ok" title="Ausgewählten Testknoten hinzufügen" type="button">Hinzufügen</button>
+          <button class="btn btn-secondary btn-add-server-cancel" title="Cancel and close dialog" type="button">Abbrechen</button>
+          <button class="btn btn-primary btn-add-server-ok" title="Add selected server type / template" type="button">Add</button>
         </div>
       </div>
     </div>

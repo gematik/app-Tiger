@@ -6,6 +6,7 @@ Feature: Summary feature
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
+    And he shows "TigerProxy" tab
     When he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
     And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
     Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
@@ -46,6 +47,7 @@ Feature: Summary feature
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
+    And he shows "TigerProxy" tab
     When he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
     And he adds complex list item
     """
@@ -95,6 +97,7 @@ Feature: Summary feature
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
+    And he shows "TigerProxy" tab
     And he clicks on global advanced icon
     Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
     """

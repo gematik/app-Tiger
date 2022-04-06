@@ -23,7 +23,7 @@ public class Pause implements Task {
     }
 
     @Override
-    @Step("{0} shows tab #tabName")
+    @Step("{0} pauses #waitms ms")
     public <T extends Actor> void performAs(T actor) {
         final long startms = System.currentTimeMillis();
         await().until(() -> System.currentTimeMillis() - startms - waitms >= 0);

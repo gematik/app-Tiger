@@ -9,7 +9,7 @@ Feature: Test functionality of simple lists
     And he shows "External" tab
     And he unfolds section ".externalJarOptions.options"
     And he tests list ".externalJarOptions.options"
-    And he checks list add button is enabled
+    And he checks that add button for simple list is enabled
 
   #Scenario: Adding and inserting an entry to list
     When he adds list item "entry1"
@@ -32,28 +32,28 @@ Feature: Test functionality of simple lists
     And he presses ESC on editing list item
     Then he checks list item in row 1 has value "entry1"
 
-  # Scenario: Abort editing an entry via add button
+  # Scenario: Auto apply an entry via add button
     When he selects list item in row 1
     And he enters "entry4" to active list item
     And he adds list item "entry5"
-    And he closes open snack
-    Then he checks list item in row 1 has value "entry1"
+    # And he closes open snack
+    Then he checks list item in row 1 has value "entry4"
     And he checks list item in row 2 has value "entry5"
 
   # TODO add snack detection?
 
-  # Scenario: Abort editing an entry via select other item
+  # Scenario: Auto apply an entry via select other item
     When he selects list item in row 2
     And he enters "entry6" to active list item
     And he selects list item in row 1
-    And he closes open snack
-    Then he checks list item in row 2 has value "entry5"
+    # And he closes open snack
+    Then he checks list item in row 2 has value "entry6"
 
   # Scenario: Abort editing an entry via delete button
     When he selects list item in row 1
-    And he enters "entry6" to active list item
+    And he enters "entry7" to active list item
     And he deletes active list item
-    Then he checks list item in row 1 has value "entry5"
+    Then he checks list item in row 1 has value "entry6"
 
   # Scenario: Deleting an existing entry
     Given he checks list length is 2
@@ -64,7 +64,7 @@ Feature: Test functionality of simple lists
     And he checks list length is 1
 
   # Scenario: check if i delete last entry in list then previous prelast is active
-    Given he adds list item "entry7"
+    Given he adds list item "entry9"
     And he adds list item "entry8"
     And he selects list item in row 3
     When he deletes active list item

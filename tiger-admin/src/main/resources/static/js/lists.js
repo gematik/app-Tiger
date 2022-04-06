@@ -15,7 +15,7 @@ const listItemPatterns = {
   ".tigerProxyCfg.proxyCfg.modifications": [
     ["single", "", "$name", ": "], "$condition", "$targetElement"
   ],
-  "pkiKeys": [
+  ".pkiKeys": [
     "$id", "(", "$type", ")"
   ]
 }
@@ -33,12 +33,9 @@ function getListItem(text, active) {
 
 function abortOtherEditing() {
   const editing = $('.editing');
-  if (editing.length) {
-    warn('Aborting other editing4');
-  }
   $.each(editing, function () {
     $(this).handleEnterEscOnEditableContent({
-      keyCode: 27, preventDefault: function () {
+      keyCode: 13, preventDefault: function () {
       }
     });
   });
@@ -48,6 +45,7 @@ function handleAddButtonOnSimpleList() {
   const listGroup = $(this).parents('.row:first').find(".list-group");
   const activeItem = listGroup.find('.active');
   listGroup.find('.active').removeClass('active');
+  listGroup.find('.list-empty-info').hide();
 
   addItemToList(listGroup, activeItem)
   $.each(listGroup.find('.list-group-item > span'), function () {
@@ -58,7 +56,7 @@ function handleAddButtonOnSimpleList() {
 }
 
 function setDefaultValuesInFieldset(editFieldSet) {
-  editFieldSet.find("*[name][type]").each(function () {
+  editFieldSet.find("*[name]").each(function () {
     const fieldName = $(this).attr('name');
     const type = $(this).attr('type');
     let defValue = getDefaultValueFor(fieldName);
@@ -73,22 +71,19 @@ function setDefaultValuesInFieldset(editFieldSet) {
 function handleAddButtonOnComplexList() {
   const fieldSet = $(this).parents('fieldset');
   fieldSet.enableSubSetFields(true);
-  const listGroup = $(this).parents(".row:first").find(".list-group");
-  const activeItem = listGroup.find('.active');
+  const listGroup = $(this).parents("fieldset").find(".list-group");
+  listGroup.find('.list-empty-info').hide();
+
+  let activeItem = listGroup.find('.active');
   if (activeItem.length) {
-    const origData = activeItem.data("listdata");
-    if (!objectDeepEquals(origData, fieldSet.getNewDataFromSubsetFieldset(false))) {
-      warn('Aborting other editing3', 10000);
-    }
+    fieldSet.updateDataAndLabelForActiveItem(false);
+    activeItem = listGroup.find('.active');
     activeItem.removeClass('active');
   }
+
   addItemToList(listGroup, activeItem);
 
   const editFieldSet = fieldSet.find('fieldset');
-  if (activeItem.length) {
-    // if no active item dont skip entered data as its not very user friendly
-    fieldSet.updateDataAndLabelForActiveItem(true);
-  }
   // respect default value of fields
   setDefaultValuesInFieldset(editFieldSet);
 
@@ -112,10 +107,10 @@ function handleDeleteButtonOnList() {
   const fieldSet = $(this).parents('fieldset');
   const activeItem = $(this).parent();
   let nextActive = activeItem.prev();
-  if (!nextActive.length) {
+  if (!nextActive.length || nextActive.length && nextActive[0].tagName !== 'LI') {
     nextActive = activeItem.next();
   }
-  if (nextActive.length) {
+  if (nextActive.length && nextActive[0].tagName === 'LI') {
     nextActive.addClass('active');
     let data = nextActive.data("listdata");
     const section = fieldSet.attr("section");
@@ -124,6 +119,9 @@ function handleDeleteButtonOnList() {
     }
   } else {
     setDefaultValuesInFieldset(fieldSet.find('fieldset'));
+    fieldSet.enableSubSetFields(false);
+    const listGroup = fieldSet.find(".list-group");
+    listGroup.find('.list-empty-info').show();
     fieldSet.find('.btn-list-apply').hide();
   }
   activeItem.remove();
@@ -184,8 +182,8 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
           $(this).parent().focus();
           $(this).parents('.list-group').find('.active').removeClass('active');
           $(this).parent().addClass('active');
-          $(this).focus();
         }
+        $(this).focus();
         $(this).keydown((ev) => {
           return $(this).handleEnterEscOnEditableContent(ev);
         });
@@ -199,13 +197,15 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
         return true;
       }
       const fieldSet = $(this).parents('fieldset');
-      const curActive = $(this).parents('.list-group').find('.active');
+      let curActive = $(this).parents('.list-group').find('.active');
 
       fieldSet.enableSubSetFields(true);
       if (!editable) {
         const origData = curActive.data("listdata");
-        if (origData && !objectDeepEquals(origData, fieldSet.getNewDataFromSubsetFieldset(false))) {
-          warn('Aborting other editing2');
+        const newData = fieldSet.getNewDataFromSubsetFieldset(false);
+        if (origData && !objectDeepEquals(origData, newData)) {
+          fieldSet.updateDataAndLabelForActiveItem(false);
+          curActive = $(this).parents('.list-group').find('.active');
         }
       }
 
@@ -220,6 +220,9 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
           fieldSet.setObjectFieldInForm(data, field, section);
         }
         $(this).parents('fieldset').find('.btn-list-apply').show();
+        fieldSet.find('fieldset').find("*[name]:first").focus();
+      } else {
+        $(this).focus();
       }
     });
   });

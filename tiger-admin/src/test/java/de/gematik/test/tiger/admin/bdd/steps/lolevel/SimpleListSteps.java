@@ -65,13 +65,19 @@ public class SimpleListSteps {
         );
     }
 
-    @And("she/he checks list add button is enabled")
+    @And("she/he checks that add button for simple list is enabled")
     public void checksAddButtonIsEnabled() {
         theActorInTheSpotlight().attemptsTo(
-            Ensure.that(PerformActionsOnList.listAddButton()).isEnabled()
+            Ensure.that(PerformActionsOnList.simpleListAddButton()).isEnabled()
         );
     }
 
+    @And("she/he checks that add button for complex list is enabled")
+    public void checksComplexListAddButtonIsEnabled() {
+        theActorInTheSpotlight().attemptsTo(
+            Ensure.that(PerformActionsOnList.complexListAddButton()).isEnabled()
+        );
+    }
     @And("she/he checks active list item is in row {int}")
     public void checksActiveEntryHasIndex(int activeRow) {
         theActorInTheSpotlight().attemptsTo(

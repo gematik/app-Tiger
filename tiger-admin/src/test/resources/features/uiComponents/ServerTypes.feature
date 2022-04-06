@@ -6,14 +6,15 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "docker" node via welcome screen
     When he focuses on formular "docker_001"
+    And he shows "Docker" tab
     Then he doesn't see field ".dockerOptions.serviceHealthchecks"
     But he sees check field ".dockerOptions.proxied"
     And he sees check field ".dockerOptions.oneShot"
-    And he shows "Allgemeines" tab
+    And he shows "General" tab
     And he sees text field "source"
     And he sees input field "version"
 
-    And he sees tab link "Allgemeines"
+    And he sees tab link "General"
     And he sees tab link "Docker"
     And he sees tab link "PKI"
     And he sees tab link "Environment"
@@ -25,14 +26,15 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "compose" node via welcome screen
     When he focuses on formular "compose_001"
+    And he shows "Docker" tab
     Then he sees list field ".dockerOptions.serviceHealthchecks"
     But he doesn't see field ".dockerOptions.proxied"
     And he doesn't see field ".dockerOptions.oneShot"
-    When he shows "Allgemeines" tab
+    When he shows "General" tab
     And he sees list field "source"
     But he doesn't see field "version"
 
-    And he sees tab link "Allgemeines"
+    And he sees tab link "General"
     And he sees tab link "Docker"
     And he sees tab link "PKI"
     And he sees tab link "Environment"
@@ -44,14 +46,15 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     When he focuses on formular "tigerProxy_001"
+    And he shows "TigerProxy" tab
     Then he sees input field ".tigerProxyCfg.proxyCfg.port"
     And he sees select field ".tigerProxyCfg.proxiedServer"
     And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    When he shows "Allgemeines" tab
+    When he shows "General" tab
     Then he doesn't see field "source"
     And he doesn't see field "version"
 
-    And he sees tab link "Allgemeines"
+    And he sees tab link "General"
     And he sees tab link "PKI"
     And he sees tab link "Environment"
     And he sees tab link "URL Mappings"
@@ -63,7 +66,8 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "externalJar" node via welcome screen
     When he focuses on formular "externalJar_001"
-    And he sees input field ".externalJarOptions.workingDir"
+    And he shows "External" tab
+    Then he sees input field ".externalJarOptions.workingDir"
     And he sees input field ".externalJarOptions.healthcheck"
     But he doesn't see field ".dockerOptions.serviceHealthchecks"
     And he doesn't see field ".externalJarOptions.options"
@@ -72,11 +76,11 @@ Feature: Check input fields and sections for all server types
     Then he sees list field ".externalJarOptions.options"
     When he unfolds section ".externalJarOptions.arguments"
     Then he sees list field ".externalJarOptions.arguments"
-    When he shows "Allgemeines" tab
+    When he shows "General" tab
     Then he sees text field "source"
     But he doesn't see field "version"
 
-    And he sees tab link "Allgemeines"
+    And he sees tab link "General"
     And he sees tab link "PKI"
     And he sees tab link "Environment"
     And he sees tab link "URL Mappings"
@@ -88,16 +92,17 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "externalUrl" node via welcome screen
     When he focuses on formular "externalUrl_001"
+    And he shows "External" tab
     Then he sees input field ".externalJarOptions.healthcheck"
     But he doesn't see field ".externalJarOptions.workingDir"
     And he doesn't see field ".dockerOptions.serviceHealthchecks"
     And he doesn't see section ".externalJarOptions.options"
     And he doesn't see section ".externalJarOptions.arguments"
-    When he shows "Allgemeines" tab
+    When he shows "General" tab
     Then he sees text field "source"
     But he doesn't see field "version"
 
-    And he sees tab link "Allgemeines"
+    And he sees tab link "General"
     And he sees tab link "PKI"
     And he sees tab link "Environment"
     And he sees tab link "URL Mappings"
@@ -117,7 +122,7 @@ Feature: Check input fields and sections for all server types
     And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
     But he doesn't see field ".tigerProxyCfg.proxiedServer"
 
-    And he sees tab link "Allgemeines"
+    And he sees tab link "General"
     And he sees tab link "TigerProxy"
     But he doesn't see tab link "Docker"
     And he doesn't see tab link "PKI"
@@ -129,11 +134,11 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "<type>" node via welcome screen
     When he focuses on formular "<type>_001"
-    And he shows "Allgemeines" tab
+    And he shows "General" tab
     Then he sees input field "hostname"
     And he sees check field "active"
     When he shows "PKI" tab
-    Then he sees list field "pkiKeys"
+    Then he sees list field ".pkiKeys"
     When he shows "Environment" tab
     Then he sees list field "<envfield1>"
     And he sees list field "<envfield2>"
@@ -155,11 +160,11 @@ Feature: Check input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "compose" node via welcome screen
     When he focuses on formular "compose_001"
-    And he shows "Allgemeines" tab
+    And he shows "General" tab
     #Then he sees input field "hostname" not shown on compose
     Then he sees check field "active"
     When he shows "PKI" tab
-    Then he sees list field "pkiKeys"
+    Then he sees list field ".pkiKeys"
     When he shows "Environment" tab
     Then he sees list field "exports"
     And he sees list field "environment"

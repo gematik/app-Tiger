@@ -5,13 +5,17 @@
 package de.gematik.test.tiger.admin.bdd.actions;
 
 import static net.serenitybdd.screenplay.Tasks.instrumented;
+import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
+import de.gematik.test.tiger.admin.bdd.actions.lolevel.Pause;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.PerformActionsOnSnack;
 import de.gematik.test.tiger.admin.bdd.pages.AdminHomePage;
+import de.gematik.test.tiger.admin.bdd.pages.ServerFormular;
 import java.time.Duration;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.Performable;
 import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.actions.Enter;
+import net.serenitybdd.screenplay.actions.ScrollToTarget;
 import net.serenitybdd.screenplay.ensure.Ensure;
 import net.serenitybdd.screenplay.targets.Target;
 import net.thucydides.core.annotations.Step;
@@ -62,6 +66,8 @@ public class AddServer implements Performable {
             // Precondition
             Ensure.that(addServerBtn).isEnabled(),
             // Actions
+            new ScrollToTarget(addServerBtn).andAlignToBottom(),
+            Pause.pauseFor(500),
             Click.on(addServerBtn),
             Ensure.that(MODAL_ADD_SERVER.waitingForNoMoreThan(Duration.ofSeconds(5))).isDisplayed(),
             Click.on(dropDownButton),

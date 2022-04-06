@@ -235,20 +235,32 @@ function addServer(serverKey, serverData) {
     const required = $(this).attr('required');
     const validation = $(this).attr('validation');
     const value = $(this).val();
-    if (required && !value) {
-      $(this).addClass('is-invalid');
-      return;
-    }
-    if (validation && !eval(validation)) {
-      $(this).addClass('is-invalid');
-    } else {
-      $(this).removeClass('is-invalid');
-      $(this).addClass('is-valid');
+    if (false) { // DEACTIVATE validation for now! TODO TGR-204
+      if (required && !value) {
+        $(this).addClass('is-invalid');
+        return;
+      }
+      if (validation && !eval(validation)) {
+        $(this).addClass('is-invalid');
+      } else {
+        $(this).removeClass('is-invalid');
+        $(this).addClass('is-valid');
+      }
     }
     notifyChangesToTestenvData(true);
   });
 
-  // create sidebar entry
+  // To fix bubbling up of Enter key to adavanced Settings button
+  formular.find('input[name]').keydown(function (ev) {
+    if (ev.keyCode === 13) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      return false;
+    }
+  });
+
+
+    // create sidebar entry
   if (serverKey !== 'local_proxy') {
     $('.container.sidebar.server-container').append(
         `<div id="sidebar_server_${serverKey}" class="box sidebar-item row">`
@@ -444,8 +456,12 @@ function showError(errMessage, errorCauses) {
   });
 }
 
-function warn(text, delay, dismissible) {
+function info(text, delay, dismissible) {
   snack(text, 'warning', delay, dismissible);
+}
+
+function warn(text, delay, dismissible) {
+  snack(text, 'info', delay, dismissible);
 }
 
 function danger(text, delay, dismissible) {
@@ -586,7 +602,7 @@ function navigateIntoFolder(folder, okfunc, addroots, mode) {
 
 function openAddServerModal() {
   const addServerModal = $('#add-server-modal');
-  addServerModal.find('button.dropdown-toggle').text("Bitte wählen");
+  addServerModal.find('button.dropdown-toggle').text("Please choose");
   addServerModal.find('.list-server-types .active').removeClass("active");
   addServerModal.find('.info-block').html('');
   addServerModal.find('.info-block').hide();
@@ -609,7 +625,7 @@ function loadMetaDataFromServer() {
 
       const dropdown = addServerModal.find('.list-server-types .dropdown-menu');
       dropdown.children().remove();
-      let html = '<li class="p-2 text-center text-success">Servertypen</li>'
+      let html = '<li class="p-2 text-center text-success">Server types</li>'
       for (let icon in serverIcons) {
         if (icon !== 'localProxy') {
           html += '<li class="dropdown-item p-2 text-success" data-value="'
@@ -618,7 +634,7 @@ function loadMetaDataFromServer() {
               + serverTypeNames[icon] + '</li>';
         }
       }
-      html += '<li class="p-2 text-center text-secondary">Testvorlagen</li>';
+      html += '<li class="p-2 text-center text-secondary">Templates</li>';
       currTemplates.templates.forEach(function (template) {
         html += '<li class="dropdown-item p-2 text-secondary" data-value="'
             + template.templateName + '">'
@@ -639,7 +655,7 @@ function loadMetaDataFromServer() {
         addServerModal.find('button.dropdown-toggle').html($(this).html());
         addServerModal.find('.btn-add-server-ok').focus();
       });
-      snack('Templates loaded', 'success', 2000);
+      snack('Templates loaded', 'success', 5000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);
@@ -654,7 +670,7 @@ function loadMetaDataFromServer() {
     dataType: 'json',
     success: function (res) {
       configScheme = res;
-      snack('ConfigScheme loaded', 'success', 2000);
+      snack('ConfigScheme loaded', 'success', 5000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);

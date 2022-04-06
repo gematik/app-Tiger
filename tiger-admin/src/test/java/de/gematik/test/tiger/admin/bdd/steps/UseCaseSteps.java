@@ -17,9 +17,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.time.Duration;
 import net.serenitybdd.screenplay.Actor;
-import net.serenitybdd.screenplay.actions.Click;
-import net.serenitybdd.screenplay.actions.Enter;
-import net.serenitybdd.screenplay.actions.SendKeys;
+import net.serenitybdd.screenplay.actions.*;
 import net.serenitybdd.screenplay.actors.OnStage;
 import net.serenitybdd.screenplay.actors.OnlineCast;
 import net.serenitybdd.screenplay.annotations.CastMember;
@@ -66,7 +64,11 @@ public class UseCaseSteps {
     @And("she/he focuses on formular {string}")
     public void focusesOnFormular(String serverKey) {
         theActorInTheSpotlight().remember("serverKey", serverKey);
-        theActorInTheSpotlight().attemptsTo(Click.on(ServerFormular.sidebarItem(theActorInTheSpotlight())));
+        theActorInTheSpotlight().attemptsTo(
+            new ScrollToTarget(ServerFormular.sidebarItem(theActorInTheSpotlight())).andAlignToBottom(),
+            Pause.pauseFor(500),
+            Click.on(ServerFormular.sidebarItem(theActorInTheSpotlight()))
+        );
     }
 
     @And("she/he shows {string} tab")
