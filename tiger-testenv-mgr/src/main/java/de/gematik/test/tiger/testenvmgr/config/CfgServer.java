@@ -20,4 +20,6 @@ public class CfgServer extends CfgTemplate {
      * comma.
      */
     private String dependsUpon;
+
+    private int uiRank = -1;
 }

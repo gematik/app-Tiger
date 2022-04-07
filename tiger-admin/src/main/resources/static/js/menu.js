@@ -100,6 +100,7 @@ function setYamlFileName(cfgfile, path) {
 
 function saveYamlFile() {
   const data = {servers: {}};
+  let uiRank = 1;
 
   $(".server-content.server-container .server-formular").each(
       function (idx, node) {
@@ -113,6 +114,9 @@ function saveYamlFile() {
                 true);
           }
         });
+        if (serverKey !== 'local_proxy') {
+          data.servers[serverKey].uiRank = uiRank++;
+        }
 
         // remove null properties and properties only containing [] or {}
         removeNullPropertiesAndEmptyArraysOrObjects(data);
@@ -146,7 +150,7 @@ function saveYamlFile() {
     delete data.tigerProxy.localProxyActive;
   }
 
-    $.ajax({
+  $.ajax({
     url: "/saveYamlFile",
     contentType: "application/json",
     type: "POST",
@@ -197,8 +201,10 @@ function removeNullPropertiesAndEmptyArraysOrObjects(data) {
 }
 
 function populateServersFromYaml(testEnvYaml) {
-  for (const serverKey in testEnvYaml) {
-    addServer(serverKey, testEnvYaml[serverKey]);
+  const sortedTestEnvYaml = Object.fromEntries(Object.entries(testEnvYaml).sort(([,a],[,b]) => a.uiRank-b.uiRank));
+
+  for (const serverKey in sortedTestEnvYaml) {
+    addServer(serverKey, sortedTestEnvYaml[serverKey]);
   }
   const serverList = Object.keys(testEnvYaml).sort();
   // update server list fields in all formulars, setting the value from testEnvYaml

@@ -342,7 +342,7 @@
                     </systemPropertyVariables>
                     <parallel>classes</parallel>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
-                    <forkCount>2</forkCount>
+                    <forkCount>4</forkCount>
                     <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
             </plugin>

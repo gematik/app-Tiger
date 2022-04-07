@@ -50,3 +50,12 @@ Feature: Check sidebar drag n drop of nodes
     When he tries to drag sidebar item "compose_001" above "tigerProxy_001"
     Then nodes are ordered "Local Tiger proxy,docker_001,tigerProxy_001,compose_001,externalJar_001"
     And formulars are ordered "local_proxy,docker_001,tigerProxy_001,compose_001,externalJar_001"
+
+    Then he saves test environment as "checkNodeUIRanking.yaml"
+
+
+  Scenario: Check order of nodes is restored on reload of project
+    Given Gerriet is on the homepage
+    When he loads test environment from "checkNodeUIRanking.yaml"
+    Then nodes are ordered "Local Tiger proxy,docker_001,tigerProxy_001,compose_001,externalJar_001"
+    And formulars are ordered "local_proxy,docker_001,tigerProxy_001,compose_001,externalJar_001"

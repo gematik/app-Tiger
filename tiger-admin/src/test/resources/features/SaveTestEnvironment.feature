@@ -11,6 +11,7 @@ Feature: Save test environments
     servers:
       docker_001:
         hostname: docker_001
+        uiRank: 1
         type: docker
     """
 
@@ -36,11 +37,14 @@ Feature: Save test environments
     servers:
       docker_002:
         hostname: docker_002
+        uiRank: 3
         type: docker
       docker_001:
         hostname: docker_001
+        uiRank: 1
         type: docker
       compose_001:
+        uiRank: 2
         type: compose
     """
 
@@ -110,6 +114,7 @@ Feature: Save test environments
     servers:
       externalUrl_001:
         hostname: externalUrl_001
+        uiRank: 3
         pkiKeys:
         - pem: Pem1
           id: '123'
@@ -117,11 +122,13 @@ Feature: Save test environments
         type: externalUrl
       docker_001:
         hostname: docker_001
+        uiRank: 1
         type: docker
         urlMappings:
         - entry1
       externalJar_001:
         hostname: externalJar_001
+        uiRank: 5
         type: externalJar
         externalJarOptions:
           options:
@@ -129,6 +136,7 @@ Feature: Save test environments
       compose_001:
         environment:
         - entry1
+        uiRank: 2
         type: compose
       tigerProxy_001:
         tigerProxyCfg:
@@ -142,6 +150,7 @@ Feature: Save test environments
               to: to1
           proxyProtocol: http
         hostname: tigerProxy_001
+        uiRank: 4
         type: tigerProxy
     """
 
