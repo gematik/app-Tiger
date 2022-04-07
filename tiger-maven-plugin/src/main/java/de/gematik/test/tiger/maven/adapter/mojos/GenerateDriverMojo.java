@@ -26,7 +26,7 @@ import org.apache.maven.project.MavenProject;
 
 /**
  * This plugin allows to generate JUnit4 driver classes for Serenity testruns dynamically in the generate-test-sources
- * phase. To trigger use the "generate-drivers" goal. For more details please referr to the README.md file in the
+ * phase. To trigger use the "generate-drivers" goal. For more details please referr to the README.adoc file in the
  * project root.
  */
 @Data

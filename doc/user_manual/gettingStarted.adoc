@@ -31,9 +31,8 @@ NOTE: The second dependency is needed so that the IntelliJ Cucumber plugin detec
 
 And to trigger the test suite's execution, you will need to add these plugins
 
-* Tiger driver generator plugin
-* Maven Surefire plugin
-* Serenity maven plugin
+* Tiger maven plugin
+* Maven FailSafe plugin
 
 .Simple Tiger Maven pom.xml
 [source,xml]
@@ -72,9 +71,9 @@ don't bother to understand all the bits / properties and settings just skip this
 
 include::../../tiger-maven-plugin/README.adoc[leveloffset=+3]
 
-==== SureFire plugin
+==== FailSave plugin
 
-The surefire plugin will trigger the test run.
+The failsafe plugin will trigger the test run.
 It is important to activate the **testFailureIgnore** property, to ensure that even if the test fails, the serenity report is created.
 
 To filter the scenarios/features to be run you may pass in the Java system property cucumber.filter.tags. You can do so either within the <systemPropertyVariables> tag or via the command line using -Dcucumber.filter.tags
@@ -82,7 +81,7 @@ To filter the scenarios/features to be run you may pass in the Java system prope
 For more details about how to use filter tags see https://cucumber.io/docs/cucumber/api/#tags
 [source,xml]
 ----
-include::../../doc/examples/tigerOnly/pom.xml[tag="surefire-plugin"]
+include::../../doc/examples/tigerOnly/pom.xml[tag="failsafe-plugin"]
 ----
 
 TIP: We do not recommend the parallel test execution with Tiger at the moment.
@@ -90,26 +89,6 @@ TIP: We do not recommend the parallel test execution with Tiger at the moment.
 Reason is that when using Tiger Proxies with the Tiger test library validation feature parallel execution may lead to messages
 from different threads / forked processes ending up in the wrong listening queue
 making it very complicated to make sure your validations are working as expected in different timing situations.
-
-==== Optionally Failsafe plugin
-
-CAUTION: We do NOT support the `maven-failsafe-plugin` at the moment.
-
-Although the failsafe plugin is used quite often with spring boot applications under test to trigger start up / tear down of the app
-via pre and post integration hooks, we found that the same
-can be achieved utilizing spring annotated JUnit driver classes.
-
-For more details please google @SpringBootTest, follow https://lmgtfy.app/?q=%40springboottest[this link] and/or check the `/src/test/jtmpl/SpringBootDriver.jtmpl file in the tiger-admin module.
-
-==== Serenity Maven plugin
-
-The `serenity-maven-plugin` has three goals, which will aggregate the data coming from the test results as XML and JSON, create the HTML reports and
-fail the maven job if any test run via the surefire plugin failed.
-
-[source,xml]
-----
-include::../../doc/examples/tigerOnly/pom.xml[tag="serenity-plugin"]
-----
 
 === Example project
 

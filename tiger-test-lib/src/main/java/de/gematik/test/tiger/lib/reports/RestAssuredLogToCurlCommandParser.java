@@ -31,6 +31,9 @@ public class RestAssuredLogToCurlCommandParser {
 
     public static String parseCurlCommandFromRestAssuredLog(final String rALogDetails) {
         final String[] lines = rALogDetails.split("\\n");
+        if (lines.length == 0) {
+            return "";
+        }
         final String uri = Stream.of(lines)
             .filter(l -> l.trim().startsWith("Request URI:"))
             .map(RestAssuredLogToCurlCommandParser::getValueFromLogLine)

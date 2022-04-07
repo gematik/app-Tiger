@@ -38,14 +38,14 @@ public class TigerRestAssuredCurlLoggingFilter implements Filter {
         String raLog = outputStream.toString(StandardCharsets.UTF_8);
         final List<String> listOfCurlCalls = RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(raLog);
         for (String callLog : listOfCurlCalls) {
-            String title = "cURL";
-            if (listOfCurlCalls.size() > 1) {
-                title = title + String.format("%3d", callCounter++);
-            }
             String curlCommand = RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(callLog);
-            log.info("cURL command: " + curlCommand);
-            log.debug("RestAssured details:\n" + callLog);
-            if (TigerDirector.isSerenityAvailable(true)) {
+            if (TigerDirector.isSerenityAvailable(true) && !curlCommand.isEmpty()) {
+                String title = "cURL";
+                if (listOfCurlCalls.size() > 1) {
+                    title = title + String.format("%3d", callCounter++);
+                }
+                log.info("cURL command: " + curlCommand);
+                log.debug("RestAssured details:\n" + callLog);
                 SerenityReportUtils.addCustomData(title, curlCommand);
             }
         }

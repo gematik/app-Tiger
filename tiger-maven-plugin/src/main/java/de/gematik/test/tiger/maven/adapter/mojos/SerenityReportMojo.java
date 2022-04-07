@@ -5,9 +5,14 @@ package de.gematik.test.tiger.maven.adapter.mojos;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.serenitybdd.reports.email.SinglePageHtmlReporter;
+import net.thucydides.core.reports.ResultChecker;
+import net.thucydides.core.reports.TestOutcomeAdaptorReporter;
+import net.thucydides.core.reports.TestOutcomes;
+import net.thucydides.core.reports.ThucydidesReporter;
 import net.thucydides.core.reports.html.HtmlAggregateStoryReporter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -42,22 +47,26 @@ public class SerenityReportMojo extends AbstractMojo {
   public void execute() throws MojoExecutionException {
     try {
       generateHtmlStoryReports();
-    } catch (final IOException e) {
+    } catch (final Exception e) {
       throw new MojoExecutionException("Error generating serenity reports", e);
     }
   }
 
-  private void generateHtmlStoryReports() throws IOException {
+  private void generateHtmlStoryReports() throws Exception {
     if (!reportDirectory.exists()) {
       getLog().warn("Report directory does not exist yet: " + reportDirectory);
       return;
     }
+
     reporter.setSourceDirectory(reportDirectory);
     reporter.setOutputDirectory(reportDirectory);
-    reporter.generateReportsForTestResultsFrom(reportDirectory);
+    reporter.setGenerateTestOutcomeReports();
+    TestOutcomes outcomes = getReporter().generateReportsForTestResultsFrom(reportDirectory);
+    new ResultChecker(reportDirectory).checkTestResults(outcomes);
 
     singlePageReporter.setSourceDirectory(reportDirectory.toPath());
     singlePageReporter.setOutputDirectory(reportDirectory.toPath());
-    singlePageReporter.generateReport();
+    Path generatedReport = singlePageReporter.generateReport();
+    getLog().info("  - " + singlePageReporter.getDescription() + ": " + generatedReport.toUri());
   }
 }

@@ -1,6 +1,8 @@
-= Tiger driver generator plugin
+= Tiger maven plugin
 
-This plugin allows to dynamically generate the JUnit driver classes that are then used in the Surefire plugin to start the test runs.
+This plugin allows to dynamically generate the JUnit driver classes that are then used in the Surefire plugin to start the test runs. And replaces the serenity maven plugin to generate Serenity BDD test reports.
+
+== Generate Drivers goal
 
 NOTE: You may decide to manually write your own JUnit driver classes in which case you can omit this plugin.
 
@@ -13,12 +15,12 @@ include::../doc/examples/tigerOnly/pom.xml[tag="generator-plugin"]
 
 
 .Mandatory configuration properties
-* **List[include] includes** (mandatory) +
-list of include patterns for feature files in Ant format (directory/**.feature)
 * **List[glue] glues** (mandatory) +
 list of packages to be included as glue or hooks code
 
 .Optional configuration properties or properties with default values
+* List[include] includes (mandatory) +
+list of include patterns for feature files in Ant format (directory/**.feature)
 * String featuresDir (default: local working directory) +
 root folder from where to apply includes and excludes
 * List[exclude] excludes (default: empty) +
@@ -47,7 +49,7 @@ path to the feature file(s).
     *** ${glues} +
 comma separated list of glue/hook packages as specified by the glues configuration property.
 
-== Manually creating driver classes
+=== Manually creating driver classes
 
 For each feature (or use wildcards / directories for single driver class) you can implement a driver class based on the example code below.
 
@@ -70,3 +72,10 @@ public class Driver1IT {
 }
 ```
 
+== Generate Reports goal
+
+The second execution block in the example XML section above will trigger the report creation. There are no properties for configuration at the moment.
+Two reports will be generated under target/site/serenity:
+
+* A simple HTML single page report for emailing (serenity-summary.html)
+* A fancy detailed overall report (index.html)
