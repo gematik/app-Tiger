@@ -156,7 +156,7 @@ endif::[]
 ==== Validating responses
 
 .Core features
-* Assert that the boty of the resposne matches regex
+* Assert that the body of the response matches regex
 * Assert that a given RBelPath node matches regex
 * Assert that a given RBelPath node matches a JSON struct using the JSONChecker feature set
 * Assert that a given RBelPath node matches an XML struct using the XMLUnit difference evaluator

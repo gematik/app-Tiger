@@ -131,7 +131,7 @@ For successfully breaking into TLS traffic the Tiger Proxy needs to present a ce
 For a forward-proxy this is easy: The client sends not only the path, but the complete URL to the proxy, letting him handle DNS-resolution.
 So when the Tiger Proxy receives a new request the necessary domain-name is given by the client. A new, matching, certificate is generated (these are cached) and presented.
 To complete the setup the client-truststore needs to be patched.
-The default CA used by the Tiger Proxy can be found here: https://github.com/gematik/app-Tiger/blob/master/tiger-standalone-proxy/src/main/resources/CertificateAuthorityCertificate.pem
+The default CA used by the Tiger Proxy can be found here: https://github.com/gematik/app-Tiger/blob/master/tiger-proxy/src/main/resources/CertificateAuthorityCertificate.pem
 
 For a reverse-proxy the domain name, which should be used, is unknown to the Tiger Proxy (DNS-resolution is done on the client-side). Thus, a  domain-name needs to be provided which should be used for certificate-generation:
 
@@ -246,6 +246,12 @@ One of the fundamental features of the Tiger Proxy is mesh set up AKA rbel-messa
 This forwards the messages, which the proxy has logged, to other Tiger Proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered Tiger Proxies.
 Common scenario for this approach might be the use of multiple reverse-proxies on the root level (e.g. when the client only allows the configuration of the server IP or domain, but no path-prefix)
 or the aggregation of traffic across machine-boundaries (e.g. one constantly running Tiger Proxy which is used by a testsuite on another machine).
+
+image::media/tiger-proxy-message-flow.svg[title="Tiger Proxy message flow"]
+
+In the above picture the test object 2 would not be accessible directly by the test suite, thus using the reverse proxy allows circumventing network restrictions.
+The reverse proxy could either be started by the test environment manager or as standalone process.
+
 
 [source,yaml]
 ----
