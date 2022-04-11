@@ -9,7 +9,7 @@ The test environment manager first checks if the env variable is set and tries t
 If none of these files exist it will fail the start up.
 
 If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named tiger.yaml.
-If none of these files exist it will fail the start up.
+If none of these files exist it will fail the startup.
 
 In the startup phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
 
@@ -633,21 +633,17 @@ tigerProxy:
 
 === Standalone mode vs. implicit startup with test suite
 
-If your test environment is very "expensive" to start or if you are developing your test suite scenarios
-thus starting many test runs in short time, you might want to keep your test environment running and not shut it down after each run.
+If your test environment is very "expensive" to start or if you are developing your test suite scenarios thus starting many test runs in short time, you might want to keep your test environment running and not shut it down after each run.
 To do so, you need to create a customized test environment configuration file (call it tiger-standalone.yaml,
 set the env var TIGER_TESTENV_CFGFILE accordingly) containing all the server nodes needed and
 deactivate the local Tiger Proxy in this configuration file.
-Now download the
-https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/0.17.1/tiger-testenv-mgr-0.17.1-jar-with-all-dependencies.jar[tiger test environment jar-with-all-dependencies file v0.17.1]
-from maven or go to https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/[maven index folder] to choose a more recent version.
+Now download the https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/0.17.1/tiger-testenv-mgr-0.17.1-jar-with-all-dependencies.jar[tiger test environment jar-with-all-dependencies file v0.17.1] from maven or go to https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/[maven index folder] to choose a more recent version.
 
-If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or
-kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}. In the latter case it is not guaranteed that all processes are cleanly shut down. Please check your process list with operating system specific tools.
+If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}. In the latter case it is not guaranteed that all processes are cleanly shut down. Please check your process list with operating system specific tools.
 
 [source,shell script]
 ----
-export TIGER_TESTENV_CFGFILE=....../tiger-testenv-standalone.yaml
+export TIGER_TESTENV_CFGFILE=....../tiger-standalone.yaml
 java -jar tiger-testenv-mgr-${VERSION}-jar-with-all-dependencies.jar
 ----
 

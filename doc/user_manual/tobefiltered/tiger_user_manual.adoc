@@ -1,4 +1,4 @@
-:version: 0.19.1
+:version: ${project.version}
 :toc:
 :toc-title: Contents
 :toclevels: 2
@@ -17,7 +17,7 @@
 :quick-uri: https://github.com/gematik/app-Tiger
 :hardbreaks:
 :numbered:
-:title-logo-image: image:media/tiger-plain.svg[width=100,top=5%,align="center"]
+:title-logo-image: image:media/tiger-mono-picto-plain.svg[width=100,top=5%,align="center"]
 :listing-caption: Listing
 :figure-caption: Figure
 :table-caption: Table
@@ -26,6 +26,8 @@
 :caution-caption: Caution
 :tip-caption: Suggestion
 :example-caption: Example
+:stylesdir: themes
+:stylesheet: ${mvn.asciidoc.css.style}-style.css
 
 = Tiger User Manual
 {author}

@@ -16,69 +16,65 @@ and activate / deactivate certain features.
 
 [source,yaml]
 ----
-rbelPathDebugging: false
-# Flag to activate tracing at the Rbel Path Executor.
-# If activated the Executor will dump all evaluation steps of all levels to the console
-# when traversing through the document tree
-# Deactivated by default
-rbelAnsiColors: true
-# Flag whether the Executor's dump shall be in ANSI color.
-# If you are working on operating systems (Windows) that do not support
-# Ansi color sequences in their console you may deactivate the coloring with this flag.
-# Activated by default.
-activateMonitorUI: false
-# Flag whether to start a small Java Swing UI to display the current steps / banner messages
-# when executing the test suite.
-# This feature can be used to instruct the tester to follow
-# a specific test workflow for manual tests.
-# Deactivated by default
+lib:
+  # Flag to activate tracing at the Rbel Path Executor.
+  # If activated the Executor will dump all evaluation steps of all levels to the console
+  # when traversing through the document tree
+  # Deactivated by default
+  rbelPathDebugging: false
+  # Flag whether the Executor's dump shall be in ANSI color.
+  # If you are working on operating systems (Windows) that do not support
+  # Ansi color sequences in their console you may deactivate the coloring with this flag.
+  # Activated by default.
+  rbelAnsiColors: true
+  # Flag whether to start a small Java Swing UI to display the current steps / banner messages
+  # when executing the test suite.
+  # This feature can be used to instruct the tester to follow
+  # a specific test workflow for manual tests.
+  # Deactivated by default
+  activateMonitorUI: false
+  # Flag whether to add a curl command details button to SerenityRest Restassured calls
+  # in the Serenity BDD report
+  addCurlCommandsForRaCallsToReport: true
 ----
 
 === Cucumber and TigerTestHooks
 
-As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are defined
-in the TigerTestHooks class.
+As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are defined in the TigerTestHooks class.
 
 That's why it is mandatory to add the package de.gematik.test.tiger.hooks to the glue packages list.
 
-The TigerTestHooks class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and
-provides those messages via a getter method to the Tiger filter and validation steps.
+The TigerTestHooks class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
 
 The @Before method calls the TigerDirector once
 to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the monitoring UI and parses the current scenario / feature file.
 It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.
-Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter,
-parses the details and adds a curl Command details button to the Serenity BDD report.
+Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter, parses the details and adds a curl Command details button to the Serenity BDD report.
 The curl command shown in this section allows to repeat the performed REST request, for manual test failure analysis.
 
 The @After method saves all collected RbelMessages as HTML file to the `target/rbellogs` folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (scucess/failed rate) to the console.
 
 The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.
-Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports,
-using the Tiger test framework from non Cucumber test drivers, ...etc.
+Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports, using the Tiger test framework from non Cucumber test drivers, ...etc.
 
 NOTE: For now, the TigerDirector is only for internal use and does not provide any implementation of the aforementioned features.
 
 ==== How to use Tiger in a non Cucumber scenario
 
-If you are using TestNG, plain JUnit or other Test harness frameworks, you have to ensure that you call the four methods defined
-in the TigerTestHooks class at the appropriate times.
+If you are using TestNG, plain JUnit or other Test harness frameworks, you have to ensure that you call the four methods defined in the TigerTestHooks class at the appropriate times.
 
 * The @Before method must be called before each Test scenario
 * The @BeforeStep method MIGHT be called before each test step
 * The @After method MIGHT be called after each Test scenario
 
-If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all methods.
-Else you just pass in a null Scenario to the methods or do not call the other methods in your test run.
+If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all methods. Else you just pass in a null Scenario to the methods or do not call the other methods in your test run.
 
-But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files.
-As a workaround you might use the TigerDirector to manually trigger UI Monitor popups via its method `updateStepInMonitor(Step step)`.
+But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files. As a workaround you might use the TigerDirector to manually trigger UI Monitor popups via its method `updateStepInMonitor(Step step)`.
 
 === Using the Cucumber Tiger validation steps
 
 The Tiger validation steps are a set of Cucumber steps that enable you to search for requests and associated responses
-matching certain criteria.
-All of that without need to write your own code. Basic knowledge about RBelPath and regular expressions are sufficient.
+matching certain criteria. All of that without need to write your own code. Basic knowledge about RBelPath and regular expressions are sufficient.
 In order to use these steps you must ensure that the relevant traffic is routed via the local Tiger Proxy of the test suite or
 construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh] set up.
 
@@ -90,8 +86,7 @@ construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh]
 * Clear all recorded messages
 * Specify timeout for filtering request
 
-With the `find next request ...` steps you can validate a complete workflow of requests to exist in a specific order and
-validate each of their responses (see next chapter).
+With the `find next request ...` steps you can validate a complete workflow of requests to exist in a specific order and validate each of their responses (see next chapter).
 
 
 // as HTML passthrough is not supported for pdf backend we need to keep this cucumber steps duplicated :(
@@ -247,9 +242,7 @@ endif::[]
 
 ===== XMLUnit Diff Builder
 
-Using the validation steps `TGR current response at {string} matches as XML` or
-`TGR current response at {string} matches as XML and diff options {string}` you are able to compare
-the content of any RbelPath node in the response.
+Using the validation steps `TGR current response at {string} matches as XML` or `TGR current response at {string} matches as XML and diff options {string}` you are able to compare the content of any RbelPath node in the response.
 The latter method even allows passing in the following options to the XMLUnit's DiffBuilder:
 
 * "nocomment" for DiffBuilder::ignoreComments
@@ -257,29 +250,23 @@ The latter method even allows passing in the following options to the XMLUnit's 
 * "txttrim" for DiffBuilder::ignoreWhitespace
 * "txtnormalize" for DiffBuilder::normalizeWhitespace
 
-Per default the comparison algorithm will ignore mismatches in namespace prefixes and URIs.
-Comparison is also performed on similarity and not equal content.
+Per default the comparison algorithm will ignore mismatches in namespace prefixes and URIs. Comparison is also performed on similarity and not equal content.
 
-For more detailed explanation about the XMLUnit difference evaluator we refer to the
-https://github.com/xmlunit/user-guide/wiki/DiffBuilder[online documentation of the XMLUnit project].
+For more detailed explanation about the XMLUnit difference evaluator we refer to the https://github.com/xmlunit/user-guide/wiki/DiffBuilder[online documentation of the XMLUnit project].
 
 ===== JSONChecker
 
-Using the validation step `TGR current response at {string} matches as JSON` you are able to compare the content of any RbelPath node
-in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.
+Using the validation step `TGR current response at {string} matches as JSON` you are able to compare the content of any RbelPath node  in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.
 
 The purpose of JSONChecker class is to compare JSON structures, including checking for the integrity of the whole RbelPath node, as well as matching values for particular keys.
 
 To make sure all the attributes in your JSON RbelPath structure are present, such features as ${json-unit.ignore}, $NULL, optional attributes, regular expressions and lenient mode can come in handy.
 
 ${json-unit.ignore} is a parameter which allows to ignore certain values in your RbelPath node while comparing, and the result of such comparison always returns true.
-It also works when ${json-unit.ignore} is used in a JSON array or nested JSON object.
-This parameter should be placed as a value of a key.
-Also to ignore some attributes in the JSON structure, you can set a boolean value checkExtraAttributes as false.
-In this case if you miss one attribute in your doc string, the comparison will still be equal to true.
+It also works when ${json-unit.ignore} is used in a JSON array or nested JSON object. This parameter should be placed as a value of a key.
+Also to ignore some attributes in the JSON structure, you can set a boolean value checkExtraAttributes as false. In this case if you miss one attribute in your doc string, the comparison will still be equal to true.
 
-To check whether the value for a particular key is null, you can either use null or parameter $NULL at the place of the value.
-Checking whether a nested key is null also works with JSONChecker.
+To check whether the value for a particular key is null, you can either use null or parameter $NULL at the place of the value. Checking whether a nested key is null also works with JSONChecker.
 
 Four underscores "____" before the JSON keys indicate that these keys are optional and will be checked for the value ONLY if the value exists in the test JSON RBelPath node.
 Please note that checking whether a nested key is optional, is not yet possible with JsonChecker.
@@ -288,11 +275,9 @@ JSON Arrays are compared in lenient mode, meaning that the order of elements in 
 
 Identifying missing keys is made easy in JSONChecker with the help of parameter $REMOVE.
 
-If you specify the name of the key and then $REMOVE parameter as its value, the comparison will result in true, if the key is indeed missing and false, if the key is present.
-It is worth noting that even if the value of the key is null, the key doesn't count as missing.
+If you specify the name of the key and then $REMOVE parameter as its value, the comparison will result in true, if the key is indeed missing and false, if the key is present. It is worth noting that even if the value of the key is null, the key doesn't count as missing.
 
-Last but not least, regular expressions, which can be used for matching the whole JSON element, as well as particular values.
-It will be first checked, whether the expected value is equal to the actual one, and only afterwards, if the actual value matches a regular expression.
+Last but not least, regular expressions, which can be used for matching the whole JSON element, as well as particular values. It will be first checked, whether the expected value is equal to the actual one, and only afterwards, if the actual value matches a regular expression.
 
 It should also be noted, that although JSONChecker can match multilevel JSON objects at a high level, it is not yet possible to access nested attributes out of the box. We are working on it :)
 
@@ -521,19 +506,13 @@ only check for regex matches if they were not equal.
 
 ==== Exemplaric scenario Konnektorfarm EAU validation
 
-The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents
-via a set of Konnektoren and that this works interoperable. For this purpose a phalanx of local Tiger Proxies is set up
-as reverse proxies for each Konnektor being hosted at the gematik location.
-Any message that is forwarded by any of these proxies is forwarded to an aggregating Tiger Proxy
-which in turn forwards all the received messages to the local Tiger Proxy for assertion via the validation test suite.
+The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable. For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.
+Any message that is forwarded by any of these proxies is forwarded to an aggregating Tiger Proxy which in turn forwards all the received messages to the local Tiger Proxy for assertion via the validation test suite.
 
 image::media/tiger-integration-eau-testenv.svg[title="Tiger EAU Konnektorfarm test environment"]
 
-So after starting the validation test suite (and the test environment),
-the customer / Primärsystem manufacturer must perform the specified workflow.
-The test suite meanwhile will wait for a given order of requests/responses matching specified criteria to appear.
-If all is well, at the end the test report JSON files will be packed into a zip archive and
-can be uploaded to the Titus platform for further certification steps.
+So after starting the validation test suite (and the test environment), the customer / Primärsystem manufacturer must perform the specified workflow. The test suite meanwhile will wait for a given order of requests/responses matching specified criteria to appear.
+If all is well, at the end the test report JSON files will be packed into a zip archive and can be uploaded to the Titus platform for further certification steps.
 
 image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm process"]
 
@@ -541,8 +520,7 @@ image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm pr
 ==== Workflow UI
 
 The Workflow UI is one of the new experimental features which are currently introduced to Tiger.If activated via the tiger.yaml configuration file (see <<_tiger_test_lib_configuration>>), any TGR banner step will be displayed in the Monitor UI popup and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.
-This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers
-through the interoperability combinations of signing/verifying documents against all Konnektors available.
+This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers  through the interoperability combinations of signing/verifying documents against all Konnektors available.
 
 image::media/uimonitor.png[title="Workflow UI popup"]
 
@@ -565,8 +543,7 @@ image::media/uimonitor.png[title="Workflow UI popup"]
     @Wenn("TGR warte auf Abbruch")
 ----
 
-The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester
-to perform demo transactions that will be logged and saved to HTML reports but are nto validated.
+The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester  to perform demo transactions that will be logged and saved to HTML reports but are not validated.
 
 === Using Tiger test lib helper classes
 
@@ -576,9 +553,7 @@ NOTE: All classes listed here are part of the tiger-common module
 
 ==== Banner
 
-If you want to use large ASCII art style log banners you may find this class very helpful.
-Supports ANSI coloring and a set of different fonts.
-For more details please check the code and its usages in the Tiger test framework.
+If you want to use large ASCII art style log banners you may find this class very helpful. Supports ANSI coloring and a set of different fonts. For more details please check the code and its usages in the Tiger test framework.
 
 // TODO TGR-347 document TigerSerializationUtil, TigertPkiIdentity
 
@@ -591,22 +566,3 @@ For more information about REST testing in Tiger/SerenityBDD please check these 
 
  * https://serenity-bdd.github.io/theserenitybook/latest/serenity-rest.html[Serenity REST]
  * https://serenity-bdd.github.io/theserenitybook/latest/serenity-screenplay-rest.html[Serenity Screenplay REST]
-
-
-=== Test library configuration
-
-To configure your test library add a tiger.yaml file to the project root.
-The following configuration properties are supported:
-
-[source, yaml]
-----
-# flag whether to activate monitoring UI
-activateMonitorUI: false
-# flag whether to activate rbel path debugging
-rbelPathDebugging: false
-# flag whether to print rbel dumps to console using ANSI color codes or not
-rbelAnsiColors: true
-# flag whether to add a curl command details button to SerenityRest Restassured calls
-# in the Serenity BDD report
-addCurlCommandsForRaCallsToReport: true
-----

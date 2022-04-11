@@ -1,0 +1,128 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+/* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
+
+@import url(https://cdn.jsdelivr.net/gh/asciidoctor/asciidoctor@2.0/data/stylesheets/asciidoctor-default.css); /* Default asciidoc style framework - important */
+
+/* CUSTOMISATIONS */
+/* Change the values in root for quick customisation. If you want even more fine grain... venture further. */
+
+:root {
+    --maincolor: #FFFFFF;
+    --primarycolor: #000E52;
+    --secondarycolor: #000E52;
+    --tertiarycolor: #225494;
+}
+
+body {
+    font-family: "Verdana", sans-serif;
+    font-size: 11pt;
+    text-align: justify;
+}
+
+/* Text styles */
+h1 {
+    color: var(--primarycolor);
+    font-weight: bold;
+    text-align: center;
+}
+
+#header {
+    padding: 20rem 0;
+    background-position: top;
+    background-repeat: no-repeat;
+    background-image: url("media/title_white.plain.svg");
+    height: 80rem;
+}
+
+/* TODO Anne to be kept locally */
+#header h1 {
+    background-image: url("media/tiger-mono-picto-plain.svg");
+    background-size: 150px;
+    background-repeat: no-repeat;
+    background-position: 120px bottom;
+    padding-left: 10rem;
+    line-height: 350%;
+    font-size: 327%;
+}
+
+#header .details {
+    text-align: center;
+    display: block;
+    padding-left: 120px;
+    border: 0;
+    margin-top: -40px;
+}
+/* end of to be kept locally */
+
+h2 {
+    color: var(--secondarycolor);
+    font-weight: bold;
+}
+
+h3, h4, h5, h6 {
+    color: var(--tertiarycolor);
+    font-weight: bold;
+}
+
+h3 {
+    margin-top: 5rem;
+}
+
+/* code blocks */
+.listingblock > .content > pre.CodeRay, code, pre {
+    font-family: "Fira Code";
+    font-size: 82%;
+}
+
+.listingblock > .content > pre.CodeRay {
+    background: #fafafa !important;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+}
+
+
+/* captions for all kinds of blocks
+.admonitionblock td.content > .title, .audioblock > .title, .exampleblock > .title, .imageblock > .title, .listingblock > .title, .literalblock > .title, .stemblock > .title, .openblock > .title, .paragraph > .title, .quoteblock > .title, table.tableblock > .title, .verseblock > .title, .videoblock > .title, .dlist > .title, .olist > .title, .ulist > .title, .qlist > .title, .hdlist > .title
+*/
+.title {
+    font-family: "Verdana" !important;
+    font-style: italic !important;
+    color: #000000 !important;
+}
+
+/* links */
+a {
+    color: #00766e;
+}
+
+#toctitle {
+    color: var(--primarycolor);
+}
+
+#toc, #toc a {
+    color: var(--secondarycolor);
+    line-height: 175%;
+}
+
+/* Table styles */
+th {
+    font-family: "Verdana", sans-serif
+}
+
+/* Responsiveness fixes */
+video {
+    max-width: 100%;
+}
+
+@media all and (max-width: 600px) {
+    table {
+        width: 55vw;
+        font-size: 3vw;
+    }
+}
+

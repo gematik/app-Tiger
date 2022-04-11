@@ -23,6 +23,7 @@
         <tags></tags>
         <webdriver.base.url></webdriver.base.url>
         <cucumber.filter.tags></cucumber.filter.tags>
+        <mvn.asciidoc.css.style>default</mvn.asciidoc.css.style>
 
         <version.asciidoctor.maven.plugin>2.2.1</version.asciidoctor.maven.plugin>
         <version.asciidoctorj>2.5.2</version.asciidoctorj>
@@ -378,6 +379,53 @@
                 </executions>
             </plugin>
             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>update-project-version-in-manual</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>../doc/user_manual</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../doc/user_manual/tobefiltered</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-manual-to-adminui</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/classes/static/manual</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>target/adoc/user_manual</directory>
+                                    <includes>
+                                        <include>media/**</include>
+                                        <include>*.html</include>
+                                        <include>*.svg</include>
+                                        <include>examples/**</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
                 <version>${version.asciidoctor.maven.plugin}</version>
@@ -403,42 +451,6 @@
                     -->
                 </dependencies>
                 <executions>
-                    <execution>
-                        <id>convert-to-pdf</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>process-asciidoc</goal>
-                        </goals>
-                        <configuration>
-                            <backend>pdf</backend>
-                            <doctype>book</doctype>
-                            <sourceDirectory>${project.basedir}/../doc/user_manual</sourceDirectory>
-                            <sourceDocumentName>tiger_user_manual.adoc</sourceDocumentName>
-                            <outputDirectory>${project.build.directory}/adoc/user_manual</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../doc/examples</directory>
-                                    <targetPath>examples</targetPath>
-                                </resource>
-                                <resource>
-                                    <directory>../doc/user_manual/media</directory>
-                                    <targetPath>media</targetPath>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                            <attributes>
-                                <source-highlighter>coderay</source-highlighter>
-                                <toc>left</toc>
-                                <icons>font</icons>
-                                <pagenums/>
-                            </attributes>
-                            <requires>
-                                <require>asciidoctor-diagram</require>
-                            </requires>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>convert-to-html</id>
                         <phase>generate-resources</phase>
