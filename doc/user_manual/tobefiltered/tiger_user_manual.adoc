@@ -86,7 +86,7 @@ Voila you are ready to start working with the Tiger Admin UI
 
 The Workflow UI is currently an experimental feature implemented as PoC.
 We plan to have this feature in product grade quality in the first half of 2022.
-Till then there is not much more than in the <<tigerTestLibrary.adoc#_workflow_ui>> section above.
+Till then there is not much more than in the xref:tigerTestLibrary.adoc#_workflow_ui[Test lib chapter section] above.
 
 === Standalone Tiger Proxy UI
 

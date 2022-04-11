@@ -2,7 +2,7 @@
 
 Configuration is an integral part of testing. To make this task easier for you and to make configuration the various parts of the system as easy as possible Tiger has a central configuration store: TigerGlobalConfiguration. It combines properties from multiple source and feeds into various parts of the system.
 
-image::../specification/tiger-configuration-global.png[title="The TigerGlobalConfiguration with inlets and outlets"]
+image::media/tiger-configuration-global.svg[title="The TigerGlobalConfiguration with inlets and outlets"]
 
 This allows a vastly simplified retrieval and configuration of nearly all aspects of the system. It is therefore recommended reusing this system for your own testsuite as well.
 

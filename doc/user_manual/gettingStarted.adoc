@@ -10,7 +10,7 @@ Tiger is based on Java, Maven and Serenity BDD - so saddle the horses, check the
 NOTE: We do not at the moment have any plans to support gradle or other build environments.
 But if you are using it in your projects feel free to contact us, and we might find a way to support your specific build environment.
 
-If you don't have time right now to look through the whole documentation, you can directly jump to our <<Example project>> section.
+If you don't have time right now to look through the whole documentation, you can directly jump to our xref:_example_project[] section.
 
 === Requirements
 
@@ -65,7 +65,7 @@ mvn verify
 === Maven plugin details
 
 This section is for the ones that love to know all the details. If you are happy that everything works and
-don't bother to understand all the bits / properties and settings just skip this section and head over to the <<Example project>> section.
+don't bother to understand all the bits / properties and settings just skip this section and head over to the xref:_example_project[] section.
 
 // ==== Tiger driver generator plugin
 
@@ -150,9 +150,9 @@ To be able to successfully start scenarios/features you first need to configure 
        if you are using the screenplay pattern (PREFERRED!)
     ** additional packages specific to your test suite
 * VM Options:
-    ** Java proxy system properties (see <<Proxy configuration>> below)
+    ** Java proxy system properties (see xref:Proxy configuration[] below)
 * Environment variables:
-    ** Proxy environment variables (see <<Proxy configuration>> below)
+    ** Proxy environment variables (see xref:Proxy configuration[] below)
 
 
 Best is to add these settings to the **Configuration Templates** for Cucumber Java.

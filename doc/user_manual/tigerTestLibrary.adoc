@@ -17,25 +17,26 @@ and activate / deactivate certain features.
 [source,yaml]
 ----
 lib:
-  # Flag to activate tracing at the Rbel Path Executor.
-  # If activated the Executor will dump all evaluation steps of all levels to the console
-  # when traversing through the document tree
-  # Deactivated by default
-  rbelPathDebugging: false
-  # Flag whether the Executor's dump shall be in ANSI color.
-  # If you are working on operating systems (Windows) that do not support
-  # Ansi color sequences in their console you may deactivate the coloring with this flag.
-  # Activated by default.
-  rbelAnsiColors: true
-  # Flag whether to start a small Java Swing UI to display the current steps / banner messages
-  # when executing the test suite.
-  # This feature can be used to instruct the tester to follow
-  # a specific test workflow for manual tests.
-  # Deactivated by default
-  activateMonitorUI: false
-  # Flag whether to add a curl command details button to SerenityRest Restassured calls
-  # in the Serenity BDD report
-  addCurlCommandsForRaCallsToReport: true
+    # Flag to activate tracing at the Rbel Path Executor.
+    # If activated the Executor will dump all evaluation steps of all levels to the console
+    # when traversing through the document tree
+    # Deactivated by default
+    rbelPathDebugging: false
+    # Flag whether the Executor's dump shall be in ANSI color.
+    # If you are working on operating systems (Windows) that do not support
+    # Ansi color sequences in their console you may deactivate the coloring with this flag.
+    # Activated by default.
+    rbelAnsiColors: true
+    # Flag whether to start a small Java Swing UI to display the current steps / banner messages
+    # when executing the test suite.
+    # This feature can be used to instruct the tester to follow
+    # a specific test workflow for manual tests.
+    # Deactivated by default
+    activateMonitorUI: false
+    # Flag whether to add a curl command details button to SerenityRest Restassured calls
+    # in the Serenity BDD report
+    addCurlCommandsForRaCallsToReport: true
+
 ----
 
 === Cucumber and TigerTestHooks
@@ -52,7 +53,7 @@ It adds a RbelMessage Listener once to the local Tiger proxy and also clears the
 Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter, parses the details and adds a curl Command details button to the Serenity BDD report.
 The curl command shown in this section allows to repeat the performed REST request, for manual test failure analysis.
 
-The @After method saves all collected RbelMessages as HTML file to the `target/rbellogs` folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (scucess/failed rate) to the console.
+The @After method saves all collected RbelMessages as HTML file to the `target/rbellogs` folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (success/failed rate) to the console.
 
 The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.
 Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports, using the Tiger test framework from non Cucumber test drivers, ...etc.
@@ -89,7 +90,7 @@ construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh]
 With the `find next request ...` steps you can validate a complete workflow of requests to exist in a specific order and validate each of their responses (see next chapter).
 
 
-// as HTML passthrough is not supported for pdf backend we need to keep this cucumber steps duplicated :(
+// as HTML pass through is not supported for pdf backend we need to keep this cucumber steps duplicated :(
 
 ifdef::backend-html5[]
 .Tiger validation filtering steps example
@@ -101,7 +102,7 @@ ifdef::backend-html5[]
 
     Scenario: Example steps
 
-      <span class="comment"># clear all previousely recorded messages (requests and responses)</span>
+      <span class="comment"># clear all previously recorded messages (requests and responses)</span>
       <span class="keyword">Given</span> TGR clear recorded messages
       <span class="comment"># restrict filtering requests to a specific host</span>
       <span class="keyword">And</span> TGR filter requests based on host <span class="string">"testnode.example.org"</span>
@@ -156,7 +157,7 @@ endif::[]
 * Assert that a given RBelPath node matches a JSON struct using the JSONChecker feature set
 * Assert that a given RBelPath node matches an XML struct using the XMLUnit difference evaluator
 
-// as HTML passthrough is not supported for pdf backend we need to keep this cucumber steps duplicated :(
+// as HTML pass through is not supported for pdf backend we need to keep this cucumber steps duplicated :(
 
 ifdef::backend-html5[]
 .Tiger response validation steps example
@@ -242,7 +243,9 @@ endif::[]
 
 ===== XMLUnit Diff Builder
 
-Using the validation steps `TGR current response at {string} matches as XML` or `TGR current response at {string} matches as XML and diff options {string}` you are able to compare the content of any RbelPath node in the response.
+Using the validation steps `TGR current response at \{string} matches as XML` or
+`TGR current response at \{string} matches as XML and diff options \{string}` you are able to compare
+the content of any RbelPath node in the response.
 The latter method even allows passing in the following options to the XMLUnit's DiffBuilder:
 
 * "nocomment" for DiffBuilder::ignoreComments
@@ -256,15 +259,18 @@ For more detailed explanation about the XMLUnit difference evaluator we refer to
 
 ===== JSONChecker
 
-Using the validation step `TGR current response at {string} matches as JSON` you are able to compare the content of any RbelPath node  in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.
+Using the validation step `TGR current response at \{string} matches as JSON` you are able to compare the content of any RbelPath node
+in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.
 
 The purpose of JSONChecker class is to compare JSON structures, including checking for the integrity of the whole RbelPath node, as well as matching values for particular keys.
 
 To make sure all the attributes in your JSON RbelPath structure are present, such features as ${json-unit.ignore}, $NULL, optional attributes, regular expressions and lenient mode can come in handy.
 
-${json-unit.ignore} is a parameter which allows to ignore certain values in your RbelPath node while comparing, and the result of such comparison always returns true.
-It also works when ${json-unit.ignore} is used in a JSON array or nested JSON object. This parameter should be placed as a value of a key.
-Also to ignore some attributes in the JSON structure, you can set a boolean value checkExtraAttributes as false. In this case if you miss one attribute in your doc string, the comparison will still be equal to true.
+${json-unit.ignore} is a parameter which allows ignoring certain values in your RbelPath node while comparing, and the result of such comparison always returns true.
+It also works when ${json-unit.ignore} is used in a JSON array or nested JSON object.
+This parameter should be placed as a value of a key.
+To ignore some attributes in the JSON structure, you can set a boolean value checkExtraAttributes as false.
+In this case if you miss one attribute in your doc string, the comparison will still be equal to true.
 
 To check whether the value for a particular key is null, you can either use null or parameter $NULL at the place of the value. Checking whether a nested key is null also works with JSONChecker.
 
@@ -519,8 +525,8 @@ image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm pr
 [#_workflow_ui]
 ==== Workflow UI
 
-The Workflow UI is one of the new experimental features which are currently introduced to Tiger.If activated via the tiger.yaml configuration file (see <<_tiger_test_lib_configuration>>), any TGR banner step will be displayed in the Monitor UI popup and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.
-This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers  through the interoperability combinations of signing/verifying documents against all Konnektors available.
+The Workflow UI is one of the new experimental features which are currently introduced to Tiger. If activated via the tiger.yaml configuration file (see xref:_tiger_test_lib_configuration[]), any TGR banner step will be displayed in the Monitor UI popup and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.
+This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.
 
 image::media/uimonitor.png[title="Workflow UI popup"]
 
@@ -553,9 +559,17 @@ NOTE: All classes listed here are part of the tiger-common module
 
 ==== Banner
 
-If you want to use large ASCII art style log banners you may find this class very helpful. Supports ANSI coloring and a set of different fonts. For more details please check the code and its usages in the Tiger test framework.
+If you want to use large ASCII art style log banners you may find this class very helpful.
+Supports ANSI coloring and a set of different fonts. Furthermore all banner messages are displayed in the Mmonitoring and highlighted in the Workflow UI
+For more details please check the code and its usages in the Tiger test framework.
 
-// TODO TGR-347 document TigerSerializationUtil, TigertPkiIdentity
+==== TigerSerializationUtil
+
+This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps. If you are plannign to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described xref:tigerConfiguration.adoc[in detail here].
+
+==== TigerPkiIdentityLoader, TigerPkiIdentity
+
+The loader class allows to easily instantiate PKI identities from given files. For more details on the format and the supported file types please check xref:tigerTestEnvironmentManager.adoc#_configuring_pki_identities_in_tiger_proxys_tls_section[this section in the test environment chapter].
 
 ==== Performing REST calls with Tiger
 
@@ -566,3 +580,22 @@ For more information about REST testing in Tiger/SerenityBDD please check these 
 
  * https://serenity-bdd.github.io/theserenitybook/latest/serenity-rest.html[Serenity REST]
  * https://serenity-bdd.github.io/theserenitybook/latest/serenity-screenplay-rest.html[Serenity Screenplay REST]
+
+=== Synchronizing BDD scenarios with Polarion test cases (Gematik only)
+
+Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requriements maintained in Polarion we have a Tiger sub project that syncrhonizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.
+
+To use this feature the scenarios need a minimal set of annotations:
+
+* **@TCID:XXXXX** ... Mandatory - an unique test case identifier, where XXXXX matches the value of the custom field "cfInternalId" in Polarion
+* **@Product:PPPPP** ... Mandatory - reference to the custom field "cfProductType". As the value most likely is identical for all scenarios you may attach this annotation also to the feature.
+* **@PRIO:N** .... Mandatory - priority number (1-3)
+* and the following optional annotations:
+** @Ready ... sets status of test case to "Implemented". If not set defaults to "In progress"
+** @Negative ... reference to the custom field "cfNegPosTF". If not set defaults to be "Positive"
+** @manual ... to mark the test case as being manually executed. If not set defaults to "Automatic"
+** @Afo:AAAAA ... a link to a defined requirement in Polarion, where AAAAA matches the custom field "cfAfoId"
+
+If a scenario is identified that has no test case with a matching TCID, it will be created automatically in the sync run. Background blocks will be merged to each scenario before exporting its steps to Polarion.
+
+For more details on how to perform the synchronisation and how to also upload generated test run reports to Polarion and Aurora, please check the PolarionToolbox project on the Gematik GitLab.

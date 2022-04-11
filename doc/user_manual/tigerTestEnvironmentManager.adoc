@@ -128,7 +128,7 @@ Their meaning and format are explained in the related section.
     entryPoint: string
 ----
 
-The configuration of the Tiger Proxy is explained in detail in the section <<_configuring_the_local_test_suite_tiger_proxy>>
+The configuration of the Tiger Proxy is explained in detail in the section xref:_configuring_the_local_test_suite_tiger_proxy[]
 
 ==== PKI configuration in pkiKeys
 
@@ -407,7 +407,7 @@ tigerProxy_001:
   exports: []
 ----
 
-The configuration of the Tiger Proxy is explained in detail in the section <<_configuring_the_local_test_suite_tiger_proxy>>
+The configuration of the Tiger Proxy is explained in detail in the section xref:_configuring_the_local_test_suite_tiger_proxy[]
 
 === Provided node templates
 
@@ -484,7 +484,7 @@ This template provides the DEMIS Meldeportal as local docker compose.
 === Configuring the local test suite Tiger Proxy
 
 The local Tiger Proxy for the test suite can be configured by using the following section(s) in the tiger.yaml file.
-For more information about what the Tiger Proxy and how it works see the chapter <<Tiger Proxy>>
+For more information about what the Tiger Proxy is and how it works see the chapter xref:tigerProxy.adoc#_tiger_proxy_basics[Tiger Proxy basics]
 
 [source,yaml]
 ----

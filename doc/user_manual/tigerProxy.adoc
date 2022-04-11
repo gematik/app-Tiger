@@ -133,7 +133,7 @@ So when the Tiger Proxy receives a new request the necessary domain-name is give
 To complete the setup the client-truststore needs to be patched.
 The default CA used by the Tiger Proxy can be found here: https://github.com/gematik/app-Tiger/blob/master/tiger-proxy/src/main/resources/CertificateAuthorityCertificate.pem
 
-For a reverse-proxy the domain name, which should be used, is unknown to the Tiger Proxy (DNS-resolution is done on the client-side). Thus, a  domain-name needs to be provided which should be used for certificate-generation:
+For a reverse-proxy the domain name, which should be used, is unknown to the Tiger Proxy (DNS-resolution is done on the client-side). Thus, a  domain-name needs to be provided, which should be used for certificate-generation:
 
 [source,yaml]
 ----
