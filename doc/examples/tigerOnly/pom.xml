@@ -22,7 +22,7 @@
           or from gematik internal Nexus
           https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
         -->
-        <version.tiger>0.19.5</version.tiger>
+        <version.tiger>0.20.0</version.tiger>
         <version.serenity.core>3.2.2</version.serenity.core>
     </properties>
 
