@@ -78,7 +78,7 @@ pipeline {
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
                         //GH Pages
                         mavenBuild(POM_PATH, "-Dasciidoctor.skip=false -Dmvn.asciidoc.css.style=gematik")
-                        stash includes: 'tiger-admin/target/adoc/user_manual/tiger_user_manual.html,tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf,tiger-admin/target/adoc/user_manual/examples/**/*,tiger-admin/target/adoc/user_manual/media/**/*', name: 'manual'
+                        stash includes: 'tiger-admin/target/adoc/user_manual/tiger_user_manual.html,tiger-admin/target/adoc/user_manual/examples/**/*,tiger-admin/target/adoc/user_manual/media/**/*', name: 'manual'
                         sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages
                             git clean -df
@@ -86,7 +86,6 @@ pipeline {
                         unstash 'manual'
                         sh label: 'moveManualsToRoot', script: """
                             mv ./tiger-admin/target/adoc/user_manual/tiger_user_manual.html ./Tiger-User-Manual.html
-                            mv ./tiger-admin/target/adoc/user_manual/tiger_user_manual.pdf ./Tiger-User-Manual.pdf
                             mv ./tiger-admin/target/adoc/user_manual/examples ./examples
                             mv ./tiger-admin/target/adoc/user_manual/media ./media
                             """

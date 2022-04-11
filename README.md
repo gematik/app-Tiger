@@ -26,8 +26,7 @@ For non BDD test suites it must be easily possible to utilize most of the featur
 
 Every information at one place: check out our Tiger-User-Manual!
 
-* [Tiger-User-Manual](https://gematik.github.io/app-Tiger/Tiger-User-Manual.html) (HTML-Version)
-* [Tiger-User-Manual](https://gematik.github.io/app-Tiger/Tiger-User-Manual.pdf) (PDF-Version)
+* [Tiger-User-Manual](https://gematik.github.io/app-Tiger/Tiger-User-Manual.html)
 
 ## Use cases
 
