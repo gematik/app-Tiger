@@ -26,6 +26,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.hooks.TigerTestHooks;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import java.net.URI;
@@ -71,7 +72,7 @@ public class RbelMessageValidator {
     protected RbelElement lastResponse;
 
     public RbelMessageValidator() {
-
+        TigerJexlExecutor.registerAdditionalNamespace("rbel", new JexlToolbox());
     }
 
     public List<RbelElement> getRbelMessages() {
@@ -306,6 +307,25 @@ public class RbelMessageValidator {
             return elems;
         } catch (final Exception e) {
             throw new AssertionError("Unable to find element in last response for rbel path '" + rbelPath + "'");
+        }
+    }
+
+    public class JexlToolbox {
+
+        public String lastResponseAsString(final String rbelPath) {
+            return findElemInLastResponse(rbelPath).getRawStringContent();
+        }
+
+        public String lastResponseAsString() {
+            return lastResponse.getRawStringContent();
+        }
+
+        public RbelElement lastResponse(final String rbelPath) {
+            return findElemInLastResponse(rbelPath);
+        }
+
+        public RbelElement lastResponse() {
+            return lastResponse;
         }
     }
 }

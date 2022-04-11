@@ -23,7 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import java.time.Duration;
@@ -36,6 +37,7 @@ import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,8 +53,13 @@ public class TestTigerTestEnvMgrStartupSequence {
     private static TigerTestEnvMgr envMgr;
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    public static void setUp() {
         envMgr = buildTestEnvMgr();
+    }
+
+    @AfterAll
+    public static void tearDown() {
+        TigerGlobalConfiguration.reset();
     }
 
     public static Stream<Arguments> checkSuccessfullStartupSequencesParameters() {

@@ -17,10 +17,12 @@
 package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -29,7 +31,6 @@ public class TestTokenSubstituteHelper {
     @BeforeEach
     public void init() {
         TigerGlobalConfiguration.reset();
-        TigerGlobalConfiguration.initialize();
         TigerGlobalConfiguration.putValue("key1", "value1");
         TigerGlobalConfiguration.putValue("key2", "KEY2VALUE");
         TigerGlobalConfiguration.putValue("foo.bar", "FOOBARVALUE");
@@ -47,5 +48,51 @@ public class TestTokenSubstituteHelper {
     public void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
             .isEqualTo(expectedString);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+        "is it !{10 == 0} or not? , is it false or not?",
+        "!{file('src/test/resources/helloworld.txt')},  Hello World!"
+    })
+    public void testFunctionExecution(String stringToSubstitute, String expectedString) {
+        assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
+            .isEqualTo(expectedString);
+    }
+
+    @Test
+    public void testRegisteringAndDeregisteringAdditionalNamespaces() {
+        final String expression = "!{foo:bar()}";
+
+        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(expression))
+            .isInstanceOf(JexlException.class);
+
+        TigerJexlExecutor.registerAdditionalNamespace("foo", new FooBarClass());
+
+        assertThat(TigerGlobalConfiguration.resolvePlaceholders(expression)).isEqualTo("realResult");
+
+        TigerJexlExecutor.deregisterNamespace("foo");
+
+        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(expression))
+            .isInstanceOf(JexlException.class);
+    }
+
+    @Test
+    public void testCombinedExpressions() {
+        TigerJexlExecutor.registerAdditionalNamespace("foo", new FooBarClass());
+        assertThat(TigerGlobalConfiguration.resolvePlaceholders("!{foo:asPlaceholder('key1')}"))
+            .isEqualTo("value1");
+        TigerJexlExecutor.deregisterNamespace("foo");
+    }
+
+    public static class FooBarClass {
+
+        public String bar() {
+            return "realResult";
+        }
+
+        public String asPlaceholder(String value) {
+            return "${" + value + "}";
+        }
     }
 }

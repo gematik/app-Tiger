@@ -9,7 +9,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.19.4</version>
+        <version>0.20.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -48,7 +48,7 @@
                         </goals>
                         <configuration>
                             <classifier>javadoc</classifier>
-                            <classesDirectory>${basedir}/javadoc</classesDirectory>
+                            <classesDirectory>${project.basedir}/javadoc</classesDirectory>
                         </configuration>
                     </execution>
                 </executions>

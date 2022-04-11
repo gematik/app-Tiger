@@ -6,12 +6,13 @@ Feature: Check advanced input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "docker" node via welcome screen
     And he focuses on formular "docker_001"
-    When he clicks on global advanced icon
+    When he shows "Docker" tab
+    And he clicks on global advanced icon
     Then he sees input field ".dockerOptions.entryPoint"
     When he clicks on global advanced icon
     Then he doesn't see field ".dockerOptions.entryPoint"
 
-    When he shows "Allgemeines" tab
+    When he shows "General" tab
     And he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
     And he sees multiselect field "dependsUpon"
@@ -29,7 +30,7 @@ Feature: Check advanced input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "<type>" node via welcome screen
     And he focuses on formular "<type>_001"
-    And he shows "Allgemeines" tab
+    And he shows "General" tab
     When he clicks on advanced icon in section "node-settings"
     Then he sees input field "startupTimeoutSec"
     And he sees multiselect field "dependsUpon"
@@ -48,7 +49,8 @@ Feature: Check advanced input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     When he focuses on formular "tigerProxy_001"
-    When he clicks on global advanced icon
+    When he shows "TigerProxy" tab
+    And he clicks on global advanced icon
     Then he sees select field ".tigerProxyCfg.proxyProtocol"
     And he sees input field ".tigerProxyCfg.serverPort"
     And he sees select field ".tigerProxyCfg.proxyCfg.proxyLogLevel"

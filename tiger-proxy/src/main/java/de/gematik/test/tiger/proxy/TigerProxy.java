@@ -26,7 +26,6 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
@@ -72,7 +71,7 @@ import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 import org.mockserver.socket.tls.NettySslContextFactory;
 
 @Slf4j
-public class TigerProxy extends AbstractTigerProxy {
+public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     private final List<TigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
     private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
@@ -81,6 +80,7 @@ public class TigerProxy extends AbstractTigerProxy {
     @Getter
     private final MockServerToRbelConverter mockServerToRbelConverter;
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
+    private List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
 
     public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
@@ -216,15 +216,16 @@ public class TigerProxy extends AbstractTigerProxy {
     }
 
     public void subscribeToTrafficEndpoints(final List<String> trafficEndpointUrls) {
-        Optional.of(trafficEndpointUrls)
+        remoteProxyClients.addAll(Optional.of(trafficEndpointUrls)
             .filter(Objects::nonNull)
             .stream()
             .flatMap(List::stream)
             .map(url -> new TigerRemoteProxyClient(url, new TigerProxyConfiguration()))
-            .forEach(remoteClient -> {
+            .peek(remoteClient -> {
                 remoteClient.setRbelLogger(getRbelLogger());
                 remoteClient.addRbelMessageListener(this::triggerListener);
-            });
+            })
+            .collect(Collectors.toList()));
     }
 
     private void addRbelTrafficEndpoint() {
@@ -303,14 +304,6 @@ public class TigerProxy extends AbstractTigerProxy {
         return createdTigerRoute;
     }
 
-    private boolean uriEquals(final String value1, final String value2) {
-        try {
-            return new URI(value1).equals(new URI(value2));
-        } catch (final URISyntaxException e) {
-            return false;
-        }
-    }
-
     private boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
         try {
             final URI uri1 = new URI(value1);
@@ -382,6 +375,9 @@ public class TigerProxy extends AbstractTigerProxy {
 
     @Override
     public void removeRoute(final String routeId) {
+        if (!mockServer.isRunning()) {
+            return;
+        }
         mockServerClient.clear(new ExpectationId().withId(routeId));
         final TigerRoute route = tigerRouteMap.remove(routeId);
 
@@ -528,8 +524,15 @@ public class TigerProxy extends AbstractTigerProxy {
     }
 
     public void shutdown() {
+        remoteProxyClients
+            .forEach(TigerRemoteProxyClient::close);
         mockServerClient.stop();
         mockServer.stop();
+    }
+
+    @Override
+    public void close() throws Exception {
+        shutdown();
     }
 
     private class TigerProxyTrustManagerBuildingException extends RuntimeException {

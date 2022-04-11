@@ -1,0 +1,55 @@
+@startuml
+
+!include plantuml.style
+
+<style>
+  title {
+    margin 20
+  }
+</style>
+
+left to right direction
+
+title Tiger Proxy message flow
+
+rectangle "Test environment" as onsiteenv {
+    component reverseProxy
+
+    component localTigerProxy [
+      local tiger proxy
+
+      ----
+
+      aggregates all messages
+      received by any proxy
+    ]
+    rectangle "test objects" as testObjects {
+        component testObject1
+        component testObject2
+    }
+}
+component testenvMgr <<Tiger>>
+
+component validationTestsuite <<Tiger>> [
+  test suite
+
+  ----
+
+  triggers requests and validates
+  all requests and responses
+  received via local tiger proxy
+]
+
+validationTestsuite --> localTigerProxy <<HTTP>> : http(s)
+validationTestsuite --> reverseProxy <<HTTP>> : http(s)
+
+testenvMgr --> onsiteenv : instantiates the proxies\non start up
+
+reverseProxy <--> testObject2 <<HTTP>> : http(s)
+
+reverseProxy .left.> localTigerProxy : mesh set up / message flow
+localTigerProxy .> validationTestsuite : forwarding all messages for validation by tiger steps
+
+localTigerProxy --> testObject1 <<HTTP>> : http(s)
+
+@enduml

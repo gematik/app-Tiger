@@ -19,6 +19,7 @@ package de.gematik.test.tiger.proxy.vau;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static j2html.TagCreator.div;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
@@ -28,6 +29,7 @@ import j2html.tags.ContainerTag;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
@@ -68,9 +70,9 @@ public class VauSessionFacet implements RbelFacet {
     private final RbelElement recordId;
 
     @Override
-    public List<Map.Entry<String, RbelElement>> getChildElements() {
+    public List<RbelMultiMap> getChildElements() {
         return List.of(
-            Pair.of("recordId", recordId)
+            RbelMultiMap.builder().key("recordId").rbelElement(recordId).build()
         );
     }
 }

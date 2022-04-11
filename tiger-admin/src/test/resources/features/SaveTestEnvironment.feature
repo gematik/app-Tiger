@@ -11,6 +11,7 @@ Feature: Save test environments
     servers:
       docker_001:
         hostname: docker_001
+        uiRank: 1
         type: docker
     """
 
@@ -36,11 +37,14 @@ Feature: Save test environments
     servers:
       docker_002:
         hostname: docker_002
+        uiRank: 3
         type: docker
       docker_001:
         hostname: docker_001
+        uiRank: 1
         type: docker
       compose_001:
+        uiRank: 2
         type: compose
     """
 
@@ -67,7 +71,7 @@ Feature: Save test environments
     When he adds a "externalUrl" node via sidebar
     Then he focuses on formular "externalUrl_001"
     And he shows "PKI" tab
-    And he tests list "pkiKeys"
+    And he tests list ".pkiKeys"
     Then he adds complex list item
     """
       pem: Pem1
@@ -108,43 +112,46 @@ Feature: Save test environments
     Then he verifies saved file "newTestEnv.yaml" contains
     """
     servers:
-  externalUrl_001:
-    hostname: externalUrl_001
-    pkiKeys:
-    - pem: Pem1
-      id: '123'
-      type: Key
-    pem: Pem1
-    id: '123'
-    type: Key
-  docker_001:
-    hostname: docker_001
-    type: docker
-    urlMappings:
-    - entry1
-  externalJar_001:
-    hostname: externalJar_001
-    type: externalJar
-    externalJarOptions:
-      options:
-      - entry1
-  compose_001:
-    environment:
-    - entry1
-    type: compose
-  tigerProxy_001:
-    tigerProxyCfg:
-      proxyCfg:
-        proxyRoutes:
-        - basicAuth:
-            password: pwd1
-            username: user1
-          from: from1
-          id: entry1
-          to: to1
-      proxyProtocol: http
-    hostname: tigerProxy_001
-    type: tigerProxy
+      externalUrl_001:
+        hostname: externalUrl_001
+        uiRank: 3
+        pkiKeys:
+        - pem: Pem1
+          id: '123'
+          type: Key
+        type: externalUrl
+      docker_001:
+        hostname: docker_001
+        uiRank: 1
+        type: docker
+        urlMappings:
+        - entry1
+      externalJar_001:
+        hostname: externalJar_001
+        uiRank: 5
+        type: externalJar
+        externalJarOptions:
+          options:
+          - entry1
+      compose_001:
+        environment:
+        - entry1
+        uiRank: 2
+        type: compose
+      tigerProxy_001:
+        tigerProxyCfg:
+          proxyCfg:
+            proxyRoutes:
+            - basicAuth:
+                password: pwd1
+                username: user1
+              from: from1
+              id: entry1
+              to: to1
+          proxyProtocol: http
+        hostname: tigerProxy_001
+        uiRank: 4
+        type: tigerProxy
     """
 
   Scenario: cancel saving of test environments

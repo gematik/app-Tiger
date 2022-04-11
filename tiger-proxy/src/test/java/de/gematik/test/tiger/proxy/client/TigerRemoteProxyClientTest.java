@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElement;
@@ -63,7 +64,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @TestPropertySource(
     properties = {"tigerProxy.activateRbelParsing: false"})
 @RequiredArgsConstructor
-@DirtiesContext
+@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @Slf4j
 public class TigerRemoteProxyClientTest {
     /*
@@ -225,12 +226,12 @@ public class TigerRemoteProxyClientTest {
         tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from(firstRoute)
             .to("http://localhost:" + remoteServer.getHttpPort())
-            .build()).getId();
+            .build());
 
         assertThatThrownBy(() -> tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from(secondRoute)
             .to("http://localhost:" + remoteServer.getHttpPort())
-            .build()).getId()).isInstanceOf(RuntimeException.class);
+            .build())).isInstanceOf(RuntimeException.class);
     }
 
     @Test

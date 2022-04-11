@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy.controller;
 
 import static j2html.TagCreator.*;
 import com.google.common.html.HtmlEscapers;
-import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -131,24 +130,25 @@ public class TigerWebUiController implements ApplicationContextAware {
                     ),
                     form().attr("onSubmit", "return false;")
                         .with(
-                        div().withClass("navbar-item").with(
-                            div().withClass("field").with(
-                                p().withClass("control has-icons-left").with(
-                                    input().withClass("input is-rounded has-text-dark")
-                                        .withType("text")
-                                        .withPlaceholder("RbelPath filter criterion")
-                                        .withId("setFilterCriterionInput")
-                                        .attr("autocomplete", "on")
+                            div().withClass("navbar-item").with(
+                                div().withClass("field").with(
+                                    p().withClass("control has-icons-left").with(
+                                        input().withClass("input is-rounded has-text-dark")
+                                            .withType("text")
+                                            .withPlaceholder("RbelPath filter criterion")
+                                            .withId("setFilterCriterionInput")
+                                            .attr("autocomplete", "on")
+                                    )
                                 )
-                            )
-                        ),
-                        div().withClass("navbar-item").with(
-                            button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success").with(
-                                i().withClass("fas fa-filter"),
-                                span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
+                            ),
+                            div().withClass("navbar-item").with(
+                                button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success")
+                                    .with(
+                                        i().withClass("fas fa-filter"),
+                                        span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
+                                    )
                             )
                         )
-                    )
                 ),
                 div().withClass("navbar-end").with(
                     div().withClass("navbar-item mr-3").with(
@@ -255,13 +255,48 @@ public class TigerWebUiController implements ApplicationContextAware {
             .matchSuccessful(jexlExecutor.matchesAsJexlExpression(targetMessage, query))
             .messageContext(messageContext)
             .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
-                .replace(RbelAnsiColors.RESET.toString(),"</span>")
-                .replace(RbelAnsiColors.RED_BOLD.toString(),"<span class='has-text-danger'>")
-                .replace(RbelAnsiColors.CYAN.toString(),"<span class='has-text-info'>")
-                .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),"<span class='has-text-primary has-text-weight-bold'>")
-                .replace(RbelAnsiColors.GREEN.toString(),"<span class='has-text-warning'>")
-                .replace(RbelAnsiColors.BLUE.toString(),"<span class='has-text-success'>")
+                .replace(RbelAnsiColors.RESET.toString(), "</span>")
+                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger'>")
+                .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
+                .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
+                    "<span class='has-text-primary has-text-weight-bold'>")
+                .replace(RbelAnsiColors.GREEN.toString(), "<span class='has-text-warning'>")
+                .replace(RbelAnsiColors.BLUE.toString(), "<span class='has-text-success'>")
                 .replace("\n", "<br/>"))
+            .build();
+    }
+
+    @GetMapping(value = "/testRbelExpression", produces = MediaType.APPLICATION_JSON_VALUE)
+    public JexlQueryResponseDto testRbelExpression(
+        @RequestParam(name = "msgUuid") final String msgUuid,
+        @RequestParam(name = "rbelPath") final String rbelPath) {
+        final List<RbelElement> targetElements = getTigerProxy().getRbelMessages().stream()
+            .filter(msg -> msg.getUuid().equals(msgUuid))
+            .map(msg -> msg.findRbelPathMembers(rbelPath))
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
+        if (targetElements.isEmpty()) {
+            return JexlQueryResponseDto.builder()
+                .build();
+        }
+        final RbelElementTreePrinter treePrinter = RbelElementTreePrinter.builder()
+            .rootElement(targetElements.get(0))
+            .printFacets(false)
+            .build();
+        return JexlQueryResponseDto.builder()
+            .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
+                .replace(RbelAnsiColors.RESET.toString(), "</span>")
+                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger'>")
+                .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
+                .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
+                    "<span class='has-text-primary has-text-weight-bold'>")
+                .replace(RbelAnsiColors.GREEN.toString(), "<span class='has-text-warning'>")
+                .replace(RbelAnsiColors.BLUE.toString(), "<span class='has-text-success'>")
+                .replace("\n", "<br/>"))
+            .elements(targetElements.stream()
+                .map(RbelElement::findNodePath)
+                .map(key -> "$." + key)
+                .collect(Collectors.toList()))
             .build();
     }
 
@@ -286,18 +321,19 @@ public class TigerWebUiController implements ApplicationContextAware {
         var jexlExecutor = new RbelJexlExecutor();
 
         List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory().stream()
-            .dropWhile(element -> {
+            .dropWhile(msg -> {
                 if (StringUtils.isEmpty(lastMsgUuid)) {
                     return false;
                 } else {
-                    return !element.getUuid().equals(lastMsgUuid);
+                    return !msg.getUuid().equals(lastMsgUuid);
                 }
             })
-            .filter(element -> {
+            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
+            .filter(msg -> {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
                 }
-                return jexlExecutor.matchesAsJexlExpression(element, filterCriterion, Optional.empty());
+                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty());
             })
             .collect(Collectors.toList());
 

@@ -309,8 +309,12 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
         @Override
         public void handleTransportError(StompSession session, Throwable exception) {
-            log.error("handle transport error from url '{}': {}", remoteProxyUrl, exception);
-            throw new TigerRemoteProxyClientException(exception);
+            if (exception instanceof ConnectionLostException) {
+                log.warn("Remote client lost connection to url {}", remoteProxyUrl);
+            } else {
+                log.error("handle transport error from url '{}': {}", remoteProxyUrl, exception);
+                throw new TigerRemoteProxyClientException(exception);
+            }
         }
     }
 
@@ -357,7 +361,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                 propagateNewRbelMessage(response.getSender(), response.getReceiver(),
                     response.buildCompleteContent());
             }
-
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.lib;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
@@ -27,16 +28,25 @@ import de.gematik.test.tiger.lib.monitor.MonitorUI;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import java.awt.HeadlessException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * The TigerDirector is the public interface of the high level features of the Tiger test framework.
@@ -54,21 +64,20 @@ import org.apache.commons.io.IOUtils;
 public class TigerDirector {
 
     private static TigerTestEnvMgr tigerTestEnvMgr;
-
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
+    private static final Pattern SHOW_STEPS = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
     private static boolean initialized = false;
 
     @Getter
     private static TigerLibConfig libConfig;
+    private static ConfigurableApplicationContext envMgrApplicationContext;
 
     public static void start() {
         if (initialized) {
             log.info("Tiger Director already started, skipping");
             return;
         }
-
-        TigerGlobalConfiguration.setRequireTigerYaml(true);
 
         showTigerBanner();
 
@@ -123,8 +132,15 @@ public class TigerDirector {
 
     private static synchronized void startTestEnvMgr() {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
-        tigerTestEnvMgr = new TigerTestEnvMgr();
-        tigerTestEnvMgr.setUpEnvironment();
+        envMgrApplicationContext = new SpringApplicationBuilder()
+            .properties(Map.of("server.port",
+                TigerGlobalConfiguration.readIntegerOptional("free.port.255").orElse(0)))
+            .sources(TigerTestEnvMgrApplication.class)
+            .web(WebApplicationType.SERVLET)
+            .initializers()
+            .run();
+
+        tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
     }
 
     private static synchronized void setDefaultProxyToLocalTigerProxy() {
@@ -202,10 +218,25 @@ public class TigerDirector {
         optionalMonitorUI.ifPresentOrElse(
             (monitor) -> monitor.waitForQuit("Tiger Testsuite"),
             () -> TigerTestEnvMgr.waitForQuit("Tiger Testsuite"));
+        envMgrApplicationContext.close();
+        await()
+            .pollInterval(Duration.ofMillis(100))
+            .atMost(Duration.ofDays(1))
+            .until(() -> !envMgrApplicationContext.isRunning());
     }
 
     public static void updateStepInMonitor(Step step) {
         optionalMonitorUI.ifPresent((monitor) -> monitor.updateStep(step));
+
+        var stepText = String.join("\n", step.getLines());
+
+        Matcher m = SHOW_STEPS.matcher(stepText);
+        if (m.find()) {
+            tigerTestEnvMgr.receiveTestEnvUpdate(
+                TigerStatusUpdate.builder()
+                    .statusMessage(m.group(4))
+                    .build());
+        }
     }
 
     private static void assertThatTigerIsInitialized() {
@@ -214,8 +245,23 @@ public class TigerDirector {
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
         }
     }
+    public static boolean isSerenityAvailable() {
+        return TigerDirector.isSerenityAvailable(false);
+    }
 
-    static void testUninitialize() {
+    public static boolean isSerenityAvailable(boolean quiet) {
+        try {
+            Class.forName("net.serenitybdd.core.Serenity");
+            return true;
+        } catch (ClassNotFoundException e) {
+            if (!quiet) {
+                log.warn("Trying to use Serenity functionality, but Serenity BDD packages are not declared as runtime dependency.", e);
+            }
+            return false;
+        }
+    }
+
+    public static void testUninitialize() {
         initialized = false;
         tigerTestEnvMgr = null;
 

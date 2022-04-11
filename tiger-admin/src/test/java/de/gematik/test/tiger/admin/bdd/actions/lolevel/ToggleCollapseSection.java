@@ -18,10 +18,13 @@ package de.gematik.test.tiger.admin.bdd.actions.lolevel;
 
 import static net.serenitybdd.screenplay.Tasks.instrumented;
 import de.gematik.test.tiger.admin.bdd.pages.ServerFormular;
+import java.time.Duration;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.Task;
 import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.actions.Scroll;
+import net.serenitybdd.screenplay.actions.ScrollToBy;
+import net.serenitybdd.screenplay.actions.ScrollToTarget;
 import net.serenitybdd.screenplay.ensure.Ensure;
 import net.serenitybdd.screenplay.targets.Target;
 import net.thucydides.core.annotations.Step;
@@ -51,8 +54,11 @@ public class ToggleCollapseSection implements Task {
         actor.attemptsTo(
             // Actions
             Ensure.that(legend).isEnabled(),
-            Scroll.to(legend).andAlignToBottom(),
-            Click.on(legend)
+            new ScrollToTarget(legend).andAlignToBottom(),
+            Pause.pauseFor(500), // needed as scroll seems to be async and causes issues of not clickable elem
+            Ensure.that(legend.waitingForNoMoreThan(Duration.ofMillis(500L))).isDisplayed(),
+            Click.on(legend),
+            new ScrollToTarget(legend).andAlignToTop()
             // TODO check that it toggled by first getting classes and check it toggled,
         );
     }

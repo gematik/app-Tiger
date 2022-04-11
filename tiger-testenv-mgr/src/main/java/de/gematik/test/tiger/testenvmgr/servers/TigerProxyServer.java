@@ -20,7 +20,7 @@ import de.gematik.test.tiger.common.data.config.CfgTigerProxyOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
@@ -44,6 +44,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
     @Override
     public void performStartup() {
+        statusMessage("Configuring tiger-proxy... (pre-start)");
         CfgTigerProxyOptions reverseProxyCfg = getConfiguration().getTigerProxyCfg();
 
         CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
@@ -68,6 +69,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         properties.put("server.port", reverseProxyCfg.getServerPort());
         properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
 
+        statusMessage("Starting tiger-proxy...");
         applicationContext = new SpringApplicationBuilder()
             .properties(properties)
             .sources(TigerProxyApplication.class)
@@ -79,6 +81,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         if (getStatus() == TigerServerStatus.STARTING) {
             waitForService(false);
         }
+        statusMessage("Tiger-proxy started");
     }
 
     @Override

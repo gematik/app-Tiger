@@ -132,9 +132,14 @@ public class PerformActionsOnList implements Task {
 
     // targets
 
-    public static Target listAddButton() {
+    public static Target complexListAddButton() {
         return Target.the("add button for list " + theActorInTheSpotlight().recall("listName"))
-            .locatedBy(listGroupUlXpath() + "/parent::div/parent::div//button[contains(@class, 'btn-list-add')]");
+            .locatedBy(listGroupUlXpath() + "/parent::div/parent::div/parent::fieldset//button[contains(@class, 'btn-list-add')]");
+    }
+
+    public static Target simpleListAddButton() {
+        return Target.the("add button for list " + theActorInTheSpotlight().recall("listName"))
+            .locatedBy(listGroupUlXpath() + "/parent::div//button[contains(@class, 'btn-list-add')]");
     }
 
     public static Target listDeleteButtonOfActiveItem() {
@@ -181,7 +186,11 @@ public class PerformActionsOnList implements Task {
     private <T extends Actor> void addsItem(T actor) {
         Target editingLine = listEditingRow();
         actor.attemptsTo(
-            Click.on(listAddButton()),
+            new ScrollToTarget(simpleListAddButton()).andAlignToBottom(),
+            Pause.pauseFor(500),
+            Click.on(simpleListAddButton()),
+            new ScrollToTarget(editingLine).andAlignToBottom(),
+            Pause.pauseFor(500),
             Ensure.that(editingLine).isDisplayed(),
             hitApply ?
                 SendKeys.of(itemText).into(editingLine).thenHit(Keys.ENTER) :
@@ -229,7 +238,9 @@ public class PerformActionsOnList implements Task {
                 line -> StringUtils.substringAfter(line, ":").trim()));
 
         List<Performable> actions = new ArrayList<>();
-        actions.add(Click.on(listAddButton()));
+        actions.add(new ScrollToTarget(complexListAddButton()).andAlignToBottom());
+        actions.add(Pause.pauseFor(500));
+        actions.add(Click.on(complexListAddButton()));
 
         Map<String, Target> mapWithValuesAsTargets = new HashMap<>();
         fields.keySet()
@@ -248,6 +259,7 @@ public class PerformActionsOnList implements Task {
 
         if (hitApply) {
             actions.add(Scroll.to(listApplyButton()).andAlignToTop());
+            actions.add(Pause.pauseFor(500));
             actions.add(Click.on(listApplyButton()));
         }
         actor.attemptsTo(actions.toArray(new Performable[0]));
@@ -256,12 +268,18 @@ public class PerformActionsOnList implements Task {
     private void enterValuesIntoSelectElements(Map<String, String> fields, List<Performable> actions,
         Map<String, Target> mapWithValuesAsTargets, Map<String, Target> mapWithSelects) {
         mapWithSelects.keySet().forEach(
-            key -> actions.add((SelectFromOptions.byValue(fields.get(key)).from(mapWithValuesAsTargets.get(key)))));
+            key -> {
+                actions.add(new ScrollToTarget(mapWithSelects.get(key)).andAlignToTop());
+                actions.add(Pause.pauseFor(500));
+                actions.add((SelectFromOptions.byValue(fields.get(key)).from(mapWithValuesAsTargets.get(key))));
+            });
     }
 
     private void enterValuesIntoTextareaAndInputElements(Map<String, String> fields, List<Performable> actions,
         Map<String, Target> mapWithElements) {
         mapWithElements.forEach((key, element) -> {
+                actions.add(new ScrollToTarget(element).andAlignToTop());
+                actions.add(Pause.pauseFor(500));
                 actions.add(Ensure.that(element).isEnabled());
                 actions.add(Enter.theValue(fields.get(key)).into(element));
             }

@@ -21,10 +21,12 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.Map;
+import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -58,7 +60,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
             envMgr -> {
                 CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
                 ReflectionTestUtils.setField(srv, prop, null);
-                assertThatThrownBy(() -> TigerServer.create("blub", srv, null)
+                assertThatThrownBy(() -> TigerServer.create("blub", srv, mockTestEnvMgr())
                     .assertThatConfigurationIsCorrect())
                     .isInstanceOf(TigerTestEnvException.class);
             });
@@ -72,7 +74,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "      serverPort: 9999", skipEnvironmentSetup = true)
     public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-        assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, null)
+        assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, mockTestEnvMgr())
             .assertThatConfigurationIsCorrect())
             .isInstanceOf(TigerTestEnvException.class);
     }
@@ -215,5 +217,24 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
             envMgr.setUpEnvironment();
         }).withMessage("The urlMappings configuration 'https://bla -->' is not correct. Please check your .yaml-file.");
+    }
+
+    @Test
+    @TigerTest(tigerYaml =
+        "additionalYamls:\n"
+            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml\n"
+            + "    baseKey: tiger\n")
+    public void readAdditionalYamlFiles(UnirestInstance unirestInstance) {
+        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
+            .isTrue();
+    }
+
+    @Test
+    @TigerTest(tigerYaml =
+        "additionalYamls:\n"
+            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionTigerKey.yaml\n")
+    public void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
+        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
+            .isTrue();
     }
 }

@@ -17,7 +17,7 @@
 package de.gematik.test.tiger.testenvmgr.config;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -48,12 +48,13 @@ import static org.mockserver.model.HttpRequest.request;
 @Slf4j
 public class TestEnvDownload {
     private static final Path DOWNLOAD_FOLDER_PATH = Path.of("target", "jarDownloadTest");
+    private static final Integer MOCKSERVER_PORT = SocketUtils.findAvailableTcpPorts(1).first();
 
-    MockServer mockServer;
-    MockServerClient mockServerClient;
-    Expectation downloadExpectation;
-    private byte[] winstoneBytes;
-    private byte[] tigerProxyBytes;
+    private static MockServer mockServer;
+    private static MockServerClient mockServerClient;
+    private static Expectation downloadExpectation;
+    private static byte[] winstoneBytes;
+    private static byte[] tigerProxyBytes;
 
     @BeforeEach
     public void cleanDownloadFolder() throws IOException {
@@ -77,7 +78,7 @@ public class TestEnvDownload {
             return;
         }
         log.info("Booting MockServer...");
-        mockServer = new MockServer(SocketUtils.findAvailableTcpPorts(1).first());
+        mockServer = new MockServer(MOCKSERVER_PORT);
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
         final File winstoneFile = new File("target/winstone.jar");

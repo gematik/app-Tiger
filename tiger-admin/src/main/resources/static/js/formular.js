@@ -43,7 +43,8 @@ $.fn.initFormular = function (serverKey, serverData) {
   $(this).find('.server-icon').attr('title', serverData.type);
   // add buttons to lists
   const btnsHtml = $('#template-list-all-buttons').html();
-  $(btnsHtml).insertBefore($(this).find('fieldset:not(.subset) > .row > .col > .list-group'));
+  $(btnsHtml).insertBefore($(this).find('fieldset.editableList .list-group'));
+  $(btnsHtml).insertBefore($(this).find('fieldset.complex-list fieldset.subset'));
   $(this).find('fieldset.complex-list fieldset.subset .col:last-child').append($('#template-list-apply-button').html());
   // add titles to some elements
   this.find(".server-formular-collapse-icon").attr('title', 'Fold/Unfold');
@@ -92,6 +93,9 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.find('fieldset.editableList .list-group-item > span').each(function () {
     $(this).addClickNKeyCallbacks2ListItem(true);
   });
+
+  this.find('fieldset .list-group').html('<div class="list-empty-info">Please press Add entry button above to add entries.</div>');
+
   // list button callbacks
   this.find('fieldset.editableList .btn-list-add').click(handleAddButtonOnSimpleList);
   this.find('fieldset.complex-list .btn-list-add').click(handleAddButtonOnComplexList);
@@ -181,22 +185,13 @@ $.fn.initFormular = function (serverKey, serverData) {
 
   // default tabs shown for most node types
   this.showTabLink('general', true);
+  this.showTabLink('dockerOptions', serverData.type === 'docker' || serverData.type === 'compose');
+  this.showTabLink('externalJarOptions', serverData.type === 'externalJar' || serverData.type === 'externalUrl');
+  this.showTabLink('tigerProxy', serverData.type === 'localProxy' || serverData.type === 'tigerProxy');
   this.showTabLink('pkiKeys', serverData.type !== 'localProxy');
   this.showTabLink('environment', serverData.type !== 'localProxy');
   this.showTabLink('urlMappings', serverData.type !== 'localProxy');
-  // show default tab for each node type
-  const defaultTabs = {
-    docker: 'dockerOptions',
-    compose: 'dockerOptions',
-    externalUrl: 'externalJarOptions',
-    externalJar: 'externalJarOptions',
-    tigerProxy: 'tigerProxy',
-    localProxy: 'general'
-  }
-  this.showTab(defaultTabs[serverData.type]);
-  this.showTabLink(defaultTabs[serverData.type], true);
-  this.showTabLink('externalJarOptions', defaultTabs[serverData.type] === 'externalJarOptions');
-  this.showTabLink('tigerProxy', serverData.type === 'localProxy' || serverData.type === 'tigerProxy');
+  this.showTab('general');
 
   //
   // show fieldsets and input groups specific to types
@@ -344,27 +339,30 @@ $.fn.populateForm = function (serverData, path) {
       continue;
     }
     const nameStr = path + (path.length === 0 ? "" : ".") + field;
-    let listHtml = '';
     // for all arrays and for source array onl yif its compose type
     if (Array.isArray(value) &&
         (field !== 'source' || serverData.type === 'compose')) {
+
       const elem = this.find(`.list-group[name="${nameStr}"]`);
-      let editable = false;
-      if (typeof value[0] === 'object') {
+      let listHtml = elem.html();
+      const fieldSet = elem.closest('fieldset');
+      const editable = fieldSet.hasClass('editableList');
+      if (!editable) {
         $.each(value, function () {
           listHtml += getListItem($('<div/>').text(elem.generateListItemLabel(this)).html(), false);
         });
         elem.html(listHtml);
         $.each(value, function (idx, itemData) {
-          $(elem.children()[idx]).data("listdata", itemData);
+          $(elem.children()[idx+1]).data("listdata", itemData);
         });
       } else {
-        const fieldSet = elem.closest('fieldset');
-        editable = fieldSet.hasClass('editableList');
         $.each(value, function () {
           listHtml += getListItem(this, false);
         });
         elem.html(listHtml);
+      }
+      if (value && value.length) {
+        elem.find(".list-empty-info").hide();
       }
       elem.find(".list-group-item > span").addClickNKeyCallbacks2ListItem(editable);
     } else {
