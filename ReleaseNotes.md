@@ -1,5 +1,19 @@
 # Changelog Tiger Testplattform
 
+# Release 0.20.1
+
+## Features
+
+* TGR-450,434,347: Updates im User manual (Failsafe plugin, chapter 5.4, smaller glitches)
+* TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD 
+* TGR-456: Useability review of admin ui
+* Tiger maven plugin has a second goal to replace the SerenityBDD maven plugin for generation of reports.
+
+## Bugfixes
+
+* TGR-411: pki keys saved correctly via admin ui
+* TGR-308: order of nodes now restored on load in admin ui
+
 # Release 0.20.0
 
 ## Breaking Changes
