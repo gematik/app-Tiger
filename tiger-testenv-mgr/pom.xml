@@ -217,6 +217,8 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
+                            <!-- https://github.com/eirslett/frontend-maven-plugin#proxy-settings -->
+                            <npmInheritsProxyConfigFromMaven>false</npmInheritsProxyConfigFromMaven>
                             <nodeVersion>${node.version}</nodeVersion>
                             <npmVersion>${npm.version}</npmVersion>
                         </configuration>
