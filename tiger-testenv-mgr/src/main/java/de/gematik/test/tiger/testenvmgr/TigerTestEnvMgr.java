@@ -136,7 +136,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         TigerGlobalConfiguration.initialize();
         readTemplates();
         final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class,
-            "tiger");
+            "tiger")
+            .orElseGet(Configuration::new);
         for (CfgServer cfgServer : configuration.getServers().values()) {
             if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
                 throw new TigerConfigurationException("Could not resolve template '" + cfgServer.getTemplate() + "'");

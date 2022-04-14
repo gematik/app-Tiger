@@ -12,6 +12,11 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * Configuration-source which is bound to a certain thread. The configuration will be invisible from outside the thread
+ * in which it has been set. Bear in mind that any unintentional threading (Thread-Pools etc.) will also have the same
+ * effect.
+ */
 public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigurationSource {
 
     private final Map<Long, Map<TigerConfigurationKey, String>> threadIdToValuesMap;

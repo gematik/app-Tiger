@@ -24,6 +24,11 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
+/**
+ * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end up here and
+ * all configuration is loaded from here (Testenv-mgr, local tiger-proxy, test-lib configuration and also user-defined
+ * values).
+ */
 @Slf4j
 public class TigerGlobalConfiguration {
 
@@ -94,7 +99,7 @@ public class TigerGlobalConfiguration {
     }
 
     @SneakyThrows
-    public synchronized static <T extends Object> T instantiateConfigurationBean(Class<T> configurationBeanClass,
+    public synchronized static <T> Optional<T> instantiateConfigurationBean(Class<T> configurationBeanClass,
         String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanClass, baseKeys);
@@ -149,7 +154,27 @@ public class TigerGlobalConfiguration {
 
     public static void putValue(String key, Object value) {
         assertGlobalConfigurationIsInitialized();
-        globalConfigurationLoader.putValue(key, value.toString());
+        globalConfigurationLoader.putValue(key, value);
+    }
+
+    public static void putValue(String key, long value) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, Long.toString(value));
+    }
+
+    public static void putValue(String key, boolean value) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, Boolean.toString(value));
+    }
+
+    public static void putValue(String key, double value) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, Double.toString(value));
+    }
+
+    public static void putValue(String key, int value) {
+        assertGlobalConfigurationIsInitialized();
+        globalConfigurationLoader.putValue(key, Integer.toString(value));
     }
 
     public static void putValue(String key, String value, SourceType sourceType) {
@@ -182,7 +207,7 @@ public class TigerGlobalConfiguration {
             .map(File::new);
         if (customCfgFile.isPresent()) {
             if (customCfgFile.get().exists()) {
-                readYamlFile(customCfgFile.get());
+                readYamlFile(customCfgFile.get(), Optional.of("tiger"));
                 return;
             } else {
                 throw new TigerConfigurationException("Could not find configuration-file '"
@@ -201,7 +226,7 @@ public class TigerGlobalConfiguration {
             .filter(File::exists)
             .findFirst();
         if (cfgFile.isPresent()) {
-            readYamlFile(cfgFile.get());
+            readYamlFile(cfgFile.get(), Optional.of("tiger"));
             return;
         }
 
@@ -215,7 +240,7 @@ public class TigerGlobalConfiguration {
             .findFirst();
         if (oldCfgFile.isPresent()) {
             log.warn("Older file format detected! Will be deprecated in upcoming versions. Please use tiger.yaml!");
-            readYamlFile(oldCfgFile.get());
+            readYamlFile(oldCfgFile.get(), Optional.of("tiger"));
             return;
         }
 
@@ -235,7 +260,8 @@ public class TigerGlobalConfiguration {
                 .map(File::new)
                 .filter(File::exists)
                 .orElseThrow(() -> new TigerConfigurationException(
-                    "Unable to locate file from configuration " + additionalYaml)));
+                    "Unable to locate file from configuration " + additionalYaml)),
+                Optional.ofNullable(additionalYaml.getBaseKey()));
         }
     }
 
@@ -247,13 +273,34 @@ public class TigerGlobalConfiguration {
         }
     }
 
-    private static void readYamlFile(File file) {
+    private static void readYamlFile(File file, Optional<String> baseKey) {
         try {
             log.info("Reading configuration from file '{}'", file.getAbsolutePath());
-            readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), "tiger");
+            if (baseKey.isPresent()) {
+                readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), baseKey.get());
+            } else {
+                readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8));
+            }
         } catch (IOException | RuntimeException e) {
             throw new TigerConfigurationException(
                 "Error while reading configuration from file '" + file.getAbsolutePath() + "'", e);
         }
+    }
+
+    /**
+     * Returns a local scope in which values can be added and code executed. This enables the use of very local values
+     * that can not (or should not) creep over into other parts of your testsuite.
+     * @return
+     */
+    public static TigerScopedExecutor localScope() {
+        return new TigerScopedExecutor();
+    }
+
+    static void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
+        globalConfigurationLoader.addConfigurationSource(configurationSource);
+    }
+
+    static boolean removeConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
+        return globalConfigurationLoader.removeConfigurationSource(configurationSource);
     }
 }

@@ -28,6 +28,9 @@ public final class TokenSubstituteHelper {
         int varIdx = str.indexOf(tokenStr);
         while (varIdx != -1) {
             final int endVar = str.indexOf('}', varIdx);
+            if (endVar == -1) {
+                return str;
+            }
             final String placeholderString = str.substring(varIdx + tokenStr.length(), endVar);
             final Optional<String> valueOptional = placeholderResolver.apply(placeholderString);
             if (valueOptional.isPresent()) {

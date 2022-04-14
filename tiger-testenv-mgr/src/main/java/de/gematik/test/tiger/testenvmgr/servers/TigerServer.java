@@ -181,7 +181,8 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     private void reloadConfiguration() {
         try {
             this.configuration = TigerGlobalConfiguration.instantiateConfigurationBean(CfgServer.class,
-                "tiger", "servers", getServerId());
+                "tiger", "servers", getServerId())
+                .orElseThrow(() -> new TigerEnvironmentStartupException("Could not reload configuration for server with id "+getServerId()));
             tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
         } catch (TigerConfigurationException e) {
             log.warn("Could not reload configuration for server {}", getServerId(), e);

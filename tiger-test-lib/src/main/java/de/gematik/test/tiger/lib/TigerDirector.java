@@ -80,7 +80,8 @@ public class TigerDirector {
     }
 
     private static synchronized void readConfiguration() {
-        libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB");
+        libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB")
+            .orElseGet(TigerLibConfig::new);
     }
 
     private static void showTigerBanner() {

@@ -81,6 +81,21 @@ servers:
 
 WARNING: Placeholders which can not be resolved will not lead to errors but rather they will simply not be replaced.
 
+=== Localized configuration
+
+Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else. By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice. To give you greater control over scope-behavior use the `.localScope()`-method:
+
+[source,java]
+----
+TigerGlobalConfiguration.localScope()
+    .withValue("local.key", "localValue")
+    .withValue("another.key", "anotherValue")
+    .execute(() -> assertThat(TigerGlobalConfiguration.readString("local.key"))
+        .isEqualTo("localValue"));
+----
+
+Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable. If you execute multiple tests in parallel you should look into the `TigerThreadScopedConfigurationSource` (which comes with other drawbacks, threading is not an easy problem to solve).
+
 === Examples
 
 Some examples to clarify:

@@ -4,6 +4,11 @@
 
 ## Features
 
+* TGR-461: Smaller improvements in TigerGlobalConfiguration:
+  * `TigerGlobalConfiguration.localScope()` allows scoped value addition
+  * Placeholders in keys are now resolved
+  * `TigerGlobalConfiguration.putValue()` now resolves nested values from objects
+  * instantiateConfigurationBean now returns an optional, allowing greater control when key was not found in configuration.
 * TGR-450,434,347: Updates im User manual (Failsafe plugin, chapter 5.4, smaller glitches)
 * TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD 
 * TGR-456: Useability review of admin ui
@@ -13,6 +18,7 @@
 
 * TGR-411: pki keys saved correctly via admin ui
 * TGR-308: order of nodes now restored on load in admin ui
+* TGR-461: Base key in `additionalYamls` is now honored
 
 # Release 0.20.0
 

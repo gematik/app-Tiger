@@ -6,6 +6,7 @@ package de.gematik.test.tiger.common.config;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
@@ -67,7 +68,8 @@ public class TigerConfigurationLoader {
     }
 
     public Optional<String> readStringOptional(String key) {
-        TigerConfigurationKey splittedKey = new TigerConfigurationKey(key);
+        TigerConfigurationKey splittedKey = new TigerConfigurationKey(
+            TokenSubstituteHelper.substitute(key, this));
         return loadedSources.stream()
             .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
             .filter(source -> source.getValues().containsKey(splittedKey))
@@ -76,19 +78,19 @@ public class TigerConfigurationLoader {
     }
 
     @SneakyThrows
-    public <T> T instantiateConfigurationBean(Class<T> configurationBeanClass, String... baseKeys) {
+    public <T> Optional<T> instantiateConfigurationBean(Class<T> configurationBeanClass, String... baseKeys) {
         initialize();
 
         TreeNode targetTree = convertToTree();
         final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
         for (TigerConfigurationKeyString key : configurationKey) {
             if (targetTree.get(key.getValue()) == null) {
-                return objectMapper.readValue("{}", configurationBeanClass);
+                return Optional.empty();
             }
             targetTree = targetTree.get(key.getValue());
         }
         try {
-            return objectMapper.treeToValue(targetTree, configurationBeanClass);
+            return Optional.of(objectMapper.treeToValue(targetTree, configurationBeanClass));
         } catch (JacksonException e) {
             log.debug("Error while converting the following tree: {}", objectMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(targetTree));
@@ -367,6 +369,21 @@ public class TigerConfigurationLoader {
         putValue(key, value, SourceType.RUNTIME_EXPORT);
     }
 
+    public void putValue(String key, Object value) {
+        try {
+            Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
+            final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
+            addYamlToMap(yaml.load(objectMapper.writeValueAsString(value)), new TigerConfigurationKey(key), valueMap);
+            loadedSources.add(BasicTigerConfigurationSource.builder()
+                .values(valueMap)
+                .sourceType(SourceType.RUNTIME_EXPORT)
+                .basePath(new TigerConfigurationKey(key))
+                .build());
+        } catch (JsonProcessingException e) {
+            throw new TigerConfigurationException("Error during serialization", e);
+        }
+    }
+
     public void putValue(String key, String value, SourceType sourceType) {
         final Optional<AbstractTigerConfigurationSource> configurationSource = loadedSources.stream()
             .filter(source -> source.getSourceType() == sourceType)
@@ -385,4 +402,11 @@ public class TigerConfigurationLoader {
         }
     }
 
+    public void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
+        loadedSources.add(configurationSource);
+    }
+
+    public boolean removeConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
+        return loadedSources.remove(configurationSource);
+    }
 }

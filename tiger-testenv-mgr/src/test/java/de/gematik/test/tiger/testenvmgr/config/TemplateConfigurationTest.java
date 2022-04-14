@@ -27,7 +27,8 @@ public class TemplateConfigurationTest {
                     "servers:\n" +
                         "  idp:\n" +
                         "    template: idp-ref\n", "tiger");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger");
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger")
+                    .get();
                 assertThat(dummyBean.getServers().get("idp").getSource())
                     .containsExactly("gstopdr1.top.local/idp/idp-server");
                 assertThat(dummyBean.getServers().get("erp").getSource())
