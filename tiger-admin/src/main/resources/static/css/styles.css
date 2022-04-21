@@ -306,7 +306,7 @@ ul.nav-tabs {
     border: 0;
 }
 
-div.local_proxy_info {
+div.local_tiger_proxy_info {
     padding: 1.5rem;
     color: var(--bs-gray-600);
     text-align: justify;
@@ -705,7 +705,7 @@ fieldset .list-group .list-group-item > span {
 }
 
 
-i.btn-list-delete {
+i.btn-list-delete, i.btn-list-simply-apply {
     color: #98A2B3;
     font-size: 1rem;
     padding-left: 1rem;

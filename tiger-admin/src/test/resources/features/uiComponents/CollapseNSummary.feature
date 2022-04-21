@@ -74,7 +74,7 @@ Feature: Check collapsing sections
   Scenario: Check collapse local proxy
     Given Gerriet is on the homepage
     And he adds a "externalUrl" node via welcome screen
-    When he focuses on formular "local_proxy"
+    When he focuses on formular "local_tiger_proxy"
     And he collapses the node
     And he doesn't see section ".tigerProxyCfg"
     And he doesn't see section ".tigerProxyCfg.proxyCfg.proxyRoutes"

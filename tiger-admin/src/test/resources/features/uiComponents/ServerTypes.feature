@@ -11,7 +11,7 @@ Feature: Check input fields and sections for all server types
     But he sees check field ".dockerOptions.proxied"
     And he sees check field ".dockerOptions.oneShot"
     And he shows "General" tab
-    And he sees text field "source"
+    And he sees input field "source"
     And he sees input field "version"
 
     And he sees tab link "General"
@@ -77,7 +77,7 @@ Feature: Check input fields and sections for all server types
     When he unfolds section ".externalJarOptions.arguments"
     Then he sees list field ".externalJarOptions.arguments"
     When he shows "General" tab
-    Then he sees text field "source"
+    Then he sees input field "source"
     But he doesn't see field "version"
 
     And he sees tab link "General"
@@ -99,7 +99,7 @@ Feature: Check input fields and sections for all server types
     And he doesn't see section ".externalJarOptions.options"
     And he doesn't see section ".externalJarOptions.arguments"
     When he shows "General" tab
-    Then he sees text field "source"
+    Then he sees input field "source"
     But he doesn't see field "version"
 
     And he sees tab link "General"
@@ -113,7 +113,7 @@ Feature: Check input fields and sections for all server types
   Scenario: Check local proxy
     Given Gerriet is on the homepage
     And he adds a "externalUrl" node via welcome screen
-    When he focuses on formular "local_proxy"
+    When he focuses on formular "local_tiger_proxy"
     Then he doesn't see field "source"
     And he doesn't see field "version"
     But he sees check field "localProxyActive"

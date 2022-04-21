@@ -86,6 +86,10 @@ public class PerformActionsOnList implements Task {
         return instrumented(PerformActionsOnList.class, docString, apply, Action.addsComplexItem);
     }
 
+    public static PerformActionsOnList opensComplexFieldset() {
+        return instrumented(PerformActionsOnList.class, Action.openComplexFieldset);
+    }
+
     public static Performable setsValueForActiveComplexItemTo(String docString, boolean apply) {
         return instrumented(PerformActionsOnList.class, docString, apply, Action.setsValueForActiveComplexItemTo);
     }
@@ -246,11 +250,19 @@ public class PerformActionsOnList implements Task {
         enterValuesIntoTextareaAndInputElements(fields, actions, mapWithTextareas);
 
         if (hitApply) {
-            actions.add(Scroll.to(listApplyButton()).andAlignToTop());
+            actions.add(Scroll.to(listApplyButton()).andAlignToBottom());
             actions.add(Pause.pauseFor(500));
             actions.add(Click.on(listApplyButton()));
         }
         actor.attemptsTo(actions.toArray(new Performable[0]));
+    }
+
+    private  <T extends Actor> void openComplexFieldSet(T actor) {
+        actor.attemptsTo(
+            new ScrollToTarget(complexListAddButton()).andAlignToBottom(),
+            Pause.pauseFor(500),
+            Click.on(complexListAddButton())
+        );
     }
 
     private void enterValuesIntoSelectElements(Map<String, String> fields, List<Performable> actions,
@@ -289,6 +301,7 @@ public class PerformActionsOnList implements Task {
             collect(Collectors.toMap(line -> StringUtils.substringBefore(line, ":").trim(),
                 line -> StringUtils.substringAfter(line, ":").trim()));
         List<Performable> actions = new ArrayList<>();
+        actions.add(Click.on(activeListItem()));
         fields.forEach((key, value) -> actions.add(
             Enter.theValue(value).into(ServerFormular.getInputField(actor, listName + "." + key))));
         if (hitApply) {
@@ -311,7 +324,8 @@ public class PerformActionsOnList implements Task {
         pressesEsc((actor, instance) -> instance.pressesEsc(actor)),
         deletesActiveItem((actor, instance) -> instance.deletesActiveItem(actor)),
         addsComplexItem((actor, instance) -> instance.addsComplexItem(actor)),
-        setsValueForActiveComplexItemTo((actor, instance) -> instance.setsValueForActiveComplexItemTo(actor));
+        setsValueForActiveComplexItemTo((actor, instance) -> instance.setsValueForActiveComplexItemTo(actor)),
+        openComplexFieldset((actor, instance) -> instance.openComplexFieldSet(actor));
 
         private final BiConsumer<Actor, PerformActionsOnList> actionConsumer;
 
@@ -336,6 +350,9 @@ public class PerformActionsOnList implements Task {
                 case setsValueForActiveComplexItemTo:
                     return " sets the value for the active complex item to " + instance.itemText.replace("\n", ", ")
                         + hitEnter(instance);
+                case openComplexFieldset:
+                    return " opens the field set for complex entries by pressing the add entry button";
+
                 default:
                     throw new InvalidArgumentException("Unknown action " + instance.action);
             }
