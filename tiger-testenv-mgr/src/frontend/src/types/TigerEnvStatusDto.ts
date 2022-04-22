@@ -1,8 +1,6 @@
 import TigerServerStatusDto from "./TigerServerStatusDto";
 
-interface TigerEnvStatusDto {
+export default interface TigerEnvStatusDto {
   currentStatusMessage: string;
   servers: Map<string, TigerServerStatusDto>;
 }
-
-export default TigerEnvStatusDto;

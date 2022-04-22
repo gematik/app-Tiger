@@ -11,11 +11,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.env.DownloadManager;
-import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,15 +34,21 @@ class EnvStatusControllerTest {
     public void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr);
 
-        assertThat(envStatusController.getStatus().getCurrentStatusMessage())
-            .isEmpty();
+        assertThat(envStatusController.getStatus().getFeatureMap()).isNull();
 
         envMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-            .statusMessage("new status message")
-            .build());
+            .featureMap(Map.of("feature", FeatureUpdate.builder()
+                    .description("feature")
+                    .scenarios(Map.of(
+                        "scenario", ScenarioUpdate.builder().description("scenario")
+                            .steps(Map.of("step", StepUpdate.builder().description("step").build()
+                            )).build()
+                    )).build()
+            )).build());
 
-        assertThat(envStatusController.getStatus().getCurrentStatusMessage())
-            .isEqualTo("new status message");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo("feature");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getDescription()).isEqualTo("scenario");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("step").getDescription()).isEqualTo("step");
     }
 
     @Test

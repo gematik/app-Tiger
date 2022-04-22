@@ -1,5 +1,9 @@
-interface TigerServerStatusUpdateDto {
-  statusMessage: string;
-}
+import ServerType from "./ServerType";
+import TigerServerStatus from "./TigerServerStatus";
 
-export default TigerServerStatusUpdateDto;
+export default interface TigerServerStatusUpdateDto {
+  statusMessage: string;
+  type: ServerType;
+  baseUrl: string;
+  status: TigerServerStatus;
+}

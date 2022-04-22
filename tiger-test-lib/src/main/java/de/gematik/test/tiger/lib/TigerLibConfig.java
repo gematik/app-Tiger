@@ -25,4 +25,6 @@ public class TigerLibConfig {
     private boolean rbelAnsiColors = true;
     @Builder.Default
     private boolean addCurlCommandsForRaCallsToReport = true;
+    @Builder.Default
+    public boolean activateWorkflowUi = false;
 }

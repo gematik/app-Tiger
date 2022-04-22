@@ -19,7 +19,14 @@ import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
-import java.io.*;
+import java.awt.Desktop;
+import java.awt.Desktop.Action;
+import java.awt.HeadlessException;
+import java.io.BufferedReader;
+import java.io.Console;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -265,5 +272,43 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     @Override
     public void registerNewListener(TigerUpdateListener listener) {
         listeners.add(listener);
+    }
+
+
+    public void openWorkflowUiInBrowser(String serverPort) {
+        try {
+            String url = "http://localhost:" + serverPort;
+
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Action.BROWSE)) {
+                Desktop desktop = Desktop.getDesktop();
+                try {
+                    desktop.browse(new URI(url));
+                } catch (IOException | URISyntaxException e) {
+                    log.error("IOException thrown during opening browser", e);
+                }
+            } else {
+                Runtime runtime = Runtime.getRuntime();
+                String command;
+                String operatingSystemName = System.getProperty("os.name").toLowerCase();
+                if (operatingSystemName.indexOf("nix") >= 0 || operatingSystemName.indexOf("nux") >= 0) {
+                    command = "xdg-open " + url;
+                } else if (operatingSystemName.indexOf("win") >= 0) {
+                    command = "rundll32 url.dll,FileProtocolHandler " + url;
+                } else if (operatingSystemName.indexOf("mac") >= 0) {
+                    command = "open " + url;
+                } else {
+                    log.info("Unknown operation system");
+                    return;
+                }
+
+                try {
+                    runtime.exec(command);
+                } catch (IOException e) {
+                    log.error("IOException thrown during opening browser", e);
+                }
+            }
+        } catch (HeadlessException hex) {
+            log.error("Unable to start Workflow UI on a headless server!", hex);
+        }
     }
 }

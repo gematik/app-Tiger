@@ -1,9 +1,8 @@
-import MessageUpdateDto from "./MessageUpdateDto";
+import DataType from "./DataType";
 import TigerServerStatusUpdateDto from "./TigerServerStatusUpdateDto";
+import FeatureUpdate from "./FeatureUpdate";
 
-interface TestEnvStatusDto {
-    message: MessageUpdateDto,
-    servers: Map<string, TigerServerStatusUpdateDto>
+export default interface TestEnvStatusDto {
+  featureMap: Map<string, FeatureUpdate>;
+  servers: Map<string, TigerServerStatusUpdateDto>;
 }
-
-export default TestEnvStatusDto;

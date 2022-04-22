@@ -17,7 +17,6 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
-import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import java.awt.HeadlessException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -27,7 +26,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +52,8 @@ public class TigerDirector {
     private static TigerTestEnvMgr tigerTestEnvMgr;
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
-    private static final Pattern SHOW_STEPS = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
+    private static final Pattern SHOW_STEPS = Pattern.compile(
+        ".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
     private static boolean initialized = false;
 
     @Getter
@@ -73,6 +72,7 @@ public class TigerDirector {
         applyTestLibConfig();
         startMonitorUi();
         startTestEnvMgr();
+        startWorkflowUi();
         setDefaultProxyToLocalTigerProxy();
 
         initialized = true;
@@ -130,6 +130,12 @@ public class TigerDirector {
             .run();
 
         tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
+    }
+
+    private static synchronized void startWorkflowUi() {
+        if (libConfig.activateWorkflowUi) {
+            tigerTestEnvMgr.openWorkflowUiInBrowser(envMgrApplicationContext.getEnvironment().getProperty("server.port"));
+        }
     }
 
     private static synchronized void setDefaultProxyToLocalTigerProxy() {
@@ -216,16 +222,6 @@ public class TigerDirector {
 
     public static void updateStepInMonitor(Step step) {
         optionalMonitorUI.ifPresent((monitor) -> monitor.updateStep(step));
-
-        var stepText = String.join("\n", step.getLines());
-
-        Matcher m = SHOW_STEPS.matcher(stepText);
-        if (m.find()) {
-            tigerTestEnvMgr.receiveTestEnvUpdate(
-                TigerStatusUpdate.builder()
-                    .statusMessage(m.group(4))
-                    .build());
-        }
     }
 
     private static void assertThatTigerIsInitialized() {
@@ -234,6 +230,7 @@ public class TigerDirector {
                 + "Did you call TigerDirector.beforeTestRun before starting test run?");
         }
     }
+
     public static boolean isSerenityAvailable() {
         return TigerDirector.isSerenityAvailable(false);
     }
@@ -244,7 +241,9 @@ public class TigerDirector {
             return true;
         } catch (ClassNotFoundException e) {
             if (!quiet) {
-                log.warn("Trying to use Serenity functionality, but Serenity BDD packages are not declared as runtime dependency.", e);
+                log.warn(
+                    "Trying to use Serenity functionality, but Serenity BDD packages are not declared as runtime dependency.",
+                    e);
             }
             return false;
         }
