@@ -94,6 +94,7 @@
         <version.lombok>1.18.22</version.lombok>
         <version.mockserver>5.11.9</version.mockserver>
         <version.spring-boot>2.6.6</version.spring-boot>
+        <version.spring>5.3.18</version.spring>
         <version.io.rest-assured>4.5.0</version.io.rest-assured>
 
         <htmlunit.version>3.55.0</htmlunit.version>

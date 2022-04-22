@@ -38,11 +38,6 @@
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-model</artifactId>
-            <version>${version.serenity.core}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-cucumber</artifactId>
         </dependency>
         <dependency>
@@ -103,7 +98,7 @@
         <dependency>
             <artifactId>json-unit-spring</artifactId>
             <groupId>net.javacrumbs.json-unit</groupId>
-            <version>2.25.0</version>
+            <version>2.33.0</version>
         </dependency>
         <dependency>
             <groupId>de.gematik</groupId>
