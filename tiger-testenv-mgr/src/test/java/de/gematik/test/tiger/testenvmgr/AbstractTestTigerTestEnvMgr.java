@@ -95,6 +95,9 @@ public abstract class AbstractTestTigerTestEnvMgr {
         }
     }
 
+    public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer, String configurationFilePath) {
+        createTestEnvMgrSafelyAndExecute(configurationFilePath, testEnvMgrConsumer);
+    }
     public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
         createTestEnvMgrSafelyAndExecute("", testEnvMgrConsumer);
     }

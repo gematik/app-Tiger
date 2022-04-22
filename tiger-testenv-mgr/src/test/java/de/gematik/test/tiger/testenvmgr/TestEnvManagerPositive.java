@@ -6,8 +6,6 @@ package de.gematik.test.tiger.testenvmgr;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -17,7 +15,6 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -49,18 +46,14 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         });
     }
 
-    @Disabled
     @ParameterizedTest
     @ValueSource(strings = {"testDockerMVP", "testTigerProxy", "testExternalJarMVP", "testExternalUrl"})
     public void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) throws IOException {
-        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml"));
-
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.getConfiguration().getServers().get(cfgFileName);
             envMgr.setUpEnvironment();
-        });
+        }, "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
     }
 
     @Test
@@ -104,7 +97,6 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     //
 
     @Test
-    @Disabled("TGR-296 tests fail due to proxy on jenkins. issue seems to be ((HttpsURLConnection) con).usingProxy() == false")
     public void testExternalUrlViaProxy() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml"));
@@ -116,7 +108,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     public void testExternalUrl_withDetails(String cfgFileName) {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_" + cfgFileName + ".yaml"));
-        createTestEnvMgrSafelyAndExecute(envMgr -> envMgr.setUpEnvironment());
+        createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
     }
 
     @Test
@@ -162,15 +154,12 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         envMgr.setUpEnvironment();
     }
 
-    @Disabled
     @Test
     public void testCreateExternalJarNonExistingWorkingDir() throws IOException {
         File folder = new File("NonExistingFolder");
         if (folder.exists()) {
             FileUtils.deleteDirectory(folder);
         }
-        TigerGlobalConfiguration.putValue("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
 
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
@@ -182,7 +171,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             } finally {
                 FileUtils.forceDeleteOnExit(folder);
             }
-        });
+        },  "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
     }
 
     @Test
