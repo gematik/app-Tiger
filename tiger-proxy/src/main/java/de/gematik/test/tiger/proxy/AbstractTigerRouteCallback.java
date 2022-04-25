@@ -6,10 +6,15 @@ package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.Header.header;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
+import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +23,7 @@ import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameters;
+import org.mockserver.model.SocketAddress;
 
 @RequiredArgsConstructor
 @Data
@@ -26,6 +32,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
     private final TigerProxy tigerProxy;
     private final TigerRoute tigerRoute;
+    private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
 
     public void applyModifications(HttpRequest request) {
         final RbelElement requestElement = tigerProxy.getMockServerToRbelConverter().requestToRbelMessage(request);
@@ -95,6 +102,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     @Override
     public final HttpRequest handle(HttpRequest req) {
         try {
+            requestTimingMap.put(req.getLogCorrelationId(), ZonedDateTime.now());
             return handleRequest(req);
         } catch (RuntimeException e) {
             propagateExceptionMessageSafe(e);
@@ -115,12 +123,50 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     @Override
     public final HttpResponse handle(HttpRequest req, HttpResponse resp) {
         try {
-            return handleResponse(req, resp);
+            final HttpResponse httpResponse = handleResponse(req, resp);
+            requestTimingMap.remove(req);
+            return httpResponse;
         } catch (RuntimeException e) {
             propagateExceptionMessageSafe(e);
             throw e;
         }
     }
 
-    protected abstract HttpResponse handleResponse(HttpRequest req, HttpResponse resp);
+    public HttpResponse handleResponse(HttpRequest req, HttpResponse resp) {
+        applyModifications(resp);
+        if (shouldLogTraffic()) {
+            try {
+                final RbelElement request = getTigerProxy().getMockServerToRbelConverter()
+                    .convertRequest(req,
+                        extractProtocolAndHostForRequest(req));
+                final RbelElement response = getTigerProxy().getMockServerToRbelConverter()
+                    .convertResponse(resp,
+                        extractProtocolAndHostForRequest(req),
+                        req.getClientAddress());
+                Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
+                    .ifPresent(requestTime -> addTimingFacet(request, requestTime));
+                addTimingFacet(response, ZonedDateTime.now());
+
+                getTigerProxy().triggerListener(request);
+                getTigerProxy().triggerListener(response);
+            } catch (RuntimeException e) {
+                propagateExceptionMessageSafe(e);
+                log.error("Rbel-parsing failed!", e);
+            }
+        }
+        getTigerProxy().manageRbelBufferSize();
+        return resp;
+    }
+
+    boolean shouldLogTraffic() {
+        return !getTigerRoute().isDisableRbelLogging();
+    }
+
+    protected abstract String extractProtocolAndHostForRequest(HttpRequest request);
+
+    private RbelElement addTimingFacet(RbelElement message, ZonedDateTime requestTime) {
+        return message.addFacet(RbelMessageTimingFacet.builder()
+            .transmissionTime(requestTime)
+            .build());
+    }
 }

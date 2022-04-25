@@ -58,9 +58,8 @@ public class VauSessionFacet implements RbelFacet {
     private final RbelElement recordId;
 
     @Override
-    public List<RbelMultiMap> getChildElements() {
-        return List.of(
-            RbelMultiMap.builder().key("recordId").rbelElement(recordId).build()
-        );
+    public RbelMultiMap getChildElements() {
+        return new RbelMultiMap()
+            .with("recordId", recordId);
     }
 }

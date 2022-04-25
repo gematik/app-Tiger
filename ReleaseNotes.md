@@ -2,6 +2,10 @@
 
 # Release 0.20.1
 
+## Breaking Changes
+
+* RBEL-54: RbelElement now returns RbelMultiMap instead of List<Entry<String, RbelElement>>. Conceptually nothing changed
+
 ## Features
 
 * TGR-461: Smaller improvements in TigerGlobalConfiguration:
@@ -13,6 +17,7 @@
 * TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD 
 * TGR-456: Useability review of admin ui
 * Tiger maven plugin has a second goal to replace the SerenityBDD maven plugin for generation of reports.
+* RBEL-54: RbelMessages now contain transmission timestamps.
 
 ## Bugfixes
 
