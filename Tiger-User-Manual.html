@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.20.0 - 2022-04-11</span>
+<span id="revdate">Version 0.20.1 - 2022-04-25</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -293,9 +293,10 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_key_translation">6.2. Key-translation</a></li>
 <li><a href="#_thread_based_configuration">6.3. Thread-based configuration</a></li>
 <li><a href="#_placeholders">6.4. Placeholders</a></li>
-<li><a href="#_examples">6.5. Examples</a></li>
-<li><a href="#_pre_defined_values">6.6. Pre-Defined values</a></li>
-<li><a href="#_inline_jexl">6.7. Inline JEXL</a></li>
+<li><a href="#_localized_configuration">6.5. Localized configuration</a></li>
+<li><a href="#_examples">6.6. Examples</a></li>
+<li><a href="#_pre_defined_values">6.7. Pre-Defined values</a></li>
+<li><a href="#_inline_jexl">6.8. Inline JEXL</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_user_interfaces">7. Tiger User interfaces</a>
@@ -3573,12 +3574,30 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect2">
-<h3 id="_examples">6.5. Examples</h3>
+<h3 id="_localized_configuration">6.5. Localized configuration</h3>
+<div class="paragraph">
+<p>Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else. By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice. To give you greater control over scope-behavior use the <code>.localScope()</code>-method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">TigerGlobalConfiguration.localScope()
+    .withValue(<span class="string"><span class="delimiter">&quot;</span><span class="content">local.key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">localValue</span><span class="delimiter">&quot;</span></span>)
+    .withValue(<span class="string"><span class="delimiter">&quot;</span><span class="content">another.key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">anotherValue</span><span class="delimiter">&quot;</span></span>)
+    .execute(() -&gt; assertThat(TigerGlobalConfiguration.readString(<span class="string"><span class="delimiter">&quot;</span><span class="content">local.key</span><span class="delimiter">&quot;</span></span>))
+        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">localValue</span><span class="delimiter">&quot;</span></span>));</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable. If you execute multiple tests in parallel you should look into the <code>TigerThreadScopedConfigurationSource</code> (which comes with other drawbacks, threading is not an easy problem to solve).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_examples">6.6. Examples</h3>
 <div class="paragraph">
 <p>Some examples to clarify:</p>
 </div>
 <div class="sect3">
-<h4 id="_example_1">6.5.1. Example 1</h4>
+<h4 id="_example_1">6.6.1. Example 1</h4>
 <div class="paragraph">
 <p>Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:</p>
 </div>
@@ -3601,7 +3620,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect3">
-<h4 id="_example_2">6.5.2. Example 2</h4>
+<h4 id="_example_2">6.6.2. Example 2</h4>
 <div class="paragraph">
 <p>In the above example let&#8217;s say you only want to customize the port. This can be done by using placeholders:</p>
 </div>
@@ -3624,7 +3643,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect3">
-<h4 id="_example_3">6.5.3. Example 3</h4>
+<h4 id="_example_3">6.6.3. Example 3</h4>
 <div class="paragraph">
 <p>Now we want to assert that the reply coming from the server has the correct backend-url in the XML that is returned to the sender.<br>
 To do this we have to reference the configured URL from above, since the value could be different on every execution.<br>
@@ -3642,7 +3661,7 @@ We can solve this using placeholders:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_pre_defined_values">6.6. Pre-Defined values</h3>
+<h3 id="_pre_defined_values">6.7. Pre-Defined values</h3>
 <div class="paragraph">
 <p>Tiger adds some pre-defined values to make your life easier configuring the environment.<br>
 Currently these are:</p>
@@ -3657,7 +3676,7 @@ This enables side effect free execution of the testsuite.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_inline_jexl">6.7. Inline JEXL</h3>
+<h3 id="_inline_jexl">6.8. Inline JEXL</h3>
 <div class="paragraph">
 <p>In addition to the <code>${foo.bar}</code> syntax allowing the retrieval of configuration values there exists the <code>!{'foo' != 'bar'}</code> syntax allowing the execution of JEXL expressions.<br>
 The JEXL-syntax is described in more depth here: <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html" class="bare">https://commons.apache.org/proper/commons-jexl/reference/syntax.html</a></p>
@@ -3667,7 +3686,7 @@ The JEXL-syntax is described in more depth here: <a href="https://commons.apache
 You will find two predefined namespaces and also the ability to add your own, allowing further customization.</p>
 </div>
 <div class="sect3">
-<h4 id="_the_default_namespace">6.7.1. The default namespace</h4>
+<h4 id="_the_default_namespace">6.8.1. The default namespace</h4>
 <div class="paragraph">
 <p>The default-namespace of the inline JEXL-expression carries the following functions:</p>
 </div>
@@ -3718,7 +3737,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="_the_rbel_namespace">6.7.2. The rbel namespace</h4>
+<h4 id="_the_rbel_namespace">6.8.2. The rbel namespace</h4>
 <div class="paragraph">
 <p>To give you direct access to the messages sent please use the rbel-namespace:</p>
 </div>
@@ -3745,7 +3764,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="_adding_custom_namespaces">6.7.3. Adding custom namespaces</h4>
+<h4 id="_adding_custom_namespaces">6.8.3. Adding custom namespaces</h4>
 <div class="paragraph">
 <p>You can easily register additional namespaces by calling <code>TigerJexlExecutor.registerAdditionalNamespace(&lt;namespace-prefix&gt;, &lt;namespace class or object)</code>.</p>
 </div>
@@ -3954,7 +3973,7 @@ Till then there is not much more than in the <a href="#_workflow_ui">Test lib ch
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-04-11 16:16:30 +0200
+Last updated 2022-04-25 11:38:36 +0200
 </div>
 </div>
 </body>
