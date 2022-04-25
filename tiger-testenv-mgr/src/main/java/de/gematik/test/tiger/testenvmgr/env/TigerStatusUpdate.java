@@ -24,6 +24,6 @@ import lombok.Data;
 @Builder
 public class TigerStatusUpdate {
 
-    private String statusMessage;
+    private Map<String, FeatureUpdate> featureMap;
     private Map<String, TigerServerStatusUpdate> serverUpdate;
 }

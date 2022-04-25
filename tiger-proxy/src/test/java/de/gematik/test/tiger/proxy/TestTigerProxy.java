@@ -30,6 +30,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -43,6 +44,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,6 +63,7 @@ import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
 import org.junit.jupiter.api.BeforeEach;
@@ -115,9 +120,6 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(
             tigerProxy.getRbelMessages().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname())
             .isEqualTo(new RbelHostname("backend", 80));
-
-        FileUtils.writeStringToFile(new File("target/out.html"),
-            new RbelHtmlRenderer().doRender(tigerProxy.getRbelMessages()));
     }
 
     @Test
@@ -697,7 +699,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void catchAllRoute_checkClientAddresses() {
+    public void forwardAllRoute_checkClientAddresses() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
@@ -742,6 +744,61 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         })
             .isInstanceOf(TigerConfigurationException.class)
             .hasMessageContaining("Could not find value for 'tigerProxy.port'");
+    }
+
+
+    @Test
+    public void forwardProxy_shouldAddTimingInformation() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        proxyRest.get("http://backend/foobar").asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+    }
+
+    @Test
+    public void reverseProxy_shouldAddTimingInformation() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+    }
+
+    @Test
+    public void forwardAllRoute_shouldAddTimingInformation() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+
+        final UnirestInstance unirestInstance = Unirest.spawnInstance();
+        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+
+        assertThat(tigerProxy.getRbelMessages().get(0)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+        assertThat(tigerProxy.getRbelMessages().get(1)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
     }
 
     // AKR: we need the 'localhost|view-localhost' because of mockserver for all checkClientAddresses-tests.

@@ -30,6 +30,11 @@ public class ComplexListSteps {
         theActorInTheSpotlight().attemptsTo(PerformActionsOnList.addsComplexItem(docstring, true));
     }
 
+    @When("he opens complex list edit fields by clicking on add entry button")
+    public void opensComplexListEditFieldsByClickingOnAddEntryButton() {
+        theActorInTheSpotlight().attemptsTo(PerformActionsOnList.opensComplexFieldset());
+    }
+
     @When("he sets active complex list item to")
     public void setsActiveComplexListItemTo(String docstring) {
         theActorInTheSpotlight().attemptsTo(PerformActionsOnList.setsValueForActiveComplexItemTo(docstring, true));

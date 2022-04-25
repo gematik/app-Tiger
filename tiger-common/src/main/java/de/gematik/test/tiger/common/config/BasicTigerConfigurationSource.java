@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Builder;
 
+/**
+ * Stores a map of key/value-pairs.
+ */
 public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSource {
 
     private final Map<TigerConfigurationKey, String> values;

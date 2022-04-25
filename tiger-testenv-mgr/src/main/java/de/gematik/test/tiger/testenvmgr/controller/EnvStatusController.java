@@ -49,7 +49,7 @@ public class EnvStatusController implements TigerUpdateListener {
 
     @Override
     public void receiveTestEnvUpdate(final TigerStatusUpdate update) {
-        tigerEnvStatus.setCurrentStatusMessage(update.getStatusMessage());
+        tigerEnvStatus.setFeatureMap(update.getFeatureMap());
         Optional.ofNullable(update.getServerUpdate())
             .map(Map::entrySet)
             .stream()
@@ -78,7 +78,7 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerEnvStatus.getServers().put(serverName, serverStatus);
     }
 
-    
+
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public TigerEnvStatusDto getStatus() {
         return tigerEnvStatus;

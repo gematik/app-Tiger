@@ -232,9 +232,19 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     @Test
     @TigerTest(tigerYaml =
         "additionalYamls:\n"
-            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionTigerKey.yaml\n")
+            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml\n")
     public void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
         assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
             .isTrue();
+    }
+
+    @Test
+    @TigerTest(tigerYaml =
+        "additionalYamls:\n"
+            + "  - filename: src/test/resources/externalConfiguration.yaml\n"
+            + "    baseKey: foobar\n")
+    public void readAdditionalYamlFilesWithDifferingBaseKey() {
+        assertThat(TigerGlobalConfiguration.readString("foobar.some.keys"))
+            .isEqualTo("andValues");
     }
 }

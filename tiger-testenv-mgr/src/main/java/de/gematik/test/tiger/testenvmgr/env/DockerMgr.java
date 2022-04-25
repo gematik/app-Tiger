@@ -105,6 +105,8 @@ public class DockerMgr {
                 }
                 final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
                 String containerScriptPath = containerConfig.getWorkingDir() + "/" + scriptName;
+                container.withExtraHost("host.docker.internal", "host-gateway");
+
                 container.withCopyFileToContainer(
                     MountableFile.forHostPath(Path.of(tmpScriptFolder.getAbsolutePath(), scriptName), MOD_ALL_EXEC),
                     containerScriptPath);
@@ -282,21 +284,6 @@ public class DockerMgr {
                 + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
                 + "echo \"" + lecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
                 + "echo \"" + risecert + "\" >> /etc/ssl/certs/ca-certificates.crt\n";
-
-            // workaround for host.docker.internal not being available on linux based docker
-            // see https://github.com/docker/for-linux/issues/264
-            if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC) {
-                String hostip = OsEnvironment.getDockerHostIp();
-                log.info("patching /etc/hosts for possibly non supported symbolic host.docker.internal");
-                content += "grep -q \"host.docker.internal\" /etc/hosts || "
-                    + "echo \" \" >> /etc/hosts && echo \"" + hostip + "    host.docker.internal\" >> /etc/hosts\n";
-
-                // TODO TGR-283 reactivate once we have docker v20 on maven nodes
-                //  container.withExtraHost("host.docker.internal", "host-gateway");
-                content += "echo HOSTS:\ncat /etc/hosts\n";
-            } else {
-                log.info("skipping etc hosts patch...");
-            }
 
             // testing ca cert of proxy with openssl
             //+ "echo \"" + proxycert + "\" > /tmp/chain.pem\n"

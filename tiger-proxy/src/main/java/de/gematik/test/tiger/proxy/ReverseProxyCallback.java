@@ -24,6 +24,7 @@ import org.mockserver.model.HttpResponse;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.mockserver.model.SocketAddress;
 
 @Slf4j
 public class ReverseProxyCallback extends AbstractTigerRouteCallback {
@@ -75,20 +76,7 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
     }
 
     @Override
-    public HttpResponse handleResponse(HttpRequest httpRequest, HttpResponse httpResponse) {
-        applyModifications(httpResponse);
-        if (!getTigerRoute().isDisableRbelLogging()) {
-            try {
-                getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
-                    .convertRequest(httpRequest, getTigerRoute().getTo()));
-                getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
-                    .convertResponse(httpResponse, getTigerRoute().getTo(), httpRequest.getClientAddress()));
-            } catch (RuntimeException e) {
-                propagateExceptionMessageSafe(e);
-                log.error("RBel FAILED!", e);
-            }
-        }
-        getTigerProxy().manageRbelBufferSize();
-        return httpResponse;
+    protected String extractProtocolAndHostForRequest(HttpRequest request) {
+        return getTigerRoute().getTo();
     }
 }

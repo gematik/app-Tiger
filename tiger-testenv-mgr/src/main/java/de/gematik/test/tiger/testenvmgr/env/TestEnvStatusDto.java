@@ -28,16 +28,14 @@ import org.apache.commons.lang3.tuple.Pair;
 @Data
 public class TestEnvStatusDto {
 
-    private final MessageUpdateDto message;
+    private final Map<String, FeatureUpdate> featureMap;
     private final Map<String, TigerServerStatusUpdateDto> servers;
 
     public static TestEnvStatusDto createFrom(final TigerStatusUpdate update) {
         return TestEnvStatusDto.builder()
-            .message(MessageUpdateDto.builder()
-                .text(update.getStatusMessage())
-                .build())
-            .servers(mapServer(update.getServerUpdate()))
-            .build();
+                .featureMap(update.getFeatureMap())
+                .servers(mapServer(update.getServerUpdate()))
+                .build();
     }
 
     private static Map<String, TigerServerStatusUpdateDto> mapServer(
@@ -51,13 +49,5 @@ public class TestEnvStatusDto {
                 TigerServerStatusUpdateDto.fromUpdate(entry.getValue())
             ))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-    }
-
-    @Builder
-    @Data
-    @RequiredArgsConstructor
-    public static class MessageUpdateDto {
-
-        private final String text;
     }
 }

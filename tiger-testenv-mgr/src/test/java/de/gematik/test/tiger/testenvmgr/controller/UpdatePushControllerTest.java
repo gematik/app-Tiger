@@ -19,13 +19,12 @@ package de.gematik.test.tiger.testenvmgr.controller;
 import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
-import de.gematik.test.tiger.testenvmgr.env.TestEnvStatusDto;
+import de.gematik.test.tiger.testenvmgr.env.*;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
@@ -82,21 +81,29 @@ class UpdatePushControllerTest {
                     @Override
                     public void handleFrame(StompHeaders headers, Object payload) {
                         log.info("Received Frame");
-                        receivedMessage.set(((TestEnvStatusDto) payload).getMessage().getText());
+                        receivedMessage.set(((TestEnvStatusDto) payload).getFeatureMap().toString());
                     }
                 };
                 session.subscribe("/topic/envStatus", handler);
             }
         });
 
-        tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-            .statusMessage("Hello World!")
-            .build());
+        TigerStatusUpdate update = TigerStatusUpdate.builder()
+            .featureMap(Map.of("feature", FeatureUpdate.builder()
+                .description("feature")
+                .scenarios(Map.of(
+                    "scenario", ScenarioUpdate.builder().description("scenario")
+                        .steps(Map.of("step", StepUpdate.builder().description("step").build()
+                        )).build()
+                )).build()
+            )).build();
+
+        tigerTestEnvMgr.receiveTestEnvUpdate(update);
 
         await()
             .atMost(2, TimeUnit.SECONDS)
             .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> receivedMessage.get().equals("Hello World!"));
+            .until(() -> receivedMessage.get().equals(update.toString()));
     }
 
     private void connectToSocketUsingHandler(StompSessionHandlerAdapter handler)

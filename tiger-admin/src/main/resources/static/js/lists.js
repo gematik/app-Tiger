@@ -32,11 +32,18 @@ const listItemPatterns = {
   ]
 }
 
-function getListItem(text, active) {
+function getListItem(text, active, editable) {
+  let applyIcon = '';
+  if (editable){
+    applyIcon = '<i class="fas fa-check btn-list-simply-apply"></i>';
+  }
+  if (editable && text==='') {
+    text= 'Press ENTER to apply';
+  }
   // TODO why <span><span> ??
   return `<li class="list-group-item ${active ? 'active ' : ''}">` +
       '<i title="Click to rearrange item in list" class="fas fa-grip-lines draghandle"></i>'
-      + `<span><span>${text}</span></span><i class="far fa-trash-alt btn-list-delete"></i></li>`;
+      + `<span><span>${text}</span></span>${applyIcon}<i class="far fa-trash-alt btn-list-delete"></i></li>`;
 }
 
 //
@@ -59,12 +66,20 @@ function handleAddButtonOnSimpleList() {
   listGroup.find('.active').removeClass('active');
   listGroup.find('.list-empty-info').hide();
 
-  addItemToList(listGroup, activeItem)
+  addItemToList(listGroup, activeItem, true)
   $.each(listGroup.find('.list-group-item > span'), function () {
     $(this).addClickNKeyCallbacks2ListItem(true);
   });
   // start editing
-  listGroup.find('.active > span').click();
+  const activeSpan = listGroup.find('.active > span')
+  activeSpan.click();
+  const sel = window.getSelection();
+  window.setTimeout(function () {
+    const range = document.createRange(); //range object
+    range.selectNodeContents(activeSpan[0]); //sets Range
+    sel.removeAllRanges(); //remove all ranges from selection
+    sel.addRange(range);//add Range to a Selection.
+  }, 1);
 }
 
 function setDefaultValuesInFieldset(editFieldSet) {
@@ -83,6 +98,7 @@ function setDefaultValuesInFieldset(editFieldSet) {
 function handleAddButtonOnComplexList() {
   const fieldSet = $(this).parents('fieldset');
   fieldSet.enableSubSetFields(true);
+  fieldSet.find('fieldset.subset').show();
   const listGroup = $(this).parents("fieldset").find(".list-group");
   listGroup.find('.list-empty-info').hide();
 
@@ -93,7 +109,7 @@ function handleAddButtonOnComplexList() {
     activeItem.removeClass('active');
   }
 
-  addItemToList(listGroup, activeItem);
+  addItemToList(listGroup, activeItem, false);
 
   const editFieldSet = fieldSet.find('fieldset');
   // respect default value of fields
@@ -104,8 +120,8 @@ function handleAddButtonOnComplexList() {
   fieldSet.find(".btn-list-apply").show();
 }
 
-function addItemToList(listGroup, activeItem) {
-  const newItem = $(getListItem("", true));
+function addItemToList(listGroup, activeItem, addEnterToApplyInfo) {
+  const newItem = $(getListItem('', true, addEnterToApplyInfo));
   if (activeItem.length === 0) {
     listGroup.prepend(newItem);
   } else {
@@ -130,11 +146,14 @@ function handleDeleteButtonOnList() {
       fieldSet.setObjectFieldInForm(data, field, section);
     }
   } else {
-    setDefaultValuesInFieldset(fieldSet.find('fieldset'));
-    fieldSet.enableSubSetFields(false);
-    const listGroup = fieldSet.find(".list-group");
+    const listGroup = $(this).parents('.list-group');
     listGroup.find('.list-empty-info').show();
-    fieldSet.find('.btn-list-apply').hide();
+    if (fieldSet.hasClass('complex-list')) {
+      fieldSet.find('fieldset.subset').hide();
+      setDefaultValuesInFieldset(fieldSet.find('fieldset'));
+      fieldSet.enableSubSetFields(false);
+      fieldSet.find('.btn-list-apply').hide();
+    }
   }
   activeItem.remove();
 }
@@ -142,6 +161,7 @@ function handleDeleteButtonOnList() {
 function handleApplyButtonOnList() {
   const fieldSet = $(this).parents('fieldset.complex-list');
   fieldSet.updateDataAndLabelForActiveItem(false);
+  fieldSet.find('fieldset.subset').hide();
 }
 
 // for single .list-group
@@ -205,10 +225,13 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
     }
 
     $(this).parent().click(function () {
+      const fieldSet = $(this).parents('fieldset');
       if ($(this).hasClass('active')) {
+        if (!editable) {
+          fieldSet.find('fieldset.subset').show();
+        }
         return true;
       }
-      const fieldSet = $(this).parents('fieldset');
       let curActive = $(this).parents('.list-group').find('.active');
 
       fieldSet.enableSubSetFields(true);
@@ -231,6 +254,7 @@ $.fn.addClickNKeyCallbacks2ListItem = function (editable) {
         for (const field in data) {
           fieldSet.setObjectFieldInForm(data, field, section);
         }
+        fieldSet.find('fieldset.subset').show();
         $(this).parents('fieldset').find('.btn-list-apply').show();
         fieldSet.find('fieldset').find("*[name]:first").focus();
       } else {
@@ -276,6 +300,7 @@ $.fn.updateDataAndLabelForActiveItem = function (emptyValues) {
     const listGroup = $(this).find('.list-group');
     let elem = listGroup.find(".list-group-item.active");
     const fieldSet = $(this).find('fieldset.subset');
+    const editable = fieldSet.hasClass('editableList');
     const data = $(this).getNewDataFromSubsetFieldset(emptyValues)
     if (emptyValues) {
       let notEmpty = fieldSet.find("*[name]").find(field => fieldSet.getValueOfInput($(field).attr('name')))
@@ -283,7 +308,7 @@ $.fn.updateDataAndLabelForActiveItem = function (emptyValues) {
         warn('Aborting other editing1');
       }
     }
-    elem.replaceWith(getListItem($('<div/>').text(listGroup.generateListItemLabel(data)).html(), true));
+    elem.replaceWith(getListItem($('<div/>').text(listGroup.generateListItemLabel(data)).html(), true, editable));
     elem = listGroup.find(".list-group-item.active");
     elem.find('.btn-list-delete').click(handleDeleteButtonOnList);
     elem.data("listdata", data);

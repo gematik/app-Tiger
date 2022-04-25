@@ -17,7 +17,7 @@
 "use strict"
 
 function initiateEditingServerKeyField(ev) {
-  if ($(this).text() === 'local_proxy') {
+  if ($(this).text() === 'local_tiger_proxy') {
     ev.preventDefault();
     return false;
   }
@@ -54,9 +54,9 @@ function handleKeysForServerKeyEditing(ev) {
           'Only ASCII characters, digits and underscore allowed in server key! Please choose a valid name!',
           'warning');
       return false;
-    } else if (text === 'local_proxy') {
+    } else if (text === 'local_tiger_proxy') {
       snack(
-          '<p>Sorry \'local_proxy\' is reserved for the test suite\'s local tiger proxy!</p>'
+          '<p>Sorry \'local_tiger_proxy\' is reserved for the test suite\'s local tiger proxy!</p>'
           +
           '<p>Please choose another name!</p>',
           'warning');

@@ -18,13 +18,18 @@ package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
+import org.mockserver.model.SocketAddress;
 
 @Slf4j
 public class ForwardProxyCallback extends AbstractTigerRouteCallback {
@@ -64,20 +69,7 @@ public class ForwardProxyCallback extends AbstractTigerRouteCallback {
     }
 
     @Override
-    public HttpResponse handleResponse(HttpRequest req, HttpResponse resp) {
-        applyModifications(resp);
-        if (!getTigerRoute().isDisableRbelLogging()) {
-            try {
-                getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
-                    .convertRequest(req, getTigerRoute().getFrom()));
-                getTigerProxy().triggerListener(getTigerProxy().getMockServerToRbelConverter()
-                    .convertResponse(resp, getTigerRoute().getFrom(), req.getClientAddress()));
-            } catch (RuntimeException e) {
-                propagateExceptionMessageSafe(e);
-                log.error("RBel FAILED!", e);
-            }
-        }
-        getTigerProxy().manageRbelBufferSize();
-        return resp;
+    protected String extractProtocolAndHostForRequest(HttpRequest request) {
+        return getTigerRoute().getFrom();
     }
 }

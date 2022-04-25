@@ -36,7 +36,7 @@ const serverIcons = {
   docker: "fab fa-docker",
   compose: "fas fa-cubes",
   tigerProxy: "fas fa-project-diagram",
-  localProxy: "fas fa-project-diagram",
+  local_tiger_proxy: "fas fa-project-diagram",
   externalJar: "fas fa-rocket",
   externalUrl: "fas fa-external-link-alt"
 }
@@ -66,9 +66,9 @@ function openYamlFile(path, separator, cfgfile) {
     success: function (res) {
       /** @namespace res.servers */
       currEnvironment = {};
-      currEnvironment['local_proxy'] = {
+      currEnvironment['local_tiger_proxy'] = {
         localProxyActive: res.localProxyActive,
-        type: 'localProxy',
+        type: 'local_tiger_proxy',
         tigerProxyCfg: {proxyCfg: res.tigerProxy}
       };
       for (const key in res.servers) {
@@ -110,54 +110,61 @@ function setYamlFileName(cfgfile, path) {
   }
 }
 
+function saveInputFieldsToDataStructure(serverData, serverKey, nodeUiRank) {
+  const node = $("#content_server_" + serverKey);
+  $(node).find("*[name]").each(function (idx, field) {
+    const $field = $(field);
+    if (!$field.hasClass("hidden") && !$field.hasClass("disabled")) {
+      $field.saveInputValueInData(null,serverData, false,
+          true);
+    }
+  });
+  if (serverKey !== 'local_tiger_proxy') {
+    serverData.uiRank = nodeUiRank;
+  }
+
+  // remove null properties and properties only containing [] or {}
+  removeNullPropertiesAndEmptyArraysOrObjects(serverData);
+
+  // special handling of some fields
+  if (serverData.dependsUpon) {
+    if (serverData.dependsUpon.length) {
+      serverData.dependsUpon = serverData.dependsUpon.toString();
+    } else {
+      delete serverData.dependsUpon;
+    }
+  }
+  if (serverData.source && !Array.isArray(
+      serverData.source)) {
+    serverData.source = [serverData.source];
+  }
+
+  delete serverData.enableForwardProxy;
+}
+
 function saveYamlFile() {
   const data = {servers: {}};
   let uiRank = 1;
 
   $(".server-content.server-container .server-formular").each(
       function (idx, node) {
-        const serverKey = $(node).attr("id").substring(
-            "content_server_".length);
+        const serverKey = $(node).attr("id").substring("content_server_".length);
         data.servers[serverKey] = {};
-        $(node).find("*[name]").each(function (idx, field) {
-          const $field = $(field);
-          if (!$field.hasClass("hidden") && !$field.hasClass("disabled")) {
-            $field.saveInputValueInData(null, data.servers[serverKey], false,
-                true);
-          }
-        });
-        if (serverKey !== 'local_proxy') {
-          data.servers[serverKey].uiRank = uiRank++;
+        saveInputFieldsToDataStructure(data.servers[serverKey], serverKey, uiRank);
+        if (serverKey !== 'local_tiger_proxy') {
+          uiRank++;
         }
-
-        // remove null properties and properties only containing [] or {}
-        removeNullPropertiesAndEmptyArraysOrObjects(data);
-
-        // special handling of some fields
-        if (data.servers[serverKey].dependsUpon) {
-          if (data.servers[serverKey].dependsUpon.length) {
-            data.servers[serverKey].dependsUpon = data.servers[serverKey].dependsUpon.toString();
-          } else {
-            delete data.servers[serverKey].dependsUpon;
-          }
-        }
-        if (data.servers[serverKey].source && !Array.isArray(
-            data.servers[serverKey].source)) {
-          data.servers[serverKey].source = [data.servers[serverKey].source];
-        }
-
-        delete data.servers[serverKey].enableForwardProxy;
       });
 
   // special handling for local proxy
-  if (data.servers["local_proxy"]
-      && data.servers["local_proxy"].tigerProxyCfg) {
-    data.tigerProxy = data.servers["local_proxy"].tigerProxyCfg.proxyCfg;
+  if (data.servers['local_tiger_proxy']
+      && data.servers["local_tiger_proxy"].tigerProxyCfg) {
+    data.tigerProxy = data.servers["local_tiger_proxy"].tigerProxyCfg.proxyCfg;
   }
-  if (data.servers["local_proxy"]) {
-    data.localProxyActive = data.servers["local_proxy"].localProxyActive;
+  if (data.servers["local_tiger_proxy"]) {
+    data.localProxyActive = data.servers["local_tiger_proxy"].localProxyActive;
   }
-  delete data.servers["local_proxy"];
+  delete data.servers["local_tiger_proxy"];
   if (data.tigerProxy) {
     delete data.tigerProxy.localProxyActive;
   }
@@ -279,7 +286,7 @@ function addServer(serverKey, serverData) {
 
 
     // create sidebar entry
-  if (serverKey !== 'local_proxy') {
+  if (serverKey !== 'local_tiger_proxy') {
     $('.container.sidebar.server-container').append(
         `<div id="sidebar_server_${serverKey}" class="box sidebar-item row">`
         + '<div class="col-1">'
@@ -302,7 +309,7 @@ function addServer(serverKey, serverData) {
           }
         });
   } else {
-    $('#sidebar_server_local_proxy .server-label').parent().click(function () {
+    $('#sidebar_server_local_tiger_proxy .server-label').parent().click(function () {
       window.scrollTo(0, 0);
     });
 
@@ -330,10 +337,10 @@ function addSelectedServer() {
       'data-value');
   // hide welcome card
   if (!Object.keys(currEnvironment).length) {
-    currEnvironment['local_proxy'] = {
-      type: 'localProxy'
+    currEnvironment['local_tiger_proxy'] = {
+      type: 'local_tiger_proxy'
     };
-    addServer('local_proxy', currEnvironment.local_proxy);
+    addServer('local_tiger_proxy', currEnvironment.local_tiger_proxy);
   }
 
   let index = 1;
@@ -645,7 +652,7 @@ function loadMetaDataFromServer() {
       dropdown.children().remove();
       let html = '<li class="p-2 text-center text-success">Server types</li>'
       for (let icon in serverIcons) {
-        if (icon !== 'localProxy') {
+        if (icon !== 'local_tiger_proxy') {
           html += '<li class="dropdown-item p-2 text-success" data-value="'
               + icon + '">'
               + '<i class="server-icon ' + serverIcons[icon] + '"></i>'

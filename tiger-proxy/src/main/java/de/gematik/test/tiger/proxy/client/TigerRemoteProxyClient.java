@@ -16,21 +16,26 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
 import kong.unirest.Unirest;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -70,8 +75,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
         webSocketClient.stop();
 
+        final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
+        messageConverter.getObjectMapper().registerModule(new JavaTimeModule());;
         tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
-        tigerProxyStompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        tigerProxyStompClient.setMessageConverter(messageConverter);
         tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
         final TigerStompSessionHandler tigerStompSessionHandler = new TigerStompSessionHandler(remoteProxyUrl);
         final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
@@ -184,12 +191,15 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
     }
 
-    private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes) {
+    private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes, Optional<ZonedDateTime> transmissionTime) {
         if (messageBytes != null) {
             log.trace("Received new message...", new String(messageBytes));
 
             final RbelElement rbelMessage = getRbelLogger().getRbelConverter()
                 .parseMessage(messageBytes, sender, receiver);
+            if (transmissionTime.isPresent()) {
+                rbelMessage.addFacet(new RbelMessageTimingFacet(transmissionTime.get()));
+            }
 
             if (messageMatchesFilterCriterion(rbelMessage)) {
                 super.triggerListener(rbelMessage);
@@ -240,10 +250,21 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                         if (frameContent instanceof TigerTracingDto) {
                             final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
                             TracingMessagePair messagePair = new TracingMessagePair();
-                            messagePair.setRequest(new PartialTracingMessage(tigerTracingDto,
-                                tigerTracingDto.getReceiver(), tigerTracingDto.getSender(), messagePair));
-                            messagePair.setResponse(new PartialTracingMessage(tigerTracingDto,
-                                tigerTracingDto.getSender(), tigerTracingDto.getReceiver(), messagePair));
+                            messagePair.setRequest(PartialTracingMessage.builder()
+                                .tracingDto(tigerTracingDto)
+                                .receiver(tigerTracingDto.getSender())
+                                .sender(tigerTracingDto.getReceiver())
+                                .messagePair(messagePair)
+                                .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
+                                .build());
+                            messagePair.setResponse(
+                                PartialTracingMessage.builder()
+                                    .tracingDto(tigerTracingDto)
+                                    .receiver(tigerTracingDto.getReceiver())
+                                    .sender(tigerTracingDto.getSender())
+                                    .messagePair(messagePair)
+                                    .transmissionTime(tigerTracingDto.getResponseTransmissionTime())
+                                    .build());
                             partiallyReceivedMessageMap.put(tigerTracingDto.getRequestUuid(),
                                 messagePair.getRequest());
                             partiallyReceivedMessageMap.put(tigerTracingDto.getResponseUuid(),
@@ -319,12 +340,14 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     @Data
-    private class PartialTracingMessage {
+    @Builder
+    private static class PartialTracingMessage {
 
         private final TigerTracingDto tracingDto;
         private final RbelHostname sender;
         private final RbelHostname receiver;
         private final TracingMessagePair messagePair;
+        private final ZonedDateTime transmissionTime;
         private final List<TracingMessagePart> messageParts = new ArrayList<>();
 
         public boolean isComplete() {
@@ -357,9 +380,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             if (request != null && response != null
                 && request.isComplete() && response.isComplete()) {
                 propagateNewRbelMessage(request.getSender(), request.getReceiver(),
-                    request.buildCompleteContent());
+                    request.buildCompleteContent(), Optional.ofNullable(request.getTransmissionTime()));
                 propagateNewRbelMessage(response.getSender(), response.getReceiver(),
-                    response.buildCompleteContent());
+                    response.buildCompleteContent(), Optional.ofNullable(response.getTransmissionTime()));
             }
         }
     }

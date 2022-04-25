@@ -9,7 +9,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.20.0</version>
+        <version>0.20.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -97,6 +97,10 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>

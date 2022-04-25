@@ -90,7 +90,7 @@
             </button>
           </div>
         </div>
-        <div class="box sidebar-local-proxy row mt-3" id="sidebar_server_local_proxy">
+        <div class="box sidebar-local-proxy row mt-3" id="sidebar_server_local_tiger_proxy">
           <div class="col-11 offset-1">
             <i class="server-icon fas fa-project-diagram" title="local tiger proxy">
             </i>
@@ -201,7 +201,7 @@
               Node settings
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
               <span class="fieldset-summary fs-6"></span>
-              <i class="fas fa-toolbox btn-advanced"></i>
+              <!--<i class="fas fa-toolbox btn-advanced"></i>-->
             </legend>
             <!-- not shown as both values are dealt with in the heading -->
             <span class="hidden">
@@ -251,6 +251,11 @@
               <span class="fieldset-summary fs-6"></span>
             </legend>
             <div class="row">
+              <div class="col form-text">
+                Specify one or more local docker compose files to be started for this node.
+              </div>
+            </div>
+            <div class="row">
               <div class="col align-items-stretch">
                 <ul class="list-group" name="source"></ul>
               </div>
@@ -262,7 +267,7 @@
                      type="text">
             </div>
           </fieldset>
-          <div class="local_proxy_info hidden">
+          <div class="local_tiger_proxy_info hidden">
             <p>
               The local tiger proxy is instantiated automatically on startup of your test suite given you have included the
               Tiger BDD hooks.
@@ -272,17 +277,15 @@
               <inlinepre>http(s).proxyPort</inlinepre>
               are adjusted
               and Restassured and Unirest calls will also be routed via the local proxy.
-            </p>
-            <p>
               If you have those system properties already set, Tiger will not overwrite them!
             </p>
             <p>
-              Please note that all nodes will be available to your test suite via their configured hostname.
-              You don't need to configure them here.
+              Please note that all nodes will be available to your test suite via their configured hostname automatically.
+              You don't need to configure them as routes on the local Tiger Proxy manually.
             </p>
-            <p>Advanced settings are hidden per default and can be revealed by clicking on the toolbox icon
+            <!--<p>Advanced settings are hidden per default and can be revealed by clicking on the toolbox icon
               <i class="fas fa-toolbox btn-advanced" style="font-size:100%;float:none;" title="Show advanced settings"></i>
-            </p>
+            </p>-->
             <div class="form-check form-switch">
               <input checked class="form-check-input hidden" name="localProxyActive" type="checkbox">
               <label class="form-check-label">Activate local Tiger proxy on startup</label>
@@ -295,7 +298,7 @@
         <fieldset section=".dockerOptions.dockerSettings">
           <legend>
             Docker settings<i class="collapse-icon fas fa-angle-down"></i>&nbsp;
-            <span class="fieldset-summary fs-6"></span><i class="fas fa-toolbox btn-advanced"></i>
+            <span class="fieldset-summary fs-6"></span><!--<i class="fas fa-toolbox btn-advanced"></i>-->
           </legend>
           <div class="input-group advanced">
             <span class="input-group-text">Entry Point cmd</span>
@@ -387,7 +390,7 @@
         <div class="proxyCfg">
           <fieldset class="labels-col-4" section=".tigerProxyCfg">
             <legend>Tiger Proxy settings&nbsp;<i class="collapse-icon fas fa-angle-down"></i>&nbsp;<span
-                class="fieldset-summary fs-6"></span><i class="fas fa-toolbox btn-advanced"></i></legend>
+                class="fieldset-summary fs-6"></span><!--<i class="fas fa-toolbox btn-advanced"></i>--></legend>
             <div class="row">
               <div class="col-6">
                 <div class="input-group">
@@ -457,7 +460,7 @@
               Routes
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
               <span class="fieldset-summary fs-6"></span>
-              <i class="fas fa-toolbox btn-advanced"></i>
+              <!--<i class="fas fa-toolbox btn-advanced"></i>-->
             </legend>
             <div class="row">
               <div class="col form-text">
@@ -681,7 +684,7 @@
             </legend>
             <div class="row">
               <div class="col form-text">
-                Configure TLS related settings like certificates to be used for TLS connections.
+                Configure TLS related settings like certificates to be used for TLS connections. The entries format is explained in <a href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_configuring_pki_identities_in_tiger_proxys_tls_section" target="user_manual">this user manual section</a>.
               </div>
             </div>
             <div class="row">
@@ -733,6 +736,8 @@
           <div class="row">
             <div class="col form-text">
               Here you can specify keys and certificates that should be provided to the local tiger proxy.
+              To configure certificates and TLS for the Tiger Proxy node switch to the TigerProxy tab (to the left)
+              and activate the advanced settings.
             </div>
           </div>
           <div class="row">
@@ -838,8 +843,8 @@
   </div>
 
   <div id="template-list-apply-button">
-    <button class="btn btn-secondary btn-list-apply m-3" title="Anwenden" type="button">
-      Anwenden
+    <button class="btn btn-secondary btn-list-apply m-3" title="Apply list entry" type="button">
+      Apply list entry
     </button>
   </div>
 
@@ -851,64 +856,32 @@
     </p>
   </div>
 
-  <!-- TODO summary regex deluxe -->
-  <fieldset class="editableList" id="template-source-list" section="source-settings">
-    <legend>
-      Source
-      <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
-      <span class="fieldset-summary fs-6"></span>
-    </legend>
-    <div class="row">
-      <div class="col align-items-stretch">
-        <ul class="list-group" name="source"></ul>
-      </div>
-    </div>
-    <div class="input-group" style="margin-top: 1rem;">
-      <span class="input-group-text">Version</span>
-      <input class="form-control" name="version" title="Version of the docker image or tiger proxy to be downloaded and instantiated"
-             type="text">
-    </div>
-  </fieldset>
-
   <fieldset id="template-source-single" section="source-settings">
     <legend>
       Source
       <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
       <span class="fieldset-summary fs-6"></span>
     </legend>
+    <div class="row">
+      <div class="col form-text">
+        Docker image specifier of the docker image to be downloaded and instantiated,<br/>
+        For externalURL the target URL for the route created at the local Tiger Proxy.<br/>
+        For externalJar the URL to download the jar archive from.<br/>
+        You may use local:..... and relative path for a local jar file.
+      </div>
+    </div>
     <div class="input-group">
-      <textarea class="form-control" name="source" required rows="3" title="Source for this node">
-      </textarea>
+      <input class="form-control" name="source" required rows="3"
+             title="Docker image specifier of the docker image to be downloaded and instantiated, for externalURL the target URL for the route created at the local Tiger Proxy">
+      </input>
       <div class="invalid-feedback">Source must not be empty.</div>
     </div>
     <div class="row input-group mt-2">
       <span class="input-group-text">Version</span>
-      <input class="form-control" name="version" required title="Version of the docker image to be downloaded and instantiated"
+      <input class="form-control" name="version" required title="Optional version of the docker image to be downloaded and instantiated"
              type="text"
              validation="value.length">
       <div class="invalid-feedback">Version must not be empty.</div>
-    </div>
-  </fieldset>
-
-  <fieldset id="template-source-select" section="source-settings">
-    <legend>
-      Source
-      <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
-      <span class="fieldset-summary fs-6"></span>
-    </legend>
-    <div class="input-group">
-      <span class="input-group-text">Source</span>
-      <select class="form-select" name="source"
-              title="Select the source from where to download the tiger proxy">
-        <option selected value="nexus">nexus</option>
-        <option value="maven">maven</option>
-      </select></div>
-    <div class="input-group" style="margin-top: 1rem;">
-      <span class="input-group-text">Version</span>
-      <input class="form-control" name="version" title="Version of the tiger proxy to be downloaded and instantiated"
-             type="text"
-             validation="value.match(/\d*\.\d*\.\d*(|-.*)/g)">
-      <div class="invalid-feedback">Version must match maven format xxx.yyy.zzz[-SNAPSHOT].</div>
     </div>
   </fieldset>
 </section>
@@ -1133,7 +1106,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-add-server-cancel" title="Cancel and close dialog" type="button">Abbrechen</button>
+          <button class="btn btn-secondary btn-add-server-cancel" title="Cancel and close dialog" type="button">Cancel</button>
           <button class="btn btn-primary btn-add-server-ok" title="Add selected server type / template" type="button">Add</button>
         </div>
       </div>

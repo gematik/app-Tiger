@@ -28,6 +28,7 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.ScenarioOutline;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
+import de.gematik.test.tiger.testenvmgr.env.*;
 import io.cucumber.java.*;
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -43,43 +45,41 @@ import net.serenitybdd.core.Serenity;
 import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class integrates SerenityBDD and the Tiger test framework.
  * <p>
- * Initializes Tiger (reading tiger.yaml, starting Tiger test environment manager, local proxy and optionally monitoring UI)
+ * Initializes Tiger (reading tiger.yaml, starting Tiger test environment manager, local proxy and optionally monitoring
+ * UI)
  * <p>
- * Provides and Manages a NON thread safe RbelMessageProvider with two lists. One for reuse by Tiger validation steps and one internal for
- * later usage.
+ * Provides and Manages a NON thread safe RbelMessageProvider with two lists. One for reuse by Tiger validation steps
+ * and one internal for later usage.
  * <p>
  * Forwards all steps to Monitoring UI, applying data variant substitution
  * <p>
- * At the end of each scenario dumps all rbel messages to the file system and attaches it to the SerenityBDD report as test evidence.
+ * At the end of each scenario dumps all rbel messages to the file system and attaches it to the SerenityBDD report as
+ * test evidence.
  * <p>
  * <b>ATTENTION!</b> As of now Tiger does not support collecting Rbel messages in a "thread safe" way,
- * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test execution, you must deal
- * with concurrency of RBel messages yourself.
+ * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test
+ * execution, you must deal with concurrency of RBel messages yourself.
  */
 @SuppressWarnings("unused")
 @Slf4j
 public class TigerTestHooks {
 
     /**
-     * internal flag whether Tiger has been initialized already.
-     */
-    private static boolean tigerInitialized = false;
-
-    /**
-     * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know what you do. It is used by the TGR
-     * validation steps. The list is not cleared at the end of / start of new scenarios!
+     * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know what you do. It
+     * is used by the TGR validation steps. The list is not cleared at the end of / start of new scenarios!
      * TODO add test to ensure this statement
      */
     @Getter
     private static final List<RbelElement> validatableRbelMessages = new ArrayList<>();
 
     /**
-     * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and SerenityBDD test report evidence. This
-     * list is internal and not accessible to validation steps or Tiger users
+     * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and SerenityBDD test
+     * report evidence. This list is internal and not accessible to validation steps or Tiger users
      */
     private static final List<RbelElement> rbelMessages = new ArrayList<>();
 
@@ -94,12 +94,6 @@ public class TigerTestHooks {
         }
     };
     /**
-     * internal flag to ensure the Rbel message listener is added only once to the local Tiger Proxy.
-     */
-    private static boolean rbelListenerAdded = false;
-
-
-    /**
      * map of features parsed, identified by their URI.
      */
     private static final Map<URI, Feature> uriFeatureMap = new HashMap<>();
@@ -107,6 +101,14 @@ public class TigerTestHooks {
      * map of steps for each scenario, identified by the scenario id.
      */
     private static final Map<String, List<Step>> scenarioStepsMap = new HashMap<>();
+    /**
+     * internal flag whether Tiger has been initialized already.
+     */
+    private static boolean tigerInitialized = false;
+    /**
+     * internal flag to ensure the Rbel message listener is added only once to the local Tiger Proxy.
+     */
+    private static boolean rbelListenerAdded = false;
     /**
      * index of currently executed step.
      */
@@ -130,14 +132,28 @@ public class TigerTestHooks {
      */
     private static List<String> currentDataVariantKeys = null;
     /**
-     * For scenario outlines, this list is the list of data variant maps. The map contains the value for the specific variant identified by
-     * its key.
+     * For scenario outlines, this list is the list of data variant maps. The map contains the value for the specific
+     * variant identified by its key.
      */
     private static List<Map<String, String>> currentDataVariant = null;
 
     private static String bulmaModalJSScript = null;
 
     private static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
+
+    public static synchronized void registerRestAssuredFilter() {
+        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport() && curlLoggingFilter == null) {
+            curlLoggingFilter = new TigerRestAssuredCurlLoggingFilter();
+            SerenityRest.filters(curlLoggingFilter);
+        }
+    }
+
+    public static synchronized void unregisterRestAssuredFilter() {
+        if (curlLoggingFilter != null) {
+            SerenityRest.replaceFiltersWith(new ArrayList<>());
+        }
+        curlLoggingFilter = null;
+    }
 
     /**
      * Initializes Tiger and rbel message listener and parses feature file and scenario steps.
@@ -174,10 +190,13 @@ public class TigerTestHooks {
                         scenario.getName(), scenario.getUri()))));
 
             if (feature.getBackground() != null) {
-                scenarioStepsMap.get(scenario.getId()).addAll(0, feature.getBackground().getSteps());
+                if (!(scenarioStepsMap.get(scenario.getId()).containsAll(feature.getBackground().getSteps()))) {
+                    scenarioStepsMap.get(scenario.getId()).addAll(0, feature.getBackground().getSteps());
+                }
             }
 
             processDataVariantsForScenarioOutlines(feature.getScenario(scenario.getName()));
+            informWorkflowUiAboutCurrentScenario(feature, scenario.getName());
 
             currentStepIndex = 0;
         } else {
@@ -186,27 +205,71 @@ public class TigerTestHooks {
         }
     }
 
+
+    private void informWorkflowUiAboutCurrentScenario(Feature feature, String scenarioName) {
+        TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
+            .featureMap(
+                Map.of(feature.getName(), FeatureUpdate.builder()
+                    .description(feature.getName())
+                    .scenarios(
+                        Map.of(
+                            mapScenarioToScenarioUpdateMap(feature, scenarioName),
+                            ScenarioUpdate.builder()
+                                .description(scenarioName)
+                                .steps(mapStepsToStepUpdateMap(feature.getScenario(scenarioName).getSteps(),
+                                    line -> {
+                                        if (feature.getScenario(scenarioName) instanceof ScenarioOutline
+                                            && currentDataVariantIndex != -1) {
+                                            return replaceLineWithCurrentDataVariantValues(line);
+                                        } else {
+                                            return line;
+                                        }
+                                    })).build()
+                        )).build()
+                )).build());
+    }
+
+    private String mapScenarioToScenarioUpdateMap(Feature feature, String scenarioName) {
+        if (feature.getScenario(scenarioName) instanceof ScenarioOutline
+            && currentDataVariantIndex != -1) {
+            return (currentDataVariantIndex + "-" + scenarioName);
+        } else {
+            return scenarioName;
+        }
+    }
+
+    private String replaceLineWithCurrentDataVariantValues(String line) {
+        String parsedLine = line;
+        for (String key : currentDataVariantKeys) {
+            parsedLine = parsedLine.replace("<" + key + ">",
+                currentDataVariant.get(currentDataVariantIndex).get(key));
+        }
+        return parsedLine;
+    }
+
+    @NotNull
+    private Map<String, StepUpdate> mapStepsToStepUpdateMap(List<Step> steps, Function<String, String> postProduction) {
+        Map<String, StepUpdate> map = new HashMap<>();
+        for (int i = 0; i < steps.size(); i++) {
+            Integer stepIndex = Integer.valueOf(i);
+            if (map.put(stepIndex.toString(), StepUpdate.builder()
+                .description(postProduction.apply(String.join("\n", steps.get(stepIndex).getLines())))
+                .status(TestResult.PENDING)
+                .build()) != null) {
+                throw new IllegalStateException("Duplicate key");
+            }
+        }
+        return map;
+    }
+
     private void initializeTiger() {
         TigerGlobalConfiguration.setRequireTigerYaml(true);
         TigerDirector.start();
         registerRestAssuredFilter();
     }
 
-    public static synchronized void registerRestAssuredFilter() {
-        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport() && curlLoggingFilter == null) {
-            curlLoggingFilter = new TigerRestAssuredCurlLoggingFilter();
-            SerenityRest.filters(curlLoggingFilter);
-        }
-    }
-
-    public static synchronized void unregisterRestAssuredFilter() {
-        if (curlLoggingFilter != null) {
-            SerenityRest.replaceFiltersWith(new ArrayList<>());
-        }
-        curlLoggingFilter = null;
-    }
-
-    private void processDataVariantsForScenarioOutlines(de.gematik.test.tiger.lib.parser.model.gherkin.Scenario tigerScenario) {
+    private void processDataVariantsForScenarioOutlines(
+        de.gematik.test.tiger.lib.parser.model.gherkin.Scenario tigerScenario) {
         if (tigerScenario instanceof ScenarioOutline) {
             if (currentDataVariantIndex == -1) {
                 currentDataVariant = ((ScenarioOutline) tigerScenario).getExamplesAsList();
@@ -222,8 +285,8 @@ public class TigerTestHooks {
     }
 
     /**
-     * If monitoring UI is active, each step is forwarded to the monitoring UI. For scenario outlines the step will be first parsed for data
-     * variant tags of pattern &lt;key&gt;, substituting it with the current value.
+     * If monitoring UI is active, each step is forwarded to the monitoring UI. For scenario outlines the step will be
+     * first parsed for data variant tags of pattern &lt;key&gt;, substituting it with the current value.
      * <p>
      * Increases the current step index.
      *
@@ -232,32 +295,56 @@ public class TigerTestHooks {
     @BeforeStep
     public void forwardToUiMonitor(final Scenario scenario) {
         if (scenario != null && TigerDirector.getLibConfig().isActivateMonitorUI()) {
-            Step currentStep = scenarioStepsMap.get(scenario.getId()).get(currentStepIndex);
-            if (currentDataVariantIndex != -1) {
-                List<String> parsedLines = currentStep.getLines().stream().map(
-                    line -> {
-                        String parsedLine = line;
-                        for (String key : currentDataVariantKeys) {
-                            parsedLine = parsedLine.replace("<" + key + ">", currentDataVariant.get(currentDataVariantIndex).get(key));
-                        }
-                        return parsedLine;
-                    }
-                ).collect(Collectors.toList());
-                currentStep = new Step(currentStep.getKeyword(), parsedLines);
-            }
+            Step currentStep = getCurrentStep(scenario, currentStepIndex);
             log.info("CurrentStep: " + String.join("\n", currentStep.getLines()));
             TigerDirector.updateStepInMonitor(currentStep);
         }
         currentStepIndex++;
     }
 
-    @AfterStep
-    public synchronized void addRestAssuredRequestsToReport(final Scenario scenario) {
-        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport() && TigerDirector.isSerenityAvailable()) {
-            if (curlLoggingFilter != null) {
-                curlLoggingFilter.printToReport();
-            }
+    private Step getCurrentStep(Scenario scenario, Integer stepIndex) {
+        Step currentStep = scenarioStepsMap.get(scenario.getId()).get(stepIndex);
+        if (currentDataVariantIndex != -1) {
+            List<String> parsedLines = currentStep.getLines().stream().map(
+                line -> replaceLineWithCurrentDataVariantValues(line)
+            ).collect(Collectors.toList());
+            currentStep = new Step(currentStep.getKeyword(), parsedLines);
         }
+        return currentStep;
+    }
+
+    @AfterStep
+    public synchronized void addRestAssuredRequestsToReportAndInformWorkflowUI(final Scenario scenario) {
+        if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport() && TigerDirector.isSerenityAvailable()
+            && curlLoggingFilter != null) {
+            curlLoggingFilter.printToReport();
+        }
+        informWorkflowUiAboutCurrentStep(scenario);
+    }
+
+    private void informWorkflowUiAboutCurrentStep(Scenario scenario) {
+        if (scenario == null) {
+            return;
+        }
+        final Feature feature = uriFeatureMap.get(scenario.getUri());
+        Step currentStep = getCurrentStep(scenario, currentStepIndex - 1);
+
+        TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
+            .featureMap(
+                Map.of(feature.getName(), FeatureUpdate.builder()
+                    .description(feature.getName())
+                    .scenarios(
+                        Map.of(
+                            mapScenarioToScenarioUpdateMap(feature, scenario.getName()),
+                            ScenarioUpdate.builder()
+                                .description(scenario.getName())
+                                .steps(Map.of(String.valueOf(currentStepIndex - 1), StepUpdate.builder()
+                                    .description(String.join("\n", currentStep.getLines()))
+                                    .status(TestResult.valueOf(scenario.getStatus().toString()))
+                                    .build()
+                                )).build()
+                        )).build()
+                )).build());
     }
 
     @After
@@ -303,12 +390,14 @@ public class TigerTestHooks {
                     + "  <div class=\"modal-content\">\n"
                     + "    <div class=\"box\"><h2>Scenario Data</h2><table class=\"table is-striped is-hoverable is-fullwidth\">\n");
                 for (Entry<String, String> entry : currentDataVariant.get(currentDataVariantIndex).entrySet()) {
-                    modal.append("<tr><th>").append(entry.getKey()).append("</th><td>").append(entry.getValue()).append("</td></tr>");
+                    modal.append("<tr><th>").append(entry.getKey()).append("</th><td>").append(entry.getValue())
+                        .append("</td></tr>");
                 }
                 modal.append("    </table></div>\n</div>\n</div>\n");
 
                 if (bulmaModalJSScript == null) {
-                    bulmaModalJSScript = IOUtils.toString(getClass().getResourceAsStream("/js/bulma-modal.js"), StandardCharsets.UTF_8);
+                    bulmaModalJSScript = IOUtils.toString(getClass().getResourceAsStream("/js/bulma-modal.js"),
+                        StandardCharsets.UTF_8);
                 }
                 html = html.substring(0, html.indexOf("</html>")) +
                     "<script>" + bulmaModalJSScript + "</script>" + modal + "</html>";
@@ -327,7 +416,8 @@ public class TigerTestHooks {
             final File logFile = Paths.get("target", "rbellogs", name + ".html").toFile();
             FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
             if (TigerDirector.isSerenityAvailable()) {
-                (Serenity.recordReportData().asEvidence().withTitle("RBellog " + (currentDataVariantIndex + 1))).downloadable()
+                (Serenity.recordReportData().asEvidence()
+                    .withTitle("RBellog " + (currentDataVariantIndex + 1))).downloadable()
                     .fromFile(logFile.toPath());
             }
             log.info("Saved HTML report to " + logFile.getAbsolutePath());

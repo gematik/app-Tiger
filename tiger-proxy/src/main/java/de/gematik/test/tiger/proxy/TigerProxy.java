@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
@@ -135,26 +134,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         if (configuration.isActivateForwardAllLogging()) {
             mockServerClient.when(request()
                     .withPath(".*"), Times.unlimited(), TimeToLive.unlimited(), Integer.MIN_VALUE)
-                .forward(req -> forwardOverriddenRequest(
-                        req.withSocketAddress(
-                            req.isSecure(),
-                            req.socketAddressFromHostHeader().getHostName(),
-                            req.socketAddressFromHostHeader().getPort()
-                        )).getHttpRequest(),
-                    (req, resp) -> {
-                        try {
-                            triggerListener(mockServerToRbelConverter.convertRequest(req,
-                                req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":"
-                                    + req.getSocketAddress().getPort()));
-                            triggerListener(mockServerToRbelConverter.convertResponse(resp,
-                                req.getSocketAddress().getScheme() + "://" + req.getSocketAddress().getHost() + ":"
-                                    + req.getSocketAddress().getPort(), req.getClientAddress()));
-                            manageRbelBufferSize();
-                        } catch (final Exception e) {
-                            log.error("RBel FAILED!", e);
-                        }
-                        return resp;
-                    });
+                .forward(new ForwardAllCallback(this));
         }
     }
 

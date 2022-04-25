@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.20.0</version>
+        <version>0.20.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -217,6 +217,8 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
+                            <!-- https://github.com/eirslett/frontend-maven-plugin#proxy-settings -->
+                            <npmInheritsProxyConfigFromMaven>false</npmInheritsProxyConfigFromMaven>
                             <nodeVersion>${node.version}</nodeVersion>
                             <npmVersion>${npm.version}</npmVersion>
                         </configuration>

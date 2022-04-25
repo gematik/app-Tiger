@@ -64,6 +64,8 @@ $(document).ready(function () {
           while (serverList.includes(namePrefix + String(ctr).padStart(3, '0'))) {
             ctr++;
           }
+          // first save node's inoput field to data
+          saveInputFieldsToDataStructure(currEnvironment[serverIndex], serverIndex, 0);
           // deep copy node
           // check how to best do deep copy, maybe JSON.stringify? or lodash?
           let newNode = JSON.parse(JSON.stringify(currEnvironment[serverIndex]));

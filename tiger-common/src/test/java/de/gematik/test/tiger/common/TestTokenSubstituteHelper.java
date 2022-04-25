@@ -34,15 +34,27 @@ public class TestTokenSubstituteHelper {
         TigerGlobalConfiguration.putValue("key1", "value1");
         TigerGlobalConfiguration.putValue("key2", "KEY2VALUE");
         TigerGlobalConfiguration.putValue("foo.bar", "FOOBARVALUE");
+        TigerGlobalConfiguration.putValue("give.me.a.foo", "foo");
     }
 
     @ParameterizedTest
     @CsvSource(value = {
+        // standard substitutions
         "value1${key2}textblabla , value1KEY2VALUEtextblabla",
         "value1${key2}text${key1}blabla, value1KEY2VALUEtextvalue1blabla",
         "value1${key2}text${key3}blabla, value1KEY2VALUEtext${key3}blabla",
         "value1${FOO_BAR}textblabla , value1FOOBARVALUEtextblabla",
-        "value1${foo.bar}textblabla , value1FOOBARVALUEtextblabla"
+        "value1${foo.bar}textblabla , value1FOOBARVALUEtextblabla",
+        // nested values
+        "${${give.me.a.foo}.bar} , FOOBARVALUE",
+        "${${give.me.a.${give.me.a.${give.me.a.foo}}}.bar} , FOOBARVALUE",
+        "hallo${${give.me.a.foo}.bar} , halloFOOBARVALUE",
+        "hallo${${give.me.a.foo}.bar}blub${key1} , halloFOOBARVALUEblubvalue1",
+        // test for partial value-markers: they should not interfere with the substitution
+        "${foo.bar}} , FOOBARVALUE}",
+        "${${foo.bar} , ${FOOBARVALUE",
+        "${foo.bar}}fds , FOOBARVALUE}fds",
+        "fdsafdas${${foo.bar} , fdsafdas${FOOBARVALUE"
     }
     )
     public void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {

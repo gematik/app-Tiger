@@ -19,9 +19,9 @@ package de.gematik.test.tiger.proxy.tracing;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerExceptionDto;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
@@ -46,8 +46,8 @@ public class TracingPushController {
 
     @PostConstruct
     public void addWebSocketListener() {
-        tigerProxy.addRbelMessageListener(msg -> propagateRbelMessageSafe(msg));
-        tigerProxy.addNewExceptionConsumer(exc -> propagateExceptionSafe(exc));
+        tigerProxy.addRbelMessageListener(this::propagateRbelMessageSafe);
+        tigerProxy.addNewExceptionConsumer(this::propagateExceptionSafe);
     }
 
     private void propagateExceptionSafe(Throwable exc) {
@@ -91,6 +91,12 @@ public class TracingPushController {
                 .sender(sender)
                 .responseUuid(msg.getUuid())
                 .requestUuid(rbelHttpResponse.getRequest().getUuid())
+                .responseTransmissionTime(msg.getFacet(RbelMessageTimingFacet.class)
+                    .map(RbelMessageTimingFacet::getTransmissionTime)
+                    .orElse(null))
+                .requestTransmissionTime(rbelHttpResponse.getRequest().getFacet(RbelMessageTimingFacet.class)
+                    .map(RbelMessageTimingFacet::getTransmissionTime)
+                    .orElse(null))
                 .build());
 
         mapRbelMessageAndSent(msg);

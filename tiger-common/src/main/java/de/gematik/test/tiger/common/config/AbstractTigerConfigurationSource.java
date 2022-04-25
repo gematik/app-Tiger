@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 
+/**
+ * Base class that stores key/value-pairs from a source.
+ */
 @Getter
 public abstract class AbstractTigerConfigurationSource {
 

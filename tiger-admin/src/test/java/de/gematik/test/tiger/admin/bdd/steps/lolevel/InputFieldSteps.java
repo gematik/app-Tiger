@@ -85,10 +85,17 @@ public class InputFieldSteps {
     }
 
     @And("she/he enters {string} into field {string}")
-    public void doesntSeeField(String value, String name) {
+    public void entersValueIntoField(String value, String name) {
         Target fieldTarget = ServerFormular.getInputField(theActorInTheSpotlight(), name);
         theActorInTheSpotlight().attemptsTo(
             Enter.theValue(value).into(fieldTarget)
+        );
+    }
+    @And("she/he checks field {string} contains {string}")
+    public void checksFieldContainsValue(String name, String value) {
+        Target fieldTarget = ServerFormular.getInputField(theActorInTheSpotlight(), name);
+        theActorInTheSpotlight().attemptsTo(
+            Ensure.that(fieldTarget).hasValue(value)
         );
     }
 }

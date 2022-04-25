@@ -46,30 +46,26 @@ $.fn.initFormular = function (serverKey, serverData) {
   $(btnsHtml).insertBefore($(this).find('fieldset.editableList .list-group'));
   $(btnsHtml).insertBefore($(this).find('fieldset.complex-list fieldset.subset'));
   $(this).find('fieldset.complex-list fieldset.subset .col:last-child').append($('#template-list-apply-button').html());
+  $(this).find('fieldset.complex-list fieldset.subset').hide();
   // add titles to some elements
   this.find(".server-formular-collapse-icon").attr('title', 'Fold/Unfold');
   this.find(".collapse-icon").attr('title', 'Fold/Unfold');
-  this.find(".btn-advanced").attr('title', 'Show advanced settings');
+  this.find(".btn-advanced.global").attr('title', 'Show advanced settings for all sections of this node');
 
   // deal with source input field special treatment
-  // adapt source field according to type (single line for docker, tigerproxy,
-  // externalJar, externalUrl, only for docker compose its a list)
-  const sourceFieldType = {
-    docker: '#template-source-single',
-    externalUrl: '#template-source-single',
-    externalJar: '#template-source-single'
-  }
+  // adapt source field according to type (single line for docker,
+  // externalJar, externalUrl), tiger proxies have no source field, only for docker compose its a list)
   switch (serverData.type) {
     case 'compose':
       // empty on purpose as for compose we use the editable list already present
       break;
-    case 'localProxy':
+    case 'local_tiger_proxy':
     case 'tigerProxy':
       this.showFieldset('source-settings', false);
       break;
     default:
       this.find('fieldset[section="source-settings"]').replaceWith(
-          $(sourceFieldType[serverData.type]).prop('outerHTML'));
+          $('#template-source-single').prop('outerHTML'));
       this.find('fieldset[section="source-settings"]')[0].removeAttribute('id');
   }
 
@@ -86,7 +82,8 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.find('.server-formular-collapse-icon').click(handleNodeCollapse);
   // advanced fields and fieldsets
   this.find('.btn-advanced.global').click(handleGlobalAdvancedButtonClick);
-  this.find('.btn-advanced:not(.global)').click(handleSectionAdvancedButtonClick);
+  // DEACTIVATED block advanced settigns button
+  // this.find('.btn-advanced:not(.global)').click(handleSectionAdvancedButtonClick);
   // draggable list items
   this.find('fieldset .list-group').sortable({handle: 'i.draghandle'});
   // list group items of editable lists editable on single click
@@ -187,17 +184,17 @@ $.fn.initFormular = function (serverKey, serverData) {
   this.showTabLink('general', true);
   this.showTabLink('dockerOptions', serverData.type === 'docker' || serverData.type === 'compose');
   this.showTabLink('externalJarOptions', serverData.type === 'externalJar' || serverData.type === 'externalUrl');
-  this.showTabLink('tigerProxy', serverData.type === 'localProxy' || serverData.type === 'tigerProxy');
-  this.showTabLink('pkiKeys', serverData.type !== 'localProxy');
-  this.showTabLink('environment', serverData.type !== 'localProxy');
-  this.showTabLink('urlMappings', serverData.type !== 'localProxy');
+  this.showTabLink('tigerProxy', serverData.type === 'local_tiger_proxy' || serverData.type === 'tigerProxy');
+  this.showTabLink('pkiKeys', serverData.type !== 'local_tiger_proxy');
+  this.showTabLink('environment', serverData.type !== 'local_tiger_proxy');
+  this.showTabLink('urlMappings', serverData.type !== 'local_tiger_proxy');
   this.showTab('general');
 
   //
   // show fieldsets and input groups specific to types
   //
   // show advanced global button for some
-  this.find('.btn-advanced.global').toggle(['docker', 'tigerProxy', 'localProxy'].includes(serverData.type));
+  this.find('.btn-advanced.global').toggle(true); //['docker', 'tigerProxy', 'local_tiger_proxy'].includes(serverData.type));
   // default hide service healthchecks
   this.showFieldset('.dockerOptions.serviceHealthchecks', serverData.type === 'compose');
   // show template only if set
@@ -218,15 +215,15 @@ $.fn.initFormular = function (serverKey, serverData) {
       this.showFieldset('environment', false);
       this.showInputGroup('.externalJarOptions.workingDir', false);
       break;
-    case 'localProxy':
+    case 'local_tiger_proxy':
       this.showFieldset('node-settings', false);
       this.showFieldset('source-settings', false);
       this.showInputGroup('.tigerProxyCfg.serverPort', false);
       this.showInputGroup('.tigerProxyCfg.proxiedServer', false);
-      this.find('div.local_proxy_info').removeClass('hidden');
+      this.find('div.local_tiger_proxy_info').removeClass('hidden');
       break;
   }
-  this.find('div.local_proxy_info *[name="localProxyActive"]').toggleClass('hidden', serverData.type !== 'localProxy');
+  this.find('div.local_tiger_proxy_info *[name="localProxyActive"]').toggleClass('hidden', serverData.type !== 'local_tiger_proxy');
 
   //
   // initial state of buttons / fieldsets / advanced buttons
@@ -284,7 +281,7 @@ $.fn.showInputGroup = function (name, flag) {
 $.fn.updateServerList = function (serverList, optOldSelection, optNewSelection) {
   checkTagNClass('updateServerList', this, 'FORM', 'server-formular');
   let html = '<option value=""></option>\n';
-  serverList.filter(key => key !== 'local_proxy').forEach(key => {
+  serverList.filter(key => key !== 'local_tiger_proxy').forEach(key => {
     html += `<option value="${key}">${key}</option>\n`;
   });
   replaceSelectOptions($(this).find('select[name=".tigerProxyCfg.proxiedServer"]'), html, optOldSelection,
@@ -294,7 +291,7 @@ $.fn.updateServerList = function (serverList, optOldSelection, optNewSelection) 
 $.fn.updateDependsUponList = function (serverList, optOldSelection, optNewSelection) {
   checkTagNClass('updateDependsUponList', this, 'FORM', 'server-formular');
   let html = "";
-  serverList.filter(key => key !== 'local_proxy').forEach(key => {
+  serverList.filter(key => key !== 'local_tiger_proxy').forEach(key => {
     html += `<option value="${key}">${key}</option>`;
   });
   replaceSelectOptions($(this).find('select[name="dependsUpon"]'), html, optOldSelection, optNewSelection);
@@ -349,7 +346,7 @@ $.fn.populateForm = function (serverData, path) {
       const editable = fieldSet.hasClass('editableList');
       if (!editable) {
         $.each(value, function () {
-          listHtml += getListItem($('<div/>').text(elem.generateListItemLabel(this)).html(), false);
+          listHtml += getListItem($('<div/>').text(elem.generateListItemLabel(this)).html(), false, editable);
         });
         elem.html(listHtml);
         $.each(value, function (idx, itemData) {
@@ -357,7 +354,7 @@ $.fn.populateForm = function (serverData, path) {
         });
       } else {
         $.each(value, function () {
-          listHtml += getListItem(this, false);
+          listHtml += getListItem(this, false, editable);
         });
         elem.html(listHtml);
       }

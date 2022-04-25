@@ -25,6 +25,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -129,7 +130,8 @@ public class TigerAdminUiController {
             var configurationLoader = new TigerConfigurationLoader();
             configurationLoader.readTemplates(templatesYaml, "tiger", "servers");
             configurationLoader.readFromYaml(yamlString, "tiger");
-            return configurationLoader.instantiateConfigurationBean(Configuration.class, "tiger");
+            return configurationLoader.instantiateConfigurationBean(Configuration.class, "tiger")
+                .orElseGet(Configuration::new);
         } catch (Exception e) {
             throw new TigerConfigurationException("Unable to load testenv yaml file", e);
         }

@@ -30,6 +30,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -348,5 +349,28 @@ public class TigerRemoteProxyClientTest {
 
         assertThat(filteredTigerProxy.getRbelMessages())
             .hasSize(2);
+    }
+
+    @Test
+    public void trafficForwardingShouldPreserveTimingInformation() {
+        AtomicInteger listenerCallCounter = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+
+        unirestInstance.get("http://myserv.er").asString();
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> listenerCallCounter.get() > 0);
+
+        assertThat(tigerRemoteProxyClient.getRbelMessages().get(0)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isEqualTo(
+                tigerProxy.getRbelMessages().get(0)
+                    .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime());
+        assertThat(tigerRemoteProxyClient.getRbelMessages().get(1)
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
+            .isEqualTo(
+                tigerProxy.getRbelMessages().get(1)
+                    .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime());
     }
 }

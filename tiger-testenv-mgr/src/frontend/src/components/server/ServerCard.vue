@@ -13,7 +13,11 @@
           </div>
           <div class="wrapper">
             <div></div>
-            <p class="card-text hostname"> {{ server.baseUrl }}</p>
+            <p class="card-text hostname">Typ: {{ server.type }}</p>
+          </div>
+          <div class="wrapper">
+            <div></div>
+            <p class="card-text hostname">URL: {{ server.baseUrl }}</p>
           </div>
           <div class="wrapper">
             <div></div>

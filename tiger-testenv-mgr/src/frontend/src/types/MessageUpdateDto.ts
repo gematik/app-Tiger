@@ -1,5 +1,5 @@
-interface MessageUpdateDto {
-  text: string,
+export default interface MessageUpdateDto {
+  text: string
 }
 
-export default MessageUpdateDto;
+ 

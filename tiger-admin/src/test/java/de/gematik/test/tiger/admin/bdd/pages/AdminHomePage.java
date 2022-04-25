@@ -30,7 +30,7 @@ public class AdminHomePage extends PageObject {
         .locatedBy(".server-content .welcome-card");
 
     public static Target dragHandleOfSidebarItem(String nodeName) {
-        if (nodeName.equals("local_proxy")) {
+        if (nodeName.equals("local_tiger_proxy")) {
             return Target.the("sidebar item for " + nodeName)
                 .locatedBy("#sidebar_server_" + nodeName);
         } else {

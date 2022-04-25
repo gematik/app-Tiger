@@ -171,7 +171,8 @@ class TestTigerDirector {
             .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/idpError.yaml")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                return TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "TIGER_TESTENV");
+                return TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "TIGER_TESTENV")
+                    .get();
             });
 
         assertThat(config.getServers().get("idp")

@@ -13,17 +13,17 @@ Feature: Check advanced input fields and sections for all server types
     Then he doesn't see field ".dockerOptions.entryPoint"
 
     When he shows "General" tab
-    And he clicks on advanced icon in section "node-settings"
+    And he clicks on global advanced icon
     Then he sees input field "startupTimeoutSec"
     And he sees multiselect field "dependsUpon"
-    When he clicks on advanced icon in section "node-settings"
+    When he clicks on global advanced icon
     Then he doesn't see field "startupTimeoutSec"
     And he doesn't see field "dependsUpon"
 
     When he shows "Docker" tab
-    And he clicks on advanced icon in section ".dockerOptions.dockerSettings"
+    And he clicks on global advanced icon
     Then he sees input field ".dockerOptions.entryPoint"
-    When he clicks on advanced icon in section ".dockerOptions.dockerSettings"
+    When he clicks on global advanced icon
     Then he doesn't see field ".dockerOptions.entryPoint"
 
   Scenario Outline: Check advanced fields for compose, externalJar, excternalUrl type
@@ -31,10 +31,10 @@ Feature: Check advanced input fields and sections for all server types
     And he adds a "<type>" node via welcome screen
     And he focuses on formular "<type>_001"
     And he shows "General" tab
-    When he clicks on advanced icon in section "node-settings"
+    When he clicks on global advanced icon
     Then he sees input field "startupTimeoutSec"
     And he sees multiselect field "dependsUpon"
-    When he clicks on advanced icon in section "node-settings"
+    When he clicks on global advanced icon
     Then he doesn't see field "startupTimeoutSec"
     And he doesn't see field "dependsUpon"
 
@@ -58,7 +58,10 @@ Feature: Check advanced input fields and sections for all server types
     And he sees check field ".tigerProxyCfg.proxyCfg.activateRbelEndpoint"
     And he sees check field ".tigerProxyCfg.proxyCfg.activateForwardAllLogging"
     And he sees check field ".tigerProxyCfg.proxyCfg.activateAsn1Parsing"
-    And he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"
+
+    When he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he opens complex list edit fields by clicking on add entry button
+    Then he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"
     And he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging"
 
     And he sees section ".tigerProxyCfg.proxyCfg.forwardToProxy"
@@ -110,7 +113,7 @@ Feature: Check advanced input fields and sections for all server types
   Scenario: Check advanced fields in local proxy
     Given Gerriet is on the homepage
     And he adds a "externalUrl" node via welcome screen
-    When he focuses on formular "local_proxy"
+    When he focuses on formular "local_tiger_proxy"
     When he shows "TigerProxy" tab
     And he clicks on global advanced icon
     Then he sees select field ".tigerProxyCfg.proxyProtocol"
@@ -119,7 +122,10 @@ Feature: Check advanced input fields and sections for all server types
     And he sees check field ".tigerProxyCfg.proxyCfg.activateRbelEndpoint"
     And he sees check field ".tigerProxyCfg.proxyCfg.activateForwardAllLogging"
     And he sees check field ".tigerProxyCfg.proxyCfg.activateAsn1Parsing"
-    And he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"
+
+    When he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he opens complex list edit fields by clicking on add entry button
+    Then he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"
     And he sees check field ".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging"
     But he doesn't see field ".tigerProxyCfg.serverPort"
 
@@ -153,7 +159,7 @@ Feature: Check advanced input fields and sections for all server types
     And he sees list field ".tigerProxyCfg.proxyCfg.tls.alternativeNames"
     And he sees list field ".tigerProxyCfg.proxyCfg.tls.serverSslSuites"
 
-    When he focuses on formular "local_proxy"
+    When he focuses on formular "local_tiger_proxy"
     And he clicks on global advanced icon
     Then he doesn't see field ".tigerProxyCfg.proxyProtocol"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.proxyLogLevel"
@@ -161,6 +167,7 @@ Feature: Check advanced input fields and sections for all server types
     And he doesn't see field ".tigerProxyCfg.proxyCfg.activateRbelEndpoint"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.activateForwardAllLogging"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.activateAsn1Parsing"
+
     And he doesn't see field ".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"
     And he doesn't see field ".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging"
     And he doesn't see section ".tigerProxyCfg.proxyCfg.forwardToProxy"

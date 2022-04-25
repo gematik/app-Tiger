@@ -17,7 +17,9 @@
 package de.gematik.test.tiger.common.config;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.DOUBLE;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import java.io.File;
@@ -51,6 +53,7 @@ public class TigerConfigurationTest {
                 TigerGlobalConfiguration.reset();
                 var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
                 assertThat(dummyBean)
+                    .get()
                     .hasFieldOrPropertyWithValue("string", "stringValue")
                     .hasFieldOrPropertyWithValue("integer", 1234);
             });
@@ -64,7 +67,8 @@ public class TigerConfigurationTest {
             .and("nestedBean.bar", "420")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean)
                     .hasFieldOrPropertyWithValue("string", "stringValue")
                     .hasFieldOrPropertyWithValue("integer", 1234);
@@ -82,7 +86,8 @@ public class TigerConfigurationTest {
             .and("nestedBean.bar", "420")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean)
                     .hasFieldOrPropertyWithValue("string", "stringValue")
                     .hasFieldOrPropertyWithValue("integer", 1234);
@@ -101,7 +106,8 @@ public class TigerConfigurationTest {
             .and("NESTEDBEAN_FOO", "schmar")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean)
                     .hasFieldOrPropertyWithValue("string", "stringValue")
                     .hasFieldOrPropertyWithValue("integer", 1234);
@@ -121,7 +127,8 @@ public class TigerConfigurationTest {
             .and("nestedbean.inner.inner.foo", "inner")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getInner())
                     .hasFieldOrPropertyWithValue("bar", 42)
                     .hasFieldOrPropertyWithValue("foo", "medium");
@@ -140,7 +147,8 @@ public class TigerConfigurationTest {
             .and("NESTEDBEAN_INNER_FOO", "medium")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getInner())
                     .hasFieldOrPropertyWithValue("bar", 42)
                     .hasFieldOrPropertyWithValue("foo", "medium");
@@ -158,7 +166,8 @@ public class TigerConfigurationTest {
             .and("NESTEDBEAN_INNER_INNER_FOO", "inner")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getInner())
                     .hasFieldOrPropertyWithValue("bar", 42)
                     .hasFieldOrPropertyWithValue("foo", "medium");
@@ -184,7 +193,8 @@ public class TigerConfigurationTest {
                             "  foo: yamlMediumFoo\n" +
                             "  inner:\n" +
                             "    foo: yamlInnerFoo", "nestedBean");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getInner())
                     .hasFieldOrPropertyWithValue("bar", 42)
                     .hasFieldOrPropertyWithValue("foo", "yamlMediumFoo");
@@ -240,7 +250,8 @@ public class TigerConfigurationTest {
                         "  - foo: nonFoo0\n" +
                         "  - foo: nonFoo1\n" +
                         "  - foo: nonFoo2", "nestedBean");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getArray())
                     .extracting("foo")
                     .containsExactly("nonFoo0", "foo1", "nonFoo2");
@@ -257,7 +268,8 @@ public class TigerConfigurationTest {
                         "  camelCase1: fooBar1\n" +
                         "  camelCase2: fooBar2\n" +
                         "  camelCase3: fooBar3");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(Map.class, "map");
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(Map.class, "map")
+                    .get();
                 assertThat(dummyBean)
                     .containsOnlyKeys("camelCase1", "camelCase2", "camelCase3", "snakecase");
             });
@@ -269,7 +281,8 @@ public class TigerConfigurationTest {
         withEnvironmentVariable("NESTEDBEAN_FOO", "nonEmptyValue")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean())
                     .hasFieldOrPropertyWithValue("foo", "");
             });
@@ -287,7 +300,8 @@ public class TigerConfigurationTest {
         TigerGlobalConfiguration.readTemplates(
             FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
             "nestedBean.array");
-        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+            .get();
         assertThat(dummyBean.getNestedBean().getArray().get(0))
             .hasFieldOrPropertyWithValue("foo", "fooYaml")
             .hasFieldOrPropertyWithValue("inner", NestedBean.builder()
@@ -314,7 +328,8 @@ public class TigerConfigurationTest {
         TigerGlobalConfiguration.readTemplates(
             FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
             "nestedBean.array");
-        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+            .get();
         assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
             .containsExactly(NestedBean.builder().foo("yamlEntry0").build(),
                 NestedBean.builder().foo("yamlEntry1").build());
@@ -339,7 +354,8 @@ public class TigerConfigurationTest {
                     FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"),
                         StandardCharsets.UTF_8),
                     "nestedBean.array");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
                     .containsOnly(NestedBean.builder().foo("envEntry0").build(),
                         NestedBean.builder().foo("yamlEntry1").build());
@@ -365,7 +381,8 @@ public class TigerConfigurationTest {
                     FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"),
                         StandardCharsets.UTF_8),
                     "nestedBean.array");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
                     .containsOnly(NestedBean.builder().foo("envEntry0").build(),
                         NestedBean.builder().foo("yamlEntry1").build());
@@ -387,7 +404,8 @@ public class TigerConfigurationTest {
                     FileUtils.readFileToString(new File("src/test/resources/exampleTemplates.yml"),
                         StandardCharsets.UTF_8),
                     "nestedBean.array");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
                     .containsOnly(NestedBean.builder().foo("envEntry0").build());
             });
@@ -409,7 +427,8 @@ public class TigerConfigurationTest {
                 TigerGlobalConfiguration.reset();
                 TigerGlobalConfiguration.readFromYaml(
                     "foo: ${myEnvVar}", "nestedBean");
-                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+                var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                    .get();
                 assertThat(dummyBean.getNestedBean().getFoo())
                     .isEqualTo("valueToBeAsserted");
             });
@@ -422,6 +441,54 @@ public class TigerConfigurationTest {
         TigerGlobalConfiguration.putValue("foo.value", "bar");
         assertThat(TigerGlobalConfiguration.readString("foo.value"))
             .isEqualTo("bar");
+    }
+
+    @SneakyThrows
+    @Test
+    public void placeIntegerValue_shouldFindValueAgain() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.putValue("foo.value", 42);
+        assertThat(TigerGlobalConfiguration.readString("foo.value"))
+            .isEqualTo("42");
+    }
+
+    @SneakyThrows
+    @Test
+    public void placeLongValue_shouldFindValueAgain() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.putValue("foo.value", Double.MAX_VALUE);
+        assertThat(TigerGlobalConfiguration.readString("foo.value"))
+            .isEqualTo(Double.toString(Double.MAX_VALUE));
+    }
+
+    @SneakyThrows
+    @Test
+    public void placeBooleanValue_shouldFindValueAgain() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.putValue("foo.value", true);
+        assertThat(TigerGlobalConfiguration.readString("foo.value"))
+            .isEqualTo("true");
+    }
+
+    @SneakyThrows
+    @Test
+    public void placeDoubleValue_shouldFindValueAgain() {
+        TigerGlobalConfiguration.reset();
+        final double value = 0.0432893401304;
+        TigerGlobalConfiguration.putValue("foo.value", value);
+        assertThat(TigerGlobalConfiguration.readString("foo.value"))
+            .isEqualTo(Double.toString(value));
+    }
+
+    @SneakyThrows
+    @Test
+    public void placeNewStructuredValue_shouldFindNestedValueAgain() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.putValue("foo.value", TigerConfigurationTest.NestedBean.builder()
+                .bar(42)
+            .build());
+        assertThat(TigerGlobalConfiguration.readString("foo.value.bar"))
+            .isEqualTo("42");
     }
 
     @SneakyThrows
@@ -451,6 +518,7 @@ public class TigerConfigurationTest {
                 new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
             "tiger");
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
+            .get()
             .extracting(TestCfg::getTemplates)
             .asList()
             .extracting("templateName")
@@ -464,7 +532,7 @@ public class TigerConfigurationTest {
         TigerGlobalConfiguration.putValue("no.real.other", "foo");
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(
             DummyBean.class, "no.real.key.to.see"))
-            .isInstanceOf(DummyBean.class);
+            .isEmpty();
     }
 
     @Test
@@ -473,10 +541,37 @@ public class TigerConfigurationTest {
         TigerGlobalConfiguration
             .readFromYaml(
                 "integer: ${free.port.224}\n");
-        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class);
+        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+            .get();
         final ServerSocket actual = new ServerSocket(dummyBean.getInteger());
         assertThat(actual).isNotNull();
         assertThat(actual.getLocalPort()).isNotZero();
+    }
+
+    @Test
+    public void readValueWithPlaceholder() throws Exception {
+        withEnvironmentVariable("give.me.foo", "foo")
+            .and("foo.int", "1234")
+            .execute(() -> {
+                TigerGlobalConfiguration.reset();
+                assertThat(TigerGlobalConfiguration.readString("${give.me.foo}.int"))
+                    .isEqualTo("1234");
+            });
+    }
+
+    @Test
+    public void localScopedValues() {
+        TigerGlobalConfiguration.reset();
+        assertThat(TigerGlobalConfiguration.readStringOptional("secret.key"))
+            .isEmpty();
+
+        TigerGlobalConfiguration.localScope()
+            .withValue("secret.key", "secretValue")
+            .execute(() -> assertThat(TigerGlobalConfiguration.readString("secret.key"))
+                .isEqualTo("secretValue"));
+
+        assertThat(TigerGlobalConfiguration.readStringOptional("secret.key"))
+            .isEmpty();
     }
 
     @Data
