@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static java.time.LocalDateTime.now;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -98,6 +99,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             addServerToLocalProxyRouteMap(buildHealthcheckUrl());
             publishNewStatusUpdate(TigerServerStatusUpdate.builder()
                 .baseUrl(extractBaseUrl(buildHealthcheckUrl()))
+                // TODO TGR-475 remove once order is ok
+                .type(ServerType.EXTERNALJAR)
                 .build());
         }
 

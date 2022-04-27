@@ -134,7 +134,7 @@ public class TigerDirector {
 
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
-            tigerTestEnvMgr.openWorkflowUiInBrowser(envMgrApplicationContext.getEnvironment().getProperty("server.port"));
+            TigerTestEnvMgr.openWorkflowUiInBrowser(envMgrApplicationContext.getEnvironment().getProperty("server.port"));
         }
     }
 

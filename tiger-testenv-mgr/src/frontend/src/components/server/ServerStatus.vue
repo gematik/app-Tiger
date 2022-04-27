@@ -1,5 +1,6 @@
 <template>
   <div class="container">
+    <div>Server status</div>
     <div
       v-for="(server, serverindex) in serverStatusData?.servers"
       :key="serverindex"

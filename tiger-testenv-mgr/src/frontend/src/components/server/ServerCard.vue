@@ -1,55 +1,24 @@
 <template>
-  <div class="container">
-    <div class="card" style="margin-top: 10px">
-      <div class="card-body">
-        <!-- draw an colored icon -->
-        <div id="container">
-          <div class="wrapper">
-            <i
-              class="bi bi-circle-fill"
-              :style="`font-size: 24px; color: ${colorStatus(server.status)}`"
-            />
-            <h4 class="card-title servername">{{ server.name }}</h4>
-          </div>
-          <div class="wrapper">
-            <div></div>
-            <p class="card-text hostname">Typ: {{ server.type }}</p>
-          </div>
-          <div class="wrapper">
-            <div></div>
-            <p class="card-text hostname">URL: {{ server.baseUrl }}</p>
-          </div>
-          <div class="wrapper">
-            <div></div>
-            <p class="card-text hostname">Server: {{ server.status }}</p>
-          </div>
-          <div class="wrapper">
-            <button
-              type="button"
-              class="btn btn-light"
-              style="
-                display: contents;
-                background-color: white;
-                border: 2px solid #555555;
-                padding: 16px;
-              "
-              @click="toggleStatusList()"
-            >
-              <i class="bi bi-arrow-down" style="font-size: 24px"></i>
-            </button>
-            <p class="card-text servername">Letzter Status: {{ server.statusMessage }}</p>
-          </div>
-          <div v-if="isActive">
-            <h5 style="margin-top: 5px">Kompletter Serverstatus:</h5>
-            <ul>
-              <li
+  <div :class="`alert alert-${colorStatus(server.status)} serverbox`">
+    <div class="alert-heading server-name truncate-text">
+      <i :class="`${getServerIcon(server.type)} left`"></i>
+      <span>{{ server.name }} ({{ server.status }})</span>
+    </div>
+    <div class="serverurl truncate-text" v-if="server.baseUrl">{{ server.baseUrl }}</div>
+    <span v-else></span>
+    <div class="serverstatus">
+      <a data-bs-toggle="collapse" :href="`#${getHistoryCollapseId(server)}`" role="button" aria-expanded="false"
+         :aria-controls="`${getHistoryCollapseId(server)}`">{{ server.statusMessage }}</a>
+      <div class="collapse" :id="`${getHistoryCollapseId(server)}`">
+        <div class="card card-body">
+          <ul>
+            <li
                 v-for="(serverstatus, servername) in server.statusUpdates"
                 :key="servername"
-              >
-                {{ serverstatus }}
-              </li>
-            </ul>
-          </div>
+            >
+              {{ serverstatus }}
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -70,6 +39,13 @@
 import TigerServerStatusDto from "@/types/TigerServerStatusDto";
 import TigerServerStatus from "@/types/TigerServerStatus";
 import {ref} from "vue";
+/*
+import {library} from '@fortawesome/fontawesome-svg-core'
+import {faUserSecret} from '@fortawesome/free-solid-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
+
+library.add(faUserSecret)
+*/
 
 let isActive = ref(false);
 
@@ -77,23 +53,40 @@ defineProps<{
   server: TigerServerStatusDto;
 }>();
 
-function showLastStatus(array: Array<string>): string {
-  return array[array.length - 1];
+const serverIcons = {
+  docker: "fab fa-docker",
+  compose: "fas fa-cubes",
+  tigerProxy: "fas fa-project-diagram",
+  local_tiger_proxy: "fas fa-project-diagram",
+  externalJar: "fas fa-rocket",
+  externalUrl: "fas fa-external-link-alt"
+}
+
+function getServerIcon(type: string) : string {
+  if (type) {
+    return serverIcons[type];
+  } else {
+    return "far fa-question";
+  }
 }
 
 function colorStatus(status: TigerServerStatus): string {
   switch (status) {
     case TigerServerStatus.NEW:
-      return "Blue";
+      return "secondary";
     case TigerServerStatus.STARTING:
-      return "Yellow";
+      return "info";
     case TigerServerStatus.RUNNING:
-      return "Green";
+      return "success";
     case TigerServerStatus.STOPPED:
-      return "Red";
+      return "error";
     default:
-      return "White";
+      return "secondary";
   }
+}
+
+function getHistoryCollapseId(server: TigerServerStatusDto): string {
+   return "history_" + server.name;
 }
 
 function toggleStatusList() {
@@ -102,19 +95,41 @@ function toggleStatusList() {
 </script>
 
 <style scoped>
-.wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
+
+.serverbox {
+  padding: 0.25rem;
 }
 
-.servername {
+.serverbox > div {
   margin-top: 0.5rem;
-  margin-left: 2rem;
 }
 
-.hostname {
-  margin-left: 4rem;
+.server-name {
+  margin-top: 0.5rem;
 }
+
+.server-name > span {
+  font-weight: bold;
+}
+
+.serverurl {
+  font-size: 75%;
+  margin-left: 1rem;
+}
+
+.serverstatus {
+  font-size: 75%;
+  font-style: italic;
+  font-color: inherit;
+  border: 1px solid white;
+}
+
+.serverstatus > a {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+}
+
 </style>

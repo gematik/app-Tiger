@@ -1,33 +1,27 @@
 <template>
-  <div>
-    <br />
-    <h5>Features and Scenarios:</h5>
-    <div
-      class="container"
-      v-for="(feature, key) in featureUpdateMap"
-      :key="key"
-    >
-      <div>
-        <div
-          class="container"
-          v-for="(featureName, featureKey) in feature"
-          :key="featureKey"
+  <div class="container">
+    <div>Featurelist</div>
+    <div class="alert alert-info featurelistbox">
+      <div class="alert-heading featurelist">
+        <div v-for="(feature, key) in featureUpdateMap"
+             :key="key"
         >
-          <div v-if="featureKey == 1">
-            {{ featureName.description }}
-          </div>
-          <div
-            class="container"
-            v-for="(scenario, scenarioKey) in featureName.scenarios"
-            :key="scenarioKey"
+          <div v-for="(featureName, featureKey) in feature"
+               :key="featureKey"
           >
-            <div
-              class="container"
-              v-for="(scenarioName, scenarioNameKey) in scenario"
-              :key="scenarioNameKey"
+            <div v-if="featureKey == 1" class="truncate-text" :title="`${featureName.description}`">
+              <b>{{ featureName.description }}</b>
+            </div>
+            <div class="container"
+                 v-for="(scenario, scenarioKey) in featureName.scenarios"
+                 :key="scenarioKey"
             >
-              <div v-if="scenarioNameKey == 1">
-                {{ scenarioName.description }}
+              <div v-for="(scenarioName, scenarioNameKey) in scenario"
+                   :key="scenarioNameKey"
+              >
+                <div v-if="scenarioNameKey == 1" class="truncate-text" :title="`${scenarioName.description}`">
+                  {{ scenarioName.description }}
+                </div>
               </div>
             </div>
           </div>
@@ -46,4 +40,12 @@ const props = defineProps<{
 
 </script>
 
-<style></style>
+<style>
+.featurelistbox {
+  padding: 0.25rem;
+}
+
+.featurelist {
+  font-size: 75%;
+}
+</style>

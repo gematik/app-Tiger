@@ -143,7 +143,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         TigerGlobalConfiguration.initialize();
         readTemplates();
         final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class,
-            "tiger")
+                "tiger")
             .orElseGet(Configuration::new);
         for (CfgServer cfgServer : configuration.getServers().values()) {
             if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
@@ -275,7 +275,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     }
 
 
-    public void openWorkflowUiInBrowser(String serverPort) {
+    public static void openWorkflowUiInBrowser(String serverPort) {
         try {
             String url = "http://localhost:" + serverPort;
 
@@ -283,25 +283,26 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                 Desktop desktop = Desktop.getDesktop();
                 try {
                     desktop.browse(new URI(url));
-                } catch (IOException | URISyntaxException e) {
-                    log.error("IOException thrown during opening browser", e);
+                } catch (Exception e) {
+                    log.error("Exception thrown during opening browser for Workflow UI via Desktop API", e);
                 }
             } else {
                 Runtime runtime = Runtime.getRuntime();
                 String command;
                 String operatingSystemName = System.getProperty("os.name").toLowerCase();
-                if (operatingSystemName.indexOf("nix") >= 0 || operatingSystemName.indexOf("nux") >= 0) {
+                if (operatingSystemName.contains("nix") || operatingSystemName.contains("nux")) {
                     command = "xdg-open " + url;
-                } else if (operatingSystemName.indexOf("win") >= 0) {
+                } else if (operatingSystemName.contains("win")) {
                     command = "rundll32 url.dll,FileProtocolHandler " + url;
-                } else if (operatingSystemName.indexOf("mac") >= 0) {
+                } else if (operatingSystemName.contains("mac")) {
                     command = "open " + url;
                 } else {
-                    log.info("Unknown operation system");
+                    log.error("Unknown operation system '{}'", operatingSystemName);
                     return;
                 }
 
                 try {
+                    log.info("Starting Workflow UI via '{}'", command);
                     runtime.exec(command);
                 } catch (IOException e) {
                     log.error("IOException thrown during opening browser", e);
@@ -309,6 +310,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
             }
         } catch (HeadlessException hex) {
             log.error("Unable to start Workflow UI on a headless server!", hex);
+        } catch (Exception e) {
+            log.error("Exception while trying to start browser for Workflow UI", e);
         }
     }
 }

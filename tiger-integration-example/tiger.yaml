@@ -30,3 +30,4 @@ servers:
 lib:
   activateMonitorUI: false
   rbelPathDebugging: false
+  activateWorkflowUi: false
