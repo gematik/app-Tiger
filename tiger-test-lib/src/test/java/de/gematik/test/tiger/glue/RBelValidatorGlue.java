@@ -354,4 +354,22 @@ public class RBelValidatorGlue {
             parsedXmlDocStr,
             diffOptionsCSV);
     }
+
+    /**
+     * Prints the rbel-tree of the current response to the System-out
+     */
+    @Dann("TGR gebe aktuelle Response als Rbel-Tree aus")
+    @Then("TGR print current response as rbel-tree")
+    public void printCurrentResponse() {
+        System.out.println(RBelValidatorGlue.getRbelValidator().getLastResponse().printTreeStructure());
+    }
+
+    /**
+     * Prints the rbel-tree of the current request to the System-out
+     */
+    @Dann("TGR gebe aktuelle Request als Rbel-Tree aus")
+    @Then("TGR print current request as rbel-tree")
+    public void printCurrentRequest() {
+        System.out.println(RBelValidatorGlue.getRbelValidator().getLastFilteredRequest().printTreeStructure());
+    }
 }

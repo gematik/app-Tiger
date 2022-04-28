@@ -15,6 +15,7 @@ Feature: Test Tiger BDD
     Given TGR show banner "<txt>"
     When User requests the startpage
     Then TGR find request to path "/"
+    And TGR print current request as rbel-tree
     Then TGR current response with attribute "$.body.html.head.link.href" matches "!{rbel:lastResponseAsString('$.body.html.head.link.href')}"
 
     Examples:
@@ -28,4 +29,3 @@ Feature: Test Tiger BDD
     When User requests the startpage
     Then TGR find request to path "/"
     Then TGR current response with attribute "$.body.html.head.link.href" matches "jetty-dir.css"
-    #Given TGR warte auf Abbruch

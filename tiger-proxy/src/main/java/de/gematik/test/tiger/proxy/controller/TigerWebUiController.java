@@ -417,9 +417,9 @@ public class TigerWebUiController implements ApplicationContextAware {
         return el.getFacet(RbelHttpMessageFacet.class)
             .map(RbelHttpMessageFacet::getHeader)
             .flatMap(e -> e.getFacet(RbelHttpHeaderFacet.class))
-            .map(RbelHttpHeaderFacet::entrySet)
+            .map(RbelHttpHeaderFacet::entries)
             .stream()
-            .flatMap(Set::stream)
+            .flatMap(List::stream)
             .map(e -> (e.getKey() + "=" + e.getValue().getRawStringContent()))
             .collect(Collectors.toList());
     }

@@ -239,7 +239,7 @@
                 <configuration>
                     <argLine>${failsafe.jacoco.args}</argLine>
                     <includes>
-                        <include>**/Parallel*IT.java</include>
+                        <include>**/TestContextFeatureTest.java</include>
                     </includes>
                     <skipITs>false</skipITs>
                     <systemPropertyVariables>

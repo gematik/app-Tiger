@@ -1,5 +1,15 @@
 # Changelog Tiger Testplattform
 
+# Release 0.20.2
+
+## Features
+
+* New test-steps: Print current request/response as rbel-tree
+
+## Bugfixes
+
+* TigerProxy-WebUI can now display traffic again
+
 # Release 0.20.1
 
 ## Breaking Changes
