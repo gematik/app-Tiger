@@ -1,55 +1,58 @@
 <template>
   <div class="tab-pane active" id="execution_pane" role="tabpanel">
-    <div style="display:flex;width:100%;">
-      <div id="execution_table">
-        <div v-for="(feature) in featureUpdateMap">
-          <h2> <i class="far fa-file-alt left"></i> {{ feature[1].description }}</h2>
-          <p>{{ JSON.stringify(feature) }}</p>
-
-          <div v-for="(scenario) in feature[1].scenarios">
-            <h3 > <i class="far fa-clipboard left"></i> {{ scenario[1].description }}</h3>
-            <table class="table table-striped">
-              <tbody>
-              <tr v-for="(step) in scenario[1].steps">
-                <th :class="`${cssClassFor(step[1])} step_status`" v-if="step[1].status">{{ step[1].status }}</th>
-                <td :class="`${cssClassFor(step[1])} step_text`" :colspan="step[1].status ? 1 : 2">{{ step[1].description }}</td>
-              </tr>
-              </tbody>
-            </table>
+    <div v-if="featureUpdateMap.size == 0" class="alert alert-danger" style="height:200px;width:100%;">
+      <i class="fa-regular fa-hourglass left fa-2x"></i> Waiting for first Feature / Scenario to start...
+    </div>
+    <div v-else>
+      <h2 class="pt-3">Workflow messages</h2>
+      <div v-if="bannerData.length > 0" :style="`color: ${bannerData[bannerData.length-1].color};`"
+           class="banner alert alert-info text-center w-100 p-5`">
+        <i class="fa-solid fa-circle-exclamation left"></i> {{ bannerData[bannerData.length - 1].text }}
+      </div>
+      <h2 class="mt-3">Testrun Features / Scenarios</h2>
+      <div style="display:flex;width:100%;">
+        <div id="execution_table" class="pt-1">
+          <div v-for="(feature) in featureUpdateMap">
+            <h3><i class="fa-regular fa-address-card left"></i> Feature: {{ feature[1].description }}</h3>
+            <div v-for="(scenario) in feature[1].scenarios">
+              <h4><i class="far fa-clipboard left"></i> Scenario: {{ scenario[1].description }}</h4>
+              <table class="table table-striped">
+                <tbody>
+                <tr v-for="(step) in scenario[1].steps">
+                  <th :class="`${step[1].status.toLowerCase()} step_status`">{{ step[1].status }}</th>
+                  <td :class="`${step[1].status.toLowerCase()} step_text`">{{ step[1].description }}</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="resizer" id="rbellog_resize"
-           v-on:mouseenter="mouseEnterHandler"
-           v-on:mousedown="mouseDownHandler"
-           v-on:mouseleave="mouseLeaveHandler">
-      </div>
-      <div class="d-none" id="rbellog_details_pane">
-        Rbel Log Details
+        <div class="resizer" id="rbellog_resize"
+             v-on:mouseenter="mouseEnterHandler"
+             v-on:mousedown="mouseDownHandler"
+             v-on:mouseleave="mouseLeaveHandler">
+        </div>
+        <div class="d-none pl-3 pt-3" id="rbellog_details_pane">
+          <h2><img src="img/rbellog.png" width="50"> Rbel Log Details</h2>
+          <div class="m-auto text-danger">
+            <i class="fa-solid fa-circle-exclamation fa-2x left"></i> Not implemented so far
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import Step from "@/types/Step";
 import DataType from "@/types/DataType";
-import TestResult from "@/types/TestResult";
-import FeatureUpdate from "@/types/FeatureUpdate";
+import TestResult from "@/types/testsuite/TestResult";
+import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
+import BannerMessages from "@/types/BannerMessages";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
+  bannerData: BannerMessages[];
 }>();
-
-function cssClassFor(step: Step): string {
-  if (step.type === DataType.FEATURE) {
-    return "feature";
-  } else if (step.type === DataType.SCENARIO) {
-    return "scenario";
-  } else {
-    return step.status.toLowerCase();
-  }
-}
 
 // elements
 let rbelLogDetailsResizer: HTMLElement;
@@ -166,9 +169,21 @@ function mouseLeaveHandler() {
 </script>
 
 <style scoped>
+.banner {
+  font-weight: bolder;
+  font-family: "Courier New", monospace;
+  font-size: 150%;
+  margin-bottom: 0;
+}
+
+#execution_pane {
+  border-left: 1px solid lightgray;
+  padding-left: 1rem;
+}
 
 #execution_table {
   display: flex;
+  width: 100%;
 }
 
 .step_status {

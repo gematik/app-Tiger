@@ -3,26 +3,13 @@
     <div>Featurelist</div>
     <div class="alert alert-info featurelistbox">
       <div class="alert-heading featurelist">
-        <div v-for="(feature, key) in featureUpdateMap"
-             :key="key"
-        >
-          <div v-for="(featureName, featureKey) in feature"
-               :key="featureKey"
-          >
-            <div v-if="featureKey == 1" class="truncate-text" :title="`${featureName.description}`">
-              <b>{{ featureName.description }}</b>
-            </div>
-            <div class="container"
-                 v-for="(scenario, scenarioKey) in featureName.scenarios"
-                 :key="scenarioKey"
-            >
-              <div v-for="(scenarioName, scenarioNameKey) in scenario"
-                   :key="scenarioNameKey"
-              >
-                <div v-if="scenarioNameKey == 1" class="truncate-text" :title="`${scenarioName.description}`">
-                  {{ scenarioName.description }}
-                </div>
-              </div>
+        <div v-for="(feature) in featureUpdateMap">
+          <div class="truncate-text" :title="`${feature[1].description}`">
+            <b>{{ feature[1].description }}</b>
+          </div>
+          <div v-for="(scenario) in feature[1].scenarios" class="container" >
+            <div class="truncate-text" :title="`${scenario[1].description}`">
+              {{ scenario[1].description }}
             </div>
           </div>
         </div>
@@ -32,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import FeatureUpdate from "@/types/FeatureUpdate";
+import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 
 const props = defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;

@@ -15,6 +15,7 @@ import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,17 +35,17 @@ class EnvStatusControllerTest {
     public void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr);
 
-        assertThat(envStatusController.getStatus().getFeatureMap()).isNull();
+        assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
         envMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-            .featureMap(Map.of("feature", FeatureUpdate.builder()
+            .featureMap(new LinkedHashMap<>(Map.of("feature", FeatureUpdate.builder()
                     .description("feature")
-                    .scenarios(Map.of(
+                    .scenarios(new LinkedHashMap<>(Map.of(
                         "scenario", ScenarioUpdate.builder().description("scenario")
                             .steps(Map.of("step", StepUpdate.builder().description("step").build()
                             )).build()
-                    )).build()
-            )).build());
+                    ))).build()
+            ))).build());
 
         assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo("feature");
         assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getDescription()).isEqualTo("scenario");
@@ -89,7 +90,7 @@ class EnvStatusControllerTest {
         assertThat(envStatusController.getStatus().getServers().get("winstoneServer"))
             .hasFieldOrPropertyWithValue("name", "winstoneServer")
             .hasFieldOrPropertyWithValue("status", TigerServerStatus.STARTING)
-            .hasFieldOrPropertyWithValue("statusMessage", "Starting server...");
+            .hasFieldOrPropertyWithValue("statusMessage", "Starting winstoneServer");
 
         downloadShouldProceed.set(true);
 
@@ -101,7 +102,7 @@ class EnvStatusControllerTest {
         assertThat(envStatusController.getStatus().getServers().get("winstoneServer"))
             .hasFieldOrPropertyWithValue("name", "winstoneServer")
             .hasFieldOrPropertyWithValue("status", TigerServerStatus.RUNNING)
-            .hasFieldOrPropertyWithValue("statusMessage", "Server winstoneServer started & running")
+            .hasFieldOrPropertyWithValue("statusMessage", "winstoneServer READY")
             .hasFieldOrPropertyWithValue("baseUrl",
                 TigerGlobalConfiguration.resolvePlaceholders("http://127.0.0.1:${free.port.0}"));
     }

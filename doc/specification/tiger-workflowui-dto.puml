@@ -1,0 +1,32 @@
+@startuml
+
+title: Workflow UI DTO
+
+start
+
+#yellowgreen:TigerServerStatusUpdate;
+
+:TigerTestEnvMgr converts to;
+#yellowgreen:TigerStatusUpdate;
+:send via listener->receieveTestEnvUpdate;
+
+fork
+:EnvStatusController converts to;
+#yellowgreen:TigerEnvStatusDto;
+
+:fetching from workflowui returns;
+#orange:TigerEnvStatusDto;
+
+fork again
+:UpdatePushController converts to;
+#yellowgreen:TestEnvStatusDto;
+
+:subscription receives;
+#orange:TestEnvStatusDto;
+
+#plum:index
+::FeatureUpdate
+::TigerServerStatusUpdateDto;
+
+end fork
+@enduml

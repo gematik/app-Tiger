@@ -7,32 +7,15 @@
     <div class="serverurl truncate-text" v-if="server.baseUrl">{{ server.baseUrl }}</div>
     <span v-else></span>
     <div class="serverstatus">
-      <a data-bs-toggle="collapse" :href="`#${getHistoryCollapseId(server)}`" role="button" aria-expanded="false"
-         :aria-controls="`${getHistoryCollapseId(server)}`">{{ server.statusMessage }}</a>
-      <div class="collapse" :id="`${getHistoryCollapseId(server)}`">
-        <div class="card card-body">
-          <ul>
-            <li
-                v-for="(serverstatus, servername) in server.statusUpdates"
-                :key="servername"
-            >
-              {{ serverstatus }}
-            </li>
-          </ul>
+      <a class="p-1" data-bs-toggle="collapse" :href="`#${getHistoryCollapseId(server)}`" role="button" aria-expanded="false"
+         :aria-controls="`${getHistoryCollapseId(server)}`"><i class="fa-solid fa-circle-chevron-down left"></i> {{ server.statusMessage }}</a>
+      <div class="collapse bg-white p-2 pb-0" :id="`${getHistoryCollapseId(server)}`">
+        <div v-for="(serverstatus) in server.statusUpdates" class="pl-3 pr-3 pb-2">
+          {{ serverstatus }}
         </div>
       </div>
     </div>
   </div>
-
-  <!--     <div v-for="(server, index) in serverStatusData?.servers" :key="index"> {{ index }} - {{ server.type }} -
-      {{ server.status }} - {{ showLastStatus(server.statusUpdates) }}
-      <button class="btn" data-toggle="collapse" data-target="#serverStatusUpdate">All Server Status</button>
-      <div id="serverStatusUpdate" class="collapse">
-        <ul v-for="(serverstatus, i) in server.statusUpdates" :key="i">
-          <li> {{ serverstatus }}</li>
-        </ul>
-      </div>
-    </div> -->
 </template>
 
 <script setup lang="ts">
@@ -62,7 +45,7 @@ const serverIcons = {
   externalUrl: "fas fa-external-link-alt"
 }
 
-function getServerIcon(type: string) : string {
+function getServerIcon(type: string): string {
   if (type) {
     return serverIcons[type];
   } else {
@@ -86,7 +69,7 @@ function colorStatus(status: TigerServerStatus): string {
 }
 
 function getHistoryCollapseId(server: TigerServerStatusDto): string {
-   return "history_" + server.name;
+  return "history_" + server.name;
 }
 
 function toggleStatusList() {

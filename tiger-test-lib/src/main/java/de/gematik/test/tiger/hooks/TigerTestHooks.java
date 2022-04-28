@@ -7,6 +7,7 @@ package de.gematik.test.tiger.hooks;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
@@ -18,6 +19,8 @@ import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import io.cucumber.java.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -26,6 +29,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -38,36 +43,34 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This class integrates SerenityBDD and the Tiger test framework.
  * <p>
- * Initializes Tiger (reading tiger.yaml, starting Tiger test environment manager, local proxy and optionally monitoring
- * UI)
+ * Initializes Tiger (reading tiger.yaml, starting Tiger test environment manager, local proxy and optionally monitoring UI)
  * <p>
- * Provides and Manages a NON thread safe RbelMessageProvider with two lists. One for reuse by Tiger validation steps
- * and one internal for later usage.
+ * Provides and Manages a NON thread safe RbelMessageProvider with two lists. One for reuse by Tiger validation steps and one internal for
+ * later usage.
  * <p>
  * Forwards all steps to Monitoring UI, applying data variant substitution
  * <p>
- * At the end of each scenario dumps all rbel messages to the file system and attaches it to the SerenityBDD report as
- * test evidence.
+ * At the end of each scenario dumps all rbel messages to the file system and attaches it to the SerenityBDD report as test evidence.
  * <p>
  * <b>ATTENTION!</b> As of now Tiger does not support collecting Rbel messages in a "thread safe" way,
- * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test
- * execution, you must deal with concurrency of RBel messages yourself.
+ * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test execution, you must deal
+ * with concurrency of RBel messages yourself.
  */
 @SuppressWarnings("unused")
 @Slf4j
 public class TigerTestHooks {
 
     /**
-     * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know what you do. It
-     * is used by the TGR validation steps. The list is not cleared at the end of / start of new scenarios!
+     * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know what you do. It is used by the TGR
+     * validation steps. The list is not cleared at the end of / start of new scenarios!
      * TODO add test to ensure this statement
      */
     @Getter
     private static final List<RbelElement> validatableRbelMessages = new ArrayList<>();
 
     /**
-     * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and SerenityBDD test
-     * report evidence. This list is internal and not accessible to validation steps or Tiger users
+     * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and SerenityBDD test report evidence. This
+     * list is internal and not accessible to validation steps or Tiger users
      */
     private static final List<RbelElement> rbelMessages = new ArrayList<>();
 
@@ -120,8 +123,8 @@ public class TigerTestHooks {
      */
     private static List<String> currentDataVariantKeys = null;
     /**
-     * For scenario outlines, this list is the list of data variant maps. The map contains the value for the specific
-     * variant identified by its key.
+     * For scenario outlines, this list is the list of data variant maps. The map contains the value for the specific variant identified by
+     * its key.
      */
     private static List<Map<String, String>> currentDataVariant = null;
 
@@ -197,10 +200,10 @@ public class TigerTestHooks {
     private void informWorkflowUiAboutCurrentScenario(Feature feature, String scenarioName) {
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
             .featureMap(
-                Map.of(feature.getName(), FeatureUpdate.builder()
+                new LinkedHashMap<>(Map.of(feature.getName(), FeatureUpdate.builder()
                     .description(feature.getName())
                     .scenarios(
-                        Map.of(
+                        new LinkedHashMap<>(Map.of(
                             mapScenarioToScenarioUpdateMap(feature, scenarioName),
                             ScenarioUpdate.builder()
                                 .description(scenarioName)
@@ -213,8 +216,8 @@ public class TigerTestHooks {
                                             return line;
                                         }
                                     })).build()
-                        )).build()
-                )).build());
+                        ))).build()
+                ))).build());
     }
 
     private String mapScenarioToScenarioUpdateMap(Feature feature, String scenarioName) {
@@ -273,8 +276,8 @@ public class TigerTestHooks {
     }
 
     /**
-     * If monitoring UI is active, each step is forwarded to the monitoring UI. For scenario outlines the step will be
-     * first parsed for data variant tags of pattern &lt;key&gt;, substituting it with the current value.
+     * If monitoring UI is active, each step is forwarded to the monitoring UI. For scenario outlines the step will be first parsed for data
+     * variant tags of pattern &lt;key&gt;, substituting it with the current value.
      * <p>
      * Increases the current step index.
      *
@@ -287,6 +290,7 @@ public class TigerTestHooks {
             log.info("CurrentStep: " + String.join("\n", currentStep.getLines()));
             TigerDirector.updateStepInMonitor(currentStep);
         }
+
         currentStepIndex++;
     }
 
@@ -310,29 +314,48 @@ public class TigerTestHooks {
         informWorkflowUiAboutCurrentStep(scenario);
     }
 
+    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß| ]*)(Banner|banner|text|Text) \"(.*)\"");
+
     private void informWorkflowUiAboutCurrentStep(Scenario scenario) {
         if (scenario == null) {
             return;
         }
+
         final Feature feature = uriFeatureMap.get(scenario.getUri());
         Step currentStep = getCurrentStep(scenario, currentStepIndex - 1);
 
-        TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
+        TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
+
+        Matcher m = showSteps.matcher(currentStep.getLines().get(0));
+        if (m.find()) {
+            Color col = Color.BLACK;
+            try {
+                if (!m.group(2).trim().isEmpty()) {
+                    col = (Color) Color.class.getDeclaredField(
+                        RbelAnsiColors.seekColor(m.group(2).trim()).name().toUpperCase()).get(null);
+                }
+            } catch (Exception ignored) {
+                col = Color.BLACK;
+            }
+            builder.bannerMessage(m.group(4)).bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())));
+        }
+
+        TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(builder
             .featureMap(
-                Map.of(feature.getName(), FeatureUpdate.builder()
+                new LinkedHashMap<>(Map.of(feature.getName(), FeatureUpdate.builder()
                     .description(feature.getName())
                     .scenarios(
-                        Map.of(
+                        new LinkedHashMap<>(Map.of(
                             mapScenarioToScenarioUpdateMap(feature, scenario.getName()),
                             ScenarioUpdate.builder()
                                 .description(scenario.getName())
-                                .steps(Map.of(String.valueOf(currentStepIndex - 1), StepUpdate.builder()
+                                .steps(new HashMap<>(Map.of(String.valueOf(currentStepIndex - 1), StepUpdate.builder()
                                     .description(String.join("\n", currentStep.getLines()))
                                     .status(TestResult.valueOf(scenario.getStatus().toString()))
                                     .build()
-                                )).build()
-                        )).build()
-                )).build());
+                                ))).build()
+                        ))).build()
+                ))).build());
     }
 
     @After

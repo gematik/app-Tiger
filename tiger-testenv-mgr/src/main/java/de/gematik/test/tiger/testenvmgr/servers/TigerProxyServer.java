@@ -32,7 +32,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
     @Override
     public void performStartup() {
-        statusMessage("Configuring tiger-proxy... (pre-start)");
+        statusMessage("Configuring proxy");
         CfgTigerProxyOptions reverseProxyCfg = getConfiguration().getTigerProxyCfg();
 
         CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
@@ -57,7 +57,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         properties.put("server.port", reverseProxyCfg.getServerPort());
         properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
 
-        statusMessage("Starting tiger-proxy...");
+        statusMessage("Starting proxy");
         applicationContext = new SpringApplicationBuilder()
             .properties(properties)
             .sources(TigerProxyApplication.class)
@@ -69,7 +69,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         if (getStatus() == TigerServerStatus.STARTING) {
             waitForService(false);
         }
-        statusMessage("Tiger-proxy started");
+        statusMessage("Tiger Proxy started");
     }
 
     @Override

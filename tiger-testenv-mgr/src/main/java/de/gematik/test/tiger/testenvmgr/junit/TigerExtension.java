@@ -106,6 +106,10 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
             .run();
 
         tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
+        if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+            log.info("Starting Test-Env setup");
+            tigerTestEnvMgr.setUpEnvironment();
+        }
         log.info("TigerTest initialized, commencing actual test");
     }
 }

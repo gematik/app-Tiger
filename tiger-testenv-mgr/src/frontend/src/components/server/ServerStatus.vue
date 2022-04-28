@@ -1,10 +1,10 @@
 <template>
   <div class="container">
     <div>Server status</div>
-    <div
-      v-for="(server, serverindex) in serverStatusData?.servers"
-      :key="serverindex"
-    >
+    <div v-if="serverStatusData.size == 0" class="alert alert-danger" style="height:200px;width:100%;">
+      <i class="fa-regular fa-hourglass left"></i> Waiting for updates...
+    </div>
+    <div v-else v-for="(server) in serverStatusData">
       <ServerCard :server="server[1]" />
     </div>
   </div>

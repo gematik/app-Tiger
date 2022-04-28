@@ -9,6 +9,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import java.lang.reflect.Type;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -77,14 +78,14 @@ class UpdatePushControllerTest {
         });
 
         TigerStatusUpdate update = TigerStatusUpdate.builder()
-            .featureMap(Map.of("feature", FeatureUpdate.builder()
+            .featureMap(new LinkedHashMap<>(Map.of("feature", FeatureUpdate.builder()
                 .description("feature")
-                .scenarios(Map.of(
+                .scenarios(new LinkedHashMap<>(Map.of(
                     "scenario", ScenarioUpdate.builder().description("scenario")
                         .steps(Map.of("step", StepUpdate.builder().description("step").build()
                         )).build()
-                )).build()
-            )).build();
+                ))).build()
+            ))).build();
 
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
 

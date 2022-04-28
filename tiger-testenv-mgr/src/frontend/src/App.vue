@@ -1,10 +1,14 @@
 <template>
   <ul class="nav nav-tabs">
+    <li class="nav-item nav-logo">
+      <img class="navbar-brand right" src="img/tiger-mono-64.png" width="48"/> Tiger Workflow UI
+    </li>
+    <li class="navbar-divider">&nbsp;</li>
     <li class="nav-item">
-      <router-link to="/" class="nav-link">Testprojekt</router-link>
+      <router-link to="/" class="nav-link">Test run</router-link>
     </li>
     <li class="nav-item">
-      <router-link to="/about" class="nav-link">Kontakt</router-link>
+      <router-link to="/about" class="nav-link">Contact</router-link>
     </li>
   </ul>
   <router-view></router-view>
@@ -20,13 +24,11 @@ export default defineComponent({
 </script>
 
 <style lang="css">
-@import "bootstrap/dist/css/bootstrap.css";
-
-i.fa.left, i.far.left, i.fas.left {
+.left, i.fa.left, i.far.left, i.fas.left, i.fa-sold.left {
   padding-right: 0.5rem;
 }
 
-i.fa.right, i.far.right, i.fas.right {
+.right, i.fa.right, i.far.right, i.fas.right, i.fa-sold.right {
   padding-left: 0.5rem;
 }
 
@@ -35,15 +37,9 @@ i.fa.right, i.far.right, i.fas.right {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-</style>
 
-<style lang="scss">
-/*
-$fa-font-path: "~@fortawesome/fontawesome-free/webfonts/";
-@import "~@fortawesome/fontawesome-free/scss/fontawesome.scss";
-@import "~@fortawesome/fontawesome-free/scss/core.scss";
-@import "~@fortawesome/fontawesome-free/scss/regular.scss"; // far
-@import "~@fortawesome/fontawesome-free/scss/solid.scss"; // fas
-@import "~@fortawesome/fontawesome-free/scss/brands.scss"; // fab<
- */
+.nav-logo {
+  background: whitesmoke;
+  padding-right: 1rem;
+}
 </style>

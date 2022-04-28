@@ -1,0 +1,25 @@
+@startuml
+
+title: TigerDirector.start() refactoring for workflowUI
+
+start
+
+:showTigerBanner;
+:readConfiguration;
+:applyTestLibConfig;
+:startMonitorUi;
+:startTestEnvMgr;
+fork
+if (WorkflowUi active?) then
+    #yellowgreen:needs envMgrApplicationContext;
+    :startWorkflowUi;
+endif
+fork again
+:setupTestEnvironment;
+#yellowgreen:as of 0.20.1 executed inside startTestEnvMgr;
+end fork
+
+:setDefaultProxyToLocalTigerProxy;
+stop
+
+@enduml

@@ -70,7 +70,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         processStartTime = now();
         getTigerTestEnvMgr().getExecutor().submit(() -> {
             try {
-                statusMessage("Starting local JAR-File '" + javaExe + "'");
+                statusMessage("Starting local JAR-File");
                 final ProcessBuilder processBuilder = new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(workingDir))
@@ -85,7 +85,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                     )));
 
                 processReference.set(processBuilder.start());
-                statusMessage("Started JAR-File '" + javaExe + "' with PID '" + processReference.get().pid() + "'");
+                statusMessage("Started JAR-File with PID '" + processReference.get().pid() + "'");
             } catch (Throwable t) {
                 log.error("Failed to start process", t);
                 exception.set(t);

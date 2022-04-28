@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,24 @@ import lombok.Data;
 @Builder
 public class TigerStatusUpdate {
 
-    private Map<String, FeatureUpdate> featureMap;
-    private Map<String, TigerServerStatusUpdate> serverUpdate;
+    static long lastIndex;
+    static Object indexMutex = new Object();
+
+
+    public TigerStatusUpdate(long dummy, LinkedHashMap<String, FeatureUpdate> featureMap, LinkedHashMap<String, TigerServerStatusUpdate> serverUpdate, String bannerMessage, String bannerColor) {
+        this.featureMap = featureMap;
+        this.serverUpdate = serverUpdate;
+        this.bannerMessage = bannerMessage;
+        this.bannerColor = bannerColor;
+        synchronized (indexMutex) {
+            index = lastIndex++;
+        }
+    }
+
+    private long index;
+    private LinkedHashMap<String, FeatureUpdate> featureMap;
+    private LinkedHashMap<String, TigerServerStatusUpdate> serverUpdate;
+
+    private String bannerMessage;
+    private String bannerColor;
 }

@@ -9,3 +9,5 @@ application.yml
 /depstree.txt
 tiger-testenv-mgr/WinstoneHTTPServer
 /tiger-admin/src/test/resources/webdriver
+/tiger-testenv-mgr/node_modules/
+/tiger-testenv-mgr/src/frontend/node/

@@ -39,7 +39,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             }
             try {
                 await().atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
-                    .pollInterval(750, TimeUnit.MILLISECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
                     .until(() -> updateStatus(quiet) != TigerServerStatus.STARTING);
             } catch (ConditionTimeoutException cte) {
                 if (!quiet) {
@@ -57,7 +57,9 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
 
     public TigerServerStatus updateStatus(boolean quiet) {
         var url = buildHealthcheckUrl();
-        statusMessage("Waiting for URL '" + url + "' to be healthy...");
+        if (!quiet) {
+            statusMessage("Waiting for URL '" + url + "' to be healthy...");
+        }
         try {
             URLConnection con = url.openConnection();
             InsecureTrustAllManager.allowAllSsl(con);

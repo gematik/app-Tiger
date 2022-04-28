@@ -28,10 +28,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
@@ -60,9 +57,6 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         this.serverId = serverId;
         this.tigerTestEnvMgr = tigerTestEnvMgr;
         this.configuration = configuration;
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type(configuration.getType())
-            .build());
     }
 
     public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
@@ -118,7 +112,11 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             }
             setStatus(TigerServerStatus.STARTING);
         }
-        statusMessage("Starting server...");
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(configuration.getType())
+            .build());
+
+        statusMessage("Starting " + getServerId());
 
         reloadConfiguration();
 
@@ -156,7 +154,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                 getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
             throw e;
         }
-        statusMessage("Server started, setting routes...");
+        statusMessage("Setting routes at local proxy");
 
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);
@@ -175,7 +173,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         synchronized (this) {
             setStatus(TigerServerStatus.RUNNING);
         }
-        statusMessage("Server " + hostname + " started & running");
+        statusMessage(hostname + " READY");
     }
 
     private void reloadConfiguration() {
@@ -412,7 +410,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             tigerTestEnvMgr.getExecutor().submit(
                 () -> listeners.parallelStream()
                     .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                        .serverUpdate(Map.of(serverId, update))
+                        .serverUpdate(new LinkedHashMap<>(Map.of(serverId, update)))
                         .build()))
             );
         }

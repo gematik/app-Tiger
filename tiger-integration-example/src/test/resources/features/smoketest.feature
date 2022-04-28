@@ -28,4 +28,4 @@ Feature: Test Tiger BDD
     When User requests the startpage
     Then TGR find request to path "/"
     Then TGR current response with attribute "$.body.html.head.link.href" matches "jetty-dir.css"
-    # Given TGR warte auf Abbruch
+    #Given TGR warte auf Abbruch

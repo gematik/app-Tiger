@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -71,12 +72,21 @@ public class TigerDirector {
         readConfiguration();
         applyTestLibConfig();
         startMonitorUi();
-        startTestEnvMgr();
-        startWorkflowUi();
+        // get free port
+        startTestEnvMgr(); // pass in
+        startWorkflowUi(); // pass in
+        setupTestEnvironent();
         setDefaultProxyToLocalTigerProxy();
 
         initialized = true;
         log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
+    }
+
+    private static void setupTestEnvironent() {
+        if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+            log.info("Starting Test-Env setup");
+            tigerTestEnvMgr.setUpEnvironment();
+        }
     }
 
     private static synchronized void readConfiguration() {
@@ -134,7 +144,7 @@ public class TigerDirector {
 
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
-            TigerTestEnvMgr.openWorkflowUiInBrowser(envMgrApplicationContext.getEnvironment().getProperty("server.port"));
+            TigerTestEnvMgr.openWorkflowUiInBrowser(TigerGlobalConfiguration.readIntegerOptional("free.port.255").get().toString());
         }
     }
 
