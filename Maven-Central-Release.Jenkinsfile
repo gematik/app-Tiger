@@ -11,17 +11,25 @@ pipeline {
         skipDefaultCheckout()
         buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')
     }
-    agent { label 'Docker-Publish' }
+//     change to 'k8-publish' after we have successfully migrated to gcp jenkins
+//     agent { label 'k8-publish' }
+    agent { label 'k8-publish-latest' }
 
     tools {
         maven 'Default'
     }
     stages {
 
+//      change back after we have successfully migrated to gcp jenkins
+//         stage('Checkout') {
+//             steps {
+//                 git branch: BRANCH,
+//                         url: REPO_URL
+//             }
+//         }
         stage('Checkout') {
             steps {
-                git branch: BRANCH,
-                        url: REPO_URL
+                sh "git clone --branch ${BRANCH} ${REPO_URL} ."
             }
         }
 
