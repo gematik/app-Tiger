@@ -38,4 +38,23 @@ public class TestFeatureParser {
         assertThat(s2.getSteps()).hasSize(10);
     }
 
+    @Test
+    public void testSameNamesForScenario() {
+        FeatureParser featureParser = new FeatureParser();
+        Feature f = featureParser.parseFeatureFile(
+            Paths.get("src", "test", "resources", "testdata", "parser", "bdd", "ScenarioWithSameName.feature").toFile());
+
+        assertThat(f.getBackground()).isNull();
+        assertThat(f.getScenarios()).hasSize(2);
+
+        f.getScenarios().forEach(gherkinStruct -> assertThat(gherkinStruct.getName()).isEqualTo("Simple first test"));
+        Scenario s0 = (Scenario) f.getScenarios().get(0);
+        assertThat(s0.getSteps()).hasSize(4);
+        assertThat(s0.getLineNumber()).isEqualTo(3);
+
+        Scenario s1 = (Scenario) f.getScenarios().get(1);
+        assertThat(s1.getSteps()).hasSize(5);
+        assertThat(s1.getLineNumber()).isEqualTo(10);
+    }
+
 }

@@ -21,6 +21,7 @@
 
 ## Bugfixes
 
+* TGR-485: fix IndexOutOfBoundsException when using identical names for feature scenarios 
 * TGR-411: pki keys saved correctly via admin ui
 * TGR-308: order of nodes now restored on load in admin ui
 * TGR-461: Base key in `additionalYamls` is now honored

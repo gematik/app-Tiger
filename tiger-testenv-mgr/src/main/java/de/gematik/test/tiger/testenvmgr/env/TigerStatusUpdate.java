@@ -5,14 +5,12 @@
 package de.gematik.test.tiger.testenvmgr.env;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class TigerStatusUpdate {
-
     static long lastIndex;
     static Object indexMutex = new Object();
 

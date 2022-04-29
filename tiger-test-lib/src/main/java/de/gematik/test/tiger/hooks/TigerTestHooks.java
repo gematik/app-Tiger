@@ -19,7 +19,6 @@ import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import io.cucumber.java.*;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
@@ -43,34 +42,36 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This class integrates SerenityBDD and the Tiger test framework.
  * <p>
- * Initializes Tiger (reading tiger.yaml, starting Tiger test environment manager, local proxy and optionally monitoring UI)
+ * Initializes Tiger (reading tiger.yaml, starting Tiger test environment manager, local proxy and optionally monitoring
+ * UI)
  * <p>
- * Provides and Manages a NON thread safe RbelMessageProvider with two lists. One for reuse by Tiger validation steps and one internal for
- * later usage.
+ * Provides and Manages a NON thread safe RbelMessageProvider with two lists. One for reuse by Tiger validation steps
+ * and one internal for later usage.
  * <p>
  * Forwards all steps to Monitoring UI, applying data variant substitution
  * <p>
- * At the end of each scenario dumps all rbel messages to the file system and attaches it to the SerenityBDD report as test evidence.
+ * At the end of each scenario dumps all rbel messages to the file system and attaches it to the SerenityBDD report as
+ * test evidence.
  * <p>
  * <b>ATTENTION!</b> As of now Tiger does not support collecting Rbel messages in a "thread safe" way,
- * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test execution, you must deal
- * with concurrency of RBel messages yourself.
+ * so that messages sent in parallel test execution scenarios are tracked. If you do run Tiger in parallel test
+ * execution, you must deal with concurrency of RBel messages yourself.
  */
 @SuppressWarnings("unused")
 @Slf4j
 public class TigerTestHooks {
 
     /**
-     * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know what you do. It is used by the TGR
-     * validation steps. The list is not cleared at the end of / start of new scenarios!
+     * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know what you do. It
+     * is used by the TGR validation steps. The list is not cleared at the end of / start of new scenarios!
      * TODO add test to ensure this statement
      */
     @Getter
     private static final List<RbelElement> validatableRbelMessages = new ArrayList<>();
 
     /**
-     * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and SerenityBDD test report evidence. This
-     * list is internal and not accessible to validation steps or Tiger users
+     * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and SerenityBDD test
+     * report evidence. This list is internal and not accessible to validation steps or Tiger users
      */
     private static final List<RbelElement> rbelMessages = new ArrayList<>();
 
@@ -123,8 +124,8 @@ public class TigerTestHooks {
      */
     private static List<String> currentDataVariantKeys = null;
     /**
-     * For scenario outlines, this list is the list of data variant maps. The map contains the value for the specific variant identified by
-     * its key.
+     * For scenario outlines, this list is the list of data variant maps. The map contains the value for the specific
+     * variant identified by its key.
      */
     private static List<Map<String, String>> currentDataVariant = null;
 
@@ -186,8 +187,8 @@ public class TigerTestHooks {
                 }
             }
 
-            processDataVariantsForScenarioOutlines(feature.getScenario(scenario.getName()));
-            informWorkflowUiAboutCurrentScenario(feature, scenario.getName());
+            processDataVariantsForScenarioOutlines(feature.getScenario(scenario.getName(), scenario.getLine()));
+            informWorkflowUiAboutCurrentScenario(feature, scenario.getName(), scenario.getLine());
 
             currentStepIndex = 0;
         } else {
@@ -197,19 +198,19 @@ public class TigerTestHooks {
     }
 
 
-    private void informWorkflowUiAboutCurrentScenario(Feature feature, String scenarioName) {
+    private void informWorkflowUiAboutCurrentScenario(Feature feature, String scenarioName, Integer scenarioLine) {
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
             .featureMap(
                 new LinkedHashMap<>(Map.of(feature.getName(), FeatureUpdate.builder()
                     .description(feature.getName())
                     .scenarios(
                         new LinkedHashMap<>(Map.of(
-                            mapScenarioToScenarioUpdateMap(feature, scenarioName),
+                            mapScenarioToScenarioUpdateMap(feature, scenarioName, scenarioLine),
                             ScenarioUpdate.builder()
                                 .description(scenarioName)
-                                .steps(mapStepsToStepUpdateMap(feature.getScenario(scenarioName).getSteps(),
+                                .steps(mapStepsToStepUpdateMap(feature.getScenario(scenarioName, scenarioLine).getSteps(),
                                     line -> {
-                                        if (feature.getScenario(scenarioName) instanceof ScenarioOutline
+                                        if (feature.getScenario(scenarioName, scenarioLine) instanceof ScenarioOutline
                                             && currentDataVariantIndex != -1) {
                                             return replaceLineWithCurrentDataVariantValues(line);
                                         } else {
@@ -220,8 +221,8 @@ public class TigerTestHooks {
                 ))).build());
     }
 
-    private String mapScenarioToScenarioUpdateMap(Feature feature, String scenarioName) {
-        if (feature.getScenario(scenarioName) instanceof ScenarioOutline
+    private String mapScenarioToScenarioUpdateMap(Feature feature, String scenarioName, Integer scenarioLine) {
+        if (feature.getScenario(scenarioName, scenarioLine) instanceof ScenarioOutline
             && currentDataVariantIndex != -1) {
             return (currentDataVariantIndex + "-" + scenarioName);
         } else {
@@ -276,8 +277,8 @@ public class TigerTestHooks {
     }
 
     /**
-     * If monitoring UI is active, each step is forwarded to the monitoring UI. For scenario outlines the step will be first parsed for data
-     * variant tags of pattern &lt;key&gt;, substituting it with the current value.
+     * If monitoring UI is active, each step is forwarded to the monitoring UI. For scenario outlines the step will be
+     * first parsed for data variant tags of pattern &lt;key&gt;, substituting it with the current value.
      * <p>
      * Increases the current step index.
      *
@@ -290,7 +291,6 @@ public class TigerTestHooks {
             log.info("CurrentStep: " + String.join("\n", currentStep.getLines()));
             TigerDirector.updateStepInMonitor(currentStep);
         }
-
         currentStepIndex++;
     }
 
@@ -315,6 +315,7 @@ public class TigerTestHooks {
     }
 
     private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß| ]*)(Banner|banner|text|Text) \"(.*)\"");
+
 
     private void informWorkflowUiAboutCurrentStep(Scenario scenario) {
         if (scenario == null) {
@@ -346,7 +347,7 @@ public class TigerTestHooks {
                     .description(feature.getName())
                     .scenarios(
                         new LinkedHashMap<>(Map.of(
-                            mapScenarioToScenarioUpdateMap(feature, scenario.getName()),
+                            mapScenarioToScenarioUpdateMap(feature, scenario.getName(), scenario.getLine()),
                             ScenarioUpdate.builder()
                                 .description(scenario.getName())
                                 .steps(new HashMap<>(Map.of(String.valueOf(currentStepIndex - 1), StepUpdate.builder()
@@ -356,6 +357,7 @@ public class TigerTestHooks {
                                 ))).build()
                         ))).build()
                 ))).build());
+
     }
 
     @After

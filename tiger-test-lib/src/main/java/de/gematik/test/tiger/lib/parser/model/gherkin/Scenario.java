@@ -17,6 +17,7 @@ import org.json.JSONObject;
 public class Scenario extends GherkinStruct {
 
     private Feature feature;
+    private Integer lineNumber;
     private List<Step> steps = new ArrayList<>();
 
     @Override

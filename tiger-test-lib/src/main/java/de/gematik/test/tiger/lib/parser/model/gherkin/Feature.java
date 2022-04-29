@@ -17,7 +17,10 @@ public class Feature extends GherkinStruct {
     private Background background;
     private List<GherkinStruct> scenarios = new ArrayList<>();
 
-    public Scenario getScenario(String name) {
-        return scenarios.stream().filter(scenario -> scenario.getName().equals(name)).map(Scenario.class::cast).findFirst().orElseThrow();
+    public Scenario getScenario(String name, Integer lineNumber) {
+        return scenarios.stream().filter(scenario -> scenario.getName().equals(name))
+            .map(Scenario.class::cast)
+            .filter(scenario -> scenario instanceof ScenarioOutline || scenario.getLineNumber().equals(lineNumber))
+            .findFirst().orElseThrow();
     }
 }
