@@ -4,21 +4,31 @@
 
 import TestResult from "./TestResult";
 
-export default class StepUpdate {
-  description: string = "";
-  status: TestResult = TestResult.UNUSED;
+export interface IStep  {
+  description: string;
+  status: TestResult;
+}
 
-  constructor() {
-  }
+export interface IJsonSteps {
+  [key:string]: IStep
+}
 
-  public static fromJson(json: any): StepUpdate {
+export default class StepUpdate  implements IStep {
+  description= "";
+  status = TestResult.UNUSED;
+
+  public static fromJson(json: IStep): StepUpdate {
     const step: StepUpdate = new StepUpdate();
-    step.description = json.description;
-    step.status = json.status;
+    if (json.description) {
+      step.description = json.description;
+    }
+    if (json.status) {
+      step.status = json.status;
+    }
     return step;
   }
 
-  public static mapFromJson(jsonsteps : any): Map<string, StepUpdate> {
+  public static mapFromJson(jsonsteps : IJsonSteps): Map<string, StepUpdate> {
     const map:Map<string, StepUpdate> = new Map<string, StepUpdate>();
     if (jsonsteps) {
       Object.entries(jsonsteps).forEach(([key, value]) =>
@@ -27,8 +37,17 @@ export default class StepUpdate {
     }
     return map;
   }
-  public toString() {
-    return "description: '" + this.description + "'\nstatus: " + this.status + "\n";
+
+  public merge(step: StepUpdate) {
+    if (step.description){
+      this.description = step.description;
+    }
+    if (step.status) {
+      this.status = step.status;
+    }
   }
 
+  public toString() {
+    return `{ description: "${this.description}",\nstatus: "${this.status}"\n }`;
+  }
 }

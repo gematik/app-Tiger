@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div>Featurelist</div>
+    <h4><i class="fa-solid fa-address-card left"></i>Testrun</h4>
     <div class="alert alert-info featurelistbox">
       <div class="alert-heading featurelist">
         <div v-for="(feature) in featureUpdateMap">
@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 
+// @ts-ignore
 const props = defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
 }>();

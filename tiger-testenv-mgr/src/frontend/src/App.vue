@@ -24,11 +24,11 @@ export default defineComponent({
 </script>
 
 <style lang="css">
-.left, i.fa.left, i.far.left, i.fas.left, i.fa-sold.left {
+.left, i.fa.left, i.far.left, i.fas.left, i.fa-solid.left {
   padding-right: 0.5rem;
 }
 
-.right, i.fa.right, i.far.right, i.fas.right, i.fa-sold.right {
+.right, i.fa.right, i.far.right, i.fas.right, i.fa-solid.right {
   padding-left: 0.5rem;
 }
 
@@ -42,4 +42,25 @@ export default defineComponent({
   background: whitesmoke;
   padding-right: 1rem;
 }
+
+.passed {
+  color: forestgreen !important;
+}
+
+.skipped {
+  color: darkorange !important;
+}
+
+.pending, .unused {
+  color: lightslategray !important;
+}
+
+.undefined, .ambiguous {
+  color: orchid !important;
+}
+
+.failed {
+  color: orangered !important;
+}
+
 </style>

@@ -6,16 +6,22 @@
     <div v-else>
       <h2 class="pt-3">Workflow messages</h2>
       <div v-if="bannerData.length > 0" :style="`color: ${bannerData[bannerData.length-1].color};`"
-           class="banner alert alert-info text-center w-100 p-5`">
+           class="banner alert alert-info">
         <i class="fa-solid fa-circle-exclamation left"></i> {{ bannerData[bannerData.length - 1].text }}
       </div>
-      <h2 class="mt-3">Testrun Features / Scenarios</h2>
+      <h2 class="mt-3">Current Testrun</h2>
       <div style="display:flex;width:100%;">
         <div id="execution_table" class="pt-1">
           <div v-for="(feature) in featureUpdateMap">
-            <h3><i class="fa-regular fa-address-card left"></i> Feature: {{ feature[1].description }}</h3>
+            <h3 class="w-100 mt-3">
+              <i :class="`fa-regular fa-address-card left ${feature[1].status.toLowerCase()}`"></i>
+              Feature: {{ feature[1].description }} ({{ feature[1].status }})
+            </h3>
             <div v-for="(scenario) in feature[1].scenarios">
-              <h4><i class="far fa-clipboard left"></i> Scenario: {{ scenario[1].description }}</h4>
+              <h4 class="scenariotitle mt-2">
+                <i :class="`far fa-clipboard left ${scenario[1].status.toLowerCase()}`"></i>
+                Scenario: {{ scenario[1].description }} ({{ scenario[1].status }})
+              </h4>
               <table class="table table-striped">
                 <tbody>
                 <tr v-for="(step) in scenario[1].steps">
@@ -44,8 +50,6 @@
 </template>
 
 <script setup lang="ts">
-import DataType from "@/types/DataType";
-import TestResult from "@/types/testsuite/TestResult";
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import BannerMessages from "@/types/BannerMessages";
 
@@ -55,23 +59,21 @@ defineProps<{
 }>();
 
 // elements
-let rbelLogDetailsResizer: HTMLElement;
-let executionPane: HTMLElement;
-let rbelLogDetailsPane: HTMLElement;
+let rbelLogDetailsResizer: HTMLElement | null;
+let executionTable: Element| null;
+let rbelLogDetailsPane: HTMLElement| null;
 
-/*const resizer = document.getElementById('dragMe');
-const executionPane = resizer.previousElementSibling;
-const rightSide = resizer.nextElementSibling;
-*/
 // The current position of mouse
 let x = -1;
-let y = 0;
-let leftWidth = -1;
 
 function initElementReferences() {
   rbelLogDetailsResizer = document.getElementById('rbellog_resize');
-  executionPane = rbelLogDetailsResizer.previousElementSibling;
+  executionTable = document.getElementById('execution_table');
   rbelLogDetailsPane = document.getElementById('rbellog_details_pane');
+
+  if (!rbelLogDetailsResizer || !executionTable || !rbelLogDetailsPane) {
+    throw new Error("Internal error - Unable to find UI element(s)!");
+  }
 }
 
 // Handle the mousedown event
@@ -82,8 +84,6 @@ function mouseDownHandler(e: MouseEvent) {
   }
   // Get the current mouse position
   x = e.clientX;
-  y = e.clientY;
-  leftWidth = executionPane.clientWidth;
   document.addEventListener("mousemove", mouseMoveHandler);
   document.addEventListener("mouseup", mouseUpHandler);
 }
@@ -102,27 +102,27 @@ function mouseMoveHandler(e: MouseEvent) {
 
   // How far the mouse has been moved
   const dx = e.clientX - x;
-  const prevWidth = executionPane.clientWidth;
+  const prevWidth = executionTable.clientWidth;
 
-  rbelLogDetailsPane.style.width = executionPane.parentElement.clientWidth - executionPane.clientWidth - dx - rbelLogDetailsResizer.clientWidth - 30 + 'px';
-  executionPane.style.width = (executionPane.clientWidth + dx) + 'px';
+  rbelLogDetailsPane.style.width = executionTable.parentElement.clientWidth - executionTable.clientWidth - dx - rbelLogDetailsResizer.clientWidth - 30 + 'px';
+  executionTable.style.width = (executionTable.clientWidth + dx) + 'px';
 
-  if (executionPane.clientWidth !== prevWidth) {
+  if (executionTable.clientWidth !== prevWidth) {
     x = e.clientX;
   }
 
   document.body.style.userSelect = 'none';
-  executionPane.style.userSelect = 'none';
-  executionPane.style.pointerEvents = 'none';
+  executionTable.style.userSelect = 'none';
+  executionTable.style.pointerEvents = 'none';
   rbelLogDetailsPane.style.userSelect = 'none';
   rbelLogDetailsPane.style.pointerEvents = 'none';
 
   let classes = rbelLogDetailsPane.getAttribute("class");
-  if (executionPane.parentElement.clientWidth - executionPane.clientWidth < 200) {
+  if (executionTable.parentElement.clientWidth - executionTable.clientWidth < 200) {
     if (classes.indexOf("d-none") === -1 && dx > 0) {
       classes += " d-none";
       rbelLogDetailsPane.setAttribute("class", classes);
-      executionPane.style.width = executionPane.parentElement.clientWidth - 10 + 'px';
+      executionTable.style.width = executionTable.parentElement.clientWidth - 10 + 'px';
       mouseUpHandler();
       return;
     }
@@ -144,8 +144,8 @@ function mouseUpHandler() {
   rbelLogDetailsResizer.style.removeProperty('cursor');
   document.body.style.removeProperty('cursor');
 
-  executionPane.style.removeProperty('user-select');
-  executionPane.style.removeProperty('pointer-events');
+  executionTable.style.removeProperty('user-select');
+  executionTable.style.removeProperty('pointer-events');
   rbelLogDetailsPane.style.removeProperty('user-select');
   rbelLogDetailsPane.style.removeProperty('pointer-events');
 
@@ -171,9 +171,10 @@ function mouseLeaveHandler() {
 <style scoped>
 .banner {
   font-weight: bolder;
-  font-family: "Courier New", monospace;
   font-size: 150%;
   margin-bottom: 0;
+  text-align: center;
+  padding: 3rem;
 }
 
 #execution_pane {
@@ -184,6 +185,11 @@ function mouseLeaveHandler() {
 #execution_table {
   display: flex;
   width: 100%;
+}
+
+.scenariotitle {
+  border-top: 3px solid gray;
+  padding: 1rem;
 }
 
 .step_status {
@@ -204,26 +210,6 @@ function mouseLeaveHandler() {
 .step_text.scenario {
   font-size: 100%;
   font-style: italic;
-}
-
-.passed {
-  color: forestgreen !important;
-}
-
-.skipped {
-  color: darkorange !important;
-}
-
-.pending, .unused {
-  color: lightslategray !important;
-}
-
-.undefined, .ambiguous {
-  color: orchid !important;
-}
-
-.failed {
-  color: orangered !important;
 }
 
 .resizer {

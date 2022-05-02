@@ -21,16 +21,6 @@
 <script setup lang="ts">
 import TigerServerStatusDto from "@/types/TigerServerStatusDto";
 import TigerServerStatus from "@/types/TigerServerStatus";
-import {ref} from "vue";
-/*
-import {library} from '@fortawesome/fontawesome-svg-core'
-import {faUserSecret} from '@fortawesome/free-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
-
-library.add(faUserSecret)
-*/
-
-let isActive = ref(false);
 
 defineProps<{
   server: TigerServerStatusDto;
@@ -47,6 +37,7 @@ const serverIcons = {
 
 function getServerIcon(type: string): string {
   if (type) {
+    // @ts-ignore
     return serverIcons[type];
   } else {
     return "far fa-question";
@@ -72,13 +63,11 @@ function getHistoryCollapseId(server: TigerServerStatusDto): string {
   return "history_" + server.name;
 }
 
-function toggleStatusList() {
-  isActive.value = !isActive.value;
-}
 </script>
 
 <style scoped>
 
+/*noinspection CssUnusedSymbol*/
 .serverbox {
   padding: 0.25rem;
 }
@@ -103,7 +92,6 @@ function toggleStatusList() {
 .serverstatus {
   font-size: 75%;
   font-style: italic;
-  font-color: inherit;
   border: 1px solid white;
 }
 
