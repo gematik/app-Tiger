@@ -17,6 +17,7 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
+import io.restassured.RestAssured;
 import java.awt.HeadlessException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -162,7 +162,8 @@ public class TigerDirector {
                 System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
                 System.setProperty("https.proxyHost", "localhost");
                 System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
-                SerenityRestUtils.setupSerenityRest();
+                System.setProperty("java.net.useSystemProxies", "true");
+                SerenityRestUtils.setupSerenityRest(tigerTestEnvMgr.getLocalTigerProxy().getPort());
             }
         } else {
             log.info(Ansi.colorize("SKIPPING TIGER PROXY settings...", RbelAnsiColors.RED_BOLD));
@@ -210,7 +211,7 @@ public class TigerDirector {
         // TODO TGR-259 (see architecture decision about pluggable (TGR-253)) create Aforeport and embedd it into serenity report
     }
 
-    public static String getProxySettings() {
+    public static String getLocalTigerProxyUrl() {
         assertThatTigerIsInitialized();
         if (tigerTestEnvMgr.getLocalTigerProxy() == null || !tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
             return null;

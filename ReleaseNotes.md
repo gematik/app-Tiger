@@ -2,6 +2,11 @@
 
 # Release 0.20.2
 
+## Breaking Changes
+
+* TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
+* During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
+
 ## Features
 
 * New test-steps: Print current request/response as rbel-tree

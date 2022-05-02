@@ -235,4 +235,16 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         assertThat(TigerGlobalConfiguration.readString("foobar.some.keys"))
             .isEqualTo("andValues");
     }
+
+    @Test
+    @TigerTest(tigerYaml =
+        "additionalYamls:\n"
+            + "  - filename: src/test/resources/defineFooAsBar.yaml\n"
+            + "  - filename: src/test/resources/${foo}.yaml\n"
+            + "    baseKey: baseKey\n")
+    public void readAdditionalYamlFilesWithPlaceholdersInName() {
+        assertThat(TigerGlobalConfiguration.readString("baseKey.someKey"))
+            .isEqualTo("someValue");
+    }
+
 }

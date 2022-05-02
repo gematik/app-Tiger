@@ -4,13 +4,16 @@
 
 package de.gematik.test.tiger.lib.serenityRest;
 
+import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SerenityRestUtils {
 
-    public static void setupSerenityRest() {
+    public static void setupSerenityRest(int localTigerProxyProxyPort) {
+        RestAssured.proxy("localhost", localTigerProxyProxyPort);
+
         RestAssured.filters((requestSpec, responseSpec, ctx) -> {
             try {
                 log.trace("Sending Request "

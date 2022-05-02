@@ -10,7 +10,6 @@ Feature: Test Tiger BDD
   Background:
     Given TGR show green banner "GRÜN!"
 
-
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR show banner "<txt>"
     When User requests the startpage
