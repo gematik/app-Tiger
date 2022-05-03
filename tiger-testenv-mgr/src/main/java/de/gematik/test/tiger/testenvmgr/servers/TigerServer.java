@@ -9,8 +9,8 @@ import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.CfgTigerProxyOptions;
 import de.gematik.test.tiger.common.data.config.PkiType;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -240,14 +240,13 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         // assert that server-port is set for the tiger-proxy
         if (type == ServerType.TIGERPROXY) {
             if (getConfiguration().getTigerProxyCfg() == null) {
-                getConfiguration().setTigerProxyCfg(new CfgTigerProxyOptions());
+                getConfiguration().setTigerProxyCfg(new TigerProxyConfiguration());
             }
-            if (getConfiguration().getTigerProxyCfg().getServerPort() <= 0) {
-                getConfiguration().getTigerProxyCfg().setServerPort(SocketUtils.findAvailableTcpPort());
+            if (getConfiguration().getTigerProxyCfg().getAdminPort() <= 0) {
+                getConfiguration().getTigerProxyCfg().setAdminPort(SocketUtils.findAvailableTcpPort());
             }
-            if (getConfiguration().getTigerProxyCfg().getProxyCfg() == null
-                || getConfiguration().getTigerProxyCfg().getProxyCfg().getPort() == null
-                || getConfiguration().getTigerProxyCfg().getProxyCfg().getPort() <= 0) {
+            if (getConfiguration().getTigerProxyCfg().getProxyPort() == null
+                || getConfiguration().getTigerProxyCfg().getProxyPort() <= 0) {
                 throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getHostname() + "'");
             }
         }
@@ -289,12 +288,6 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
 
         if (type == ServerType.EXTERNALJAR) {
             assertCfgPropertySet(getConfiguration(), "externalJarOptions", "healthcheck");
-        }
-
-        if (type == ServerType.TIGERPROXY) {
-            if (getConfiguration().getTigerProxyCfg().getServerPort() < 1) {
-                throw new TigerTestEnvException("Server port for Tiger Proxy must be explicitly set!");
-            }
         }
     }
 

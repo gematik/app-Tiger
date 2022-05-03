@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
@@ -33,7 +32,7 @@ public class TracingpointsController {
         return new TracingpointsInfo[]{
             TracingpointsInfo.builder()
                 .name(tigerProxyConfiguration.getTrafficEndpointConfiguration().getName())
-                .port(tigerProxy.getPort())
+                .port(tigerProxy.getProxyPort())
 
                 .wsEndpoint(tigerProxyConfiguration.getTrafficEndpointConfiguration().getWsEndpoint())
                 .stompTopic("/topic" + tigerProxyConfiguration.getTrafficEndpointConfiguration().getStompTopic())

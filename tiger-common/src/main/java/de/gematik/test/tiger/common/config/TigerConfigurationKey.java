@@ -95,4 +95,10 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
         }
         return new TigerConfigurationKey(subList(reference.size(), size()));
     }
+
+
+
+    public boolean containsKey(String key) {
+        return downsampleKey().matches(key);
+    }
 }

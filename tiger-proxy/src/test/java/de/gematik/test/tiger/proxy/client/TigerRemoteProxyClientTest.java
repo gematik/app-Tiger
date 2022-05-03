@@ -116,7 +116,7 @@ public class TigerRemoteProxyClientTest {
         }
 
         unirestInstance = new UnirestInstance(
-            new Config().proxy("localhost", tigerProxy.getPort()));
+            new Config().proxy("localhost", tigerProxy.getProxyPort()));
     }
 
     @AfterEach
@@ -263,7 +263,7 @@ public class TigerRemoteProxyClientTest {
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
-        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/blub/foo").asString()
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/blub/foo").asString()
             .ifFailure(response -> fail("Failure from server: " + response.getBody()))
             .getBody())
             .isEqualTo("bar");
@@ -283,7 +283,7 @@ public class TigerRemoteProxyClientTest {
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
-        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foo").asString()
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo").asString()
             .ifFailure(response -> fail("Failure from server: " + response.getBody()))
             .getBody())
             .isEqualTo("bar");

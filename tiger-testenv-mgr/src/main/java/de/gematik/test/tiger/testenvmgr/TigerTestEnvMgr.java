@@ -65,10 +65,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         localTigerProxy = startLocalTigerProxy(configuration);
 
         if (configuration.isLocalProxyActive()) {
-            log.info("Started local tiger proxy on port " + localTigerProxy.getPort() + "...");
+            log.info("Started local tiger proxy on port " + localTigerProxy.getProxyPort() + "...");
             environmentVariables = new HashMap<>(
                 Map.of("PROXYHOST", "host.docker.internal",
-                    "PROXYPORT", localTigerProxy.getPort()));
+                    "PROXYPORT", localTigerProxy.getProxyPort()));
         } else {
             log.info("Local docker tiger proxy deactivated");
             environmentVariables = new HashMap<>();
@@ -143,7 +143,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         TigerGlobalConfiguration.initialize();
         readTemplates();
         final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class,
-                "tiger")
+            "tiger")
             .orElseGet(Configuration::new);
         for (CfgServer cfgServer : configuration.getServers().values()) {
             if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
@@ -275,9 +275,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     }
 
 
-    public static void openWorkflowUiInBrowser(String serverPort) {
+    public static void openWorkflowUiInBrowser(String adminPort) {
         try {
-            String url = "http://localhost:" + serverPort;
+            String url = "http://localhost:" + adminPort;
 
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Action.BROWSE)) {
                 Desktop desktop = Desktop.getDesktop();

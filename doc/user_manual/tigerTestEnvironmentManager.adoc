@@ -106,17 +106,16 @@ Their meaning and format are explained in the related section.
 
   # type specific sub structure for Tiger Proxy nodes
   tigerProxyCfg:
-    serverPort: int
-    proxiedServer: string
-    proxiedServerProtocol: [HTTP|HTTPS]
     # Here a normal Tiger Proxy configuration can be used.
     # This is explained in more depth down below
-    proxyCfg:
-      proxyRoutes:
-          # defines a forward-proxy-route from this server
-        - from: http://foobar
-          # to this server
-          to: https://cryptic.backend/server/with/path
+    adminPort: int
+    proxiedServer: string
+    proxiedServerProtocol: [HTTP|HTTPS]
+    proxyRoutes:
+        # defines a forward-proxy-route from this server
+      - from: http://foobar
+        # to this server
+        to: https://cryptic.backend/server/with/path
 
   # type specific sub structure for docker container and compose nodes
   dockerOptions:
@@ -378,9 +377,9 @@ tigerProxy_001:
     # OPTIONAL port of the web user interface and the proxy management
     # (e.g. rbel-message forwarding)
     # Default value is empty, which means a random port will be used.
-    serverPort: 8080
+    adminPort: 8080
     # OPTIONAL server key of the node this proxy shall be used as reverse proxy for.
-    # If set the routes in the proxyCfg section will be configured appropriately.
+    # If set the routes will be configured appropriately.
     # Default value is empty.
     proxiedServer: externalJar_001
     # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
@@ -391,14 +390,13 @@ tigerProxy_001:
     proxyProtocol: http
     # configures the proxy itself. For more details
     # please check the chapter about the local test suite Tiger Proxy below
-    proxyCfg:
-      ...
-      proxyRoutes:
-        - from: http://foobar
-          # defines a forward-proxy-route from this server...
-          to: https://cryptic.backend/server/with/path
-          # to this server
-      ...
+    ...
+    proxyRoutes:
+      - from: http://foobar
+        # defines a forward-proxy-route from this server...
+        to: https://cryptic.backend/server/with/path
+        # to this server
+    ...
 
   # The following properties are explained in the General properties section above
   pkiKeys: []

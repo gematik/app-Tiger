@@ -36,7 +36,7 @@ Feature: Check collapsing sections
     Then he doesn't see section "node-settings"
     And he doesn't see section "source"
     And he doesn't see section ".tigerProxyCfg"
-    And he doesn't see section ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he doesn't see section ".tigerProxyCfg.proxyRoutes"
     And he doesn't see tab link "TigerProxy"
     And he doesn't see tab link "External"
     And he doesn't see tab link "PKI"
@@ -77,5 +77,5 @@ Feature: Check collapsing sections
     When he focuses on formular "local_tiger_proxy"
     And he collapses the node
     And he doesn't see section ".tigerProxyCfg"
-    And he doesn't see section ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he doesn't see section ".tigerProxyCfg.proxyRoutes"
     And he doesn't see tab link "TigerProxy"

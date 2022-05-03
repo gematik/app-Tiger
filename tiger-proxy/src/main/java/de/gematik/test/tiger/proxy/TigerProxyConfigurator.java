@@ -22,6 +22,9 @@ public class TigerProxyConfigurator {
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
+        if (tigerProxy.getTigerProxyConfiguration().getAdminPort() == 0) {
+            tigerProxy.getTigerProxyConfiguration().setAdminPort(webServerAppCtxt.getWebServer().getPort());
+        }
         log.info("Adding route for 'http://tiger.proxy'...");
         tigerProxy.addRoute(
                 TigerRoute.builder()

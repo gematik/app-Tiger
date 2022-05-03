@@ -121,7 +121,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     @Override
-    public int getPort() {
+    public int getProxyPort() {
         return 0;
     }
 

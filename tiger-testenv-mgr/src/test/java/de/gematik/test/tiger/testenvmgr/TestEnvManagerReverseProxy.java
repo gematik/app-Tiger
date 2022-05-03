@@ -30,10 +30,9 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "  reverseproxy1:\n"
         + "    type: tigerProxy\n"
         + "    tigerProxyCfg:\n"
-        + "      serverPort: ${free.port.2}\n"
+        + "      adminPort: ${free.port.2}\n"
         + "      proxiedServer: testWinstone2\n"
-        + "      proxyCfg:\n"
-        + "        port: ${free.port.3}\n")
+        + "      proxyPort: ${free.port.3}\n")
     public void testReverseProxy() {
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();
@@ -70,10 +69,9 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "  reverseproxy1:\n"
         + "    type: tigerProxy\n"
         + "    tigerProxyCfg:\n"
-        + "      serverPort: ${free.port.2}\n"
+        + "      adminPort: ${free.port.2}\n"
         + "      proxiedServer: testWinstone2\n"
-        + "      proxyCfg:\n"
-        + "        port: ${free.port.3}\n")
+        + "      proxyPort: ${free.port.3}\n")
     public void deepPathHealthcheckUrl_routeShouldTargetBaseUrl() {
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();

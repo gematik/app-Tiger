@@ -22,7 +22,6 @@ import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
-import de.gematik.test.tiger.proxy.configuration.TigerProxyReportConfiguration;
 import de.gematik.test.tiger.proxy.data.GetMessagesAfterDto;
 import de.gematik.test.tiger.proxy.data.JexlQueryResponseDto;
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
@@ -70,6 +69,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer = new RbelHtmlRenderer();
+
     private final ApplicationConfiguration applicationConfiguration;
     private ApplicationContext applicationContext;
 
@@ -167,7 +167,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                     ),
                     div().withClass("navbar-item").with(
                         span("Proxy port "),
-                        b("" + tigerProxy.getPort()).withClass("ml-3")
+                        b("" + tigerProxy.getProxyPort()).withClass("ml-3")
                     ),
                     div().withClass("navbar-item").with(
                         button().withId("quitProxy").withClass("button is-outlined is-danger").with(
@@ -179,13 +179,10 @@ public class TigerWebUiController implements ApplicationContextAware {
             )
         ).render();
 
-        if (applicationConfiguration.getReport() == null) {
-            applicationConfiguration.setReport(new TigerProxyReportConfiguration());
-        }
         String configJSSnippetStr = loadResourceToString("/configScript.html")
-            .replace("${ProxyPort}", String.valueOf(tigerProxy.getPort()))
-            .replace("${FilenamePattern}", applicationConfiguration.getReport().getFilenamePattern())
-            .replace("${UploadUrl}", applicationConfiguration.getReport().getUploadUrl());
+            .replace("${ProxyPort}", String.valueOf(tigerProxy.getProxyPort()))
+            .replace("${FilenamePattern}", applicationConfiguration.getFilenamePattern())
+            .replace("${UploadUrl}", applicationConfiguration.getUploadUrl());
         return html.replace("<div id=\"navbardiv\"></div>", navbar +
                 loadResourceToString("/routeModal.html") +
                 loadResourceToString("/jexlModal.html") +
@@ -350,7 +347,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "/quit", produces = MediaType.APPLICATION_JSON_VALUE)
     public void quitProxy(@RequestParam(name = "noSystemExit", required = false) final String noSystemExit) {
-        log.info("shutting down tiger standalone proxy at port " + tigerProxy.getPort() + "...");
+        log.info("shutting down tiger standalone proxy at port " + tigerProxy.getProxyPort() + "...");
         tigerProxy.clearAllRoutes();
         tigerProxy.shutdown();
         log.info("shutting down tiger standalone proxy ui...");
@@ -365,8 +362,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @PostMapping(value = "/uploadReport", produces = MediaType.APPLICATION_JSON_VALUE)
     public void uploadReport(@RequestBody String htmlReport) {
-        if (applicationConfiguration.getReport() == null || applicationConfiguration.getReport().getUploadUrl()
-            .equals("UNDEFINED")) {
+        if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
             throw new TigerProxyConfigurationException("Upload feature is not configured!");
         }
         log.info("uploading report...");
@@ -441,10 +437,10 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private void performUploadReport(String htmlReport) {
         // Connect to the web server endpoint
-        String filename = applicationConfiguration.getReport().getFilenamePattern()
+        String filename = applicationConfiguration.getFilenamePattern()
             .replace("${DATE}", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")))
             .replace("${TIME}", LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmssSSS")));
-        String uploadUrl = applicationConfiguration.getReport().getUploadUrl() + filename;
+        String uploadUrl = applicationConfiguration.getUploadUrl() + filename;
 
         try {
             URL serverUrl = new URL(uploadUrl);
@@ -453,9 +449,9 @@ public class TigerWebUiController implements ApplicationContextAware {
             urlConnection.setDoOutput(true);
             urlConnection.setRequestMethod("POST");
             urlConnection.addRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundaryString);
-            if (applicationConfiguration.getReport().getUsername() != null) {
-                String auth = applicationConfiguration.getReport().getUsername() + ":"
-                    + applicationConfiguration.getReport().getPassword();
+            if (applicationConfiguration.getUsername() != null) {
+                String auth = applicationConfiguration.getUsername() + ":"
+                    + applicationConfiguration.getPassword();
                 byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.UTF_8));
                 String authHeaderValue = "Basic " + new String(encodedAuth);
                 urlConnection.setRequestProperty("Authorization", authHeaderValue);
@@ -478,7 +474,8 @@ public class TigerWebUiController implements ApplicationContextAware {
                     zos.closeEntry();
                     entry = new ZipEntry("application.cfg");
                     zos.putNextEntry(entry);
-                    zos.write(applicationConfiguration.toString().getBytes(StandardCharsets.UTF_8));
+                    // Todo: was genau soll hier rausgeschrieben werden?
+                    zos.write(tigerProxy.getTigerProxyConfiguration().toString().getBytes(StandardCharsets.UTF_8));
                     zos.closeEntry();
                 }
 

@@ -53,7 +53,7 @@ public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         AtomicReference<Throwable> caughtExceptionReference = new AtomicReference<>();
         tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
 
-        Unirest.spawnInstance().get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        Unirest.spawnInstance().get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(caughtExceptionReference.get().getMessage())
             .isEqualTo("foobar");
@@ -91,7 +91,7 @@ public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         AtomicReference<Throwable> caughtExceptionReference = new AtomicReference<>();
         tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
 
-        Unirest.spawnInstance().get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        Unirest.spawnInstance().get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(caughtExceptionReference.get().getMessage())
             .isEqualTo("foobar");

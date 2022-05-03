@@ -17,7 +17,6 @@ import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
-import io.restassured.RestAssured;
 import java.awt.HeadlessException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -158,12 +157,12 @@ public class TigerDirector {
             } else {
                 log.info(Ansi.colorize("SETTING TIGER PROXY...", RbelAnsiColors.BLUE_BOLD));
                 System.setProperty("http.proxyHost", "localhost");
-                System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
+                System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
                 System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
                 System.setProperty("https.proxyHost", "localhost");
-                System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
+                System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
                 System.setProperty("java.net.useSystemProxies", "true");
-                SerenityRestUtils.setupSerenityRest(tigerTestEnvMgr.getLocalTigerProxy().getPort());
+                SerenityRestUtils.setupSerenityRest(tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
             }
         } else {
             log.info(Ansi.colorize("SKIPPING TIGER PROXY settings...", RbelAnsiColors.RED_BOLD));

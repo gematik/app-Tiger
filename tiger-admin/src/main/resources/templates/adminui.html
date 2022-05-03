@@ -383,7 +383,7 @@
               <div class="col-6">
                 <div class="input-group">
                   <span class="input-group-text">Proxy Port</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.port" title="Port on which the Tiger proxy is listening"
+                  <input class="form-control" name=".tigerProxyCfg.proxyPort" title="Port on which the Tiger proxy is listening"
                          type="number">
                 </div>
                 <div class="input-group advanced">
@@ -396,7 +396,7 @@
                 </div>
                 <div class="input-group advanced">
                   <span class="input-group-text">Log level</span>
-                  <select class="form-select" name=".tigerProxyCfg.proxyCfg.proxyLogLevel"
+                  <select class="form-select" name=".tigerProxyCfg.proxyLogLevel"
                           title="Log level of the proxy. WARN is fint, TRACE produces a LOT of logs.">
                     <option selected="" value="WARN">WARN</option>
                     <option value="INFO">INFO</option>
@@ -412,8 +412,8 @@
                   </select>
                 </div>
                 <div class="input-group advanced">
-                  <span class="input-group-text">Server Port</span>
-                  <input class="form-control" name=".tigerProxyCfg.serverPort"
+                  <span class="input-group-text">Admin Port</span>
+                  <input class="form-control" name=".tigerProxyCfg.adminPort"
                          title="Port the web ui and traffic endpoint is running on."
                          type="number">
                 </div>
@@ -422,28 +422,28 @@
             <div class="row input-group advanced mt-3">
               <div class="col-6">
                 <div class="form-check form-switch advanced">
-                  <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.activateRbelParsing"
+                  <input class="form-check-input" name=".tigerProxyCfg.activateRbelParsing"
                          type="checkbox">
                   <label class="form-check-label">Parse Traffic via RbelLogger</label></div>
                 <div class="form-check form-switch advanced">
-                  <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.activateRbelEndpoint"
+                  <input class="form-check-input" name=".tigerProxyCfg.activateRbelEndpoint"
                          type="checkbox">
                   <label class="form-check-label">Activate RbelLogger user interface</label>
                 </div>
               </div>
               <div class="col-6">
                 <div class="form-check form-switch advanced">
-                  <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.activateForwardAllLogging"
+                  <input class="form-check-input" name=".tigerProxyCfg.activateForwardAllLogging"
                          type="checkbox">
                   <label class="form-check-label">Log traffic even without routes</label></div>
                 <div class="form-check form-switch advanced">
-                  <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.activateAsn1Parsing"
+                  <input class="form-check-input" name=".tigerProxyCfg.activateAsn1Parsing"
                          type="checkbox">
                   <label class="form-check-label">Parse ASN1 structures</label></div>
               </div>
             </div>
           </fieldset>
-          <fieldset class="complex-list" section=".tigerProxyCfg.proxyCfg.proxyRoutes">
+          <fieldset class="complex-list" section=".tigerProxyCfg.proxyRoutes">
             <legend>
               Routes
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -464,29 +464,29 @@
                       <label class="form-label">Route</label>
                       <div class="input-group">
                         <span class="input-group-text">ID</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.proxyRoutes.id" title="Unique id of this routing."
+                        <input class="form-control" name=".tigerProxyCfg.proxyRoutes.id" title="Unique id of this routing."
                                type="text">
                       </div>
                       <div class="input-group">
                         <span class="input-group-text">From ↦</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.proxyRoutes.from"
+                        <input class="form-control" name=".tigerProxyCfg.proxyRoutes.from"
                                title="scheme://host:port the client wants to reach. Using '/' means catch all (reverse proxy)."
                                type="text">
                       </div>
                       <div class="input-group">
                         <span class="input-group-text">To</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.proxyRoutes.to"
+                        <input class="form-control" name=".tigerProxyCfg.proxyRoutes.to"
                                title="scheme://host:port the server will redirect the client request to."
                                type="text">
                       </div>
                       <div class="form-check form-switch advanced">
-                        <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.proxyRoutes.internalRoute"
+                        <input class="form-check-input" name=".tigerProxyCfg.proxyRoutes.internalRoute"
                                type="checkbox">
                         <label class="form-check-label">Internal route</label>
                       </div>
                       <div class="form-check form-switch advanced">
                         <label class="form-check-label">Deactivate RbelLogger</label>
-                        <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.proxyRoutes.disableRbelLogging"
+                        <input class="form-check-input" name=".tigerProxyCfg.proxyRoutes.disableRbelLogging"
                                type="checkbox">
                         <!-- TODO rephrase and redefine property to be activating -->
                       </div>
@@ -495,13 +495,13 @@
                       <label class="form-label">Basic HTTP authentication</label>
                       <div class="input-group input-group">
                         <span class="input-group-text">Username</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.username"
+                        <input class="form-control" name=".tigerProxyCfg.proxyRoutes.basicAuth.username"
                                title="User name for basic authentication credentials for this route. Leave empty if no authenticationis required."
                                type="text">
                       </div>
                       <div class="input-group input-group">
                         <span class="input-group-text">Password</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.proxyRoutes.basicAuth.password"
+                        <input class="form-control" name=".tigerProxyCfg.proxyRoutes.basicAuth.password"
                                title="Password for basic authentication credentials for this route."
                                type="text">
                       </div>
@@ -512,12 +512,12 @@
             </div>
             <div class="row">
               <div class="col align-items-stretch">
-                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.proxyRoutes"></ul>
+                <ul class="list-group" name=".tigerProxyCfg.proxyRoutes"></ul>
               </div>
             </div>
           </fieldset>
           <fieldset class="labels-col-4 forwardToProxy advanced start-collapsed"
-                    section=".tigerProxyCfg.proxyCfg.forwardToProxy">
+                    section=".tigerProxyCfg.forwardToProxy">
             <legend>
               Forward Proxy
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -537,12 +537,12 @@
               <div class="col-md-6">
                 <div class="input-group">
                   <span class="input-group-text">Hostname</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.forwardToProxy.hostname" placeholder="Your company proxy"
+                  <input class="form-control" name=".tigerProxyCfg.forwardToProxy.hostname" placeholder="Your company proxy"
                          type="text">
                 </div>
                 <div class="input-group">
                   <span class="input-group-text">Proxy Protocol</span>
-                  <select class="form-select" name=".tigerProxyCfg.proxyCfg.forwardToProxy.type">
+                  <select class="form-select" name=".tigerProxyCfg.forwardToProxy.type">
                     <option value="http">HTTP</option>
                     <option value="https">HTTPS</option>
                   </select>
@@ -551,14 +551,14 @@
               <div class="col-md-6">
                 <div class="input-group">
                   <span class="input-group-text">Port</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.forwardToProxy.port" placeholder="Your company proxy port"
+                  <input class="form-control" name=".tigerProxyCfg.forwardToProxy.port" placeholder="Your company proxy port"
                          type="number">
                 </div>
               </div>
             </div>
           </fieldset>
           <fieldset class="labels-col-3 editableList advanced start-collapsed"
-                    section=".tigerProxyCfg.proxyCfg.trafficEndpoints">
+                    section=".tigerProxyCfg.trafficEndpoints">
             <legend>
               Traffic Endpoints
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -572,7 +572,7 @@
             <div class="row">
               <div class="col">
                 <div class="form-check form-switch">
-                  <input class="form-check-input" name=".tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription"
+                  <input class="form-check-input" name=".tigerProxyCfg.skipTrafficEndpointsSubscription"
                          type="checkbox">
                   <label class="form-check-label">Skip traffic endpoint subscription at startup</label>
                 </div>
@@ -580,7 +580,7 @@
             </div>
             <div class="row">
               <div class="col align-items-stretch">
-                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.trafficEndpoints"></ul>
+                <ul class="list-group" name=".tigerProxyCfg.trafficEndpoints"></ul>
               </div>
             </div>
             <div class="row mt-3">
@@ -589,12 +589,12 @@
                         <span class="flex-fill input-group-text">
                           Connection Timeout (sec)
                         </span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds"
+                  <input class="form-control" name=".tigerProxyCfg.connectionTimeoutInSeconds"
                          type="number">
                 </div>
                 <div class="input-group">
                   <span class="flex-fill input-group-text">Stomp Client Buffer (Mb)</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb"
+                  <input class="form-control" name=".tigerProxyCfg.stompClientBufferSizeInMb"
                          type="number">
                 </div>
               </div>
@@ -602,18 +602,18 @@
 
                 <div class="input-group">
                   <span class="flex-fill input-group-text">Message Buffer (Mb)</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb"
+                  <input class="form-control" name=".tigerProxyCfg.perMessageBufferSizeInMb"
                          type="number">
                 </div>
                 <div class="input-group">
                   <span class="flex-fill input-group-text">Rbel Buffer (Mb)</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.rbelBufferSizeInMb" type="number">
+                  <input class="form-control" name=".tigerProxyCfg.rbelBufferSizeInMb" type="number">
                 </div>
               </div>
             </div>
           </fieldset>
           <fieldset class="labels-col-3 start-collapsed advanced  complex-list"
-                    section=".tigerProxyCfg.proxyCfg.modifications">
+                    section=".tigerProxyCfg.modifications">
             <legend>
               Modifications
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -631,26 +631,26 @@
                     <div class="col">
                       <div class="input-group input-group">
                         <span class="input-group-text">Name</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.modifications.name" type="text">
+                        <input class="form-control" name=".tigerProxyCfg.modifications.name" type="text">
                       </div>
                       <div class="input-group input-group">
                         <span class="input-group-text">Condition</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.modifications.condition"
+                        <input class="form-control" name=".tigerProxyCfg.modifications.condition"
                                type="text">
                       </div>
                       <div class="input-group input-group">
                         <span class="input-group-text">Target Element</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.modifications.targetElement"
+                        <input class="form-control" name=".tigerProxyCfg.modifications.targetElement"
                                type="text">
                       </div>
                       <div class="input-group input-group">
                         <span class="input-group-text">Replace With</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.modifications.replaceWith"
+                        <input class="form-control" name=".tigerProxyCfg.modifications.replaceWith"
                                type="text">
                       </div>
                       <div class="input-group input-group">
                         <span class="input-group-text">Regex Filter</span>
-                        <input class="form-control" name=".tigerProxyCfg.proxyCfg.modifications.regexFilter"
+                        <input class="form-control" name=".tigerProxyCfg.modifications.regexFilter"
                                type="text">
                       </div>
                     </div>
@@ -660,11 +660,11 @@
             </div>
             <div class="row">
               <div class="col align-items-stretch">
-                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.modifications"></ul>
+                <ul class="list-group" name=".tigerProxyCfg.modifications"></ul>
               </div>
             </div>
           </fieldset>
-          <fieldset class="editableList advanced tls start-collapsed" section=".tigerProxyCfg.proxyCfg.tls">
+          <fieldset class="editableList advanced tls start-collapsed" section=".tigerProxyCfg.tls">
             <legend>
               TLS Configuration
               <i class="collapse-icon fas fa-angle-down"></i>&nbsp;
@@ -679,35 +679,35 @@
               <div class="col">
                 <div class="input-group">
                   <span class="input-group-text">Server Root Ca</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.serverRootCa"
+                  <input class="form-control" name=".tigerProxyCfg.tls.serverRootCa"
                          type="text">
                 </div>
                 <div class="input-group">
                   <span class="input-group-text">Forward Mutual TLS Identity</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity"
+                  <input class="form-control" name=".tigerProxyCfg.tls.forwardMutualTlsIdentity"
                          type="text">
                 </div>
                 <div class="input-group">
                   <span class="input-group-text">Server Identity</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.serverIdentity"
+                  <input class="form-control" name=".tigerProxyCfg.tls.serverIdentity"
                          type="text">
                 </div>
                 <div class="input-group">
                   <span class="input-group-text">Domain Name</span>
-                  <input class="form-control" name=".tigerProxyCfg.proxyCfg.tls.domainName" type="text">
+                  <input class="form-control" name=".tigerProxyCfg.tls.domainName" type="text">
                 </div>
               </div>
             </div>
             <label class="form-label" style="margin-top: 1rem;">Alternative Names</label>
             <div class="row">
               <div class="col align-items-stretch">
-                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.alternativeNames"></ul>
+                <ul class="list-group" name=".tigerProxyCfg.tls.alternativeNames"></ul>
               </div>
             </div>
             <label class="form-label" style="margin-top: 1rem;">Server SSL Suites</label>
             <div class="row">
               <div class="col align-items-stretch">
-                <ul class="list-group" name=".tigerProxyCfg.proxyCfg.tls.serverSslSuites"></ul>
+                <ul class="list-group" name=".tigerProxyCfg.tls.serverSslSuites"></ul>
               </div>
             </div>
           </fieldset>

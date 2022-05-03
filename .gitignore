@@ -11,3 +11,5 @@ tiger-testenv-mgr/WinstoneHTTPServer
 /tiger-admin/src/test/resources/webdriver
 /tiger-testenv-mgr/node_modules/
 /tiger-testenv-mgr/src/frontend/node/
+/tiger-testenv-mgr/src/frontend/package-lock.json
+/doc/tiger_user_manual.adoc

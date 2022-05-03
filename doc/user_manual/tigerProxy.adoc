@@ -258,13 +258,13 @@ The reverse proxy could either be started by the test environment manager or as 
 tigerProxy:
     proxyId: IBM
     trafficEndpoints:
-      - http://another.tiger.proxy:<serverPort>
+      - http://another.tiger.proxy:<adminPort>
     # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
     # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the
     # server will not boot. (fail fast, fail early)
 ----
 
-Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.port`). The traffic from routes with `activateRbelLogging: false` will not show up here.
+Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.proxyPort`). The traffic from routes with `activateRbelLogging: false` will not show up here.
 
 NOTE: If you are setting up a Tiger Proxy to run constantly and simply forward traffic to a testsuite that is booted ad-hoc you might run into performance-problems. This is due to the Rbel-Logger being a very hungry beast. To stop Rbel from parsing all message simply add `tigerProxy.activateRbelParsing: false`. This will vastly reduce memory and CPU consumption of the application, while still forwarding logged traffic.
 

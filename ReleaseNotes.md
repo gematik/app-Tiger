@@ -20,9 +20,12 @@
 ## Breaking Changes
 
 * RBEL-54: RbelElement now returns RbelMultiMap instead of List<Entry<String, RbelElement>>. Conceptually nothing changed
-
+* TGR-469: clean up the yaml file
+  * serverPort is renamed in adminPort
+  * port is renamed to proxyPort
+  * proxyCfg under tigerProxyCfg is omitted
+  
 ## Features
-
 * TGR-461: Smaller improvements in TigerGlobalConfiguration:
   * `TigerGlobalConfiguration.localScope()` allows scoped value addition
   * Placeholders in keys are now resolved

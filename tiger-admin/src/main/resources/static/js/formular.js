@@ -114,10 +114,10 @@ $.fn.initFormular = function (serverKey, serverData) {
     'serverRootCa',
     'forwardMutualTlsIdentity',
     'serverIdentity'];
-  if (serverData.tigerProxyCfg && serverData.tigerProxyCfg.proxyCfg && serverData.tigerProxyCfg.proxyCfg.tls) {
+  if (serverData.tigerProxyCfg && serverData.tigerProxyCfg && serverData.tigerProxyCfg.tls) {
     fileLoadingInformationFields.forEach(field => {
-          if (serverData.tigerProxyCfg.proxyCfg.tls[field]) {
-            serverData.tigerProxyCfg.proxyCfg.tls[field] = serverData.tigerProxyCfg.proxyCfg.tls[field].fileLoadingInformation;
+          if (serverData.tigerProxyCfg.tls[field]) {
+            serverData.tigerProxyCfg.tls[field] = serverData.tigerProxyCfg.tls[field].fileLoadingInformation;
           }
         }
     );
@@ -125,10 +125,10 @@ $.fn.initFormular = function (serverKey, serverData) {
 
   const skipDefaultValuesFor = [
     'type', 'key', 'hostname', 'template', 'dependsUpon', 'version',
-    'entryPoint', 'workingDir', '.tigerProxyCfg.proxyCfg.port', 'enableForwardProxy',
-    '.tigerProxyCfg.proxyCfg.tls.serverRootCa',
-    '.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity',
-    '.tigerProxyCfg.proxyCfg.tls.serverIdentity'];
+    'entryPoint', 'workingDir', '.tigerProxyCfg.proxyPort', 'enableForwardProxy',
+    '.tigerProxyCfg.tls.serverRootCa',
+    '.tigerProxyCfg.tls.forwardMutualTlsIdentity',
+    '.tigerProxyCfg.tls.serverIdentity'];
   // preset default values for all fields (except subset fields) in formular
   $(this).find('*[name]').each(function () {
     const fieldName = $(this).attr('name');
@@ -153,7 +153,7 @@ $.fn.initFormular = function (serverKey, serverData) {
   // type specific data adaptations post
   //
   // set forwardToProxy flag depending on hostname and port being set
-  const forwardToProxySection = '.tigerProxyCfg.proxyCfg.forwardToProxy.';
+  const forwardToProxySection = '.tigerProxyCfg.forwardToProxy.';
   const proxyHostname = this.find('*[name="' + forwardToProxySection + 'hostname"]').val();
   this.find('*[name="enableForwardProxy"]').prop('checked',
       (proxyHostname && this.find(`*[name="${forwardToProxySection}port"]`).val()) ||
@@ -206,7 +206,7 @@ $.fn.initFormular = function (serverKey, serverData) {
     case 'local_tiger_proxy':
       this.showFieldset('node-settings', false);
       this.showFieldset('source-settings', false);
-      this.showInputGroup('.tigerProxyCfg.serverPort', false);
+      this.showInputGroup('.tigerProxyCfg.adminPort', false);
       this.showInputGroup('.tigerProxyCfg.proxiedServer', false);
       this.find('div.local_tiger_proxy_info').removeClass('hidden');
       break;

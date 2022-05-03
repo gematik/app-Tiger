@@ -72,7 +72,7 @@ public abstract class AbstractTigerProxyTest {
 
         proxyRest = Unirest.spawnInstance();
         proxyRest.config()
-            .proxy("localhost", tigerProxy.getPort())
+            .proxy("localhost", tigerProxy.getProxyPort())
             .sslContext(tigerProxy.buildSslContext());
     }
 

@@ -47,9 +47,9 @@ Feature: Check input fields and sections for all server types
     And he adds a "tigerProxy" node via welcome screen
     When he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
-    Then he sees input field ".tigerProxyCfg.proxyCfg.port"
+    Then he sees input field ".tigerProxyCfg.proxyPort"
     And he sees select field ".tigerProxyCfg.proxiedServer"
-    And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he sees list field ".tigerProxyCfg.proxyRoutes"
     When he shows "General" tab
     Then he doesn't see field "source"
     And he doesn't see field "version"
@@ -118,8 +118,8 @@ Feature: Check input fields and sections for all server types
     And he doesn't see field "version"
     But he sees check field "localProxyActive"
     When he shows "TigerProxy" tab
-    Then he sees input field ".tigerProxyCfg.proxyCfg.port"
-    And he sees list field ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    Then he sees input field ".tigerProxyCfg.proxyPort"
+    And he sees list field ".tigerProxyCfg.proxyRoutes"
     But he doesn't see field ".tigerProxyCfg.proxiedServer"
 
     And he sees tab link "General"

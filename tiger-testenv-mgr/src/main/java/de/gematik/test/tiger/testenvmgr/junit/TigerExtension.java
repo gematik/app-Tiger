@@ -59,7 +59,7 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
             return this.tigerTestEnvMgr;
         } else if (parameterContext.getParameter().getType().isAssignableFrom(UnirestInstance.class)) {
             final UnirestInstance unirestInstance = Unirest.spawnInstance();
-            unirestInstance.config().proxy("127.0.0.1", tigerTestEnvMgr.getLocalTigerProxy().getPort());
+            unirestInstance.config().proxy("127.0.0.1", tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
             return unirestInstance;
         } else {
             throw new RuntimeException("Could not instantiate parameter, unsupported typ "
