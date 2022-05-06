@@ -4,16 +4,17 @@
 
 ## Breaking Changes
 
-* TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
-* During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
+* TGR-495: TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
+* TGR-495: During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
 
 ## Features
 
-* New test-steps: Print current request/response as rbel-tree
+* TGR-489: New test-steps: Print current request/response as rbel-tree
 
 ## Bugfixes
 
 * TigerProxy-WebUI can now display traffic again
+* TGR-503: The Testenv-Mgr now by default uses the own JVM to start externalJar-Servers. This can be overriden by setting `tiger.lib.javaHome`
 
 # Release 0.20.1
 

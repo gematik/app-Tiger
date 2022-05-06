@@ -322,6 +322,8 @@ externalJar_001:
   exports: []
 ----
 
+By default the JVM used to start the JAR-File is the taken from the `java.home` system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property `tiger.lib.javaHome` (e.g. by setting `-Dtiger.lib.javaHome`, by setting `TIGER_LIB_JAVAHOME` in the environment or by setting `lib.javaHome` in the `tiger.yaml`).
+
 ==== External URL node
 
 The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname. This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.
