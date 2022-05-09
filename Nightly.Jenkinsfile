@@ -3,7 +3,7 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def JIRA_PROJECT_ID = 'TGR'
 def POM_PATH = 'pom.xml'
-def REPO_URL = createGitUrl('git/Testtools/tiger')
+def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
 
 pipeline {
     options {
