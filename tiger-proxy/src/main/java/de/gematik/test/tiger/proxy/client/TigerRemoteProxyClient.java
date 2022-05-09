@@ -51,6 +51,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
     private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
 
+    public TigerRemoteProxyClient(String remoteProxyUrl) {
+        this(remoteProxyUrl, new TigerProxyConfiguration());
+    }
+
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
         final String tracingWebSocketUrl = remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
