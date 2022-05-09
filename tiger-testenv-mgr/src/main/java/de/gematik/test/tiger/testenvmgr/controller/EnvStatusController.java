@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.controller;
 
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
@@ -73,6 +72,9 @@ public class EnvStatusController implements TigerUpdateListener {
                             scenario.setStatus(svalue.getStatus());
                         }
                         scenario.setDescription(svalue.getDescription());
+                        scenario.setExampleKeys(svalue.getExampleKeys());
+                        scenario.setExampleList(svalue.getExampleList());
+                        scenario.setVariantIndex(svalue.getVariantIndex());
                         svalue.getSteps().forEach((stkey, stvalue) -> {
                             if (scenario.getSteps().containsKey(stkey)) {
                                 StepUpdate step = scenario.getSteps().get(stkey);
@@ -80,6 +82,7 @@ public class EnvStatusController implements TigerUpdateListener {
                                     step.setStatus(stvalue.getStatus());
                                 }
                                 step.setDescription(stvalue.getDescription());
+                                step.setStepIndex(stvalue.getStepIndex());
                             } else {
                                 scenario.getSteps().put(stkey, stvalue);
                             }

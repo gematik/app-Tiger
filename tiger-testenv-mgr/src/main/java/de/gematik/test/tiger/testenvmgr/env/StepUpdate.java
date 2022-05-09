@@ -17,4 +17,5 @@ public class StepUpdate {
 
     private String description;
     private TestResult status;
+    private int stepIndex = -1;
 }

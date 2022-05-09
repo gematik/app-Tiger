@@ -208,6 +208,9 @@ public class TigerTestHooks {
                             mapScenarioToScenarioUpdateMap(feature, scenarioName, scenarioLine),
                             ScenarioUpdate.builder()
                                 .description(scenarioName)
+                                .variantIndex(currentDataVariantIndex)
+                                .exampleKeys(currentDataVariantIndex != -1 ? currentDataVariantKeys : null)
+                                .exampleList(currentDataVariantIndex != -1 ? currentDataVariant.get(currentDataVariantIndex) : null)
                                 .steps(mapStepsToStepUpdateMap(feature.getScenario(scenarioName, scenarioLine).getSteps(),
                                     line -> {
                                         if (feature.getScenario(scenarioName, scenarioLine) instanceof ScenarioOutline
@@ -247,6 +250,7 @@ public class TigerTestHooks {
             if (map.put(stepIndex.toString(), StepUpdate.builder()
                 .description(postProduction.apply(String.join("\n", steps.get(stepIndex).getLines())))
                 .status(TestResult.PENDING)
+                .stepIndex(stepIndex)
                 .build()) != null) {
                 throw new IllegalStateException("Duplicate key");
             }
@@ -350,9 +354,13 @@ public class TigerTestHooks {
                             mapScenarioToScenarioUpdateMap(feature, scenario.getName(), scenario.getLine()),
                             ScenarioUpdate.builder()
                                 .description(scenario.getName())
+                                .variantIndex(currentDataVariantIndex)
+                                .exampleKeys(currentDataVariantIndex != -1 ? currentDataVariantKeys : null)
+                                .exampleList(currentDataVariantIndex != -1 ? currentDataVariant.get(currentDataVariantIndex) : null)
                                 .steps(new HashMap<>(Map.of(String.valueOf(currentStepIndex - 1), StepUpdate.builder()
                                     .description(String.join("\n", currentStep.getLines()))
                                     .status(TestResult.valueOf(scenario.getStatus().toString()))
+                                    .stepIndex(currentStepIndex - 1)
                                     .build()
                                 ))).build()
                         ))).build()
