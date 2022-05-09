@@ -4,8 +4,8 @@
 
 ## Breaking Changes
 
-* TGR-495: TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
-* TGR-495: During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
+* TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
+* During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
 
 ## Features
 
