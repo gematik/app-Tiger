@@ -1,7 +1,7 @@
 @Library('gematik-jenkins-shared-library') _
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
-def REPO_URL = createGitUrl('git/Testtools/tiger')
+def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
 def BRANCH = 'master'
 def JIRA_PROJECT_ID = 'TGR'
 def GITLAB_PROJECT_ID = '644'
