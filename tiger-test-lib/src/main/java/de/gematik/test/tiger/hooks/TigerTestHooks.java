@@ -318,7 +318,7 @@ public class TigerTestHooks {
         informWorkflowUiAboutCurrentStep(scenario);
     }
 
-    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß| ]*)(Banner|banner|text|Text) \"(.*)\"");
+    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß| ]*)(Banner|banner|text|Text) \"(.*)\""); //NOSONAR
 
 
     private void informWorkflowUiAboutCurrentStep(Scenario scenario) {

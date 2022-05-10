@@ -52,7 +52,7 @@ public class TigerDirector {
     private static TigerTestEnvMgr tigerTestEnvMgr;
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
-    private static final Pattern SHOW_STEPS = Pattern.compile(
+    private static final Pattern SHOW_STEPS = Pattern.compile(//NOSONAR
         ".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
     private static boolean initialized = false;
 

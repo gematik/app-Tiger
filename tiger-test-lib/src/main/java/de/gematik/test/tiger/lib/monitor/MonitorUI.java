@@ -24,7 +24,7 @@ public class MonitorUI extends JFrame {
     private JLabel message;
     private JButton quitButton;
     private boolean clickedQuitBtn = false;
-    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
+    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
 
     public static Optional<MonitorUI> getMonitor()  {
         try {
