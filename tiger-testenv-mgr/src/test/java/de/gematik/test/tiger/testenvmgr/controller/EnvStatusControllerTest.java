@@ -59,6 +59,7 @@ class EnvStatusControllerTest {
         + "    source:\n"
         + "      - local:target/winstone.jar\n"
         + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
+        + "    healthcheckReturnCode: 200\n"
         + "    externalJarOptions:\n"
         + "      arguments:\n"
         + "        - --httpPort=${free.port.0}\n"

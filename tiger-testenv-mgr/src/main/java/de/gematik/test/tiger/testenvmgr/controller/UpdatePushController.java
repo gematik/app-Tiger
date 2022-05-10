@@ -29,7 +29,7 @@ public class UpdatePushController implements TigerUpdateListener {
 
     @Override
     public void receiveTestEnvUpdate(TigerStatusUpdate update) {
-        log.info("Propagating status udpate {}", update);
+        log.trace("Propagating status udpate {}", update);
         template.convertAndSend("/topic/envStatus", TestEnvStatusDto.createFrom(update));
     }
 }

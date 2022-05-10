@@ -18,6 +18,7 @@
 
 * TigerProxy-WebUI can now display traffic again
 * TGR-503: The Testenv-Mgr now by default uses the own JVM to start externalJar-Servers. This can be overriden by setting `tiger.lib.javaHome`
+* TGR-508: Remote Tiger-Proxies can now also be supplied with TLS-Identities
 
 # Release 0.20.1
 

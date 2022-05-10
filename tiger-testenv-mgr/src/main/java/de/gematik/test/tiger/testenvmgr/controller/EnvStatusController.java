@@ -30,7 +30,7 @@ public class EnvStatusController implements TigerUpdateListener {
 
     @Override
     public synchronized void receiveTestEnvUpdate(final TigerStatusUpdate update) {
-        log.info("receiving update " + update.getIndex());
+        log.trace("receiving update {}", update.getIndex());
         try {
             receiveTestSuiteUpdate(update.getFeatureMap());
 
@@ -99,7 +99,7 @@ public class EnvStatusController implements TigerUpdateListener {
 
     private synchronized void receiveServerStatusUpdate(final String serverName,
         final TigerServerStatusUpdate statusUpdate) {
-        log.info("Status update for server " + serverName);
+        log.trace("Status update for server {}", serverName);
         final TigerServerStatusDto serverStatus = tigerEnvStatus.getServers()
             .getOrDefault(serverName, new TigerServerStatusDto());
         serverStatus.setName(serverName);
