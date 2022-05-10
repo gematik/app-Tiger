@@ -19,6 +19,7 @@ public class CfgTemplate {
     private String version;
     private Integer startupTimeoutSec;
     private boolean active = true;
+    private String healthcheckUrl;
 
     private CfgExternalJarOptions externalJarOptions;
     private CfgDockerOptions dockerOptions = new CfgDockerOptions();

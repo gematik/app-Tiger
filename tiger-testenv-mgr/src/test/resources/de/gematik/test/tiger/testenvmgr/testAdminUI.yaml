@@ -10,13 +10,13 @@ servers:
     source:
       - https://eitzen.at/download
     startupTimeoutSec: 5
+    healthcheckUrl: http://127.0.0.1:19207
     externalJarOptions:
       workingDir: WinstoneHTTPServer
       arguments:
         - --httpPort=19207
         - --webroot=.
         - --control-port=19000
-      healthcheck: http://127.0.0.1:19207
 
   reverseproxy2:
     hostname: reverseproxy2

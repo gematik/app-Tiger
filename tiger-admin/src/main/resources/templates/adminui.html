@@ -205,6 +205,12 @@
               <div class="valid-feedback">Empty value defaults to server key.</div>
             </div>
             <div class="input-group">
+              <span class="input-group-text">Health check URL</span>
+              <input class="form-control" name="healthcheckUrl"
+                     title="URL to be used to check for successfully started node"
+                     type="url">
+            </div>
+            <div class="input-group">
               <span class="input-group-text">Template</span>
               <input class="form-control disabled" disabled name="template" readonly title="The template this node is based upon."
                      type="text">
@@ -333,12 +339,6 @@
             <!--
             <button class="btn btn-secondary" type="button">Browse...</button>
             -->
-          </div>
-          <div class="input-group">
-            <span class="input-group-text">Health check URL</span>
-            <input class="form-control" name=".externalJarOptions.healthcheck"
-                   title="URL to be used to check for successfully started node"
-                   type="url">
           </div>
         </fieldset>
         <fieldset class="editableList start-collapsed" section=".externalJarOptions.options">
@@ -955,7 +955,7 @@
                 customizable options and program arguments).
                 In most cases the jar will start a server. The local test suite proxy will then route traffic from the
                 given hostname for this node to the external Jar (reverse proxy mode).
-                The healthcheck attribute will determine the servers access URL (= the destination address for the test
+                The healthcheckUrl attribute will determine the servers access URL (= the destination address for the test
                 suite proxy). This way your test suite needs to know nothing about the external address and can switch
                 between different
                 servers without any changes in its configuration.

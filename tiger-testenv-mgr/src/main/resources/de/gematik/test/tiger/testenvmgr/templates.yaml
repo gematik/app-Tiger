@@ -89,8 +89,7 @@ templates:
       - https://idp-ref.zentral.idp.splitdns.ti-dienste.de/
     # version: N/A
     startupTimeoutSec: 15
-    externalJarOptions:
-      healthcheck: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+    healthcheckUrl: https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-ref.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
 
@@ -108,8 +107,7 @@ templates:
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
     startupTimeoutSec: 15
-    externalJarOptions:
-      healthcheck: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
+    healthcheckUrl: https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
     exports:
       - IDP_SERVER=https://idp-test.zentral.idp.splitdns.ti-dienste.de/.well-known/openid-configuration
 
@@ -209,6 +207,7 @@ templates:
       - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-fdv/2.0.0-124/epa-fdv-2.0.0-124.jar
     startupTimeoutSec: 60
     # working directory of the java process to start
+    healthcheckUrl: https://127.0.0.1:9107
     externalJarOptions:
       workingDir: FdVPortable
       # options to the java call
@@ -221,7 +220,6 @@ templates:
       arguments:
         - --spring.profiles.active=instance2local
         - --aktor.rproxySGD2.use=false
-      healthcheck: https://127.0.0.1:9107
 
     pkiKeys: [ ]
     environment: [ ]
@@ -240,11 +238,11 @@ templates:
     source:
       - local://konnektor-simulator-2.1.7-SNAPSHOT.jar
     startupTimeoutSec: 30
+    # options to the java call
+    healthcheckUrl: https://127.0.0.1:9106
     externalJarOptions:
       # working directory of the java process to start
       workingDir: kon-sim
-      # options to the java call
-      healthcheck: https://127.0.0.1:9106
 
     pkiKeys: []
     environment: []
@@ -263,9 +261,9 @@ templates:
       - https://build.top.local/nexus/service/local/repositories/releases/content/de/gematik/titus/epa-ps/2.0.5-284/epa-ps-2.0.5-284.jar
     active: false
     startupTimeoutSec: 30
+    healthcheckUrl: http://127.0.0.1:9116
     externalJarOptions:
       workingDir: PsSimPortable
-      healthcheck: http://127.0.0.1:9116
       options:
         - -Dspring-boot.run.profiles=ide,noevents
         - -Dspring.profiles.active=ide,noevents

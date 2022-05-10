@@ -4,9 +4,20 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -19,19 +30,6 @@ import org.mockserver.model.Delay;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.springframework.util.SocketUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockserver.model.HttpRequest.request;
 
 @Slf4j
 public class TestEnvDownload {
@@ -193,8 +191,8 @@ public class TestEnvDownload {
                 "    type: externalJar\n" +
                 "    source:\n" +
                 "      - " + jarDownloadUrl[i] + "\n" +
+                "    healthcheckUrl: http://127.0.0.1:" + port + "\n" +
                 "    externalJarOptions:\n" +
-                "      healthcheck: http://127.0.0.1:" + port + "\n" +
                 "      workingDir: \"target/jarDownloadTest\"\n" +
                 "      startupTimeoutSec: 30\n" +
                 "      arguments:\n";

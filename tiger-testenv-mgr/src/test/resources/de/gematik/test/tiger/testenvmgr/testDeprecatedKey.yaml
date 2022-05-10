@@ -15,6 +15,16 @@ servers:
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.
+  winstone2:
+    hostname: winstone2
+    source:
+      - local:target/winstone2.jar
+    type: externalJar
+    externalJarOptions:
+      healthcheckUrl: http://localhost:${free.port.4}
+      arguments:
+        - --httpPort=${free.port.0}
+        - --webroot=.
 
   remoteTigerProxy:
     type: tigerProxy

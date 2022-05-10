@@ -196,6 +196,7 @@ $.fn.initFormular = function (serverKey, serverData) {
     case 'compose':
       this.showFieldset('.dockerOptions.dockerSettings', false);
       this.showInputGroup('hostname', false);
+      this.showInputGroup('healthcheckUrl', false);
       break;
     case 'externalUrl':
       this.showFieldset('.externalJarOptions.options', false);

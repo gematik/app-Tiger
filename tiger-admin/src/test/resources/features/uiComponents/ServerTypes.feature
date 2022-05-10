@@ -68,7 +68,7 @@ Feature: Check input fields and sections for all server types
     When he focuses on formular "externalJar_001"
     And he shows "External" tab
     Then he sees input field ".externalJarOptions.workingDir"
-    And he sees input field ".externalJarOptions.healthcheck"
+    And he sees input field ".healthcheckUrl"
     But he doesn't see field ".dockerOptions.serviceHealthchecks"
     And he doesn't see field ".externalJarOptions.options"
     And he doesn't see field ".externalJarOptions.arguments"
@@ -93,7 +93,7 @@ Feature: Check input fields and sections for all server types
     And he adds a "externalUrl" node via welcome screen
     When he focuses on formular "externalUrl_001"
     And he shows "External" tab
-    Then he sees input field ".externalJarOptions.healthcheck"
+    Then he sees input field ".healthcheckUrl"
     But he doesn't see field ".externalJarOptions.workingDir"
     And he doesn't see field ".dockerOptions.serviceHealthchecks"
     And he doesn't see section ".externalJarOptions.options"

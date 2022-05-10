@@ -93,10 +93,6 @@
                   "type":"string"
                 },
                 "description":""
-              },
-              "healthcheck":{
-                "type":"string",
-                "description":""
               }
             },
             "description":""
@@ -561,6 +557,10 @@
             "description":"properties to be exported to subsequent nodes as env vars and set as system properties to current jvm"
           },
           "hostname":{
+            "type":"string",
+            "description":""
+          },
+          "healthcheckUrl":{
             "type":"string",
             "description":""
           },

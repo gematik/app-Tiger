@@ -111,6 +111,24 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
+    public void testCheckDeprecatedKey_healthcheck_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('tiger.servers.*.externalJarOptions.healthcheck') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
+    }
+
+    @Test
+    public void testCheckDeprecatedKey_healthcheckurl_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('tiger.servers.*.externalJarOptions.healthcheckurl') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
+    }
+
+    @Test
     @TigerTest(tigerYaml = "servers:\n" +
         "  tigerServer1:\n"
         + "    hostname: testReverseProxy\n"

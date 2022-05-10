@@ -6,9 +6,9 @@ tigerProxy:
 servers:
   idp:
     type: externalJar
+    healthcheckUrl:
+      http://127.0.0.1:10000
     externalJarOptions:
-      healthcheck:
-        http://127.0.0.1:10000
       arguments:
         - --server.port=10000
       workingDir: ../idp-server/target
@@ -19,9 +19,9 @@ servers:
 
   idp-sektoral:
     type: externalJar
+    healthcheckUrl:
+      http://127.0.0.1:11000
     externalJarOptions:
-      healthcheck:
-        http://127.0.0.1:11000
       arguments:
         - --server.port=11000
       workingDir: ../idp-sektoral/target
@@ -32,9 +32,8 @@ servers:
 
   idp2:
     type: externalUrl
-    externalJarOptions:
-      healthcheck:
-        http://127.0.0.1:${PORT_IDP_SERVER}/auth/realms/idp/.well-known/openid-configuration
+    healthcheckUrl:
+      http://127.0.0.1:${PORT_IDP_SERVER}/auth/realms/idp/.well-known/openid-configuration
     source:
       - http://127.0.0.1:${PORT_IDP_SERVER}
     startupTimeoutSec: 10
@@ -46,6 +45,6 @@ servers:
       - http://127.0.0.1:${PORT_IDP_SEKTORAL}
     startupTimeoutSec: 10
     active: false
-    externalJarOptions:
-      healthcheck:
-        http://127.0.0.1:${PORT_IDP_SEKTORAL}/auth/realms/idp/.well-known/openid-configuration"
+    healthcheckUrl:
+      http://127.0.0.1:${PORT_IDP_SEKTORAL}/auth/realms/idp/.well-known/openid-configuration"
+

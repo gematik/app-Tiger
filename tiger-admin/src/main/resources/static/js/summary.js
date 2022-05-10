@@ -7,6 +7,7 @@
 const summaryPatterns = {
   "node-settings": [
     ["single", "<b>", "$hostname", "</b>"],
+    ["single", "<b>", "$healthcheckUrl", "</b>"],
     ["group", "(", ", ",
       ["$active", "$type", "$template", ["", "$startupTimeoutSec", " sec"]], ")"
     ]
@@ -24,8 +25,7 @@ const summaryPatterns = {
     "$.dockerOptions.serviceHealthchecks"
   ],
   ".externalJarOptions.externalSettings": [
-    ["single", "Folder ", "$.externalJarOptions.workingDir", "<br/>"],
-    ["single", "CheckURL", "$.externalJarOptions.healthcheck", ""]
+    ["single", "Folder ", "$.externalJarOptions.workingDir", "<br/>"]
   ],
   ".externalJarOptions.options": [
     "$.externalJarOptions.options"

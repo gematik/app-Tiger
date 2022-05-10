@@ -13,5 +13,4 @@ public class CfgExternalJarOptions {
     private String workingDir;
     private List<String> options = new ArrayList<>();
     private List<String> arguments = new ArrayList<>();
-    private String healthcheck;
 }

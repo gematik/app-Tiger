@@ -49,10 +49,10 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     @Override
     String getHealthcheckUrl() {
         if (getConfiguration().getExternalJarOptions() == null
-        || StringUtils.isEmpty(getConfiguration().getExternalJarOptions().getHealthcheck())){
+        || StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())){
             return getConfiguration().getSource().get(0);
         } else {
-            return getConfiguration().getExternalJarOptions().getHealthcheck();
+            return getConfiguration().getHealthcheckUrl();
         }
     }
 

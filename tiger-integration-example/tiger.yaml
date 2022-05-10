@@ -9,8 +9,8 @@ servers:
     source:
       - local:target/winstone.jar
     type: externalJar
+    healthcheckUrl: http://localhost:${free.port.0}
     externalJarOptions:
-      healthcheck: http://localhost:${free.port.0}
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.

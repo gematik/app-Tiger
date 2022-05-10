@@ -287,7 +287,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         }
 
         if (type == ServerType.EXTERNALJAR) {
-            assertCfgPropertySet(getConfiguration(), "externalJarOptions", "healthcheck");
+            assertCfgPropertySet(getConfiguration(),  "healthcheckUrl");
         }
     }
 

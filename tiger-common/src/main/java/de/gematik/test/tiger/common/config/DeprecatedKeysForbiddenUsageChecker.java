@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
  * A specialized class that checks for old/deprecated keys.
  */
 @NoArgsConstructor
-public class DeprecatedKeysForbiddenUsageChecker {
+public final class DeprecatedKeysForbiddenUsageChecker {
 
     private static final List<DeprecatedKeyDescriptor> deprecatedKeysMap = List.of(
         DeprecatedKeyDescriptor.builder()
@@ -36,6 +36,16 @@ public class DeprecatedKeysForbiddenUsageChecker {
             .compareKey("tiger.servers.*.tigerproxycfg.proxycfg.*")
             .deprecatedKey("proxyCfg")
             .newKey("")
+            .build(),
+        DeprecatedKeyDescriptor.builder()
+            .compareKey("tiger.servers.*.externaljaroptions.healthcheck")
+            .deprecatedKey("tiger.servers.*.externalJarOptions.healthcheck")
+            .newKey("tiger.servers.*.healthcheckUrl")
+            .build(),
+        DeprecatedKeyDescriptor.builder()
+            .compareKey("tiger.servers.*.externaljaroptions.healthcheckurl")
+            .deprecatedKey("tiger.servers.*.externalJarOptions.healthcheckurl")
+            .newKey("tiger.servers.*.healthcheckUrl")
             .build());
 
     public static void checkForDeprecatedKeys(@NotNull Map<TigerConfigurationKey, String> valueMap)

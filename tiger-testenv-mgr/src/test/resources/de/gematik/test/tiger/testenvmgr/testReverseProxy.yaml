@@ -3,11 +3,11 @@ servers:
     type: externalJar
     source:
       - http://localhost:${mockserver.port}/download
+    healthcheckUrl: http://127.0.0.1:${free.port.0}
     externalJarOptions:
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.
-      healthcheck: http://127.0.0.1:${free.port.0}
 
   reverseproxy1:
     type: tigerProxy

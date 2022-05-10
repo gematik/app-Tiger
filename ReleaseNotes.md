@@ -6,6 +6,8 @@
 
 * TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
 * During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
+* TGR-479: clean up the yaml file
+  * healthcheck renamed to healthcheckUrl and move up one level
 
 ## Features
 

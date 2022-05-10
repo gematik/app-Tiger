@@ -44,10 +44,8 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             } catch (ConditionTimeoutException cte) {
                 if (!quiet) {
                     final String healthcheckUrl = getConfiguration() != null ?
-                        getConfiguration().getExternalJarOptions() != null ?
-                            getConfiguration().getExternalJarOptions().getHealthcheck()
-                            : "<null>"
-                        : "<null>";
+                            getConfiguration().getHealthcheckUrl()
+                            : "<null>";
                     throw new TigerTestEnvException("Timeout waiting for external server '"
                         + getServerId() + "' to respond at '" + healthcheckUrl + "'!");
                 }
@@ -120,13 +118,13 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             return new URL(getHealthcheckUrl());
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(
-                "Could not build healthcheck URL from '" + getConfiguration().getExternalJarOptions().getHealthcheck()
+                "Could not build healthcheck URL from '" + getConfiguration().getHealthcheckUrl()
                     + "'!", e);
         }
     }
 
     String getHealthcheckUrl() {
-        return getConfiguration().getExternalJarOptions().getHealthcheck();
+        return getConfiguration().getHealthcheckUrl();
     }
 
     @Override
@@ -143,9 +141,8 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     boolean isHealthCheckNone() {
-        return getConfiguration().getExternalJarOptions() == null ||
-            getConfiguration().getExternalJarOptions().getHealthcheck() == null ||
-            getConfiguration().getExternalJarOptions().getHealthcheck().isEmpty() ||
-            getConfiguration().getExternalJarOptions().getHealthcheck().equals("NONE");
+        return getConfiguration().getHealthcheckUrl() == null ||
+            getConfiguration().getHealthcheckUrl().isEmpty() ||
+            getConfiguration().getHealthcheckUrl().equals("NONE");
     }
 }

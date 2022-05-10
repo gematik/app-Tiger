@@ -60,6 +60,8 @@ serverKey_xxx:
   source:
     - source entry 1
     - source entry 2
+  # used by all node types
+  healthcheckUrl: string
   # type specific property for Tiger Proxy and docker container nodes
   version: string
   # OPTIONAL list of pki certs and keys to initialize
@@ -97,8 +99,6 @@ Their meaning and format are explained in the related section.
   externalJarOptions:
     # used by external jar and Tiger Proxy nodes
     workingDir: string
-    # used by all node types
-    healthcheck: string
     # only used by external jar nodes
     options: []
     # used by external jar and Tiger Proxy nodes
@@ -293,6 +293,12 @@ externalJar_001:
   # Only one entry is expected for this node type. Additional entries are silently ignored.
   source:
     - http://myjars.download.org/myproject/myjar.jar
+  # MANDATORY URL to check for the successful startup of this node.
+  # A successful start is indicated by ANY answer on this URL.
+  # Any status is accepted as long as there is an answer.
+  # If set to "NONE" no check is performed and
+  # the test environment manager will wait for the startup timeout.
+  healthcheckUrl: http://127.0.0.1:8080
 
   externalJarOptions:
     # OPTIONAL folder from where to start the external jar.
@@ -300,12 +306,6 @@ externalJar_001:
     # The default value is empty, which means that the operating-system-specific
     # temporary folder will be used.
     workingDir: /home/user/test/myspecificjar
-    # MANDATORY URL to check for the successful startup of this node.
-    # A successful start is indicated by ANY answer on this URL.
-    # Any status is accepted as long as there is an answer.
-    # If set to "NONE" no check is performed and
-    # the test environment manager will wait for the startup timeout.
-    healthcheck: http://127.0.0.1:8080
     # OPTIONAL Options to pass in to the java executable call.
     options: []
     # OPTIONAL provide additional arguments to the jar archive call.
@@ -345,14 +345,13 @@ externalUrl_001:
   source:
     - https://www.medizin.de
 
-  externalJarOptions:
-    # OPTIONAL URL to check for successful startup of this node.
-    # A successful start is indicated by ANY answer on this URL.
-    # Any status is accepted as long as there is an answer.
-    # If the value is not set, then no health check is carried out
-    # in the startup phase, instead the startupTimeout is waited for.
-    # After this timeout it is assumed that the server is up.
-    healthcheck: https://www.medizin.de/healthyState.jsp
+  # OPTIONAL URL to check for successful startup of this node.
+  # A successful start is indicated by ANY answer on this URL.
+  # Any status is accepted as long as there is an answer.
+  # If the value is not set, then no health check is carried out
+  # in the startup phase, instead the startupTimeout is waited for.
+  # After this timeout it is assumed that the server is up.
+  healthcheckUrl: https://www.medizin.de/healthyState.jsp
 
   # The following properties are explained in the General properties section above
   pkiKeys: []

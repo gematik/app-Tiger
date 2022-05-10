@@ -58,11 +58,11 @@ class EnvStatusControllerTest {
         + "    type: externalJar\n"
         + "    source:\n"
         + "      - local:target/winstone.jar\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
         + "    externalJarOptions:\n"
         + "      arguments:\n"
         + "        - --httpPort=${free.port.0}\n"
-        + "        - --webroot=.\n"
-        + "      healthcheck: http://127.0.0.1:${free.port.0}\n",
+        + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
     public void verifyServerStatusDuringStartup(final TigerTestEnvMgr envMgr) {
         final AtomicBoolean downloadShouldProceed = new AtomicBoolean(false);

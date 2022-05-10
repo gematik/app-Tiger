@@ -3,8 +3,9 @@ servers:
     type: externalJar
     source:
       - local:../tiger-testenv-mgr/target/winstone.jar
+    healthcheckUrl: http://127.0.0.1:${free.port.0}
     externalJarOptions:
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.
-      healthcheck: http://127.0.0.1:${free.port.0}
+
