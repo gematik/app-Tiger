@@ -12,6 +12,7 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.io.IOException;
 import java.net.*;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
@@ -44,8 +45,8 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             } catch (ConditionTimeoutException cte) {
                 if (!quiet) {
                     final String healthcheckUrl = getConfiguration() != null ?
-                            getConfiguration().getHealthcheckUrl()
-                            : "<null>";
+                        getConfiguration().getHealthcheckUrl()
+                        : "<null>";
                     throw new TigerTestEnvException("Timeout waiting for external server '"
                         + getServerId() + "' to respond at '" + healthcheckUrl + "'!");
                 }
@@ -59,10 +60,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             statusMessage("Waiting for URL '" + url + "' to be healthy...");
         }
         try {
-            URLConnection con = url.openConnection();
-            InsecureTrustAllManager.allowAllSsl(con);
-            con.setConnectTimeout(1000);
-            con.connect();
+            checkUrlOrThrowException(url);
             printServerUpMessage();
             statusMessage("Server up & healthy");
             setStatus(TigerServerStatus.RUNNING);
@@ -91,6 +89,24 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             }
         }
         return getStatus();
+    }
+
+    private void checkUrlOrThrowException(URL url) throws IOException {
+        URLConnection con = url.openConnection();
+        InsecureTrustAllManager.allowAllSsl(con);
+        con.setConnectTimeout(1000);
+        con.connect();
+        if (getConfiguration().getHealthcheckReturnCode() != null
+            && con instanceof HttpURLConnection) {
+            final HttpURLConnection httpConnection = (HttpURLConnection) con;
+            if (!getConfiguration().getHealthcheckReturnCode()
+                .equals(httpConnection.getResponseCode())) {
+                throw new TigerEnvironmentStartupException(
+                    "Return code for server '" + getServerId() + "' does not match:"
+                        + " Expected " + getConfiguration().getHealthcheckReturnCode() + " but got "
+                        + httpConnection.getResponseCode());
+            }
+        }
     }
 
     void printServerUpMessage() {

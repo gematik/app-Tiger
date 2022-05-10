@@ -10,6 +10,7 @@ import lombok.Data;
 
 @Data
 public class CfgExternalJarOptions {
+
     private String workingDir;
     private List<String> options = new ArrayList<>();
     private List<String> arguments = new ArrayList<>();

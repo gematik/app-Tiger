@@ -62,6 +62,9 @@ serverKey_xxx:
     - source entry 2
   # used by all node types
   healthcheckUrl: string
+  # OPTIONAL only declare the server healthy once the specified return code
+  # is given
+  healthcheckReturnCode: int
   # type specific property for Tiger Proxy and docker container nodes
   version: string
   # OPTIONAL list of pki certs and keys to initialize
@@ -299,6 +302,9 @@ externalJar_001:
   # If set to "NONE" no check is performed and
   # the test environment manager will wait for the startup timeout.
   healthcheckUrl: http://127.0.0.1:8080
+  # OPTIONAL only declare the server healthy once the specified return code
+  # is given
+  healthcheckReturnCode: int
 
   externalJarOptions:
     # OPTIONAL folder from where to start the external jar.
@@ -352,6 +358,9 @@ externalUrl_001:
   # in the startup phase, instead the startupTimeout is waited for.
   # After this timeout it is assumed that the server is up.
   healthcheckUrl: https://www.medizin.de/healthyState.jsp
+  # OPTIONAL only declare the server healthy once the specified return code
+  # is given
+  healthcheckReturnCode: int
 
   # The following properties are explained in the General properties section above
   pkiKeys: []

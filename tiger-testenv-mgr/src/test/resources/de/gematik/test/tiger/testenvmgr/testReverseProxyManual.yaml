@@ -2,6 +2,7 @@ servers:
   testWinstone3:
     type: externalJar
     healthcheckUrl: http://127.0.0.1:${free.port.0}
+    healthcheckReturnCode: 200
     source:
       - http://localhost:${mockserver.port}/download
     externalJarOptions:

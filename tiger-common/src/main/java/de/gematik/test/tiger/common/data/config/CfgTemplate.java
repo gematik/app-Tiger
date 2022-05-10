@@ -20,6 +20,7 @@ public class CfgTemplate {
     private Integer startupTimeoutSec;
     private boolean active = true;
     private String healthcheckUrl;
+    private Integer healthcheckReturnCode;
 
     private CfgExternalJarOptions externalJarOptions;
     private CfgDockerOptions dockerOptions = new CfgDockerOptions();
