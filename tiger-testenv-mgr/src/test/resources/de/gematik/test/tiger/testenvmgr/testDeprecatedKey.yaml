@@ -1,0 +1,44 @@
+tigerProxy:
+  port: 2433
+  skipTrafficEndpointsSubscription: true
+  trafficEndpoints:
+    - http://localhost:${free.port.2}
+
+servers:
+  winstone:
+    hostname: winstone
+    source:
+      - local:target/winstone.jar
+    type: externalJar
+    externalJarOptions:
+      healthcheck: http://localhost:${free.port.0}
+      arguments:
+        - --httpPort=${free.port.0}
+        - --webroot=.
+  winstone2:
+    hostname: winstone2
+    source:
+      - local:target/winstone2.jar
+    type: externalJar
+    externalJarOptions:
+      healthcheckUrl: http://localhost:${free.port.4}
+      arguments:
+        - --httpPort=${free.port.0}
+        - --webroot=.
+
+  remoteTigerProxy:
+    type: tigerProxy
+    tigerProxyCfg:
+      serverPort: ${free.port.2}
+      proxyCfg:
+        activateRbelParsing: false
+        rbelBufferSizeInMb: 0
+        port: ${free.port.1}
+        proxyRoutes:
+          - from: http://winstone
+            to: http://localhost:${free.port.0}
+
+lib:
+  activateMonitorUI: true
+  rbelPathDebugging: false
+  activateWorkflowUi: true

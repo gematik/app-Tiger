@@ -7,13 +7,13 @@ Feature: Summary feature
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
-    When he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
+    When he tests list ".tigerProxyCfg.proxyRoutes"
+    And he folds section ".tigerProxyCfg.proxyRoutes"
+    Then the summary of section ".tigerProxyCfg.proxyRoutes" matches
     """
       No entries
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    When he unfolds section ".tigerProxyCfg.proxyRoutes"
     And he adds complex list item
     """
       id: id1
@@ -22,12 +22,12 @@ Feature: Summary feature
       basicAuth.username: user1
       basicAuth.password: pwd1
     """
-    And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
+    And he folds section ".tigerProxyCfg.proxyRoutes"
+    Then the summary of section ".tigerProxyCfg.proxyRoutes" matches
     """
       id1: [user1@pwd1] from1 ↦ to1
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    When he unfolds section ".tigerProxyCfg.proxyRoutes"
     And he adds complex list item
     """
       id: id2
@@ -36,8 +36,8 @@ Feature: Summary feature
       basicAuth.username: user2
       basicAuth.password: pwd2
     """
-    And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
+    And he folds section ".tigerProxyCfg.proxyRoutes"
+    Then the summary of section ".tigerProxyCfg.proxyRoutes" matches
     """
       id1: [user1@pwd1] from1 ↦ to1,
       id2: [user2@pwd2] from2 ↦ to2
@@ -48,7 +48,7 @@ Feature: Summary feature
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
-    When he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    When he tests list ".tigerProxyCfg.proxyRoutes"
     And he adds complex list item
     """
       id: id1
@@ -57,38 +57,38 @@ Feature: Summary feature
       basicAuth.username: user1
       basicAuth.password: pwd1
     """
-    And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
+    And he folds section ".tigerProxyCfg.proxyRoutes"
+    Then the summary of section ".tigerProxyCfg.proxyRoutes" matches
     """
       id1: [user1@pwd1] from1 ↦ to1
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    When he unfolds section ".tigerProxyCfg.proxyRoutes"
     And he sets active complex list item to
     """
       id: id3
     """
-    And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
+    And he folds section ".tigerProxyCfg.proxyRoutes"
+    Then the summary of section ".tigerProxyCfg.proxyRoutes" matches
     """
       id3: [user1@pwd1] from1 ↦ to1
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    When he unfolds section ".tigerProxyCfg.proxyRoutes"
     And he sets active complex list item to
     """
       from: from3
     """
-    And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
+    And he folds section ".tigerProxyCfg.proxyRoutes"
+    Then the summary of section ".tigerProxyCfg.proxyRoutes" matches
     """
       id3: [user1@pwd1] from3 ↦ to1
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    When he unfolds section ".tigerProxyCfg.proxyRoutes"
     And he sets active complex list item to
     """
       basicAuth.username: user3
     """
-    And he folds section ".tigerProxyCfg.proxyCfg.proxyRoutes"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.proxyRoutes" matches
+    And he folds section ".tigerProxyCfg.proxyRoutes"
+    Then the summary of section ".tigerProxyCfg.proxyRoutes" matches
     """
       id3: [user3@pwd1] from3 ↦ to1
     """
@@ -99,7 +99,7 @@ Feature: Summary feature
     And he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
     And he clicks on global advanced icon
-    Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
+    Then the summary of section ".tigerProxyCfg.tls" matches
     """
       localhost
       Additional Names:
@@ -107,11 +107,11 @@ Feature: Summary feature
       Server SSL Suites:
       No entries
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.tls"
-    And he tests list ".tigerProxyCfg.proxyCfg.tls.alternativeNames"
+    When he unfolds section ".tigerProxyCfg.tls"
+    And he tests list ".tigerProxyCfg.tls.alternativeNames"
     And he adds list item "altname1"
-    And he folds section ".tigerProxyCfg.proxyCfg.tls"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
+    And he folds section ".tigerProxyCfg.tls"
+    Then the summary of section ".tigerProxyCfg.tls" matches
     """
       localhost
       Additional Names:
@@ -119,11 +119,11 @@ Feature: Summary feature
       Server SSL Suites:
       No entries
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.tls"
-    And he tests list ".tigerProxyCfg.proxyCfg.tls.serverSslSuites"
+    When he unfolds section ".tigerProxyCfg.tls"
+    And he tests list ".tigerProxyCfg.tls.serverSslSuites"
     And he adds list item "sslSuite1"
-    And he folds section ".tigerProxyCfg.proxyCfg.tls"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
+    And he folds section ".tigerProxyCfg.tls"
+    Then the summary of section ".tigerProxyCfg.tls" matches
     """
       localhost
       Additional Names:
@@ -131,10 +131,10 @@ Feature: Summary feature
       Server SSL Suites:
       sslSuite1
     """
-    When he unfolds section ".tigerProxyCfg.proxyCfg.tls"
-    And he enters "rootca1" into field ".tigerProxyCfg.proxyCfg.tls.serverRootCa"
-    And he folds section ".tigerProxyCfg.proxyCfg.tls"
-    Then the summary of section ".tigerProxyCfg.proxyCfg.tls" matches
+    When he unfolds section ".tigerProxyCfg.tls"
+    And he enters "rootca1" into field ".tigerProxyCfg.tls.serverRootCa"
+    And he folds section ".tigerProxyCfg.tls"
+    Then the summary of section ".tigerProxyCfg.tls" matches
     """
       localhost
       RootCa rootca1

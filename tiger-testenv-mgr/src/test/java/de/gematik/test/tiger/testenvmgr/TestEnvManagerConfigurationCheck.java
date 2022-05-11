@@ -71,7 +71,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "  testTigerProxy:\n" +
         "    type: tigerProxy\n" +
         "    tigerProxyCfg:\n" +
-        "      serverPort: 9999", skipEnvironmentSetup = true)
+        "      adminPort: 9999", skipEnvironmentSetup = true)
     public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
         assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, mockTestEnvMgr())
@@ -88,6 +88,59 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
+    public void testCheckDeprecatedKey_port_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
+    }
+
+    @Test
+    public void testCheckDeprecatedKey_tigerport_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
+    }
+    @Test
+    public void testCheckDeprecatedKey_serverPort_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('serverPort') in yaml file should not be used anymore, use 'adminPort' instead!");
+   }
+
+    @Test
+    public void testCheckDeprecatedKey_proxyCfg_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('proxyCfg') in yaml file should not be used anymore, it is omitted!");
+    }
+
+    @Test
+    public void testCheckDeprecatedKey_healthcheck_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('tiger.servers.*.externalJarOptions.healthcheck') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
+    }
+
+    @Test
+    public void testCheckDeprecatedKey_healthcheckurl_NOK() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+            .hasRootCauseInstanceOf(TigerConfigurationException.class)
+            .getRootCause()
+            .hasMessageContaining("The key ('tiger.servers.*.externalJarOptions.healthcheckurl') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
+    }
+
+    @Test
     @TigerTest(tigerYaml = "servers:\n" +
         "  tigerServer1:\n"
         + "    hostname: testReverseProxy\n"
@@ -96,24 +149,22 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         + "      - FOO_BAR=${custom.value}\n"
         + "      - OTHER_PORT=${FREE_PORT_3}\n"
         + "    tigerProxyCfg:\n"
-        + "      serverPort: ${FREE_PORT_1}\n"
-        + "      proxyCfg:\n"
-        + "        port: ${FREE_PORT_2}\n"
+        + "      adminPort: ${FREE_PORT_1}\n"
+        + "      proxyPort: ${FREE_PORT_2}\n"
         + "  tigerServer2:\n"
         + "    hostname: ${foo.bar}\n"
         + "    type: tigerProxy\n"
         + "    dependsUpon: tigerServer1\n"
         + "    tigerProxyCfg:\n"
-        + "      serverPort: ${free.port.3}\n"
+        + "      adminPort: ${free.port.3}\n"
         + "      proxiedServerProtocol: ${FOO_BAR}\n"
-        + "      proxyCfg:\n"
-        + "        port: ${free.port.4}\n",
+        + "      proxyPort: ${free.port.4}\n",
         additionalProperties = {"custom.value = ftp"})
     public void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
         final TigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
-        assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getServerPort())
+        assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getAdminPort())
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
-        assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyCfg().getPort())
+        assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyPort())
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.4").get());
         assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
             .isEqualTo("ftp");
@@ -247,4 +298,16 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         assertThat(TigerGlobalConfiguration.readString("foobar.some.keys"))
             .isEqualTo("andValues");
     }
+
+    @Test
+    @TigerTest(tigerYaml =
+        "additionalYamls:\n"
+            + "  - filename: src/test/resources/defineFooAsBar.yaml\n"
+            + "  - filename: src/test/resources/${foo}.yaml\n"
+            + "    baseKey: baseKey\n")
+    public void readAdditionalYamlFilesWithPlaceholdersInName() {
+        assertThat(TigerGlobalConfiguration.readString("baseKey.someKey"))
+            .isEqualTo("someValue");
+    }
+
 }

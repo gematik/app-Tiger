@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone;
+package de.gematik.test.tiger.common.config;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class CfgStandaloneServer {
-    private int port;
+@Builder
+public class DeprecatedKeyDescriptor {
+
+    private String compareKey;
+    private String deprecatedKey;
+    private String newKey;
 }

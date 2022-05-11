@@ -19,6 +19,7 @@
 const summaryPatterns = {
   "node-settings": [
     ["single", "<b>", "$hostname", "</b>"],
+    ["single", "<b>", "$healthcheckUrl", "</b>"],
     ["group", "(", ", ",
       ["$active", "$type", "$template", ["", "$startupTimeoutSec", " sec"]], ")"
     ]
@@ -36,8 +37,7 @@ const summaryPatterns = {
     "$.dockerOptions.serviceHealthchecks"
   ],
   ".externalJarOptions.externalSettings": [
-    ["single", "Folder ", "$.externalJarOptions.workingDir", "<br/>"],
-    ["single", "CheckURL", "$.externalJarOptions.healthcheck", ""]
+    ["single", "Folder ", "$.externalJarOptions.workingDir", "<br/>"]
   ],
   ".externalJarOptions.options": [
     "$.externalJarOptions.options"
@@ -47,47 +47,47 @@ const summaryPatterns = {
   ],
   ".tigerProxyCfg": [
     ["single", "Proxied ", "$.tigerProxyCfg.proxiedServer", "@ "],
-    ["single", "http(s)://localhost:", "$.tigerProxyCfg.proxyCfg.proxyPort", "", "RANDOMPORT"],
+    ["single", "http(s)://localhost:", "$.tigerProxyCfg.proxyPort", "", "RANDOMPORT"],
     "<br/>",
-    ["single", "WebUI http://localhost:", "$.tigerProxyCfg.serverPort", "/webui<br/>"],
-    ["single", "Loglevel ", "$.tigerProxyCfg.proxyCfg.proxyLogLevel", "<br/>"],
+    ["single", "WebUI http://localhost:", "$.tigerProxyCfg.adminPort", "/webui<br/>"],
+    ["single", "Loglevel ", "$.tigerProxyCfg.proxyLogLevel", "<br/>"],
     ["group", "", "<br/>",
       [
-        ["Rbel Endpoint ", "$.tigerProxyCfg.proxyCfg.activateRbelEndpoint", ""],
-        ["ASN1 parsing ", "$.tigerProxyCfg.proxyCfg.activateAsn1Parsing", ""],
-        ["Log traffic even without routes ", "$.tigerProxyCfg.proxyCfg.activateForwardAllLogging", ""],
-        ["Parse Rbel ", "$.tigerProxyCfg.proxyCfg.activateRbelParsing", ""]
+        ["Rbel Endpoint ", "$.tigerProxyCfg.activateRbelEndpoint", ""],
+        ["ASN1 parsing ", "$.tigerProxyCfg.activateAsn1Parsing", ""],
+        ["Log traffic even without routes ", "$.tigerProxyCfg.activateForwardAllLogging", ""],
+        ["Parse Rbel ", "$.tigerProxyCfg.activateRbelParsing", ""]
       ], ""
     ]
   ],
-  ".tigerProxyCfg.proxyCfg.proxyRoutes": [
-    "$.tigerProxyCfg.proxyCfg.proxyRoutes"
+  ".tigerProxyCfg.proxyRoutes": [
+    "$.tigerProxyCfg.proxyRoutes"
   ],
-  ".tigerProxyCfg.proxyCfg.forwardToProxy": [
-    "$.tigerProxyCfg.proxyCfg.forwardToProxy.type",
-    ["single", "://", "$.tigerProxyCfg.proxyCfg.forwardToProxy.hostname", ""],
-    ["single", ":", "$.tigerProxyCfg.proxyCfg.forwardToProxy.port", ""]
+  ".tigerProxyCfg.forwardToProxy": [
+    "$.tigerProxyCfg.forwardToProxy.type",
+    ["single", "://", "$.tigerProxyCfg.forwardToProxy.hostname", ""],
+    ["single", ":", "$.tigerProxyCfg.forwardToProxy.port", ""]
   ],
-  ".tigerProxyCfg.proxyCfg.trafficEndpoints": [
-    ["single", "Endpoints <br/>", "$.tigerProxyCfg.proxyCfg.trafficEndpoints}", "<br/>"],
-    ["single", "Timeout ", "$.tigerProxyCfg.proxyCfg.connectionTimeoutInSeconds", " sec<br/>"],
+  ".tigerProxyCfg.trafficEndpoints": [
+    ["single", "Endpoints <br/>", "$.tigerProxyCfg.trafficEndpoints}", "<br/>"],
+    ["single", "Timeout ", "$.tigerProxyCfg.connectionTimeoutInSeconds", " sec<br/>"],
     ["group", "Buffers in Mb ", ", ",
-      ["$.tigerProxyCfg.proxyCfg.stompClientBufferSizeInMb",
-        "$.tigerProxyCfg.proxyCfg.perMessageBufferSizeInMb",
-        "$.tigerProxyCfg.proxyCfg.rbelBufferSizeInMb"], "<br/>"],
-    ["single", "Skip subscription at startup ", "$.tigerProxyCfg.proxyCfg.skipTrafficEndpointsSubscription", ""]
+      ["$.tigerProxyCfg.stompClientBufferSizeInMb",
+        "$.tigerProxyCfg.perMessageBufferSizeInMb",
+        "$.tigerProxyCfg.rbelBufferSizeInMb"], "<br/>"],
+    ["single", "Skip subscription at startup ", "$.tigerProxyCfg.skipTrafficEndpointsSubscription", ""]
   ],
-  ".tigerProxyCfg.proxyCfg.modifications": [
-    "$.tigerProxyCfg.proxyCfg.modifications"
+  ".tigerProxyCfg.modifications": [
+    "$.tigerProxyCfg.modifications"
   ],
-  ".tigerProxyCfg.proxyCfg.tls": [
-    ["single", "<b>", "$.tigerProxyCfg.proxyCfg.tls.domainName", "</b><br/>"],
-    ["single", "RootCa ", "$.tigerProxyCfg.proxyCfg.tls.serverRootCa", "<br/>"],
-    ["single", "Mutual TLS Identity ", "$.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity",
+  ".tigerProxyCfg.tls": [
+    ["single", "<b>", "$.tigerProxyCfg.tls.domainName", "</b><br/>"],
+    ["single", "RootCa ", "$.tigerProxyCfg.tls.serverRootCa", "<br/>"],
+    ["single", "Mutual TLS Identity ", "$.tigerProxyCfg.tls.forwardMutualTlsIdentity",
       "<br/>"],
-    ["single", "Server Identity ", "$.tigerProxyCfg.proxyCfg.tls.serverIdentity", "<br/>"],
-    ["single", "Additional Names:<br/> ", "$.tigerProxyCfg.proxyCfg.tls.alternativeNames", "<br/>"],
-    ["single", "Server SSL Suites:<br/> ", "$.tigerProxyCfg.proxyCfg.tls.serverSslSuites", ""]
+    ["single", "Server Identity ", "$.tigerProxyCfg.tls.serverIdentity", "<br/>"],
+    ["single", "Additional Names:<br/> ", "$.tigerProxyCfg.tls.alternativeNames", "<br/>"],
+    ["single", "Server SSL Suites:<br/> ", "$.tigerProxyCfg.tls.serverSslSuites", ""]
   ],
   ".pkiKeys": [
     "$.pkiKeys"
@@ -226,7 +226,7 @@ $.fn.setSummary = function () {
         case "source":
           summarySpan.html(fieldSet.generateSummary());
           break;
-        case ".tigerProxyCfg.proxyCfg.forwardToProxy":
+        case ".tigerProxyCfg.forwardToProxy":
           if (fieldSet.getValueOfInput("enableForwardProxy") === 'ON') {
             summarySpan.html(fieldSet.generateSummary());
           } else {

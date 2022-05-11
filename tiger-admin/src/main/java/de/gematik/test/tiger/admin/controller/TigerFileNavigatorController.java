@@ -47,14 +47,16 @@ public class TigerFileNavigatorController {
     @ResponseBody
     public DTOFileNavigation getFolderInfo(@RequestParam("current") String currentFolder) throws IOException {
         File folder = new File(currentFolder);
-        if (folder.listFiles() == null) {
+        if (folder.listFiles() == null) { //NOSONAR
             throw new IOException("Invalid folder '" + folder.getAbsolutePath() + "' given!");
         }
         try {
             final List<String> childFolders = new ArrayList<>();
             final List<String> configFiles = new ArrayList<>();
             childFolders.add("..");
-            Arrays.stream(Objects.requireNonNull(folder.listFiles())).sorted().forEach(file -> {
+            Arrays.stream(Objects.requireNonNull(folder.listFiles()))//NOSONAR
+                .sorted()
+                .forEach(file -> {
                 if (file.isDirectory()) {
                     childFolders.add(file.getName());
                 } else {

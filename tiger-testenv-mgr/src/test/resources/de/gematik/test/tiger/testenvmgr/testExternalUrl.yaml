@@ -7,5 +7,4 @@ servers:
     type: externalUrl
     source:
       - https://www.orf.at
-    externalJarOptions:
-      healthcheck: https://www.orf.at
+    healthcheckUrl: https://www.orf.at

@@ -24,8 +24,6 @@ import lombok.Data;
 @Data
 @JsonInclude(Include.NON_NULL)
 public class CfgStandaloneProxy {
-    private CfgStandaloneServer server;
-
     private TigerProxyConfiguration tigerProxy;
 }
 

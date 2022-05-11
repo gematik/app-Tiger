@@ -19,7 +19,6 @@ package de.gematik.test.tiger.lib;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
@@ -29,13 +28,13 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import kong.unirest.Unirest;
 import lombok.SneakyThrows;
+import net.serenitybdd.rest.SerenityRest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
@@ -59,7 +58,7 @@ class TestTigerDirector {
 
         assertThat(TigerDirector.isInitialized()).isFalse();
         assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
-        assertThatThrownBy(TigerDirector::getProxySettings).isInstanceOf(TigerStartupException.class);
+        assertThatThrownBy(TigerDirector::getLocalTigerProxyUrl).isInstanceOf(TigerStartupException.class);
     }
 
     @Test
@@ -140,28 +139,21 @@ class TestTigerDirector {
             .hasMessageContaining(nonExistingPath.toString());
     }
 
-    @ParameterizedTest
-    @CsvSource(value = {"http.proxyHost, https.proxyHost, http.proxyPort, https.proxyPort"})
-    void testLocalProxyActiveSetByDefault(final String httpHost, final String httpsHost, final String httpPort,
-        final String httpsPort,
-        final CapturedOutput capturedOutput) {
+    @Test
+    void testLocalProxyActiveSetByDefault() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
         TigerDirector.start();
 
-        System.out.println(
-            "PROXY:" + System.getProperty(httpHost) + " / " + System.getProperty(httpsHost));
-        System.out.println(
-            "PORTS:" + System.getProperty(httpHost) + " / " + System.getProperty(httpsPort));
-
-        assertThat(capturedOutput.getOut()).contains(
-            "SETTING TIGER PROXY...");
-
-        assertThat(System.getProperty(httpHost)).isNotNull();
-        assertThat(System.getProperty(httpsHost)).isNotNull();
-        assertThat(System.getProperty(httpPort)).isNotNull();
-        assertThat(System.getProperty(httpsPort)).isNotNull();
-
+        assertThat(System.getProperty("http.proxyHost")).isNotNull();
+        assertThat(System.getProperty("https.proxyHost")).isNotNull();
+        assertThat(System.getProperty("http.proxyPort")).isNotNull();
+        assertThat(System.getProperty("https.proxyPort")).isNotNull();
         assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
+
+        assertThat(SerenityRest.get("http://testExternalJar/").getStatusCode())
+            .isEqualTo(200);
+        assertThat(Unirest.get("http://testExternalJar/").asEmpty().getStatus())
+            .isEqualTo(200);
     }
 
     @Test

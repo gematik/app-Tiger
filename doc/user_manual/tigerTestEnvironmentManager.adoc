@@ -60,6 +60,11 @@ serverKey_xxx:
   source:
     - source entry 1
     - source entry 2
+  # used by all node types
+  healthcheckUrl: string
+  # OPTIONAL only declare the server healthy once the specified return code
+  # is given
+  healthcheckReturnCode: int
   # type specific property for Tiger Proxy and docker container nodes
   version: string
   # OPTIONAL list of pki certs and keys to initialize
@@ -97,8 +102,6 @@ Their meaning and format are explained in the related section.
   externalJarOptions:
     # used by external jar and Tiger Proxy nodes
     workingDir: string
-    # used by all node types
-    healthcheck: string
     # only used by external jar nodes
     options: []
     # used by external jar and Tiger Proxy nodes
@@ -106,17 +109,16 @@ Their meaning and format are explained in the related section.
 
   # type specific sub structure for Tiger Proxy nodes
   tigerProxyCfg:
-    serverPort: int
-    proxiedServer: string
-    proxiedServerProtocol: [HTTP|HTTPS]
     # Here a normal Tiger Proxy configuration can be used.
     # This is explained in more depth down below
-    proxyCfg:
-      proxyRoutes:
-          # defines a forward-proxy-route from this server
-        - from: http://foobar
-          # to this server
-          to: https://cryptic.backend/server/with/path
+    adminPort: int
+    proxiedServer: string
+    proxiedServerProtocol: [HTTP|HTTPS]
+    proxyRoutes:
+        # defines a forward-proxy-route from this server
+      - from: http://foobar
+        # to this server
+        to: https://cryptic.backend/server/with/path
 
   # type specific sub structure for docker container and compose nodes
   dockerOptions:
@@ -294,6 +296,15 @@ externalJar_001:
   # Only one entry is expected for this node type. Additional entries are silently ignored.
   source:
     - http://myjars.download.org/myproject/myjar.jar
+  # MANDATORY URL to check for the successful startup of this node.
+  # A successful start is indicated by ANY answer on this URL.
+  # Any status is accepted as long as there is an answer.
+  # If set to "NONE" no check is performed and
+  # the test environment manager will wait for the startup timeout.
+  healthcheckUrl: http://127.0.0.1:8080
+  # OPTIONAL only declare the server healthy once the specified return code
+  # is given
+  healthcheckReturnCode: int
 
   externalJarOptions:
     # OPTIONAL folder from where to start the external jar.
@@ -301,12 +312,6 @@ externalJar_001:
     # The default value is empty, which means that the operating-system-specific
     # temporary folder will be used.
     workingDir: /home/user/test/myspecificjar
-    # MANDATORY URL to check for the successful startup of this node.
-    # A successful start is indicated by ANY answer on this URL.
-    # Any status is accepted as long as there is an answer.
-    # If set to "NONE" no check is performed and
-    # the test environment manager will wait for the startup timeout.
-    healthcheck: http://127.0.0.1:8080
     # OPTIONAL Options to pass in to the java executable call.
     options: []
     # OPTIONAL provide additional arguments to the jar archive call.
@@ -322,6 +327,8 @@ externalJar_001:
   urlMappings: []
   exports: []
 ----
+
+By default the JVM used to start the JAR-File is the taken from the `java.home` system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property `tiger.lib.javaHome` (e.g. by setting `-Dtiger.lib.javaHome`, by setting `TIGER_LIB_JAVAHOME` in the environment or by setting `lib.javaHome` in the `tiger.yaml`).
 
 ==== External URL node
 
@@ -344,14 +351,16 @@ externalUrl_001:
   source:
     - https://www.medizin.de
 
-  externalJarOptions:
-    # OPTIONAL URL to check for successful startup of this node.
-    # A successful start is indicated by ANY answer on this URL.
-    # Any status is accepted as long as there is an answer.
-    # If the value is not set, then no health check is carried out
-    # in the startup phase, instead the startupTimeout is waited for.
-    # After this timeout it is assumed that the server is up.
-    healthcheck: https://www.medizin.de/healthyState.jsp
+  # OPTIONAL URL to check for successful startup of this node.
+  # A successful start is indicated by ANY answer on this URL.
+  # Any status is accepted as long as there is an answer.
+  # If the value is not set, then no health check is carried out
+  # in the startup phase, instead the startupTimeout is waited for.
+  # After this timeout it is assumed that the server is up.
+  healthcheckUrl: https://www.medizin.de/healthyState.jsp
+  # OPTIONAL only declare the server healthy once the specified return code
+  # is given
+  healthcheckReturnCode: int
 
   # The following properties are explained in the General properties section above
   pkiKeys: []
@@ -378,9 +387,9 @@ tigerProxy_001:
     # OPTIONAL port of the web user interface and the proxy management
     # (e.g. rbel-message forwarding)
     # Default value is empty, which means a random port will be used.
-    serverPort: 8080
+    adminPort: 8080
     # OPTIONAL server key of the node this proxy shall be used as reverse proxy for.
-    # If set the routes in the proxyCfg section will be configured appropriately.
+    # If set the routes will be configured appropriately.
     # Default value is empty.
     proxiedServer: externalJar_001
     # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
@@ -391,14 +400,13 @@ tigerProxy_001:
     proxyProtocol: http
     # configures the proxy itself. For more details
     # please check the chapter about the local test suite Tiger Proxy below
-    proxyCfg:
-      ...
-      proxyRoutes:
-        - from: http://foobar
-          # defines a forward-proxy-route from this server...
-          to: https://cryptic.backend/server/with/path
-          # to this server
-      ...
+    ...
+    proxyRoutes:
+      - from: http://foobar
+        # defines a forward-proxy-route from this server...
+        to: https://cryptic.backend/server/with/path
+        # to this server
+    ...
 
   # The following properties are explained in the General properties section above
   pkiKeys: []

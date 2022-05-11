@@ -9,8 +9,7 @@ servers:
     template: idp-rise-tu
     type: externalUrl
     startupTimeoutSec: 2
-    externalJarOptions:
-      healthcheck: NONE
+    healthcheckUrl: NONE
     source:
       - https://www.orf.at
     active: true

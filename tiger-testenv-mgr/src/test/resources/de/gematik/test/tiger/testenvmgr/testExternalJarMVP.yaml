@@ -9,9 +9,10 @@ servers:
     source:
       - http://localhost:${mockserver.port}/download
     startupTimeoutSec: 8
+    healthcheckUrl: http://127.0.0.1:${free.port.0}
     externalJarOptions:
       workingDir: target/jarDownloadTest
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.
-      healthcheck: http://127.0.0.1:${free.port.0}
+

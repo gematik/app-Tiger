@@ -70,13 +70,13 @@ servers:
     type: externalJar
     source:
       - http://nexus/download/server.jar
+    healthcheckUrl: http://127.0.0.1:19307
     externalJarOptions:
       arguments:
 # The second part is the placeholder which will be resolved using the internal value store.
 # The string "serverA.url" is split into "serverA" and "url", again considered as lowercase,
 # which then matches to "SERVERA_URL",
         - --serverAUrl=${serverA.url}
-      healthcheck: http://127.0.0.1:19307
 ----
 
 WARNING: Placeholders which can not be resolved will not lead to errors but rather they will simply not be replaced.

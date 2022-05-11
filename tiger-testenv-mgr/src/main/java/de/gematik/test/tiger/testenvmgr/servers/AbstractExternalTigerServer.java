@@ -24,6 +24,7 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.io.IOException;
 import java.net.*;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
@@ -51,14 +52,12 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             }
             try {
                 await().atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
-                    .pollInterval(750, TimeUnit.MILLISECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
                     .until(() -> updateStatus(quiet) != TigerServerStatus.STARTING);
             } catch (ConditionTimeoutException cte) {
                 if (!quiet) {
                     final String healthcheckUrl = getConfiguration() != null ?
-                        getConfiguration().getExternalJarOptions() != null ?
-                            getConfiguration().getExternalJarOptions().getHealthcheck()
-                            : "<null>"
+                        getConfiguration().getHealthcheckUrl()
                         : "<null>";
                     throw new TigerTestEnvException("Timeout waiting for external server '"
                         + getServerId() + "' to respond at '" + healthcheckUrl + "'!");
@@ -69,12 +68,11 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
 
     public TigerServerStatus updateStatus(boolean quiet) {
         var url = buildHealthcheckUrl();
-        statusMessage("Waiting for URL '" + url + "' to be healthy...");
+        if (!quiet) {
+            statusMessage("Waiting for URL '" + url + "' to be healthy...");
+        }
         try {
-            URLConnection con = url.openConnection();
-            InsecureTrustAllManager.allowAllSsl(con);
-            con.setConnectTimeout(1000);
-            con.connect();
+            checkUrlOrThrowException(url);
             printServerUpMessage();
             statusMessage("Server up & healthy");
             setStatus(TigerServerStatus.RUNNING);
@@ -105,6 +103,24 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         return getStatus();
     }
 
+    private void checkUrlOrThrowException(URL url) throws IOException {
+        URLConnection con = url.openConnection();
+        InsecureTrustAllManager.allowAllSsl(con);
+        con.setConnectTimeout(1000);
+        con.connect();
+        if (getConfiguration().getHealthcheckReturnCode() != null
+            && con instanceof HttpURLConnection) {
+            final HttpURLConnection httpConnection = (HttpURLConnection) con;
+            if (!getConfiguration().getHealthcheckReturnCode()
+                .equals(httpConnection.getResponseCode())) {
+                throw new TigerEnvironmentStartupException(
+                    "Return code for server '" + getServerId() + "' does not match:"
+                        + " Expected " + getConfiguration().getHealthcheckReturnCode() + " but got "
+                        + httpConnection.getResponseCode());
+            }
+        }
+    }
+
     void printServerUpMessage() {
         String message = "External server Startup OK for '" + getHostname() + "'";
         if (getConfiguration().getSource() != null
@@ -130,13 +146,13 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             return new URL(getHealthcheckUrl());
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(
-                "Could not build healthcheck URL from '" + getConfiguration().getExternalJarOptions().getHealthcheck()
+                "Could not build healthcheck URL from '" + getConfiguration().getHealthcheckUrl()
                     + "'!", e);
         }
     }
 
     String getHealthcheckUrl() {
-        return getConfiguration().getExternalJarOptions().getHealthcheck();
+        return getConfiguration().getHealthcheckUrl();
     }
 
     @Override
@@ -153,9 +169,8 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     boolean isHealthCheckNone() {
-        return getConfiguration().getExternalJarOptions() == null ||
-            getConfiguration().getExternalJarOptions().getHealthcheck() == null ||
-            getConfiguration().getExternalJarOptions().getHealthcheck().isEmpty() ||
-            getConfiguration().getExternalJarOptions().getHealthcheck().equals("NONE");
+        return getConfiguration().getHealthcheckUrl() == null ||
+            getConfiguration().getHealthcheckUrl().isEmpty() ||
+            getConfiguration().getHealthcheckUrl().equals("NONE");
     }
 }

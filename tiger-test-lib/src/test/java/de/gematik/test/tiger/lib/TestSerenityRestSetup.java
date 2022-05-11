@@ -30,7 +30,7 @@ public class TestSerenityRestSetup {
 
     @Test
     public void useNonExistentProxy_ExceptionMessageShouldContainRequestInformation() {
-        SerenityRestUtils.setupSerenityRest();
+        SerenityRestUtils.setupSerenityRest(1234);
 
         final String proxy = "http://localhost:" + SocketUtils.findAvailableTcpPort();
         final String serverUrl = "http://localhost:5342/foobar";

@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -32,20 +33,20 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
     @TigerTest(tigerYaml = "servers:\n"
         + "  testWinstone2:\n"
         + "    type: externalJar\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
+        + "    healthcheckReturnCode: 200\n"
         + "    source:\n"
         + "      - http://localhost:${mockserver.port}/download\n"
         + "    externalJarOptions:\n"
         + "      arguments:\n"
         + "        - --httpPort=${free.port.0}\n"
         + "        - --webroot=.\n"
-        + "      healthcheck: http://127.0.0.1:${free.port.0}\n"
         + "  reverseproxy1:\n"
         + "    type: tigerProxy\n"
         + "    tigerProxyCfg:\n"
-        + "      serverPort: ${free.port.2}\n"
+        + "      adminPort: ${free.port.2}\n"
         + "      proxiedServer: testWinstone2\n"
-        + "      proxyCfg:\n"
-        + "        port: ${free.port.3}\n")
+        + "      proxyPort: ${free.port.3}\n")
     public void testReverseProxy() {
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();
@@ -74,22 +75,50 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "    type: externalJar\n"
         + "    source:\n"
         + "      - http://localhost:${mockserver.port}/download\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}/target\n"
+        + "    healthcheckReturnCode: 200\n"
         + "    externalJarOptions:\n"
+        + "      workingDir: target/\n"
         + "      arguments:\n"
         + "        - --httpPort=${free.port.0}\n"
         + "        - --webroot=..\n"
-        + "      healthcheck: http://127.0.0.1:${free.port.0}/foo/bar/stuff\n"
         + "  reverseproxy1:\n"
         + "    type: tigerProxy\n"
         + "    tigerProxyCfg:\n"
-        + "      serverPort: ${free.port.2}\n"
+        + "      adminPort: ${free.port.2}\n"
         + "      proxiedServer: testWinstone2\n"
-        + "      proxyCfg:\n"
-        + "        port: ${free.port.3}\n")
+        + "      proxyPort: ${free.port.3}\n")
     public void deepPathHealthcheckUrl_routeShouldTargetBaseUrl() {
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();
         assertThat(httpResponse.getBody())
             .contains("<TITLE>Directory: /</TITLE>");
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  testWinstone2:\n"
+        + "    type: externalJar\n"
+        + "    source:\n"
+        + "      - http://localhost:${mockserver.port}/download\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
+        + "    healthcheckReturnCode: 200\n"
+        + "    externalJarOptions:\n"
+        + "      arguments:\n"
+        + "        - --httpPort=${free.port.0}\n"
+        + "        - --webroot=..\n"
+        + "  proxykon2:\n"
+        + "    type: tigerProxy\n"
+        + "    active: true\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${free.port.1}\n"
+        + "      proxyPort: ${free.port.2}\n"
+        + "      tls:\n"
+        + "        serverIdentity: \"src/test/resources/c.ak.aut-konsim.p12;00\"\n"
+        + "  ")
+    public void remoteProxyWithConfiguredTlsIdentity(UnirestInstance proxyRest) {
+        proxyRest.get(
+            "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.0").get()).asString();
+
     }
 }

@@ -17,14 +17,14 @@
 "use strict"
 
 const listItemPatterns = {
-  ".tigerProxyCfg.proxyCfg.proxyRoutes": [
+  ".tigerProxyCfg.proxyRoutes": [
     ["single", "", "$id", ": "],
     ["single", " [", "$basicAuth.username", "@"],
     ["single", "", "$basicAuth.password", "]"],
     ["single", " ", "$from", ""],
     ["single", " ↦ ", "$to", ""]
   ],
-  ".tigerProxyCfg.proxyCfg.modifications": [
+  ".tigerProxyCfg.modifications": [
     ["single", "", "$name", ": "], "$condition", "$targetElement"
   ],
   ".pkiKeys": [

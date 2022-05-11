@@ -17,9 +17,19 @@
 package de.gematik.test.tiger.common.pki;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity.TigerPkiIdentityDeserializer;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity.TigerPkiIdentitySerializer;
+import java.io.IOException;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
@@ -29,11 +39,34 @@ import lombok.NoArgsConstructor;
     "keyId",
     "certificateChain"
 })
+@JsonDeserialize(using = TigerPkiIdentityDeserializer.class)
+@JsonSerialize(using = TigerPkiIdentitySerializer.class)
 public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
     private String fileLoadingInformation;
 
     public TigerConfigurationPkiIdentity(String fileLoadingInformation) {
         super(fileLoadingInformation);
         this.fileLoadingInformation = fileLoadingInformation;
+    }
+
+    public static class TigerPkiIdentityDeserializer extends JsonDeserializer<TigerConfigurationPkiIdentity> {
+
+        @Override
+        public TigerConfigurationPkiIdentity deserialize(JsonParser p, DeserializationContext ctxt) {
+            try {
+                return new TigerConfigurationPkiIdentity(
+                    ((com.fasterxml.jackson.databind.node.TextNode) p.readValueAsTree()).asText());
+            } catch (IOException e) {
+                throw new TigerConfigurationException("Error while deserializing from JSON: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    public static class TigerPkiIdentitySerializer extends JsonSerializer<TigerConfigurationPkiIdentity> {
+
+        @Override
+        public void serialize(TigerConfigurationPkiIdentity value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeString(value.getFileLoadingInformation());
+        }
     }
 }

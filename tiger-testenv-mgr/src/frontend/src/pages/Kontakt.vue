@@ -1,7 +1,6 @@
 <template>
   <div>
       Kontaktdaten todo
-
   </div>
 </template>
 

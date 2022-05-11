@@ -145,6 +145,8 @@ public class TigerConfigurationLoader {
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
         final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
         addYamlToMap(yaml.load(yamlSource), new TigerConfigurationKey(baseKeys), valueMap);
+        DeprecatedKeysForbiddenUsageChecker.checkForDeprecatedKeys(valueMap);
+
         loadedSources.add(BasicTigerConfigurationSource.builder()
             .values(valueMap)
             .sourceType(sourceType)

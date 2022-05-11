@@ -67,7 +67,7 @@ public class FeatureParser {
                 } else //noinspection StatementWithEmptyBody
                     if (line.startsWith("#") || line.isBlank() || parseTagsFromLine(line, tags)) {
                     // skip comments
-                } else if (parseGherkinStructFromLine(line, tags, feature, child)) {
+                } else if (parseGherkinStructFromLine(line, tags, feature, child, linectr)) {
                     mode = ParseMode.DESCRIPTION;
                 } else {
                     final AtomicReference<ParseMode> moderef = new AtomicReference<>(mode);
@@ -144,7 +144,7 @@ public class FeatureParser {
 
     @SneakyThrows
     private boolean parseGherkinStructFromLine(final String line, final List<Tag> tags,
-        final AtomicReference<Feature> feature, final AtomicReference<Scenario> child) {
+        final AtomicReference<Feature> feature, final AtomicReference<Scenario> child, int lineNumber) {
         final int colon = line.indexOf(':');
         if (colon != -1) {
             String structName = line.substring(0, colon).replace(" ", "").replace("\t", "");
@@ -176,6 +176,7 @@ public class FeatureParser {
                         }
                         child.set(sc);
                         sc.setFeature(feature.get());
+                        sc.setLineNumber(lineNumber);
                         if (sc instanceof Background) {
                             feature.get().setBackground((Background) sc);
                         } else {

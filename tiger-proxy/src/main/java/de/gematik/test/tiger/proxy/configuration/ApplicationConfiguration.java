@@ -28,6 +28,4 @@ import org.springframework.stereotype.Component;
 @ToString(callSuper = true)
 public class ApplicationConfiguration extends TigerProxyConfiguration {
 
-    private boolean localResources = false;
-    private TigerProxyReportConfiguration report;
 }

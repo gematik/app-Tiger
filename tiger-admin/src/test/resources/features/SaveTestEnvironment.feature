@@ -85,7 +85,7 @@ Feature: Save test environments
     And he adds a "tigerProxy" node via sidebar
     Then he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
-    And he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he tests list ".tigerProxyCfg.proxyRoutes"
     Then he adds complex list item
     """
       id: entry1
@@ -140,8 +140,7 @@ Feature: Save test environments
         type: compose
       tigerProxy_001:
         tigerProxyCfg:
-          proxyCfg:
-            proxyRoutes:
+          proxyRoutes:
             - basicAuth:
                 password: pwd1
                 username: user1

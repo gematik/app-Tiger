@@ -269,6 +269,7 @@ public class TigerGlobalConfiguration {
         for (AdditionalYamlProperty additionalYaml : additionalYamls) {
             readYamlFile(Optional.ofNullable(additionalYaml.getFilename())
                 .filter(Objects::nonNull)
+                .map(TigerGlobalConfiguration::resolvePlaceholders)
                 .map(File::new)
                 .filter(File::exists)
                 .orElseThrow(() -> new TigerConfigurationException(

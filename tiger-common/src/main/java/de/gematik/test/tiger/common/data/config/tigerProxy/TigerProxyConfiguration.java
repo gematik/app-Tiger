@@ -19,12 +19,14 @@ package de.gematik.test.tiger.common.data.config.tigerProxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 
 @Data
@@ -48,7 +50,7 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private boolean activateForwardAllLogging = true;
     private TigerFileSaveInfo fileSaveInfo;
-    private Integer port;
+    private Integer proxyPort;
     @Builder.Default
     private boolean skipTrafficEndpointsSubscription = false;
     private List<String> trafficEndpoints;
@@ -70,14 +72,37 @@ public class TigerProxyConfiguration {
     private TrafficEndpointConfiguration trafficEndpointConfiguration = new TrafficEndpointConfiguration();
     @Builder.Default
     private List<RbelModificationDescription> modifications = new ArrayList<>();
+    @Builder.Default
+    private boolean localResources = false;
+    /**
+     * Management-port of the Tiger Proxy.
+     */
+    private int adminPort;
+    @Builder.Default
+    private String filenamePattern = "tiger-report-${GEMATIKACCOUNT}-${DATE}-${TIME}.zip";
+    @Builder.Default
+    private String uploadUrl = "UNDEFINED";
+    private String username;
+    private String password;
+
+    /**
+     * used to overwrite proxyCfg with values that allow to reverse proxy the given server node.
+     */
+    private String proxiedServer;
+
+    /**
+     * Used to add a route to the Tiger Proxy. By default, the healthcheck-url-protocol is used here, or http if none is
+     * present. If you want to override this you can do it using this field.
+     */
+    private String proxiedServerProtocol;
 
     @JsonIgnore
     public Integer[] getPortAsArray() {
-        if (port == null) {
+        if (proxyPort == null) {
             return null;
         } else {
             return new Integer[]{
-                port
+                proxyPort
             };
         }
     }

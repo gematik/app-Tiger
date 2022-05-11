@@ -114,7 +114,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             ))
             .build());
 
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
         assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.header.user-agent"))
             .get().extracting(RbelElement::getRawStringContent)
@@ -141,7 +141,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             ))
             .build());
 
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.foo"))
             .get().extracting(RbelElement::getRawStringContent)
@@ -179,7 +179,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        final byte[] body = Unirest.post("http://localhost:" + tigerProxy.getPort() + "/foobar")
+        final byte[] body = Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .body(binaryMessageContent)
             .asBytes().getBody();
 
@@ -240,7 +240,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
                     .build()))
             .build());
 
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
         assertThat(getLastRequest().getQueryParams())
             .containsOnlyKeys("foo", "schmoo");
@@ -267,7 +267,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
         HttpResponse<JsonNode> response = Unirest.get(
-            "http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+            "http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
         assertThat(response.getStatus())
             .isEqualTo(200);
@@ -290,7 +290,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
         HttpResponse<JsonNode> response = Unirest.get(
-            "http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+            "http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
         assertThat(response.getStatusText())
             .isEqualTo("Foo bar Bar Foobar");
@@ -313,7 +313,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
         HttpResponse<JsonNode> response = Unirest.get(
-            "http://localhost:" + tigerProxy.getPort() + "/foobar").asJson();
+            "http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
         assertThat(response.getStatusText())
             .isEqualTo("");

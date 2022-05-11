@@ -31,7 +31,6 @@ import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.*;
@@ -44,7 +43,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -159,7 +157,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar")
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .header("foo", "bar")
             .header("x-forwarded-for", "someStuff")
             .asString();
@@ -187,7 +185,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(0)
             .findElement("$.receiver")
@@ -238,7 +236,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         );
         new UnirestInstance(new Config()
             .sslContext(ctx))
-            .get("https://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+            .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(verifyWasCalledSuccesfully).isTrue();
     }
@@ -331,7 +329,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .activateRbelEndpoint(true)
             .build());
 
-        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/rbel").asString()
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/rbel").asString()
             .getBody())
             .contains("<html");
 
@@ -388,7 +386,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
         // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/notAServer/foobar").asString();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/notAServer/foobar").asString();
 
         assertThat(callCounter.get()).isEqualTo(2);
         assertThat(tigerProxy.getRbelMessages().get(1)
@@ -411,7 +409,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
         // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(callCounter.get()).isEqualTo(2);
     }
@@ -514,7 +512,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         final HttpResponse<JsonNode> response = Unirest
-            .get("http://localhost:" + tigerProxy.getPort() + "/foobar")
+            .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .asJson();
 
         assertThat(response.getStatus()).isEqualTo(666);
@@ -596,7 +594,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        assertThat(Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString()
+        assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString()
             .getStatus())
             .isEqualTo(777);
 
@@ -634,7 +632,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
         assertThat(getLastRequest().getQueryParams())
             .containsOnlyKeys("foo", "schmoo");
@@ -654,11 +652,11 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://backend/foobar").asString();
 
         final UnirestInstance secondInstance = Unirest.spawnInstance();
-        secondInstance.config().proxy("localhost", tigerProxy.getPort());
+        secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         secondInstance.get("http://backend/foobar").asString();
 
         final List<String> hostnameSenderList = new ArrayList<>();
@@ -683,10 +681,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         final UnirestInstance secondInstance = Unirest.spawnInstance();
-        secondInstance.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        secondInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         final List<String> hostnameList = new ArrayList<>();
         hostnameList.addAll(
@@ -703,11 +701,11 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
         final UnirestInstance secondInstance = Unirest.spawnInstance();
-        secondInstance.config().proxy("localhost", tigerProxy.getPort());
+        secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         secondInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
         final List<String> hostnameList = new ArrayList<>();
@@ -724,10 +722,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     public void checkNotSetTigerProxyPort_ShouldImplicitBeSetToTheChosenFreePort() {
         TigerGlobalConfiguration.reset();
         spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
-        final String port = TigerGlobalConfiguration.readString("tigerProxy.port");
+        final String port = TigerGlobalConfiguration.readString("tigerProxy.proxyPort");
 
         assertNotNull(port);
-        assertThat(TigerGlobalConfiguration.readIntegerOptional("tigerProxy.port")
+        assertThat(TigerGlobalConfiguration.readIntegerOptional("tigerProxy.proxyPort")
             .get())
             .isBetween(10000, 100000);
     }
@@ -736,7 +734,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     public void checkGetNotSetTigerProxyPort_ShouldThrowTigerConfigurationException() {
         TigerGlobalConfiguration.reset();
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .port(SocketUtils.findAvailableTcpPort())
+            .proxyPort(SocketUtils.findAvailableTcpPort())
             .build());
 
         assertThatThrownBy(() -> {
@@ -775,7 +773,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .build()))
             .build());
 
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(0)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
@@ -790,7 +788,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(0)

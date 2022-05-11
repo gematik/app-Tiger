@@ -64,7 +64,7 @@ public class TigerDirector {
     private static TigerTestEnvMgr tigerTestEnvMgr;
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static Optional<MonitorUI> optionalMonitorUI = Optional.empty();
-    private static final Pattern SHOW_STEPS = Pattern.compile(
+    private static final Pattern SHOW_STEPS = Pattern.compile(//NOSONAR
         ".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
     private static boolean initialized = false;
 
@@ -83,12 +83,21 @@ public class TigerDirector {
         readConfiguration();
         applyTestLibConfig();
         startMonitorUi();
-        startTestEnvMgr();
-        startWorkflowUi();
+        // get free port
+        startTestEnvMgr(); // pass in
+        startWorkflowUi(); // pass in
+        setupTestEnvironent();
         setDefaultProxyToLocalTigerProxy();
 
         initialized = true;
         log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
+    }
+
+    private static void setupTestEnvironent() {
+        if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+            log.info("Starting Test-Env setup");
+            tigerTestEnvMgr.setUpEnvironment();
+        }
     }
 
     private static synchronized void readConfiguration() {
@@ -146,7 +155,7 @@ public class TigerDirector {
 
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
-            tigerTestEnvMgr.openWorkflowUiInBrowser(envMgrApplicationContext.getEnvironment().getProperty("server.port"));
+            TigerTestEnvMgr.openWorkflowUiInBrowser(TigerGlobalConfiguration.readIntegerOptional("free.port.255").get().toString());
         }
     }
 
@@ -160,11 +169,12 @@ public class TigerDirector {
             } else {
                 log.info(Ansi.colorize("SETTING TIGER PROXY...", RbelAnsiColors.BLUE_BOLD));
                 System.setProperty("http.proxyHost", "localhost");
-                System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
+                System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
                 System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
                 System.setProperty("https.proxyHost", "localhost");
-                System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getPort());
-                SerenityRestUtils.setupSerenityRest();
+                System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
+                System.setProperty("java.net.useSystemProxies", "true");
+                SerenityRestUtils.setupSerenityRest(tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
             }
         } else {
             log.info(Ansi.colorize("SKIPPING TIGER PROXY settings...", RbelAnsiColors.RED_BOLD));
@@ -212,7 +222,7 @@ public class TigerDirector {
         // TODO TGR-259 (see architecture decision about pluggable (TGR-253)) create Aforeport and embedd it into serenity report
     }
 
-    public static String getProxySettings() {
+    public static String getLocalTigerProxyUrl() {
         assertThatTigerIsInitialized();
         if (tigerTestEnvMgr.getLocalTigerProxy() == null || !tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
             return null;

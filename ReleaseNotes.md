@@ -1,13 +1,36 @@
 # Changelog Tiger Testplattform
 
+# Release 0.20.2
+
+## Breaking Changes
+
+* TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
+* During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
+* TGR-479: clean up the yaml file
+  * healthcheck renamed to healthcheckUrl and move up one level
+
+## Features
+
+* TGR-489: New test-steps: Print current request/response as rbel-tree
+* TGR-509: Server-Health-checks can now also be verified with given return code
+
+## Bugfixes
+
+* TigerProxy-WebUI can now display traffic again
+* TGR-503: The Testenv-Mgr now by default uses the own JVM to start externalJar-Servers. This can be overriden by setting `tiger.lib.javaHome`
+* TGR-508: Remote Tiger-Proxies can now also be supplied with TLS-Identities
+
 # Release 0.20.1
 
 ## Breaking Changes
 
 * RBEL-54: RbelElement now returns RbelMultiMap instead of List<Entry<String, RbelElement>>. Conceptually nothing changed
-
+* TGR-469: clean up the yaml file
+  * serverPort is renamed in adminPort
+  * port is renamed to proxyPort
+  * proxyCfg under tigerProxyCfg is omitted
+  
 ## Features
-
 * TGR-461: Smaller improvements in TigerGlobalConfiguration:
   * `TigerGlobalConfiguration.localScope()` allows scoped value addition
   * Placeholders in keys are now resolved
@@ -21,6 +44,7 @@
 
 ## Bugfixes
 
+* TGR-485: fix IndexOutOfBoundsException when using identical names for feature scenarios 
 * TGR-411: pki keys saved correctly via admin ui
 * TGR-308: order of nodes now restored on load in admin ui
 * TGR-461: Base key in `additionalYamls` is now honored

@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import TestResult from "./TestResult";
+import StepUpdate, {IJsonSteps} from "./StepUpdate";
+import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
+
+interface IScenarioUpdate {
+  steps: Map<string, StepUpdate>;
+  description: string;
+  status: TestResult;
+  exampleKeys: Array<string>;
+  exampleList: Map<String, String>;
+  variantIndex: number;
+}
+
+interface IJsonScenario {
+  steps: IJsonSteps;
+  description: string;
+  status: TestResult;
+  exampleKeys: Array<string>;
+  exampleList: IJsonOutlineList;
+  variantIndex: number;
+}
+
+export interface IJsonScenarios {
+  [key: string]:IJsonScenario
+}
+
+export interface IJsonOutlineList {
+  [key: string]: string;
+}
+
+export default class ScenarioUpdate implements IScenarioUpdate {
+  steps = new Map<string, StepUpdate>();
+  description = "";
+  status = TestResult.UNUSED;
+  exampleKeys = new Array<string>();
+  exampleList = new Map<String, String>();
+  variantIndex = -1;
+
+  public static fromJson(json: IJsonScenario): ScenarioUpdate {
+    const scenario: ScenarioUpdate = new ScenarioUpdate();
+    scenario.steps = StepUpdate.mapFromJson(json.steps);
+    scenario.description = json.description;
+    scenario.exampleKeys = json.exampleKeys;
+    scenario.exampleList = this.mapScenarioOutlineFromJson(json.exampleList);
+    if (json.variantIndex !== -1) {
+      scenario.variantIndex = json.variantIndex;
+    }
+    if (json.status) {
+      scenario.status = json.status;
+    } else {
+      scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
+    }
+    return scenario;
+  }
+
+  public static mapFromJson(
+    jsonscenarios: IJsonScenarios
+  ): Map<string, ScenarioUpdate> {
+    const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
+    if (jsonscenarios) {
+      Object.entries(jsonscenarios).forEach(([key, value]) =>
+        map.set(key, this.fromJson(value))
+      );
+    }
+    return map;
+  }
+
+  public static mapScenarioOutlineFromJson(outlineList: IJsonOutlineList): Map<string, string> {
+    const map: Map<string, string> = new Map<string, string>();
+    if (outlineList) {
+      Object.entries(outlineList).forEach(([key, value]) =>
+        map.set(key, value));
+    }
+    return map;
+  }
+
+  public merge(scenario: ScenarioUpdate) {
+    if (scenario.description) {
+      this.description = scenario.description;
+    }
+    if (scenario.status) {
+      this.status = scenario.status;
+    }
+    if (scenario.variantIndex !== -1) {
+      this.variantIndex = scenario.variantIndex;
+    }
+    if (scenario.steps) {
+      for (let key of scenario.steps.keys()) {
+        const step: StepUpdate | undefined = this.steps.get(key);
+        if (step) {
+          // @ts-ignore
+          step.merge(scenario.steps.get(key));
+        } else {
+          // @ts-ignore
+          this.steps.set(key, scenario.steps.get(key));
+        }
+      }
+      // update scenario status and change pending steps to skipped in case of error
+      this.status = FeatureUpdate.mapToTestResult(this.steps);
+      if (this.status === TestResult.FAILED) {
+        this.steps.forEach((step) => {
+          if (step.status === TestResult.PENDING)
+            step.status = TestResult.SKIPPED;
+        });
+      }
+    }
+  }
+
+  public toString() {
+    return `{ description: "${this.description}",\nstatus: "${
+      this.status
+    }",\nsteps: "${FeatureUpdate.mapToString(this.steps)}"\n}`;
+  }
+}

@@ -65,7 +65,7 @@ public class TigerProxyRoutingTest {
         backendServerPort = wmRuntimeInfo.getHttpPort();
 
         unirestInstance = new UnirestInstance(
-            new Config().proxy("localhost", tigerProxy.getPort()));
+            new Config().proxy("localhost", tigerProxy.getProxyPort()));
         unirestInstance.get("");
     }
 

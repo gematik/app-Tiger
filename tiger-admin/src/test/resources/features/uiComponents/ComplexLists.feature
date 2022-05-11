@@ -7,7 +7,7 @@ Feature: Test functionality of complex lists
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
-    And he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he tests list ".tigerProxyCfg.proxyRoutes"
     And he checks that add button for complex list is enabled
 
   #Scenario: Adding and inserting an entry to list
@@ -155,7 +155,7 @@ Feature: Test functionality of complex lists
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
-    And he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he tests list ".tigerProxyCfg.proxyRoutes"
     And he adds complex list item
       """
       id: drag1
@@ -207,7 +207,7 @@ Feature: Test functionality of complex lists
     And he adds a "tigerProxy" node via welcome screen
     And he focuses on formular "tigerProxy_001"
     And he shows "TigerProxy" tab
-    And he tests list ".tigerProxyCfg.proxyCfg.proxyRoutes"
+    And he tests list ".tigerProxyCfg.proxyRoutes"
     And he checks that add button for complex list is enabled
 
     When he adds complex list item

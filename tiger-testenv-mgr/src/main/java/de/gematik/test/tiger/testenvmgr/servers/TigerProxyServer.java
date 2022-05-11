@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import de.gematik.test.tiger.common.data.config.CfgTigerProxyOptions;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
@@ -24,7 +24,7 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
-import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,28 +45,24 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     @Override
     public void performStartup() {
         statusMessage("Configuring tiger-proxy... (pre-start)");
-        CfgTigerProxyOptions reverseProxyCfg = getConfiguration().getTigerProxyCfg();
-
+        TigerProxyConfiguration reverseProxyCfg = getConfiguration().getTigerProxyCfg();
         CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
-        standaloneCfg.setServer(new CfgStandaloneServer());
-        standaloneCfg.getServer().setPort(reverseProxyCfg.getServerPort());
-
-        standaloneCfg.setTigerProxy(reverseProxyCfg.getProxyCfg());
-        if (reverseProxyCfg.getProxyCfg().getProxyRoutes() == null) {
-            reverseProxyCfg.getProxyCfg().setProxyRoutes(new ArrayList<>());
+        standaloneCfg.setTigerProxy(reverseProxyCfg);
+        if (reverseProxyCfg.getProxyRoutes() == null) {
+            reverseProxyCfg.setProxyRoutes(new ArrayList<>());
         }
 
         if (reverseProxyCfg.getProxiedServer() != null) {
             getDestinationUrlFromProxiedServer(reverseProxyCfg);
         }
 
-        reverseProxyCfg.getProxyCfg().getProxyRoutes().forEach(route -> {
+        reverseProxyCfg.getProxyRoutes().forEach(route -> {
             route.setFrom(getTigerTestEnvMgr().replaceSysPropsInString(route.getFrom()));
             route.setTo(getTigerTestEnvMgr().replaceSysPropsInString(route.getTo()));
         });
 
         Map<String, Object> properties = new HashMap<>();
-        properties.put("server.port", reverseProxyCfg.getServerPort());
+        properties.put("server.port", reverseProxyCfg.getAdminPort());
         properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
 
         statusMessage("Starting tiger-proxy...");
@@ -92,7 +88,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         }
     }
 
-    private void getDestinationUrlFromProxiedServer(CfgTigerProxyOptions cfg) {
+    private void getDestinationUrlFromProxiedServer(TigerProxyConfiguration cfg) {
         final String destUrl = getTigerTestEnvMgr().getServers().keySet().stream()
             .filter(srvid -> srvid.equals(cfg.getProxiedServer()))
             .findAny()
@@ -105,12 +101,12 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         TigerRoute tigerRoute = new TigerRoute();
         tigerRoute.setFrom("/");
         tigerRoute.setTo(destUrl);
-        cfg.getProxyCfg().getProxyRoutes().add(tigerRoute);
+        cfg.getProxyRoutes().add(tigerRoute);
     }
 
     @Override
     String getHealthcheckUrl() {
-        return "http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getServerPort();
+        return "http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getAdminPort();
     }
 
     @Override

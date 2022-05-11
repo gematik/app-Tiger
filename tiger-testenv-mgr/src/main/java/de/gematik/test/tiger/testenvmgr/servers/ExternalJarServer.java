@@ -19,6 +19,8 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static java.time.LocalDateTime.now;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -81,7 +83,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         processStartTime = now();
         getTigerTestEnvMgr().getExecutor().submit(() -> {
             try {
-                statusMessage("Starting local JAR-File '" + javaExe + "'");
+                statusMessage("Starting local JAR-File");
                 final ProcessBuilder processBuilder = new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(workingDir))
@@ -96,7 +98,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                     )));
 
                 processReference.set(processBuilder.start());
-                statusMessage("Started JAR-File '" + javaExe + "' with PID '" + processReference.get().pid() + "'");
+                statusMessage("Started JAR-File with PID '" + processReference.get().pid() + "'");
             } catch (Throwable t) {
                 log.error("Failed to start process", t);
                 exception.set(t);
@@ -110,6 +112,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             addServerToLocalProxyRouteMap(buildHealthcheckUrl());
             publishNewStatusUpdate(TigerServerStatusUpdate.builder()
                 .baseUrl(extractBaseUrl(buildHealthcheckUrl()))
+                // TODO TGR-475 remove once order is ok
+                .type(ServerType.EXTERNALJAR)
                 .build());
         }
 
@@ -176,13 +180,14 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
     }
 
     private String findJavaExecutable() {
-        String[] paths = System.getenv("PATH").split(SystemUtils.IS_OS_WINDOWS ? ";" : ":");
-        String javaProg = "java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
-        return Arrays.stream(paths)
-            .map(path -> Path.of(path, javaProg).toFile())
-            .filter(file -> file.exists() && file.canExecute())
-            .map(File::getAbsolutePath)
-            .findAny()
-            .orElseThrow(() -> new TigerTestEnvException("Unable to find executable java program in PATH"));
+        final String javaHomeDirectory = TigerGlobalConfiguration.readStringOptional("tiger.lib.javaHome")
+                .or(() -> TigerGlobalConfiguration.readStringOptional("java.home"))
+                .orElseThrow(() -> new TigerEnvironmentStartupException("Could not determine java-home. "
+                    + "Expected either 'tiger.lib.javaHome' oder 'java.home' to be set, but neither was!"));
+        if (System.getProperty("os.name").startsWith("Win")) {
+            return javaHomeDirectory + File.separator + "bin" + File.separator + "java.exe";
+        } else {
+            return javaHomeDirectory + File.separator + "bin" + File.separator + "java";
+        }
     }
 }

@@ -18,7 +18,9 @@ package de.gematik.test.tiger.lib.monitor;
 
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.model.gherkin.Step;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import java.awt.*;
 import java.net.URL;
 import java.util.Optional;
@@ -34,7 +36,7 @@ public class MonitorUI extends JFrame {
     private JLabel message;
     private JButton quitButton;
     private boolean clickedQuitBtn = false;
-    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");
+    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
 
     public static Optional<MonitorUI> getMonitor()  {
         try {
@@ -96,6 +98,7 @@ public class MonitorUI extends JFrame {
                 message.setBackground(Color.WHITE);
             }
             message.setText(m.group(4));
+            TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder().bannerMessage(message.getText()).build());
         }
         if (stepText.endsWith("TGR warte auf Abbruch") || stepText.endsWith("TGR wait for user abort")) {
             clickedQuitBtn = false;

@@ -86,7 +86,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
         );
         new UnirestInstance(new Config()
             .sslContext(ctx))
-            .get("https://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+            .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(verifyWasCalledSuccesfully).isTrue();
     }
@@ -125,7 +125,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().verifySsl(true);
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         SSLContext ctx = SSLContext.getInstance("TLSv1.2");
         ctx.init(null, new TrustManager[]{
                 new X509TrustManager() {
@@ -197,7 +197,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
         Unirest.config().reset();
-        Unirest.config().proxy("localhost", tigerProxy.getPort());
+        Unirest.config().proxy("localhost", tigerProxy.getProxyPort());
         Unirest.config().verifySsl(true);
         Unirest.config().sslContext(tigerProxy.buildSslContext());
 
@@ -241,7 +241,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
-        proxyRest.get("https://localhost:" + tigerProxy.getPort() + "/foobar").asString();
+        proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
         assertThat(callCounter.get()).isEqualTo(2);
     }
@@ -288,7 +288,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
         final UnirestInstance unirestInstance = new UnirestInstance(
-            new Config().proxy("localhost", tigerProxy.getPort())
+            new Config().proxy("localhost", tigerProxy.getProxyPort())
                 .verifySsl(true)
                 .sslContext(buildSslContextTrustingOnly(serverIdentity)));
 
@@ -331,7 +331,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
         SSLContext ctx = tigerProxy.buildSslContext();
         new UnirestInstance(new Config()
             .sslContext(ctx)
-            .proxy("localhost", tigerProxy.getPort()))
+            .proxy("localhost", tigerProxy.getProxyPort()))
             .get("https://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
         assertThat(ctx.getClientSessionContext()
@@ -350,7 +350,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
         var restInstanceWithSslContextConfigured = Unirest.spawnInstance();
-        restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getPort());
+        restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
         restInstanceWithSslContextConfigured.config().sslContext(tigerProxy.buildSslContext());
 
         final HttpResponse<JsonNode> response = restInstanceWithSslContextConfigured.get("https://backend/foobar")
@@ -371,7 +371,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build());
 
             var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
-            restInstanceWithoutSslContextConfigured.config().proxy("localhost", tigerProxy.getPort());
+            restInstanceWithoutSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
             restInstanceWithoutSslContextConfigured.get("https://backend/foobar")
                 .asJson();
 
@@ -389,7 +389,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
         OkHttpClient client = new OkHttpClient.Builder()
-            .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getPort())))
+            .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
             .sslSocketFactory(tigerProxy.getConfiguredTigerProxySslContext().getSocketFactory(),
                 tigerProxy.buildTrustManagerForTigerProxy())
             .build();
@@ -414,7 +414,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build());
 
             OkHttpClient client = new OkHttpClient.Builder()
-                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getPort())))
+                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
                 .build();
 
             Request request = new Request.Builder()
@@ -439,7 +439,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
         RestAssured.config = RestAssured.config().sslConfig(SSLConfig.sslConfig()
             .trustStore(tigerProxy.buildTruststore()));
 
-        RestAssured.proxy("localhost", tigerProxy.getPort());
+        RestAssured.proxy("localhost", tigerProxy.getProxyPort());
         Response response = RestAssured.get(
                 "https://backend/foobar").
             andReturn();
@@ -460,7 +460,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
             RestAssured.config = RestAssured.config().sslConfig(SSLConfig.sslConfig()
                 .trustStore(null));
 
-            RestAssured.proxy("localhost", tigerProxy.getPort());
+            RestAssured.proxy("localhost", tigerProxy.getProxyPort());
             RestAssured.get(
                     "https://backend/foobar").
                 andReturn();

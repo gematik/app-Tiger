@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +27,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -51,7 +50,7 @@ public class EpaTracingpointsTest {
         assertThat(tracingpointsBody.getArray().getJSONObject(0).getString("name"))
             .isEqualTo("tigerProxy Tracing Point");
         assertThat(tracingpointsBody.getArray().getJSONObject(0).getInt("port"))
-            .isEqualTo(tigerProxy.getPort());
+            .isEqualTo(tigerProxy.getProxyPort());
         assertThat(tracingpointsBody.getArray().getJSONObject(0).getString("ws_endpoint"))
             .isEqualTo("/tracing");
         assertThat(tracingpointsBody.getArray().getJSONObject(0).getString("stomp_topic"))

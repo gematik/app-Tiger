@@ -2,6 +2,5 @@ servers:
   testTigerProxy:
     type: tigerProxy
     tigerProxyCfg:
-      serverPort: 9999
-      proxyCfg:
-        port: 10020
+      adminPort: 9999
+      proxyPort: 10020

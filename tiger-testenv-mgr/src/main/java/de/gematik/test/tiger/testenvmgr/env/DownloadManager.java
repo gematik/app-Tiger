@@ -78,7 +78,7 @@ public class DownloadManager {
                 AtomicReference<File> candidateFile = new AtomicReference();
                 do {
                     candidateFile.set(Path.of(externalJarOptions.getWorkingDir(),
-                            jarName + "_" + RandomStringUtils.randomAlphanumeric(10))
+                            jarName + "_" + RandomStringUtils.randomAlphanumeric(10))//NOSONAR
                         .toFile());
                 } while (streamOfCandidateFiles(externalJarOptions, jarName)
                     .anyMatch(path -> path.getFileName().equals(candidateFile.get().toPath())));

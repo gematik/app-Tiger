@@ -1,20 +1,20 @@
 servers:
   testWinstone3:
     type: externalJar
+    healthcheckUrl: http://127.0.0.1:${free.port.0}
+    healthcheckReturnCode: 200
     source:
       - http://localhost:${mockserver.port}/download
     externalJarOptions:
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.
-      healthcheck: http://127.0.0.1:${free.port.0}
 
   reverseproxy2:
     type: tigerProxy
     tigerProxyCfg:
-      serverPort: ${free.port.1}
-      proxyCfg:
-        port: ${free.port.2}
-        proxyRoutes:
-          - from: /
-            to: http://127.0.0.1:${free.port.0}
+      adminPort: ${free.port.1}
+      proxyPort: ${free.port.2}
+      proxyRoutes:
+        - from: /
+          to: http://127.0.0.1:${free.port.0}

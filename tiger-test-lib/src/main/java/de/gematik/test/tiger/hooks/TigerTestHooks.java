@@ -19,6 +19,7 @@ package de.gematik.test.tiger.hooks;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
@@ -30,6 +31,7 @@ import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import io.cucumber.java.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -38,6 +40,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -195,8 +199,8 @@ public class TigerTestHooks {
                 }
             }
 
-            processDataVariantsForScenarioOutlines(feature.getScenario(scenario.getName()));
-            informWorkflowUiAboutCurrentScenario(feature, scenario.getName());
+            processDataVariantsForScenarioOutlines(feature.getScenario(scenario.getName(), scenario.getLine()));
+            informWorkflowUiAboutCurrentScenario(feature, scenario.getName(), scenario.getLine());
 
             currentStepIndex = 0;
         } else {
@@ -206,31 +210,34 @@ public class TigerTestHooks {
     }
 
 
-    private void informWorkflowUiAboutCurrentScenario(Feature feature, String scenarioName) {
+    private void informWorkflowUiAboutCurrentScenario(Feature feature, String scenarioName, Integer scenarioLine) {
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
             .featureMap(
-                Map.of(feature.getName(), FeatureUpdate.builder()
+                new LinkedHashMap<>(Map.of(feature.getName(), FeatureUpdate.builder()
                     .description(feature.getName())
                     .scenarios(
-                        Map.of(
-                            mapScenarioToScenarioUpdateMap(feature, scenarioName),
+                        new LinkedHashMap<>(Map.of(
+                            mapScenarioToScenarioUpdateMap(feature, scenarioName, scenarioLine),
                             ScenarioUpdate.builder()
                                 .description(scenarioName)
-                                .steps(mapStepsToStepUpdateMap(feature.getScenario(scenarioName).getSteps(),
+                                .variantIndex(currentDataVariantIndex)
+                                .exampleKeys(currentDataVariantIndex != -1 ? currentDataVariantKeys : null)
+                                .exampleList(currentDataVariantIndex != -1 ? currentDataVariant.get(currentDataVariantIndex) : null)
+                                .steps(mapStepsToStepUpdateMap(feature.getScenario(scenarioName, scenarioLine).getSteps(),
                                     line -> {
-                                        if (feature.getScenario(scenarioName) instanceof ScenarioOutline
+                                        if (feature.getScenario(scenarioName, scenarioLine) instanceof ScenarioOutline
                                             && currentDataVariantIndex != -1) {
                                             return replaceLineWithCurrentDataVariantValues(line);
                                         } else {
                                             return line;
                                         }
                                     })).build()
-                        )).build()
-                )).build());
+                        ))).build()
+                ))).build());
     }
 
-    private String mapScenarioToScenarioUpdateMap(Feature feature, String scenarioName) {
-        if (feature.getScenario(scenarioName) instanceof ScenarioOutline
+    private String mapScenarioToScenarioUpdateMap(Feature feature, String scenarioName, Integer scenarioLine) {
+        if (feature.getScenario(scenarioName, scenarioLine) instanceof ScenarioOutline
             && currentDataVariantIndex != -1) {
             return (currentDataVariantIndex + "-" + scenarioName);
         } else {
@@ -255,6 +262,7 @@ public class TigerTestHooks {
             if (map.put(stepIndex.toString(), StepUpdate.builder()
                 .description(postProduction.apply(String.join("\n", steps.get(stepIndex).getLines())))
                 .status(TestResult.PENDING)
+                .stepIndex(stepIndex)
                 .build()) != null) {
                 throw new IllegalStateException("Duplicate key");
             }
@@ -322,29 +330,54 @@ public class TigerTestHooks {
         informWorkflowUiAboutCurrentStep(scenario);
     }
 
+    private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß| ]*)(Banner|banner|text|Text) \"(.*)\""); //NOSONAR
+
+
     private void informWorkflowUiAboutCurrentStep(Scenario scenario) {
         if (scenario == null) {
             return;
         }
+
         final Feature feature = uriFeatureMap.get(scenario.getUri());
         Step currentStep = getCurrentStep(scenario, currentStepIndex - 1);
 
-        TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
+        TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
+
+        Matcher m = showSteps.matcher(currentStep.getLines().get(0));
+        if (m.find()) {
+            Color col = Color.BLACK;
+            try {
+                if (!m.group(2).trim().isEmpty()) {
+                    col = (Color) Color.class.getDeclaredField(
+                        RbelAnsiColors.seekColor(m.group(2).trim()).name().toUpperCase()).get(null);
+                }
+            } catch (Exception ignored) {
+                col = Color.BLACK;
+            }
+            builder.bannerMessage(m.group(4)).bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())));
+        }
+
+        TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(builder
             .featureMap(
-                Map.of(feature.getName(), FeatureUpdate.builder()
+                new LinkedHashMap<>(Map.of(feature.getName(), FeatureUpdate.builder()
                     .description(feature.getName())
                     .scenarios(
-                        Map.of(
-                            mapScenarioToScenarioUpdateMap(feature, scenario.getName()),
+                        new LinkedHashMap<>(Map.of(
+                            mapScenarioToScenarioUpdateMap(feature, scenario.getName(), scenario.getLine()),
                             ScenarioUpdate.builder()
                                 .description(scenario.getName())
-                                .steps(Map.of(String.valueOf(currentStepIndex - 1), StepUpdate.builder()
+                                .variantIndex(currentDataVariantIndex)
+                                .exampleKeys(currentDataVariantIndex != -1 ? currentDataVariantKeys : null)
+                                .exampleList(currentDataVariantIndex != -1 ? currentDataVariant.get(currentDataVariantIndex) : null)
+                                .steps(new HashMap<>(Map.of(String.valueOf(currentStepIndex - 1), StepUpdate.builder()
                                     .description(String.join("\n", currentStep.getLines()))
                                     .status(TestResult.valueOf(scenario.getStatus().toString()))
+                                    .stepIndex(currentStepIndex - 1)
                                     .build()
-                                )).build()
-                        )).build()
-                )).build());
+                                ))).build()
+                        ))).build()
+                ))).build());
+
     }
 
     @After

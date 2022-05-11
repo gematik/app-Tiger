@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +29,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class FeatureUpdate {
 
-    private Map<String, ScenarioUpdate> scenarios;
+    private LinkedHashMap<String, ScenarioUpdate> scenarios;
     private String description;
     private TestResult status;
 }

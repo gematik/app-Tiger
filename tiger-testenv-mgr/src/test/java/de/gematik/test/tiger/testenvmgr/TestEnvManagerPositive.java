@@ -30,7 +30,6 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -139,12 +138,13 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "    type: externalJar\n"
         + "    source:\n"
         + "      - local:winstone.jar\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
+        + "    healthcheckReturnCode: 200\n"
         + "    externalJarOptions:\n"
         + "      workingDir: 'target/'\n"
         + "      arguments:\n"
         + "        - --httpPort=${free.port.0}\n"
-        + "        - --webroot=.\n"
-        + "      healthcheck: http://127.0.0.1:${free.port.0}\n",
+        + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
     public void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
         envMgr.setUpEnvironment();
@@ -156,11 +156,12 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "    type: externalJar\n"
         + "    source:\n"
         + "      - local:target/winstone.jar\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
+        + "    healthcheckReturnCode: 200\n"
         + "    externalJarOptions:\n"
         + "      arguments:\n"
         + "        - --httpPort=${free.port.0}\n"
-        + "        - --webroot=.\n"
-        + "      healthcheck: http://127.0.0.1:${free.port.0}\n",
+        + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
     public void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
         envMgr.setUpEnvironment();
@@ -176,7 +177,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
             srv.getExternalJarOptions().setWorkingDir("NonExistingFolder");
-            srv.getExternalJarOptions().setHealthcheck("NONE");
+            srv.setHealthcheckUrl("NONE");
             srv.setStartupTimeoutSec(1);
             try {
                 envMgr.setUpEnvironment();
@@ -192,8 +193,9 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "    type: externalJar\n" +
         "    source:\n" +
         "      - \"http://localhost:${mockserver.port}/download\"\n" +
+        "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n" +
+        "    healthcheckReturnCode: 200\n" +
         "    externalJarOptions:\n" +
-        "      healthcheck: http://127.0.0.1:${free.port.0}\n" +
         "      arguments:\n" +
         "        - \"--httpPort=${free.port.0}\"\n" +
         "        - \"--webroot=.\"\n")
@@ -204,6 +206,26 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             .exists()
             .isDirectoryContaining(file -> file.getName().equals("download"))
             .isDirectoryContaining(file -> file.getName().equals("download.dwnProps"));
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  externalJarServer:\n"
+        + "    type: externalJar\n"
+        + "    source:\n"
+        + "      - \"http://localhost:${mockserver.port}/download\"\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}/foo/bar/wrong/url\n"
+        + "    healthcheckReturnCode: 200\n"
+        + "    startupTimeoutSec: 1\n"
+        + "    externalJarOptions:\n"
+        + "      arguments:\n"
+        + "        - \"--httpPort=${free.port.0}\"\n"
+        + "        - \"--webroot=.\"\n", skipEnvironmentSetup = true)
+    public void healthcheckEndpointGives404AndExpecting200_environmentShouldNotStartUp(TigerTestEnvMgr envMgr) {
+        assertThatThrownBy(() -> envMgr.setUpEnvironment())
+            .isInstanceOf(TigerTestEnvException.class)
+            .hasMessageContaining("/foo/bar/wrong/url")
+            .hasMessageContaining("Timeout");
     }
 
     @Test

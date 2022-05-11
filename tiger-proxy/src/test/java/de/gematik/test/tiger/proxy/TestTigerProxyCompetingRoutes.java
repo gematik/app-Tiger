@@ -43,7 +43,7 @@ public class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
             tigerProxy.addRoute(route1);
             tigerProxy.addRoute(route2);
 
-            proxyRest.get("http://localhost:" + tigerProxy.getPort() + targetPath)
+            proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + targetPath)
                 .asString();
 
             assertThat(tigerProxy.getRbelMessages()).last()

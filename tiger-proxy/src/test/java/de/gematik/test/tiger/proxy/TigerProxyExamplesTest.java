@@ -16,12 +16,20 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
@@ -32,16 +40,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
-
-import javax.net.ssl.SSLContext;
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 @RequiredArgsConstructor
 public class TigerProxyExamplesTest {
@@ -78,7 +76,7 @@ public class TigerProxyExamplesTest {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .build());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(1).getRawStringContent())
@@ -90,7 +88,7 @@ public class TigerProxyExamplesTest {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .build());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
@@ -104,7 +102,7 @@ public class TigerProxyExamplesTest {
             .build());
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/read?filename=src/test/resources/test.json").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.webdriver.*.driver")
@@ -117,7 +115,7 @@ public class TigerProxyExamplesTest {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .build());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/read?filename=src/test/resources/combined.json").asString();
 
         RbelOptions.activateRbelPathDebugging();
@@ -130,7 +128,7 @@ public class TigerProxyExamplesTest {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .build());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/read?filename=src/test/resources/combined.json").asString();
 
         RbelOptions.activateRbelPathDebugging();
@@ -148,7 +146,7 @@ public class TigerProxyExamplesTest {
                 .build()))
             .build());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://norealserver/foo").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
@@ -165,9 +163,9 @@ public class TigerProxyExamplesTest {
                 .build()))
             .build());
 
-        System.out.println("curl -v http://norealserver/foo -x localhost:" + tigerProxy.getPort());
+        System.out.println("curl -v http://norealserver/foo -x localhost:" + tigerProxy.getProxyPort());
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://norealserver/foo").asString();
 
         await().atMost(2, TimeUnit.SECONDS)
@@ -183,8 +181,8 @@ public class TigerProxyExamplesTest {
                 .build()))
             .build());
 
-        System.out.println("curl -v http://localhost:" + tigerProxy.getPort() + "/foo");
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/foo").asString();
+        System.out.println("curl -v http://localhost:" + tigerProxy.getProxyPort() + "/foo");
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
         await().atMost(2, TimeUnit.SECONDS)
             .until(() -> tigerProxy.getRbelMessages().size() >= 2);
@@ -199,8 +197,8 @@ public class TigerProxyExamplesTest {
                 .build()))
             .build());
 
-        System.out.println("curl -v http://localhost:" + tigerProxy.getPort() + "/wuff/foo");
-        Unirest.get("http://localhost:" + tigerProxy.getPort() + "/wuff/foo").asString();
+        System.out.println("curl -v http://localhost:" + tigerProxy.getProxyPort() + "/wuff/foo");
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/wuff/foo").asString();
 
         await().atMost(2, TimeUnit.SECONDS)
             .until(() -> tigerProxy.getRbelMessages().size() >= 2);
@@ -215,10 +213,10 @@ public class TigerProxyExamplesTest {
                 .build()))
             .build());
 
-        System.out.println("curl -v https://localhost:" + tigerProxy.getPort() + "/foo");
+        System.out.println("curl -v https://localhost:" + tigerProxy.getProxyPort() + "/foo");
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().sslContext(tigerProxy.buildSslContext());
-        unirestInstance.get("https://localhost:" + tigerProxy.getPort() + "/foo").asString();
+        unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
         await().atMost(2, TimeUnit.SECONDS)
             .until(() -> tigerProxy.getRbelMessages().size() >= 2);
@@ -236,9 +234,9 @@ public class TigerProxyExamplesTest {
                 .build())
             .build());
 
-        System.out.println("curl -v https://blub/foo -x http://localhost:" + tigerProxy.getPort() + " -k");
+        System.out.println("curl -v https://blub/foo -x http://localhost:" + tigerProxy.getProxyPort() + " -k");
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.config().verifySsl(false);
         unirestInstance.get("https://blub/foo").asString();
 
@@ -259,9 +257,9 @@ public class TigerProxyExamplesTest {
                 .build())
             .build());
 
-        System.out.println("curl -v https://blub/foo -x http://localhost:" + tigerProxy.getPort() + " -k");
+        System.out.println("curl -v https://blub/foo -x http://localhost:" + tigerProxy.getProxyPort() + " -k");
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.config().verifySsl(false);
         unirestInstance.get("https://blub/foo").asString();
 
@@ -309,7 +307,7 @@ public class TigerProxyExamplesTest {
             "      regexFilter: \"hostToBeReplaced:\\d{3,5}\"";
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://blub/foo").asString();
 
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
@@ -333,7 +331,7 @@ public class TigerProxyExamplesTest {
 
         SSLContext ctx = tigerProxy.buildSslContext();
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().proxy("localhost", tigerProxy.getPort());
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.config().sslContext(ctx);
         unirestInstance.get("https://blub/foo").asString();
 

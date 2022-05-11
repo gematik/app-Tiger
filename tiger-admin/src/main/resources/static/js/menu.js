@@ -16,10 +16,10 @@
 
 let currEnvironment = {};
 /** @namespace currEnvironment.tigerProxyCfg.proxiedServer */
-/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls */
-/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls.serverRootCa.fileLoadingInformation */
-/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation */
-/** @namespace currEnvironment.tigerProxyCfg.proxyCfg.tls.serverIdentity.fileLoadingInformation */
+/** @namespace currEnvironment.tigerProxyCfg.tls */
+/** @namespace currEnvironment.tigerProxyCfg.tls.serverRootCa.fileLoadingInformation */
+/** @namespace currEnvironment.tigerProxyCfg.tls.forwardMutualTlsIdentity.fileLoadingInformation */
+/** @namespace currEnvironment.tigerProxyCfg.tls.serverIdentity.fileLoadingInformation */
 
 let currTemplates = [];
 /** @namespace currTemplates.templates */
@@ -69,7 +69,7 @@ function openYamlFile(path, separator, cfgfile) {
       currEnvironment['local_tiger_proxy'] = {
         localProxyActive: res.localProxyActive,
         type: 'local_tiger_proxy',
-        tigerProxyCfg: {proxyCfg: res.tigerProxy}
+        tigerProxyCfg: res.tigerProxy
       };
       for (const key in res.servers) {
         currEnvironment[key] = res.servers[key];
@@ -159,7 +159,7 @@ function saveYamlFile() {
   // special handling for local proxy
   if (data.servers['local_tiger_proxy']
       && data.servers["local_tiger_proxy"].tigerProxyCfg) {
-    data.tigerProxy = data.servers["local_tiger_proxy"].tigerProxyCfg.proxyCfg;
+    data.tigerProxy = data.servers["local_tiger_proxy"].tigerProxyCfg;
   }
   if (data.servers["local_tiger_proxy"]) {
     data.localProxyActive = data.servers["local_tiger_proxy"].localProxyActive;

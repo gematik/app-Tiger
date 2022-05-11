@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.common.data.config;
 
 import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -30,10 +31,12 @@ public class CfgTemplate {
     private String version;
     private Integer startupTimeoutSec;
     private boolean active = true;
+    private String healthcheckUrl;
+    private Integer healthcheckReturnCode;
 
     private CfgExternalJarOptions externalJarOptions;
     private CfgDockerOptions dockerOptions = new CfgDockerOptions();
-    private CfgTigerProxyOptions tigerProxyCfg;
+    private TigerProxyConfiguration tigerProxyCfg;
 
     private final List<CfgKey> pkiKeys = new ArrayList<>();
     /** list of env vars to be set for docker, external Jar/TigerProxy */

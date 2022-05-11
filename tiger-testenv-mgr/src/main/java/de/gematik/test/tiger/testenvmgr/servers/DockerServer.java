@@ -21,10 +21,10 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
-import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import lombok.Builder;
@@ -90,8 +90,8 @@ public class DockerServer extends TigerServer {
     }
 
     private String guessAServerUrl() {
-        if (StringUtils.isNotEmpty(getConfiguration().getExternalJarOptions().getHealthcheck())) {
-            return getConfiguration().getExternalJarOptions().getHealthcheck();
+        if (StringUtils.isNotEmpty(getConfiguration().getHealthcheckUrl())) {
+            return getConfiguration().getHealthcheckUrl();
         } else {
             if (getStatus() != TigerServerStatus.RUNNING) {
                 throw new TigerTestEnvException("If reverse proxy is to be used with docker container '"
