@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.20.1 - 2022-04-25</span>
+<span id="revdate">Version 0.20.2 - 2022-05-11</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -1321,6 +1321,11 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
   <span class="key">source</span>:
     - <span class="string"><span class="content">source entry 1</span></span>
     - <span class="string"><span class="content">source entry 2</span></span>
+  <span class="comment"># used by all node types</span>
+  <span class="key">healthcheckUrl</span>: <span class="string"><span class="content">string</span></span>
+  <span class="comment"># OPTIONAL only declare the server healthy once the specified return code</span>
+  <span class="comment"># is given</span>
+  <span class="key">healthcheckReturnCode</span>: <span class="string"><span class="content">int</span></span>
   <span class="comment"># type specific property for Tiger Proxy and docker container nodes</span>
   <span class="key">version</span>: <span class="string"><span class="content">string</span></span>
   <span class="comment"># OPTIONAL list of pki certs and keys to initialize</span>
@@ -1360,8 +1365,6 @@ Their meaning and format are explained in the related section.</p>
   <span class="key">externalJarOptions</span>:
     <span class="comment"># used by external jar and Tiger Proxy nodes</span>
     <span class="key">workingDir</span>: <span class="string"><span class="content">string</span></span>
-    <span class="comment"># used by all node types</span>
-    <span class="key">healthcheck</span>: <span class="string"><span class="content">string</span></span>
     <span class="comment"># only used by external jar nodes</span>
     <span class="key">options</span>: <span class="string"><span class="content">[]</span></span>
     <span class="comment"># used by external jar and Tiger Proxy nodes</span>
@@ -1369,17 +1372,16 @@ Their meaning and format are explained in the related section.</p>
 
   <span class="comment"># type specific sub structure for Tiger Proxy nodes</span>
   <span class="key">tigerProxyCfg</span>:
-    <span class="key">serverPort</span>: <span class="string"><span class="content">int</span></span>
-    <span class="key">proxiedServer</span>: <span class="string"><span class="content">string</span></span>
-    <span class="key">proxiedServerProtocol</span>: <span class="string"><span class="content">[HTTP|HTTPS]</span></span>
     <span class="comment"># Here a normal Tiger Proxy configuration can be used.</span>
     <span class="comment"># This is explained in more depth down below</span>
-    <span class="key">proxyCfg</span>:
-      <span class="key">proxyRoutes</span>:
-          <span class="comment"># defines a forward-proxy-route from this server</span>
-        - <span class="string"><span class="content">from: http://foobar</span></span>
-          <span class="comment"># to this server</span>
-          <span class="key">to</span>: <span class="string"><span class="content">https://cryptic.backend/server/with/path</span></span>
+    <span class="key">adminPort</span>: <span class="string"><span class="content">int</span></span>
+    <span class="key">proxiedServer</span>: <span class="string"><span class="content">string</span></span>
+    <span class="key">proxiedServerProtocol</span>: <span class="string"><span class="content">[HTTP|HTTPS]</span></span>
+    <span class="key">proxyRoutes</span>:
+        <span class="comment"># defines a forward-proxy-route from this server</span>
+      - <span class="string"><span class="content">from: http://foobar</span></span>
+        <span class="comment"># to this server</span>
+        <span class="key">to</span>: <span class="string"><span class="content">https://cryptic.backend/server/with/path</span></span>
 
   <span class="comment"># type specific sub structure for docker container and compose nodes</span>
   <span class="key">dockerOptions</span>:
@@ -1616,6 +1618,15 @@ So if your jar archive expects some configuration files make sure to choose the 
   <span class="comment"># Only one entry is expected for this node type. Additional entries are silently ignored.</span>
   <span class="key">source</span>:
     - <span class="string"><span class="content">http://myjars.download.org/myproject/myjar.jar</span></span>
+  <span class="comment"># MANDATORY URL to check for the successful startup of this node.</span>
+  <span class="comment"># A successful start is indicated by ANY answer on this URL.</span>
+  <span class="comment"># Any status is accepted as long as there is an answer.</span>
+  <span class="comment"># If set to &quot;NONE&quot; no check is performed and</span>
+  <span class="comment"># the test environment manager will wait for the startup timeout.</span>
+  <span class="key">healthcheckUrl</span>: <span class="string"><span class="content">http://127.0.0.1:8080</span></span>
+  <span class="comment"># OPTIONAL only declare the server healthy once the specified return code</span>
+  <span class="comment"># is given</span>
+  <span class="key">healthcheckReturnCode</span>: <span class="string"><span class="content">int</span></span>
 
   <span class="key">externalJarOptions</span>:
     <span class="comment"># OPTIONAL folder from where to start the external jar.</span>
@@ -1623,12 +1634,6 @@ So if your jar archive expects some configuration files make sure to choose the 
     <span class="comment"># The default value is empty, which means that the operating-system-specific</span>
     <span class="comment"># temporary folder will be used.</span>
     <span class="key">workingDir</span>: <span class="string"><span class="content">/home/user/test/myspecificjar</span></span>
-    <span class="comment"># MANDATORY URL to check for the successful startup of this node.</span>
-    <span class="comment"># A successful start is indicated by ANY answer on this URL.</span>
-    <span class="comment"># Any status is accepted as long as there is an answer.</span>
-    <span class="comment"># If set to &quot;NONE&quot; no check is performed and</span>
-    <span class="comment"># the test environment manager will wait for the startup timeout.</span>
-    <span class="key">healthcheck</span>: <span class="string"><span class="content">http://127.0.0.1:8080</span></span>
     <span class="comment"># OPTIONAL Options to pass in to the java executable call.</span>
     <span class="key">options</span>: <span class="string"><span class="content">[]</span></span>
     <span class="comment"># OPTIONAL provide additional arguments to the jar archive call.</span>
@@ -1644,6 +1649,9 @@ So if your jar archive expects some configuration files make sure to choose the 
   <span class="key">urlMappings</span>: <span class="string"><span class="content">[]</span></span>
   <span class="key">exports</span>: <span class="string"><span class="content">[]</span></span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>By default the JVM used to start the JAR-File is the taken from the <code>java.home</code> system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property <code>tiger.lib.javaHome</code> (e.g. by setting <code>-Dtiger.lib.javaHome</code>, by setting <code>TIGER_LIB_JAVAHOME</code> in the environment or by setting <code>lib.javaHome</code> in the <code>tiger.yaml</code>).</p>
 </div>
 </div>
 <div class="sect3">
@@ -1671,14 +1679,16 @@ If it is ever necessary to change the external URL, the test suite does not have
   <span class="key">source</span>:
     - <span class="string"><span class="content">https://www.medizin.de</span></span>
 
-  <span class="key">externalJarOptions</span>:
-    <span class="comment"># OPTIONAL URL to check for successful startup of this node.</span>
-    <span class="comment"># A successful start is indicated by ANY answer on this URL.</span>
-    <span class="comment"># Any status is accepted as long as there is an answer.</span>
-    <span class="comment"># If the value is not set, then no health check is carried out</span>
-    <span class="comment"># in the startup phase, instead the startupTimeout is waited for.</span>
-    <span class="comment"># After this timeout it is assumed that the server is up.</span>
-    <span class="key">healthcheck</span>: <span class="string"><span class="content">https://www.medizin.de/healthyState.jsp</span></span>
+  <span class="comment"># OPTIONAL URL to check for successful startup of this node.</span>
+  <span class="comment"># A successful start is indicated by ANY answer on this URL.</span>
+  <span class="comment"># Any status is accepted as long as there is an answer.</span>
+  <span class="comment"># If the value is not set, then no health check is carried out</span>
+  <span class="comment"># in the startup phase, instead the startupTimeout is waited for.</span>
+  <span class="comment"># After this timeout it is assumed that the server is up.</span>
+  <span class="key">healthcheckUrl</span>: <span class="string"><span class="content">https://www.medizin.de/healthyState.jsp</span></span>
+  <span class="comment"># OPTIONAL only declare the server healthy once the specified return code</span>
+  <span class="comment"># is given</span>
+  <span class="key">healthcheckReturnCode</span>: <span class="string"><span class="content">int</span></span>
 
   <span class="comment"># The following properties are explained in the General properties section above</span>
   <span class="key">pkiKeys</span>: <span class="string"><span class="content">[]</span></span>
@@ -1707,9 +1717,9 @@ If it is ever necessary to change the external URL, the test suite does not have
     <span class="comment"># OPTIONAL port of the web user interface and the proxy management</span>
     <span class="comment"># (e.g. rbel-message forwarding)</span>
     <span class="comment"># Default value is empty, which means a random port will be used.</span>
-    <span class="key">serverPort</span>: <span class="string"><span class="content">8080</span></span>
+    <span class="key">adminPort</span>: <span class="string"><span class="content">8080</span></span>
     <span class="comment"># OPTIONAL server key of the node this proxy shall be used as reverse proxy for.</span>
-    <span class="comment"># If set the routes in the proxyCfg section will be configured appropriately.</span>
+    <span class="comment"># If set the routes will be configured appropriately.</span>
     <span class="comment"># Default value is empty.</span>
     <span class="key">proxiedServer</span>: <span class="string"><span class="content">externalJar_001</span></span>
     <span class="comment"># OPTIONAL port of the proxy, where the proxy expects to receive proxy requests</span>
@@ -1720,14 +1730,13 @@ If it is ever necessary to change the external URL, the test suite does not have
     <span class="key">proxyProtocol</span>: <span class="string"><span class="content">http</span></span>
     <span class="comment"># configures the proxy itself. For more details</span>
     <span class="comment"># please check the chapter about the local test suite Tiger Proxy below</span>
-    <span class="key">proxyCfg</span>:
-      <span class="error">...</span>
-      <span class="key">proxyRoutes</span>:
-        - <span class="string"><span class="content">from: http://foobar</span></span>
-          <span class="comment"># defines a forward-proxy-route from this server...</span>
-          <span class="key">to</span>: <span class="string"><span class="content">https://cryptic.backend/server/with/path</span></span>
-          <span class="comment"># to this server</span>
-      <span class="error">...</span>
+    <span class="error">...</span>
+    <span class="key">proxyRoutes</span>:
+      - <span class="string"><span class="content">from: http://foobar</span></span>
+        <span class="comment"># defines a forward-proxy-route from this server...</span>
+        <span class="key">to</span>: <span class="string"><span class="content">https://cryptic.backend/server/with/path</span></span>
+        <span class="comment"># to this server</span>
+    <span class="error">...</span>
 
   <span class="comment"># The following properties are explained in the General properties section above</span>
   <span class="key">pkiKeys</span>: <span class="string"><span class="content">[]</span></span>
@@ -2437,14 +2446,14 @@ The reverse proxy could either be started by the test environment manager or as 
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">tigerProxy</span>:
     <span class="key">proxyId</span>: <span class="string"><span class="content">IBM</span></span>
     <span class="key">trafficEndpoints</span>:
-      - <span class="string"><span class="content">http://another.tiger.proxy:&lt;serverPort&gt;</span></span>
+      - <span class="string"><span class="content">http://another.tiger.proxy:&lt;adminPort&gt;</span></span>
     <span class="comment"># A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to</span>
     <span class="comment"># gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the</span>
     <span class="comment"># server will not boot. (fail fast, fail early)</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Please be advised to use the server-port (<code>server.port</code>) here, not the proxy-port (<code>tigerProxy.port</code>). The traffic from routes with <code>activateRbelLogging: false</code> will not show up here.</p>
+<p>Please be advised to use the server-port (<code>server.port</code>) here, not the proxy-port (<code>tigerProxy.proxyPort</code>). The traffic from routes with <code>activateRbelLogging: false</code> will not show up here.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -3551,13 +3560,13 @@ The Tiger test library configuration also provides a flag to add curl command de
     <span class="key">type</span>: <span class="string"><span class="content">externalJar</span></span>
     <span class="key">source</span>:
       - <span class="string"><span class="content">http://nexus/download/server.jar</span></span>
+    <span class="key">healthcheckUrl</span>: <span class="string"><span class="content">http://127.0.0.1:19307</span></span>
     <span class="key">externalJarOptions</span>:
       <span class="key">arguments</span>:
 <span class="comment"># The second part is the placeholder which will be resolved using the internal value store.</span>
 <span class="comment"># The string &quot;serverA.url&quot; is split into &quot;serverA&quot; and &quot;url&quot;, again considered as lowercase,</span>
 <span class="comment"># which then matches to &quot;SERVERA_URL&quot;,</span>
-        - <span class="string"><span class="content">--serverAUrl=${serverA.url}</span></span>
-      <span class="key">healthcheck</span>: <span class="string"><span class="content">http://127.0.0.1:19307</span></span></code></pre>
+        - <span class="string"><span class="content">--serverAUrl=${serverA.url}</span></span></code></pre>
 </div>
 </div>
 <div class="admonitionblock warning">
@@ -3973,7 +3982,7 @@ Till then there is not much more than in the <a href="#_workflow_ui">Test lib ch
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-04-25 11:38:36 +0200
+Last updated 2022-05-11 09:11:58 +0200
 </div>
 </div>
 </body>
