@@ -105,6 +105,12 @@ public class TigerGlobalConfiguration {
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanClass, baseKeys);
     }
 
+    @SneakyThrows
+    public synchronized static  <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType, String... baseKeys) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanType, baseKeys);
+    }
+
     public synchronized static void readFromYaml(String yamlSource, String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         globalConfigurationLoader.readFromYaml(yamlSource, baseKeys);
