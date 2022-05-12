@@ -12,7 +12,9 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.env.*;
@@ -26,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -39,6 +42,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 
 @Slf4j
 @Getter
@@ -46,6 +52,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
+    public static final String CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT = "tiger.tigerProxy.webUiPort";
+    public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
     private final Configuration configuration;
     private final DockerMgr dockerManager;
     private final Map<String, Object> environmentVariables;
@@ -94,7 +102,29 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
             proxyConfig.getTls().setServerRootCa(new TigerConfigurationPkiIdentity(
                 "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"));
         }
-        localTigerProxy = new TigerProxy(configuration.getTigerProxy());
+
+        Map<String, Object> properties = new HashMap<>(TigerSerializationUtil.toMap(proxyConfig, "tigerProxy"));
+        if (configuration.getTigerProxy().getAdminPort() == 0) {
+            try (ServerSocket serverSocket = new ServerSocket(0)) {
+                properties.put("server.port", Integer.toString(serverSocket.getLocalPort()));
+            } catch (IOException e) {
+                throw new TigerEnvironmentStartupException("Unable to obtain a free local port", e);
+            }
+        } else {
+            properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
+        }
+        ServletWebServerApplicationContext applicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
+            .properties(properties)
+            .sources(TigerProxyApplication.class)
+            .web(WebApplicationType.SERVLET)
+            .initializers()
+            .run();
+
+        localTigerProxy = applicationContext.getBean(TigerProxy.class);
+
+        TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT, localTigerProxy.getProxyPort());
+        TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT, String.valueOf(applicationContext.getWebServer().getPort()));
+
         return localTigerProxy;
     }
 

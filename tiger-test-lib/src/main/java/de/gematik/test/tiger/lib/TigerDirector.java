@@ -71,6 +71,7 @@ public class TigerDirector {
         readConfiguration();
         applyTestLibConfig();
         startMonitorUi();
+        registerShutdownHook();
         // get free port
         startTestEnvMgr(); // pass in
         startWorkflowUi(); // pass in
@@ -79,6 +80,20 @@ public class TigerDirector {
 
         initialized = true;
         log.info("\n" + Banner.toBannerStr("DIRECTOR STARTUP OK", RbelAnsiColors.GREEN_BOLD.toString()));
+    }
+
+    private static void registerShutdownHook() {
+        Thread shutdownHook = new Thread(() -> {
+            log.info("Initiating testenv-mgr shutdown...");
+            if (getTigerTestEnvMgr() != null) {
+                getTigerTestEnvMgr().shutDown();
+            }
+            log.info("Destorying spring boot context...");
+            if (envMgrApplicationContext != null) {
+                envMgrApplicationContext.close();
+            }
+        });
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
     private static void setupTestEnvironent() {
@@ -135,6 +150,7 @@ public class TigerDirector {
                 TigerGlobalConfiguration.readIntegerOptional("free.port.255").orElse(0)))
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
+            .registerShutdownHook(false)
             .initializers()
             .run();
 

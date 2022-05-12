@@ -17,4 +17,6 @@ public class TigerEnvStatusDto {
     private Map<String, TigerServerStatusDto> servers = new HashMap<>();
     private String bannerMessage;
     private String bannerColor;
+
+    private String localProxyWebUiUrl;
 }

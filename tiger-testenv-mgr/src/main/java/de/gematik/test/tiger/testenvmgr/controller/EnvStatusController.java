@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.controller;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -122,6 +124,13 @@ public class EnvStatusController implements TigerUpdateListener {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public TigerEnvStatusDto getStatus() {
+        log.trace("Fetch request to getStatus() received");
+        if (StringUtils.isNotEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
+            tigerEnvStatus.setLocalProxyWebUiUrl(
+                "http://localhost:"
+                    + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT)
+                    + "/webui");
+        }
         return tigerEnvStatus;
     }
 }

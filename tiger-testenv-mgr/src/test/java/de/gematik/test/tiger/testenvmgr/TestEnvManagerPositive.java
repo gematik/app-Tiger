@@ -225,4 +225,52 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
             .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
     }
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    //
+    // local tiger proxy details
+    //
+
+    @Test
+    @TigerTest(tigerYaml = "servers:\n" +
+        "  externalJarServer:\n" +
+        "    type: externalJar\n" +
+        "    source:\n" +
+        "      - \"http://localhost:${mockserver.port}/download\"\n" +
+        "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n" +
+        "    healthcheckReturnCode: 200\n" +
+        "    externalJarOptions:\n" +
+        "      arguments:\n" +
+        "        - \"--httpPort=${free.port.0}\"\n" +
+        "        - \"--webroot=.\"\n",
+        skipEnvironmentSetup = true)
+    public void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT).get()).isBetween(0, 655536);
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get()).isBetween(0, 655536);
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "tigerProxy:\n" +
+        "  proxyPort: ${free.port.1}\n" +
+        "  adminPort: ${free.port.2}\n" +
+        "servers:\n" +
+        "  externalJarServer:\n" +
+        "    type: externalJar\n" +
+        "    source:\n" +
+        "      - \"http://localhost:${mockserver.port}/download\"\n" +
+        "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n" +
+        "    healthcheckReturnCode: 200\n" +
+        "    externalJarOptions:\n" +
+        "      arguments:\n" +
+        "        - \"--httpPort=${free.port.0}\"\n" +
+        "        - \"--webroot=.\"\n",
+        skipEnvironmentSetup = true)
+    public void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch(TigerTestEnvMgr envMgr) {
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT).get()).isEqualTo(
+            TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get()).isEqualTo(
+            TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
+    }
+
 }

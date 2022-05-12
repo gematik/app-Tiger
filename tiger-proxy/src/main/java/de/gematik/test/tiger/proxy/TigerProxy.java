@@ -91,10 +91,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
 
-        if (configuration.getPortAsArray() == null) {
-            TigerGlobalConfiguration.putValue("tigerProxy.proxyPort", mockServer.getLocalPort());
-        }
-
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         if (configuration.getProxyRoutes() != null) {
             for (final TigerRoute tigerRoute : configuration.getProxyRoutes()) {

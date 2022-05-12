@@ -710,26 +710,18 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     public void checkNotSetTigerProxyPort_ShouldImplicitBeSetToTheChosenFreePort() {
         TigerGlobalConfiguration.reset();
         spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
-        final String port = TigerGlobalConfiguration.readString("tigerProxy.proxyPort");
-
-        assertNotNull(port);
-        assertThat(TigerGlobalConfiguration.readIntegerOptional("tigerProxy.proxyPort")
-            .get())
-            .isBetween(10000, 100000);
+        assertThat(tigerProxy.getProxyPort()).isBetween(10000, 100000);
     }
 
     @Test
     public void checkGetNotSetTigerProxyPort_ShouldThrowTigerConfigurationException() {
         TigerGlobalConfiguration.reset();
+        int availableTcpPort = SocketUtils.findAvailableTcpPort();
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyPort(SocketUtils.findAvailableTcpPort())
+            .proxyPort(availableTcpPort)
             .build());
 
-        assertThatThrownBy(() -> {
-            TigerGlobalConfiguration.readString("tigerProxy.port");
-        })
-            .isInstanceOf(TigerConfigurationException.class)
-            .hasMessageContaining("Could not find value for 'tigerProxy.port'");
+        assertThat(tigerProxy.getProxyPort()).isEqualTo(availableTcpPort);
     }
 
 
