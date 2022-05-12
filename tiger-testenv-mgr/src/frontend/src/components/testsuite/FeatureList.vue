@@ -4,8 +4,7 @@
 
 <template>
   <div class="container">
-    <h4><i class="fa-solid fa-address-card left"></i>Testrun</h4>
-    <div class="alert alert-info featurelistbox">
+    <div class="alert alert-light featurelistbox">
       <div class="alert-heading featurelist">
         <div v-for="feature in featureUpdateMap">
           <div class="truncate-text" :title="`${feature[1].description}`">
@@ -17,7 +16,7 @@
                 {{ scenario[1].description }}
               </div>
               <div v-else>
-                {{ scenario[1].description}} [{{scenario[1].variantIndex+1}}]  
+                {{ scenario[1].description}} [{{scenario[1].variantIndex+1}}]
               </div>
             </div>
           </div>
@@ -38,10 +37,10 @@ const props = defineProps<{
 
 <style>
 .featurelistbox {
-  padding: 0.25rem;
+  padding: 0.5rem;
 }
 
 .featurelist {
-  font-size: 75%;
+  font-size: 85%;
 }
 </style>

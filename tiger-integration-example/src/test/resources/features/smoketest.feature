@@ -17,10 +17,10 @@ Feature: Test Tiger BDD
     And TGR print current request as rbel-tree
     Then TGR current response with attribute "$.body.html.head.link.href" matches "!{rbel:lastResponseAsString('$.body.html.head.link.href')}"
 
-    Examples:
-      | txt   |
-      | text2 |
-      | text2 |
+    Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
+      | txt   | txt2 | txt3| txt4| txt5|
+      | text2 | 21   |31   |41   |51   |
+      | text2 |22    |32   |42   |52   |
 
   Scenario: Simple first test
     Given TGR show banner "text2"

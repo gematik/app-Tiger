@@ -42,6 +42,10 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
     @Override
     public void performStartup() {
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(ServerType.EXTERNALJAR)
+            .build());
+
         final CfgExternalJarOptions externalJarOptions = getConfiguration().getExternalJarOptions();
         final String workingDir = getConfiguration().getExternalJarOptions().getWorkingDir();
         log.info(Ansi.colorize("starting external jar instance {} in folder {}...", RbelAnsiColors.GREEN_BOLD),
@@ -100,8 +104,6 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             addServerToLocalProxyRouteMap(buildHealthcheckUrl());
             publishNewStatusUpdate(TigerServerStatusUpdate.builder()
                 .baseUrl(extractBaseUrl(buildHealthcheckUrl()))
-                // TODO TGR-475 remove once order is ok
-                .type(ServerType.EXTERNALJAR)
                 .build());
         }
 

@@ -67,6 +67,8 @@ public class TigerProxyApplication implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        tigerProxy.shutdown();
+        if (tigerProxy != null) {
+            tigerProxy.shutdown();
+        }
     }
 }

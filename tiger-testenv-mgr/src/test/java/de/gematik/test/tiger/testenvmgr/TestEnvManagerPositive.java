@@ -246,7 +246,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
     public void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT).get()).isBetween(0, 655536);
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).get()).isBetween(0, 655536);
         assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get()).isBetween(0, 655536);
     }
 
@@ -267,7 +267,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
     public void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch(TigerTestEnvMgr envMgr) {
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT).get()).isEqualTo(
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).get()).isEqualTo(
             TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
         assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get()).isEqualTo(
             TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());

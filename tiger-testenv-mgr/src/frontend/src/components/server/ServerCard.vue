@@ -1,6 +1,6 @@
 <template>
-  <div :class="`alert alert-${colorStatus(server.status)} serverbox`">
-    <div class="alert-heading server-name truncate-text">
+  <div class="serverbox">
+    <div :class="`alert-heading server-name truncate-text serverstatus-${server.status.toLowerCase()}`">
       <i :class="`${getServerIcon(server.type)} left`"></i>
       <span>{{ server.name }} ({{ server.status }})</span>
     </div>
@@ -9,7 +9,7 @@
     <div class="serverstatus">
       <a class="p-1" data-bs-toggle="collapse" :href="`#${getHistoryCollapseId(server)}`" role="button" aria-expanded="false"
          :aria-controls="`${getHistoryCollapseId(server)}`"><i class="fa-solid fa-circle-chevron-down left"></i> {{ server.statusMessage }}</a>
-      <div class="collapse bg-white p-2 pb-0" :id="`${getHistoryCollapseId(server)}`">
+      <div class="collapse bg-white text-primary p-2 pb-0" :id="`${getHistoryCollapseId(server)}`">
         <div v-for="(serverstatus) in server.statusUpdates" class="pl-3 pr-3 pb-2">
           {{ serverstatus }}
         </div>
@@ -44,21 +44,6 @@ function getServerIcon(type: string): string {
   }
 }
 
-function colorStatus(status: TigerServerStatus): string {
-  switch (status) {
-    case TigerServerStatus.NEW:
-      return "secondary";
-    case TigerServerStatus.STARTING:
-      return "info";
-    case TigerServerStatus.RUNNING:
-      return "success";
-    case TigerServerStatus.STOPPED:
-      return "error";
-    default:
-      return "secondary";
-  }
-}
-
 function getHistoryCollapseId(server: TigerServerStatusDto): string {
   return "history_" + server.name;
 }
@@ -69,7 +54,7 @@ function getHistoryCollapseId(server: TigerServerStatusDto): string {
 
 /*noinspection CssUnusedSymbol*/
 .serverbox {
-  padding: 0.25rem;
+  padding: 0.5rem;
 }
 
 .serverbox > div {

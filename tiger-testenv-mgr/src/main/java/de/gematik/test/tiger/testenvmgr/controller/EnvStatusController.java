@@ -9,9 +9,8 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.*;
+import java.util.ArrayList;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
@@ -36,10 +35,7 @@ public class EnvStatusController implements TigerUpdateListener {
         try {
             receiveTestSuiteUpdate(update.getFeatureMap());
 
-            Optional.ofNullable(update.getServerUpdate())
-                .map(Map::entrySet)
-                .stream()
-                .flatMap(Set::stream)
+            update.getServerUpdate().entrySet()
                 .forEach(entry -> receiveServerStatusUpdate(entry.getKey(), entry.getValue()));
 
             if (update.getBannerMessage() != null) {
@@ -47,7 +43,7 @@ public class EnvStatusController implements TigerUpdateListener {
                 tigerEnvStatus.setBannerColor(update.getBannerColor());
             }
             // TODO make sure to check that the index is the expected next number, if not we do have to cache this and wait for the correct message
-            //  TODO to be received and then process the cached messages in order
+            //  TODO to be received and then process the cached messages in order, currently this is done on the client side
             if (update.getIndex() > tigerEnvStatus.getCurrentIndex()) {
                 tigerEnvStatus.setCurrentIndex(update.getIndex());
             }
@@ -57,44 +53,51 @@ public class EnvStatusController implements TigerUpdateListener {
     }
 
     private void receiveTestSuiteUpdate(Map<String, FeatureUpdate> update) {
-        if (update == null) {
-            return;
-        }
         update.forEach((key, value) -> {
-            if (tigerEnvStatus.getFeatureMap().containsKey(key)) {
-                FeatureUpdate feature = tigerEnvStatus.getFeatureMap().get(key);
-                if (value.getStatus() != TestResult.UNUSED) {
-                    feature.setStatus(value.getStatus());
-                }
-                feature.setDescription(value.getDescription());
-                value.getScenarios().forEach((skey, svalue) -> {
-                    if (feature.getScenarios().containsKey(skey)) {
-                        ScenarioUpdate scenario = feature.getScenarios().get(skey);
-                        if (svalue.getStatus() != TestResult.UNUSED) {
-                            scenario.setStatus(svalue.getStatus());
-                        }
-                        scenario.setDescription(svalue.getDescription());
-                        scenario.setExampleKeys(svalue.getExampleKeys());
-                        scenario.setExampleList(svalue.getExampleList());
-                        scenario.setVariantIndex(svalue.getVariantIndex());
-                        svalue.getSteps().forEach((stkey, stvalue) -> {
-                            if (scenario.getSteps().containsKey(stkey)) {
-                                StepUpdate step = scenario.getSteps().get(stkey);
-                                if (stvalue.getStatus() != TestResult.UNUSED) {
-                                    step.setStatus(stvalue.getStatus());
-                                }
-                                step.setDescription(stvalue.getDescription());
-                                step.setStepIndex(stvalue.getStepIndex());
-                            } else {
-                                scenario.getSteps().put(stkey, stvalue);
-                            }
-                        });
-                    } else {
-                        feature.getScenarios().put(skey, svalue);
+            try {
+                if (tigerEnvStatus.getFeatureMap().containsKey(key)) {
+                    FeatureUpdate feature = tigerEnvStatus.getFeatureMap().get(key);
+                    if (value.getStatus() != TestResult.UNUSED) {
+                        feature.setStatus(value.getStatus());
                     }
-                });
-            } else {
-                tigerEnvStatus.getFeatureMap().put(key, value);
+                    feature.setDescription(value.getDescription());
+                    value.getScenarios().forEach((skey, svalue) -> {
+                        if (feature.getScenarios().containsKey(skey)) {
+                            ScenarioUpdate scenario = feature.getScenarios().get(skey);
+                            if (svalue.getStatus() != TestResult.UNUSED) {
+                                scenario.setStatus(svalue.getStatus());
+                            }
+                            scenario.setDescription(svalue.getDescription());
+                            scenario.setExampleKeys(svalue.getExampleKeys());
+                            scenario.setExampleList(svalue.getExampleList());
+                            scenario.setVariantIndex(svalue.getVariantIndex());
+                            svalue.getSteps().forEach((stkey, stvalue) -> {
+                                if (scenario.getSteps().containsKey(stkey)) {
+                                    StepUpdate step = scenario.getSteps().get(stkey);
+                                    if (stvalue.getStatus() != TestResult.UNUSED) {
+                                        step.setStatus(stvalue.getStatus());
+                                    }
+                                    step.setDescription(stvalue.getDescription());
+                                    step.setStepIndex(stvalue.getStepIndex());
+                                    if (stvalue.getRbelMetaData() != null) {
+                                        if (step.getRbelMetaData() == null) {
+                                            step.setRbelMetaData(new ArrayList<>());
+                                        }
+                                        step.getRbelMetaData().addAll(stvalue.getRbelMetaData());
+                                    }
+                                } else {
+                                    scenario.getSteps().put(stkey, stvalue);
+                                }
+                            });
+                        } else {
+                            feature.getScenarios().put(skey, svalue);
+                        }
+                    });
+                } else {
+                    tigerEnvStatus.getFeatureMap().put(key, value);
+                }
+            } catch (Exception e) {
+                log.error("Unable to parse update", e);
             }
         });
     }
@@ -128,7 +131,7 @@ public class EnvStatusController implements TigerUpdateListener {
         if (StringUtils.isNotEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
             tigerEnvStatus.setLocalProxyWebUiUrl(
                 "http://localhost:"
-                    + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT)
+                    + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
                     + "/webui");
         }
         return tigerEnvStatus;

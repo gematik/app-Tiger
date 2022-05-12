@@ -51,7 +51,7 @@ export default class FeatureUpdate implements IFeatureUpdate{
     }
   }
 
-  public merge(feature: FeatureUpdate) {
+  public merge(feature: FeatureUpdate) : FeatureUpdate {
     if (feature.description) {
       this.description = feature.description;
     }
@@ -71,6 +71,7 @@ export default class FeatureUpdate implements IFeatureUpdate{
       }
       this.status = FeatureUpdate.mapToTestResult(this.scenarios);
     }
+    return this;
   }
 
   public toString() {

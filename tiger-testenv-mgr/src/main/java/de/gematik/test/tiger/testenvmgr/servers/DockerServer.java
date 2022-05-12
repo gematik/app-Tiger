@@ -7,8 +7,10 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr.HTTP;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -30,6 +32,10 @@ public class DockerServer extends TigerServer {
 
     @Override
     public void performStartup() {
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(ServerType.DOCKER)
+            .build());
+
         log.info(Ansi.colorize("Starting docker container for {} :{}", RbelAnsiColors.GREEN_BOLD),
             getHostname(), getDockerSource());
         statusMessage("Starting docker container");

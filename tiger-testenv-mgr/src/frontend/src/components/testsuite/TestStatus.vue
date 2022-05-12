@@ -4,8 +4,7 @@
 
 <template>
   <div class="container">
-    <h4><i class="fa-solid fa-square-poll-vertical left" :aria-label="`${createStats(featureUpdateMap)}`"></i> Test run status</h4>
-    <div class="alert alert-info featurelistbox">
+    <div class="alert alert-light featurelistbox" :aria-label="`${createStats(featureUpdateMap)}`">
       <div class="alert-heading featurelist">
         <div v-if="features.failed > 0" class="pl-3 failed fw-bold">Features: {{ features.passed }} OK {{features.failed}} FAIL</div>
         <div v-else class="pl-3 passed">Features: {{ features.passed }} OK</div>
@@ -56,6 +55,6 @@ function createStats(map : Map<string, FeatureUpdate>) {
 
 <style>
 .featurelistbox {
-  padding: 0.25rem;
+  padding: 0.5rem;
 }
 </style>

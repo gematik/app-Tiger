@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.env;
 
 import java.util.LinkedHashMap;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,8 +17,8 @@ public class TigerStatusUpdate {
 
 
     public TigerStatusUpdate(long dummy, LinkedHashMap<String, FeatureUpdate> featureMap, LinkedHashMap<String, TigerServerStatusUpdate> serverUpdate, String bannerMessage, String bannerColor) {
-        this.featureMap = featureMap;
-        this.serverUpdate = serverUpdate;
+        this.featureMap = Objects.requireNonNullElseGet(featureMap, LinkedHashMap::new);
+        this.serverUpdate = Objects.requireNonNullElseGet(serverUpdate, LinkedHashMap::new);
         this.bannerMessage = bannerMessage;
         this.bannerColor = bannerColor;
         synchronized (indexMutex) {

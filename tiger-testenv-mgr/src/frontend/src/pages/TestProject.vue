@@ -1,12 +1,31 @@
+<!--
+  - ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
 <template>
   <div>
-    <div class="row" style="margin-top: 30px">
-      <div class="col-md-3">
+    <div class="row">
+      <div class="col-md-3" id="sidebar-left">
+        <h3 class="sidebar-title">
+          <img v-on:click="toggleLeftSideBar(1, $event)" class="navbar-brand right" src="img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
+          <span>Workflow UI</span>
+          <i v-on:click="toggleLeftSideBar(0, $event)" class="fa-solid fa-circle-chevron-left resizer-left-icon"></i>
+        </h3>
+
+        <h4 :class="`${currentOverallTestRunStatus()}`"><i class="fa-solid fa-square-poll-vertical left" v-on:click="toggleLeftSideBar(1, $event)"></i>
+          <span>Status</span>
+        </h4>
         <TestStatus :featureUpdateMap="featureUpdateMap"/>
+        <h4><i class="fa-solid fa-address-card left" v-on:click="toggleLeftSideBar(1, $event)"></i>
+          <span>Features</span>
+        </h4>
         <FeatureList :featureUpdateMap="featureUpdateMap"/>
+        <h4 :class="`serverstatus-${currentOverallServerStatus()}`"><i class="fa-solid fa-server left" v-on:click="toggleLeftSideBar(1, $event)"></i>
+          <span>Servers</span>
+        </h4>
         <ServerStatus :serverStatusData="currentServerStatus"/>
       </div>
-      <div class="col-md-9">
+      <div class="col-md-9" id="main-content">
         <nav class="nav nav-tabs nav-fill" role="navigation">
           <!--suppress HtmlUnknownAnchorTarget -->
           <a class="nav-link active" data-bs-toggle="tab" href="#execution_pane" role="tab" data-toggle="tab">Test execution</a>
@@ -15,7 +34,7 @@
 
         <!-- Tab panes -->
         <div class="tab-content">
-          <ExecutionPane :featureUpdateMap="featureUpdateMap" :bannerData="bannerData"/>
+          <ExecutionPane :featureUpdateMap="featureUpdateMap" :bannerData="bannerData" :localProxyWebUiUrl="localProxyWebUiUrl"/>
           <div class="tab-pane h-100 w-100 text-danger pt-3" id="logs_pane" role="tabpanel">
             <i class="fa-solid fa-circle-exclamation fa-2x left"></i> Not implemented so far
           </div>
@@ -67,6 +86,8 @@ import ExecutionPane from "@/components/testsuite/ExecutionPane.vue";
 import FeatureList from "@/components/testsuite/FeatureList.vue";
 import TestStatus from "@/components/testsuite/TestStatus.vue";
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
+import TigerServerStatus from "@/types/TigerServerStatus";
+import TestResult from "@/types/testsuite/TestResult";
 
 let baseURL = process.env.BASE_URL;
 let socket: WebSocket;
@@ -98,11 +119,65 @@ let currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(new Map<st
  */
 let featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, FeatureUpdate>());
 
-const DEBUG = true;
+let localProxyWebUiUrl: Ref<string> = ref("");
+
+function mergeStatus(status1: TigerServerStatus, status2: TigerServerStatus) {
+  switch (status1) {
+    case TigerServerStatus.STARTING:
+    case TigerServerStatus.STOPPED:
+      return status1;
+    case TigerServerStatus.NEW:
+    case TigerServerStatus.RUNNING:
+      return status2;
+  }
+}
+
+function currentOverallServerStatus() {
+  let status =  TigerServerStatus.NEW;
+  currentServerStatus.value.forEach((server, key) => {
+    status = mergeStatus(status, server.status);
+  });
+  return status.toLowerCase();
+}
+
+function currentOverallTestRunStatus()   {
+  if (!featureUpdateMap.value.size) {
+    return "pending";
+  }
+  let status = "passed";
+  featureUpdateMap.value.forEach(feature => {
+    if (feature.status === TestResult.FAILED) {
+      status = "failed";
+    }
+    feature.scenarios.forEach(scenario => {
+      if (scenario.status === TestResult.FAILED) {
+        status = "failed";
+      }
+    });
+  });
+  return status;
+}
+
+const DEBUG = false;
 
 function debug(message: string) {
   if (DEBUG) {
     console.log(Date.now() + " " + message);
+  }
+}
+
+function toggleLeftSideBar(open : number, event: MouseEvent) {
+  const sidebar: HTMLDivElement = document.getElementById("sidebar-left") as HTMLDivElement;
+  const mainContent: HTMLDivElement = document.getElementById("main-content") as HTMLDivElement;
+  let classes: string = sidebar.getAttribute("class") as string;
+  let mainClasses: string = mainContent.getAttribute("class") as string;
+
+  if (open === 0) {
+    sidebar.setAttribute("class", classes.replace("col-md-3", "sidebar-collapsed"))
+    mainContent.setAttribute("class", mainClasses.replace("col-md-9", "col-md-11"))
+  } else {
+    sidebar.setAttribute("class", classes.replace("sidebar-collapsed", "col-md-3"))
+    mainContent.setAttribute("class", mainClasses.replace("col-md-11", "col-md-9"))
   }
 }
 
@@ -145,12 +220,12 @@ function connectToWebSocket() {
             if (firstOutOfOrderTimestamp === -1) {
               firstOutOfOrderTimestamp = Date.now();
             }
-            if (Date.now() - firstOutOfOrderTimestamp > 2000) {
+            if (Date.now() - firstOutOfOrderTimestamp > 1000) {
               // resorting to re fetch the status
               firstOutOfOrderTimestamp = -1;
               outOfOrderMessageList = new Array<TestEnvStatusDto>();
               currentServerStatus.value.clear();
-              console.warn(Date.now() + ` Missing push messages for more then 2 seconds in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+              console.warn(Date.now() + ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
               currentMessageIndex = -1;
               preFetchMessageList = new Array<TestEnvStatusDto>();
               preFetchMessageList.push(pushedMessage);
@@ -171,7 +246,7 @@ function connectToWebSocket() {
         });
       },
       (error: Frame | CloseEvent) => {
-        console.log("Websocket error: " + JSON.stringify(error));
+        console.error("Websocket error: " + JSON.stringify(error));
       }
   );
 }
@@ -211,9 +286,10 @@ function fetchInitialServerStatus() {
   fetch(baseURL + "status")
   .then((response) => response.text())
   .then((data) => {
-
     debug("FETCH: " + data);
     const json = JSON.parse(data);
+
+    localProxyWebUiUrl.value = json.localProxyWebUiUrl;
 
     const fetchedServerStatus = new Map<string, TigerServerStatusDto>(Object.entries(json.servers));
 
@@ -228,7 +304,7 @@ function fetchInitialServerStatus() {
     // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
     let indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
     if (!indexConsistent) {
-      console.log("prefetched message list is not consistent \nwait 500ms and refetch!");
+      debug("prefetched message list is not consistent \nwait 500ms and refetch!");
       // TODO add them to the outOfOrderMessage list and return
       window.setTimeout(fetchInitialServerStatus, 500);
       return;
@@ -285,31 +361,24 @@ function updateServerStatus(serverStatus: Map<string, TigerServerStatusDto>, upd
 function updateFeatureMap(update: Map<string, FeatureUpdate>) {
   update.forEach((featureUpdate: FeatureUpdate, featureKey: string) => {
     if (featureUpdate.description) {
-      console.log("FEATURE UPDATE" + featureUpdate.description);
+      debug("FEATURE UPDATE " + featureUpdate.description);
       const featureToBeUpdated: FeatureUpdate | undefined = featureUpdateMap.value.get(featureKey);
       if (!featureToBeUpdated) {
         // add new feature
-        addNewFeatureToMap(featureUpdate, featureKey);
+        debug("add new feature " + featureKey + " => " + JSON.stringify(featureUpdate));
+        const feature = new FeatureUpdate().merge(featureUpdate);
+        featureUpdateMap.value.set(featureKey, feature);
+        debug("added new feature " + featureKey + " => " + feature.toString());
       } else {
-        // feature in map -> check scenarios and steps
-        //checkFeatureMapForUpdates(featureUpdate, featureToBeUpdated);
         featureToBeUpdated.merge(featureUpdate);
       }
     }
   });
 }
 
-function addNewFeatureToMap(featureUpdate: FeatureUpdate, featureKey: string) {
-  debug("add new feature " + featureKey + " => " + JSON.stringify(featureUpdate));
-  const feature = new FeatureUpdate();
-  feature.merge(featureUpdate);
-  featureUpdateMap.value.set(featureKey, feature);
-  debug("added new feature " + featureKey + " => " + feature.toString());
-}
-
 onMounted(() => {
   connectToWebSocket();
-  window.setTimeout(fetchInitialServerStatus, 100);
+  fetchInitialServerStatus();
 });
 
 </script>
@@ -318,6 +387,76 @@ onMounted(() => {
   border-left: 1px solid lightgray;
   padding-left: 1rem;
   min-height: 300px;
+}
+
+#sidebar-left {
+  color: white;
+  background: var(--bs-primary);
+  border-radius: 0.5rem;
+}
+
+.sidebar-title {
+  background: lightslategray;
+  min-height:4rem;
+  line-height:4rem;
+}
+
+#sidebar-left .alert {
+  color: var(--bs-primary);
+}
+
+#sidebar-left h4 {
+  color: white;
+  padding-left: 0.75rem;
+  margin-top: 2rem;
+}
+
+.sidebar-collapsed {
+  max-width: 60px;
+}
+
+.sidebar-collapsed .alert, .sidebar-collapsed h4 > span, .sidebar-collapsed h3 > span {
+  display: none;
+}
+
+i.resizer-left-icon {
+  color: white;
+  text-align: right;
+  margin: 1rem 1rem 1rem 0;
+  float: right;
+}
+
+
+.sidebar-collapsed i.resizer-left-icon, .sidebar-collapsed .container {
+  display: none;
+}
+
+.sidebar-collapsed h4, .sidebar-collapsed h3 {
+  text-align: center;
+  padding-left: 0 !important;
+}
+
+.sidebar-collapsed h3 img {
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-collapsed h4 > i {
+  padding-right: 0 !important;
+  margin: 1rem 0;
+}
+
+.serverstatus-new {
+  color: yellow !important;
+}
+.serverstatus-starting {
+  color: #0dcaf0 !important;
+}
+.serverstatus-running {
+  color: forestgreen !important;
+}
+.serverstatus-stopped {
+  color: orangered !important;
 }
 
 </style>

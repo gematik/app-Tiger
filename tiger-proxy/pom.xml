@@ -60,6 +60,10 @@
                     <artifactId>junit</artifactId>
                     <groupId>junit</groupId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.vaadin.external.google</groupId>
+                    <artifactId>android-json</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -240,5 +244,5 @@
                 </configuration>
             </plugin>
         </plugins>
-   </build>
+    </build>
 </project>

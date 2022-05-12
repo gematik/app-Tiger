@@ -52,7 +52,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
-    public static final String CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT = "tiger.tigerProxy.webUiPort";
+    public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
     public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
     private final Configuration configuration;
     private final DockerMgr dockerManager;
@@ -64,6 +64,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
     private List<TigerUpdateListener> listeners = new ArrayList<>();
     private DownloadManager downloadManager = new DownloadManager();
+    private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
     public TigerTestEnvMgr() {
         Configuration configuration = readConfiguration();
@@ -113,17 +114,17 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         } else {
             properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
         }
-        ServletWebServerApplicationContext applicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
+        localTigerProxyApplicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
             .properties(properties)
             .sources(TigerProxyApplication.class)
             .web(WebApplicationType.SERVLET)
             .initializers()
             .run();
 
-        localTigerProxy = applicationContext.getBean(TigerProxy.class);
+        localTigerProxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
 
         TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT, localTigerProxy.getProxyPort());
-        TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_WEBUI_PORT, String.valueOf(applicationContext.getWebServer().getPort()));
+        TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT, String.valueOf(localTigerProxyApplicationContext.getWebServer().getPort()));
 
         return localTigerProxy;
     }
@@ -273,6 +274,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     public void shutDown() {
         log.info("Shutting down local tiger proxy...");
         localTigerProxy.shutdown();
+        localTigerProxyApplicationContext.close();
+
         log.info("Shutting down server all servers...");
         servers.values().stream().forEach(TigerServer::shutdown);
     }

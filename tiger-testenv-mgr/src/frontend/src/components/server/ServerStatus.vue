@@ -1,6 +1,9 @@
+<!--
+  - ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
 <template>
   <div class="container">
-    <h4> <i class="fa-solid fa-server left"></i> Server status</h4>
     <div v-if="serverStatusData.size === 0" class="alert alert-danger" style="height:200px;width:100%;">
       <i class="fa-regular fa-hourglass left"></i> Waiting for updates...
     </div>

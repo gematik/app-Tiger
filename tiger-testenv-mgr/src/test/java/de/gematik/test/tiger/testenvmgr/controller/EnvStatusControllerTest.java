@@ -15,6 +15,7 @@ import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -39,17 +40,75 @@ class EnvStatusControllerTest {
 
         envMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
             .featureMap(new LinkedHashMap<>(Map.of("feature", FeatureUpdate.builder()
-                    .description("feature")
-                    .scenarios(new LinkedHashMap<>(Map.of(
-                        "scenario", ScenarioUpdate.builder().description("scenario")
-                            .steps(Map.of("step", StepUpdate.builder().description("step").build()
-                            )).build()
-                    ))).build()
+                .description("feature")
+                .scenarios(new LinkedHashMap<>(Map.of(
+                    "scenario", ScenarioUpdate.builder().description("scenario")
+                        .steps(new LinkedHashMap<>(Map.of("0", StepUpdate.builder().description("step").build()
+                        ))).build()
+                ))).build()
             ))).build());
 
         assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo("feature");
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getDescription()).isEqualTo("scenario");
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("step").getDescription()).isEqualTo("step");
+        assertThat(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getDescription()).isEqualTo(
+            "scenario");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("0")
+            .getDescription()).isEqualTo("step");
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "")
+    public void mergeStepsOfScenario(final TigerTestEnvMgr envMgr) {
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+
+        assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
+
+        envMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+            .featureMap(new LinkedHashMap<>(Map.of("feature", FeatureUpdate.builder()
+                .description("feature")
+                .scenarios(new LinkedHashMap<>(Map.of(
+                    "scenario", ScenarioUpdate.builder().description("scenario")
+                        .steps(new LinkedHashMap<>(Map.of("0", StepUpdate.builder().description("step0").build()
+                        ))).build()
+                ))).build()
+            ))).build());
+        envMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+            .featureMap(new LinkedHashMap<>(Map.of("feature", FeatureUpdate.builder()
+                .description("feature")
+                .scenarios(new LinkedHashMap<>(Map.of(
+                    "scenario", ScenarioUpdate.builder().description("scenario")
+                        .steps(new LinkedHashMap<>(Map.of("0", StepUpdate.builder().description("step00").status(TestResult.PASSED).build()
+                            ,"1", StepUpdate.builder().description("step1").build()
+                        ))).build()
+                ))).build()
+            ))).build());
+
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo("feature");
+        assertThat(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getDescription()).isEqualTo(
+            "scenario");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("0")
+            .getDescription()).isEqualTo("step00");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("0")
+            .getStatus()).isEqualTo(TestResult.PASSED);
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("1")
+            .getDescription()).isEqualTo("step1");
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "")
+    public void checkBannerMessages(final TigerTestEnvMgr envMgr) {
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+
+        assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
+
+        envMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+            .bannerColor("green")
+            .bannerMessage("bannertest")
+            .build());
+
+        assertThat(envStatusController.getStatus().getBannerMessage()).isEqualTo("bannertest");
+        assertThat(envStatusController.getStatus().getBannerColor()).isEqualTo("green");
     }
 
     @Test
