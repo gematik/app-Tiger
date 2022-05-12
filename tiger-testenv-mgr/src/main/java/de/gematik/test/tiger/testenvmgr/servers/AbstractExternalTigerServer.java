@@ -62,8 +62,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         try {
             checkUrlOrThrowException(url);
             printServerUpMessage();
-            statusMessage("Server up & healthy");
-            setStatus(TigerServerStatus.RUNNING);
+            setStatus(TigerServerStatus.RUNNING, "Server up & healthy");
         } catch (ConnectException | SocketTimeoutException cex) {
             if (!quiet) {
                 log.info("No connection to " + url + " of " + getHostname() + "...");
@@ -71,8 +70,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         } catch (SSLHandshakeException sslhe) {
             log.warn(Ansi.colorize("SSL handshake but server at least seems to be up!" + sslhe.getMessage(),
                 RbelAnsiColors.YELLOW_BOLD));
-            statusMessage("Server up & healthy");
-            setStatus(TigerServerStatus.RUNNING);
+            setStatus(TigerServerStatus.RUNNING, "Server up & healthy");
         } catch (SSLException sslex) {
             if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
                 if (!quiet) {
@@ -126,7 +124,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        setStatus(TigerServerStatus.RUNNING);
+        setStatus(TigerServerStatus.RUNNING, "Server up & healthy (default timeout)");
     }
 
     URL buildHealthcheckUrl() {

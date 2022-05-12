@@ -66,5 +66,6 @@ public class DockerComposeServer extends TigerServer {
     public void shutdown() {
         log.info("Stopping docker compose {}...", getHostname());
         removeAllRoutes();
+        setStatus(TigerServerStatus.STOPPED, "Docker compose stopped");
     }
 }

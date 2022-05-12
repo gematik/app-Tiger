@@ -9,10 +9,10 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import lombok.Builder;
@@ -62,6 +62,7 @@ public class DockerServer extends TigerServer {
         log.info("Stopping docker container {}...", getHostname());
         removeAllRoutes();
         getTigerTestEnvMgr().getDockerManager().stopContainer(this);
+        setStatus(TigerServerStatus.STOPPED, "Docker container stopped");
     }
 
     @Override

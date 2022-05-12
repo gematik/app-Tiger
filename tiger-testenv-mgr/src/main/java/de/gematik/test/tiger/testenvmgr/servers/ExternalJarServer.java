@@ -127,7 +127,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
     public TigerServerStatus updateStatus(boolean quiet) {
         if (!processReference.get().isAlive()) {
             log.warn("Process {} is stopped!", processReference.get().pid());
-            setStatus(TigerServerStatus.STOPPED);
+            setStatus(TigerServerStatus.STOPPED, "Jar process stopped unexpectedly");
             if (now().isBefore(processStartTime.plusSeconds(3))) {
                 log.warn("{}: Unusually short process run time ({})! Suspecting defunct jar! (Exitcode={})",
                     getHostname(), Duration.between(now(), processStartTime), processReference.get().exitValue());
@@ -162,8 +162,10 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             processReference.get().destroy();
             log.info("stopping threads...");
             processReference.get().destroyForcibly();
+            setStatus(TigerServerStatus.STOPPED, "Jar process stopped");
         } else {
             log.warn("Process for server {} not found... No need to shutdown", getHostname());
+            setStatus(TigerServerStatus.STOPPED, "Jar process never started");
         }
     }
 

@@ -110,13 +110,8 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             if (getStatus() != TigerServerStatus.NEW) {
                 throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
             }
-            setStatus(TigerServerStatus.STARTING);
         }
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type(configuration.getType())
-            .build());
-
-        statusMessage("Starting " + getServerId());
+        setStatus(TigerServerStatus.STARTING, "Starting " +  getServerId());
 
         reloadConfiguration();
 
@@ -154,7 +149,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                 getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
             throw e;
         }
-        statusMessage("Setting routes at local proxy");
+        statusMessage(getServerId() + " started");
 
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);
@@ -171,9 +166,8 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         });
 
         synchronized (this) {
-            setStatus(TigerServerStatus.RUNNING);
+            setStatus(TigerServerStatus.RUNNING,getServerId() + " READY");
         }
-        statusMessage(hostname + " READY");
     }
 
     private void reloadConfiguration() {
@@ -384,6 +378,14 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         this.status = newStatus;
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .status(newStatus)
+            .build());
+    }
+
+    public void setStatus(TigerServerStatus newStatus, String statusMessage) {
+        this.status = newStatus;
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .status(newStatus)
+            .statusMessage(statusMessage)
             .build());
     }
 

@@ -74,6 +74,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             && applicationContext.isRunning()) {
             applicationContext.stop();
         }
+        setStatus(TigerServerStatus.STOPPED, "Stopped Tiger Proxy context");
     }
 
     private void getDestinationUrlFromProxiedServer(TigerProxyConfiguration cfg) {

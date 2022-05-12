@@ -44,6 +44,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     @Override
     public void shutdown() {
         removeAllRoutes();
+        setStatus(TigerServerStatus.STOPPED, "Disconnected external url");
     }
 
     @Override
