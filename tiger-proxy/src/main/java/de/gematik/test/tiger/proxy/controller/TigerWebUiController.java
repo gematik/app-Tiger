@@ -84,9 +84,9 @@ public class TigerWebUiController implements ApplicationContextAware {
         String html = renderer.getEmptyPage();
         String targetDiv;
         if (embedded) {
-            targetDiv = "<div class=\"column ml-6 msglist\">";
-        } else {
             targetDiv = "<div class=\"column msglist embeddedlist\">";
+        } else {
+            targetDiv = "<div class=\"column ml-6 msglist\">";
         }
         html = replaceScript(html.replace("<div class=\"column ml-6\">", targetDiv));
 

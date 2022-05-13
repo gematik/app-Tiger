@@ -308,7 +308,7 @@ public class TigerTestHooks {
         Step currentStep = scenarioStepsMap.get(scenario.getId()).get(stepIndex);
         if (currentDataVariantIndex != -1) {
             List<String> parsedLines = currentStep.getLines().stream().map(
-                line -> replaceLineWithCurrentDataVariantValues(line)
+                this::replaceLineWithCurrentDataVariantValues
             ).collect(Collectors.toList());
             currentStep = new Step(currentStep.getKeyword(), parsedLines);
         }
