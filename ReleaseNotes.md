@@ -11,6 +11,7 @@
 
 ## Features
 
+* TGR-473: local tiger proxy now starts as springboot app thus providing also the webui interface.
 * TGR-489: New test-steps: Print current request/response as rbel-tree
 * TGR-509: Server-Health-checks can now also be verified with given return code
 

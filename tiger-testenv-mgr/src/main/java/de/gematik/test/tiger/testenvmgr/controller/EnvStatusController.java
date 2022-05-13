@@ -35,8 +35,7 @@ public class EnvStatusController implements TigerUpdateListener {
         try {
             receiveTestSuiteUpdate(update.getFeatureMap());
 
-            update.getServerUpdate().entrySet()
-                .forEach(entry -> receiveServerStatusUpdate(entry.getKey(), entry.getValue()));
+            update.getServerUpdate().forEach(this::receiveServerStatusUpdate);
 
             if (update.getBannerMessage() != null) {
                 tigerEnvStatus.setBannerMessage(update.getBannerMessage());
@@ -128,7 +127,7 @@ public class EnvStatusController implements TigerUpdateListener {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public TigerEnvStatusDto getStatus() {
         log.trace("Fetch request to getStatus() received");
-        if (StringUtils.isNotEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
+        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
             tigerEnvStatus.setLocalProxyWebUiUrl(
                 "http://localhost:"
                     + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
