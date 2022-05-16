@@ -9,7 +9,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
-    agent { label 'k8-maven' }
+    agent { label 'k8-maven-medium' }
 
     tools {
         maven 'Default'
