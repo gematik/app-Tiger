@@ -59,14 +59,17 @@ export default class FeatureUpdate implements IFeatureUpdate{
       this.status = feature.status;
     }
     if (feature.scenarios) {
-      for (let key of feature.scenarios.keys()) {
+      for (const key of feature.scenarios.keys()) {
         const scenario: ScenarioUpdate | undefined = this.scenarios.get(key)
-        if (scenario) {
-          // @ts-ignore
-          scenario.merge(feature.scenarios.get(key))
+        const newScneario = feature.scenarios.get(key);
+        if (newScneario) {
+          if (scenario) {
+            scenario.merge(newScneario)
+          } else {
+            this.scenarios.set(key, newScneario)
+          }
         } else {
-          // @ts-ignore
-          this.scenarios.set(key, feature.scenarios.get(key))
+          console.error(`No or empty scenario ${key} provided`);
         }
       }
       this.status = FeatureUpdate.mapToTestResult(this.scenarios);

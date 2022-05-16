@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.google.common.base.Strings;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -111,7 +112,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                 throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
             }
         }
-        setStatus(TigerServerStatus.STARTING, "Starting " +  getServerId());
+        setStatus(TigerServerStatus.STARTING, "Starting " + getServerId());
 
         reloadConfiguration();
 
@@ -166,15 +167,16 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         });
 
         synchronized (this) {
-            setStatus(TigerServerStatus.RUNNING,getServerId() + " READY");
+            setStatus(TigerServerStatus.RUNNING, getServerId() + " READY");
         }
     }
 
     private void reloadConfiguration() {
         try {
             this.configuration = TigerGlobalConfiguration.instantiateConfigurationBean(CfgServer.class,
-                "tiger", "servers", getServerId())
-                .orElseThrow(() -> new TigerEnvironmentStartupException("Could not reload configuration for server with id "+getServerId()));
+                    "tiger", "servers", getServerId())
+                .orElseThrow(
+                    () -> new TigerEnvironmentStartupException("Could not reload configuration for server with id " + getServerId()));
             tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
         } catch (TigerConfigurationException e) {
             log.warn("Could not reload configuration for server {}", getServerId(), e);
@@ -281,7 +283,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         }
 
         if (type == ServerType.EXTERNALJAR) {
-            assertCfgPropertySet(getConfiguration(),  "healthcheckUrl");
+            assertCfgPropertySet(getConfiguration(), "healthcheckUrl");
         }
     }
 

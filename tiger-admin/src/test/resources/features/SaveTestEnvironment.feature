@@ -104,11 +104,8 @@ Feature: Save test environments
     And he unfolds section ".externalJarOptions.options"
     And he tests list ".externalJarOptions.options"
     When he adds list item "entry1"
-    Then he checks list item in row 1 has value "entry1"
-
-#    TODO: TGR-411: PKI Keys are not saved correctly in the files
-#    TODO: TGR-308: Keep order of nodes from ui persistent
-    Then he saves test environment as "newTestEnv.yaml"
+    And he checks list item in row 1 has value "entry1"
+    And he saves test environment as "newTestEnv.yaml"
     Then he verifies saved file "newTestEnv.yaml" contains
     """
     servers:
@@ -141,13 +138,12 @@ Feature: Save test environments
       tigerProxy_001:
         tigerProxyCfg:
           proxyRoutes:
-            - basicAuth:
-                password: pwd1
-                username: user1
-              from: from1
-              id: entry1
-              to: to1
-          proxyProtocol: http
+          - basicAuth:
+              password: pwd1
+              username: user1
+            from: from1
+            id: entry1
+            to: to1
         hostname: tigerProxy_001
         uiRank: 4
         type: tigerProxy

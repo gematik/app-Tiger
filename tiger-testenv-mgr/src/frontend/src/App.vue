@@ -36,15 +36,15 @@ export default defineComponent({
 }
 
 .passed {
-  color: forestgreen !important;
+  color: greenyellow !important;
 }
 
 .skipped {
-  color: darkorange !important;
+  color: lightsalmon !important;
 }
 
 .pending, .unused {
-  color: lightslategray !important;
+  color: #bbbbbb !important;
 }
 
 .undefined, .ambiguous {
@@ -55,4 +55,23 @@ export default defineComponent({
   color: orangered !important;
 }
 
+.bg-passed {
+  background: #ECFDF3 !important;
+}
+
+.bg-skipped {
+  background: #FEFDD6 !important;
+}
+
+.bg-pending, .bg-unused {
+  background: #dddddd !important;
+}
+
+.bg-undefined, .bg-ambiguous {
+  background: #ffccff !important;
+}
+
+.bg-failed {
+  background: #FECDD6 !important;
+}
 </style>

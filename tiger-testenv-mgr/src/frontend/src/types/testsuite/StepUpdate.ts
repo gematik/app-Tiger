@@ -20,7 +20,7 @@ export default class StepUpdate  implements IStep {
   description= "";
   status = TestResult.UNUSED;
   stepIndex = -1;
-  rbelMetaData = new Array();
+  rbelMetaData : MessageMetaDataDto[] = [];
 
   public static fromJson(json: IStep): StepUpdate {
     const step: StepUpdate = new StepUpdate();
@@ -65,6 +65,6 @@ export default class StepUpdate  implements IStep {
   }
 
   public toString() {
-    return JSON.stringify(this, () => {} ,2);
+    return JSON.stringify(this);
   }
 }

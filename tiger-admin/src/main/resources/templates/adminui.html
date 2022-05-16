@@ -404,6 +404,15 @@
                   </select>
                 </div>
                 <div class="input-group advanced">
+                  <span class="input-group-text">Log level</span>
+                  <select class="form-select" name=".tigerProxyCfg.proxiedServerProtocol"
+                          title="Proxy protocol of proxied server">
+                    <option selected="" value="">Take from health check URL</option>
+                    <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
+                  </select>
+                </div>
+                <div class="input-group advanced">
                   <span class="input-group-text">Admin Port</span>
                   <input class="form-control" name=".tigerProxyCfg.adminPort"
                          title="Port the web ui and traffic endpoint is running on."

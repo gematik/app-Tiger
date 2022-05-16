@@ -397,7 +397,7 @@ tigerProxy_001:
     proxyPort: 3128
     # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
     # Default value is http
-    proxyProtocol: http
+    proxiedServerProtocol: http
     # configures the proxy itself. For more details
     # please check the chapter about the local test suite Tiger Proxy below
     ...

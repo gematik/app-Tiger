@@ -219,7 +219,7 @@ function populateServersFromYaml(testEnvYaml) {
     updateServerListFields(serverList, serverKey, testEnvYaml[serverKey]);
   }
   notifyChangesToTestenvData(false);
-  snack(`Loaded yaml file`, 'success');
+  snack(`Loaded yaml file`, 'success', 4000);
 }
 
 function discardChanges() {
@@ -309,7 +309,7 @@ function updateServerListFields(serverList, serverKey, serverData) {
   const serverList2 = [...serverList].filter(e => e !== serverKey);
   if (serverData.type === 'tigerProxy') {
     form.updateServerList(serverList2, null,
-        serverData.tigerProxyCfg.proxiedServer);
+        serverData.tigerProxyCfg?.proxiedServer);
   }
   form.updateDependsUponList(serverList2, null, "");
   if (serverData.dependsUpon) {
@@ -668,7 +668,7 @@ function loadMetaDataFromServer() {
         addServerModal.find('button.dropdown-toggle').html($(this).html());
         addServerModal.find('.btn-add-server-ok').focus();
       });
-      snack('Templates loaded', 'success', 5000);
+      snack('Templates loaded', 'success', 8000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);
@@ -683,7 +683,7 @@ function loadMetaDataFromServer() {
     dataType: 'json',
     success: function (res) {
       configScheme = res;
-      snack('ConfigScheme loaded', 'success', 5000);
+      snack('ConfigScheme loaded', 'success', 8000);
     },
     error: function (xhr) {
       $('body *').setEnabled(false);

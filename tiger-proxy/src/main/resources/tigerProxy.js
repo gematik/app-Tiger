@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 100);
   }
   if (urlParams.has("embedded")) {
+    scrollLock = true;
     let elem = document.getElementsByClassName("sidebar")[0];
     elem.setAttribute("class", elem.getAttribute("class") + " hidden");
     elem = document.getElementsByClassName("main-content")[0];

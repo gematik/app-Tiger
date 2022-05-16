@@ -1,4 +1,4 @@
-export default class BannerMessages {
+export default class BannerMessage {
   text: string | null;
   color: string |null;
 
@@ -7,8 +7,8 @@ export default class BannerMessages {
     this.color = "";
   }
 
-  public static fromJson(json: {  bannerMessage:string, bannerColor:string } ) : BannerMessages {
-    const msg:BannerMessages = new BannerMessages();
+  public static fromJson(json: {  bannerMessage:string, bannerColor:string } ) : BannerMessage {
+    const msg:BannerMessage = new BannerMessage();
     msg.text = json.bannerMessage;
     msg.color = json.bannerColor;
     return msg;
