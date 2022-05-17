@@ -83,7 +83,7 @@ construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh]
 
 .Core features
 * Filter for server, method, path, RBelPath node matching given value in request
-* Find first / next matching request
+* Find first / next / last matching request
 * Clear all recorded messages
 * Specify timeout for filtering request
 
@@ -399,6 +399,26 @@ only check for regex matches if they were not equal.
  */
 @Wenn("TGR finde die nächste Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt")
 @When("TGR find next request to path {string} with {string} matching {string}")
+
+/**
+ * find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+ * instance.
+ *
+ * @param path path to match
+ */
+@Wenn("TGR finde die letzte Anfrage mit dem Pfad {string}")
+@When("TGR find last request to path {string}")
+
+/**
+ * find the LAST request where path and node value equal or match as regex and memorize it in the {@link
+ * #rbelValidator} instance.
+ *
+ * @param path     path to match
+ * @param rbelPath rbel path to node/attribute
+ * @param value    value to match at given node/attribute
+ */
+@Wenn("TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt")
+@When("TGR find last request to path {string} with {string} matching {string}")
 
 /**
  * assert that there is any message with given rbel path node/attribute matching given value.

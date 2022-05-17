@@ -15,7 +15,7 @@ Feature: Test Tiger BDD
     When User requests the startpage
     Then TGR find request to path "/"
     And TGR print current request as rbel-tree
-    Then TGR current response with attribute "$.body.html.head.link.href" matches "!{rbel:lastResponseAsString('$.body.html.head.link.href')}"
+    Then TGR current response with attribute "$.body.html.head.link.href" matches "!{rbel:currentResponseAsString('$.body.html.head.link.href')}"
 
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
       | txt   | txt2 | txt3| txt4| txt5|
@@ -29,3 +29,22 @@ Feature: Test Tiger BDD
     Then TGR find request to path "/"
     Then TGR current response with attribute "$.body.html.head.link.href" matches "jetty-dir.css"
     #Given TGR warte auf Abbruch
+
+  Scenario: Test Find Last Request
+    Given TGR show banner "text1"
+    Then User requests "/classes" with parameter "foobar=1"
+    Then User requests "/classes" with parameter "foobar=2"
+    Then TGR find last request to path "/classes"
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute "$.header.Location.foobar.value" matches "2"
+
+  Scenario: Test find last request with parameters
+    Given TGR show banner "text1"
+    Then User requests "/classes" with parameter "foobar=1"
+    Then User requests "/classes" with parameter "foobar=1&xyz=4"
+    Then User requests "/classes" with parameter "foobar=2"
+    Then TGR find last request to path "/classes" with "$.path.foobar.value" matching "1"
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute "$.header.Location.xyz.value" matches "4"

@@ -6,8 +6,20 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.hooks.TigerTestHooks;
+import de.gematik.test.tiger.lib.TigerLibraryException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -50,9 +62,23 @@ public class RbelMessageValidatorTest {
     }
 
     @Test
-    public void testPathMatchingWithInvalidRegex_NOK() {
+    public void testPathMatchingWithNotMatchRegex_NOK() {
         assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
             buildRequestWithPath("http://bl.ub/foo/bar/test?sch=mar"), "/foo/.*/[test]"))
+            .isFalse();
+    }
+
+    @Test
+    public void testPathMatchingWithInvalidRegex_NOK() {
+        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+            buildRequestWithPath("http://bl.ub/foo/bar/test?sch=mar"), "["))
+            .isFalse();
+    }
+
+    @Test
+    public void testInvalidPathMatching_NOK() {
+        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+            buildRequestWithPath("file$:."), "/foo/.*"))
             .isFalse();
     }
 
@@ -62,6 +88,67 @@ public class RbelMessageValidatorTest {
             .path(new RbelElement(path.getBytes(), null))
             .build());
         return rbelElement;
+    }
+
+    @Test
+    public void testHostMatching_OK() {
+        assertThat(new RbelMessageValidator().doesHostMatch(
+            buildRequestFromCurlFile("getRequestLocalhost.curl"), "localhost:8080"))
+            .isTrue();
+    }
+    @Test
+    public void testHostMatchingRegex_OK() {
+        assertThat(new RbelMessageValidator().doesHostMatch(
+            buildRequestFromCurlFile("getRequestLocalhost.curl"), "local.*:8080"))
+            .isTrue();
+    }
+
+    @Test
+    public void testHostMatchingRegexNotMatching_OK() {
+        assertThat(new RbelMessageValidator().doesHostMatch(
+            buildRequestFromCurlFile("getRequestLocalhost.curl"), "eitzen.*"))
+            .isFalse();
+    }
+    @Test
+    public void testHostMatchingInvalidRegex_NOK() {
+        assertThat(new RbelMessageValidator().doesHostMatch(
+            buildRequestFromCurlFile("getRequestLocalhost.curl"), "["))
+            .isFalse();
+    }
+
+    @Test
+    public void testMethodMatching_OK() {
+        assertThat(new RbelMessageValidator().doesMethodMatch(
+            buildRequestFromCurlFile("getRequestLocalhost.curl"), "GET"))
+            .isTrue();
+    }
+
+    @Test
+    public void testMethodMatchingNotMatching_OK() {
+        assertThat(new RbelMessageValidator().doesMethodMatch(
+            buildRequestFromCurlFile("getRequestLocalhost.curl"), "POST"))
+            .isFalse();
+    }
+
+    private RbelElement buildRequestFromCurlFile(String curlFileName) {
+        String curlMessage = readCurlFromFileWithCorrectedLineBreaks(curlFileName, StandardCharsets.UTF_8);
+        return RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    }
+
+    private RbelElement buildResponseFromCurlFile(String curlFileName, RbelElement request) {
+        String curlMessage = readCurlFromFileWithCorrectedLineBreaks(curlFileName, StandardCharsets.UTF_8);
+        RbelElement message = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+        message.addOrReplaceFacet(message.getFacet(RbelHttpResponseFacet.class).get().toBuilder().request(request).build());
+        return message;
+    }
+
+    private String readCurlFromFileWithCorrectedLineBreaks(String fileName, Charset charset) {
+        try {
+            return FileUtils.readFileToString(new File("src/test/resources/testdata/sampleCurlMessages/" + fileName), charset)
+                .replaceAll("(?<!\\r)\\n", "\r\n");
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unable to read curl file", ioe);
+        }
     }
 
     @Test
@@ -144,5 +231,78 @@ public class RbelMessageValidatorTest {
         assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
             buildRequestWithPath(url), path))
             .isFalse();
+    }
+
+    @Test
+    public void testFilterRequests_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
+        RbelElement request = validator.currentRequest;
+        assertTrue(validator.doesHostMatch(request, "localhost:8080"));
+    }
+
+    @Test
+    public void testFilterRequestsWrongPath_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        assertThatThrownBy(() -> {
+            validator.filterRequestsAndStoreInContext(RequestParameter.builder().path("/NOWAY.*").build());
+        }).isInstanceOf(AssertionError.class);
+
+    }
+
+    @Test
+    public void testFilterRequestsNextRequest_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").startFromLastRequest(true).build());
+        RbelElement request = validator.currentRequest;
+        assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
+    }
+
+    @Test
+    public void testFilterRequestsRbelPath_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonalagent").build());
+        assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+    }
+
+    @Test
+    public void testFilterRequestsRbelPathNotMatching_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        assertThatThrownBy(() -> {
+            validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonalagentXXXX").build());
+        }).isInstanceOf(AssertionError.class);
+    }
+    @Test
+    public void testFilterRequestsRbelPathRegex_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonal.*").build());
+        assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+    }
+
+    @Test
+    public void testFilterRequestsAttachResponseCorrectly_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonal.*").build());
+        assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+        assertThat(validator.currentResponse.getFacet(RbelHttpResponseFacet.class).get().getResponseCode().getRawStringContent()).isEqualTo("500");
+    }
+
+    private void addSomeMessagesToTigerTestHooks() {
+        TigerGlobalConfiguration.putValue("tiger.rbel.request.timeout", 1);
+        TigerTestHooks.getValidatableRbelMessages().clear();
+        RbelElement request = buildRequestFromCurlFile("getRequestLocalhost.curl");
+        TigerTestHooks.getValidatableRbelMessages().add(request);
+        TigerTestHooks.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessage.curl", request));
+        request = buildRequestFromCurlFile("getRequestEitzenAt.curl");
+        TigerTestHooks.getValidatableRbelMessages().add(request);
+        TigerTestHooks.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
     }
 }

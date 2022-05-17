@@ -1,5 +1,14 @@
 # Changelog Tiger Testplattform
 
+# Release 0.20.4
+## Breaking Changes
+
+## Features
+* TGR-482: TGR findLastRequest added in the glue code
+
+## Bugfixes
+
+
 # Release 0.20.2
 
 ## Breaking Changes
