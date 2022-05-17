@@ -41,7 +41,7 @@ i.statusbadge {
 }
 
 .statustext {
-  background: #FCFCFD;
+  background: var(--gem-primary-025);
   border-radius: 1rem;
   padding: 0.25rem 1rem;
   margin-right: 0.5rem;

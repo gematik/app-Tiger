@@ -131,14 +131,14 @@ function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<
 
 h3.featuretitle {
   padding: 1rem 1rem 1rem 0.5rem;
-  background: #EAECF5;
+  background: var(--gem-primary-100);
   margin-bottom: 0;
 }
 
 h4.scenariotitle {
   padding: 1rem 1rem 1rem 0.5rem;
-  background: #EAECF5;
-  color: #717BBC;
+  background: var(--gem-primary-100);
+  color: var(--gem-primary-400);
 }
 
 
@@ -175,7 +175,7 @@ h4.scenariotitle {
   margin-bottom: 0.25rem;
   padding: 0.5em 1rem;
   border: 1px solid lightgray;
-  background-color: #ecfcfe;
+  background-color: #ecfcfe; /* TODO coming from bulma we need --gem-info colors */
   color: #0a8694;
   text-decoration: none;
   cursor: pointer;
@@ -187,15 +187,15 @@ h4.scenariotitle {
   bottom: 0;
   width: 16px;
   z-index: 2000;
-  border-left: 1px solid #717BBC;
-  background: #EAECF5;
+  border-left: 1px solid var(--gem-primary-400);
+  background: var(--gem-primary-100);
 }
 
 #rbellog_resize i.resizer-right {
   left: -19px;
   right: 5px;
-  color: #717BBC;
-  border: 1px solid #717BBC;
+  color: var(--gem-primary-400);
+  border: 1px solid var(--gem-primary-400);
   border-radius: 0.5rem;
   padding: 0.5rem;
   background: inherit;
@@ -203,8 +203,8 @@ h4.scenariotitle {
 }
 
 #rbellog_details_pane {
-  background: #EAECF5;
-  color: #717BBC;
+  background: var(--gem-primary-100);
+  color: var(--gem-primary-400);
   top: 0;
   bottom: 0;
 }

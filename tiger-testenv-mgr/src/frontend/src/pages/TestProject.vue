@@ -376,21 +376,21 @@ function updateFeatureMap(update: Map<string, FeatureUpdate>) {
 
 #sidebar-left {
   border-radius: 0.5rem;
-  border: 1px solid #EAECF5;
-  background: #EAECF5;
-  color: #717BBC;
+  border: 1px solid var(--gem-primary-100);
+  background: var(--gem-primary-100);
+  color: var(--gem-primary-400);
   min-height: 100vh;
 }
 
 .sidebar-title {
-  background: #EAECF5;
-  color: #717BBC;
+  background: var(--gem-primary-100);
+  color: var(--gem-primary-400);
   min-height: 4rem;
   line-height: 4rem;
 }
 
 #sidebar-left h4 {
-  color: #333;
+  color: var(--gem-neutral-700);
   padding-left: 0.75rem;
   margin-top: 2rem;
 }
@@ -405,10 +405,10 @@ function updateFeatureMap(update: Map<string, FeatureUpdate>) {
 }
 
 i.resizer-left-icon {
-  color: #717BBC;
+  color: var(--gem-primary-400);
   border-radius: 0.5rem;
   padding: 0.5rem;
-  background: #FCFCFD;
+  background: var(--gem-primary-025);
   text-align: right;
   margin: 1rem 1rem 1rem 0;
   float: right;
@@ -435,7 +435,7 @@ i.resizer-left-icon {
 }
 
 .serverstatus-new {
-  color: yellow !important;
+  color: var(--gem-warning-400) !important;
 }
 
 .serverstatus-starting {
@@ -443,23 +443,23 @@ i.resizer-left-icon {
 }
 
 .serverstatus-running {
-  color: greenyellow !important;
+  color: var(--gem-success-400) !important;
 }
 
 .serverstatus-stopped {
-  color: orangered !important;
+  color: var(--gem-error-400) !important;
 }
 
 .execution-pane-nav {
-  background: #EAECF5;
+  background: var(--gem-primary-100);
   padding: 0.5rem;
   border-radius: 0.5rem;
 }
 
 .execution-pane-buttons {
-  border: 1px solid #EAECF5;
+  border: 1px solid var(--gem-primary-100);
   border-radius: 1rem;
-  color: #717BBC;
+  color: var(--gem-primary-400);
 }
 
 .execution-pane-buttons.active {

@@ -8,7 +8,7 @@ Feature: Test Tiger BDD
 #    And TGR zeige grünen Text "Der Testbericht wird unter target/site/serenity/index.html erstellt"
 
   Background:
-    Given TGR show green banner "GRÜN!"
+    Given TGR clear recorded messages
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR show banner "<txt>"

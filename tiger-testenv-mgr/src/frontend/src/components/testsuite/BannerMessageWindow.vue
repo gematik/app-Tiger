@@ -40,9 +40,9 @@ function closeWindow(ev : MouseEvent) {
   width: 50%;
   z-index: 20000;
   padding: 0.5rem;
-  background: rgba(234, 236, 245, 0.9);
-  border: 1px solid #717BBC;
-  color: #717BBC;
+  background: rgba(234, 236, 245, 0.9); /* --gem-primary-400) */
+  border: 1px solid var(--gem-primary-400);
+  color: var(--gem-primary-400);
   transition: opacity 0.75s ease-in-out !important;
 }
 
@@ -55,10 +55,10 @@ function closeWindow(ev : MouseEvent) {
 }
 
 .btn-banner-close {
-  color: #717BBC;
+  color: var(--gem-primary-400);
   border-radius: 0.5rem;
   padding: 0.75rem;
-  background: #FCFCFD;
+  background: var(--gem-primary-025);
   float: right;
   cursor: pointer;
 }

@@ -36,15 +36,15 @@ export default defineComponent({
 }
 
 .passed {
-  color: greenyellow !important;
+  color: var(--gem-success-300) !important;
 }
 
 .skipped {
-  color: lightsalmon !important;
+  color: var(--gem-warning-400) !important;
 }
 
 .pending, .unused {
-  color: #bbbbbb !important;
+  color: var(--gem-neutral-400) !important;
 }
 
 .undefined, .ambiguous {
@@ -52,19 +52,19 @@ export default defineComponent({
 }
 
 .failed {
-  color: orangered !important;
+  color: var(--gem-error-400) !important;
 }
 
 .bg-passed {
-  background: #ECFDF3 !important;
+  background: var(--gem-success-050) !important;
 }
 
 .bg-skipped {
-  background: #FEFDD6 !important;
+  background: var(--gem-warning-100) !important;
 }
 
 .bg-pending, .bg-unused {
-  background: #dddddd !important;
+  background: var(--gem-neutral-100) !important;
 }
 
 .bg-undefined, .bg-ambiguous {
@@ -72,6 +72,6 @@ export default defineComponent({
 }
 
 .bg-failed {
-  background: #FECDD6 !important;
+  background: var(--gem-error-100) !important;
 }
 </style>
