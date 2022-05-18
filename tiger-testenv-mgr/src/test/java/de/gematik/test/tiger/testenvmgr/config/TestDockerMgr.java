@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Tag("de.gematik.test.tiger.common.LongrunnerTest")
+//@Tag("de.gematik.test.tiger.common.LongrunnerTest")
 public class TestDockerMgr {
 
     private static final String TEST_IMAGE = "eitzenbe/test-containers:1.0.19";
@@ -93,9 +93,6 @@ public class TestDockerMgr {
 
     @Test
     public void testDockerMgrPauseUnpause() {
-        // TODO TGR-285 ensure image with given version is available locally
-        // Rewrite so that the docker image can be downloaded gematik internally and without gematik connection
-        // check backlog for simliar topic
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck
