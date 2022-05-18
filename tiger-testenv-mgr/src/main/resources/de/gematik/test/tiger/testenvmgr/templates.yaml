@@ -9,7 +9,7 @@ templates:
   - templateName: idp-ref
     type: docker
     source:
-      - gstopdr1.top.local/idp/idp-server
+      - eu.gcr.io/gematik-all-infra-prod/idp/idp-server
     version: 19.4.0-272
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on without error)
@@ -123,7 +123,7 @@ templates:
   - templateName: erzpt-fd-ref
     type: docker
     source:
-      - gstopdr1.top.local/erezept/ref-erx-fd-server
+      - eu.gcr.io/gematik-all-infra-prod/erezept/ref-erx-fd-server
     version: 0.19.2
     startupTimeoutSec: 50
     urlMappings:
@@ -164,10 +164,6 @@ templates:
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
       - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
     startupTimeoutSec: 180
-    dockerOptions:
-      serviceHealthchecks:
-        - http://epa-gateway:8001/
-        - http://epa-docv-fdv:8005/
 
     pkiKeys: []
     environment: []
@@ -184,10 +180,6 @@ templates:
     source:
       - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
     startupTimeoutSec: 180
-    dockerOptions:
-      serviceHealthchecks:
-        - http://notification-gateway:9042
-        - http://notification-portal:9041/welcome
 
     pkiKeys: [ ]
     environment: [ ]

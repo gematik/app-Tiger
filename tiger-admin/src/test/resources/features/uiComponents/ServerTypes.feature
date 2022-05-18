@@ -7,7 +7,6 @@ Feature: Check input fields and sections for all server types
     And he adds a "docker" node via welcome screen
     When he focuses on formular "docker_001"
     And he shows "Docker" tab
-    Then he doesn't see field ".dockerOptions.serviceHealthchecks"
     But he sees check field ".dockerOptions.proxied"
     And he sees check field ".dockerOptions.oneShot"
     And he shows "General" tab
@@ -27,7 +26,6 @@ Feature: Check input fields and sections for all server types
     And he adds a "compose" node via welcome screen
     When he focuses on formular "compose_001"
     And he shows "Docker" tab
-    Then he sees list field ".dockerOptions.serviceHealthchecks"
     But he doesn't see field ".dockerOptions.proxied"
     And he doesn't see field ".dockerOptions.oneShot"
     When he shows "General" tab
@@ -68,7 +66,6 @@ Feature: Check input fields and sections for all server types
     When he focuses on formular "externalJar_001"
     And he shows "External" tab
     Then he sees input field ".externalJarOptions.workingDir"
-    But he doesn't see field ".dockerOptions.serviceHealthchecks"
     And he doesn't see field ".externalJarOptions.options"
     And he doesn't see field ".externalJarOptions.arguments"
     When he unfolds section ".externalJarOptions.options"
@@ -94,12 +91,11 @@ Feature: Check input fields and sections for all server types
     When he focuses on formular "externalUrl_001"
     And he shows "External" tab
     Then he doesn't see field ".externalJarOptions.workingDir"
-    And he doesn't see field ".dockerOptions.serviceHealthchecks"
     And he doesn't see section ".externalJarOptions.options"
     And he doesn't see section ".externalJarOptions.arguments"
     When he shows "General" tab
-    Then he sees input field "healthcheckUrl"
-    And he sees input field "source"
+    Then he sees input field "source"
+    And he sees input field "healthcheckUrl"
     But he doesn't see field "version"
 
     And he sees tab link "General"

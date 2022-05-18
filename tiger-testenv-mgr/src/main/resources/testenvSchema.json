@@ -100,13 +100,6 @@
           "dockerOptions":{
             "type":"object",
             "properties":{
-              "serviceHealthchecks":{
-                "type":"array",
-                "items":{
-                  "type":"string"
-                },
-                "description":""
-              },
               "proxied":{
                 "type":"boolean",
                 "description":"whether to start container with unmodified entrypoint, or whether to modify by adding pki and other stuff,\n      rewriting the entrypoint"

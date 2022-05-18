@@ -1,0 +1,6 @@
+servers:
+  testComposeMVP:
+    startupTimeoutSec: 20
+    source:
+      - src/test/resources/de/gematik/test/tiger/testenvmgr/docker-compose.yaml
+    type: compose

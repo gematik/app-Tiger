@@ -4,46 +4,48 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import static org.awaitility.Awaitility.await;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.ListContainersCmd;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.ContainerConfig;
+import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.ResponseItem;
-import de.gematik.test.tiger.common.OsEnvironment;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.servers.DockerComposeServer;
 import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
+import org.json.JSONObject;
 import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.containers.wait.strategy.WaitStrategy;
+import org.testcontainers.utility.Base58;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -106,6 +108,13 @@ public class DockerMgr {
             log.info("Passing in environment:");
             addEnvVarsToContainer(container, server.getEnvironmentProperties());
 
+            if (containerConfig.getExposedPorts() != null) {
+                List<Integer> ports = Arrays.stream(containerConfig.getExposedPorts())
+                    .map(ExposedPort::getPort)
+                    .collect(Collectors.toList());
+                log.info("Exposing ports {}", ports);
+                container.setExposedPorts(ports);
+            }
             if (server.getDockerOptions().isOneShot()) {
                 container.withStartupCheckStrategy(new OneShotStartupCheckStrategy());
             }
@@ -140,54 +149,104 @@ public class DockerMgr {
     }
 
     public void startComposition(final DockerComposeServer server) {
-        var folder = Paths.get("target", "tiger-testenv-mgr", server.getHostname()).toFile();
-        if (!folder.exists() && !folder.mkdirs()) {
-            throw new TigerTestEnvException("Unable to create temp folder " + folder.getAbsolutePath());
-        }
-        File[] composeFiles = server.getSource().stream().map(f -> {
-            if (f.startsWith(CLZPATH)) {
-                var tmpFile = Paths.get(folder.getAbsolutePath(), f.substring(CLZPATH.length())).toFile();
-                InputStream is = getClass().getResourceAsStream(f.substring(CLZPATH.length()));
-                if (is == null) {
-                    throw new TigerTestEnvException("Missing docker compose file in classpath " + f);
+        List<String> composeFileContents = new ArrayList<>();
+        File[] composeFiles = collectAndProcessComposeYamlFiles(server.getServerId(), server.getSource(), composeFileContents);
+        String identity = "tiger_" + Base58.randomString(6).toLowerCase();
+        DockerComposeContainer composition = new DockerComposeContainer(identity, composeFiles); //NOSONAR
+
+        composeFileContents.stream()
+            .filter(content -> !content.isEmpty())
+            .map(content -> TigerSerializationUtil.yamlToJsonObject(content).getJSONObject("services"))
+            .map(JSONObject::toMap)
+            .flatMap(services -> services.entrySet().stream())
+            .forEach(serviceEntry -> {
+                var map = ((Map<String, ?>) serviceEntry.getValue());
+                if (map.containsKey("ports")) {
+                    ((List<Integer>) map.get("expose")).forEach(
+                        port -> {
+                            log.info("Exposing service {} with port {}", serviceEntry.getKey(), port);
+                            composition.withExposedService(serviceEntry.getKey(), port);
+                        }
+                    );
                 }
-                if (!tmpFile.getParentFile().exists() && !tmpFile.getParentFile().mkdirs()) {
-                    throw new TigerTestEnvException(
-                        "Unable to create temp folder " + tmpFile.getParentFile().getAbsolutePath());
+                composition.withLogConsumer(serviceEntry.getKey(), new Slf4jLogConsumer(log));
+            });
+        // ALERT! Jenkins only works with local docker compose!
+        // So do not change this unless you VERIFIED it also works on Jenkins builds
+        composition.withLocalCompose(true).withOptions("--compatibility").start(); //NOSONAR
+
+        composeFileContents.stream()
+            .filter(content -> !content.isEmpty())
+            .map(content -> TigerSerializationUtil.yamlToJsonObject(content).getJSONObject("services"))
+            .map(JSONObject::toMap)
+            .flatMap(services -> services.entrySet().stream())
+            .forEach(serviceEntry -> {
+                var map = ((Map<String, ?>) serviceEntry.getValue());
+                if (map.containsKey("expose")) {
+                    ((List<Integer>) map.get("expose")).forEach(port -> {
+                            log.info("Service {} with port {} exposed via {}", serviceEntry.getKey(), port,
+                                composition.getServicePort(serviceEntry.getKey(), port));
+                            ListContainersCmd cmd = DockerClientFactory.instance().client()
+                                .listContainersCmd();
+                            log.info("INSPECTION: " + cmd.exec().toString());
+                        }
+                    );
                 }
-                try (var fos = new FileOutputStream(tmpFile)) {
-                    IOUtils.copy(is, fos);
-                    f = tmpFile.getAbsolutePath();
-                } catch (IOException ioe) {
-                    throw new TigerTestEnvException("Unable to create temp docker compose files (" + f + ")", ioe);
-                }
-            }
-            return new File(f);
-        }).toArray(File[]::new);
-        DockerComposeContainer composition = new DockerComposeContainer(composeFiles) //NOSONAR
-            .withLogConsumer("epa-gateway", new Slf4jLogConsumer((log)));
-        try {
-            for (String check : server.getDockerOptions().getServiceHealthchecks()) {
-                try {
-                    URL serviceUrl = new URL(check);
-                    WaitStrategy waitStrategy = (serviceUrl.getProtocol().equals("http") ?
-                        Wait.forHttp(serviceUrl.getPath()) : Wait.forHttps(serviceUrl.getPath())).forStatusCode(200)
-                        .forStatusCode(404)
-                        .withStartupTimeout(Duration.of(server.getStartupTimeoutSec()
-                                .orElse(TigerServer.DEFAULT_STARTUP_TIMEOUT_IN_SECONDS),
-                            ChronoUnit.SECONDS));
-                    composition = composition.withExposedService(
-                        serviceUrl.getHost(), serviceUrl.getPort(), waitStrategy);
-                } catch (MalformedURLException e) {
-                    throw new TigerTestEnvException(
-                        "Invalid health check URL '" + check + "' for server " + server.getHostname());
-                }
-            }
-        } catch (Exception e) {
-            throw new TigerTestEnvException("Unable to start server " + server.getHostname());
-        }
-        composition.start(); //NOSONAR
+                composition.withLogConsumer(serviceEntry.getKey(), new Slf4jLogConsumer(log));
+            });
+
     }
+
+    private File[] collectAndProcessComposeYamlFiles(String serverId, List<String> composeFilePaths, List<String> composeFileContents) {
+        var folder = Paths.get("target", "tiger-testenv-mgr", serverId).toFile();
+        return composeFilePaths.stream()
+            .map(filePath -> {
+                String content = readAndProcessComposeFile(filePath, composeFileContents);
+                return saveComposeContentToTempFile(folder, filePath, content);
+            }).toArray(File[]::new);
+    }
+
+    private String readAndProcessComposeFile(String filePath, List<String> composeFileContents) {
+        try {
+            String content;
+            if (filePath.startsWith(CLZPATH)) {
+                try (InputStream is = getClass().getResourceAsStream(filePath)) {
+                    if (is == null) {
+                        throw new TigerTestEnvException("Missing docker compose file in classpath " + filePath);
+                    }
+                    content = IOUtils.toString(is, StandardCharsets.UTF_8);
+                } catch (IOException ioe) {
+                    throw new TigerTestEnvException("Unable to create temp docker compose file (" + filePath + ")", ioe);
+                }
+            } else {
+                content = FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8);
+            }
+
+            content = TigerGlobalConfiguration.resolvePlaceholders(content);
+            composeFileContents.add(content);
+            return content;
+        } catch (IOException e) {
+            throw new TigerTestEnvException("Unable to process compose file " + filePath, e);
+        }
+    }
+
+    private File saveComposeContentToTempFile(File folder, String filePath, String content) {
+        try {
+            if (filePath.startsWith(CLZPATH)) {
+                filePath = filePath.substring(CLZPATH.length());
+            }
+            var tmpFile = Paths.get(folder.getAbsolutePath(), filePath).toFile();
+            if (!tmpFile.getParentFile().exists() && !tmpFile.getParentFile().mkdirs()) {
+                throw new TigerTestEnvException(
+                    "Unable to create temp folder " + tmpFile.getParentFile().getAbsolutePath());
+            }
+            FileUtils.writeStringToFile(tmpFile, content, StandardCharsets.UTF_8);
+            return tmpFile;
+        } catch (IOException e) {
+            throw new TigerTestEnvException("Unable to process compose file " + filePath, e);
+        }
+    }
+
 
     private void addEnvVarsToContainer(GenericContainer<?> container, List<String> envVars) {
         envVars.stream()
@@ -228,17 +287,12 @@ public class DockerMgr {
                 }
             });
 
-        while (!pullComplete.get()) {
+        await().pollInterval(Duration.ofMillis(1000)).atMost(5, TimeUnit.MINUTES).until(() -> {
             if (cbException.get() != null) {
                 throw new TigerTestEnvException("Unable to pull image " + imageName + "!", cbException.get());
             }
-            try {
-                Thread.sleep(1_000);
-            } catch (InterruptedException e) {
-                log.warn("Interruption signaled", e);
-                Thread.currentThread().interrupt();
-            }
-        }
+            return pullComplete.get();
+        });
         log.info("Docker image " + imageName + " is available locally!");
     }
 
@@ -308,7 +362,7 @@ public class DockerMgr {
         final long startms = System.currentTimeMillis();
         long endhalfms = server.getStartupTimeoutSec()
             .map(seconds -> seconds * 500L)
-            .orElse(5000l);
+            .orElse(5000L);
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {

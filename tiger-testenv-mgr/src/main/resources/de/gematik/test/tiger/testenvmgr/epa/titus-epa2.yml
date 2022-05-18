@@ -44,7 +44,7 @@ x-healthcheck-config: &healthcheck-ref
 services:
   # OpenDJ - LDAP-VZD Backend
   epa-ldap-vzd:
-    image: gstopdr1.top.local/titus/opendj:4.4.10
+    image: eu.gcr.io/gematik-all-infra-prod/titus/opendj:4.4.10
     <<: *service-setup-ref
     healthcheck:
       <<: *healthcheck-ref
@@ -56,13 +56,13 @@ services:
 
   # ePA Configuration Files - The image is terminated immediately, it serves as data container
   epa-config-data:
-    image: gstopdr1.top.local/titus/epa2/config:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/config:latest
     restart: "no"
     <<: *volume-setup-ref
 
   # ePA Authentication Service
   epa-authn:
-    image: gstopdr1.top.local/titus/epa2/authn:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/authn:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:
@@ -78,7 +78,7 @@ services:
 
   # ePA Authorization Service
   epa-authz:
-    image: gstopdr1.top.local/titus/epa2/authz:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/authz:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:
@@ -94,7 +94,7 @@ services:
 
   # ePA Document Verwaltung - Frontend der Versicherten
   epa-docv-fdv:
-    image: gstopdr1.top.local/titus/epa2/docv-fdv:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/docv-fdv:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:
@@ -111,7 +111,7 @@ services:
 
   # ePA Document Verwaltung - Fachmodul
   epa-docv-fm:
-    image: gstopdr1.top.local/titus/epa2/docv-fm:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/docv-fm:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:
@@ -128,7 +128,7 @@ services:
 
   # ePA LDAP Proxy / Verzeichnisdienst (VZD) - Directory Service Markup Language
   epa-dsml:
-    image: gstopdr1.top.local/titus/epa2/dsml:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/dsml:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:
@@ -145,7 +145,7 @@ services:
 
   # ePA Key Generation Service (Schlüsselgenerierungsdienst - SGD)
   epa-sgd:
-    image: gstopdr1.top.local/titus/epa2/sgd:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/sgd:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:
@@ -161,7 +161,7 @@ services:
 
   # ePA Platform Service
   epa-service:
-    image: gstopdr1.top.local/titus/epa2/service:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/service:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:
@@ -177,7 +177,7 @@ services:
 
   # ePA Zugangsgateway
   epa-gateway:
-    image: gstopdr1.top.local/titus/epa2/gateway:latest
+    image: eu.gcr.io/gematik-all-infra-prod/titus/epa2/gateway:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     healthcheck:

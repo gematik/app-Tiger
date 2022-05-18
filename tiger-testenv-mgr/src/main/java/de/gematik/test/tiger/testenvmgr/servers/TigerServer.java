@@ -149,6 +149,10 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             log.warn("Error during startup of server {}. Used configuration was {}",
                 getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
             throw e;
+        } catch (Throwable t) {
+            log.warn("Throwable during startup of server {}. Used configuration was {}",
+                getHostname(), TigerSerializationUtil.toJson(getConfiguration()), t);
+            throw t;
         }
         statusMessage(getServerId() + " started");
 

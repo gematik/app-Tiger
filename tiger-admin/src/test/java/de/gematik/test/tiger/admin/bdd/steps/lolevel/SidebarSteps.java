@@ -81,6 +81,7 @@ public class SidebarSteps {
     public void heDuplicatesNode(String nodeName) {
         theActorInTheSpotlight().attemptsTo(
             new ScrollToTarget(AdminHomePage.sidebarHeader()).andAlignToTop(),
+            new ScrollToTarget(ServerFormular.sidebarItemContextMenu(nodeName)).andAlignToBottom(),
             Click.on(ServerFormular.sidebarItemContextMenu(nodeName)),
             Click.on(ServerFormular.sidebarItemContextMenuEntry("duplicate"))
         );

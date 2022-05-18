@@ -21,9 +21,6 @@ const summaryPatterns = {
     ["single", "Proxied ", "$.dockerOptions.proxied", "&nbsp;"],
     ["single", "Oneshot ", "$.dockerOptions.oneShot", "&nbsp;"]
   ],
-  ".dockerOptions.serviceHealthchecks": [
-    "$.dockerOptions.serviceHealthchecks"
-  ],
   ".externalJarOptions.externalSettings": [
     ["single", "Folder ", "$.externalJarOptions.workingDir", "<br/>"]
   ],

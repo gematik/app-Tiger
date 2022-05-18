@@ -1,12 +1,16 @@
 # Changelog Tiger Testplattform
 
-# Release 0.20.4
+# Release 0.21.0
+
 ## Breaking Changes
+* TGR-480: Healthchecks for docker compose services are not any more supported
+* TGR-480: upgrade testcontainers 1.17.0, exposed ports behaviour has changed
 
 ## Features
 * TGR-482: TGR findLastRequest added in the glue code
 
 ## Bugfixes
+* TGR-480: docker compose is not working, in the fix a complete rewrite of the compose code part has been done, dropping the healthchecks property.
 
 
 # Release 0.20.2

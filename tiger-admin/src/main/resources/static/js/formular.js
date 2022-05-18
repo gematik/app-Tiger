@@ -183,8 +183,6 @@ $.fn.initFormular = function (serverKey, serverData) {
   //
   // show advanced global button for some
   this.find('.btn-advanced.global').toggle(true); //['docker', 'tigerProxy', 'local_tiger_proxy'].includes(serverData.type));
-  // default hide service healthchecks
-  this.showFieldset('.dockerOptions.serviceHealthchecks', serverData.type === 'compose');
   // show template only if set
   this.showInputGroup('template', serverData.template);
   // show version only for docker

@@ -5,14 +5,11 @@
 package de.gematik.test.tiger.common.data.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import lombok.Data;
 
 @Data
 public class CfgDockerOptions {
-    private List<String> serviceHealthchecks = new ArrayList<>();
     /**
      * whether to start container with unmodified entrypoint, or whether to modify by adding pki and other stuff,
      * rewriting the entrypoint
