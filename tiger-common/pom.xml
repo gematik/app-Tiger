@@ -102,6 +102,13 @@
             <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.dtmo.jfiglet</groupId>
+            <artifactId>jfiglet</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

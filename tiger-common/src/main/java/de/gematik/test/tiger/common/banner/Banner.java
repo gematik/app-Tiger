@@ -4,16 +4,15 @@
 
 package de.gematik.test.tiger.common.banner;
 
+import com.github.dtmo.jfiglet.FigFontResources;
+import com.github.dtmo.jfiglet.FigletRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import de.gematik.test.tiger.common.exceptions.TigerOsException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
-
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import lombok.SneakyThrows;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /* do editing of the font files in the notepad
@@ -21,46 +20,12 @@ import org.apache.commons.lang3.StringUtils;
 
 public class Banner {
 
+    private static FigletRenderer figletRenderer;
     private Banner() {
     }
 
-    private static Map<Character, List<String>> asciiArt = null;
-
-    private static final Map<String, BannerFontMetrics> configs = new HashMap<>();
-
-    private static BannerFontMetrics cfg;
-
-    @SneakyThrows
-    public static void initialize() {
-        configs.put("Spliff", new BannerFontMetrics(9, 5, true));
-        configs.put("Doom", new BannerFontMetrics(12, 8, true));
-        configs.put("Thin", new BannerFontMetrics(6, 6, false));
-        configs.put("Straight", new BannerFontMetrics(6, 4, false));
-
-        String font = TigerGlobalConfiguration.readString("TIGER_BANNER_FONT", "Straight");
-        cfg = configs.get(font);
-
-        asciiArt = new HashMap<>();
-        List<String> lines = IOUtils
-            .readLines(Objects.requireNonNull(Banner.class.getResourceAsStream(
-                    "/de/gematik/test/tiger/common/banner/ascii-" + font + ".txt")),
-                StandardCharsets.UTF_8);
-        for (int ascii = ' '; ascii <= 'ü'; ascii++) {
-            List<String> linesForChar = new ArrayList<>();
-            int maxWidth = 0;
-            for (int i = 0; i < cfg.getHeight(); i++) {
-                maxWidth = Math.max(lines.get((ascii - ' ' + 1) * cfg.getHeight() + i).trim().length(), maxWidth);
-            }
-            if (maxWidth < cfg.getWidth()) {
-                maxWidth++;
-            }
-
-            for (int i = 0; i < cfg.getHeight(); i++) {
-                String line = lines.get((ascii - ' ' + 1) * cfg.getHeight() + i);
-                linesForChar.add(line.substring(0, Math.min(maxWidth, line.length())));
-            }
-            asciiArt.put((char) ascii, linesForChar);
-        }
+    static {
+        setFont(FigFontResources.STANDARD_FLF);
     }
 
     public static String toBannerStr(String msg, String ansiColors) {
@@ -87,22 +52,7 @@ public class Banner {
     }
 
     private static List<String> toBannerLines(String msg) {
-        if (asciiArt == null) {
-            initialize();
-        }
-        List<String> outLines = new ArrayList<>();
-        for (int y = 0; y < cfg.getHeight(); y++) {
-            StringBuilder outLine = new StringBuilder();
-            for (int i = 0; i < msg.length(); i++) {
-                char ascii = msg.charAt(i);
-                if (asciiArt.get(ascii) == null) {
-                    ascii = ' ';
-                }
-                outLine.append(" ").append(asciiArt.get(ascii).get(y));
-            }
-            outLines.add(outLine.toString());
-        }
-        return outLines;
+        return Arrays.asList(figletRenderer.renderText(msg).split("\n"));
     }
 
     public static void shout(String msg) {
@@ -112,6 +62,12 @@ public class Banner {
     public static void shout(String msg, String ansiColors) {
         toBannerLines(msg).forEach(line -> System.out.println(Ansi.colorize(line, ansiColors)));
     }
-}
 
-// https://patorjk.com/software/taag/#p=display&f=Doom&t=
+    public static void setFont(String fontName) {
+        try {
+            figletRenderer = new FigletRenderer(FigFontResources.loadFigFontResource(fontName));
+        } catch (IOException ioe) {
+            throw new TigerOsException("Unable to load font " + fontName, ioe);
+        }
+    }
+}
