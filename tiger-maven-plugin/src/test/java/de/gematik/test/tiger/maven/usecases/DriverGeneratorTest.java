@@ -29,12 +29,12 @@ class DriverGeneratorTest {
     private final Logger logger = new Logger() {
         @Override
         public void info(final CharSequence message) {
-            log.info("" + message);
+            log.info(message.toString());
         }
 
         @Override
         public void debug(final CharSequence message) {
-            log.debug("" + message);
+            log.debug(message.toString());
 
         }
     };
@@ -68,7 +68,7 @@ class DriverGeneratorTest {
                     "package: fancy.pck.of.driver\n"
                         + "feature: relativeRessourceFeatureFile.feature\n"
                         + "counter: 1\n"
-                        + "glues: \"de.gematik.test.tiger.hooks\", \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
+                        + "glues: \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
                         + "classname: Mops1IT\n"),
                 getNormalizedJavaFrom(
                     outputFolder.resolve(Paths.get("fancy", "pck", "of", "driver", "Mops1IT.java")))
@@ -78,7 +78,7 @@ class DriverGeneratorTest {
                     "package: fancy.pck.of.driver\n"
                         + "feature: /absoluteRessourceFeatureFile\n"
                         + "counter: 2\n"
-                        + "glues: \"de.gematik.test.tiger.hooks\", \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
+                        + "glues: \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
                         + "classname: Mops2IT\n"),
                 getNormalizedJavaFrom(
                     outputFolder.resolve(Paths.get("fancy", "pck", "of", "driver", "Mops2IT.java")))
@@ -105,13 +105,13 @@ class DriverGeneratorTest {
             getNormalizedJavaFrom(";\n"
                 + "\n"
                 + "import io.cucumber.junit.CucumberOptions;\n"
-                + "import net.serenitybdd.cucumber.CucumberWithSerenity;\n"
+                + "import de.gematik.test.tiger.TigerCucumberRunner;\n"
                 + "import org.junit.runner.RunWith;\n"
                 + "\n"
-                + "@RunWith(CucumberWithSerenity.class)\n"
+                + "@RunWith(TigerCucumberRunner.class)\n"
                 + "@CucumberOptions(" + "features = {\"featureFile.feature\"},"
-                + " plugin = {\n" + "    \"json:target/cucumber-parallel/1.json\"},"
-                + " glue = {\"de.gematik.test.tiger.hooks\", \"de.gematik.test.tiger.glue\""
+                + " plugin = {\n" + "    \"json:target/cucumber-parallel/1.json\", \"de.gematik.test.tiger.TigerCucumberListener\" },"
+                + " glue = {\"de.gematik.test.tiger.glue\""
                 + "})\n"
                 + "public class Mops1IT {\n"
                 + "\n"

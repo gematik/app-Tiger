@@ -84,7 +84,8 @@ public class FeatureParser {
             } else {
                 child.get().setDescription(StringUtils.removeEnd(description.toString(), "\n"));
                 description.setLength(0);
-                step = Step.fromLine(line);
+                step = Step.
+                    fromLine(line);
                 moderef.set(addStepToScenario(child.get(), step));
             }
         } else if (moderef.get() == ParseMode.STEPS || moderef.get() == ParseMode.EXAMPLES) {

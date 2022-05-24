@@ -4,7 +4,8 @@
 
 <template>
   <div id="workflow-messages" :class="`alert banner-message fade ${bannerData.length > 0 ? 'show' : ''}`" role="alert">
-    <i class="btn-banner-close fa-solid fa-xmark" v-on:click="closeWindow"></i>
+    <i v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type !== BannerType.TESTRUN_ENDED"
+       class="btn-banner-close fa-solid fa-xmark" v-on:click="closeWindow"></i>
     <h4 class="pt-3 pb-0 text-center">
       <i class="fa-solid fa-bullhorn fa-flip-horizontal"></i>
       Workflow message
@@ -12,11 +13,17 @@
     <div v-if="bannerData.length > 0" :style="`color: ${bannerData[bannerData.length-1].color};`" class="banner">
       {{ bannerData[bannerData.length - 1].text }}
     </div>
+    <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.TESTRUN_ENDED"
+         v-on:click="sendQuit"
+         class="btn btn-danger w-100 mt-3 mb-1">
+      Quit
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import BannerMessage from "@/types/BannerMessage";
+import BannerType from "@/types/BannerType";
 import {onUpdated} from "vue";
 
 onUpdated(() => {
@@ -29,6 +36,15 @@ defineProps<{
 
 function closeWindow(ev : MouseEvent) {
   document.getElementById('workflow-messages')!.classList.toggle('show');
+}
+
+function sendQuit(event: MouseEvent) {
+  closeWindow(event);
+  fetch(process.env.BASE_URL + "status/quit")
+  .then((response) => response.text())
+  .then((data) => {
+    alert("Backend of Workflow UI has been shut down!\nRbelLog details pane has no more filtering / search support!");
+  });
 }
 </script>
 

@@ -142,15 +142,16 @@ We recommend to use latest version of IntelliJ at least version 2021.1.
 To be able to successfully start scenarios/features you first need to configure the Run/Debug settings of your project:
 
 .Run/Debug settings for Java Cucumber template
-* Main class: net.serenitybdd.cucumber.cli.Main
+* Main class: de.gematik.test.tiger.TigerCucumberRunner
 * Glue:
     ** de.gematik.test.tiger.glue
-    ** de.gematik.test.tiger.hooks
     ** net.serenitybdd.cucumber.actors +
        if you are using the screenplay pattern (PREFERRED!)
     ** additional packages specific to your test suite
 * VM Options:
     ** Java proxy system properties (see xref:Proxy configuration[] below)
+* Program arguments:
+    ** --plugin de.gematik.test.tiger.TigerCucumberListener
 * Environment variables:
     ** Proxy environment variables (see xref:Proxy configuration[] below)
 

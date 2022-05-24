@@ -12,6 +12,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
@@ -52,69 +53,84 @@ class TestTigerDirector {
     @Test
     void testDirectorSimpleIdp() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp2.yaml");
-        TigerDirector.start();
+        executeWithSecureShutdown(() -> {
+            TigerDirector.start();
 
-        assertThat(TigerDirector.isInitialized()).isTrue();
-        assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getBaseUrl()).startsWith(
-            "http://localhost");
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getRbelLogger()).isNotNull();
-        // TODO TGR-124 upgrading to testcontainer 1.16.0 causes the ports info
-        // to be not available in docker config network bindings
-        // so make sure we get ONE valid value here!
-        // see https://github.com/testcontainers/testcontainers-java/issues/4489
-        assertThat(
-            TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
-                .getPorts()).hasSize(1);
-        assertThat(
-            TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
-                .getPorts().get(8080)).isNotNull();
+            assertThat(TigerDirector.isInitialized()).isTrue();
+            assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getBaseUrl()).startsWith(
+                "http://localhost");
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getRbelLogger()).isNotNull();
+            // TODO TGR-124 upgrading to testcontainer 1.16.0 causes the ports info
+            // to be not available in docker config network bindings
+            // so make sure we get ONE valid value here!
+            // see https://github.com/testcontainers/testcontainers-java/issues/4489
+            assertThat(
+                TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
+                    .getPorts()).hasSize(1);
+            assertThat(
+                TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
+                    .getPorts().get(8080)).isNotNull();
+        });
     }
 
     @SneakyThrows
     @Test
     void testDirectorDisabledProxy(final CapturedOutput capturedOutput) {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyDisabled.yaml");
-        TigerDirector.start();
+        executeWithSecureShutdown(() -> {
+            try {
+                TigerDirector.start();
 
-        System.out.println(
-            "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
-        System.out.println(
-            "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
+                System.out.println(
+                    "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
+                System.out.println(
+                    "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
 
-        assertThat(TigerDirector.isInitialized()).isTrue();
-        assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
+                assertThat(TigerDirector.isInitialized()).isTrue();
+                assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
+                assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
 
-        final var url = new URL("http://idp-rise-tu-noproxy");
+                final var url = new URL("http://idp-rise-tu-noproxy");
 
-        final URLConnection con = url.openConnection();
-        InsecureTrustAllManager.allowAllSsl(con);
+                final URLConnection con = url.openConnection();
+                InsecureTrustAllManager.allowAllSsl(con);
 
-        con.setConnectTimeout(1000);
+                con.setConnectTimeout(1000);
 
-        assertThat(capturedOutput.getOut()).contains("SKIPPING TIGER PROXY settings...");
-        assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
+                assertThat(capturedOutput.getOut()).contains("SKIPPING TIGER PROXY settings as localProxyActive==false...");
+                assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        });
+
     }
 
-    @SneakyThrows
     @Test
     void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
-        TigerDirector.start();
+        executeWithSecureShutdown(() -> {
+            try {
+                TigerDirector.start();
 
-        System.out.println(
-            "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
-        System.out.println(
-            "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
+                System.out.println(
+                    "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
+                System.out.println(
+                    "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
 
-        final var url = new URL("https://github.com/");
+                final var url = new URL("https://github.com/");
 
-        final URLConnection con = url.openConnection();
-        InsecureTrustAllManager.allowAllSsl(con);
+                final URLConnection con;
+                con = url.openConnection();
+                InsecureTrustAllManager.allowAllSsl(con);
 
-        con.connect();
+                con.connect();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @SneakyThrows
@@ -130,18 +146,18 @@ class TestTigerDirector {
     @Test
     void testLocalProxyActiveSetByDefault() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
-        TigerDirector.start();
-
-        assertThat(System.getProperty("http.proxyHost")).isNotNull();
-        assertThat(System.getProperty("https.proxyHost")).isNotNull();
-        assertThat(System.getProperty("http.proxyPort")).isNotNull();
-        assertThat(System.getProperty("https.proxyPort")).isNotNull();
-        assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
-
-        assertThat(SerenityRest.get("http://testExternalJar/").getStatusCode())
-            .isEqualTo(200);
-        assertThat(Unirest.get("http://testExternalJar/").asEmpty().getStatus())
-            .isEqualTo(200);
+        executeWithSecureShutdown(() -> {
+            TigerDirector.start();
+            assertThat(System.getProperty("http.proxyHost")).isNotNull();
+            assertThat(System.getProperty("https.proxyHost")).isNotNull();
+            assertThat(System.getProperty("http.proxyPort")).isNotNull();
+            assertThat(System.getProperty("https.proxyPort")).isNotNull();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
+            assertThat(SerenityRest.get("http://testExternalJar/").getStatusCode())
+                .isEqualTo(200);
+            assertThat(Unirest.get("http://testExternalJar/").asEmpty().getStatus())
+                .isEqualTo(200);
+        });
     }
 
     @Test
@@ -159,6 +175,14 @@ class TestTigerDirector {
             .getExternalJarOptions()
             .getArguments().get(0))
             .isEqualTo("foobar");
+    }
+
+    private void executeWithSecureShutdown(Runnable test) {
+        try {
+            test.run();
+        } finally {
+            TigerDirector.getTigerTestEnvMgr().shutDown();
+        }
     }
 
     // TODO TGR-253 create test cases for polarion sync and afo reporter,  rethink architecture and make it pluggable

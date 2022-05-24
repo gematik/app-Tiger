@@ -9,16 +9,16 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
-import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
-import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
+import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -36,9 +36,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     public void performStartup() {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .type(ServerType.TIGERPROXY)
+            .statusMessage("Ppre-start Tiger Proxy " + getServerId())
             .build());
 
-        statusMessage("Configuring tiger-proxy... (pre-start)");
         TigerProxyConfiguration reverseProxyCfg = getConfiguration().getTigerProxyCfg();
         CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
         standaloneCfg.setTigerProxy(reverseProxyCfg);
@@ -59,11 +59,13 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         properties.put("server.port", reverseProxyCfg.getAdminPort());
         properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
 
-        statusMessage("Starting tiger-proxy...");
+        statusMessage("Starting Tiger Proxy " + getServerId() + " at " + reverseProxyCfg.getAdminPort() + "...");
         applicationContext = new SpringApplicationBuilder()
+            .bannerMode(Mode.OFF)
             .properties(properties)
             .sources(TigerProxyApplication.class)
             .web(WebApplicationType.SERVLET)
+            .registerShutdownHook(false)
             .initializers()
             .run();
 
@@ -71,16 +73,18 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         if (getStatus() == TigerServerStatus.STARTING) {
             waitForService(false);
         }
-        statusMessage("Tiger-proxy started");
+        statusMessage("Tiger Proxy " + getServerId() + " started");
     }
 
     @Override
     public void shutdown() {
         if (applicationContext != null
             && applicationContext.isRunning()) {
-            applicationContext.stop();
+            applicationContext.close();
+            setStatus(TigerServerStatus.STOPPED, "Stopped Tiger Proxy " + getServerId());
+        } else {
+            setStatus(TigerServerStatus.STOPPED, "Tiger Proxy " + getServerId() + " already stopped");
         }
-        setStatus(TigerServerStatus.STOPPED, "Stopped Tiger Proxy context");
     }
 
     private void getDestinationUrlFromProxiedServer(TigerProxyConfiguration cfg) {

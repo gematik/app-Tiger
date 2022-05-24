@@ -6,7 +6,6 @@ package de.gematik.test.tiger.testenvmgr.env;
 
 import static org.awaitility.Awaitility.await;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.ListContainersCmd;
 import com.github.dockerjava.api.exception.DockerException;
@@ -17,10 +16,10 @@ import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.ResponseItem;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
-import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import de.gematik.test.tiger.testenvmgr.servers.DockerComposeServer;
 import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +39,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.testcontainers.DockerClientFactory;
-import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -90,7 +88,7 @@ public class DockerMgr {
                     if (!tmpScriptFolder.mkdirs()) {
                         throw new TigerTestEnvException(
                             "Unable to create temp folder for modified startup script for server "
-                                + server.getHostname());
+                                + server.getServerId());
                     }
                 }
                 final String scriptName = createContainerStartupScript(server, iiResponse, startCmd, entryPointCmd);
@@ -105,14 +103,14 @@ public class DockerMgr {
             }
 
             container.setLogConsumers(List.of(new Slf4jLogConsumer(log)));
-            log.info("Passing in environment:");
+            log.info("Passing in environment for {}...", server.getServerId());
             addEnvVarsToContainer(container, server.getEnvironmentProperties());
 
             if (containerConfig.getExposedPorts() != null) {
                 List<Integer> ports = Arrays.stream(containerConfig.getExposedPorts())
                     .map(ExposedPort::getPort)
                     .collect(Collectors.toList());
-                log.info("Exposing ports {}", ports);
+                log.info("Exposing ports for {}: {}", server.getServerId(), ports);
                 container.setExposedPorts(ports);
             }
             if (server.getDockerOptions().isOneShot()) {
@@ -122,8 +120,8 @@ public class DockerMgr {
             // make startup time and intervall and url (supporting ${PORT} and regex content configurable
             waitForHealthyStartup(server, container);
             container.getDockerClient().renameContainerCmd(container.getContainerId())
-                .withName("tiger." + server.getHostname()).exec();
-            containers.put(server.getHostname(), container);
+                .withName("tiger." + server.getServerId()).exec();
+            containers.put(server.getServerId(), container);
             final Map<Integer, Integer> ports = new HashMap<>();
             // TODO TGR-282 LO PRIO for now we assume ports are bound only to one other port on the docker container
             // maybe just make clear we support only single exported port
@@ -133,7 +131,7 @@ public class DockerMgr {
                     Integer.valueOf(entry.getValue()[0].getHostPortSpec())));
             server.getDockerOptions().setPorts(ports);
         } catch (final DockerException de) {
-            throw new TigerTestEnvException("Failed to start container for server " + server.getHostname(), de);
+            throw new TigerTestEnvException("Failed to start container for server " + server.getServerId(), de);
         }
     }
 
@@ -188,7 +186,7 @@ public class DockerMgr {
                                 composition.getServicePort(serviceEntry.getKey(), port));
                             ListContainersCmd cmd = DockerClientFactory.instance().client()
                                 .listContainersCmd();
-                            log.info("INSPECTION: " + cmd.exec().toString());
+                            log.debug("Inspecting docker container: {}", cmd.exec().toString());
                         }
                     );
                 }
@@ -252,14 +250,14 @@ public class DockerMgr {
         envVars.stream()
             .filter(i -> i.contains("="))
             .map(i -> i.split("=", 2))
-            .peek(envvar -> log.info("  * " + envvar[0] + "=" + envvar[1]))
+            .peek(envvar -> log.info("  * {}={}", envvar[0], envvar[1]))
             .forEach(envvar -> container.addEnv(
                 TigerGlobalConfiguration.resolvePlaceholders(envvar[0]),
                 TigerGlobalConfiguration.resolvePlaceholders(envvar[1])));
     }
 
     public void pullImage(final String imageName) {
-        log.info("Pulling docker image " + imageName + "...");
+        log.info("Pulling docker image {}...", imageName);
         final AtomicBoolean pullComplete = new AtomicBoolean();
         pullComplete.set(false);
         final AtomicReference<Throwable> cbException = new AtomicReference<>();
@@ -293,7 +291,7 @@ public class DockerMgr {
             }
             return pullComplete.get();
         });
-        log.info("Docker image " + imageName + " is available locally!");
+        log.info("Docker image {} is available locally!", imageName);
     }
 
     private String createContainerStartupScript(TigerServer server, InspectImageResponse iiResponse, String[] startCmd,
@@ -301,7 +299,7 @@ public class DockerMgr {
         final ContainerConfig containerConfig = iiResponse.getConfig();
         if (containerConfig == null) {
             throw new TigerTestEnvException(
-                "Docker image of server '" + server.getHostname() + "' has no configuration info!");
+                "Docker image of server '" + server.getServerId() + "' has no configuration info!");
         }
         startCmd = startCmd == null ? new String[0] : startCmd;
         entryPointCmd = entryPointCmd == null ? new String[0] : entryPointCmd;
@@ -320,7 +318,7 @@ public class DockerMgr {
             if (!tmpScriptFolder.exists() && !tmpScriptFolder.mkdirs()) {
                 throw new TigerTestEnvException("Unable to create script folder " + tmpScriptFolder.getAbsolutePath());
             }
-            final var scriptName = "__tigerStart_" + server.getHostname() + ".sh";
+            final var scriptName = "__tigerStart_" + server.getServerId() + ".sh";
             var content = "#!/bin/sh -x\nenv\n"
                 // append proxy and other certs (for rise idp)
                 + "echo \"" + proxycert + "\" >> /etc/ssl/certs/ca-certificates.crt\n"
@@ -345,7 +343,7 @@ public class DockerMgr {
             return scriptName;
         } catch (IOException ioe) {
             throw new TigerTestEnvException(
-                "Failed to configure start script on container for server " + server.getHostname(), ioe);
+                "Failed to configure start script on container for server " + server.getServerId(), ioe);
         }
 
     }
@@ -366,7 +364,7 @@ public class DockerMgr {
         try {
             Thread.sleep(endhalfms);
         } catch (final InterruptedException e) {
-            log.warn("Interrupted while waiting for startup of server " + server.getHostname(), e);
+            log.warn("Interrupted while waiting for startup of server " + server.getServerId(), e);
             Thread.currentThread().interrupt();
         }
         try {
@@ -375,31 +373,31 @@ public class DockerMgr {
                 Thread.sleep(500);
                 if (startms + endhalfms * 2L < System.currentTimeMillis()) {
                     throw new TigerTestEnvException("Startup of server %s timed out after %d seconds!",
-                        server.getHostname(), (System.currentTimeMillis() - startms) / 1000);
+                        server.getServerId(), (System.currentTimeMillis() - startms) / 1000);
                 }
             }
-            log.info("HealthCheck OK (" + (container.isHealthy() ? 1 : 0) + ") for " + server.getHostname());
+            log.info("HealthCheck OK ({}) for {}", (container.isHealthy() ? 1 : 0), server.getServerId());
         } catch (InterruptedException ie) {
-            log.warn("Interruption signaled while waiting for server " + server.getHostname() + " to start up", ie);
+            log.warn("Interruption signaled while waiting for server " + server.getServerId() + " to start up", ie);
             Thread.currentThread().interrupt();
         } catch (TigerTestEnvException ttee) {
             throw ttee;
         } catch (final RuntimeException rte) {
             int timeout = server.getStartupTimeoutSec().orElse(TigerServer.DEFAULT_STARTUP_TIMEOUT_IN_SECONDS);
-            log.warn("probably no health check configured - defaulting to " + timeout + "s startup time");
+            log.warn("probably no health check configured - defaulting to {}s startup time", timeout);
             try {
                 Thread.sleep(timeout * 1000L);
             } catch (InterruptedException interruptedException) {
                 log.warn("Interruption signaled");
                 Thread.currentThread().interrupt();
             }
-            log.warn("HealthCheck UNCLEAR for " + server.getHostname()
-                + " as no healthcheck is configured, we assume it works and continue setup!");
+            log.warn("HealthCheck UNCLEAR for {} as no healthcheck is configured, we assume it works and continue setup!",
+                server.getServerId());
         }
     }
 
     public void stopContainer(final TigerServer server) {
-        final GenericContainer<?> container = containers.get(server.getHostname());
+        final GenericContainer<?> container = containers.get(server.getServerId());
         if (container != null && container.getDockerClient() != null) {
             try {
                 container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
@@ -412,13 +410,13 @@ public class DockerMgr {
 
     @SuppressWarnings("unused")
     public void pauseContainer(final DockerServer srv) {
-        final GenericContainer<?> container = containers.get(srv.getHostname());
+        final GenericContainer<?> container = containers.get(srv.getServerId());
         container.getDockerClient().pauseContainerCmd(container.getContainerId()).exec();
     }
 
     @SuppressWarnings("unused")
     public void unpauseContainer(final DockerServer srv) {
-        final GenericContainer<?> container = containers.get(srv.getHostname());
+        final GenericContainer<?> container = containers.get(srv.getServerId());
         container.getDockerClient().unpauseContainerCmd(container.getContainerId()).exec();
     }
 }

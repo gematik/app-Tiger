@@ -8,8 +8,9 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import javax.servlet.ServletContextListener;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
@@ -17,13 +18,17 @@ import org.springframework.context.annotation.Bean;
 public class TigerTestEnvMgrApplication implements ServletContextListener {
 
     public static void main(String[] args) {
-        SpringApplication.run(TigerTestEnvMgrApplication.class, args);
+        new SpringApplicationBuilder()
+            .bannerMode(Mode.OFF)
+            .sources(TigerTestEnvMgrApplication.class)
+            .initializers()
+            .run(args);
     }
 
     @Bean
     public TigerTestEnvMgr tigerTestEnvMgr() {
         TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        log.info(Ansi.colorize("Tiger standalone test environment UP!", RbelAnsiColors.GREEN_BOLD));
+        log.info(Ansi.colorize("Tiger standalone test environment manager UP!", RbelAnsiColors.GREEN_BOLD));
         return envMgr;
     }
 

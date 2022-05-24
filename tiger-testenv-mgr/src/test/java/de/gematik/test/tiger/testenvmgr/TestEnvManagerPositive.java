@@ -104,7 +104,8 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             } else {
                 host = new URI(host).getHost();
             }
-            log.info("Web server expected to serve at {}", TigerGlobalConfiguration.resolvePlaceholders("http://" + host + ":${free.port.1}"));
+            log.info("Web server expected to serve at {}",
+                TigerGlobalConfiguration.resolvePlaceholders("http://" + host + ":${free.port.1}"));
             try {
                 log.info("Web server responds with: " +
                     Unirest.spawnInstance()
@@ -114,7 +115,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
                 log.error("Unable to retrieve document from docker compose webserver...", e);
             }
             assertThat(Unirest.spawnInstance().get(
-                    TigerGlobalConfiguration.resolvePlaceholders("http://" + host +":${free.port.1}"))
+                    TigerGlobalConfiguration.resolvePlaceholders("http://" + host + ":${free.port.1}"))
                 .asString().getStatus()).isEqualTo(200);
         }, "src/test/resources/de/gematik/test/tiger/testenvmgr/testComposeMVP.yaml");
     }
@@ -143,10 +144,12 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     @TigerTest(cfgFilePath = "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrlInternalServer.yaml",
         skipEnvironmentSetup = true)
     public void testExternalUrlInternalUrl(TigerTestEnvMgr envMgr) {
-        envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
-        CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
-        srv.getSource().set(0, "https://build.top.local");
-        envMgr.setUpEnvironment();
+        executeWithSecureShutdown(() -> {
+            envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
+            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
+            srv.getSource().set(0, "https://build.top.local");
+            envMgr.setUpEnvironment();
+        }, envMgr);
     }
 
     @Test
@@ -164,7 +167,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
     public void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
-        envMgr.setUpEnvironment();
+        executeWithSecureShutdown(envMgr::setUpEnvironment, envMgr);
     }
 
     @Test
@@ -181,7 +184,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
     public void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
-        envMgr.setUpEnvironment();
+        executeWithSecureShutdown(envMgr::setUpEnvironment, envMgr);
     }
 
     @Test
@@ -239,10 +242,12 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "        - \"--httpPort=${free.port.0}\"\n"
         + "        - \"--webroot=.\"\n", skipEnvironmentSetup = true)
     public void healthcheckEndpointGives404AndExpecting200_environmentShouldNotStartUp(TigerTestEnvMgr envMgr) {
-        assertThatThrownBy(() -> envMgr.setUpEnvironment())
-            .isInstanceOf(TigerTestEnvException.class)
-            .hasMessageContaining("/foo/bar/wrong/url")
-            .hasMessageContaining("Timeout");
+        executeWithSecureShutdown(() -> {
+            assertThatThrownBy(() -> envMgr.setUpEnvironment())
+                .isInstanceOf(TigerTestEnvException.class)
+                .hasMessageContaining("/foo/bar/wrong/url")
+                .hasMessageContaining("Timeout");
+        }, envMgr);
     }
 
     @Test
@@ -251,8 +256,10 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             "tiger.servers.testExternalJarMVP.externalJarOptions.workingDir=src/test/resources"},
         skipEnvironmentSetup = true)
     public void testCreateExternalJarRelativePathFileNotFound(TigerTestEnvMgr envMgr) {
-        assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
-            .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
+        executeWithSecureShutdown(() -> {
+            assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
+                .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
+        }, envMgr);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -302,5 +309,14 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get()).isEqualTo(
             TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
     }
+
+    private void executeWithSecureShutdown(Runnable test, TigerTestEnvMgr envMgr) {
+        try {
+            test.run();
+        } finally {
+            envMgr.shutDown();
+        }
+    }
+
 
 }

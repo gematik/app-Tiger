@@ -36,7 +36,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             waitForConfiguredTimeAndSetRunning(timeOutInMs);
         } else {
             if (!quiet) {
-                log.info("  Checking {} instance '{}' is available ...", getClass().getSimpleName(), getHostname());
+                log.info("  Checking {} instance '{}' is available ...", getClass().getSimpleName(), getServerId());
             }
             try {
                 await().atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
@@ -62,15 +62,15 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         try {
             checkUrlOrThrowException(url);
             printServerUpMessage();
-            setStatus(TigerServerStatus.RUNNING, "Server up & healthy");
+            setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() +" up & healthy");
         } catch (ConnectException | SocketTimeoutException cex) {
             if (!quiet) {
-                log.info("No connection to " + url + " of " + getHostname() + "...");
+                log.info("No connection to {} of {}...", url, getServerId());
             }
         } catch (SSLHandshakeException sslhe) {
             log.warn(Ansi.colorize("SSL handshake but server at least seems to be up!" + sslhe.getMessage(),
                 RbelAnsiColors.YELLOW_BOLD));
-            setStatus(TigerServerStatus.RUNNING, "Server up & healthy");
+            setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy");
         } catch (SSLException sslex) {
             if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
                 if (!quiet) {
@@ -108,7 +108,7 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
     }
 
     void printServerUpMessage() {
-        String message = "External server Startup OK for '" + getHostname() + "'";
+        String message = "External server Startup OK for '" + getServerId() + "'";
         if (getConfiguration().getSource() != null
             && !getConfiguration().getSource().isEmpty()) {
             message += " downloaded from '" + getConfiguration().getSource().get(0) + "'";
@@ -118,13 +118,13 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
 
     private void waitForConfiguredTimeAndSetRunning(long timeOutInMs) {
         log.warn("No health check URL configured! Resorting to simple wait with timeout {}s", (timeOutInMs / 1000L));
-        log.info("Waiting {}s for external server {}...", (timeOutInMs / 1000L), getHostname());
+        log.info("Waiting {}s for external server {}...", (timeOutInMs / 1000L), getServerId());
         try {
             Thread.sleep(timeOutInMs);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        setStatus(TigerServerStatus.RUNNING, "Server up & healthy (default timeout)");
+        setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() +" up & healthy (default timeout)");
     }
 
     URL buildHealthcheckUrl() {

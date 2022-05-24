@@ -15,6 +15,7 @@ import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.extension.*;
+import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -26,14 +27,18 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
     private ConfigurableApplicationContext envMgrApplicationContext;
 
     @Override
-    public void beforeTestExecution(ExtensionContext context) throws Exception {
+    public void beforeTestExecution(ExtensionContext context) {
         assertInitialized(context);
     }
 
     @Override
-    public void afterTestExecution(ExtensionContext context) throws Exception {
+    public void afterTestExecution(ExtensionContext context) {
         if (tigerTestEnvMgr != null) {
             log.info("After test execution - tearing down context");
+            if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+                log.info("Stopping Test-Env");
+                tigerTestEnvMgr.shutDown();
+            }
             envMgrApplicationContext.close();
             TigerGlobalConfiguration.reset();
             tigerTestEnvMgr = null;
@@ -98,6 +103,7 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
         TigerGlobalConfiguration.initializeWithCliProperties(additionalProperties);
 
         envMgrApplicationContext = new SpringApplicationBuilder()
+            .bannerMode(Mode.OFF)
             .properties(Map.of("server.port",
                 TigerGlobalConfiguration.readIntegerOptional("free.port.255").orElse(0)))
             .sources(TigerTestEnvMgrApplication.class)

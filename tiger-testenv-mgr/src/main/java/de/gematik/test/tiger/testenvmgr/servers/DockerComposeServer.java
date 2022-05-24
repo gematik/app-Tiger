@@ -4,8 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
@@ -35,13 +33,9 @@ public class DockerComposeServer extends TigerServer {
             .type(ServerType.DOCKER_COMPOSE)
             .build());
 
-        log.info(Ansi.colorize("Starting docker compose for {} :{}", RbelAnsiColors.GREEN_BOLD),
-            getHostname(), getDockerSource());
-        statusMessage("Starting docker compose");
+        statusMessage("Starting docker compose for " + getServerId() + " from " + getDockerSource());
         getTigerTestEnvMgr().getDockerManager().startComposition(this);
-        log.info(Ansi.colorize("Docker compose Startup for {} : {} OK", RbelAnsiColors.GREEN_BOLD),
-            getHostname(), getDockerSource());
-        statusMessage("Docker compose started");
+        statusMessage("Docker compose " + getServerId() + " started");
     }
 
     public String getDockerSource() {
@@ -61,8 +55,8 @@ public class DockerComposeServer extends TigerServer {
 
     @Override
     public void shutdown() {
-        log.info("Stopping docker compose {}...", getHostname());
+        log.info("Stopping docker compose {}...", getServerId());
         removeAllRoutes();
-        setStatus(TigerServerStatus.STOPPED, "Docker compose stopped");
+        setStatus(TigerServerStatus.STOPPED, "Docker compose " + getServerId() + " stopped");
     }
 }

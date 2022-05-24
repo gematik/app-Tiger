@@ -4,14 +4,11 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Data transfer object that is deserialized on client side by Typescript class with same name.
@@ -28,13 +25,16 @@ public class TestEnvStatusDto {
     private String bannerMessage;
     private String bannerColor;
 
+    private BannerType bannerType;
+
     public TestEnvStatusDto(long index, LinkedHashMap<String, FeatureUpdate> featureMap, LinkedHashMap<String, TigerServerStatusUpdateDto> servers,
-        String bannerMessage, String bannerColor) {
+        String bannerMessage, String bannerColor, BannerType bannerType) {
         this.index = index;
         this.featureMap = featureMap;
         this.servers = servers;
         this.bannerMessage = bannerMessage;
         this.bannerColor = bannerColor;
+        this.bannerType = bannerType;
     }
 
     public static TestEnvStatusDto createFrom(final TigerStatusUpdate update) {
@@ -43,6 +43,7 @@ public class TestEnvStatusDto {
             .servers(mapServer(update.getServerUpdate()))
             .bannerMessage(update.getBannerMessage())
             .bannerColor(update.getBannerColor())
+            .bannerType(update.getBannerType())
             .index(update.getIndex())
             .build();
     }
@@ -52,10 +53,8 @@ public class TestEnvStatusDto {
         if (serverUpdate == null) {
             return null;
         }
-        LinkedHashMap updatedMap = new LinkedHashMap();
-        serverUpdate.forEach((key, serverStatusUpdate) -> {
-            updatedMap.put(key, TigerServerStatusUpdateDto.fromUpdate(serverStatusUpdate));
-        });
+        LinkedHashMap<String, TigerServerStatusUpdateDto> updatedMap = new LinkedHashMap<>();
+        serverUpdate.forEach((key, serverStatusUpdate) -> updatedMap.put(key, TigerServerStatusUpdateDto.fromUpdate(serverStatusUpdate)));
         return updatedMap;
     }
 }

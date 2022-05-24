@@ -62,7 +62,6 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         assertThat(message0.recipient).isEqualTo("backend:80");
         assertThat(message0.sender).matches("(view-|)localhost:\\d*");
         assertThat(message0.sequenceNumber).isEqualTo(0);
-        assertThat(message0.timestamp).isCloseTo(ZonedDateTime.now().toEpochSecond(), Offset.offset(10L));
 
         MessageMetaDataDto message1 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessages().get(1));
         assertThat(message1.path).isNull();
@@ -71,6 +70,5 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         assertThat(message1.recipient).matches("(view-|)localhost:\\d*");
         assertThat(message1.sender).isEqualTo("backend:80");
         assertThat(message1.sequenceNumber).isEqualTo(1);
-        assertThat(message1.timestamp).isCloseTo(ZonedDateTime.now().toEpochSecond(), Offset.offset(10L));
     }
 }

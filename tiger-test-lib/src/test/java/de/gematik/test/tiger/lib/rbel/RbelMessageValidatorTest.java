@@ -12,13 +12,11 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.hooks.TigerTestHooks;
-import de.gematik.test.tiger.lib.TigerLibraryException;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -297,12 +295,12 @@ public class RbelMessageValidatorTest {
 
     private void addSomeMessagesToTigerTestHooks() {
         TigerGlobalConfiguration.putValue("tiger.rbel.request.timeout", 1);
-        TigerTestHooks.getValidatableRbelMessages().clear();
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
         RbelElement request = buildRequestFromCurlFile("getRequestLocalhost.curl");
-        TigerTestHooks.getValidatableRbelMessages().add(request);
-        TigerTestHooks.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessage.curl", request));
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessage.curl", request));
         request = buildRequestFromCurlFile("getRequestEitzenAt.curl");
-        TigerTestHooks.getValidatableRbelMessages().add(request);
-        TigerTestHooks.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
     }
 }

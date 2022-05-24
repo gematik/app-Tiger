@@ -15,7 +15,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import de.gematik.test.tiger.hooks.TigerTestHooks;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -64,11 +64,11 @@ public class RbelMessageValidator {
     }
 
     public List<RbelElement> getRbelMessages() {
-        return TigerTestHooks.getValidatableRbelMessages();
+        return LocalProxyRbelMessageListener.getValidatableRbelMessages();
     }
 
     public void clearRBelMessages() {
-        TigerTestHooks.getValidatableRbelMessages().clear();
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
     }
 
     public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {

@@ -42,7 +42,6 @@ public class DriverGenerator {
 
     private String toCommaseparatedQuotedList(final List<String> glues) {
         return Stream.concat(Stream.of(
-            "de.gematik.test.tiger.hooks",
             "de.gematik.test.tiger.glue"
         ), glues.stream()).distinct().map(this::withQuotes).collect(Collectors.joining(", "));
     }
@@ -92,7 +91,7 @@ public class DriverGenerator {
     private void write(final String currentDriverClassName, final String driverSourceCode)
         throws IOException {
         final Path sourceFile = outputFolder.resolve(currentDriverClassName + ".java");
-        log.debug("=> '" + sourceFile.toAbsolutePath() + "'");
+        log.info("=> '" + sourceFile.toAbsolutePath() + "'");
         Files.write(sourceFile, driverSourceCode.getBytes(StandardCharsets.UTF_8),
             StandardOpenOption.CREATE,
             StandardOpenOption.WRITE,

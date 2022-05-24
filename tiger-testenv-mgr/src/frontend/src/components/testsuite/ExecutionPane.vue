@@ -20,7 +20,7 @@
                 <TestStatusBadge
                     :test-status="scenario[1].status"
                     :highlight-text="false"
-                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + scenario[1].variantIndex + 1 + ']' : ''}`">
+                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`">
                 </TestStatusBadge>
               </h4>
               <div v-if="scenario[1].variantIndex !== -1">
@@ -108,7 +108,7 @@ function getTableCountForScenarioOutlineKeysLength(list: Array<string>): number 
 }
 
 function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<string> {
-  var partScenarioOutlineList = new Array<string>();
+  const partScenarioOutlineList = new Array<string>();
   list.forEach((element, index) => {
     if (index < (count * maxOutlineTableColumns) && index >= maxOutlineTableColumns * (count - 1)) {
       partScenarioOutlineList.push(element);

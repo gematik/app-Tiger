@@ -13,10 +13,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,9 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
 /**
- * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end up here and
- * all configuration is loaded from here (Testenv-mgr, local tiger-proxy, test-lib configuration and also user-defined
- * values).
+ * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end up here and all configuration is loaded
+ * from here (Testenv-mgr, local tiger-proxy, test-lib configuration and also user-defined values).
  */
 @Slf4j
 public class TigerGlobalConfiguration {
@@ -70,17 +66,25 @@ public class TigerGlobalConfiguration {
     }
 
     private static void addFreePortVariables() {
+        List<ServerSocket> sockets = new ArrayList<>();
         for (int i = 0; i < 256; i++) {
             try {
                 final ServerSocket serverSocket = new ServerSocket(0);
                 globalConfigurationLoader.putValue("free.port." + i,
                     Integer.toString(serverSocket.getLocalPort()),
                     SourceType.RUNTIME_EXPORT);
-                serverSocket.close();
+                sockets.add(serverSocket);
             } catch (IOException e) {
                 throw new TigerConfigurationException("Exception while trying to add free port variables", e);
             }
         }
+        sockets.forEach(serverSocket -> {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                throw new TigerConfigurationException("Exception while closing temporary sockets for free port variables", e);
+            }
+        });
     }
 
     public synchronized static String readString(String key) {
@@ -106,7 +110,7 @@ public class TigerGlobalConfiguration {
     }
 
     @SneakyThrows
-    public synchronized static  <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType, String... baseKeys) {
+    public synchronized static <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType, String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanType, baseKeys);
     }
@@ -262,12 +266,12 @@ public class TigerGlobalConfiguration {
 
         for (AdditionalYamlProperty additionalYaml : additionalYamls) {
             readYamlFile(Optional.ofNullable(additionalYaml.getFilename())
-                .filter(Objects::nonNull)
-                .map(TigerGlobalConfiguration::resolvePlaceholders)
-                .map(File::new)
-                .filter(File::exists)
-                .orElseThrow(() -> new TigerConfigurationException(
-                    "Unable to locate file from configuration " + additionalYaml)),
+                    .filter(Objects::nonNull)
+                    .map(TigerGlobalConfiguration::resolvePlaceholders)
+                    .map(File::new)
+                    .filter(File::exists)
+                    .orElseThrow(() -> new TigerConfigurationException(
+                        "Unable to locate file from configuration " + additionalYaml)),
                 Optional.ofNullable(additionalYaml.getBaseKey()));
         }
     }
@@ -295,8 +299,9 @@ public class TigerGlobalConfiguration {
     }
 
     /**
-     * Returns a local scope in which values can be added and code executed. This enables the use of very local values
-     * that can not (or should not) creep over into other parts of your testsuite.
+     * Returns a local scope in which values can be added and code executed. This enables the use of very local values that can not (or
+     * should not) creep over into other parts of your testsuite.
+     *
      * @return
      */
     public static TigerScopedExecutor localScope() {

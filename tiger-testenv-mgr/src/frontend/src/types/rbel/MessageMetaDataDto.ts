@@ -10,7 +10,6 @@ export default class MessageMetaDataDto {
   recipient: string = '';
   sender: string = '';
   sequenceNumber : number = -1;
-  timestamp: number = -1;
 
   public toString() {
     return `{ uuid: "${this.uuid}" }\n`;

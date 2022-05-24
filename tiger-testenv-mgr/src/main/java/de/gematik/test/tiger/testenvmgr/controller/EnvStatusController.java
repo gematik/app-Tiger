@@ -25,8 +25,11 @@ public class EnvStatusController implements TigerUpdateListener {
 
     private final TigerEnvStatusDto tigerEnvStatus = new TigerEnvStatusDto();
 
+    TigerTestEnvMgr tigerTestEnvMgr;
+
     public EnvStatusController(final TigerTestEnvMgr tigerTestEnvMgr) {
-        tigerTestEnvMgr.registerNewListener(this);
+        this.tigerTestEnvMgr = tigerTestEnvMgr;
+        this.tigerTestEnvMgr.registerNewListener(this);
     }
 
     @Override
@@ -40,6 +43,7 @@ public class EnvStatusController implements TigerUpdateListener {
             if (update.getBannerMessage() != null) {
                 tigerEnvStatus.setBannerMessage(update.getBannerMessage());
                 tigerEnvStatus.setBannerColor(update.getBannerColor());
+                tigerEnvStatus.setBannerType(update.getBannerType());
             }
             // TODO make sure to check that the index is the expected next number, if not we do have to cache this and wait for the correct message
             //  TODO to be received and then process the cached messages in order, currently this is done on the client side
@@ -134,5 +138,12 @@ public class EnvStatusController implements TigerUpdateListener {
                     + "/webui");
         }
         return tigerEnvStatus;
+    }
+
+
+    @GetMapping(path = "/quit")
+    public void getConfirmQuit() {
+        log.trace("Fetch request to getQuit() received");
+        tigerTestEnvMgr.receivedUserAcknowledgementForShutdown();
     }
 }

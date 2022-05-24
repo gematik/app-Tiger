@@ -15,11 +15,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Slf4j
 public class MessageMetaDataDto {
 
     String uuid;
@@ -29,14 +31,11 @@ public class MessageMetaDataDto {
     String recipient;
     String sender;
     long sequenceNumber;
-    /** timestamp in epoche seconds */
-    long timestamp;
 
     public static MessageMetaDataDto createFrom(RbelElement el) {
         MessageMetaDataDto.MessageMetaDataDtoBuilder b = MessageMetaDataDto.builder();
         b = b.uuid(el.getUuid())
             .sequenceNumber(getElementSequenceNumber(el))
-            .timestamp(el.getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toEpochSecond())
             .sender(el.getFacet(RbelTcpIpMessageFacet.class)
                 .map(RbelTcpIpMessageFacet::getSender)
                 .filter(Objects::nonNull)
@@ -45,7 +44,6 @@ public class MessageMetaDataDto {
                 .orElse(""))
             .recipient(el.getFacet(RbelTcpIpMessageFacet.class)
                 .map(RbelTcpIpMessageFacet::getReceiver)
-                // TODO WORKAROUND TGR-496
                 .filter(Objects::nonNull)
                 .filter(element -> element.getRawStringContent() != null)
                 .flatMap(element -> Optional.of(element.getRawStringContent()))

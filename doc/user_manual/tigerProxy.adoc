@@ -415,7 +415,7 @@ localResources: false
 
 === Additional configuration
 
-There are some additional configuration-flags in the tiger-proxy:
+There are some additional configuration-flags in the Tiger Proxy:
 
 ==== Performance
 

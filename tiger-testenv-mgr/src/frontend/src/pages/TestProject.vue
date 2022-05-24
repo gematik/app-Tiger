@@ -117,6 +117,7 @@ import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import {currentOverallServerStatus} from "@/types/TigerServerStatus";
 import {currentOverallTestRunStatus} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
+import BannerType from "@/types/BannerType";
 
 let baseURL = process.env.BASE_URL;
 let socket: WebSocket;
@@ -198,6 +199,9 @@ function connectToWebSocket() {
           pushedMessage.index = json.index;
           pushedMessage.bannerMessage = json.bannerMessage;
           pushedMessage.bannerColor = json.bannerColor;
+          if (json.bannerType) {
+            pushedMessage.bannerType = json.bannerType as BannerType;
+          }
 
           if (json.featureMap) {
             FeatureUpdate.addToMapFromJson(pushedMessage.featureMap, json.featureMap);
@@ -278,6 +282,7 @@ function mergeMessage(map: Map<string, TigerServerStatusDto>, message: TestEnvSt
     const bm = new BannerMessage();
     bm.text = message.bannerMessage;
     bm.color = message.bannerColor;
+    bm.type = message.bannerType;
     bannerData.value.push(bm);
   }
   currentMessageIndex = message.index;

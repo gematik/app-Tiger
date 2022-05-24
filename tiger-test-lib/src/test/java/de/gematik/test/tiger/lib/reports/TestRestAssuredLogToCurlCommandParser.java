@@ -10,9 +10,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.assertj.core.api.Assertions.assertThat;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import de.gematik.test.tiger.hooks.TigerTestHooks;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.RestAssured;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -35,11 +40,10 @@ public class TestRestAssuredLogToCurlCommandParser {
             .willReturn(aResponse()
                 .withBody("byy")));
 
-        TigerDirector.testUninitialize();
-        TigerTestHooks.unregisterRestAssuredFilter();
+       TigerDirector.testUninitialize();
         TigerDirector.start();
         TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
-        TigerTestHooks.registerRestAssuredFilter();
+        TigerDirector.registerRestAssuredFilter();
     }
 
     @Test
@@ -91,7 +95,7 @@ public class TestRestAssuredLogToCurlCommandParser {
     }
 
     private String getCurlLog() {
-        Object tigerHooksCurlLoggingFilter = ReflectionTestUtils.getField(TigerTestHooks.class, "curlLoggingFilter");
+        Object tigerHooksCurlLoggingFilter = ReflectionTestUtils.getField(TigerDirector.class, "curlLoggingFilter");
         return String.valueOf(ReflectionTestUtils.getField(
             tigerHooksCurlLoggingFilter, TigerRestAssuredCurlLoggingFilter.class, "outputStream").toString());
     }

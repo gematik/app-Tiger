@@ -5,7 +5,8 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import com.google.common.base.Strings;
+import de.gematik.rbellogger.util.RbelAnsiColors;
+import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -147,11 +148,11 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             performStartup();
         } catch (RuntimeException e) {
             log.warn("Error during startup of server {}. Used configuration was {}",
-                getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
+                getServerId(), TigerSerializationUtil.toJson(getConfiguration()));
             throw e;
         } catch (Throwable t) {
             log.warn("Throwable during startup of server {}. Used configuration was {}",
-                getHostname(), TigerSerializationUtil.toJson(getConfiguration()), t);
+                getServerId(), TigerSerializationUtil.toJson(getConfiguration()), t);
             throw t;
         }
         statusMessage(getServerId() + " started");
@@ -166,7 +167,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             }
             kvp[1] = kvp[1].replace("${NAME}", getHostname());
 
-            log.info("  setting global property " + kvp[0] + "=" + kvp[1]);
+            log.info("Setting global property {}={}", kvp[0], kvp[1]);
             TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
         });
 
@@ -188,7 +189,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     private void loadPkiForProxy() {
-        log.info("  loading PKI resources for instance {}...", getHostname());
+        log.info("Loading PKI resources for instance {}...", getServerId());
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Certificate)
             .forEach(key -> {
@@ -196,7 +197,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                     throw new TigerConfigurationException(
                         "Your certificate is empty, please check your .yaml-file for " + key.getId());
                 }
-                log.info("Adding certificate " + key.getId());
+                log.info("Adding certificate {}", key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
@@ -210,7 +211,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                     throw new TigerConfigurationException(
                         "Your Key is empty, please check your .yaml-file for " + key.getId());
                 }
-                log.info("Adding key " + key.getId());
+                log.info("Adding key {}", key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
@@ -237,7 +238,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             assertCfgPropertySet(getConfiguration(), "version");
         }
 
-        // assert that server-port is set for the tiger-proxy
+        // assert that server-port is set for the Tiger Proxy
         if (type == ServerType.TIGERPROXY) {
             if (getConfiguration().getTigerProxyCfg() == null) {
                 getConfiguration().setTigerProxyCfg(new TigerProxyConfiguration());
@@ -247,13 +248,13 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             }
             if (getConfiguration().getTigerProxyCfg().getProxyPort() == null
                 || getConfiguration().getTigerProxyCfg().getProxyPort() <= 0) {
-                throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getHostname() + "'");
+                throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getServerId() + "'");
             }
         }
 
         // set default values for all types
         if (getConfiguration().getStartupTimeoutSec() == null) {
-            log.info("Defaulting startup timeout sec to 20sec for server " + serverId);
+            log.info("Defaulting startup timeout sec to 20sec for server {}", serverId);
             getConfiguration().setStartupTimeoutSec(20);
         }
 
@@ -354,7 +355,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     void removeAllRoutes() {
-        log.info("Removing routes for {}...", getHostname());
+        log.info("Removing routes for {}...", getServerId());
         routes.stream()
             .map(TigerRoute::getId)
             .forEach(getTigerTestEnvMgr().getLocalTigerProxy()::removeRoute);
@@ -381,10 +382,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     public void setStatus(TigerServerStatus newStatus) {
-        this.status = newStatus;
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .status(newStatus)
-            .build());
+        setStatus(newStatus, null);
     }
 
     public void setStatus(TigerServerStatus newStatus, String statusMessage) {
@@ -393,6 +391,13 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             .status(newStatus)
             .statusMessage(statusMessage)
             .build());
+        if (statusMessage != null) {
+            if (newStatus == TigerServerStatus.STOPPED) {
+                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.RED_BOLD));
+            } else {
+                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
+            }
+        }
     }
 
     public void registerNewListener(TigerUpdateListener listener) {
@@ -400,10 +405,10 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     public void statusMessage(String statusMessage) {
-        log.info(statusMessage);
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .statusMessage(statusMessage)
             .build());
+        log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
     }
 
     void publishNewStatusUpdate(TigerServerStatusUpdate update) {

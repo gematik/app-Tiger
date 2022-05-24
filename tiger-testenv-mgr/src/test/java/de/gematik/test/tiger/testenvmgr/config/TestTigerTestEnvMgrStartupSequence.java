@@ -184,23 +184,26 @@ public class TestTigerTestEnvMgrStartupSequence {
     public void checkSuccessfullStartupSequences(Map<String, TigerServer> serverMap,
         List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
+        try {
+            envMgr.setUpEnvironment();
 
-        envMgr.setUpEnvironment();
-
-        startupSequences.stream()
-            .map(potentialOrder -> {
-                try {
-                    assertThat(this.startupSequence)
-                        .isEqualTo(potentialOrder);
-                    return Optional.empty();
-                } catch (AssertionError e) {
-                    return Optional.of(e);
-                }
-            })
-            .filter(Optional::isEmpty)
-            .findAny()
-            .orElseThrow(() -> new AssertionError("Encountered unexpected startup sequence. Found\n"
-                + startupSequence + "\nbut wanted one of\n" + startupSequences));
+            startupSequences.stream()
+                .map(potentialOrder -> {
+                    try {
+                        assertThat(this.startupSequence)
+                            .isEqualTo(potentialOrder);
+                        return Optional.empty();
+                    } catch (AssertionError e) {
+                        return Optional.of(e);
+                    }
+                })
+                .filter(Optional::isEmpty)
+                .findAny()
+                .orElseThrow(() -> new AssertionError("Encountered unexpected startup sequence. Found\n"
+                    + startupSequence + "\nbut wanted one of\n" + startupSequences));
+        } finally {
+            envMgr.shutDown();
+        }
     }
 
     @ParameterizedTest
