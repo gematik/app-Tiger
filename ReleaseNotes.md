@@ -6,6 +6,7 @@
 * TGR-480: Healthchecks for docker compose services are not any more supported
 * TGR-480: upgrade testcontainers 1.17.0, exposed ports behaviour has changed
 * TGR-513: The way tests are started and teared down have changed to prepare for workflow UI landing. The quit step is not functional at the moment, but the workflow UI will pause before shutdown and show a quit button to finish the test run (shutting down the test env). If no workflow UI is active the test will finish normally.
+* TGR-248: removed OSEnvironment class, functionality is replaced by TigerGlobalConfiguration
 
 ## Features
 * TGR-482: TGR findLastRequest added in the glue code

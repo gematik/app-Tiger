@@ -590,6 +590,23 @@ public class TigerConfigurationTest {
             .isEmpty();
     }
 
+
+    // Tests from removed OSEnvironment class, expects env with at least one entry
+    @Test
+    public void testGetEnvAsStringPathOk() {
+        assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next())).isNotBlank();
+    }
+
+    @Test
+    public void testGetEnvAsStringNotExistingWithDefaultOk() {
+        assertThat(TigerGlobalConfiguration.readString("_______NOT____EXISTS", "DEFAULT")).isEqualTo("DEFAULT");
+    }
+
+    @Test
+    public void testGetEnvAsStringExistingNotDefaultOk() {
+        assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
+    }
+
     @Data
     @Builder
     public static class DummyBean {
