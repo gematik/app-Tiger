@@ -1,7 +1,3 @@
-#
-# ${GEMATIK_COPYRIGHT_STATEMENT}
-#
-
 @Authentication
 @Product:IDP-D
 Feature: Authentifiziere Anwendung am IDP Server

@@ -231,12 +231,12 @@ public class TestTigerCucumberListener {
 
         @Override
         public Integer getLine() {
-            return 64;
+            return 60;
         }
 
         @Override
         public Location getLocation() {
-            return new Location(64, 13);
+            return new Location(60, 13);
         }
 
         @Override
@@ -279,12 +279,12 @@ public class TestTigerCucumberListener {
 
         @Override
         public Integer getLine() {
-            return 168;
+            return 164;
         }
 
         @Override
         public Location getLocation() {
-            return new Location(168, 21);
+            return new Location(164, 21);
         }
 
         @Override
