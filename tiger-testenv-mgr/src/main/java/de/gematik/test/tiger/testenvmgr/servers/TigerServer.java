@@ -299,27 +299,30 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                 .getMethod("get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1));
             target = mthd.invoke(target);
             if (target == null) {
-                throw new TigerTestEnvException("Server " + propertyName + " must be set and must not be NULL!");
+                throw new TigerTestEnvException("Server " + getServerId() + " must have property " + propertyName
+                    + " be set and not be NULL!");
             }
             if (target instanceof List) {
                 List<?> l = (List<?>) target;
                 if (l.isEmpty() ||
                     l.get(0) == null) {
                     throw new TigerTestEnvException(
-                        "Server " + propertyName + " list must be set and must contain at least one not empty entry!");
+                        "Server " + getServerId() + " must have property " + propertyName
+                            + " be set and must contain at least one not empty entry!");
                 }
                 if (l.get(0) instanceof String) {
                     if (((String) l.get(0)).isBlank()) {
                         throw new TigerTestEnvException(
-                            "Server " + propertyName
-                                + " list must be set and must contain at least one not empty entry!");
+                            "Server " + getServerId() + " must have property " + propertyName
+                                + " be set and contain at least one not empty entry!");
                     }
                 }
             } else {
                 if (target instanceof String) {
                     if (((String) target).isBlank()) {
                         throw new TigerTestEnvException(
-                            "Server " + propertyName + " must be set and must not be empty!");
+                            "Server " + getServerId() + " must have property " + propertyName
+                                + " be set and not be empty!");
                     }
                 }
             }
