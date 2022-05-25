@@ -1,25 +1,17 @@
 <template>
-  <ul class="nav nav-tabs">
-    <li class="nav-item nav-logo">
-      <img class="navbar-brand right" src="img/tiger-mono-64.png" width="48"/> Tiger Workflow UI
-    </li>
-    <li class="navbar-divider">&nbsp;</li>
-    <li class="nav-item">
-      <router-link to="/" class="nav-link">Test run</router-link>
-    </li>
-    <li class="nav-item">
-      <router-link to="/about" class="nav-link">Contact</router-link>
-    </li>
-  </ul>
-  <router-view></router-view>
+  <TestProject/>
 </template>
 
 <script lang="ts">
 import {defineComponent} from 'vue';
+import TestProject from "@/pages/TestProject.vue";
 import "bootstrap";
 
 export default defineComponent({
   name: 'App',
+  components: {
+    TestProject
+  }
 });
 </script>
 
@@ -44,15 +36,15 @@ export default defineComponent({
 }
 
 .passed {
-  color: forestgreen !important;
+  color: var(--gem-success-300) !important;
 }
 
 .skipped {
-  color: darkorange !important;
+  color: var(--gem-warning-400) !important;
 }
 
 .pending, .unused {
-  color: lightslategray !important;
+  color: var(--gem-neutral-400) !important;
 }
 
 .undefined, .ambiguous {
@@ -60,7 +52,26 @@ export default defineComponent({
 }
 
 .failed {
-  color: orangered !important;
+  color: var(--gem-error-400) !important;
 }
 
+.bg-passed {
+  background: var(--gem-success-050) !important;
+}
+
+.bg-skipped {
+  background: var(--gem-warning-100) !important;
+}
+
+.bg-pending, .bg-unused {
+  background: var(--gem-neutral-100) !important;
+}
+
+.bg-undefined, .bg-ambiguous {
+  background: #ffccff !important;
+}
+
+.bg-failed {
+  background: var(--gem-error-100) !important;
+}
 </style>

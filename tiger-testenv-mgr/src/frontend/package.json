@@ -15,7 +15,6 @@
     "core-js": "^3.8.3",
     "sockjs-client": "^1.6.0",
     "vue": "^3.2.13",
-    "vue-router": "^4.0.14",
     "@popperjs/core": "^2.10.2"
   },
   "devDependencies": {

@@ -30,8 +30,6 @@ import lombok.*;
 public class TigerLibConfig {
 
     @Builder.Default
-    public boolean activateMonitorUI = false;
-    @Builder.Default
     private boolean rbelPathDebugging = false;
     @Builder.Default
     private boolean rbelAnsiColors = true;

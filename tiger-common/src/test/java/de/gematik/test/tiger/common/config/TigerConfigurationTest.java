@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.DOUBLE;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import java.io.File;
 import java.io.IOException;
@@ -411,6 +413,32 @@ public class TigerConfigurationTest {
             });
     }
 
+    @Test
+    public void fillGenericObjectShouldWork() {
+                TigerGlobalConfiguration.reset();
+                TigerGlobalConfiguration.readFromYaml(
+                    "users:\n" +
+                        "  -\n" +
+                        "     username: admin\n" +
+                        "     password: admin1234\n" +
+                        "     roles:\n" +
+                        "           - READ\n" +
+                        "           - WRITE\n" +
+                        "           - VIEW\n" +
+                        "           - DELETE\n" +
+                        "  -\n" +
+                        "     username: guest\n" +
+                        "     password: guest1234\n" +
+                        "     roles:\n" +
+                        "        - VIEW\n");
+                final List<Users> usersList = TigerGlobalConfiguration.instantiateConfigurationBean(new TypeReference<>() {
+                    }, "users");
+                assertThat(usersList).isNotEmpty();
+                assertThat(usersList).hasSize(2);
+                assertThat(usersList).containsOnly(Users.builder().username("admin").password("admin1234").roles(List.of("READ", "WRITE", "VIEW", "DELETE")).build(),
+                    Users.builder().username("guest").password("guest1234").roles(List.of("VIEW")).build());
+    }
+
     /**
      * ${ENV => GlobalConfigurationHelper.getString() ${json-unit.ignore} => interessiert dann folglich nicht
      * ${VAR.foobar} => GlobalConfigurationHelper.getSourceByName("VAR").getString()
@@ -574,6 +602,23 @@ public class TigerConfigurationTest {
             .isEmpty();
     }
 
+
+    // Tests from removed OSEnvironment class, expects env with at least one entry
+    @Test
+    public void testGetEnvAsStringPathOk() {
+        assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next())).isNotBlank();
+    }
+
+    @Test
+    public void testGetEnvAsStringNotExistingWithDefaultOk() {
+        assertThat(TigerGlobalConfiguration.readString("_______NOT____EXISTS", "DEFAULT")).isEqualTo("DEFAULT");
+    }
+
+    @Test
+    public void testGetEnvAsStringExistingNotDefaultOk() {
+        assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
+    }
+
     @Data
     @Builder
     public static class DummyBean {
@@ -601,5 +646,13 @@ public class TigerConfigurationTest {
         @JsonProperty
         private List<CfgTemplate> templates;
 
+    }
+
+    @Data
+    @Builder
+    public static class Users {
+        private String username;
+        private String password;
+        private List<String> roles;
     }
 }

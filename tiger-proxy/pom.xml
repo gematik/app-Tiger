@@ -9,7 +9,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.20.2</version>
+        <version>0.21.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -59,6 +59,10 @@
                 <exclusion>
                     <artifactId>junit</artifactId>
                     <groupId>junit</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.vaadin.external.google</groupId>
+                    <artifactId>android-json</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -240,5 +244,5 @@
                 </configuration>
             </plugin>
         </plugins>
-   </build>
+    </build>
 </project>

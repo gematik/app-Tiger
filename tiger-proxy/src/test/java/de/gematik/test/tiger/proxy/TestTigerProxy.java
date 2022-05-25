@@ -22,16 +22,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.test.tiger.common.config.TigerConfigurationException;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
@@ -722,26 +720,18 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     public void checkNotSetTigerProxyPort_ShouldImplicitBeSetToTheChosenFreePort() {
         TigerGlobalConfiguration.reset();
         spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
-        final String port = TigerGlobalConfiguration.readString("tigerProxy.proxyPort");
-
-        assertNotNull(port);
-        assertThat(TigerGlobalConfiguration.readIntegerOptional("tigerProxy.proxyPort")
-            .get())
-            .isBetween(10000, 100000);
+        assertThat(tigerProxy.getProxyPort()).isBetween(10000, 100000);
     }
 
     @Test
     public void checkGetNotSetTigerProxyPort_ShouldThrowTigerConfigurationException() {
         TigerGlobalConfiguration.reset();
+        int availableTcpPort = SocketUtils.findAvailableTcpPort();
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyPort(SocketUtils.findAvailableTcpPort())
+            .proxyPort(availableTcpPort)
             .build());
 
-        assertThatThrownBy(() -> {
-            TigerGlobalConfiguration.readString("tigerProxy.port");
-        })
-            .isInstanceOf(TigerConfigurationException.class)
-            .hasMessageContaining("Could not find value for 'tigerProxy.port'");
+        assertThat(tigerProxy.getProxyPort()).isEqualTo(availableTcpPort);
     }
 
 

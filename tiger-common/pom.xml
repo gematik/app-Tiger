@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.20.2</version>
+        <version>0.21.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20210307</version>
+            <version>20220320</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
         <dependency>
@@ -102,6 +102,13 @@
             <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.dtmo.jfiglet</groupId>
+            <artifactId>jfiglet</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

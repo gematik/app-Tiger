@@ -91,10 +91,11 @@ public class TigerProxyConfiguration {
     private String proxiedServer;
 
     /**
-     * Used to add a route to the Tiger Proxy. By default, the healthcheck-url-protocol is used here, or http if none is
-     * present. If you want to override this you can do it using this field.
+     * Used when adding a route to the Tiger Proxy. By default, or when set to "inherit", the healthcheck-url-protocol is used here,
+     * alternatively you may use http or https explicitly.
      */
-    private String proxiedServerProtocol;
+    @Builder.Default
+    private String proxiedServerProtocol = null;
 
     @JsonIgnore
     public Integer[] getPortAsArray() {

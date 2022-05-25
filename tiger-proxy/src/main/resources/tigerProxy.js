@@ -173,6 +173,26 @@ document.addEventListener('DOMContentLoaded', function () {
   fieldRouteTo.addEventListener("blur", updateAddRouteBtnState);
   fieldRouteFrom.addEventListener("mouseleave", updateAddRouteBtnState);
   fieldRouteTo.addEventListener("mouseleave", updateAddRouteBtnState);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has("updateMode")) {
+    console.log("UpdateMode:" + urlParams.get("updateMode"));
+    window.setTimeout(function() {
+      document.getElementById(urlParams.get("updateMode")).click();
+    }, 100);
+  }
+  if (urlParams.has("embedded")) {
+    scrollLock = true;
+    let elem = document.getElementsByClassName("sidebar")[0];
+    elem.setAttribute("class", elem.getAttribute("class") + " hidden");
+    elem = document.getElementsByClassName("main-content")[0];
+    elem.setAttribute("class", elem.getAttribute("class") + " hidden");
+    const not4embeddedelems = document.getElementsByClassName("not4embedded");
+    for (let i = 0; i < not4embeddedelems.length; i++ ) {
+      not4embeddedelems[i].setAttribute("class",
+          not4embeddedelems[i].getAttribute("class") + " hidden");
+    }
+  }
 });
 
 // Functions

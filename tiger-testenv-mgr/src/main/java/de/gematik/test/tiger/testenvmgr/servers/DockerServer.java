@@ -17,12 +17,12 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr.HTTP;
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.MalformedURLException;
@@ -42,9 +42,11 @@ public class DockerServer extends TigerServer {
 
     @Override
     public void performStartup() {
-        log.info(Ansi.colorize("Starting docker container for {} :{}", RbelAnsiColors.GREEN_BOLD),
-            getHostname(), getDockerSource());
-        statusMessage("Starting docker container");
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(ServerType.DOCKER)
+            .statusMessage("Starting docker container for " + getServerId() + " from '" + getDockerSource() + "'")
+            .build());
+
         getTigerTestEnvMgr().getDockerManager().startContainer(this);
 
         // add routes needed for each server to local docker proxy
@@ -56,9 +58,7 @@ public class DockerServer extends TigerServer {
                 .to(HTTP + "localhost:" + getConfiguration().getDockerOptions().getPorts().values().iterator().next())
                 .build());
         }
-        log.info(Ansi.colorize("Docker container Startup for {} : {} OK", RbelAnsiColors.GREEN_BOLD),
-            getHostname(), getDockerSource());
-        statusMessage("Docker container started");
+        statusMessage("Docker container " + getServerId() + " started");
     }
 
     public String getDockerSource() {
@@ -71,9 +71,10 @@ public class DockerServer extends TigerServer {
 
     @Override
     public void shutdown() {
-        log.info("Stopping docker container {}...", getHostname());
+        log.info("Stopping docker container {}...", getServerId());
         removeAllRoutes();
         getTigerTestEnvMgr().getDockerManager().stopContainer(this);
+        setStatus(TigerServerStatus.STOPPED, "Docker container " + getServerId() + " stopped");
     }
 
     @Override
@@ -95,7 +96,7 @@ public class DockerServer extends TigerServer {
         } else {
             if (getStatus() != TigerServerStatus.RUNNING) {
                 throw new TigerTestEnvException("If reverse proxy is to be used with docker container '"
-                    + getHostname() + "' make sure to start it first or have a valid healthcheck setting!");
+                    + getServerId() + "' make sure to start it first or have a valid healthcheck setting!");
             } else {
                 return "http://127.0.0.1:" + getConfiguration().getDockerOptions().getPorts().values()
                     .iterator().next();

@@ -84,7 +84,6 @@
                         <configuration>
                             <!-- mandatory -->
                             <glues>
-                                <glue>de.gematik.test.tiger.hooks</glue>
                                 <glue>de.gematik.test.tiger.glue</glue>
                                 <!-- add your packages here -->
                             </glues>

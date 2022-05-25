@@ -49,9 +49,9 @@ Feature: Check advanced input fields and sections for all server types
     Given Gerriet is on the homepage
     And he adds a "tigerProxy" node via welcome screen
     When he focuses on formular "tigerProxy_001"
-    When he shows "TigerProxy" tab
+    And he shows "TigerProxy" tab
     And he clicks on global advanced icon
-    Then he sees select field ".tigerProxyCfg.proxyProtocol"
+    Then he sees select field ".tigerProxyCfg.proxiedServerProtocol"
     And he sees input field ".tigerProxyCfg.adminPort"
     And he sees select field ".tigerProxyCfg.proxyLogLevel"
     And he sees check field ".tigerProxyCfg.activateRbelParsing"
@@ -95,7 +95,7 @@ Feature: Check advanced input fields and sections for all server types
     And he sees list field ".tigerProxyCfg.tls.serverSslSuites"
 
     When he clicks on global advanced icon
-    And he doesn't see field ".tigerProxyCfg.proxyProtocol"
+    And he doesn't see field ".tigerProxyCfg.proxiedServerProtocol"
     And he doesn't see field ".tigerProxyCfg.adminPort"
     And he doesn't see field ".tigerProxyCfg.proxyLogLevel"
     And he doesn't see field ".tigerProxyCfg.activateRbelParsing"
@@ -116,7 +116,7 @@ Feature: Check advanced input fields and sections for all server types
     When he focuses on formular "local_tiger_proxy"
     When he shows "TigerProxy" tab
     And he clicks on global advanced icon
-    Then he sees select field ".tigerProxyCfg.proxyProtocol"
+    Then he sees select field ".tigerProxyCfg.proxiedServerProtocol"
     And he sees select field ".tigerProxyCfg.proxyLogLevel"
     And he sees check field ".tigerProxyCfg.activateRbelParsing"
     And he sees check field ".tigerProxyCfg.activateRbelEndpoint"
@@ -161,7 +161,7 @@ Feature: Check advanced input fields and sections for all server types
 
     When he focuses on formular "local_tiger_proxy"
     And he clicks on global advanced icon
-    Then he doesn't see field ".tigerProxyCfg.proxyProtocol"
+    Then he doesn't see field ".tigerProxyCfg.proxiedServerProtocol"
     And he doesn't see field ".tigerProxyCfg.proxyLogLevel"
     And he doesn't see field ".tigerProxyCfg.activateRbelParsing"
     And he doesn't see field ".tigerProxyCfg.activateRbelEndpoint"

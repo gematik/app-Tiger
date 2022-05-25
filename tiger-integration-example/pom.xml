@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.20.2</version>
+        <version>0.21.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -68,8 +68,16 @@
                         </configuration>
                         <phase>generate-test-sources</phase>
                         <id>prepare-and-verify-tiger-tests-and-results</id>
+                        <!--
+                            You MUST define the two goals in two different executions
+                            to avoid the report being generated before the test run
+                        -->
                         <goals>
                             <goal>generate-drivers</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <goals>
                             <goal>generate-serenity-reports</goal>
                         </goals>
                     </execution>
@@ -106,6 +114,13 @@
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.0.0-M5</version>
+                <configuration>
+                    <!--
+                        WorkflowUI needs this to allow it to block execution of maven,
+                        else maven will try to kill and destroy the tiger spring boot apps
+                     -->
+                    <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

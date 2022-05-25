@@ -71,11 +71,11 @@ public class DownloadManager {
 
     private static File seekNewUniqueFile(CfgExternalJarOptions externalJarOptions, String jarName) {
         synchronized (RESERVED_FILES) {
-            if (!streamOfCandidateFiles(externalJarOptions, jarName)
-                .findAny().isPresent()) {
+            if (streamOfCandidateFiles(externalJarOptions, jarName)
+                .findAny().isEmpty()) {
                 return Path.of(externalJarOptions.getWorkingDir(), jarName).toFile();
             } else {
-                AtomicReference<File> candidateFile = new AtomicReference();
+                AtomicReference<File> candidateFile = new AtomicReference<>();
                 do {
                     candidateFile.set(Path.of(externalJarOptions.getWorkingDir(),
                             jarName + "_" + RandomStringUtils.randomAlphanumeric(10))//NOSONAR
@@ -103,8 +103,8 @@ public class DownloadManager {
     }
 
     private static void downloadJar(CfgExternalJarOptions externalJarOptions, String jarUrl, File jarFile, String
-        hostname) {
-        log.info("downloading jar for external server from '{}'...", jarUrl);
+        serverId) {
+        log.info("Downloading jar for external server {} from '{}'...", serverId, jarUrl);
 
         var workDir = new File(externalJarOptions.getWorkingDir());
         if (!workDir.exists() && !workDir.mkdirs()) {
@@ -112,7 +112,7 @@ public class DownloadManager {
         }
 
         AtomicReference<LocalDateTime> lastTimePrinted = new AtomicReference<>(LocalDateTime.now());
-        AtomicReference<Long> lastSizePrinted = new AtomicReference<>(0l);
+        AtomicReference<Long> lastSizePrinted = new AtomicReference<>(0L);
         LocalDateTime firstTimePrinted = LocalDateTime.now();
 
         Unirest.get(jarUrl)
@@ -125,7 +125,7 @@ public class DownloadManager {
                         (long) ((totalBytes - bytesWritten) / speedInBytesPerMilliSecond));
                     log.info(
                         "Downloading jar for {}. {} kb of {} kb completed (Elapsed time {}, estimated {} till completion)",
-                        hostname, bytesWritten / 1000, totalBytes / 1000,
+                        serverId, bytesWritten / 1000, totalBytes / 1000,
                         prettyPrintDuration(downloadDuration), prettyPrintDuration(remainingTime));
                     lastTimePrinted.set(LocalDateTime.now());
                     lastSizePrinted.set(bytesWritten);
@@ -171,29 +171,30 @@ public class DownloadManager {
             if (!jarFile.exists()) {
                 throw new TigerTestEnvException("Local jar " + jarFile.getAbsolutePath() + " not found!");
             }
-            externalJarServer.statusMessage("Starting from local JAR-File '" + jarFile.getAbsolutePath() + "'");
+            externalJarServer.statusMessage(
+                "Starting " + externalJarServer.getServerId() + " from local JAR-File '" + jarFile.getAbsolutePath() + "'");
             return jarFile;
         } else {
-            externalJarServer.statusMessage("Downloading JAR-File from '" + jarUrl + "'...");
+            externalJarServer.statusMessage("Downloading " + externalJarServer.getServerId() + " JAR-File from '" + jarUrl + "'...");
             return executeDownload(externalJarServer.getConfiguration().getExternalJarOptions(), jarUrl,
-                externalJarServer.getHostname());
+                externalJarServer.getServerId());
         }
     }
 
     @SneakyThrows
     private File executeDownload(CfgExternalJarOptions externalJarOptions, String jarUrl,
-        String hostname) {
+        String serverId) {
         var jarName = jarUrl
             .substring(jarUrl.lastIndexOf("/") + 1)
             .replaceAll("\\W+", "");
 
         Monitor.Guard jarCurrentlyNotDownloading = monitor.newGuard(
             () -> !DOWNLOADING_URLS.contains(jarUrl));
-        log.trace("{} tries to enter the monitor...", hostname);
+        log.trace("{} tries to enter the monitor...", serverId);
         synchronized (monitor) {
             monitor.enterWhen(jarCurrentlyNotDownloading);
         }
-        log.trace("{} has entered the monitor!", hostname);
+        log.trace("{} has entered the monitor!", serverId);
 
         try {
             return streamOfCandidateFiles(externalJarOptions, jarName)
@@ -203,14 +204,14 @@ public class DownloadManager {
                 .orElseGet(() -> {
                     File jarFile = seekNewUniqueFile(externalJarOptions, jarName);
 
-                    downloadJar(externalJarOptions, jarUrl, jarFile, hostname);
+                    downloadJar(externalJarOptions, jarUrl, jarFile, serverId);
 
                     return jarFile;
                 });
         } finally {
-            log.trace("{} tries to leave the monitor...", hostname);
+            log.trace("{} tries to leave the monitor...", serverId);
             monitor.leave();
-            log.trace("{} has left the monitor!", hostname);
+            log.trace("{} has left the monitor!", serverId);
         }
     }
 

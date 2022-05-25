@@ -87,7 +87,7 @@ public class TigerRemoteProxyClientTest {
     @Autowired
     private TigerProxy tigerProxy;
 
-    // the local TigerProxy-Client (which syphons the message from the remote tiger-proxy)
+    // the local TigerProxy-Client (which syphons the message from the remote Tiger Proxy)
     private TigerRemoteProxyClient tigerRemoteProxyClient;
     private UnirestInstance unirestInstance;
 

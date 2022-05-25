@@ -1,6 +1,6 @@
 == Tiger Test library
 
-As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the Tiger test libarary is
+As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the Tiger test library is
 one of the three core components of the Tiger test framework.
 Its main goal is to provide extensive support for BDD/Cucumber testing and integrating the local Tiger Proxy
 with the test environment manager and the started test environment.
@@ -27,50 +27,39 @@ lib:
     # Ansi color sequences in their console you may deactivate the coloring with this flag.
     # Activated by default.
     rbelAnsiColors: true
-    # Flag whether to start a small Java Swing UI to display the current steps / banner messages
+    # Flag whether to start a browser window to display
+    # the current steps / banner messages / rbel logs
     # when executing the test suite.
     # This feature can be used to instruct the tester to follow
     # a specific test workflow for manual tests.
     # Deactivated by default
-    activateMonitorUI: false
-    # Flag whether to add a curl command details button to SerenityRest Restassured calls
+    activateWorkflowUi: false
+    # Flag whether to add a curl command details button to
+    # SerenityRest Restassured calls
     # in the Serenity BDD report
     addCurlCommandsForRaCallsToReport: true
 
 ----
 
-=== Cucumber and TigerTestHooks
+=== Cucumber and Hooks
 
-As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are defined in the TigerTestHooks class.
+As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed .
 
-That's why it is mandatory to add the package de.gematik.test.tiger.hooks to the glue packages list.
+That's why it is mandatory to add the plugin de.gematik.test.tiger.TigerCucumberListener to the plugins list and use the TigerCucumberRunner.
 
-The TigerTestHooks class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
+The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
 
-The @Before method calls the TigerDirector once
-to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the monitoring UI and parses the current scenario / feature file.
+At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the workflow UI.
 It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.
-Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter, parses the details and adds a curl Command details button to the Serenity BDD report.
-The curl command shown in this section allows to repeat the performed REST request, for manual test failure analysis.
+Utilizing the close integration of SerenityBDD and RestAssured at startup also a Restassured request filter, which parses the details and adds a curl Command details button to the Serenity BDD report, is registered.
+The curl command shown in that section in the report allows to repeat the performed REST request, for manual test failure analysis.
 
-The @After method saves all collected RbelMessages as HTML file to the `target/rbellogs` folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (success/failed rate) to the console.
+After each scenario / data variant all collected RbelMessages are saved as HTML file to the `target/rbellogs` folder, and attached to the SerenityBDD report as test evidence. The current test run state (success/failed rate) is logged to the console.
 
 The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.
 Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports, using the Tiger test framework from non Cucumber test drivers, ...etc.
 
-NOTE: For now, the TigerDirector is only for internal use and does not provide any implementation of the aforementioned features.
-
-==== How to use Tiger in a non Cucumber scenario
-
-If you are using TestNG, plain JUnit or other Test harness frameworks, you have to ensure that you call the four methods defined in the TigerTestHooks class at the appropriate times.
-
-* The @Before method must be called before each Test scenario
-* The @BeforeStep method MIGHT be called before each test step
-* The @After method MIGHT be called after each Test scenario
-
-If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all methods. Else you just pass in a null Scenario to the methods or do not call the other methods in your test run.
-
-But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files. As a workaround you might use the TigerDirector to manually trigger UI Monitor popups via its method `updateStepInMonitor(Step step)`.
+NOTE: For now, the TigerDirector, TigerCucumberRunner, TigerCucumberListener are only for internal use and do not provide any implementation of the aforementioned features.
 
 === Using the Cucumber Tiger validation steps
 
@@ -83,7 +72,7 @@ construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh]
 
 .Core features
 * Filter for server, method, path, RBelPath node matching given value in request
-* Find first / next matching request
+* Find first / next / last matching request
 * Clear all recorded messages
 * Specify timeout for filtering request
 
@@ -401,6 +390,26 @@ only check for regex matches if they were not equal.
 @When("TGR find next request to path {string} with {string} matching {string}")
 
 /**
+ * find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+ * instance.
+ *
+ * @param path path to match
+ */
+@Wenn("TGR finde die letzte Anfrage mit dem Pfad {string}")
+@When("TGR find last request to path {string}")
+
+/**
+ * find the LAST request where path and node value equal or match as regex and memorize it in the {@link
+ * #rbelValidator} instance.
+ *
+ * @param path     path to match
+ * @param rbelPath rbel path to node/attribute
+ * @param value    value to match at given node/attribute
+ */
+@Wenn("TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt")
+@When("TGR find last request to path {string} with {string} matching {string}")
+
+/**
  * assert that there is any message with given rbel path node/attribute matching given value.
  * The result (request or response) will not be stored in the {@link #rbelValidator}
  * instance.
@@ -560,7 +569,7 @@ NOTE: All classes listed here are part of the tiger-common module
 ==== Banner
 
 If you want to use large ASCII art style log banners you may find this class very helpful.
-Supports ANSI coloring and a set of different fonts. Furthermore all banner messages are displayed in the Mmonitoring and highlighted in the Workflow UI
+Supports ANSI coloring and a set of different fonts. Furthermore, all banner messages are displayed and highlighted in the Workflow UI
 For more details please check the code and its usages in the Tiger test framework.
 
 ==== TigerSerializationUtil

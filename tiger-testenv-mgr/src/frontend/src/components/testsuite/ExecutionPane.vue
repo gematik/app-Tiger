@@ -15,235 +15,115 @@
   -->
 
 <template>
-  <div class="tab-pane active" id="execution_pane" role="tabpanel">
-    <div
-      v-if="featureUpdateMap.size == 0"
-      class="alert alert-danger"
-      style="height: 200px; width: 100%"
-    >
-      <i class="fa-regular fa-hourglass left fa-2x"></i> Waiting for first Feature /
-      Scenario to start...
-    </div>
-    <div v-else>
-      <h2 class="pt-3">Workflow messages</h2>
-      <div
-        v-if="bannerData.length > 0"
-        :style="`color: ${bannerData[bannerData.length - 1].color};`"
-        class="banner alert alert-info"
-      >
-        <i class="fa-solid fa-circle-exclamation left"></i>
-        {{ bannerData[bannerData.length - 1].text }}
-      </div>
-      <h2 class="mt-3">Current Testrun</h2>
-      <div style="display: flex; width: 100%">
-        <div id="execution_table" class="pt-1">
-          <div v-for="feature in featureUpdateMap">
-            <h3 class="w-100 mt-3">
-              <i
-                :class="`fa-regular fa-address-card left ${feature[1].status.toLowerCase()}`"
-              ></i>
-              Feature: {{ feature[1].description }} ({{ feature[1].status }})
+  <div class="tab-pane active execution-pane-tabs" id="execution_pane" role="tabpanel">
+    <BannerMessageWindow :banner-data="bannerData"></BannerMessageWindow>
+    <div class="w-100">
+      <div id="execution_table" class="pt-1">
+        <div v-if="featureUpdateMap.size === 0" class="alert w-100 text-center" style="height: 200px;">
+          <i class="fa-solid fa-spinner left fa-2x"></i> Waiting for first Feature / Scenario to start...
+        </div>
+        <div v-else class="w-100">
+          <div v-for="(feature, key) in featureUpdateMap" :key="key">
+            <h3 class="featuretitle">
+              <TestStatusBadge :test-status="feature[1].status" :highlight-text="true" :text="`Feature: ${feature[1].description}`"></TestStatusBadge>
             </h3>
-            <div v-for="scenario in feature[1].scenarios">
-              <h4 class="scenariotitle mt-2">
-                <i
-                  :class="`far fa-clipboard left ${scenario[1].status.toLowerCase()}`"
-                ></i>
-                <div v-if="scenario[1].variantIndex == -1" style="display:inline-block">
-                  Scenario: {{ scenario[1].description }} ({{ scenario[1].status }})
-                </div>
-                <div v-else style="display:inline-block">
-                  Scenario: {{ scenario[1].description }} [{{
-                    scenario[1].variantIndex + 1
-                  }}] ({{ scenario[1].status }})
-                </div>
+            <div v-for="(scenario, key) in feature[1].scenarios" :key="key">
+              <h4 class="scenariotitle">
+                <TestStatusBadge
+                    :test-status="scenario[1].status"
+                    :highlight-text="false"
+                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`">
+                </TestStatusBadge>
               </h4>
-              <div v-if="scenario[1].variantIndex != -1">
-                <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)" :key="anzahl">
-                   <table class="table table-striped">
-                     <thead>
-                       <tr>
-                         <th v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)" :key="index" style="word-break: break-all; word-wrap: break-word;">
-                            {{ key }}
-                         </th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       <tr>
-                         <td v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)" :key="index" style="word-break: break-all; word-wrap: break-word;">
-                           {{ scenario[1].exampleList.get(key) }} 
-                         </td>
-                       </tr>
+              <div v-if="scenario[1].variantIndex !== -1">
+                <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)" :key="anzahl"
+                     class="d-inline-block">
+                  <table class="table table-sm table-data-variant">
+                    <thead>
+                    <tr>
+                      <th v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)" :key="index">
+                        {{ key }}
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                      <td v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)" :key="index">
+                        {{ scenario[1].exampleList.get(key) }}
+                      </td>
+                    </tr>
                     </tbody>
-                   </table>
+                  </table>
                 </div>
               </div>
-              <table class="table table-striped">
+              <table class="table table-borderless">
                 <tbody>
-                  <tr v-for="step in scenario[1].steps">
-                    <th :class="`${step[1].status.toLowerCase()} step_status`">
-                      {{ step[1].status }}
-                    </th>
-                    <td :class="`${step[1].status.toLowerCase()} step_text`">
-                      {{ step[1].description }}
-                    </td>
-                  </tr>
+                <tr v-for="(step, index) in scenario[1].steps" :key="index">
+                  <td :class="`${step[1].status.toLowerCase()} step_status `">
+                    <i :class="`fa-solid ${getTestResultIcon(step[1].status)}`" :title="`${step[1].status}`"></i>
+                  </td>
+                  <td class="step_text">
+                    <div>{{ step[1].description }}</div>
+                    <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
+                      <div v-if="rbelmsg.method">
+                        <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, $event)"
+                           href="#" class="badge rbelDetailsBadge">
+                          {{ rbelmsg.sequenceNumber + 1 }}
+                        </a>
+                        <b>{{ rbelmsg.method }} {{ step[1].rbelMetaData[index + 1].responseCode }}</b>
+                        <span>&nbsp;&nbsp;&nbsp;&rarr;&nbsp;&nbsp;&nbsp;
+                        {{ rbelmsg.recipient }}{{ rbelmsg.path }}</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-        <div
-          class="resizer"
-          id="rbellog_resize"
-          v-on:mouseenter="mouseEnterHandler"
-          v-on:mousedown="mouseDownHandler"
-          v-on:mouseleave="mouseLeaveHandler"
-        ></div>
-        <div class="d-none pl-3 pt-3" id="rbellog_details_pane">
-          <h2><img src="img/rbellog.png" width="50" /> Rbel Log Details</h2>
-          <div class="m-auto text-danger">
-            <i class="fa-solid fa-circle-exclamation fa-2x left"></i> Not implemented so
-            far
-          </div>
-        </div>
       </div>
+      <div class="row footer-spacing"></div>
+    </div>
+    <div class="position-fixed" id="rbellog_resize"
+         v-on:mouseenter="ui.mouseEnterHandler"
+         v-on:mousedown="ui.mouseDownHandler"
+         v-on:mouseleave="ui.mouseLeaveHandler">
+      <i v-on:click="ui.toggleRightSideBar" class="fa-solid fa-angles-left resizer-right"></i>
+    </div>
+    <div class="d-none position-fixed pl-3 pt-3" id="rbellog_details_pane">
+      <h2><img alt="RBel logo" src="img/rbellog.png" class="rbel-logo"> Rbel Log Details</h2>
+      <iframe id="rbellog-details-iframe" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
-import BannerMessages from "@/types/BannerMessages";
+import BannerMessage from "@/types/BannerMessage";
+import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
+import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue";
+import {getTestResultIcon} from "@/types/testsuite/TestResult";
+import Ui from "@/types/ui/Ui";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
-  bannerData: BannerMessages[];
+  bannerData: BannerMessage[];
+  localProxyWebUiUrl: string;
+  ui: Ui;
 }>();
 
-// elements
-let rbelLogDetailsResizer: HTMLElement | null;
-let executionTable: Element | null;
-let rbelLogDetailsPane: HTMLElement | null;
-
-// The current position of mouse
-let x = -1;
-
-function initElementReferences() {
-  rbelLogDetailsResizer = document.getElementById("rbellog_resize");
-  executionTable = document.getElementById("execution_table");
-  rbelLogDetailsPane = document.getElementById("rbellog_details_pane");
-
-  if (!rbelLogDetailsResizer || !executionTable || !rbelLogDetailsPane) {
-    throw new Error("Internal error - Unable to find UI element(s)!");
-  }
-}
-
-// Handle the mousedown event
-// that's triggered when user drags the resizer
-function mouseDownHandler(e: MouseEvent) {
-  if (!rbelLogDetailsResizer) {
-    initElementReferences();
-  }
-  // Get the current mouse position
-  x = e.clientX;
-  document.addEventListener("mousemove", mouseMoveHandler);
-  document.addEventListener("mouseup", mouseUpHandler);
-}
-
-function mouseMoveHandler(e: MouseEvent) {
-  if (x === -1) {
-    return;
-  }
-
-  if (!rbelLogDetailsResizer) {
-    initElementReferences();
-  }
-
-  rbelLogDetailsResizer.style.cursor = "col-resize";
-  document.body.style.cursor = "col-resize";
-
-  // How far the mouse has been moved
-  const dx = e.clientX - x;
-  const prevWidth = executionTable.clientWidth;
-
-  rbelLogDetailsPane.style.width =
-    executionTable.parentElement.clientWidth -
-    executionTable.clientWidth -
-    dx -
-    rbelLogDetailsResizer.clientWidth -
-    30 +
-    "px";
-  executionTable.style.width = executionTable.clientWidth + dx + "px";
-
-  if (executionTable.clientWidth !== prevWidth) {
-    x = e.clientX;
-  }
-
-  document.body.style.userSelect = "none";
-  executionTable.style.userSelect = "none";
-  executionTable.style.pointerEvents = "none";
-  rbelLogDetailsPane.style.userSelect = "none";
-  rbelLogDetailsPane.style.pointerEvents = "none";
-
-  let classes = rbelLogDetailsPane.getAttribute("class");
-  if (executionTable.parentElement.clientWidth - executionTable.clientWidth < 200) {
-    if (classes.indexOf("d-none") === -1 && dx > 0) {
-      classes += " d-none";
-      rbelLogDetailsPane.setAttribute("class", classes);
-      executionTable.style.width = executionTable.parentElement.clientWidth - 10 + "px";
-      mouseUpHandler();
-      return;
-    }
-  } else {
-    if (classes.indexOf("d-none") !== -1) {
-      classes = classes.replace("d-none", "");
-    }
-  }
-  rbelLogDetailsPane.setAttribute("class", classes);
-}
-
-function mouseUpHandler() {
-  x = -1;
-
-  if (!rbelLogDetailsResizer) {
-    initElementReferences();
-  }
-  rbelLogDetailsResizer.style.removeProperty("cursor");
-  document.body.style.removeProperty("cursor");
-
-  executionTable.style.removeProperty("user-select");
-  executionTable.style.removeProperty("pointer-events");
-  rbelLogDetailsPane.style.removeProperty("user-select");
-  rbelLogDetailsPane.style.removeProperty("pointer-events");
-
-  document.removeEventListener("mousemove", mouseMoveHandler);
-  document.removeEventListener("mouseup", mouseUpHandler);
-}
-
-function mouseEnterHandler() {
-  if (!rbelLogDetailsResizer) {
-    initElementReferences();
-  }
-  rbelLogDetailsResizer.style.cursor = "col-resize";
-  document.body.style.cursor = "col-resize";
-}
-
-function mouseLeaveHandler() {
-  rbelLogDetailsResizer.style.removeProperty("cursor");
-  document.body.style.removeProperty("cursor");
-}
-
 const maxOutlineTableColumns = 4;
+
 function getTableCountForScenarioOutlineKeysLength(list: Array<string>): number {
-  return (Math.ceil(list.length/maxOutlineTableColumns));
+  return (Math.ceil(list.length / maxOutlineTableColumns));
 }
 
 function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<string> {
-  var partScenarioOutlineList = new Array<string>();
-  list.forEach((element, index)  => {
+  const partScenarioOutlineList = new Array<string>();
+  list.forEach((element, index) => {
     if (index < (count * maxOutlineTableColumns) && index >= maxOutlineTableColumns * (count - 1)) {
-      partScenarioOutlineList.push(element); 
+      partScenarioOutlineList.push(element);
     }
   });
   return partScenarioOutlineList;
@@ -251,17 +131,9 @@ function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<
 </script>
 
 <style scoped>
-.banner {
-  font-weight: bolder;
-  font-size: 150%;
-  margin-bottom: 0;
-  text-align: center;
-  padding: 3rem;
-}
 
 #execution_pane {
-  border-left: 1px solid lightgray;
-  padding-left: 1rem;
+  padding-left: 2rem;
 }
 
 #execution_table {
@@ -269,9 +141,33 @@ function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<
   width: 100%;
 }
 
-.scenariotitle {
-  border-top: 3px solid gray;
-  padding: 1rem;
+h3.featuretitle {
+  padding: 1rem 1rem 1rem 0.5rem;
+  background: var(--gem-primary-100);
+  margin-bottom: 0;
+}
+
+h4.scenariotitle {
+  padding: 1rem 1rem 1rem 0.5rem;
+  background: var(--gem-primary-100);
+  color: var(--gem-primary-400);
+}
+
+
+.table-data-variant {
+  font-size: 90%;
+  width: auto;
+  max-width: 100%;
+  border: 1px solid lightgray;
+}
+
+.table-data-variant tbody {
+  border-top: 0;
+}
+
+.table-data-variant th, .table-data-variant td {
+  word-break: break-all;
+  word-wrap: break-word;
 }
 
 .step_status {
@@ -284,23 +180,49 @@ function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<
   width: 99%;
 }
 
-.step_text.feature {
+.rbelDetailsBadge {
   font-size: 100%;
-  font-weight: bold;
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  padding: 0.5em 1rem;
+  border: 1px solid lightgray;
+  background-color: #ecfcfe; /* TODO coming from bulma we need --gem-info colors */
+  color: #0a8694;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.step_text.scenario {
-  font-size: 100%;
-  font-style: italic;
+#rbellog_resize {
+  right: 2px;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  z-index: 2000;
+  border-left: 1px solid var(--gem-primary-400);
+  background: var(--gem-primary-100);
 }
 
-.resizer {
-  width: 0.5rem;
-  border-left: 3px solid gray;
-  background: rgba(224, 224, 224, 0.5);
+#rbellog_resize i.resizer-right {
+  left: -19px;
+  right: 5px;
+  color: var(--gem-primary-400);
+  border: 1px solid var(--gem-primary-400);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background: inherit;
+  position: relative;
 }
 
 #rbellog_details_pane {
-  background: whitesmoke;
+  background: var(--gem-primary-100);
+  color: var(--gem-primary-400);
+  top: 0;
+  bottom: 0;
+}
+
+.rbel-logo {
+  width: 50px;
+  margin-left: 0.5rem;
 }
 </style>

@@ -16,8 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
@@ -37,7 +36,10 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
 
     @Override
     public void performStartup() {
-        log.info(Ansi.colorize("starting external URL instance {}...", RbelAnsiColors.GREEN_BOLD), getHostname());
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(ServerType.EXTERNALURL)
+            .statusMessage("Starting external URL instance " + getServerId() + "...")
+            .build());
 
         final var url = buildUrl();
         addServerToLocalProxyRouteMap(url);
@@ -45,8 +47,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
             .baseUrl(extractBaseUrl(url))
             .build());
 
-        log.info("  Waiting 50% of start up time for external URL instance  {} to come up ...", getHostname());
-
+        log.info("  Waiting 50% of start up time for external URL instance  {} to come up ...", getServerId());
         waitForService(true);
         if (getStatus() == TigerServerStatus.STARTING) {
             waitForService(false);
@@ -56,6 +57,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     @Override
     public void shutdown() {
         removeAllRoutes();
+        setStatus(TigerServerStatus.STOPPED, "Disconnected external url " + getServerId());
     }
 
     @Override

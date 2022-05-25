@@ -27,7 +27,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import de.gematik.test.tiger.hooks.TigerTestHooks;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -67,26 +67,25 @@ public class RbelMessageValidator {
     private static final List<String> emptyPath = ImmutableList.of("", "/");
 
     @Getter
-    protected RbelElement lastFilteredRequest;
+    protected RbelElement currentRequest;
     @Getter
-    protected RbelElement lastResponse;
+    protected RbelElement currentResponse;
 
     public RbelMessageValidator() {
         TigerJexlExecutor.registerAdditionalNamespace("rbel", new JexlToolbox());
     }
 
     public List<RbelElement> getRbelMessages() {
-        return TigerTestHooks.getValidatableRbelMessages();
+        return LocalProxyRbelMessageListener.getValidatableRbelMessages();
     }
 
     public void clearRBelMessages() {
-        TigerTestHooks.getValidatableRbelMessages().clear();
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
     }
 
-    public void filterRequestsAndStoreInContext(final String path, final String rbelPath, final String value,
-        final boolean startFromLastRequest) {
+    public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
         final int waitsec = TigerGlobalConfiguration.readIntegerOptional("tiger.rbel.request.timeout").orElse(5);
-        lastFilteredRequest = findRequestByDescription(path, rbelPath, value, startFromLastRequest);
+        currentRequest = findRequestByDescription(requestParameter);
         try {
             await("Waiting for matching response").atMost(waitsec, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
@@ -94,50 +93,48 @@ public class RbelMessageValidator {
                     .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
                     .filter(
                         resp -> resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()
-                            == lastFilteredRequest)
-                    .peek(rbelElement -> lastResponse = rbelElement)
+                            == currentRequest)
+                    .peek(rbelElement -> currentResponse = rbelElement)
                     .findAny()
                     .isPresent());
         } catch (final ConditionTimeoutException cte) {
-            log.error("Missing response message to filtered request!\n\n{}", lastFilteredRequest.getRawStringContent());
+            log.error("Missing response message to filtered request!\n\n{}", currentRequest.getRawStringContent());
             throw new TigerLibraryException("Missing response message to filtered request!", cte);
         }
     }
 
-    protected RbelElement findRequestByDescription(final String path, final String rbelPath, final String value,
-        final boolean startFromLastRequest) {
+    protected RbelElement findRequestByDescription(final RequestParameter requestParameter) {
         final int waitsec = TigerGlobalConfiguration.readIntegerOptional("tiger.rbel.request.timeout").orElse(5);
 
         final AtomicReference<RbelElement> candidate = new AtomicReference<>();
         try {
             await("Waiting for matching request").atMost(waitsec, TimeUnit.SECONDS)
-                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .pollDelay(0, TimeUnit.SECONDS).pollInterval(400, TimeUnit.MILLISECONDS)
                 .until(() -> {
-                    final Optional<RbelElement> found = filterRequests(path, rbelPath, value, startFromLastRequest);
+                    final Optional<RbelElement> found = filterRequests(requestParameter);
                     found.ifPresent(candidate::set);
                     return found.isPresent();
                 });
         } catch (final ConditionTimeoutException cte) {
             log.error("Didn't find any matching request!");
             printAllPathsOfMessages(getRbelMessages());
-            if (rbelPath == null) {
+            if (requestParameter.getRbelPath() == null) {
                 throw new AssertionError(
-                    "No request with path '" + path + "' found in messages");
+                    "No request with path '" + requestParameter.getPath() + "' found in messages");
             } else {
                 throw new AssertionError(
-                    "No request with path '" + path + "' and rbelPath '" + rbelPath
-                        + "' matching '" + StringUtils.abbreviate(value, 300) + "' found in messages");
+                    "No request with path '" + requestParameter.getPath() + "' and rbelPath '" + requestParameter.getRbelPath()
+                        + "' matching '" + StringUtils.abbreviate(requestParameter.getValue(), 300) + "' found in messages");
             }
         }
         return candidate.get();
     }
 
-    protected Optional<RbelElement> filterRequests(final String path, final String rbelPath, final String value,
-        final boolean startFromLastRequest) {
+    protected Optional<RbelElement> filterRequests(final RequestParameter requestParameter) {
 
         List<RbelElement> msgs = getRbelMessages();
-        if (startFromLastRequest) {
-            final RbelElement prevRequest = getLastFilteredRequest();
+        if (requestParameter.isStartFromLastRequest()) {
+            final RbelElement prevRequest = getCurrentRequest();
             int idx = -1;
             for (var i = 0; i < msgs.size(); i++) {
                 if (msgs.get(i) == prevRequest) {
@@ -145,7 +142,7 @@ public class RbelMessageValidator {
                     break;
                 }
             }
-            msgs = new ArrayList<>(msgs.subList(idx + 2, msgs.size()));
+                msgs = new ArrayList<>(msgs.subList(idx + 2, msgs.size()));
         }
 
         final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
@@ -153,7 +150,7 @@ public class RbelMessageValidator {
 
         final List<RbelElement> candidateMessages = msgs.stream()
             .filter(el -> el.hasFacet(RbelHttpRequestFacet.class))
-            .filter(req -> doesPathOfMessageMatch(req, path))
+            .filter(req -> doesPathOfMessageMatch(req, requestParameter.getPath()))
             .filter(req -> hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter))
             .filter(req -> methodFilter == null || methodFilter.isEmpty() || doesMethodMatch(req, methodFilter))
             .collect(Collectors.toList());
@@ -161,21 +158,26 @@ public class RbelMessageValidator {
             return Optional.empty();
         }
 
-        if (StringUtils.isEmpty(rbelPath)) {
+        if (StringUtils.isEmpty(requestParameter.getRbelPath())) {
             if (candidateMessages.size() > 1) {
+                String warnMsg = requestParameter.isFilterPreviousRequest() ? "last" : "first";
                 log.warn("Found more then one candidate message. "
-                    + "Returning first message. This may not be deterministic!");
+                    + "Returning " + warnMsg + " message. This may not be deterministic!");
                 printAllPathsOfMessages(candidateMessages);
             }
-            return Optional.of(candidateMessages.get(0));
+            return Optional.of(requestParameter.isFilterPreviousRequest() ? candidateMessages.get(candidateMessages.size() -1) : candidateMessages.get(0));
+        }
+
+        if (requestParameter.isFilterPreviousRequest()) {
+            Collections.reverse(candidateMessages);
         }
 
         for (final RbelElement candidateMessage : candidateMessages) {
-            final List<RbelElement> pathExecutionResult = new RbelPathExecutor(candidateMessage, rbelPath).execute();
+            final List<RbelElement> pathExecutionResult = new RbelPathExecutor(candidateMessage, requestParameter.getRbelPath()).execute();
             if (pathExecutionResult.isEmpty()) {
                 continue;
             }
-            if (StringUtils.isEmpty(value)) {
+            if (StringUtils.isEmpty(requestParameter.getValue())) {
                 return Optional.of(candidateMessage);
             } else {
                 final String content = pathExecutionResult.stream()
@@ -183,16 +185,16 @@ public class RbelMessageValidator {
                     .map(String::trim)
                     .collect(Collectors.joining());
                 try {
-                    if (content.equals(value) ||
-                        content.matches(value) ||
-                        Pattern.compile(value, Pattern.DOTALL).matcher(content).matches()) {
+                    if (content.equals(requestParameter.getValue()) ||
+                        content.matches(requestParameter.getValue()) ||
+                        Pattern.compile(requestParameter.getValue(), Pattern.DOTALL).matcher(content).matches()) {
                         return Optional.of(candidateMessage);
                     } else {
                         log.info("Found rbel node but \n'" + StringUtils.abbreviate(content, 300) + "' didnt match\n'"
-                            + StringUtils.abbreviate(value, 300) + "'");
+                            + StringUtils.abbreviate(requestParameter.getValue(), 300) + "'");
                     }
                 } catch (final Exception ex) {
-                    log.error("Failure while trying to apply regular expression '" + value + "'!", ex);
+                    log.error("Failure while trying to apply regular expression '" + requestParameter.getValue() + "'!", ex);
                 }
             }
         }
@@ -289,9 +291,9 @@ public class RbelMessageValidator {
         compareXMLStructure(test, oracle, diffOptions);
     }
 
-    public RbelElement findElemInLastResponse(final String rbelPath) {
+    public RbelElement findElementInCurrentResponse(final String rbelPath) {
         try {
-            final List<RbelElement> elems = lastResponse.findRbelPathMembers(rbelPath);
+            final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
             assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
             assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
             return elems.get(0);
@@ -300,9 +302,9 @@ public class RbelMessageValidator {
         }
     }
 
-    public List<RbelElement> findElemsInLastResponse(final String rbelPath) {
+    public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
         try {
-            final List<RbelElement> elems = lastResponse.findRbelPathMembers(rbelPath);
+            final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
             assertThat(elems).isNotEmpty();
             return elems;
         } catch (final Exception e) {
@@ -312,20 +314,20 @@ public class RbelMessageValidator {
 
     public class JexlToolbox {
 
-        public String lastResponseAsString(final String rbelPath) {
-            return findElemInLastResponse(rbelPath).getRawStringContent();
+        public String currentResponseAsString(final String rbelPath) {
+            return findElementInCurrentResponse(rbelPath).getRawStringContent();
         }
 
-        public String lastResponseAsString() {
-            return lastResponse.getRawStringContent();
+        public String currentResponseAsString() {
+            return currentResponse.getRawStringContent();
         }
 
-        public RbelElement lastResponse(final String rbelPath) {
-            return findElemInLastResponse(rbelPath);
+        public RbelElement currentResponse(final String rbelPath) {
+            return findElementInCurrentResponse(rbelPath);
         }
 
         public RbelElement lastResponse() {
-            return lastResponse;
+            return currentResponse;
         }
     }
 }

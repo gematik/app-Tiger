@@ -18,6 +18,7 @@ package de.gematik.test.tiger.lib.parser.model.gherkin;
 
 import de.gematik.test.tiger.lib.parser.TestParserException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

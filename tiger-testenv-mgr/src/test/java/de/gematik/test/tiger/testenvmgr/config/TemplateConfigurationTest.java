@@ -42,9 +42,9 @@ public class TemplateConfigurationTest {
                 var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger")
                     .get();
                 assertThat(dummyBean.getServers().get("idp").getSource())
-                    .containsExactly("gstopdr1.top.local/idp/idp-server");
+                    .containsExactly("eu.gcr.io/gematik-all-infra-prod/idp/idp-server");
                 assertThat(dummyBean.getServers().get("erp").getSource())
-                    .containsExactly("gstopdr1.top.local/erezept/ref-erx-fd-server");
+                    .containsExactly("eu.gcr.io/gematik-all-infra-prod/erezept/ref-erx-fd-server");
             });
     }
 }

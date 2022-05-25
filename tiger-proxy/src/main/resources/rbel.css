@@ -36,6 +36,10 @@
     width: 100%;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .logo {
     vertical-align: middle;
     margin: 1rem;
@@ -250,4 +254,8 @@ pre.json {
 
 .msglist {
     max-width:80%;
+}
+
+.msglist.embeddedlist {
+    max-width: 100% !important;
 }

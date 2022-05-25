@@ -20,12 +20,6 @@ import static j2html.TagCreator.*;
 import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
@@ -98,9 +92,15 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
-    public String getUI() throws IOException {
-        String html = replaceScript(renderer.getEmptyPage()
-            .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">"));
+    public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
+        String html = renderer.getEmptyPage();
+        String targetDiv;
+        if (embedded) {
+            targetDiv = "<div class=\"column msglist embeddedlist\">";
+        } else {
+            targetDiv = "<div class=\"column ml-6 msglist\">";
+        }
+        html = replaceScript(html.replace("<div class=\"column ml-6\">", targetDiv));
 
         if (applicationConfiguration.isLocalResources()) {
             log.info("Running with local resources...");
@@ -111,10 +111,10 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
                     "/webui/css/all.min.css");
         }
-        String navbar = nav().withClass("navbar is-dark is-fixed-bottom").with(
+        String navbar = nav().withClass("navbar is-dark is-fixed-bottom not4embedded").withStyle("bottom: 57px !important;").with(
             div().withClass("navbar-menu").with(
                 div().withClass("navbar-start").with(
-                    div().withClass("navbar-item").with(
+                    div().withClass("navbar-item not4embedded").with(
                         button().withId("routeModalBtn")
                             .withClass("button is-dark")
                             .attr("data-target", "routeModalDialog").with(
@@ -128,7 +128,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                             span("Scroll Lock")
                         )
                     ),
-                    form().attr("onSubmit", "return false;")
+                    form().withClass("is-inline-flex").attr("onSubmit", "return false;")
                         .with(
                             div().withClass("navbar-item").with(
                                 div().withClass("field").with(
@@ -148,15 +148,13 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
                                     )
                             )
-                        )
-                ),
-                div().withClass("navbar-end").with(
+                        ),
                     div().withClass("navbar-item mr-3").with(
                         div().withId("updateLed").withClass("led "),
                         radio("1s", "updates", "update1", "1", "updates"),
                         radio("2s", "updates", "update2", "2", "updates"),
                         radio("5s", "updates", "update5", "5", "updates"),
-                        radio("Manual", "updates", "noupdate", "0", "updates", true),
+                        radio("Manual", "updates", "noupdate", "0", "updates"),
                         button("Update").withId("updateBtn").withClass("button is-outlined is-success")
                     ),
                     div().withClass("navbar-item ml-3").with(
@@ -202,9 +200,8 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("</body>", configJSSnippetStr + "</body>");
     }
 
-    private String replaceScript(String replace) {
-        var jsoup = Jsoup.parse(renderer.getEmptyPage()
-            .replace("<div class=\"column ml-6\">", "<div class=\"column ml-6 msglist\">"));
+    private String replaceScript(String html) {
+        var jsoup = Jsoup.parse(html);
         final Element script = jsoup.select("script").get(0);
         script.dataNodes().get(0).replaceWith(
             new DataNode(loadResourceToString("/tigerProxy.js")));
@@ -342,7 +339,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .convert(msg, Optional.empty()).render())
             .collect(Collectors.toList()));
         result.setMetaMsgList(msgs.stream()
-            .map(this::getMetaData)
+            .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList()));
         return result;
     }
@@ -380,58 +377,6 @@ public class TigerWebUiController implements ApplicationContextAware {
         log.info("uploading report...");
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
-
-    private MessageMetaDataDto getMetaData(RbelElement el) {
-        MessageMetaDataDto.MessageMetaDataDtoBuilder b = MessageMetaDataDto.builder();
-        b = b.uuid(el.getUuid())
-            .headers(extractHeadersFromMessage(el))
-            .sequenceNumber(getElementSequenceNumber(el));
-        if (el.hasFacet(RbelHttpRequestFacet.class)) {
-            RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
-            b = b.path(req.getPath().getRawStringContent())
-                .method(req.getMethod().getRawStringContent())
-                .recipient(el.getFacet(RbelTcpIpMessageFacet.class)
-                    .map(RbelTcpIpMessageFacet::getReceiver)
-                    .filter(Objects::nonNull)
-                    .flatMap(element -> element.seekValue(RbelHostname.class))
-                    .map(RbelHostname::toString)
-                    .map(Object::toString)
-                    .orElse(""));
-        } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
-            b.status(el.getFacetOrFail(RbelHttpResponseFacet.class)
-                    .getResponseCode().seekValue(Integer.class)
-                    .orElse(-1))
-                .sender(el.getFacet(RbelTcpIpMessageFacet.class)
-                    .map(RbelTcpIpMessageFacet::getSender)
-                    .filter(Objects::nonNull)
-                    .flatMap(element -> element.seekValue(RbelHostname.class))
-                    .map(RbelHostname::toString)
-                    .map(Object::toString)
-                    .orElse(""));
-        } else {
-            throw new IllegalArgumentException(
-                "We do not support meta data for non http elements (" + el.getClass().getName() + ")");
-        }
-        return b.build();
-    }
-
-    private long getElementSequenceNumber(RbelElement rbelElement) {
-        return rbelElement.getFacet(RbelTcpIpMessageFacet.class)
-            .map(RbelTcpIpMessageFacet::getSequenceNumber)
-            .orElse(0l);
-    }
-
-    private List<String> extractHeadersFromMessage(RbelElement el) {
-        return el.getFacet(RbelHttpMessageFacet.class)
-            .map(RbelHttpMessageFacet::getHeader)
-            .flatMap(e -> e.getFacet(RbelHttpHeaderFacet.class))
-            .map(RbelHttpHeaderFacet::entries)
-            .stream()
-            .flatMap(List::stream)
-            .map(e -> (e.getKey() + "=" + e.getValue().getRawStringContent()))
-            .collect(Collectors.toList());
-    }
-
 
     private ContainerTag radio(final String text, final String name, final String id, String value,
         final String clazz) {

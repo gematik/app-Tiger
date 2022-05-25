@@ -24,6 +24,7 @@ import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
+import de.gematik.test.tiger.lib.rbel.RequestParameter;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
@@ -119,7 +120,7 @@ public class RBelValidatorGlue {
     @When("TGR find request to path {string}")
     public void findRequestToPath(final String path) {
         final String parsedPath = TigerGlobalConfiguration.resolvePlaceholders(path);
-        rbelValidator.filterRequestsAndStoreInContext(parsedPath, null, null, false);
+        rbelValidator.filterRequestsAndStoreInContext(RequestParameter.builder().path(parsedPath).build());
     }
 
     /**
@@ -136,7 +137,7 @@ public class RBelValidatorGlue {
         final String parsedPath = TigerGlobalConfiguration.resolvePlaceholders(path);
         final String parsedRbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
         final String parsedValue = TigerGlobalConfiguration.resolvePlaceholders(value);
-        rbelValidator.filterRequestsAndStoreInContext(parsedPath, parsedRbelPath, parsedValue, false);
+        rbelValidator.filterRequestsAndStoreInContext(RequestParameter.builder().path(parsedPath).rbelPath(parsedRbelPath).value(parsedValue).build());
     }
 
     /**
@@ -149,7 +150,8 @@ public class RBelValidatorGlue {
     @When("TGR find next request to path {string}")
     public void findNextRequestToPath(final String path) {
         final String parsedPath = TigerGlobalConfiguration.resolvePlaceholders(path);
-        rbelValidator.filterRequestsAndStoreInContext(parsedPath, null, null, true);
+        rbelValidator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(parsedPath).startFromLastRequest(true).build());
     }
 
     /**
@@ -166,7 +168,37 @@ public class RBelValidatorGlue {
         final String parsedPath = TigerGlobalConfiguration.resolvePlaceholders(path);
         final String parsedRbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
         final String parsedValue = TigerGlobalConfiguration.resolvePlaceholders(value);
-        rbelValidator.filterRequestsAndStoreInContext(parsedPath, parsedRbelPath, parsedValue, true);
+        rbelValidator.filterRequestsAndStoreInContext(RequestParameter.builder().path(parsedPath).rbelPath(parsedRbelPath).value(parsedValue).startFromLastRequest(true).build());
+    }
+
+    /**
+     * find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+     * instance.
+     *
+     * @param path path to match
+     */
+    @Wenn("TGR finde die letzte Anfrage mit dem Pfad {string}")
+    @When("TGR find last request to path {string}")
+    public void findLastRequestToPath(final String path) {
+        final String parsedPath = TigerGlobalConfiguration.resolvePlaceholders(path);
+        rbelValidator.filterRequestsAndStoreInContext(RequestParameter.builder().path(parsedPath).filterPreviousRequest(true).build());
+    }
+
+    /**
+     * find the LAST request where path and node value equal or match as regex and memorize it in the {@link
+     * #rbelValidator} instance.
+     *
+     * @param path     path to match
+     * @param rbelPath rbel path to node/attribute
+     * @param value    value to match at given node/attribute
+     */
+    @Wenn("TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt")
+    @When("TGR find last request to path {string} with {string} matching {string}")
+    public void findLastRequestToPathWithCommand(final String path, final String rbelPath, final String value) {
+        final String parsedPath = TigerGlobalConfiguration.resolvePlaceholders(path);
+        final String parsedRbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
+        final String parsedValue = TigerGlobalConfiguration.resolvePlaceholders(value);
+        rbelValidator.filterRequestsAndStoreInContext(RequestParameter.builder().path(parsedPath).rbelPath(parsedRbelPath).value(parsedValue).filterPreviousRequest(true).build());
     }
 
     /**
@@ -204,7 +236,7 @@ public class RBelValidatorGlue {
     @Dann("TGR speichere Wert des Knotens {string} der aktuellen Antwort in der Variable {string}")
     @Then("TGR store current response node text value at {string} in variable {string}")
     public void storeCurrentResponseNodeTextValueInVariable(final String rbelPath, final String varName) {
-        final String text = rbelValidator.findElemsInLastResponse(rbelPath).stream()
+        final String text = rbelValidator.findElementsInCurrentResponse(rbelPath).stream()
             .map(RbelElement::getRawStringContent)
             .map(String::trim)
             .collect(Collectors.joining());
@@ -266,7 +298,7 @@ public class RBelValidatorGlue {
     @Then("TGR current response with attribute {string} matches {string}")
     public void currentResponseMessageAttributeMatches(final String rbelPath, final String value) {
         final String parsedRbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
-        final String text = rbelValidator.findElemsInLastResponse(parsedRbelPath).stream()
+        final String text = rbelValidator.findElementsInCurrentResponse(parsedRbelPath).stream()
             .map(RbelElement::getRawStringContent)
             .map(String::trim)
             .collect(Collectors.joining());
@@ -322,12 +354,12 @@ public class RBelValidatorGlue {
         switch (mode.toUpperCase()) {
             case "JSON":
                 new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(
-                    rbelValidator.findElemInLastResponse(parsedRbelPath).getRawStringContent(),
+                    rbelValidator.findElementInCurrentResponse(parsedRbelPath).getRawStringContent(),
                     parsedOracleDocStr,
                     false);
                 break;
             case "XML":
-                final RbelElement el = rbelValidator.findElemInLastResponse(parsedRbelPath);
+                final RbelElement el = rbelValidator.findElementInCurrentResponse(parsedRbelPath);
                 assertThat(el.hasFacet(RbelXmlFacet.class))
                     .withFailMessage("Node '" + rbelPath + "' is not XML")
                     .isTrue();
@@ -360,7 +392,7 @@ public class RBelValidatorGlue {
         final String xmlDocStr) {
         final String parsedRbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
         final String parsedXmlDocStr = TigerGlobalConfiguration.resolvePlaceholders(xmlDocStr);
-        final RbelElement el = rbelValidator.findElemInLastResponse(parsedRbelPath);
+        final RbelElement el = rbelValidator.findElementInCurrentResponse(parsedRbelPath);
         assertThat(el.hasFacet(RbelXmlFacet.class)).withFailMessage("Node '" + rbelPath + "' is not XML").isTrue();
         rbelValidator.compareXMLStructure(el.getRawStringContent(),
             parsedXmlDocStr,
@@ -373,7 +405,7 @@ public class RBelValidatorGlue {
     @Dann("TGR gebe aktuelle Response als Rbel-Tree aus")
     @Then("TGR print current response as rbel-tree")
     public void printCurrentResponse() {
-        System.out.println(RBelValidatorGlue.getRbelValidator().getLastResponse().printTreeStructure());
+        System.out.println(RBelValidatorGlue.getRbelValidator().getCurrentResponse().printTreeStructure());
     }
 
     /**
@@ -382,6 +414,6 @@ public class RBelValidatorGlue {
     @Dann("TGR gebe aktuelle Request als Rbel-Tree aus")
     @Then("TGR print current request as rbel-tree")
     public void printCurrentRequest() {
-        System.out.println(RBelValidatorGlue.getRbelValidator().getLastFilteredRequest().printTreeStructure());
+        System.out.println(RBelValidatorGlue.getRbelValidator().getCurrentRequest().printTreeStructure());
     }
 }

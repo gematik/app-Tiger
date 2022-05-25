@@ -122,8 +122,6 @@ Their meaning and format are explained in the related section.
 
   # type specific sub structure for docker container and compose nodes
   dockerOptions:
-    # only used by docker compose nodes
-    serviceHealthchecks: []
     # all properties below only used by docker container nodes
     proxied: boolean
     oneShot: boolean
@@ -247,12 +245,6 @@ For now we support the ePA2 FD module and the DEMIS Meldeportal.
   source:
     - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
     - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
-  dockerOptions:
-    # MANDATORY list of URLs to check for a successful start up
-    # of the docker compose's services
-    serviceHealthchecks:
-      - http://service1:8001/
-      - https://service2:9001/
 ----
 
 [source,yaml,title="Demis docker compose example"]
@@ -262,10 +254,6 @@ demis_001:
   source:
     - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
   startupTimeoutSec: 180
-  dockerOptions:
-    serviceHealthchecks:
-      - http://notification-gateway:9042
-      - http://notification-portal:9041/welcome
 ----
 
 ==== External Jar node
@@ -397,7 +385,7 @@ tigerProxy_001:
     proxyPort: 3128
     # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
     # Default value is http
-    proxyProtocol: http
+    proxiedServerProtocol: http
     # configures the proxy itself. For more details
     # please check the chapter about the local test suite Tiger Proxy below
     ...

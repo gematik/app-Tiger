@@ -23,7 +23,7 @@ interface IScenarioUpdate {
   description: string;
   status: TestResult;
   exampleKeys: Array<string>;
-  exampleList: Map<String, String>;
+  exampleList: Map<string, string>;
   variantIndex: number;
 }
 
@@ -49,7 +49,7 @@ export default class ScenarioUpdate implements IScenarioUpdate {
   description = "";
   status = TestResult.UNUSED;
   exampleKeys = new Array<string>();
-  exampleList = new Map<String, String>();
+  exampleList = new Map<string, string>();
   variantIndex = -1;
 
   public static fromJson(json: IJsonScenario): ScenarioUpdate {
@@ -101,14 +101,17 @@ export default class ScenarioUpdate implements IScenarioUpdate {
       this.variantIndex = scenario.variantIndex;
     }
     if (scenario.steps) {
-      for (let key of scenario.steps.keys()) {
+      for (const key of scenario.steps.keys()) {
         const step: StepUpdate | undefined = this.steps.get(key);
-        if (step) {
-          // @ts-ignore
-          step.merge(scenario.steps.get(key));
+        const newStep = scenario.steps.get(key);
+        if (newStep) {
+          if (step) {
+            step.merge(newStep);
+          } else {
+            this.steps.set(key, newStep);
+          }
         } else {
-          // @ts-ignore
-          this.steps.set(key, scenario.steps.get(key));
+          console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
         }
       }
       // update scenario status and change pending steps to skipped in case of error

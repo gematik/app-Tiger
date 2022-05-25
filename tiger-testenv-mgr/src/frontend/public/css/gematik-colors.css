@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2022 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:root {
+    --gem-neutral-025: #fcfcfd;
+    --gem-neutral-050: #f9fafb;
+    --gem-neutral-100: #f2f4f7;
+    --gem-neutral-200: #e4e7ec;
+    --gem-neutral-300: #d0d5dd;
+    --gem-neutral-400: #98a2b3;
+    --gem-neutral-500: #667085;
+    --gem-neutral-600: #475467;
+    --gem-neutral-700: #344054;
+    --gem-neutral-800: #1d2939;
+    --gem-neutral-900: #101828;
+
+    --gem-primary-025: #fcfcfd;
+    --gem-primary-050: #f8f9fc;
+    --gem-primary-100: #eaecf5;
+    --gem-primary-200: #c8cce5;
+    --gem-primary-300: #9ea5d1;
+    --gem-primary-400: #717bbc;
+    --gem-primary-500: #4e5ba6;
+    --gem-primary-600: #3e4784;
+    --gem-primary-700: #363f72;
+    --gem-primary-800: #293056;
+    --gem-primary-900: #101323;
+
+    --gem-error-025: #fffbfa;
+    --gem-error-050: #fef3f2;
+    --gem-error-100: #fee4e2;
+    --gem-error-200: #fecdca;
+    --gem-error-300: #fda29b;
+    --gem-error-400: #f97066;
+    --gem-error-500: #f04438;
+    --gem-error-600: #d92d20;
+    --gem-error-700: #b42318;
+    --gem-error-800: #912018;
+    --gem-error-900: #7a271a;
+
+    --gem-warning-025: #fffcf5;
+    --gem-warning-050: #fffaeb;
+    --gem-warning-100: #fef0c7;
+    --gem-warning-200: #fedf89;
+    --gem-warning-300: #fec84b;
+    --gem-warning-400: #fdb022;
+    --gem-warning-500: #f79009;
+    --gem-warning-600: #dc6803;
+    --gem-warning-700: #b54708;
+    --gem-warning-800: #93370d;
+    --gem-warning-900: #7a2e0e;
+
+    --gem-success-025: #f6fef9;
+    --gem-success-050: #ecfdf3;
+    --gem-success-100: #d1fadf;
+    --gem-success-200: #a6f4c5;
+    --gem-success-300: #6ce9a6;
+    --gem-success-400: #32d583;
+    --gem-success-500: #12b76a;
+    --gem-success-600: #039855;
+    --gem-success-700: #027a48;
+    --gem-success-800: #05603a;
+    --gem-success-900: #054f31;
+}

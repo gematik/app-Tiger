@@ -17,6 +17,8 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.rbellogger.util.RbelAnsiColors;
+import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -122,13 +124,8 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             if (getStatus() != TigerServerStatus.NEW) {
                 throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
             }
-            setStatus(TigerServerStatus.STARTING);
         }
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type(configuration.getType())
-            .build());
-
-        statusMessage("Starting " + getServerId());
+        setStatus(TigerServerStatus.STARTING, "Starting " + getServerId());
 
         reloadConfiguration();
 
@@ -163,10 +160,14 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             performStartup();
         } catch (RuntimeException e) {
             log.warn("Error during startup of server {}. Used configuration was {}",
-                getHostname(), TigerSerializationUtil.toJson(getConfiguration()));
+                getServerId(), TigerSerializationUtil.toJson(getConfiguration()));
             throw e;
+        } catch (Throwable t) {
+            log.warn("Throwable during startup of server {}. Used configuration was {}",
+                getServerId(), TigerSerializationUtil.toJson(getConfiguration()), t);
+            throw t;
         }
-        statusMessage("Setting routes at local proxy");
+        statusMessage(getServerId() + " started");
 
         configuration.getExports().forEach(exp -> {
             String[] kvp = exp.split("=", 2);
@@ -178,21 +179,21 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             }
             kvp[1] = kvp[1].replace("${NAME}", getHostname());
 
-            log.info("  setting global property " + kvp[0] + "=" + kvp[1]);
+            log.info("Setting global property {}={}", kvp[0], kvp[1]);
             TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
         });
 
         synchronized (this) {
-            setStatus(TigerServerStatus.RUNNING);
+            setStatus(TigerServerStatus.RUNNING, getServerId() + " READY");
         }
-        statusMessage(hostname + " READY");
     }
 
     private void reloadConfiguration() {
         try {
             this.configuration = TigerGlobalConfiguration.instantiateConfigurationBean(CfgServer.class,
-                "tiger", "servers", getServerId())
-                .orElseThrow(() -> new TigerEnvironmentStartupException("Could not reload configuration for server with id "+getServerId()));
+                    "tiger", "servers", getServerId())
+                .orElseThrow(
+                    () -> new TigerEnvironmentStartupException("Could not reload configuration for server with id " + getServerId()));
             tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
         } catch (TigerConfigurationException e) {
             log.warn("Could not reload configuration for server {}", getServerId(), e);
@@ -200,7 +201,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     private void loadPkiForProxy() {
-        log.info("  loading PKI resources for instance {}...", getHostname());
+        log.info("Loading PKI resources for instance {}...", getServerId());
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Certificate)
             .forEach(key -> {
@@ -208,7 +209,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                     throw new TigerConfigurationException(
                         "Your certificate is empty, please check your .yaml-file for " + key.getId());
                 }
-                log.info("Adding certificate " + key.getId());
+                log.info("Adding certificate {}", key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
@@ -222,7 +223,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                     throw new TigerConfigurationException(
                         "Your Key is empty, please check your .yaml-file for " + key.getId());
                 }
-                log.info("Adding key " + key.getId());
+                log.info("Adding key {}", key.getId());
                 getTigerTestEnvMgr().getLocalTigerProxy().addKey(
                     key.getId(),
                     KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
@@ -249,7 +250,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             assertCfgPropertySet(getConfiguration(), "version");
         }
 
-        // assert that server-port is set for the tiger-proxy
+        // assert that server-port is set for the Tiger Proxy
         if (type == ServerType.TIGERPROXY) {
             if (getConfiguration().getTigerProxyCfg() == null) {
                 getConfiguration().setTigerProxyCfg(new TigerProxyConfiguration());
@@ -259,13 +260,13 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             }
             if (getConfiguration().getTigerProxyCfg().getProxyPort() == null
                 || getConfiguration().getTigerProxyCfg().getProxyPort() <= 0) {
-                throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getHostname() + "'");
+                throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getServerId() + "'");
             }
         }
 
         // set default values for all types
         if (getConfiguration().getStartupTimeoutSec() == null) {
-            log.info("Defaulting startup timeout sec to 20sec for server " + serverId);
+            log.info("Defaulting startup timeout sec to 20sec for server {}", serverId);
             getConfiguration().setStartupTimeoutSec(20);
         }
 
@@ -299,7 +300,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         }
 
         if (type == ServerType.EXTERNALJAR) {
-            assertCfgPropertySet(getConfiguration(),  "healthcheckUrl");
+            assertCfgPropertySet(getConfiguration(), "healthcheckUrl");
         }
     }
 
@@ -310,27 +311,30 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                 .getMethod("get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1));
             target = mthd.invoke(target);
             if (target == null) {
-                throw new TigerTestEnvException("Server " + propertyName + " must be set and must not be NULL!");
+                throw new TigerTestEnvException("Server " + getServerId() + " must have property " + propertyName
+                    + " be set and not be NULL!");
             }
             if (target instanceof List) {
                 List<?> l = (List<?>) target;
                 if (l.isEmpty() ||
                     l.get(0) == null) {
                     throw new TigerTestEnvException(
-                        "Server " + propertyName + " list must be set and must contain at least one not empty entry!");
+                        "Server " + getServerId() + " must have property " + propertyName
+                            + " be set and must contain at least one not empty entry!");
                 }
                 if (l.get(0) instanceof String) {
                     if (((String) l.get(0)).isBlank()) {
                         throw new TigerTestEnvException(
-                            "Server " + propertyName
-                                + " list must be set and must contain at least one not empty entry!");
+                            "Server " + getServerId() + " must have property " + propertyName
+                                + " be set and contain at least one not empty entry!");
                     }
                 }
             } else {
                 if (target instanceof String) {
                     if (((String) target).isBlank()) {
                         throw new TigerTestEnvException(
-                            "Server " + propertyName + " must be set and must not be empty!");
+                            "Server " + getServerId() + " must have property " + propertyName
+                                + " be set and not be empty!");
                     }
                 }
             }
@@ -366,7 +370,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     void removeAllRoutes() {
-        log.info("Removing routes for {}...", getHostname());
+        log.info("Removing routes for {}...", getServerId());
         routes.stream()
             .map(TigerRoute::getId)
             .forEach(getTigerTestEnvMgr().getLocalTigerProxy()::removeRoute);
@@ -393,10 +397,22 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     public void setStatus(TigerServerStatus newStatus) {
+        setStatus(newStatus, null);
+    }
+
+    public void setStatus(TigerServerStatus newStatus, String statusMessage) {
         this.status = newStatus;
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .status(newStatus)
+            .statusMessage(statusMessage)
             .build());
+        if (statusMessage != null) {
+            if (newStatus == TigerServerStatus.STOPPED) {
+                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.RED_BOLD));
+            } else {
+                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
+            }
+        }
     }
 
     public void registerNewListener(TigerUpdateListener listener) {
@@ -404,10 +420,10 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     public void statusMessage(String statusMessage) {
-        log.info(statusMessage);
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .statusMessage(statusMessage)
             .build());
+        log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
     }
 
     void publishNewStatusUpdate(TigerServerStatusUpdate update) {

@@ -46,6 +46,8 @@ public class GherkinStruct {
     private String description = "";
     private List<Tag> tags = new ArrayList<>();
 
+    private String id;
+
 
     protected Tag getTag(final String tagName) {
         return tags.stream()

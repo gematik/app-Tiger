@@ -20,7 +20,6 @@ import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
@@ -79,7 +78,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     @Getter
     private final MockServerToRbelConverter mockServerToRbelConverter;
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
-    private List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
+    private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
 
     public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
@@ -102,10 +101,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
             .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
         log.info("Proxy started on port " + mockServer.getLocalPort());
-
-        if (configuration.getPortAsArray() == null) {
-            TigerGlobalConfiguration.putValue("tigerProxy.proxyPort", mockServer.getLocalPort());
-        }
 
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         if (configuration.getProxyRoutes() != null) {
@@ -235,9 +230,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     @Override
     public List<TigerRoute> getRoutes() {
-        return tigerRouteMap.entrySet().stream()
-            .map(Entry::getValue)
-            .collect(Collectors.toList());
+        return tigerRouteMap.values().stream().collect(Collectors.toUnmodifiableList());
     }
 
     @Override
@@ -267,7 +260,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 throw new TigerProxyRouteConflictException(existingRoute);
             });
 
-        log.info("adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
+        log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
         final Expectation[] expectations = buildRouteAndReturnExpectation(tigerRoute);
         if (expectations.length > 1) {
             log.warn("Unexpected number of expectations created! Got {}, expected 1", expectations.length);
@@ -374,7 +367,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             SSLContext.setDefault(sslContext);
             return sslContext;
         } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while configuring SSL Context for tiger-proxy",
+            throw new TigerProxyTrustManagerBuildingException("Error while configuring SSL Context for Tiger Proxy",
                 e);
         }
     }
@@ -406,7 +399,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 }
             };
         } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building TrustManager for tiger-proxy",
+            throw new TigerProxyTrustManagerBuildingException("Error while building TrustManager for Tiger Proxy",
                 e);
         }
     }
@@ -442,7 +435,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             }
             return ks;
         } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy",
+            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for Tiger Proxy",
                 e);
         }
     }
@@ -455,7 +448,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             TrustManager[] trustManagers = tmf.getTrustManagers();
-            log.info("our trust managers: " + trustManagers);
+            log.info("Our trust managers: " + trustManagers);
             sslContext.init(null, trustManagers, null);
 
             final HttpClient httpClient = HttpClients.custom()
@@ -468,7 +461,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .httpClient(config -> ApacheClient.builder(httpClient).apply(config));
             return sslContext;
         } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for tiger-proxy",
+            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for Tiger Proxy",
                 e);
         }
     }

@@ -17,8 +17,6 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static java.time.LocalDateTime.now;
-import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
@@ -28,17 +26,14 @@ import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.SystemUtils;
 
 @Slf4j
 public class ExternalJarServer extends AbstractExternalTigerServer {
@@ -54,17 +49,18 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
     @Override
     public void performStartup() {
-        final CfgExternalJarOptions externalJarOptions = getConfiguration().getExternalJarOptions();
         final String workingDir = getConfiguration().getExternalJarOptions().getWorkingDir();
-        log.info(Ansi.colorize("starting external jar instance {} in folder {}...", RbelAnsiColors.GREEN_BOLD),
-            getHostname(), workingDir);
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(ServerType.EXTERNALJAR)
+            .statusMessage("Starting external jar instance " + getServerId() + " in folder '" + workingDir + "'...")
+            .build());
 
-        log.info("preparing check for external jar location...");
+        final CfgExternalJarOptions externalJarOptions = getConfiguration().getExternalJarOptions();
+
         var jarUrl = getConfiguration().getSource().get(0);
 
         jarFile = getTigerTestEnvMgr().getDownloadManager().downloadJarAndReturnFile(this, jarUrl);
 
-        log.info("creating cmd line...");
         List<String> options = new ArrayList<>();
         String javaExe = findJavaExecutable();
         options.add(javaExe);
@@ -74,16 +70,15 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         options.add("-jar");
         options.add(jarFile.getName());
         options.addAll(externalJarOptions.getArguments());
-        statusMessage("About to run '" + String.join(" ", options)
+        statusMessage("Running '" + String.join(" ", options)
             + "' in folder '" + new File(workingDir).getAbsolutePath() + "'");
-        Runtime.getRuntime().addShutdownHook(new Thread(this::stopExternalProcess));
 
         final AtomicReference<Throwable> exception = new AtomicReference<>();
 
         processStartTime = now();
         getTigerTestEnvMgr().getExecutor().submit(() -> {
             try {
-                statusMessage("Starting local JAR-File");
+                statusMessage("Starting Jar process for " + getServerId());
                 final ProcessBuilder processBuilder = new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(workingDir))
@@ -98,7 +93,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                     )));
 
                 processReference.set(processBuilder.start());
-                statusMessage("Started JAR-File with PID '" + processReference.get().pid() + "'");
+                statusMessage("Started JAR-File for " + getServerId() + " with PID '" + processReference.get().pid() + "'");
             } catch (Throwable t) {
                 log.error("Failed to start process", t);
                 exception.set(t);
@@ -107,42 +102,40 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         });
 
         if (isHealthCheckNone()) {
-            log.warn("Healthcheck is not configured, so unable to add route to local proxy!");
+            log.warn("Healthcheck for {} is not configured, so unable to add route to local proxy!", getServerId());
         } else {
             addServerToLocalProxyRouteMap(buildHealthcheckUrl());
             publishNewStatusUpdate(TigerServerStatusUpdate.builder()
                 .baseUrl(extractBaseUrl(buildHealthcheckUrl()))
-                // TODO TGR-475 remove once order is ok
-                .type(ServerType.EXTERNALJAR)
                 .build());
         }
 
         if (exception.get() != null) {
-            throw new TigerTestEnvException("Unable to start external jar '" + getHostname() + "'!", exception.get());
+            throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!", exception.get());
         }
         waitForService(true);
         if (exception.get() != null) {
-            throw new TigerTestEnvException("Unable to start external jar '" + getHostname() + "'!", exception.get());
+            throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!", exception.get());
         } else if (getStatus() == TigerServerStatus.STOPPED) {
-            throw new TigerEnvironmentStartupException("Unable to start external jar '" + getHostname() + "'!");
+            throw new TigerEnvironmentStartupException("Unable to start external jar '" + getServerId() + "'!");
         } else if (getStatus() == TigerServerStatus.STARTING) {
             waitForService(false);
             if (exception.get() != null) {
-                throw new TigerTestEnvException("Unable to start external jar '" + getHostname() + "'!",
+                throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!",
                     exception.get());
             } else {
-                throw new TigerTestEnvException("Unable to start external jar '" + getHostname() + "'!");
+                throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!");
             }
         }
     }
 
     public TigerServerStatus updateStatus(boolean quiet) {
         if (!processReference.get().isAlive()) {
-            log.warn("Process {} is stopped!", processReference.get().pid());
-            setStatus(TigerServerStatus.STOPPED);
+            log.warn("Process {} for {} is stopped!", processReference.get().pid(), getServerId());
+            setStatus(TigerServerStatus.STOPPED, "Jar process for " + getServerId() + " stopped unexpectedly");
             if (now().isBefore(processStartTime.plusSeconds(3))) {
                 log.warn("{}: Unusually short process run time ({})! Suspecting defunct jar! (Exitcode={})",
-                    getHostname(), Duration.between(now(), processStartTime), processReference.get().exitValue());
+                    getServerId(), Duration.between(now(), processStartTime), processReference.get().exitValue());
                 cleanupDefunctJar();
             }
             return getStatus();
@@ -162,7 +155,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
     @Override
     public void shutdown() {
-        log.info("Stopping external jar {}...", getHostname());
+        log.info("Stopping external jar {}...", getServerId());
         removeAllRoutes();
         stopExternalProcess();
     }
@@ -170,12 +163,13 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
     private void stopExternalProcess() {
         if (processReference.get() != null) {
             log.info("Stopping external process (pid={})", processReference.get().pid());
-            log.info("interrupting threads...");
+            log.info("Interrupting threads...");
             processReference.get().destroy();
-            log.info("stopping threads...");
+            log.info("Stopping threads...");
             processReference.get().destroyForcibly();
+            setStatus(TigerServerStatus.STOPPED, "Jar process for " + getServerId() + " stopped");
         } else {
-            log.warn("Process for server {} not found... No need to shutdown", getHostname());
+            setStatus(TigerServerStatus.STOPPED, "No Jar process for " + getServerId() + " found");
         }
     }
 

@@ -53,13 +53,13 @@ services:
 
   # DEMIS Configuration Files - The image is terminated immediately, it serves as data container
   demis-config-data:
-    image: gstopdr1.top.local/demis/configuration-localhost:latest
+    image: eu.gcr.io/gematik-all-infra-prod/demis/configuration-localhost:latest
     #image: demis-config:local
     restart: "no"
     <<: *volume-setup-ref
 
   keycloak:
-    image: gstopdr1.top.local/demis/keycloak:1.0.2-configured-dev
+    image: eu.gcr.io/gematik-all-infra-prod/demis/keycloak:1.0.2-configured-dev
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -83,7 +83,7 @@ services:
           - demis-keycloak
 
   postgresDemis:
-    image: gstopdr1.top.local/demis/postgres:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/postgres:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     environment:
@@ -112,7 +112,7 @@ services:
     restart: always
 
   nginx:
-    image: gstopdr1.top.local/demis/nginx:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/nginx:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -134,7 +134,7 @@ services:
     restart: always
 
   storage-service:
-    image: gstopdr1.top.local/demis/storage:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/storage:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -152,7 +152,7 @@ services:
     restart: always
 
   doublette-detection-services:
-    image: gstopdr1.top.local/demis/doublette-detection:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/doublette-detection:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -171,7 +171,7 @@ services:
 
 
   pseudonymization-service:
-    image: gstopdr1.top.local/demis/pseudonymization:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/pseudonymization:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -192,7 +192,7 @@ services:
     restart: always
 
   notification-clearing-api:
-    image: gstopdr1.top.local/demis/notification-clearing-api:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/notification-clearing-api:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -210,7 +210,7 @@ services:
     restart: always
 
   notification-api:
-    image: gstopdr1.top.local/demis/notification-api:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/notification-api:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -228,7 +228,7 @@ services:
     restart: always
 
   pdf-generation-service:
-    image: gstopdr1.top.local/demis/pdf-generation:1.8.2
+    image: eu.gcr.io/gematik-all-infra-prod/demis/pdf-generation:1.8.2
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -247,7 +247,7 @@ services:
 
 
   profile-server:
-    image: gstopdr1.top.local/demis/profile-server:latest
+    image: eu.gcr.io/gematik-all-infra-prod/demis/profile-server:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -263,7 +263,7 @@ services:
       <<: *environment-timezone-ref
 
   notification-portal:
-    image: gstopdr1.top.local/demis/notification-portal:latest-local
+    image: eu.gcr.io/gematik-all-infra-prod/demis/notification-portal:latest-local
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:
@@ -281,7 +281,7 @@ services:
       <<: *environment-timezone-ref
 
   notification-gateway:
-    image: gstopdr1.top.local/demis/notification-gateway:latest
+    image: eu.gcr.io/gematik-all-infra-prod/demis/notification-gateway:latest
     <<: *service-setup-ref
     <<: *volume-setup-ref
     ports:

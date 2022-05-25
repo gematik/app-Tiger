@@ -18,7 +18,9 @@ package de.gematik.test.tiger.common.banner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.github.dtmo.jfiglet.FigFontResources;
 import de.gematik.rbellogger.util.RbelAnsiColors;
+import java.util.Arrays;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -28,15 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class TestBanner {
 
-    private static final String REGEX_MATCH_ASCII_COLORS = "\\x1b|\\[|[0-9;]|[m]|[\\n]{2,}|[=]{5,}";
-
-    private static Stream<Arguments> provideMessagesForBannerShout() {
-        return Stream.of(
-            Arguments.of("TIGER Director V1.2.0"),
-            Arguments.of("Starting director..."),
-            Arguments.of("abcdefghijklmnopqrstuvwxyzÄäÜüÖöß?%&12345,67;89:0<>!$#")
-        );
-    }
+    private static final String REGEX_MATCH_ASCII_COLORS = "\\x1b|\\[|[\\d;]|m|\\n{2,}|={5,}";
 
     private static Stream<Arguments> provideMessageForCheckingSymbols() {
         return Stream.of(
@@ -44,70 +38,59 @@ public class TestBanner {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource("provideMessagesForBannerShout")
-    public void testBannerMessageShoutForAllFonts(String message) {
-        changeBannerFontTo("Straight");
-        Banner.shout(message, RbelAnsiColors.GREEN_BOLD.toString());
-
-        changeBannerFontTo("Thin");
-        Banner.shout(message, RbelAnsiColors.GREEN_BOLD.toString());
-
-        changeBannerFontTo("Doom");
-        Banner.shout(message, RbelAnsiColors.GREEN_BOLD.toString());
-
-        changeBannerFontTo("Spliff");
-        Banner.shout(message, RbelAnsiColors.GREEN_BOLD.toString());
-    }
-
 
     @ParameterizedTest
     @MethodSource("provideMessageForCheckingSymbols")
     public void testAllSymbolsArePresentInBannerMessage(String message) {
-        changeBannerFontTo("Straight");
+        Banner.setFont(FigFontResources.BUBBLE_FLF);
         assertEachSymbolIsPresent(message);
 
-        changeBannerFontTo("Thin");
+        Banner.setFont(FigFontResources.LEAN_FLF);
         assertEachSymbolIsPresent(message);
 
-        changeBannerFontTo("Doom");
+        Banner.setFont(FigFontResources.SMSHADOW_FLF);
         assertEachSymbolIsPresent(message);
 
-        changeBannerFontTo("Spliff");
+        Banner.setFont(FigFontResources.BANNER_FLF);
         assertEachSymbolIsPresent(message);
     }
 
     @Test
     public void testBannerStrRedOK() {
-        changeBannerFontTo("Straight");
+        Banner.setFont(FigFontResources.STANDARD_FLF);
 
         var colors = new String[]{"roten", "rot", "RED"};
         for (String col : colors) {
             String str = Banner.toBannerStr("TestString", RbelAnsiColors.seekColor(col).toString());
-            assertThat(str).isEqualTo(
-                "\u001B[0;31m====================================================================================================\u001B[0m\n"
-                    + "\u001B[0;31m ___               __                     \u001B[0m\n"
-                    + "\u001B[0;31m  |    _   _  |_  (_   |_   _ .   _    _  \u001B[0m\n"
-                    + "\u001B[0;31m  |   (=  _)  |_  __)  |_  |  |  | )  (_) \u001B[0m\n"
-                    + "\u001B[0;31m                                      _/  \u001B[0m\n"
-                    + "\u001B[0;31m====================================================================================================\u001B[0m");
+            assertThat(str).isEqualTo("\u001B[0;31m====================================================================================================\u001B[0m\n"
+                + "\u001B[0;31m  _____         _   ____  _        _             \u001B[0m\n"
+                + "\u001B[0;31m |_   _|__  ___| |_/ ___|| |_ _ __(_)_ __   __ _ \u001B[0m\n"
+                + "\u001B[0;31m   | |/ _ \\/ __| __\\___ \\| __| '__| | '_ \\ / _` |\u001B[0m\n"
+                + "\u001B[0;31m   | |  __/\\__ \\ |_ ___) | |_| |  | | | | | (_| |\u001B[0m\n"
+                + "\u001B[0;31m   |_|\\___||___/\\__|____/ \\__|_|  |_|_| |_|\\__, |\u001B[0m\n"
+                + "\u001B[0;31m                                           |___/ \u001B[0m\n"
+                + "\u001B[0;31m====================================================================================================\u001B[0m");
         }
     }
 
+
+
+
+
     @Test
     public void testBannerStrCOLOROK() {
-        System.setProperty("TIGER_BANNER_FONT", "Straight");
-        Banner.initialize();
+        Banner.setFont(FigFontResources.STANDARD_FLF);
         var colors = new String[]{"roten", "rot", "RED"};
         for (String col : colors) {
             String str = Banner.toBannerStrWithCOLOR("TestString", col);
-            assertThat(str).isEqualTo(
-                "\u001B[0;31m====================================================================================================\u001B[0m\n"
-                    + "\u001B[0;31m ___               __                     \u001B[0m\n"
-                    + "\u001B[0;31m  |    _   _  |_  (_   |_   _ .   _    _  \u001B[0m\n"
-                    + "\u001B[0;31m  |   (=  _)  |_  __)  |_  |  |  | )  (_) \u001B[0m\n"
-                    + "\u001B[0;31m                                      _/  \u001B[0m\n"
-                    + "\u001B[0;31m====================================================================================================\u001B[0m");
+            assertThat(str).isEqualTo("\u001B[0;31m====================================================================================================\u001B[0m\n"
+                + "\u001B[0;31m  _____         _   ____  _        _             \u001B[0m\n"
+                + "\u001B[0;31m |_   _|__  ___| |_/ ___|| |_ _ __(_)_ __   __ _ \u001B[0m\n"
+                + "\u001B[0;31m   | |/ _ \\/ __| __\\___ \\| __| '__| | '_ \\ / _` |\u001B[0m\n"
+                + "\u001B[0;31m   | |  __/\\__ \\ |_ ___) | |_| |  | | | | | (_| |\u001B[0m\n"
+                + "\u001B[0;31m   |_|\\___||___/\\__|____/ \\__|_|  |_|_| |_|\\__, |\u001B[0m\n"
+                + "\u001B[0;31m                                           |___/ \u001B[0m\n"
+                + "\u001B[0;31m====================================================================================================\u001B[0m");
         }
     }
 
@@ -118,6 +101,7 @@ public class TestBanner {
     }
 
     private static void assertEachSymbolIsPresent(String msg) {
+        // DEBUG Arrays.stream(Banner.toBannerStr(msg, RbelAnsiColors.GREEN_BOLD.toString()).split("\n")).forEach(System.out::println);
         for (int i = 0; i < msg.length(); i++) {
             String initialSymbol = Banner.toBannerStr(msg.substring(i, i + 1), RbelAnsiColors.GREEN_BOLD.toString());
 
@@ -126,11 +110,5 @@ public class TestBanner {
                 .withFailMessage("The symbol " + msg.charAt(i) + " is not displayed.")
                 .isFalse();
         }
-    }
-
-    private static void changeBannerFontTo(String fontName) {
-        System.setProperty("TIGER_BANNER_FONT", fontName);
-
-        Banner.initialize();
     }
 }

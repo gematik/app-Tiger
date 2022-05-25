@@ -196,13 +196,13 @@ This will load the given file and replace any placeholders found in it.
 
 To give you direct access to the messages sent please use the rbel-namespace:
 
-* `lastResponse` returns the last response, optionally filtered by a given Rbel-path
-* `lastResponseAsString` returns the string-representation of the last response, optionally filtered by a given Rbel-path
+* `currentResponse` returns the current response, optionally filtered by a given Rbel-path
+* `currentResponseAsString` returns the string-representation of the last response, optionally filtered by a given Rbel-path
 
 This can be done like so
 
 ```
-!{rbel:lastResponseAsString('$.body.html.head.link.href')}
+!{rbel:currentResponseAsString('$.body.html.head.link.href')}
 ```
 
 This will immediately return the `href`-attribute of the link in question as a string.

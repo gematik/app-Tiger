@@ -1,0 +1,7 @@
+version: '2'
+services:
+  webserver:
+    image: docker.io/httpd:alpine
+    expose: [80]
+    ports:
+      - "${free.port.1}:80"
