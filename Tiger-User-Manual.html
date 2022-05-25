@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.20.2 - 2022-05-11</span>
+<span id="revdate">Version 0.21.0 - 2022-05-25</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -281,7 +281,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_tiger_test_library_2">5. Tiger Test library</a>
 <ul class="sectlevel2">
 <li><a href="#_tiger_test_lib_configuration">5.1. Tiger test lib configuration</a></li>
-<li><a href="#_cucumber_and_tigertesthooks">5.2. Cucumber and TigerTestHooks</a></li>
+<li><a href="#_cucumber_and_hooks">5.2. Cucumber and Hooks</a></li>
 <li><a href="#_using_the_cucumber_tiger_validation_steps">5.3. Using the Cucumber Tiger validation steps</a></li>
 <li><a href="#_using_tiger_test_lib_helper_classes">5.4. Using Tiger test lib helper classes</a></li>
 <li><a href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.5. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
@@ -692,7 +692,6 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
                         <span class="tag">&lt;configuration&gt;</span>
                             <span class="comment">&lt;!-- mandatory --&gt;</span>
                             <span class="tag">&lt;glues&gt;</span>
-                                <span class="tag">&lt;glue&gt;</span>de.gematik.test.tiger.hooks<span class="tag">&lt;/glue&gt;</span>
                                 <span class="tag">&lt;glue&gt;</span>de.gematik.test.tiger.glue<span class="tag">&lt;/glue&gt;</span>
                                 <span class="comment">&lt;!-- add your packages here --&gt;</span>
                             <span class="tag">&lt;/glues&gt;</span>
@@ -843,7 +842,6 @@ You may decide to manually write your own JUnit driver classes in which case you
                         <span class="tag">&lt;configuration&gt;</span>
                             <span class="comment">&lt;!-- mandatory --&gt;</span>
                             <span class="tag">&lt;glues&gt;</span>
-                                <span class="tag">&lt;glue&gt;</span>de.gematik.test.tiger.hooks<span class="tag">&lt;/glue&gt;</span>
                                 <span class="tag">&lt;glue&gt;</span>de.gematik.test.tiger.glue<span class="tag">&lt;/glue&gt;</span>
                                 <span class="comment">&lt;!-- add your packages here --&gt;</span>
                             <span class="tag">&lt;/glues&gt;</span>
@@ -988,15 +986,15 @@ comma separated list of glue/hook packages as specified by the glues configurati
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">de.gematik.test.tiger.integration.YOURPROJECT</span>;
 
 <span class="keyword">import</span> <span class="include">io.cucumber.junit.CucumberOptions</span>;
-<span class="keyword">import</span> <span class="include">net.serenitybdd.cucumber.CucumberWithSerenity</span>;
+<span class="keyword">import</span> <span class="include">de.gematik.test.tiger.TigerCucumberRunner</span>;
 <span class="keyword">import</span> <span class="include">org.junit.runner.RunWith</span>;
 
-<span class="annotation">@RunWith</span>(CucumberWithSerenity.class)
+<span class="annotation">@RunWith</span>(TigerCucumberRunner.class)
 <span class="annotation">@CucumberOptions</span>(
     features = {<span class="string"><span class="delimiter">&quot;</span><span class="content">src/test/resources/features/YOURFEATURE.feature</span><span class="delimiter">&quot;</span></span>},
-    plugin = {<span class="string"><span class="delimiter">&quot;</span><span class="content">json:target/cucumber-parallel/1.json</span><span class="delimiter">&quot;</span></span>},
+    plugin = {<span class="string"><span class="delimiter">&quot;</span><span class="content">json:target/cucumber-parallel/1.json</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">de.gematik.test.tiger.TigerCucumberListener</span><span class="delimiter">&quot;</span></span>},
     monochrome = <span class="predefined-constant">false</span>,
-    glue = {<span class="string"><span class="delimiter">&quot;</span><span class="content">de.gematik.test.tiger.hooks</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">de.gematik.test.tiger.glue</span><span class="delimiter">&quot;</span></span>,
+    glue = {<span class="string"><span class="delimiter">&quot;</span><span class="content">de.gematik.test.tiger.glue</span><span class="delimiter">&quot;</span></span>,
         <span class="string"><span class="delimiter">&quot;</span><span class="content">ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code</span><span class="delimiter">&quot;</span></span>})
 <span class="directive">public</span> <span class="type">class</span> <span class="class">Driver1IT</span> {
 
@@ -1151,7 +1149,7 @@ making it very complicated to make sure your validations are working as expected
 <div class="title">Run/Debug settings for Java Cucumber template</div>
 <ul>
 <li>
-<p>Main class: net.serenitybdd.cucumber.cli.Main</p>
+<p>Main class: de.gematik.test.tiger.TigerCucumberRunner</p>
 </li>
 <li>
 <p>Glue:</p>
@@ -1159,9 +1157,6 @@ making it very complicated to make sure your validations are working as expected
 <ul>
 <li>
 <p>de.gematik.test.tiger.glue</p>
-</li>
-<li>
-<p>de.gematik.test.tiger.hooks</p>
 </li>
 <li>
 <p>net.serenitybdd.cucumber.actors<br>
@@ -1179,6 +1174,16 @@ if you are using the screenplay pattern (PREFERRED!)</p>
 <ul>
 <li>
 <p>Java proxy system properties (see <a href="#_proxy_configuration">Proxy configuration</a> below)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Program arguments:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>--plugin de.gematik.test.tiger.TigerCucumberListener</p>
 </li>
 </ul>
 </div>
@@ -1385,8 +1390,6 @@ Their meaning and format are explained in the related section.</p>
 
   <span class="comment"># type specific sub structure for docker container and compose nodes</span>
   <span class="key">dockerOptions</span>:
-    <span class="comment"># only used by docker compose nodes</span>
-    <span class="key">serviceHealthchecks</span>: <span class="string"><span class="content">[]</span></span>
     <span class="comment"># all properties below only used by docker container nodes</span>
     <span class="key">proxied</span>: <span class="string"><span class="content">boolean</span></span>
     <span class="key">oneShot</span>: <span class="string"><span class="content">boolean</span></span>
@@ -1562,13 +1565,7 @@ For containers that should exit after a single command you may enable the oneSho
   <span class="comment"># (it could also be located inside a jar that is in the class path)</span>
   <span class="key">source</span>:
     - <span class="string"><span class="content">classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml</span></span>
-    - <span class="string"><span class="content">classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml</span></span>
-  <span class="key">dockerOptions</span>:
-    <span class="comment"># MANDATORY list of URLs to check for a successful start up</span>
-    <span class="comment"># of the docker compose's services</span>
-    <span class="key">serviceHealthchecks</span>:
-      - <span class="string"><span class="content">http://service1:8001/</span></span>
-      - <span class="string"><span class="content">https://service2:9001/</span></span></code></pre>
+    - <span class="string"><span class="content">classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml</span></span></code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -1578,11 +1575,7 @@ For containers that should exit after a single command you may enable the oneSho
   <span class="key">type</span>: <span class="string"><span class="content">compose</span></span>
   <span class="key">source</span>:
     - <span class="string"><span class="content">classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml</span></span>
-  <span class="key">startupTimeoutSec</span>: <span class="string"><span class="content">180</span></span>
-  <span class="key">dockerOptions</span>:
-    <span class="key">serviceHealthchecks</span>:
-      - <span class="string"><span class="content">http://notification-gateway:9042</span></span>
-      - <span class="string"><span class="content">http://notification-portal:9041/welcome</span></span></code></pre>
+  <span class="key">startupTimeoutSec</span>: <span class="string"><span class="content">180</span></span></code></pre>
 </div>
 </div>
 </div>
@@ -1727,7 +1720,7 @@ If it is ever necessary to change the external URL, the test suite does not have
     <span class="key">proxyPort</span>: <span class="string"><span class="content">3128</span></span>
     <span class="comment"># OPTIONAL protocol the proxy is expecting requests in. One of [http|https]</span>
     <span class="comment"># Default value is http</span>
-    <span class="key">proxyProtocol</span>: <span class="string"><span class="content">http</span></span>
+    <span class="key">proxiedServerProtocol</span>: <span class="string"><span class="content">http</span></span>
     <span class="comment"># configures the proxy itself. For more details</span>
     <span class="comment"># please check the chapter about the local test suite Tiger Proxy below</span>
     <span class="error">...</span>
@@ -2687,7 +2680,7 @@ If <code>message</code> is a request, then the <code>message</code> itself will 
 <div class="sect2">
 <h3 id="_additional_configuration">4.9. Additional configuration</h3>
 <div class="paragraph">
-<p>There are some additional configuration-flags in the tiger-proxy:</p>
+<p>There are some additional configuration-flags in the Tiger Proxy:</p>
 </div>
 <div class="sect3">
 <h4 id="_performance">4.9.1. Performance</h4>
@@ -2729,7 +2722,7 @@ If <code>message</code> is a request, then the <code>message</code> itself will 
 <h2 id="_tiger_test_library_2">5. Tiger Test library</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>As outlined in <a href="#_overview">the overview section</a> the Tiger test libarary is<br>
+<p>As outlined in <a href="#_overview">the overview section</a> the Tiger test library is<br>
 one of the three core components of the Tiger test framework.<br>
 Its main goal is to provide extensive support for BDD/Cucumber testing and integrating the local Tiger Proxy<br>
 with the test environment manager and the started test environment.</p>
@@ -2765,38 +2758,39 @@ and activate / deactivate certain features.</p>
     <span class="comment"># Ansi color sequences in their console you may deactivate the coloring with this flag.</span>
     <span class="comment"># Activated by default.</span>
     <span class="key">rbelAnsiColors</span>: <span class="string"><span class="content">true</span></span>
-    <span class="comment"># Flag whether to start a small Java Swing UI to display the current steps / banner messages</span>
+    <span class="comment"># Flag whether to start a browser window to display</span>
+    <span class="comment"># the current steps / banner messages / rbel logs</span>
     <span class="comment"># when executing the test suite.</span>
     <span class="comment"># This feature can be used to instruct the tester to follow</span>
     <span class="comment"># a specific test workflow for manual tests.</span>
     <span class="comment"># Deactivated by default</span>
-    <span class="key">activateMonitorUI</span>: <span class="string"><span class="content">false</span></span>
-    <span class="comment"># Flag whether to add a curl command details button to SerenityRest Restassured calls</span>
+    <span class="key">activateWorkflowUi</span>: <span class="string"><span class="content">false</span></span>
+    <span class="comment"># Flag whether to add a curl command details button to</span>
+    <span class="comment"># SerenityRest Restassured calls</span>
     <span class="comment"># in the Serenity BDD report</span>
     <span class="key">addCurlCommandsForRaCallsToReport</span>: <span class="string"><span class="content">true</span></span></code></pre>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cucumber_and_tigertesthooks">5.2. Cucumber and TigerTestHooks</h3>
+<h3 id="_cucumber_and_hooks">5.2. Cucumber and Hooks</h3>
 <div class="paragraph">
-<p>As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are defined in the TigerTestHooks class.</p>
+<p>As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed .</p>
 </div>
 <div class="paragraph">
-<p>That&#8217;s why it is mandatory to add the package de.gematik.test.tiger.hooks to the glue packages list.</p>
+<p>That&#8217;s why it is mandatory to add the plugin de.gematik.test.tiger.TigerCucumberListener to the plugins list and use the TigerCucumberRunner.</p>
 </div>
 <div class="paragraph">
-<p>The TigerTestHooks class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.</p>
+<p>The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.</p>
 </div>
 <div class="paragraph">
-<p>The @Before method calls the TigerDirector once<br>
-to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the monitoring UI and parses the current scenario / feature file.<br>
+<p>At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the workflow UI.<br>
 It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.<br>
-Utilizing the close integration of SerenityBDD and RestAssured the @Before method also registers a Restassured request filter, parses the details and adds a curl Command details button to the Serenity BDD report.<br>
-The curl command shown in this section allows to repeat the performed REST request, for manual test failure analysis.</p>
+Utilizing the close integration of SerenityBDD and RestAssured at startup also a Restassured request filter, which parses the details and adds a curl Command details button to the Serenity BDD report, is registered.<br>
+The curl command shown in that section in the report allows to repeat the performed REST request, for manual test failure analysis.</p>
 </div>
 <div class="paragraph">
-<p>The @After method saves all collected RbelMessages as HTML file to the <code>target/rbellogs</code> folder, attaches it to the SerenityBDD report as test evidence and logs the current test run state (success/failed rate) to the console.</p>
+<p>After each scenario / data variant all collected RbelMessages are saved as HTML file to the <code>target/rbellogs</code> folder, and attached to the SerenityBDD report as test evidence. The current test run state (success/failed rate) is logged to the console.</p>
 </div>
 <div class="paragraph">
 <p>The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.<br>
@@ -2809,35 +2803,10 @@ Such things as syncing test cases and test reports with Polarion, creating requi
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-For now, the TigerDirector is only for internal use and does not provide any implementation of the aforementioned features.
+For now, the TigerDirector, TigerCucumberRunner, TigerCucumberListener are only for internal use and do not provide any implementation of the aforementioned features.
 </td>
 </tr>
 </table>
-</div>
-<div class="sect3">
-<h4 id="_how_to_use_tiger_in_a_non_cucumber_scenario">5.2.1. How to use Tiger in a non Cucumber scenario</h4>
-<div class="paragraph">
-<p>If you are using TestNG, plain JUnit or other Test harness frameworks, you have to ensure that you call the four methods defined in the TigerTestHooks class at the appropriate times.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>The @Before method must be called before each Test scenario</p>
-</li>
-<li>
-<p>The @BeforeStep method MIGHT be called before each test step</p>
-</li>
-<li>
-<p>The @After method MIGHT be called after each Test scenario</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>If you provide a dummy Scenario instance with dummy steps matching your test code to the method you might use all methods. Else you just pass in a null Scenario to the methods or do not call the other methods in your test run.</p>
-</div>
-<div class="paragraph">
-<p>But take note that this will not pop up UI Workflow banner messages and will not save RBelMessage HTML files. As a workaround you might use the TigerDirector to manually trigger UI Monitor popups via its method <code>updateStepInMonitor(Step step)</code>.</p>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -2857,7 +2826,7 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
 <p>Filter for server, method, path, RBelPath node matching given value in request</p>
 </li>
 <li>
-<p>Find first / next matching request</p>
+<p>Find first / next / last matching request</p>
 </li>
 <li>
 <p>Clear all recorded messages</p>
@@ -3162,6 +3131,26 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find next request to path {string} with {string} matching {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/**
+ * find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+ * instance.
+ *
+ * @param path path to match
+ */</span>
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR finde die letzte Anfrage mit dem Pfad {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find last request to path {string}</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/**
+ * find the LAST request where path and node value equal or match as regex and memorize it in the {@link
+ * #rbelValidator} instance.
+ *
+ * @param path     path to match
+ * @param rbelPath rbel path to node/attribute
+ * @param value    value to match at given node/attribute
+ */</span>
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find last request to path {string} with {string} matching {string}</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/**
  * assert that there is any message with given rbel path node/attribute matching given value.
  * The result (request or response) will not be stored in the {@link #rbelValidator}
  * instance.
@@ -3352,7 +3341,7 @@ All classes listed here are part of the tiger-common module
 <h4 id="_banner">5.4.1. Banner</h4>
 <div class="paragraph">
 <p>If you want to use large ASCII art style log banners you may find this class very helpful.<br>
-Supports ANSI coloring and a set of different fonts. Furthermore all banner messages are displayed in the Mmonitoring and highlighted in the Workflow UI<br>
+Supports ANSI coloring and a set of different fonts. Furthermore, all banner messages are displayed and highlighted in the Workflow UI<br>
 For more details please check the code and its usages in the Tiger test framework.</p>
 </div>
 </div>
@@ -3753,10 +3742,10 @@ You will find two predefined namespaces and also the ability to add your own, al
 <div class="ulist">
 <ul>
 <li>
-<p><code>lastResponse</code> returns the last response, optionally filtered by a given Rbel-path</p>
+<p><code>currentResponse</code> returns the current response, optionally filtered by a given Rbel-path</p>
 </li>
 <li>
-<p><code>lastResponseAsString</code> returns the string-representation of the last response, optionally filtered by a given Rbel-path</p>
+<p><code>currentResponseAsString</code> returns the string-representation of the last response, optionally filtered by a given Rbel-path</p>
 </li>
 </ul>
 </div>
@@ -3765,7 +3754,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code>!{rbel:lastResponseAsString('$.body.html.head.link.href')}</code></pre>
+<pre class="CodeRay highlight"><code>!{rbel:currentResponseAsString('$.body.html.head.link.href')}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -3982,7 +3971,7 @@ Till then there is not much more than in the <a href="#_workflow_ui">Test lib ch
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-05-11 09:11:58 +0200
+Last updated 2022-05-25 13:26:03 +0200
 </div>
 </div>
 </body>
