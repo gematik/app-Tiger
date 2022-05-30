@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.admin.bdd.steps.lolevel;
 
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
+import de.gematik.test.tiger.admin.bdd.actions.lolevel.Pause;
 import de.gematik.test.tiger.admin.bdd.actions.lolevel.PerformDragAction;
 import de.gematik.test.tiger.admin.bdd.pages.AdminHomePage;
 import de.gematik.test.tiger.admin.bdd.pages.ServerFormular;
@@ -82,6 +83,7 @@ public class SidebarSteps {
         theActorInTheSpotlight().attemptsTo(
             new ScrollToTarget(AdminHomePage.sidebarHeader()).andAlignToTop(),
             new ScrollToTarget(ServerFormular.sidebarItemContextMenu(nodeName)).andAlignToBottom(),
+            Pause.pauseFor(500),
             Click.on(ServerFormular.sidebarItemContextMenu(nodeName)),
             Click.on(ServerFormular.sidebarItemContextMenuEntry("duplicate"))
         );

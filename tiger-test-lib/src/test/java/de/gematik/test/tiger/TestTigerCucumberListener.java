@@ -123,12 +123,12 @@ public class TestTigerCucumberListener {
 
         TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
         listener.getStepStarted().receive(stepStartedEvent);
-        listener.getStepFinsihed().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.PASSED,
+        listener.getStepFinished().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.PASSED,
             Duration.ofMillis(500), null)));
         assertThat(listener.getCurrentStepIndex()).isEqualTo(1);
 
         listener.getStepStarted().receive(stepStartedEvent);
-        listener.getStepFinsihed().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
+        listener.getStepFinished().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
             Duration.ofMillis(500), null)));
         assertThat(listener.getCurrentStepIndex()).isEqualTo(2);
 
@@ -151,7 +151,7 @@ public class TestTigerCucumberListener {
 
         TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
         listener.getStepStarted().receive(stepStartedEvent);
-        listener.getStepFinsihed().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
+        listener.getStepFinished().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
             Duration.ofMillis(500), null)));
         TestCaseFinished finishedEvent = new TestCaseFinished(Instant.now(), testCase,
             new Result(Status.PASSED, Duration.ofMillis(500), null));

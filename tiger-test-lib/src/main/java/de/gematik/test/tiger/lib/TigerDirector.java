@@ -136,7 +136,8 @@ public class TigerDirector {
     }
 
     private static void showTigerBanner() {
-        if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO", false)) {
+        // created via https://kirilllive.github.io/ASCII_Art_Paint/ascii_paint.html
+        if (TigerGlobalConfiguration.readBoolean("TIGER_LOGO", false)) {
             try {
                 log.info("\n" + IOUtils.toString(
                     Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
