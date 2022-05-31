@@ -321,6 +321,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     private boolean rbelBufferIsExceedingMaxSize() {
+        if (getTigerProxyConfiguration().getRbelBufferSizeInMb() <= 0) {
+            return true;
+        }
         final long bufferSize = getRbelLogger().getMessageHistory().stream()
             .map(RbelElement::getRawContent)
             .mapToLong(ar -> ar.length)

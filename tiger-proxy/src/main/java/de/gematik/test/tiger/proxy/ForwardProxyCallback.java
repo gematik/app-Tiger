@@ -6,18 +6,12 @@ package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.model.SocketAddress;
 
 @Slf4j
 public class ForwardProxyCallback extends AbstractTigerRouteCallback {

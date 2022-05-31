@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
@@ -14,6 +13,7 @@ import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.time.ZonedDateTime;
@@ -23,10 +23,7 @@ import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
 import kong.unirest.Unirest;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
@@ -68,7 +65,8 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         webSocketClient.stop();
 
         final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
-        messageConverter.getObjectMapper().registerModule(new JavaTimeModule());;
+        messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
+
         tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(messageConverter);
         tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
@@ -183,24 +181,30 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
     }
 
-    private void propagateNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes, Optional<ZonedDateTime> transmissionTime) {
+    private Optional<RbelElement> buildNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes,
+        Optional<ZonedDateTime> transmissionTime) {
         if (messageBytes != null) {
-            log.trace("Received new message...", new String(messageBytes));
+            log.info("Received new message...", new String(messageBytes));
 
             final RbelElement rbelMessage = getRbelLogger().getRbelConverter()
                 .parseMessage(messageBytes, sender, receiver);
-            if (transmissionTime.isPresent()) {
-                rbelMessage.addFacet(new RbelMessageTimingFacet(transmissionTime.get()));
-            }
 
-            if (messageMatchesFilterCriterion(rbelMessage)) {
-                super.triggerListener(rbelMessage);
-            } else {
-                getRbelLogger().getMessageHistory().remove(rbelMessage);
-            }
+            transmissionTime.ifPresent(
+                zonedDateTime -> rbelMessage.addFacet(new RbelMessageTimingFacet(zonedDateTime)));
+            return Optional.of(rbelMessage);
         } else {
             log.warn("Received message with content 'null'. Skipping parsing...");
+            return Optional.empty();
         }
+    }
+
+    private void propagateMessage(RbelElement rbelMessage) {
+        if (messageMatchesFilterCriterion(rbelMessage)) {
+            super.triggerListener(rbelMessage);
+        } else {
+            getRbelLogger().getMessageHistory().remove(rbelMessage);
+        }
+
     }
 
     private boolean messageMatchesFilterCriterion(RbelElement rbelMessage) {
@@ -371,10 +375,23 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         public void checkForCompletePairAndPropagateIfComplete() {
             if (request != null && response != null
                 && request.isComplete() && response.isComplete()) {
-                propagateNewRbelMessage(request.getSender(), request.getReceiver(),
+                val requestParsed = buildNewRbelMessage(request.getSender(), request.getReceiver(),
                     request.buildCompleteContent(), Optional.ofNullable(request.getTransmissionTime()));
-                propagateNewRbelMessage(response.getSender(), response.getReceiver(),
+                val responseParsed = buildNewRbelMessage(response.getSender(), response.getReceiver(),
                     response.buildCompleteContent(), Optional.ofNullable(response.getTransmissionTime()));
+                if (requestParsed.isEmpty() || responseParsed.isEmpty()) {
+                    return;
+                }
+
+                val pairFacet = TracingMessagePairFacet.builder()
+                    .response(responseParsed.get())
+                    .request(requestParsed.get())
+                    .build();
+                responseParsed.get().addFacet(pairFacet);
+                requestParsed.get().addFacet(pairFacet);
+
+                propagateMessage(requestParsed.get());
+                propagateMessage(responseParsed.get());
             }
         }
     }

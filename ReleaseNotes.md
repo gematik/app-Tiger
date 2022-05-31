@@ -1,5 +1,11 @@
 # Changelog Tiger Testplattform
 
+# Release 0.22.1
+
+## Bugfixes
+
+* TGR-519: Fixed propagation in aggregating tiger proxies
+
 # Release 0.21.0
 
 ## Breaking Changes

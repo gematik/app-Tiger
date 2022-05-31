@@ -15,6 +15,7 @@ import de.gematik.test.tiger.proxy.client.TigerExceptionDto;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.client.TigerTracingDto;
 import de.gematik.test.tiger.proxy.client.TracingMessagePart;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.Arrays;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -57,38 +58,54 @@ public class TracingPushController {
     }
 
     private void propagateRbelMessage(RbelElement msg) {
+        if (!msg.hasFacet(RbelTcpIpMessageFacet.class)) {
+            log.trace("Skipping propagation, not a TCP/IP message");
+            return;
+        }
         if (!msg.hasFacet(RbelHttpResponseFacet.class)
-            || !msg.hasFacet(RbelTcpIpMessageFacet.class)) {
+            && !msg.hasFacet(TracingMessagePairFacet.class)) {
             log.trace("Skipping propagation, not a response");
             return;
         }
-        log.debug("Handling Rbel-Message!");
-        RbelHttpResponseFacet rbelHttpResponse = msg.getFacetOrFail(RbelHttpResponseFacet.class);
+        log.trace("Handling Rbel-Message!");
         RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
         final RbelHostname sender = rbelTcpIpMessageFacet.getSender().seekValue(RbelHostname.class).orElse(null);
         final RbelHostname receiver = rbelTcpIpMessageFacet.getReceiver().seekValue(RbelHostname.class).orElse(null);
+        final RbelElement request = msg.getFacet(TracingMessagePairFacet.class)
+            .map(TracingMessagePairFacet::getRequest)
+            .or(() -> msg.getFacet(RbelHttpResponseFacet.class)
+                .map(RbelHttpResponseFacet::getRequest))
+            .orElseThrow();
+
         log.debug("Propagating new request/response pair (from {} to {}, path {}, status {})",
             sender, receiver,
-            rbelHttpResponse.getRequest().getFacetOrFail(RbelHttpRequestFacet.class)
-                .getPath().getRawStringContent(),
-            rbelHttpResponse.getResponseCode().getRawStringContent());
+            msg.getFacet(RbelHttpResponseFacet.class)
+                .map(RbelHttpResponseFacet::getRequest)
+                .map(req -> req.getFacetOrFail(RbelHttpRequestFacet.class))
+                .map(RbelHttpRequestFacet::getPath)
+                .map(RbelElement::getRawStringContent)
+                .orElse("<unknown>"),
+            msg.getFacet(RbelHttpResponseFacet.class)
+                .map(RbelHttpResponseFacet::getResponseCode)
+                .map(RbelElement::getRawStringContent)
+                .orElse("<unknown>"));
         template.convertAndSend(TigerRemoteProxyClient.WS_TRACING,
             TigerTracingDto.builder()
                 .uuid(msg.getUuid())
                 .receiver(receiver)
                 .sender(sender)
                 .responseUuid(msg.getUuid())
-                .requestUuid(rbelHttpResponse.getRequest().getUuid())
+                .requestUuid(request.getUuid())
                 .responseTransmissionTime(msg.getFacet(RbelMessageTimingFacet.class)
                     .map(RbelMessageTimingFacet::getTransmissionTime)
                     .orElse(null))
-                .requestTransmissionTime(rbelHttpResponse.getRequest().getFacet(RbelMessageTimingFacet.class)
+                .requestTransmissionTime(request.getFacet(RbelMessageTimingFacet.class)
                     .map(RbelMessageTimingFacet::getTransmissionTime)
                     .orElse(null))
                 .build());
 
         mapRbelMessageAndSent(msg);
-        mapRbelMessageAndSent(rbelHttpResponse.getRequest());
+        mapRbelMessageAndSent(request);
     }
 
     private void propagateException(Throwable exception) {
@@ -111,7 +128,7 @@ public class TracingPushController {
             byte[] partContent = Arrays.copyOfRange(
                 rbelHttpMessage.getRawContent(),
                 i * MAX_MESSAGE_SIZE,
-                Math.min((i + 1) * MAX_MESSAGE_SIZE,  rbelHttpMessage.getRawContent().length)
+                Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelHttpMessage.getRawContent().length)
             );
 
             log.trace("Sending part {} of {} for UUID {}...", i, numberOfParts, rbelHttpMessage.getUuid());
