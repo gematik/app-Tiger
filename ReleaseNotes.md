@@ -5,6 +5,7 @@
 ## Bugfixes
 
 * TGR-519: Fixed propagation in aggregating tiger proxies
+* TGR-521: Race-Condition fixed for heavy-duty TigerProxy settings
 
 # Release 0.21.0
 
