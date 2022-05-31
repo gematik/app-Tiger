@@ -119,4 +119,11 @@ public class TigerGlue {
     public void tgrWaitForUserAbort() {
         TigerDirector.waitForQuit();
     }
+
+
+    @When("TGR pause test run execution")
+    @Wenn("TGR pausiere Testausführung")
+    public void tgrPauseExecution() {
+        TigerDirector.pauseExecution();
+    }
 }

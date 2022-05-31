@@ -271,7 +271,7 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
             builder.bannerMessage(m.group(4)).bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())));
         }
 
-        List<MessageMetaDataDto> stepMessagesMetaDataList = LocalProxyRbelMessageListener.getStepRbelMessages().stream()
+        List<MessageMetaDataDto> stepMessagesMetaDataList = new ArrayList<>(LocalProxyRbelMessageListener.getStepRbelMessages()).stream()
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList());
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(builder

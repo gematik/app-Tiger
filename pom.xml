@@ -7,6 +7,7 @@
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
     <version>0.22.1-SNAPSHOT</version>
+
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
     <description>Short project description</description>

@@ -2,8 +2,15 @@
 
 # Release 0.22.1
 
-## Bugfixes
+## Breaking Changes
+* Tiger maven plugin now purges the target/generated-test-sources/tigerbdd folder to avoid left over driver class files from previous runs. 
+* Tiger maven plugin will by default only search for feature files in src/test/resources/features folder tree from now on, to avoid duplicate feature files also found in target subfolders.
 
+## Features
+* A new step "TGR pause test run execution" will pause th eexecution and if workflow UI is active will display a nice banner with a continue button. Without workflow UI you can enter "next" in the console and press ENTER to continue test execution
+
+## Bugfixes
+* TGR-516 "TGR wait for user abort" is now also working when workflow UI is disabled. You must have a console like environment like Bash or GitBash to be able to enter "quit" and press Enter
 * TGR-519: Fixed propagation in aggregating tiger proxies
 * TGR-521: Race-Condition fixed for heavy-duty TigerProxy settings
 

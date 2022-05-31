@@ -146,4 +146,9 @@ public class EnvStatusController implements TigerUpdateListener {
         log.trace("Fetch request to getQuit() received");
         tigerTestEnvMgr.receivedUserAcknowledgementForShutdown();
     }
+    @GetMapping(path = "/continueExecution")
+    public void getConfirmContinueExecution() {
+        log.trace("Fetch request to continueExecution() received");
+        tigerTestEnvMgr.receivedResumeTestRunExecution();
+    }
 }

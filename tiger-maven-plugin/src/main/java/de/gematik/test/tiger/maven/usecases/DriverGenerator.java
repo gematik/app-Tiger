@@ -14,6 +14,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -60,6 +61,9 @@ public class DriverGenerator {
     }
 
     private void createTargetFolderIfNotExists() throws IOException {
+        if (outputFolder.toFile().exists()) {
+            FileUtils.deleteDirectory(outputFolder.toFile());
+        }
         Files.createDirectories(outputFolder);
     }
 

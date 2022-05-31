@@ -28,12 +28,12 @@ public class TigerCucumberRunner extends CucumberSerenityRunner {
         log.info("Starting TigerCucumberRunner.main()...");
         if (tigerStartupFailedException != null) {
             log.error("Aborting due to earlier errors in setting up Tiger!");
-            System.exit(-1);
+            System.exit(1);
         }
         initializeTiger();
         if (tigerStartupFailedException != null) {
             log.error("Unable to start Tiger!", tigerStartupFailedException);
-            System.exit(-1);
+            System.exit(1);
         }
         Supplier<ClassLoader> classLoaderSupplier = ClassLoaders::getDefaultClassLoader;
         byte exitstatus = run(argv, classLoaderSupplier);

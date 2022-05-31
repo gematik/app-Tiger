@@ -42,9 +42,9 @@ public class GenerateDriverMojo extends AbstractMojo {
 
     /**
      * Optional base directory for each file to replace. Path to base relative feature files from. This feature is
-     * useful for multi-module projects. Default "." which is the default Maven basedir.
+     * useful for multi-module projects. Defaults to ${}basedir}/src/test/resources/features.
      */
-    @Parameter(alias = "basedir", defaultValue = "${basedir}")
+    @Parameter(alias = "basedir", defaultValue = "${basedir}/src/test/resources/features")
     private String featuresDir;
 
     /**
