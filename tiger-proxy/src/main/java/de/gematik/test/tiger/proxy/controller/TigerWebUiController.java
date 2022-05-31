@@ -335,8 +335,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         result.setLastMsgUuid(lastMsgUuid);
         log.debug("returning {} messages of total {}", msgs.size(), tigerProxy.getRbelMessages().size());
         result.setHtmlMsgList(msgs.stream()
-            .map(msg -> new RbelHtmlRenderingToolkit(renderer)
-                .convert(msg, Optional.empty()).render())
+            .map(msg -> new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
             .collect(Collectors.toList()));
         result.setMetaMsgList(msgs.stream()
             .map(MessageMetaDataDto::createFrom)

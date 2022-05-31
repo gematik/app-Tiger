@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
-import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -34,6 +33,7 @@ import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.awt.Desktop;
 import java.awt.Desktop.Action;
 import java.awt.HeadlessException;
@@ -81,6 +81,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
     private boolean userAcknowledgedShutdown = false;
+    private boolean userAcknowledgedContinueTestRun = false;
 
     public TigerTestEnvMgr() {
         Configuration configuration = readConfiguration();
@@ -153,30 +154,44 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         return localTigerProxy;
     }
 
-    public static void waitForQuit(String appName) {
+    public static void waitForConsoleInput(String textToEnter) {
         Console c = System.console();
+        String message = "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.", RbelAnsiColors.RED_BOLD.toString());
         if (c != null) {
-            c.format("\n\n\nPress 'quit' and ENTER to stop {}.\n\n\n\n\n", appName);
-            String cmd = "";
-            while (!cmd.equals("quit")) {
+            String cmd = null;
+            while (cmd == null || !cmd.equals(textToEnter)) {
+                log.info(message);
+                if (cmd != null) {
+                    log.warn("Received: '{}'", cmd);
+                }
                 cmd = c.readLine();
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new TigerTestEnvException("Interrupt received while waiting for console input", e);
+                }
             }
-            log.info("Stopping {}...", appName);
         } else {
             log.warn("No Console interface found, trying System in stream...");
-            log.info("\n\n\nPress 'quit' and ENTER to stop {}.\n\n\n\n\n", appName);
             try {
-                BufferedReader rdr = new BufferedReader(
-                    new InputStreamReader(System.in));
-                String cmd = "";
-                while (!cmd.equals("quit")) {
+                BufferedReader rdr = new BufferedReader(new InputStreamReader(System.in));
+                String cmd = null;
+                while (cmd == null || !cmd.equals(textToEnter)) {
+                    log.info(message);
+                    if (cmd != null) {
+                        log.warn("Received: '{}'", cmd);
+                    }
                     cmd = rdr.readLine();
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new TigerTestEnvException("Interrupt received while waiting for console input", e);
+                    }
                 }
             } catch (IOException e) {
-                log.warn("Unable to open input stream from console! "
-                    + "Running {} for max. 24 hours."
-                    + "You will have to use Ctrl+C and eventually clean up the processes manually!", appName);
-                await().atMost(24, TimeUnit.HOURS).pollDelay(1, TimeUnit.SECONDS).until(() -> false);
+                log.warn("Unable to open input stream from console! Continuing with test run...", e);
             }
         }
     }
@@ -339,7 +354,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                 Desktop desktop = Desktop.getDesktop();
                 log.info("Starting Workflow UI via Java Desktop API");
                 desktop.browse(new URI(url));
-                log.info(Ansi.colorize("Workflow UI {}", RbelAnsiColors.BLUE_BOLD),  url);
+                log.info(Ansi.colorize("Workflow UI {}", RbelAnsiColors.BLUE_BOLD), url);
             } else {
                 String command;
                 String operatingSystemName = System.getProperty("os.name").toLowerCase();
@@ -366,5 +381,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public void receivedUserAcknowledgementForShutdown() {
         userAcknowledgedShutdown = true;
+    }
+
+    public void receivedResumeTestRunExecution() {
+        userAcknowledgedContinueTestRun = true;
+    }
+
+    public void resetUserAcknowledgedContinueTestRun() {
+        userAcknowledgedContinueTestRun = false;
     }
 }

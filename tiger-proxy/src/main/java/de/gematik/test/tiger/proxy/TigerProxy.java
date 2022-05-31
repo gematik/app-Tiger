@@ -325,27 +325,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         }
     }
 
-    public void manageRbelBufferSize() {
-        while (rbelBufferIsExceedingMaxSize()) {
-            log.info("Exceeded buffer size, dropping oldest message in history");
-            getRbelLogger().getMessageHistory().remove(0);
-        }
-    }
-
-    private boolean rbelBufferIsExceedingMaxSize() {
-        final long bufferSize = getRbelLogger().getMessageHistory().stream()
-            .map(RbelElement::getRawContent)
-            .mapToLong(ar -> ar.length)
-            .sum();
-        final boolean exceedingLimit =
-            bufferSize > (getTigerProxyConfiguration().getRbelBufferSizeInMb() * 1024 * 1024);
-        if (exceedingLimit) {
-            log.info("Buffersize is {} Mb which exceeds the limit of {} Mb",
-                bufferSize / (1024 ^ 2), getTigerProxyConfiguration().getRbelBufferSizeInMb());
-        }
-        return exceedingLimit;
-    }
-
     @Override
     public void removeRoute(final String routeId) {
         if (!mockServer.isRunning()) {

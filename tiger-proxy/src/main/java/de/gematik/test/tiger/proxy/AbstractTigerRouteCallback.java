@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.Header.header;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
@@ -149,15 +150,18 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         if (shouldLogTraffic()) {
             try {
                 final RbelElement request = getTigerProxy().getMockServerToRbelConverter()
-                    .convertRequest(req,
-                        extractProtocolAndHostForRequest(req));
+                    .convertRequest(req, extractProtocolAndHostForRequest(req));
                 final RbelElement response = getTigerProxy().getMockServerToRbelConverter()
-                    .convertResponse(resp,
-                        extractProtocolAndHostForRequest(req),
-                        req.getClientAddress());
+                    .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getClientAddress());
                 Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
                     .ifPresent(requestTime -> addTimingFacet(request, requestTime));
                 addTimingFacet(response, ZonedDateTime.now());
+                response.addOrReplaceFacet(
+                    response.getFacet(RbelHttpResponseFacet.class)
+                        .map(RbelHttpResponseFacet::toBuilder)
+                        .orElse(RbelHttpResponseFacet.builder())
+                        .request(request)
+                        .build());
 
                 getTigerProxy().triggerListener(request);
                 getTigerProxy().triggerListener(response);
@@ -166,7 +170,6 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                 log.error("Rbel-parsing failed!", e);
             }
         }
-        getTigerProxy().manageRbelBufferSize();
         return resp;
     }
 

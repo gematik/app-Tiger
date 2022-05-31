@@ -96,7 +96,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void useAsWebProxyServer_shouldForward() throws IOException {
+    public void useAsWebProxyServer_shouldForward() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
@@ -787,6 +787,25 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessages().get(1)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
             .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+    }
+
+    @Test
+    public void emptyBuffer_shouldNotRetainMessages() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .rbelBufferSizeInMb(0)
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        proxyRest.get("http://backend/foobar")
+            .header("foo", "bar")
+            .header("x-forwarded-for", "someStuff")
+            .asString();
+
+        assertThat(tigerProxy.getRbelMessages())
+            .isEmpty();
     }
 
     // AKR: we need the 'localhost|view-localhost' because of mockserver for all checkClientAddresses-tests.

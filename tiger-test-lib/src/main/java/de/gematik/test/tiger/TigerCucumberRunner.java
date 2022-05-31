@@ -34,9 +34,19 @@ import org.junit.runners.model.InitializationError;
 @Slf4j
 public class TigerCucumberRunner extends CucumberSerenityRunner {
 
+    private static RuntimeException tigerStartupFailedException;
+
     public static void main(String[] argv) {
         log.info("Starting TigerCucumberRunner.main()...");
+        if (tigerStartupFailedException != null) {
+            log.error("Aborting due to earlier errors in setting up Tiger!");
+            System.exit(1);
+        }
         initializeTiger();
+        if (tigerStartupFailedException != null) {
+            log.error("Unable to start Tiger!", tigerStartupFailedException);
+            System.exit(1);
+        }
         Supplier<ClassLoader> classLoaderSupplier = ClassLoaders::getDefaultClassLoader;
         byte exitstatus = run(argv, classLoaderSupplier);
         System.exit(exitstatus);
@@ -53,12 +63,22 @@ public class TigerCucumberRunner extends CucumberSerenityRunner {
     public TigerCucumberRunner(Class clazz) throws InitializationError {
         super(clazz);
         log.info("Starting TigerCucumberRunner for {}", clazz.getName());
+        if (tigerStartupFailedException != null) {
+            throw new InitializationError(tigerStartupFailedException);
+        }
         initializeTiger();
+        if (tigerStartupFailedException != null) {
+            throw new InitializationError(tigerStartupFailedException);
+        }
     }
 
-    private static void initializeTiger() {
-        TigerDirector.start();
-        TigerDirector.registerShutdownHook();
+    private synchronized static void initializeTiger() {
+        try {
+            TigerDirector.registerShutdownHook();
+            TigerDirector.start();
+        } catch (RuntimeException rte) {
+            tigerStartupFailedException = rte;
+        }
     }
 
     public static Runtime using(Supplier<ClassLoader> classLoaderSupplier, RuntimeOptions runtimeOptions) {

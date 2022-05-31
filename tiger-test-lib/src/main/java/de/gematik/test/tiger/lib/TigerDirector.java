@@ -103,7 +103,7 @@ public class TigerDirector {
         log.info("Registering shutdown hook...");
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
-                if (getLibConfig().isActivateWorkflowUi()) {
+                if (getLibConfig().isActivateWorkflowUi() && !tigerTestEnvMgr.isUserAcknowledgedShutdown()) {
                     System.out.println(Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...", RbelAnsiColors.GREEN_BOLD));
                     if (tigerTestEnvMgr != null) {
                         tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
@@ -148,7 +148,8 @@ public class TigerDirector {
     }
 
     private static void showTigerBanner() {
-        if (!TigerGlobalConfiguration.readBoolean("TIGER_NOLOGO", false)) {
+        // created via https://kirilllive.github.io/ASCII_Art_Paint/ascii_paint.html
+        if (TigerGlobalConfiguration.readBoolean("TIGER_LOGO", false)) {
             try {
                 log.info("\n" + IOUtils.toString(
                     Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
@@ -267,12 +268,23 @@ public class TigerDirector {
     }
 
     public static void waitForQuit() {
-        // TODO TGR-516 wait for quit from workflow ui, then shutdown env and all processes and system exit to force mvn failsafe to abort ....
-        envMgrApplicationContext.close();
-        await()
-            .pollInterval(Duration.ofMillis(100))
-            .atMost(Duration.ofDays(1))
-            .until(() -> !envMgrApplicationContext.isRunning());
+        if (getLibConfig().isActivateWorkflowUi()) {
+            tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                .bannerMessage("Press QUIT to abort test run")
+                .bannerColor("green")
+                .bannerType(BannerType.TESTRUN_ENDED)
+                .build());
+            try {
+                await().pollInterval(1, TimeUnit.SECONDS)
+                    .atMost(5, TimeUnit.HOURS)
+                    .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
+            } finally {
+                System.exit(0);
+            }
+        } else {
+            tigerTestEnvMgr.waitForConsoleInput("quit");
+            System.exit(0);
+        }
     }
 
     private final static Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
@@ -328,5 +340,21 @@ public class TigerDirector {
             SerenityRest.replaceFiltersWith(new ArrayList<>());
         }
         curlLoggingFilter = null;
+    }
+
+    public static void pauseExecution() {
+        if (getLibConfig().isActivateWorkflowUi()) {
+            tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                .bannerMessage("Test execution paused, click to continue")
+                .bannerColor("green")
+                .bannerType(BannerType.STEP_WAIT)
+                .build());
+            await().pollInterval(1, TimeUnit.SECONDS)
+                .atMost(5, TimeUnit.HOURS)
+                .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun());
+            tigerTestEnvMgr.resetUserAcknowledgedContinueTestRun();
+        } else {
+            tigerTestEnvMgr.waitForConsoleInput("next");
+        }
     }
 }

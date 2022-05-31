@@ -114,11 +114,9 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "      adminPort: ${free.port.1}\n"
         + "      proxyPort: ${free.port.2}\n"
         + "      tls:\n"
-        + "        serverIdentity: \"src/test/resources/c.ak.aut-konsim.p12;00\"\n"
-        + "  ")
+        + "        serverIdentity: \"src/test/resources/c.ak.aut-konsim.p12;00\"")
     public void remoteProxyWithConfiguredTlsIdentity(UnirestInstance proxyRest) {
         proxyRest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.0").get()).asString();
-
     }
 }

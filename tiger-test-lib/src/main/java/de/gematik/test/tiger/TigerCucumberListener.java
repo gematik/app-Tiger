@@ -103,7 +103,7 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
         eventPublisher.registerHandlerFor(TestSourceRead.class, sourceRead);
         eventPublisher.registerHandlerFor(TestCaseStarted.class, caseStarted);
         eventPublisher.registerHandlerFor(TestStepStarted.class, stepStarted);
-        eventPublisher.registerHandlerFor(TestStepFinished.class, stepFinsihed);
+        eventPublisher.registerHandlerFor(TestStepFinished.class, stepFinished);
         eventPublisher.registerHandlerFor(TestCaseFinished.class, caseFinished);
     }
 
@@ -232,7 +232,7 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
         currentStepIndex++;
     };
 
-    private final EventHandler<TestStepFinished> stepFinsihed = event -> {
+    private final EventHandler<TestStepFinished> stepFinished = event -> {
         if (!(event.getTestStep() instanceof PickleStepTestStep)) {
             return;
         }
@@ -283,7 +283,7 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
             builder.bannerMessage(m.group(4)).bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())));
         }
 
-        List<MessageMetaDataDto> stepMessagesMetaDataList = LocalProxyRbelMessageListener.getStepRbelMessages().stream()
+        List<MessageMetaDataDto> stepMessagesMetaDataList = new ArrayList<>(LocalProxyRbelMessageListener.getStepRbelMessages()).stream()
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList());
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(builder

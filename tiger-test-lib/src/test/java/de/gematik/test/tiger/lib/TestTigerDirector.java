@@ -16,22 +16,35 @@
 
 package de.gematik.test.tiger.lib;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withTextFromSystemIn;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+import static org.awaitility.Awaitility.await;
+import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Permission;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Unirest;
 import lombok.SneakyThrows;
 import net.serenitybdd.rest.SerenityRest;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,7 +124,8 @@ class TestTigerDirector {
 
                 con.setConnectTimeout(1000);
 
-                assertThat(capturedOutput.getOut()).contains("SKIPPING TIGER PROXY settings as localProxyActive==false...");
+                assertThat(capturedOutput.getOut()).contains(
+                    "SKIPPING TIGER PROXY settings as localProxyActive==false...");
                 assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
@@ -189,11 +203,108 @@ class TestTigerDirector {
             .isEqualTo("foobar");
     }
 
-    private void executeWithSecureShutdown(Runnable test) {
+    @Test
+    void testPauseExecutionViaConsole() throws Exception {
+        withTextFromSystemIn("next\n")
+            .execute(() ->
+                executeWithSecureShutdown(() -> {
+                    TigerDirector.start();
+                    new Thread(() -> {
+                        TigerDirector.pauseExecution();
+                        TigerDirector.getTigerTestEnvMgr().receivedResumeTestRunExecution();
+                        System.out.println("Execution resumes!");
+                    }).start();
+
+                    await().atMost(400, TimeUnit.MILLISECONDS)
+                        .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
+                    TigerDirector.getTigerTestEnvMgr().resetUserAcknowledgedContinueTestRun();
+                    assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
+                }));
+    }
+
+    @Test
+    void testPauseExecutionViaWorkflowUI() {
+        executeWithSecureShutdown(() -> {
+            TigerDirector.start();
+            EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr());
+            TigerDirector.getLibConfig().activateWorkflowUi = true;
+            new Thread(() -> {
+                TigerDirector.pauseExecution();
+                System.out.println("Execution resumes!");
+            }).start();
+
+            envStatusController.getConfirmContinueExecution();
+            await().atMost(400, TimeUnit.MILLISECONDS)
+                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
+        });
+    }
+
+    @Test
+    void testPauseExecutionViaConsoleWrongEnter() throws Exception {
+        withTextFromSystemIn("notnext\n")
+            .execute(() ->
+                executeWithSecureShutdown(() -> {
+                    TigerDirector.start();
+                    new Thread(TigerDirector::pauseExecution).start();
+
+                    Thread.sleep(400);
+
+                    assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun())
+                        .isFalse();
+                 //   fail(
+                 //       "Did not expect to continue test execution when entering something different than 'next' in console");
+                }));
+    }
+
+    @Test
+    void testQuitTestRunViaConsole() throws Exception {
+        withTextFromSystemIn("quit\n")
+            .execute(() ->
+                executeWithSecureShutdown(() ->
+                    assertThat(catchSystemExit(() -> {
+                            TigerDirector.start();
+                            await().atMost(2, TimeUnit.SECONDS)
+                                .until(() -> {
+                                    TigerDirector.waitForQuit();
+                                    return false;
+                                });
+                        })
+                    ).isEqualTo(0)));
+    }
+
+    @Test
+    void testQuitTestRunViaWorkFlowUi() throws Exception {
+        withTextFromSystemIn("quit\n")
+            .execute(() ->
+                executeWithSecureShutdown(() ->
+                    assertThat(catchSystemExit(() -> {
+                        TigerDirector.start();
+                        EnvStatusController envStatusController = new EnvStatusController(
+                            TigerDirector.getTigerTestEnvMgr());
+                        TigerDirector.getLibConfig().activateWorkflowUi = true;
+                        new Thread(TigerDirector::waitForQuit).start();
+
+                        await().atMost(2, TimeUnit.SECONDS)
+                            .until(() -> {
+                                envStatusController.getConfirmQuit();
+                                return false;
+                            });
+                    })).isEqualTo(0)));
+    }
+
+    private void executeWithSecureShutdown(Statement test) {
+        executeWithSecureShutdown(test, () -> {
+        });
+    }
+
+    private void executeWithSecureShutdown(Statement test, Runnable cleanup) {
         try {
-            test.run();
+            test.execute();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             TigerDirector.getTigerTestEnvMgr().shutDown();
+            cleanup.run();
         }
     }
 

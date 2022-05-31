@@ -30,6 +30,11 @@
          class="btn btn-danger w-100 mt-3 mb-1">
       Quit
     </div>
+    <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.STEP_WAIT"
+         v-on:click="sendContinue"
+         class="btn btn-success w-100 mt-3 mb-1">
+      Continue
+    </div>
   </div>
 </template>
 
@@ -51,11 +56,19 @@ function closeWindow(ev : MouseEvent) {
 }
 
 function sendQuit(event: MouseEvent) {
-  closeWindow(event);
   fetch(process.env.BASE_URL + "status/quit")
   .then((response) => response.text())
   .then((data) => {
+    closeWindow(event);
     alert("Backend of Workflow UI has been shut down!\nRbelLog details pane has no more filtering / search support!");
+  });
+}
+
+function sendContinue(event: MouseEvent) {
+  fetch(process.env.BASE_URL + "status/continueExecution")
+  .then((response) => response.text())
+  .then((data) => {
+    closeWindow(event);
   });
 }
 </script>

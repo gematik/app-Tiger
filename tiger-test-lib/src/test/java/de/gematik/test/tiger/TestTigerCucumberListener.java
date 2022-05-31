@@ -17,7 +17,9 @@
 package de.gematik.test.tiger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
@@ -61,6 +63,7 @@ public class TestTigerCucumberListener {
     @BeforeEach
     public void initListener() {
         listener = new TigerCucumberListener();
+        TigerGlobalConfiguration.putValue(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT, 9999);
         envStatusController.getStatus().getFeatureMap().clear();
     }
 
@@ -135,12 +138,12 @@ public class TestTigerCucumberListener {
 
         TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
         listener.getStepStarted().receive(stepStartedEvent);
-        listener.getStepFinsihed().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.PASSED,
+        listener.getStepFinished().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.PASSED,
             Duration.ofMillis(500), null)));
         assertThat(listener.getCurrentStepIndex()).isEqualTo(1);
 
         listener.getStepStarted().receive(stepStartedEvent);
-        listener.getStepFinsihed().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
+        listener.getStepFinished().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
             Duration.ofMillis(500), null)));
         assertThat(listener.getCurrentStepIndex()).isEqualTo(2);
 
@@ -163,7 +166,7 @@ public class TestTigerCucumberListener {
 
         TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
         listener.getStepStarted().receive(stepStartedEvent);
-        listener.getStepFinsihed().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
+        listener.getStepFinished().receive(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
             Duration.ofMillis(500), null)));
         TestCaseFinished finishedEvent = new TestCaseFinished(Instant.now(), testCase,
             new Result(Status.PASSED, Duration.ofMillis(500), null));

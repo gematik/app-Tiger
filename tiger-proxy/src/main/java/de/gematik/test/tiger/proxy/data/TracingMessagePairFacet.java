@@ -14,8 +14,23 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.testenvmgr.data;
+package de.gematik.test.tiger.proxy.data;
 
-public enum BannerType {
-    MESSAGE,TESTRUN_ENDED,STEP_WAIT
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.facet.RbelFacet;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class TracingMessagePairFacet implements RbelFacet {
+
+    private final RbelElement response;
+    private final RbelElement request;
+
+    @Override
+    public RbelMultiMap getChildElements() {
+        return new RbelMultiMap();
+    }
 }

@@ -41,11 +41,11 @@ public class Banner {
     }
 
     public static String toBannerStr(String msg, String ansiColors) {
-        return ansiColors + StringUtils.repeat('=', 100) + RbelAnsiColors.RESET + "\n"
+        return ansiColors + StringUtils.repeat('=', 120) + RbelAnsiColors.RESET + "\n"
             + toBannerLines(msg).stream()
             .map(line -> Ansi.colorize(line, ansiColors))
             .collect(Collectors.joining("\n"))
-            + "\n" + Ansi.colorize(StringUtils.repeat('=', 100), ansiColors);
+            + "\n" + Ansi.colorize(StringUtils.repeat('=', 120), ansiColors);
     }
 
     public static String toTextStr(String msg, String colorName) {
@@ -56,11 +56,11 @@ public class Banner {
     public static String toBannerStrWithCOLOR(String msg, String colorName) {
         final String ansiColors = RbelAnsiColors.seekColor(colorName.toLowerCase()).toString();
 
-        return Ansi.colorize(StringUtils.repeat('=', 100),ansiColors) + "\n"
+        return Ansi.colorize(StringUtils.repeat('=', 120),ansiColors) + "\n"
             + toBannerLines(msg).stream()
             .map(line -> Ansi.colorize(line,ansiColors))
             .collect(Collectors.joining("\n"))
-            + "\n" + Ansi.colorize( StringUtils.repeat('=', 100) , ansiColors);
+            + "\n" + Ansi.colorize( StringUtils.repeat('=', 120) , ansiColors);
     }
 
     private static List<String> toBannerLines(String msg) {
