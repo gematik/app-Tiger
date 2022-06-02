@@ -36,7 +36,6 @@ import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameters;
-import org.mockserver.model.SocketAddress;
 
 @RequiredArgsConstructor
 @Data
@@ -48,7 +47,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
 
     public void applyModifications(HttpRequest request) {
-        final RbelElement requestElement = tigerProxy.getMockServerToRbelConverter().requestToRbelMessage(request);
+        final RbelElement requestElement = tigerProxy.getRbelLogger().getRbelConverter().convertElement(
+            tigerProxy.getMockServerToRbelConverter().requestToRbelMessage(request));
         final RbelElement modifiedRequest = tigerProxy.getRbelLogger().getRbelModifier()
             .applyModifications(requestElement);
         if (modifiedRequest == requestElement) {
@@ -91,7 +91,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     }
 
     public void applyModifications(HttpResponse response) {
-        final RbelElement responseElement = tigerProxy.getMockServerToRbelConverter().responseToRbelMessage(response);
+        final RbelElement responseElement = tigerProxy.getRbelLogger().getRbelConverter().convertElement(
+            tigerProxy.getMockServerToRbelConverter().responseToRbelMessage(response));
         final RbelElement modifiedResponse = tigerProxy.getRbelLogger().getRbelModifier()
             .applyModifications(responseElement);
         if (modifiedResponse == responseElement) {

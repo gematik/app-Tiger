@@ -25,7 +25,6 @@ import lombok.Data;
 @Builder
 public class TigerTracingDto {
 
-    private final String uuid;
     private final String requestUuid;
     private final String responseUuid;
     private final RbelHostname sender;

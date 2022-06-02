@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
@@ -35,10 +36,13 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -72,15 +76,22 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     }
 
     protected void readTrafficFromSourceFile(String sourceFile) {
-        try {
+        new Thread(() -> {
             log.info("Trying to read traffic from file '{}'...", sourceFile);
-            RbelFileWriterUtils.convertFromRbelFile(Files.readString(
-                Path.of(sourceFile), StandardCharsets.UTF_8
-            ), getRbelLogger().getRbelConverter());
+            try {
+                rbelLogger.getRbelConverter().addPostConversionListener((msg, conv) -> {
+                    if (msg.getParentNode() == null) {
+                        triggerListener(msg);
+                    }
+                });
+                RbelFileWriterUtils.convertFromRbelFile(
+                    Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8),
+                    getRbelLogger().getRbelConverter());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
-        } catch (IOException e) {
-            throw new TigerProxyStartupException("Error while reading from file '" + sourceFile + "'", e);
-        }
+        }).start();
     }
 
     private void addFixVauKey() {

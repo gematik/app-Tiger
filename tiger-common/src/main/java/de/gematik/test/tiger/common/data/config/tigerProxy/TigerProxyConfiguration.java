@@ -55,6 +55,8 @@ public class TigerProxyConfiguration {
     private boolean skipTrafficEndpointsSubscription = false;
     private List<String> trafficEndpoints;
     @Builder.Default
+    private boolean downloadInitialTrafficFromEndpoints = false;
+    @Builder.Default
     private String trafficEndpointFilterString = "";
     @Builder.Default
     private int connectionTimeoutInSeconds = 10;

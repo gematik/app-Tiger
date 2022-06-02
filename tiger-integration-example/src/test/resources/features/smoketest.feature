@@ -1,6 +1,6 @@
 Feature: Test Tiger BDD
 
-### Deaktiviert, dient der Veranschaulichung und Überprüfung des Demo-Modus (und damit auch der MonitorUI)
+### Deaktiviert, dient der Veranschaulichung und Überprüfung des Demo-Modus
 #  @Demo
 #  Scenario: Demo modus
 #    Given TGR zeige grünen Banner "Demo modus aktiv"

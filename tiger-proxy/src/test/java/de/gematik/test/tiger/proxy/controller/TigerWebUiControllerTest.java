@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -32,8 +33,11 @@ import java.util.List;
 import java.util.Map;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -46,12 +50,16 @@ public class TigerWebUiControllerTest extends AbstractTigerProxyTest {
 
     int adminPort;
 
-    public void spawnTigerProxyAsSpringBootApplicationWith(TigerProxyConfiguration configuration) {
-        if (configuration == null) {
-            configuration = TigerProxyConfiguration.builder().build();
-        }
+    @BeforeEach
+    public void spawnTigerProxyAsSpringBootApplicationWith() {
+        TigerProxyConfiguration configuration = TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build();
 
-        try (ServerSocket  socket = new ServerSocket(0)){
+        try (ServerSocket socket = new ServerSocket(0)) {
             adminPort = socket.getLocalPort();
             configuration.setAdminPort(adminPort);
         } catch (IOException e) {
@@ -74,6 +82,8 @@ public class TigerWebUiControllerTest extends AbstractTigerProxyTest {
         proxyRest.config()
             .proxy("localhost", tigerProxy.getProxyPort())
             .sslContext(tigerProxy.buildSslContext());
+
+        proxyRest.post("http://backend/notFoobar").asJson();
     }
 
     public String getWebUiUrl() {
@@ -86,15 +96,7 @@ public class TigerWebUiControllerTest extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void checkHtmlIsReturned() throws InterruptedException {
-        spawnTigerProxyAsSpringBootApplicationWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
-                .build()))
-            .build());
-        proxyRest.post("http://backend/notFoobar").asJson();
-
+    public void checkHtmlIsReturned() {
         Response response = RestAssured.given().get(getWebUiUrl());
 
         response.then().statusCode(200);
@@ -103,53 +105,60 @@ public class TigerWebUiControllerTest extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void checkMsgIsReturned() throws InterruptedException {
-        spawnTigerProxyAsSpringBootApplicationWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
-                .build()))
-            .build());
-        proxyRest.post("http://backend/notFoobar").asJson();
-
+    public void checkMsgIsReturned() {
         Response response = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter");
         response.then().statusCode(200);
 
         JSONObject json = new JSONObject(response.asString());
         assertThat(json.getJSONArray("metaMsgList").length()).isEqualTo(2);
-        assertThat(json.getJSONArray("metaMsgList").getJSONObject(0).getString("uuid")).isEqualTo("" + tigerProxy.getRbelMessages().get(0).getUuid());
-        assertThat(json.getJSONArray("metaMsgList").getJSONObject(1).getString("uuid")).isEqualTo("" + tigerProxy.getRbelMessages().get(1).getUuid());
+        assertThat(json.getJSONArray("metaMsgList").getJSONObject(0).getString("uuid")).isEqualTo(
+            "" + tigerProxy.getRbelMessages().get(0).getUuid());
+        assertThat(json.getJSONArray("metaMsgList").getJSONObject(1).getString("uuid")).isEqualTo(
+            "" + tigerProxy.getRbelMessages().get(1).getUuid());
     }
 
     @Test
-    public void checkOnlyOneMsgIsReturnedWithLastMsgUuidSupplied() throws InterruptedException {
-        spawnTigerProxyAsSpringBootApplicationWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
-                .build()))
-            .build());
-        proxyRest.post("http://backend/notFoobar").asJson();
-
-        Response response = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid());
+    public void checkOnlyOneMsgIsReturnedWithLastMsgUuidSupplied() {
+        Response response = RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid());
         response.then().statusCode(200);
 
         JSONObject json = new JSONObject(response.asString());
         assertThat(json.getJSONArray("metaMsgList").length()).isEqualTo(1);
-        assertThat(json.getJSONArray("metaMsgList").getJSONObject(0).getString("uuid")).isEqualTo("" + tigerProxy.getRbelMessages().get(1).getUuid());
+        assertThat(json.getJSONArray("metaMsgList").getJSONObject(0).getString("uuid")).isEqualTo(
+            "" + tigerProxy.getRbelMessages().get(1).getUuid());
     }
 
     @Test
-    public void checkNoMsgIsReturnedIfNoneExistsAfterRequested() throws InterruptedException {
-        spawnTigerProxyAsSpringBootApplicationWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
-                .build()))
-            .build());
-        proxyRest.post("http://backend/notFoobar").asJson();
+    public void checkAllTrafficSuppliedWhenDownloadWithoutFilteredUuids() {
+        Response response = RestAssured.given().get(getWebUiUrl() + "/trafficLog.tgr");
+        response.then().statusCode(200);
 
-        Response response = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(1).getUuid());
+        final String trafficResult = response.asString();
+        tigerProxy.getRbelMessages().stream()
+            .map(RbelElement::getUuid)
+            .forEach(uuid -> assertThat(trafficResult).contains(uuid));
+    }
+
+    @Test
+    public void checkSuppliedUuidsAreFilteredOutWhenDownloadingTraffic() {
+        Response response = RestAssured.given()
+            .get(getWebUiUrl() + "/trafficLog.tgr?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid());
+        response.then().statusCode(200);
+
+        final String trafficResult = response.asString();
+        tigerProxy.getRbelMessages().stream()
+            .skip(1)
+            .map(RbelElement::getUuid)
+            .forEach(uuid -> assertThat(trafficResult).contains(uuid));
+
+        assertThat(trafficResult).doesNotContain(tigerProxy.getRbelMessages().get(0).getUuid());
+    }
+
+    @Test
+    public void checkNoMsgIsReturnedIfNoneExistsAfterRequested() {
+        Response response = RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(1).getUuid());
         response.then().statusCode(200);
 
         JSONObject json = new JSONObject(response.asString());
@@ -158,15 +167,7 @@ public class TigerWebUiControllerTest extends AbstractTigerProxyTest {
 
 
     @Test
-    public void checkNoMsgIsReturnedAfterReset() throws InterruptedException {
-        spawnTigerProxyAsSpringBootApplicationWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
-                .build()))
-            .build());
-        proxyRest.post("http://backend/notFoobar").asJson();
-
+    public void checkNoMsgIsReturnedAfterReset() {
         Response response = RestAssured.given().get(getWebUiUrl() + "/resetMsgs");
         response.then().statusCode(200);
 

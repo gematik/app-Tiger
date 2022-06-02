@@ -18,17 +18,14 @@ package de.gematik.test.tiger.proxy.tracing;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.client.TigerExceptionDto;
-import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
-import de.gematik.test.tiger.proxy.client.TigerTracingDto;
-import de.gematik.test.tiger.proxy.client.TracingMessagePart;
+import de.gematik.test.tiger.proxy.client.*;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +76,6 @@ public class TracingPushController {
             log.trace("Skipping propagation, not a response");
             return;
         }
-        log.trace("Handling Rbel-Message!");
         RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
         final RbelHostname sender = rbelTcpIpMessageFacet.getSender().seekValue(RbelHostname.class).orElse(null);
         final RbelHostname receiver = rbelTcpIpMessageFacet.getReceiver().seekValue(RbelHostname.class).orElse(null);
@@ -87,23 +83,12 @@ public class TracingPushController {
             .map(TracingMessagePairFacet::getRequest)
             .or(() -> msg.getFacet(RbelHttpResponseFacet.class)
                 .map(RbelHttpResponseFacet::getRequest))
-            .orElseThrow();
+            .orElseThrow(() -> new TigerRemoteProxyClientException("Failure to correctly push message with id '"
+                + msg.getUuid() + "': Unable to find matching request"));
 
-        log.debug("Propagating new request/response pair (from {} to {}, path {}, status {})",
-            sender, receiver,
-            msg.getFacet(RbelHttpResponseFacet.class)
-                .map(RbelHttpResponseFacet::getRequest)
-                .map(req -> req.getFacetOrFail(RbelHttpRequestFacet.class))
-                .map(RbelHttpRequestFacet::getPath)
-                .map(RbelElement::getRawStringContent)
-                .orElse("<unknown>"),
-            msg.getFacet(RbelHttpResponseFacet.class)
-                .map(RbelHttpResponseFacet::getResponseCode)
-                .map(RbelElement::getRawStringContent)
-                .orElse("<unknown>"));
+        log.debug("Propagating new request/response pair (IDs: {} and {})", request.getUuid(), msg.getUuid());
         template.convertAndSend(TigerRemoteProxyClient.WS_TRACING,
             TigerTracingDto.builder()
-                .uuid(msg.getUuid())
                 .receiver(receiver)
                 .sender(sender)
                 .responseUuid(msg.getUuid())

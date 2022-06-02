@@ -20,17 +20,27 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import io.cucumber.core.options.CommandlineOptionsParser;
 import io.cucumber.core.options.RuntimeOptions;
+import io.cucumber.core.plugin.Options;
 import io.cucumber.core.plugin.SerenityReporter;
 import io.cucumber.core.resource.ClassLoaders;
 import io.cucumber.core.runtime.Runtime;
 import io.cucumber.junit.CucumberSerenityRunner;
 import io.cucumber.plugin.Plugin;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.thucydides.core.guice.Injectors;
 import net.thucydides.core.webdriver.Configuration;
 import org.junit.runners.model.InitializationError;
 
+/**
+ * When started via Intellij the main method is run.
+ * When started via maven the constructor gets called for each driver class.
+ * Later must have the TigerCucumberListener registered as plugin in the cucumberoptions
+ * When using the tiger maven plugin this is taken care of automgically!
+ *
+ * First one sets it in the code explicitely.
+ */
 @Slf4j
 public class TigerCucumberRunner extends CucumberSerenityRunner {
 
