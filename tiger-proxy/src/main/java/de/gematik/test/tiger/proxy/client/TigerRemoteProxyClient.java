@@ -19,7 +19,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
@@ -114,9 +116,12 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
         try {
             connectFuture.get(connectionTimeoutInSeconds, TimeUnit.SECONDS);
-        } catch (Exception e) {
+        } catch (RuntimeException | ExecutionException | TimeoutException e) {
             throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
                 + tracingWebSocketUrl, e);
+        } catch (InterruptedException e) {
+            log.error("InterruptedException while opening tracing-connection to {}", tracingWebSocketUrl);
+            Thread.currentThread().interrupt();
         }
     }
 

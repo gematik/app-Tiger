@@ -4,7 +4,7 @@
 
 ## Bugfixes
 
-* TGR-521: Connection-lost issues for Tiger Proxy mesh-setups fixed.
+* TGR-523: Connection-lost issues for Tiger Proxy mesh-setups fixed.
 
 # Release 0.22.1
 
