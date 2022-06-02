@@ -60,7 +60,7 @@ public class TestTigerCucumberListener {
         TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
         listener.getSourceRead().receive(event);
         assertThat(listener.getIdFeatureMap()).hasSize(0);
-        assertThat(listener.getCurrentFeature().getScenarios()).hasSize(7);
+        assertThat(listener.getUriFeatureMap().get(featureUri).getScenarios()).hasSize(7);
 
         TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), new TestcaseAdapter());
 
@@ -83,7 +83,7 @@ public class TestTigerCucumberListener {
         TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
         listener.getSourceRead().receive(event);
         assertThat(listener.getIdFeatureMap()).hasSize(0);
-        assertThat(listener.getCurrentFeature().getScenarios()).hasSize(7);
+        assertThat(listener.getUriFeatureMap().get(featureUri).getScenarios()).hasSize(7);
 
         TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), new ScenarioOutlineTestCaseAdapter());
         listener.getCaseStarted().receive(startedEvent);

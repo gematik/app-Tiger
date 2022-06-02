@@ -44,6 +44,11 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
 
 
     /**
+     * map of features parsed, based on their uri
+     */
+    private final Map<URI, Feature> uriFeatureMap = new HashMap<>();
+
+    /**
      * map of features parsed, for each scenario based on its id.
      */
     private final Map<String, Feature> idFeatureMap = new HashMap<>();
@@ -53,7 +58,6 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
      */
     private final Map<String, List<Step>> scenarioStepsMap = new HashMap<>();
 
-    private Feature currentFeature;
     private String currentScenarioId;
 
     /**
@@ -97,14 +101,15 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
 
     private final EventHandler<TestSourceRead> sourceRead = event -> {
         log.debug("Parsing feature file {}", event.getUri());
-        currentFeature = new FeatureParser().parseFeatureFile(event.getUri());
+        uriFeatureMap.put(event.getUri(), new FeatureParser().parseFeatureFile(event.getUri()));
     };
 
     private final EventHandler<TestCaseStarted> caseStarted = testcase -> {
         log.debug("Starting scenario {}", testcase.getTestCase().getName());
 
         currentScenarioId = testcase.getTestCase().getId().toString();
-        final Feature feature = idFeatureMap.computeIfAbsent(currentScenarioId, id -> currentFeature);
+        final Feature feature = uriFeatureMap.get(testcase.getTestCase().getUri());
+        idFeatureMap.computeIfAbsent(currentScenarioId, id -> feature);
 
         String scenarioName = testcase.getTestCase().getName();
         Scenario scenario = feature.getScenario(scenarioName, testcase.getTestCase().getLocation().getLine());
@@ -215,6 +220,7 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
             }
             if (stepText.endsWith("TGR warte auf Abbruch") || stepText.endsWith("TGR wait for user abort")) {
                 // TODO notify workflow ui for next step button
+                // Eigentlich doch obsolete oder?
             }
         }
         currentStepIndex++;
