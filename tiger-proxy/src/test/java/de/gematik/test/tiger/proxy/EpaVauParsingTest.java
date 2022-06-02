@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
@@ -37,6 +39,10 @@ class EpaVauParsingTest {
             .keyFolders(List.of("src/test/resources"))
             .activateVauAnalysis(true)
             .build());
+
+        await()
+            .atMost(5, TimeUnit.SECONDS)
+            .until(() -> tigerProxy.getRbelMessages().size() >= 36);
 
         FileUtils.writeStringToFile(new File("target/vauFlow.html"),
             RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory()), StandardCharsets.UTF_8);
@@ -77,6 +83,10 @@ class EpaVauParsingTest {
                 .build())
             .activateVauAnalysis(true)
             .build());
+
+        await()
+            .atMost(5, TimeUnit.SECONDS)
+                .until(() -> tigerProxy.getRbelMessages().size() >= 16);
 
         assertThat(tigerProxy.getRbelMessages().get(15).findElement("$.body.recordId"))
             .get()

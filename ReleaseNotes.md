@@ -1,5 +1,11 @@
 # Changelog Tiger Testplattform
 
+# Release 0.22.2
+
+## Bugfixes
+
+* TGR-521: Connection-lost issues for Tiger Proxy mesh-setups fixed.
+
 # Release 0.22.1
 
 ## Breaking Changes

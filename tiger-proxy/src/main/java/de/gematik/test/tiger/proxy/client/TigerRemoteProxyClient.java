@@ -10,6 +10,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
+import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
+import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -70,13 +72,40 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(messageConverter);
         tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
-        final TigerStompSessionHandler tigerStompSessionHandler = new TigerStompSessionHandler(remoteProxyUrl);
+        final TigerStompSessionHandler tigerStompSessionHandler = new TigerStompSessionHandler(tracingWebSocketUrl,
+            configuration);
+        connectToRemoteUrl(tracingWebSocketUrl, tigerStompSessionHandler,
+            configuration.getConnectionTimeoutInSeconds(),
+            getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+    }
+
+    private void downloadTrafficFromRemoteProxy() {
+        final String downloadUrl = remoteProxyUrl + "/webui/trafficLog.tgr" +
+            (getRbelMessages().isEmpty() ? ""
+                : "?lastMsgUuid=" + getRbelMessages().get(getRbelMessages().size() - 1).getUuid());
+        log.info("Downloading missed traffic from '{}' (currently cached {} messages)",
+            downloadUrl, getRbelMessages().size());
+        final HttpResponse<String> response = Unirest.get(downloadUrl).asString();
+        if (response.getStatus() != 200) {
+            throw new TigerRemoteProxyClientException(
+                "Error while downloading message from remote '" + downloadUrl + "': " + response.getBody());
+        }
+        RbelFileWriterUtils.convertFromRbelFile(response.getBody(), getRbelLogger().getRbelConverter());
+        log.info("Successfully downloaded missed traffic from '{}'. Now {} message cached",
+            downloadUrl, getRbelMessages().size());
+    }
+
+    private void connectToRemoteUrl(String tracingWebSocketUrl,
+        TigerStompSessionHandler tigerStompSessionHandler, int connectionTimeoutInSeconds, boolean downloadTraffic) {
         final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
             tracingWebSocketUrl, tigerStompSessionHandler);
 
         connectFuture.addCallback(stompSession -> {
                 log.info("Succesfully opened stomp session {} to url",
                     stompSession.getSessionId(), tracingWebSocketUrl);
+                if (downloadTraffic) {
+                    new Thread(this::downloadTrafficFromRemoteProxy).start();
+                }
             },
             throwable -> {
                 throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
@@ -84,7 +113,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
 
         try {
-            connectFuture.get(configuration.getConnectionTimeoutInSeconds(), TimeUnit.SECONDS);
+            connectFuture.get(connectionTimeoutInSeconds, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
                 + tracingWebSocketUrl, e);
@@ -182,12 +211,15 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     private Optional<RbelElement> buildNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes,
-        Optional<ZonedDateTime> transmissionTime) {
+        Optional<ZonedDateTime> transmissionTime, String uuid) {
         if (messageBytes != null) {
-            log.info("Received new message...", new String(messageBytes));
+            log.debug("Received new message with ID '{}'", uuid);
 
             final RbelElement rbelMessage = getRbelLogger().getRbelConverter()
-                .parseMessage(messageBytes, sender, receiver);
+                .parseMessage(RbelElement.builder()
+                    .uuid(uuid)
+                    .rawContent(messageBytes)
+                    .build(), sender, receiver);
 
             transmissionTime.ifPresent(
                 zonedDateTime -> rbelMessage.addFacet(new RbelMessageTimingFacet(zonedDateTime)));
@@ -230,6 +262,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     private class TigerStompSessionHandler extends StompSessionHandlerAdapter {
 
         private final String remoteProxyUrl;
+        private final TigerProxyConfiguration configuration;
 
         @Override
         public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
@@ -327,7 +360,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         @Override
         public void handleTransportError(StompSession session, Throwable exception) {
             if (exception instanceof ConnectionLostException) {
-                log.warn("Remote client lost connection to url {}", remoteProxyUrl);
+                log.warn("Remote client lost connection to url {}. Reconnecting...", remoteProxyUrl);
+                connectToRemoteUrl(remoteProxyUrl, this,
+                    configuration.getConnectionTimeoutInSeconds(),
+                    true);
             } else {
                 log.error("handle transport error from url '{}': {}", remoteProxyUrl, exception);
                 throw new TigerRemoteProxyClientException(exception);
@@ -376,9 +412,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             if (request != null && response != null
                 && request.isComplete() && response.isComplete()) {
                 val requestParsed = buildNewRbelMessage(request.getSender(), request.getReceiver(),
-                    request.buildCompleteContent(), Optional.ofNullable(request.getTransmissionTime()));
+                    request.buildCompleteContent(), Optional.ofNullable(request.getTransmissionTime()),
+                    request.getTracingDto().getRequestUuid());
                 val responseParsed = buildNewRbelMessage(response.getSender(), response.getReceiver(),
-                    response.buildCompleteContent(), Optional.ofNullable(response.getTransmissionTime()));
+                    response.buildCompleteContent(), Optional.ofNullable(response.getTransmissionTime()),
+                    response.getTracingDto().getResponseUuid());
                 if (requestParsed.isEmpty() || responseParsed.isEmpty()) {
                     return;
                 }
@@ -388,7 +426,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                     .request(requestParsed.get())
                     .build();
                 responseParsed.get().addFacet(pairFacet);
-                requestParsed.get().addFacet(pairFacet);
 
                 propagateMessage(requestParsed.get());
                 propagateMessage(responseParsed.get());

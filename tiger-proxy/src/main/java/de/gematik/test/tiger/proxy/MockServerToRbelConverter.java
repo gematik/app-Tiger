@@ -29,17 +29,42 @@ public class MockServerToRbelConverter {
 
     public RbelElement convertResponse(HttpResponse response, String serverProtocolAndHost,
         SocketAddress clientAddress) {
-        log.trace("Converting response {}, headers {}, body {}", response,
-            response.getHeaders(), response.getBodyAsString());
-        return rbelConverter.parseMessage(responseToRbelMessage(response),
+        if (log.isTraceEnabled()) {
+            log.trace("Converting response {}, headers {}, body {}", response,
+                response.getHeaders(), response.getBodyAsString());
+        }
+
+        final RbelElement element = rbelConverter.parseMessage(responseToRbelMessage(response),
             convertUri(serverProtocolAndHost), convertSocketAdress(clientAddress));
+
+        if (!element.hasFacet(RbelHttpResponseFacet.class)) {
+            element.addFacet(RbelHttpResponseFacet.builder()
+                .responseCode(RbelElement.builder()
+                    .parentNode(element)
+                    .rawContent(response.getStatusCode().toString().getBytes())
+                    .build())
+                .build());
+        }
+        return element;
     }
 
     public RbelElement convertRequest(HttpRequest request, String protocolAndHost) {
-        log.trace("Converting request {}, headers {}, body {}", request,
-            request.getHeaders(), request.getBodyAsString());
-        return rbelConverter.parseMessage(requestToRbelMessage(request),
+        if (log.isTraceEnabled()) {
+            log.trace("Converting request {}, headers {}, body {}", request,
+                request.getHeaders(), request.getBodyAsString());
+        }
+
+        final RbelElement element = rbelConverter.parseMessage(requestToRbelMessage(request),
             convertSocketAdress(request.getClientAddress()), convertUri(protocolAndHost));
+
+        if (!element.hasFacet(RbelHttpRequestFacet.class)) {
+            element.addFacet(RbelHttpRequestFacet.builder()
+                .path(RbelElement.wrap(element, request.getPath().getValue()))
+                .method(RbelElement.wrap(element, request.getMethod().getValue()))
+                .build());
+        }
+
+        return element;
     }
 
     private RbelHostname convertSocketAdress(SocketAddress clientAddress) {
@@ -64,30 +89,16 @@ public class MockServerToRbelConverter {
 
     public RbelElement responseToRbelMessage(final HttpResponse response) {
         final byte[] httpMessage = responseToRawMessage(response);
-        final RbelElement element = rbelConverter.convertElement(httpMessage, null);
-        if (!element.hasFacet(RbelHttpResponseFacet.class)) {
-            element.addFacet(RbelHttpResponseFacet.builder()
-                .responseCode(RbelElement.builder()
-                    .parentNode(element)
-                    .rawContent(response.getStatusCode().toString().getBytes())
-                    .build())
-                .build());
-        }
-
-        return element;
+        return RbelElement.builder()
+            .rawContent(httpMessage)
+            .build();
     }
 
     public RbelElement requestToRbelMessage(final HttpRequest request) {
         final byte[] httpMessage = requestToRawMessage(request);
-        final RbelElement element = rbelConverter.convertElement(httpMessage, null);
-        if (!element.hasFacet(RbelHttpRequestFacet.class)) {
-            element.addFacet(RbelHttpRequestFacet.builder()
-                .path(RbelElement.wrap(element, request.getPath().getValue()))
-                .method(RbelElement.wrap(element, request.getMethod().getValue()))
-                .build());
-        }
-
-        return element;
+        return RbelElement.builder()
+            .rawContent(httpMessage)
+            .build();
     }
 
     private byte[] requestToRawMessage(HttpRequest request) {

@@ -361,4 +361,22 @@ public class TigerRemoteProxyClientTest {
                 tigerProxy.getRbelMessages().get(1)
                     .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime());
     }
+
+    @Test
+    public void laterConnect_shouldDownloadInitialTraffic() {
+        unirestInstance.get("http://myserv.er/foobarString").asString();
+
+        TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder()
+                .downloadInitialTrafficFromEndpoints(true)
+                .build());
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+                .until(() -> !newlyConnectedRemoteClient.getRbelMessages().isEmpty());
+
+        assertThat(newlyConnectedRemoteClient.getRbelMessages().get(0)
+            .findElement("$.path").get().getRawStringContent())
+            .isEqualTo("/foobarString");
+    }
 }

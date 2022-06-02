@@ -55,6 +55,7 @@ const summaryPatterns = {
   ],
   ".tigerProxyCfg.trafficEndpoints": [
     ["single", "Endpoints <br/>", "$.tigerProxyCfg.trafficEndpoints}", "<br/>"],
+    ["single", "Download initial traffic from remore? ", "$.tigerProxyCfg.downloadInitialTrafficFromEndpoints", ""],
     ["single", "Timeout ", "$.tigerProxyCfg.connectionTimeoutInSeconds", " sec<br/>"],
     ["group", "Buffers in Mb ", ", ",
       ["$.tigerProxyCfg.stompClientBufferSizeInMb",

@@ -73,8 +73,17 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     @GetMapping(value = "/trafficLog.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public String downloadTraffic() {
+    public String downloadTraffic(
+        @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid) {
         return tigerProxy.getRbelMessages().stream()
+            .dropWhile(msg -> {
+                if (StringUtils.isEmpty(lastMsgUuid)) {
+                    return false;
+                } else {
+                    return !msg.getUuid().equals(lastMsgUuid);
+                }
+            })
+            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .map(RbelFileWriterUtils::convertToRbelFileString)
             .collect(Collectors.joining("\n\n"));
     }
@@ -99,7 +108,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
                     "/webui/css/all.min.css");
         }
-        String navbar = nav().withClass("navbar is-dark is-fixed-bottom not4embedded").withStyle("bottom: 57px !important;").with(
+        String navbar = nav().withClass("navbar is-dark is-fixed-bottom not4embedded").with(
             div().withClass("navbar-menu").with(
                 div().withClass("navbar-start").with(
                     div().withClass("navbar-item not4embedded").with(

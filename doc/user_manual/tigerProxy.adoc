@@ -262,6 +262,8 @@ tigerProxy:
     # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
     # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the
     # server will not boot. (fail fast, fail early)
+    downloadInitialTrafficFromEndpoints: true
+    # Should the traffic currently available (cached) in the remote be download upon initial connection?
 ----
 
 Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.proxyPort`). The traffic from routes with `activateRbelLogging: false` will not show up here.
