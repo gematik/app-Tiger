@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.22.2 - 2022-06-02</span>
+<span id="revdate">Version 0.22.3 - 2022-06-02</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -2442,7 +2442,9 @@ The reverse proxy could either be started by the test environment manager or as 
       - <span class="string"><span class="content">http://another.tiger.proxy:&lt;adminPort&gt;</span></span>
     <span class="comment"># A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to</span>
     <span class="comment"># gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the</span>
-    <span class="comment"># server will not boot. (fail fast, fail early)</span></code></pre>
+    <span class="comment"># server will not boot. (fail fast, fail early)</span>
+    <span class="key">downloadInitialTrafficFromEndpoints</span>: <span class="string"><span class="content">true</span></span>
+    <span class="comment"># Should the traffic currently available (cached) in the remote be download upon initial connection?</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -3971,7 +3973,7 @@ Till then there is not much more than in the <a href="#_workflow_ui">Test lib ch
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-06-02 11:17:56 +0200
+Last updated 2022-06-02 19:05:11 +0200
 </div>
 </div>
 </body>
