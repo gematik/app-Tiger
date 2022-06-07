@@ -366,17 +366,85 @@ public class TigerRemoteProxyClientTest {
     public void laterConnect_shouldDownloadInitialTraffic() {
         unirestInstance.get("http://myserv.er/foobarString").asString();
 
-        TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
+        TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient(
+            "http://localhost:" + springServerPort,
             TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(true)
                 .build());
 
         await()
             .atMost(2, TimeUnit.SECONDS)
-                .until(() -> !newlyConnectedRemoteClient.getRbelMessages().isEmpty());
+            .until(() -> !newlyConnectedRemoteClient.getRbelMessages().isEmpty());
 
         assertThat(newlyConnectedRemoteClient.getRbelMessages().get(0)
             .findElement("$.path").get().getRawStringContent())
             .isEqualTo("/foobarString");
+    }
+
+    @Test
+    public void outOfSyncReception1_shouldRecoverOrder() {
+        AtomicInteger receivedMessages = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(el -> receivedMessages.incrementAndGet());
+
+        addMessagePart("responseUuid", 1, 2);
+        addMessagePart("responseUuid", 0, 2);
+        addMessagePart("requestUuid", 0, 1);
+        tigerRemoteProxyClient.getTigerStompSessionHandler().getTracingStompHandler()
+            .handleFrame(null, TigerTracingDto.builder()
+                .requestUuid("requestUuid")
+                .responseUuid("responseUuid")
+                .build());
+
+        await()
+            .atMost(5, TimeUnit.SECONDS)
+            .until(() -> receivedMessages.get() >= 2);
+    }
+
+    @Test
+    public void outOfSyncReception2_shouldRecoverOrder() {
+        AtomicInteger receivedMessages = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(el -> receivedMessages.incrementAndGet());
+
+        addMessagePart("responseUuid", 1, 2);
+        addMessagePart("requestUuid", 0, 1);
+        tigerRemoteProxyClient.getTigerStompSessionHandler().getTracingStompHandler()
+            .handleFrame(null, TigerTracingDto.builder()
+                .requestUuid("requestUuid")
+                .responseUuid("responseUuid")
+                .build());
+        addMessagePart("responseUuid", 0, 2);
+
+        await()
+            .atMost(5, TimeUnit.SECONDS)
+            .until(() -> receivedMessages.get() >= 2);
+    }
+
+    @Test
+    public void outOfSyncReception3_shouldRecoverOrder() {
+        AtomicInteger receivedMessages = new AtomicInteger(0);
+        tigerRemoteProxyClient.addRbelMessageListener(el -> receivedMessages.incrementAndGet());
+
+        addMessagePart("responseUuid", 1, 2);
+        addMessagePart("responseUuid", 0, 2);
+        tigerRemoteProxyClient.getTigerStompSessionHandler().getTracingStompHandler()
+            .handleFrame(null, TigerTracingDto.builder()
+                .requestUuid("requestUuid")
+                .responseUuid("responseUuid")
+                .build());
+        addMessagePart("requestUuid", 0, 1);
+
+        await()
+            .atMost(5, TimeUnit.SECONDS)
+            .until(() -> receivedMessages.get() >= 2);
+    }
+
+    private void addMessagePart(String responseUuid, int index, int numberOfMessages) {
+        tigerRemoteProxyClient.getTigerStompSessionHandler().getDataStompHandler()
+            .handleFrame(null, TracingMessagePart.builder()
+                .uuid(responseUuid)
+                .data("blub".getBytes())
+                .index(index)
+                .numberOfMessages(numberOfMessages)
+                .build());
     }
 }

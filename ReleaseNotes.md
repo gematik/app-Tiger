@@ -1,5 +1,12 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.0
+
+## Bugfixes
+
+* TGR-528: Solved Race-Condition on out-of-order Message-Parts
+* TGR-528: Solved ConcurrentModificationException in WebUi
+
 # Release 0.22.2
 
 ## Bugfixes

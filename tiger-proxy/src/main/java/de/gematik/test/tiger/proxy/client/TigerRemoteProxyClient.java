@@ -14,9 +14,6 @@ import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
-import java.lang.reflect.Array;
-import java.lang.reflect.Type;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -29,6 +26,7 @@ import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -46,11 +44,15 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     public static final String WS_TRACING = "/topic/traces";
     public static final String WS_DATA = "/topic/data";
     public static final String WS_ERRORS = "/topic/errors";
+    @Getter
     private final String remoteProxyUrl;
     private final WebSocketStompClient tigerProxyStompClient;
     @Getter
     private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
+    @Getter
     private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
+    @Getter
+    private TigerStompSessionHandler tigerStompSessionHandler;
 
     public TigerRemoteProxyClient(String remoteProxyUrl) {
         this(remoteProxyUrl, new TigerProxyConfiguration());
@@ -74,8 +76,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(messageConverter);
         tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
-        final TigerStompSessionHandler tigerStompSessionHandler = new TigerStompSessionHandler(tracingWebSocketUrl,
-            configuration);
+        tigerStompSessionHandler = new TigerStompSessionHandler(this);
         connectToRemoteUrl(tracingWebSocketUrl, tigerStompSessionHandler,
             configuration.getConnectionTimeoutInSeconds(),
             getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
@@ -92,12 +93,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             throw new TigerRemoteProxyClientException(
                 "Error while downloading message from remote '" + downloadUrl + "': " + response.getBody());
         }
+        log.info("Downloaded {} of traffic. Now parsing...", FileUtils.byteCountToDisplaySize(response.getBody().length()));
         RbelFileWriterUtils.convertFromRbelFile(response.getBody(), getRbelLogger().getRbelConverter());
         log.info("Successfully downloaded missed traffic from '{}'. Now {} message cached",
             downloadUrl, getRbelMessages().size());
     }
 
-    private void connectToRemoteUrl(String tracingWebSocketUrl,
+    void connectToRemoteUrl(String tracingWebSocketUrl,
         TigerStompSessionHandler tigerStompSessionHandler, int connectionTimeoutInSeconds, boolean downloadTraffic) {
         final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
             tracingWebSocketUrl, tigerStompSessionHandler);
@@ -215,7 +217,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
     }
 
-    private Optional<RbelElement> buildNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes,
+    Optional<RbelElement> buildNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes,
         Optional<ZonedDateTime> transmissionTime, String uuid) {
         if (messageBytes != null) {
             log.debug("Received new message with ID '{}'", uuid);
@@ -235,7 +237,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         }
     }
 
-    private void propagateMessage(RbelElement rbelMessage) {
+    void propagateMessage(RbelElement rbelMessage) {
         if (messageMatchesFilterCriterion(rbelMessage)) {
             super.triggerListener(rbelMessage);
         } else {
@@ -263,178 +265,40 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         unsubscribe();
     }
 
-    @RequiredArgsConstructor
-    private class TigerStompSessionHandler extends StompSessionHandlerAdapter {
+    void receiveNewMessagePart(TracingMessagePart tracingMessagePart) {
+        final PartialTracingMessage tracingMessage = retrieveOrInitializePartialMessage(
+            tracingMessagePart.getUuid(), PartialTracingMessage.builder().build());
 
-        private final String remoteProxyUrl;
-        private final TigerProxyConfiguration configuration;
+        tracingMessage.getMessageParts().add(tracingMessagePart);
+        checkForCompletion(tracingMessage, tracingMessagePart.getUuid());
+    }
 
-        @Override
-        public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
-            log.info("Connecting to tracing point {}", remoteProxyUrl);
-
-            stompSession.subscribe(WS_TRACING, new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders stompHeaders) {
-                        return TigerTracingDto.class;
-                    }
-
-                    @Override
-                    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-                        if (frameContent instanceof TigerTracingDto) {
-                            final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
-                            TracingMessagePair messagePair = new TracingMessagePair();
-                            messagePair.setRequest(PartialTracingMessage.builder()
-                                .tracingDto(tigerTracingDto)
-                                .receiver(tigerTracingDto.getSender())
-                                .sender(tigerTracingDto.getReceiver())
-                                .messagePair(messagePair)
-                                .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
-                                .build());
-                            messagePair.setResponse(
-                                PartialTracingMessage.builder()
-                                    .tracingDto(tigerTracingDto)
-                                    .receiver(tigerTracingDto.getReceiver())
-                                    .sender(tigerTracingDto.getSender())
-                                    .messagePair(messagePair)
-                                    .transmissionTime(tigerTracingDto.getResponseTransmissionTime())
-                                    .build());
-                            partiallyReceivedMessageMap.put(tigerTracingDto.getRequestUuid(),
-                                messagePair.getRequest());
-                            partiallyReceivedMessageMap.put(tigerTracingDto.getResponseUuid(),
-                                messagePair.getResponse());
-                        }
-                    }
-                }
-            );
-            stompSession.subscribe(WS_DATA, new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders stompHeaders) {
-                        return TracingMessagePart.class;
-                    }
-
-                    @Override
-                    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-                        if (frameContent instanceof TracingMessagePart) {
-                            final TracingMessagePart tracingMessagePart = (TracingMessagePart) frameContent;
-                            log.trace("Received part {} of {} for UUID {}",
-                                tracingMessagePart.getIndex(), tracingMessagePart.getNumberOfMessages(),
-                                tracingMessagePart.getUuid());
-                            if (!partiallyReceivedMessageMap.containsKey(tracingMessagePart.getUuid())) {
-                                log.error("Received stray message part with UUID {}", tracingMessagePart.getUuid());
-                            } else {
-                                final PartialTracingMessage tracingMessage = partiallyReceivedMessageMap.get(
-                                    tracingMessagePart.getUuid());
-                                tracingMessage.getMessageParts().add(tracingMessagePart);
-                                if (tracingMessage.isComplete()) {
-                                    tracingMessage.getMessagePair().checkForCompletePairAndPropagateIfComplete();
-                                    partiallyReceivedMessageMap.remove(tracingMessagePart.getUuid());
-                                }
-                            }
-                        }
-                    }
-                }
-            );
-
-            stompSession.subscribe(WS_ERRORS, new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders stompHeaders) {
-                        return TigerExceptionDto.class;
-                    }
-
-                    @Override
-                    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-                        if (frameContent instanceof TigerExceptionDto) {
-                            final TigerExceptionDto exceptionDto = (TigerExceptionDto) frameContent;
-                            log.warn("Received remote exception: ({}) {}: {} ",
-                                exceptionDto.getClassName(), exceptionDto.getMessage(), exceptionDto.getStacktrace());
-                            receivedRemoteExceptions.add(exceptionDto);
-                        }
-                    }
-                }
-            );
-        }
-
-        @Override
-        public void handleException(StompSession stompSession, StompCommand stompCommand, StompHeaders stompHeaders,
-            byte[] bytes, Throwable throwable) {
-            log.error("handle exception with remote url '{}': {}, {}", remoteProxyUrl, new String(bytes), throwable);
-            throw new TigerRemoteProxyClientException(throwable);
-        }
-
-        @Override
-        public void handleTransportError(StompSession session, Throwable exception) {
-            if (exception instanceof ConnectionLostException) {
-                log.warn("Remote client lost connection to url {}. Reconnecting...", remoteProxyUrl);
-                connectToRemoteUrl(remoteProxyUrl, this,
-                    configuration.getConnectionTimeoutInSeconds(),
-                    true);
-            } else {
-                log.error("handle transport error from url '{}': {}", remoteProxyUrl, exception);
-                throw new TigerRemoteProxyClientException(exception);
+    private PartialTracingMessage retrieveOrInitializePartialMessage(String uuid, PartialTracingMessage message) {
+        synchronized (partiallyReceivedMessageMap) {
+            if (partiallyReceivedMessageMap.containsKey(uuid)) {
+                return partiallyReceivedMessageMap.get(uuid);
             }
+            partiallyReceivedMessageMap.put(uuid, message);
+            return message;
         }
     }
 
-    @Data
-    @Builder
-    private static class PartialTracingMessage {
-
-        private final TigerTracingDto tracingDto;
-        private final RbelHostname sender;
-        private final RbelHostname receiver;
-        private final TracingMessagePair messagePair;
-        private final ZonedDateTime transmissionTime;
-        private final List<TracingMessagePart> messageParts = new ArrayList<>();
-
-        public boolean isComplete() {
-            return !messageParts.isEmpty()
-                && messageParts.get(0).getNumberOfMessages() == messageParts.size();
-        }
-
-        public byte[] buildCompleteContent() {
-            byte[] result = new byte[messageParts.stream()
-                .map(TracingMessagePart::getData)
-                .mapToInt(Array::getLength)
-                .sum()];
-            int resultIndex = 0;
-            for (int i = 0; i < messageParts.size(); i++) {
-                System.arraycopy(messageParts.get(i).getData(), 0,
-                    result, resultIndex, messageParts.get(i).getData().length);
-                resultIndex += messageParts.get(i).getData().length;
+    public void initOrUpdateMessagePart(String uuid, PartialTracingMessage partialTracingMessage) {
+        synchronized (partiallyReceivedMessageMap) {
+            if (partiallyReceivedMessageMap.containsKey(uuid)) {
+                val oldMessage = partiallyReceivedMessageMap.get(uuid);
+                partialTracingMessage.getMessageParts().addAll(oldMessage.getMessageParts());
             }
-            return result;
+            partiallyReceivedMessageMap.put(uuid, partialTracingMessage);
+        }
+        checkForCompletion(partialTracingMessage, uuid);
+    }
+
+    private void checkForCompletion(PartialTracingMessage tracingMessage, String messageUuid) {
+        if (tracingMessage.isComplete()) {
+            tracingMessage.getMessagePair().checkForCompletePairAndPropagateIfComplete();
+            partiallyReceivedMessageMap.remove(messageUuid);
         }
     }
 
-    @Data
-    public class TracingMessagePair {
-
-        private PartialTracingMessage request;
-        private PartialTracingMessage response;
-
-        public void checkForCompletePairAndPropagateIfComplete() {
-            if (request != null && response != null
-                && request.isComplete() && response.isComplete()) {
-                val requestParsed = buildNewRbelMessage(request.getSender(), request.getReceiver(),
-                    request.buildCompleteContent(), Optional.ofNullable(request.getTransmissionTime()),
-                    request.getTracingDto().getRequestUuid());
-                val responseParsed = buildNewRbelMessage(response.getSender(), response.getReceiver(),
-                    response.buildCompleteContent(), Optional.ofNullable(response.getTransmissionTime()),
-                    response.getTracingDto().getResponseUuid());
-                if (requestParsed.isEmpty() || responseParsed.isEmpty()) {
-                    return;
-                }
-
-                val pairFacet = TracingMessagePairFacet.builder()
-                    .response(responseParsed.get())
-                    .request(requestParsed.get())
-                    .build();
-                responseParsed.get().addFacet(pairFacet);
-
-                propagateMessage(requestParsed.get());
-                propagateMessage(responseParsed.get());
-            }
-        }
-    }
 }
