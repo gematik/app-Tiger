@@ -1,26 +1,26 @@
 == Tiger test environment manager
 
 As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the test environment manager is one of the three core components of the Tiger test framework.
-Its main task is to start various test server nodes configured in the tiger.yaml configuration file and initialize the local Tiger Proxy for the test suite.
+Its main task is to start various test server nodes configured in the `tiger.yaml` configuration file and initialize the local Tiger Proxy for the test suite.
 To choose a different test environmental configuration file you may set the environment variable TIGER_TESTENV_CFGFILE.
 
 
-The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from tiger.yaml.
+The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from `tiger.yaml`.
 If none of these files exist it will fail the start up.
 
-If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named tiger.yaml.
+If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named `tiger.yaml`.
 If none of these files exist it will fail the startup.
 
 In the startup phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
 
-To configure your test environment you can either compose the tiger.yaml file manually or much preferred
+To configure your test environment you can either compose the `tiger.yaml` file manually or much preferred
 use the xref:tiger_user_manual.adoc#_admin_ui[Tiger Admin UI].
 
 The nodes configured in the yaml file will be started asynchronously unless the dependsUpon property is set.
 
 === Supported server nodes and their configuration
 
-The Tiger testenviroment manager currently supports the following list of server ndoes.
+The Tiger testenviroment manager currently supports the following list of server nodes.
 
 * **Docker container** is a node based on instantiating a specific docker image that is either locally available or downloaded from a remote docker repo configured in the source property.
 * **Docker compose** is a node that you can use to start a group of services defined in one to several compose yaml files configured in the source list.
@@ -30,7 +30,7 @@ The Tiger testenviroment manager currently supports the following list of server
 
 ==== YAML configuration files in a nutshell
 
-Before you start writing your own tiger.yaml configuration files, make sure you have worked with yaml files before and know its syntax and structure. If unsure take a https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06[20 minutes primer], although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.
+Before you start writing your own `tiger.yaml` configuration files, make sure you have worked with yaml files before and know its syntax and structure. If unsure take a https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06[20 minutes primer], although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.
 
 ==== General properties
 
@@ -67,6 +67,10 @@ serverKey_xxx:
   healthcheckReturnCode: int
   # type specific property for Tiger Proxy and docker container nodes
   version: string
+  # OPTIONAL the logs of the server are also written to a file, if no logFile is
+  # specified a default name will be used (default is "./target/serverlogs/[key of server in tiger.yaml].log")
+  logFile: ./target/serverlogs/serverKey_xxx.log
+
   # OPTIONAL list of pki certs and keys to initialize
   # the local Tiger Proxy of the test suite with
   # Default value is empty array
@@ -203,6 +207,9 @@ dockerContainer_001:
     - dockerhubrepo.somewhere.org/repo/project/docker.image
   # OPTIONAL version of the docker image to download.
   version: 0.1.2
+  # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
+  # specified a default name will be used
+  logFile: ./target/serverlogs/dockerContainer_001.log
 
   dockerOptions:
     # OPTIONAL Flag whether the container shall be modified by
@@ -237,6 +244,9 @@ For now we support the ePA2 FD module and the DEMIS Meldeportal.
   type: compose
   dependsUpon: csv string
   startupTimeoutSec: int
+  # OPTIONAL the logs of the docker compose are also written to a file, if no logFile is
+  # specified a default name will be used
+  logFile: ./target/serverlogs/dockerCompose.log
 
   # MANDATORY list of yaml files to use to start up the services.
   # The entries can either be file paths or if starts with
@@ -293,6 +303,9 @@ externalJar_001:
   # OPTIONAL only declare the server healthy once the specified return code
   # is given
   healthcheckReturnCode: int
+  # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
+  # specified a default name will be used
+  logFile: ./target/serverlogs/externalJar_001.log
 
   externalJarOptions:
     # OPTIONAL folder from where to start the external jar.
@@ -349,6 +362,9 @@ externalUrl_001:
   # OPTIONAL only declare the server healthy once the specified return code
   # is given
   healthcheckReturnCode: int
+  # OPTIONAL the logs of the externalUrl are also written to a file, if no logFile is
+  # specified a default name will be used
+  logFile: ./target/serverlogs/externalUrl_001.log
 
   # The following properties are explained in the General properties section above
   pkiKeys: []
@@ -479,7 +495,7 @@ This template provides the DEMIS Meldeportal as local docker compose.
 [#_configuring_the_local_test_suite_tiger_proxy]
 === Configuring the local test suite Tiger Proxy
 
-The local Tiger Proxy for the test suite can be configured by using the following section(s) in the tiger.yaml file.
+The local Tiger Proxy for the test suite can be configured by using the following section(s) in the `tiger.yaml` file.
 For more information about what the Tiger Proxy is and how it works see the chapter xref:tigerProxy.adoc#_tiger_proxy_basics[Tiger Proxy basics]
 
 [source,yaml]
@@ -520,8 +536,8 @@ tigerProxy:
       # reverse proxy-route. http://<tiger-proxy>/blub will be forwarded
     - from: "/blub"
       to: "https://another.de/server"
-      # the traffic for this route will NOT be logged (default is true)
-      activateRbelLogging: false
+      # the traffic for this route will NOT be logged (default is false)
+      disableRbelLogging: true
 
   # a list of modifications that will be applied to every proxied request and response
   modifications:
@@ -645,14 +661,14 @@ java -jar tiger-testenv-mgr-${VERSION}-jar-with-all-dependencies.jar
 
 Now before starting your test suite scenarios you need to
 
-* disable / remove the test nodes in your default tiger.yaml (either by setting the property active to false or remove the server node entry completely). If you forget to do this, two nodes will be instantiated (one from the standalone test environment manager and the second during test run from the test environment manager started via the test suite hooks).
+* disable / remove the test nodes in your default `tiger.yaml` (either by setting the property active to false or remove the server node entry completely). If you forget to do this, two nodes will be instantiated (one from the standalone test environment manager and the second during test run from the test environment manager started via the test suite hooks).
 * and add routes for each node to the local Tiger Proxy. If you forget to do this, your test suite will not be able to access the test nodes under their configured hostname as this configuration is only known to the standalone test environment manager and NOT to the local tiger proxy started by the test suite hooks.
 
 Best practice is to have three test environment configuration files:
 
 * tiger-standalone.yaml to enable a persistent test environment during the development of test suite scenarios
 * tiger-nonodes.yaml for the test suite that will instantiate no nodes but only configure the routes to the nodes from the standalone test environment manager
-* tiger.yaml a complete configuration that can be used in CI or after the test suite development is completed.
+* `tiger.yaml` a complete configuration that can be used in CI or after the test suite development is completed.
 
 The first and the latter most of the time are identical besides the root level flag localProxyActive. So you may skip the first and just use it with two different values being set.
 

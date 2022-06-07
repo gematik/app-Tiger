@@ -1,9 +1,7 @@
 == Tiger Test library
 
-As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the Tiger test library is
-one of the three core components of the Tiger test framework.
-Its main goal is to provide extensive support for BDD/Cucumber testing and integrating the local Tiger Proxy
-with the test environment manager and the started test environment.
+As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the Tiger test library is one of the three core components of the Tiger test framework.
+Its main goal is to provide extensive support for BDD/Cucumber testing and integrating the local Tiger Proxy with the test environment manager and the started test environment.
 
 CAUTION: As of now we do not support multithreaded / parallel test runs.
 
@@ -41,11 +39,12 @@ lib:
 
 ----
 
+[#_cucumber_hooks]
 === Cucumber and Hooks
 
-As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed .
+As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.
 
-That's why it is mandatory to add the plugin de.gematik.test.tiger.TigerCucumberListener to the plugins list and use the TigerCucumberRunner.
+That's why it is mandatory to add the plugin `de.gematik.test.tiger.TigerCucumberListener` to the plugins list and use the TigerCucumberRunner.
 
 The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
 
@@ -295,7 +294,7 @@ The example above shows three main features of the JSONChecker.
 
 * Value specified as $NULL, meaning this value of this key is equal to null.
 * Usage of regular expression (e.g. ".\*" and "[\\d]*") to match values.
-* Usage of "____" preceeding a json key.- This indicates that the entry is optional but if it exists it must match the given value.
+* Usage of "____" preceeding a json key: This indicates that the entry is optional but if it exists it must match the given value.
 * if a value is specified as "${json-unit.ignore}", there is no check performed at all. This applies also to objects and arrays as seen in the dummyarray2 entry.
 * if we match key dummyEntry2 to the value of $REMOVE, it will return true, because this key does not exist.
 
@@ -436,6 +435,22 @@ only check for regex matches if they were not equal.
 @Dann("TGR speichere Wert des Knotens {string} der aktuellen Antwort in der Variable {string}")
 @Then("TGR store current response node text value at {string} in variable {string}")
 
+// =========================================================================================
+//
+//    M O D I F Y   S T O R E D   C O N T E N T
+//
+// =========================================================================================
+
+/**
+ * replace stored content with given regex
+ *
+ * @param regexPattern regular expression to search for
+ * @param replace string to replace all matches with
+ * @param varName  name of variable to store the node text value in
+ */
+@Dann("TGR ersetze {string} mit {string} im Inhalt der Variable {string}")
+@Then("TGR replace {string} with {string} in content of variable {string}")
+
 // ==========================================================================================
 //
 //    R E S P O N S E   V A L I D A T I O N
@@ -517,6 +532,19 @@ only check for regex matches if they were not equal.
  */
 @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als XML mit folgenden diff Optionen {string} überein mit:")
 @Then("TGR current response at {string} matches as XML and diff options {string}")
+
+/**
+ * Prints the rbel-tree of the current response to the System-out
+ */
+@Dann("TGR gebe aktuelle Response als Rbel-Tree aus")
+@Then("TGR print current response as rbel-tree")
+
+
+/**
+ * Prints the rbel-tree of the current request to the System-out
+ */
+@Dann("TGR gebe aktuelle Request als Rbel-Tree aus")
+@Then("TGR print current request as rbel-tree")
 ----
 
 ==== Exemplaric scenario Konnektorfarm EAU validation
@@ -534,10 +562,21 @@ image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm pr
 [#_workflow_ui]
 ==== Workflow UI
 
-The Workflow UI is one of the new experimental features which are currently introduced to Tiger. If activated via the tiger.yaml configuration file (see xref:_tiger_test_lib_configuration[]), any TGR banner step will be displayed in the Monitor UI popup and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.
-This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.
+The Workflow UI is one of the new features which are currently introduced to Tiger. If activated via the `tiger.yaml` configuration file (see xref:_tiger_test_lib_configuration[]), the Workflow UI will be opened in the current browser window during the test run.
+If no browser is open at the time a new instance will be launched.
 
-image::media/uimonitor.png[title="Workflow UI popup"]
+image::media/WorkflowUIStartup.png[title="Workflow UI"]
+
+The image above shows the inital startup of the Workflow UI. The Workflow UI is divided into three sections. When the user clicks on the tigers head on the top left the overview section is shown. It tells the user about the overall status, the name of the features and scenarios and the server status and logs.
+The section in the middle of the Workflow UI shows the test suite results. Each scenario and the corresponding steps are displayed, showing the user which feature/scenario went through or failed. The communication requests that are called during the step execution are displayed beneath the step that initated the request.
+When the user clicks on the light blue rectangle with the number (whereas uneven numbers are requests, even number are responses) of the request then the Rbel Log view opens on the right hand side of the Workflow UI.
+These are the RbelMessages that are also saved as HTML files as described in the xref:tigerTestLibrary.adoc#_cucumber_hooks[Cucumber and Hooks] section.
+The image below shows all three sections of the Workflow UI.
+
+image::media/WorkflowUI.png[title="Workflow UI - all views expanded"]
+
+TGR banner step will be displayed at the bottom of the Workflow UI and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.
+This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.
 
 .Current message steps for Workflow UI
 [source,java]
@@ -554,11 +593,14 @@ image::media/uimonitor.png[title="Workflow UI popup"]
     @Gegebensei("TGR zeige Banner {string}")
     @Given("TGR show banner {string}")
 
+    @When("TGR pause test run execution")
+    @Wenn("TGR pausiere Testausführung")
+
     @When("TGR wait for user abort")
     @Wenn("TGR warte auf Abbruch")
 ----
-
-The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester  to perform demo transactions that will be logged and saved to HTML reports but are not validated.
+The penultimate step allows to pause the validation test suite.
+The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester to perform demo transactions that will be logged and saved to HTML reports but are not validated. The wait for user abort subsequently terminates the test execution.
 
 === Using Tiger test lib helper classes
 
@@ -574,7 +616,7 @@ For more details please check the code and its usages in the Tiger test framewor
 
 ==== TigerSerializationUtil
 
-This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps. If you are plannign to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described xref:tigerConfiguration.adoc[in detail here].
+This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps. If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described xref:tigerConfiguration.adoc#_tiger_configuration[in detail here].
 
 ==== TigerPkiIdentityLoader, TigerPkiIdentity
 

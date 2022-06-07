@@ -7,7 +7,6 @@ start
 :showTigerBanner;
 :readConfiguration;
 :applyTestLibConfig;
-:startMonitorUi;
 :startTestEnvMgr;
 fork
 if (WorkflowUi active?) then
