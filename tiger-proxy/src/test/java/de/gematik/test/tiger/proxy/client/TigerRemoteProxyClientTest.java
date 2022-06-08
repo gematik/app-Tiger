@@ -20,6 +20,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -77,7 +78,7 @@ public class TigerRemoteProxyClientTest {
     private TigerProxy tigerProxy;
 
     // the local TigerProxy-Client (which syphons the message from the remote Tiger Proxy)
-    private TigerRemoteProxyClient tigerRemoteProxyClient;
+    private static TigerRemoteProxyClient tigerRemoteProxyClient;
     private UnirestInstance unirestInstance;
 
     @LocalServerPort
@@ -85,12 +86,16 @@ public class TigerRemoteProxyClientTest {
 
     @BeforeEach
     public void setup(WireMockRuntimeInfo remoteServer) {
-        log.info("Setup remote client... {}, {}", tigerRemoteProxyClient, tigerProxy);
-        TigerProxyConfiguration cfg = TigerProxyConfiguration.builder()
-            .proxyLogLevel("WARN")
-            .build();
-        tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
-            cfg);
+        if (tigerRemoteProxyClient == null) {
+            log.info("Setup remote client... {}", tigerProxy);
+            tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
+                TigerProxyConfiguration.builder()
+                    .proxyLogLevel("WARN")
+                    .build());
+        } else {
+            tigerRemoteProxyClient.clearAllRoutes();
+            tigerRemoteProxyClient.getRbelMessages().clear();
+        }
 
         remoteServer.getWireMock().register(get("/foo")
             .willReturn(aResponse()
@@ -341,7 +346,7 @@ public class TigerRemoteProxyClientTest {
     }
 
     @Test
-    public void trafficForwardingShouldPreserveTimingInformation() {
+    public void trafficForwardingShouldPreserveTimingAndAddressingInformation() {
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
@@ -361,6 +366,12 @@ public class TigerRemoteProxyClientTest {
             .isEqualTo(
                 tigerProxy.getRbelMessages().get(1)
                     .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime());
+        assertThat(tigerRemoteProxyClient.getRbelMessages().get(1)
+            .getFacetOrFail(RbelTcpIpMessageFacet.class).getSender().getRawStringContent())
+            .isEqualTo("myserv.er:80");
+        assertThat(tigerRemoteProxyClient.getRbelMessages().get(1)
+            .getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiver().getRawStringContent())
+            .startsWith("localhost:");
     }
 
     @Test

@@ -65,8 +65,10 @@ public class TracingPushController {
             return;
         }
         RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
-        final RbelHostname sender = rbelTcpIpMessageFacet.getSender().seekValue(RbelHostname.class).orElse(null);
-        final RbelHostname receiver = rbelTcpIpMessageFacet.getReceiver().seekValue(RbelHostname.class).orElse(null);
+        final RbelHostname sender = RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
+            .orElse(null);
+        final RbelHostname receiver = RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
+            .orElse(null);
         final RbelElement request = msg.getFacet(TracingMessagePairFacet.class)
             .map(TracingMessagePairFacet::getRequest)
             .or(() -> msg.getFacet(RbelHttpResponseFacet.class)
