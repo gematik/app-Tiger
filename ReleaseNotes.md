@@ -6,6 +6,7 @@
 
 * TGR-528: Solved Race-Condition on out-of-order Message-Parts
 * TGR-528: Solved ConcurrentModificationException in WebUi
+* TGR-529: Serverless test runs caused Workflow UI to not update
 
 # Release 0.22.2
 

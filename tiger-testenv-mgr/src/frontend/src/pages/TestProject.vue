@@ -25,7 +25,7 @@
           </i>
           <span>Status</span>
         </h4>
-        <TestStatus :featureUpdateMap="featureUpdateMap"/>
+        <TestStatus :featureUpdateMap="featureUpdateMap" :started="started"/>
         <!-- feature list -->
         <h4>
           <i v-on:click="Ui.toggleLeftSideBar(1)"
@@ -62,7 +62,7 @@
 
         <!-- tabs -->
         <div class="tab-content">
-          <ExecutionPane :featureUpdateMap="featureUpdateMap" :bannerData="bannerData" :localProxyWebUiUrl="localProxyWebUiUrl" :ui="ui"/>
+          <ExecutionPane :featureUpdateMap="featureUpdateMap" :bannerData="bannerData" :localProxyWebUiUrl="localProxyWebUiUrl" :ui="ui" :started="started"/>
           <div class="tab-pane h-100 w-100 text-danger pt-3 execution-pane-tabs" id="logs_pane" role="tabpanel">
             <i class="fa-solid fa-circle-exclamation fa-2x left"></i> Not implemented so far
           </div>
@@ -122,6 +122,10 @@ import BannerType from "@/types/BannerType";
 let baseURL = process.env.BASE_URL;
 let socket: WebSocket;
 let stompClient: Client;
+
+const started = ref(new Date());
+
+let fetchedInitialStatus = false;
 
 let bannerData: Ref<BannerMessage[]> = ref([]);
 
@@ -211,7 +215,7 @@ function connectToWebSocket() {
           }
 
           // Deal with initial phase buffering all notifications till fetch returned data
-          if (currentServerStatus.value.size === 0) {
+          if (!fetchedInitialStatus) {
             debug("MESSAGE PREFETCH: " + pushedMessage.index);
             preFetchMessageList.push(pushedMessage);
             return;
@@ -333,6 +337,7 @@ function fetchInitialServerStatus() {
     });
     currentMessageIndex = json.currentIndex;
     fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
+    fetchedInitialStatus = true;
     debug("FETCH DONE " + currentMessageIndex);
   });
 }

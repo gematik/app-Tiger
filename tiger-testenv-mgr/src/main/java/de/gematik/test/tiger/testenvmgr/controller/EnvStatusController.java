@@ -6,6 +6,7 @@ package de.gematik.test.tiger.testenvmgr.controller;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.*;
@@ -34,7 +35,7 @@ public class EnvStatusController implements TigerUpdateListener {
 
     @Override
     public synchronized void receiveTestEnvUpdate(final TigerStatusUpdate update) {
-        log.trace("receiving update {}", update.getIndex());
+        log.trace("receiving update {}", update);
         try {
             receiveTestSuiteUpdate(update.getFeatureMap());
 
@@ -127,7 +128,6 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerEnvStatus.getServers().put(serverName, serverStatus);
     }
 
-
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public TigerEnvStatusDto getStatus() {
         log.trace("Fetch request to getStatus() received");
@@ -137,6 +137,7 @@ public class EnvStatusController implements TigerUpdateListener {
                     + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
                     + "/webui");
         }
+        log.trace("Sending test env status {}", tigerEnvStatus);
         return tigerEnvStatus;
     }
 
@@ -150,5 +151,7 @@ public class EnvStatusController implements TigerUpdateListener {
     public void getConfirmContinueExecution() {
         log.trace("Fetch request to continueExecution() received");
         tigerTestEnvMgr.receivedResumeTestRunExecution();
+        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Resuming test run").bannerType(BannerType.MESSAGE).bannerColor("green").build();
+        tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 }

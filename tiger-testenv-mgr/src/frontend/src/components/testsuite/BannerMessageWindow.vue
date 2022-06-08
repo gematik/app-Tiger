@@ -4,7 +4,7 @@
 
 <template>
   <div id="workflow-messages" :class="`alert banner-message fade ${bannerData.length > 0 ? 'show' : ''}`" role="alert">
-    <i v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type !== BannerType.TESTRUN_ENDED"
+    <i v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type == BannerType.MESSAGE"
        class="btn-banner-close fa-solid fa-xmark" v-on:click="closeWindow"></i>
     <h4 class="pt-3 pb-0 text-center">
       <i class="fa-solid fa-bullhorn fa-flip-horizontal"></i>
@@ -56,7 +56,7 @@ function sendContinue(event: MouseEvent) {
   fetch(process.env.BASE_URL + "status/continueExecution")
   .then((response) => response.text())
   .then((data) => {
-    closeWindow(event);
+    // do nothing as the resume message will appear shortly after the click
   });
 }
 </script>
