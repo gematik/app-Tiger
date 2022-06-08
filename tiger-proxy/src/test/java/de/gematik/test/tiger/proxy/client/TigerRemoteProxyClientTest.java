@@ -18,6 +18,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;

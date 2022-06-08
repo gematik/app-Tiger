@@ -8,14 +8,16 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-public class TigerProxyConfigurator {
+public class TigerProxyConfigurator implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
 
     private final TigerProxy tigerProxy;
     private final ServletWebServerApplicationContext webServerAppCtxt;
@@ -35,5 +37,12 @@ public class TigerProxyConfigurator {
                         .disableRbelLogging(true)
                         .internalRoute(true)
                         .build());
+    }
+
+    @Override
+    public void customize(ConfigurableServletWebServerFactory factory) {
+        if (tigerProxy.getTigerProxyConfiguration().getAdminPort() > 0) {
+            factory.setPort(tigerProxy.getTigerProxyConfiguration().getAdminPort());
+        }
     }
 }

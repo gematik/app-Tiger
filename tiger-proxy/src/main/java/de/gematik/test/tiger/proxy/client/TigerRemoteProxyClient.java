@@ -52,7 +52,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     @Getter
     private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
     @Getter
-    private TigerStompSessionHandler tigerStompSessionHandler;
+    private final TigerStompSessionHandler tigerStompSessionHandler;
 
     public TigerRemoteProxyClient(String remoteProxyUrl) {
         this(remoteProxyUrl, new TigerProxyConfiguration());
@@ -108,7 +108,8 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                 log.info("Succesfully opened stomp session {} to url",
                     stompSession.getSessionId(), tracingWebSocketUrl);
                 if (downloadTraffic) {
-                    new Thread(this::downloadTrafficFromRemoteProxy).start();
+                    new Thread(this::downloadTrafficFromRemoteProxy,
+                        "connectToRemoteUrl-Download").start();
                 }
             },
             throwable -> {

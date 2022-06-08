@@ -53,14 +53,10 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             route.setTo(getTigerTestEnvMgr().replaceSysPropsInString(route.getTo()));
         });
 
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("server.port", reverseProxyCfg.getAdminPort());
-        properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
-
         statusMessage("Starting Tiger Proxy " + getServerId() + " at " + reverseProxyCfg.getAdminPort() + "...");
         applicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(properties)
+            .properties(new HashMap<>(TigerSerializationUtil.toMap(standaloneCfg)))
             .sources(TigerProxyApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)

@@ -79,7 +79,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
                 throw new RuntimeException(e);
             }
             log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
-        }).start();
+        }, "readTrafficFromSourceFile").start();
     }
 
     private void addFixVauKey() {

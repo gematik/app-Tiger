@@ -6,6 +6,9 @@
 
 * TGR-528: Solved Race-Condition on out-of-order Message-Parts
 * TGR-528: Solved ConcurrentModificationException in WebUi
+* TGR-530: Eliminate extraneous VauSessionFacet-Instances
+* TGR-530: Only apply modifications when needed
+* TGR-530: Standalone Tiger Proxy now respect tigerProxy.adminPort
 * TGR-529: Serverless test runs caused Workflow UI to not update
 
 # Release 0.22.2

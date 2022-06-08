@@ -18,8 +18,8 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
 
     private static final String RECORD_ID_KVNR_RBEL_PATH =
         "$.Data.content.decoded.AuthorizationAssertion.content.decoded." +
-        "Assertion.AttributeStatement.Attribute.AttributeValue.RecordIdentifier." +
-        "InsurantId.extension";
+            "Assertion.AttributeStatement.Attribute.AttributeValue.RecordIdentifier." +
+            "InsurantId.extension";
 
     // For technical details please see gemSpec_Krypt chapter 3.15 and chapter 6
 
@@ -61,7 +61,8 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
     }
 
     private void tagVauServerHello(RbelElement rbelElement) {
-        if (rbelElement.getParentNode().hasFacet(RbelHttpResponseFacet.class)) {
+        if (rbelElement.getParentNode().hasFacet(RbelHttpResponseFacet.class)
+            && rbelElement.getKey().map("body"::equals).orElse(false)) {
             rbelElement.getParentNode().getFacet(RbelHttpResponseFacet.class)
                 .map(RbelHttpResponseFacet::getRequest)
                 .flatMap(req -> req.getFacet(RbelHttpMessageFacet.class)
@@ -97,7 +98,8 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
     }
 
     private void tagVauServerFin(RbelElement rbelElement) {
-        if (rbelElement.getParentNode().hasFacet(RbelHttpResponseFacet.class)) {
+        if (rbelElement.getParentNode().hasFacet(RbelHttpResponseFacet.class)
+            && rbelElement.getKey().map("body"::equals).orElse(false)) {
             rbelElement.getParentNode().getFacet(RbelHttpResponseFacet.class)
                 .map(RbelHttpResponseFacet::getRequest)
                 .flatMap(req -> req.getFacet(RbelHttpMessageFacet.class)
