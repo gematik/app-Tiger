@@ -22,6 +22,7 @@ import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
+import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
@@ -35,11 +36,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.platform.commons.util.StringUtils;
 import org.springframework.util.SocketUtils;
 
-@Slf4j
 @Getter
 public abstract class TigerServer implements TigerEnvUpdateSender {
 
@@ -54,11 +53,15 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     private CfgServer configuration;
     private TigerServerStatus status = TigerServerStatus.NEW;
 
+    protected final org.slf4j.Logger log;
+
     public TigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
         this.hostname = hostname;
         this.serverId = serverId;
         this.tigerTestEnvMgr = tigerTestEnvMgr;
         this.configuration = configuration;
+        log = org.slf4j.LoggerFactory.getLogger("TgrSrv-" + serverId);
+        TigerServerLogManager.addAppenders(this);
     }
 
     public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
@@ -152,7 +155,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             throw e;
         } catch (Throwable t) {
             log.warn("Throwable during startup of server {}. Used configuration was {}",
-                getServerId(), TigerSerializationUtil.toJson(getConfiguration()), t);
+                getServerId(), TigerSerializationUtil.toJson(getConfiguration()));
             throw t;
         }
         statusMessage(getServerId() + " started");

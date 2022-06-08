@@ -21,6 +21,7 @@ public class CfgTemplate {
     private boolean active = true;
     private String healthcheckUrl;
     private Integer healthcheckReturnCode;
+    private String logFile;
 
     private CfgExternalJarOptions externalJarOptions;
     private CfgDockerOptions dockerOptions = new CfgDockerOptions();

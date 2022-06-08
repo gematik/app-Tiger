@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
@@ -279,8 +278,7 @@ public class TigerDirector {
 
     private static void assertThatTigerIsInitialized() {
         if (!initialized) {
-            throw new TigerStartupException("Tiger test environment has not been initialized. "
-                + "Did you call TigerDirector.beforeTestRun before starting test run?");
+            throw new TigerStartupException("Tiger test environment has not been initialized successfully!");
         }
     }
 

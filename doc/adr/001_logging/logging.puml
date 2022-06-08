@@ -1,0 +1,20 @@
+@startuml
+title Logging-Flüsse im Tiger Test-Env Manager
+
+[Logback Manager] as logback
+[TigerServerLogManager] as serverLog
+
+[Tiger Server] -down-> serverLog :slf4j-Logger
+[TestEnvMgr] -down-> logback :slf4j-Logger
+
+logback -down-> [Konsole]
+logback -down-> serverLog
+
+[External JAR Server] -down-> serverLog :slf4j-Logger
+[External JAR Server] -down-> serverLog :System IO
+
+serverLog -down-> [WebUI] :über den TigerStatusUpdate-Mechanismus
+serverLog -down-> [Dateien] :nur für Serverlogs
+serverLog -down-> [Konsole] :System IO
+
+@enduml

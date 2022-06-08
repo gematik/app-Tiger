@@ -28,6 +28,9 @@
 * TGR-519: Fixed propagation in aggregating tiger proxies
 * TGR-521: Race-Condition fixed for heavy-duty TigerProxy settings
 
+## Features
+* TGR-236: Logs of Tiger server instances are now also written to server specific log files
+
 # Release 0.21.0
 
 ## Breaking Changes

@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.awaitility.core.ConditionTimeoutException;
 
-@Slf4j
 public abstract class AbstractExternalTigerServer extends TigerServer {
 
     AbstractExternalTigerServer(String hostname, String serverId, CfgServer configuration,

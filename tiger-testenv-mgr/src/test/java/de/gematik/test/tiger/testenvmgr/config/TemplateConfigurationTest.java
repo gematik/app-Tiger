@@ -4,14 +4,14 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Test;
-
-import java.io.File;
-
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Test;
 
 public class TemplateConfigurationTest {
     @Test
@@ -34,5 +34,40 @@ public class TemplateConfigurationTest {
                 assertThat(dummyBean.getServers().get("erp").getSource())
                     .containsExactly("eu.gcr.io/gematik-all-infra-prod/erezept/ref-erx-fd-server");
             });
+    }
+
+    @SneakyThrows
+    @Test
+    public void readTigerYamlWithLogFile() {
+        TigerGlobalConfiguration.readFromYaml(
+            "tiger:\n"
+                + "  servers:\n"
+                + "    testExternalJar:\n"
+                + "      type: externalJar\n"
+                + "      source:\n"
+                + "        - http://localhost:${mockserver.port}/download\n"
+                + "      healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
+                + "      logFile: 'target/serverLogs/Test.log'\n"
+                + "      externalJarOptions:\n"
+                + "        workingDir: 'target/'\n"
+                + "        arguments:\n"
+                + "          - --httpPort=${free.port.0}\n"
+                + "          - --webroot=.\n");
+        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger")
+            .get();
+        assertThat(dummyBean.getServers().get("testExternalJar").getLogFile())
+            .contains("target/serverLogs/Test.log");
+    }
+
+    @SneakyThrows
+    @Test
+    public void readTigerYamlWithLogDirectory() {
+        TigerGlobalConfiguration.readFromYaml(
+            FileUtils.readFileToString(
+                new File("src/test/resources/testExternalJarDir.yaml"), StandardCharsets.UTF_8));
+        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger")
+            .get();
+        assertThat(dummyBean.getServers().get("testExternalJar").getLogFile())
+            .contains("target/serverLogs");
     }
 }
