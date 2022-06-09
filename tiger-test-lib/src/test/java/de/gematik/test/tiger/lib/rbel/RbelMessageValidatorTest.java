@@ -285,6 +285,32 @@ public class RbelMessageValidatorTest {
     }
 
     @Test
+    public void testFilterRequestsRbelPathExists_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").build());
+        assertTrue(validator.doesHostMatch(validator.currentRequest, "localhost:8080"));
+    }
+
+    @Test
+    public void testFilterRequestsRbelPathExists2_OK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
+        assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+    }
+
+    @Test
+    public void testFilterRequestsRbelPathExists_NOK() {
+        addSomeMessagesToTigerTestHooks();
+        RbelMessageValidator validator = new RbelMessageValidator();
+        assertThatThrownBy(() -> {
+            validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build());
+        }).isInstanceOf(AssertionError.class);
+    }
+
+
+    @Test
     public void testFilterRequestsAttachResponseCorrectly_OK() {
         addSomeMessagesToTigerTestHooks();
         RbelMessageValidator validator = new RbelMessageValidator();

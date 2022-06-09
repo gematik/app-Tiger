@@ -2,6 +2,10 @@
 
 # Release 0.23.0
 
+## Breaking changes
+
+* TGR-483 rbel validator steps using a doc string as parameter and not ending with a colon ":" are marked deprecated and are replaced with a correct version ending with ":" The old version will be removed with 0.23.1
+
 ## Bugfixes
 
 * TGR-528: Solved Race-Condition on out-of-order Message-Parts
@@ -11,6 +15,10 @@
 * TGR-530: Standalone Tiger Proxy now respect tigerProxy.adminPort
 * TGR-529: Serverless test runs caused Workflow UI to not update
 * TGR-530: Sender & Receiver are transmitted via tracing/mesh-setup
+
+## Features
+
+* TGR-483 adding new steps to RbelValidator, allowing to check for existence of node in request / response and allowing to check for mismatching node in response
 
 # Release 0.22.2
 

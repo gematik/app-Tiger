@@ -130,7 +130,7 @@ public class RbelMessageValidator {
                     break;
                 }
             }
-                msgs = new ArrayList<>(msgs.subList(idx + 2, msgs.size()));
+            msgs = new ArrayList<>(msgs.subList(idx + 2, msgs.size()));
         }
 
         final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
@@ -232,7 +232,8 @@ public class RbelMessageValidator {
     }
 
     private void printAllPathsOfMessages(final List<RbelElement> msgs) {
-        log.info("Found the following {} messages:\n{} ", msgs.size(), msgs.stream()
+        long requests = msgs.stream().filter(msg -> msg.getFacet(RbelHttpRequestFacet.class).isPresent()).count();
+        log.info("Found the following {} messages:\n{} ", requests, msgs.stream()
             .map(msg -> msg.getFacet(RbelHttpRequestFacet.class))
             .filter(Optional::isPresent)
             .map(Optional::get)
