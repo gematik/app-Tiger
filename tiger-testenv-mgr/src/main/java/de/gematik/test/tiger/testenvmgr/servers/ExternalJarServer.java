@@ -23,6 +23,7 @@ import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.servers.log.TigerStreamLogFeeder;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
@@ -33,9 +34,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.event.Level;
 
-@Slf4j
 public class ExternalJarServer extends AbstractExternalTigerServer {
 
     private final AtomicReference<Process> processReference = new AtomicReference<>();
@@ -93,6 +93,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                     )));
 
                 processReference.set(processBuilder.start());
+                new TigerStreamLogFeeder(log, processReference.get().getInputStream(), Level.INFO);
+                new TigerStreamLogFeeder(log, processReference.get().getErrorStream(), Level.ERROR);
                 statusMessage("Started JAR-File for " + getServerId() + " with PID '" + processReference.get().pid() + "'");
             } catch (Throwable t) {
                 log.error("Failed to start process", t);

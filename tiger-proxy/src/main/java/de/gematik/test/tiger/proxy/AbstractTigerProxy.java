@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
@@ -39,7 +40,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import kong.unirest.Unirest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -91,7 +94,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
                 throw new RuntimeException(e);
             }
             log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
-        }).start();
+        }, "readTrafficFromSourceFile").start();
     }
 
     private void addFixVauKey() {
@@ -160,5 +163,22 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     @Override
     public void removeRbelMessageListener(IRbelMessageListener listener) {
         rbelMessageListeners.remove(listener);
+    }
+
+    protected void waitForRemoteTigerProxyToBeOnline(String url) {
+        await()
+            .atMost(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 20L, TimeUnit.SECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until(() -> {
+                try {
+                    log.debug("Waiting for tiger-proxy at '{}' to be online...", url);
+                    Unirest.get(url)
+                        .connectTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
+                        .asEmpty();
+                    return true;
+                } catch (RuntimeException e) {
+                    return false;
+                }
+            });
     }
 }

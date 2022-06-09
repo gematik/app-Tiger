@@ -27,6 +27,5 @@ servers:
           to: http://localhost:${free.port.0}
 
 lib:
-  activateMonitorUI: false
   rbelPathDebugging: false
   activateWorkflowUi: false

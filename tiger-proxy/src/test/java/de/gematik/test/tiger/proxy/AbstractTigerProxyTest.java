@@ -32,22 +32,19 @@ import java.util.concurrent.ThreadLocalRandom;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 @Slf4j
 public abstract class AbstractTigerProxyTest {
 
-    public WireMockServer fakeBackendServer;
+    public static WireMockServer fakeBackendServer;
     public TigerProxy tigerProxy;
     public UnirestInstance proxyRest;
-    public byte[] binaryMessageContent = new byte[100];
+    public static byte[] binaryMessageContent = new byte[100];
 
-    @BeforeEach
-    public void setupBackendServer() {
-        if (fakeBackendServer != null) {
-            return;
-        }
-
+    @BeforeAll
+    public static void setupBackendServer() {
         fakeBackendServer = new WireMockServer(
             new WireMockConfiguration()
                 .dynamicPort()

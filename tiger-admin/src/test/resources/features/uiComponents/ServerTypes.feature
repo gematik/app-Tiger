@@ -75,6 +75,8 @@ Feature: Check input fields and sections for all server types
     When he shows "General" tab
     Then he sees input field "source"
     And he sees input field "healthcheckUrl"
+    And he sees input field "healthcheckReturnCode"
+    And he sees input field "logFile"
     But he doesn't see field "version"
 
     And he sees tab link "General"
@@ -96,6 +98,8 @@ Feature: Check input fields and sections for all server types
     When he shows "General" tab
     Then he sees input field "source"
     And he sees input field "healthcheckUrl"
+    And he sees input field "healthcheckReturnCode"
+    And he sees input field "logFile"
     But he doesn't see field "version"
 
     And he sees tab link "General"
@@ -159,6 +163,9 @@ Feature: Check input fields and sections for all server types
     And he shows "General" tab
     #Then he sees input field "hostname" not shown on compose
     Then he sees check field "active"
+    And he sees check field "logFile"
+    But he doesn't see field "healthcheckUrl"
+    And he doesn't see field "healthcheckReturnCode"
     When he shows "PKI" tab
     Then he sees list field ".pkiKeys"
     When he shows "Environment" tab
@@ -166,3 +173,4 @@ Feature: Check input fields and sections for all server types
     And he sees list field "environment"
     When he shows "URL Mappings" tab
     Then he sees list field "urlMappings"
+

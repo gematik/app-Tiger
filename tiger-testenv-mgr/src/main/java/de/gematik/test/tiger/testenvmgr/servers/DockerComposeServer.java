@@ -25,10 +25,8 @@ import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-@Slf4j
 public class DockerComposeServer extends TigerServer {
 
     @Builder

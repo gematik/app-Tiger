@@ -1,9 +1,7 @@
 == Tiger Test library
 
-As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the Tiger test library is
-one of the three core components of the Tiger test framework.
-Its main goal is to provide extensive support for BDD/Cucumber testing and integrating the local Tiger Proxy
-with the test environment manager and the started test environment.
+As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the Tiger test library is one of the three core components of the Tiger test framework.
+Its main goal is to provide extensive support for BDD/Cucumber testing and integrating the local Tiger Proxy with the test environment manager and the started test environment.
 
 CAUTION: As of now we do not support multithreaded / parallel test runs.
 
@@ -41,11 +39,12 @@ lib:
 
 ----
 
+[#_cucumber_hooks]
 === Cucumber and Hooks
 
-As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed .
+As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.
 
-That's why it is mandatory to add the plugin de.gematik.test.tiger.TigerCucumberListener to the plugins list and use the TigerCucumberRunner.
+That's why it is mandatory to add the plugin `de.gematik.test.tiger.TigerCucumberListener` to the plugins list and use the TigerCucumberRunner.
 
 The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
 
@@ -71,164 +70,29 @@ construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh]
 ==== Filtering requests
 
 .Core features
-* Filter for server, method, path, RBelPath node matching given value in request
+* Filter for server, method, path, RBelPath node existing / matching given value in request
 * Find first / next / last matching request
+* Find first / next / last request containing a RBelPath node
 * Clear all recorded messages
 * Specify timeout for filtering request
 
-With the `find next request ...` steps you can validate a complete workflow of requests to exist in a specific order and validate each of their responses (see next chapter).
-
-
-// as HTML pass through is not supported for pdf backend we need to keep this cucumber steps duplicated :(
-
-ifdef::backend-html5[]
-.Tiger validation filtering steps example
---
-++++
-<pre class="CodeRay highlight">
-
-  Feature Tiger validation steps
-
-    Scenario: Example steps
-
-      <span class="comment"># clear all previously recorded messages (requests and responses)</span>
-      <span class="keyword">Given</span> TGR clear recorded messages
-      <span class="comment"># restrict filtering requests to a specific host</span>
-      <span class="keyword">And</span> TGR filter requests based on host <span class="string">"testnode.example.org"</span>
-      <span class="comment"># restrict filtering requests to a specific HTTP method</span>
-      <span class="keyword">And</span> TGR filter requests based on method <span class="string">"POST"</span>
-      <span class="comment"># specify timeout for filter queries</span>
-      <span class="keyword">And</span> TGR set request wait timeout to <span class="string">20</span> seconds
-      <span class="comment"># find the first request matching criteria</span>
-      <span class="keyword">When</span> TGR find request to path <span class="string">"/path/blabla"</span> with <span class="string">"$..tag.value.text"</span> matching <span class="string">"abc.*"</span>
-      <span class="comment"># validate response to the filtered request using RBelPath</span>
-      <span class="keyword">Then</span> TGR current response with attribute <span class="string">"$..answer.result.text"</span> matches <span class="string">"OK.*"</span>
-      <span class="comment"># find the next request matching criteria</span>
-      <span class="keyword">When</span> TGR find next request to path <span class="string">"/path"</span> with <span class="string">"$..value.text"</span> matching <span class="string">"abc.*"</span>
-
-      ....
-</pre>
-++++
---
-endif::[]
-ifdef::backend-pdf[]
-.Tiger validation filtering steps example
-----
-Feature Tiger validation steps
-
-  Scenario: Example steps
-
-    # clear all previousely recorded messages (requests and responses)
-    Given TGR clear recorded messages
-    # restrict filtering requests to a specific host
-    And TGR filter requests based on host "testnode.example.org"
-    # restrict filtering requests to a specific HTTP method
-    And TGR filter requests based on method "POST"
-    # specify timeout for filter queries
-    And TGR set request wait timeout to 20 seconds
-    # find the first request matching criteria
-    When TGR find request to path "/path/blabla" with "$..tag.value.text" matching "abc.*"
-    # validate response to the filtered request using RBelPath
-    Then TGR current response with attribute "$..answer.result.text" matches "OK.*"
-    # find the next request matching criteria
-    When TGR find next request to path "/path" with "$..value.text" matching "abc.*"
-
-    ....
-----
-endif::[]
-
+With the `TGR find next request ...` steps you can validate a complete workflow of requests to exist in a specific order and validate each of their responses (see next chapter).
 
 ==== Validating responses
 
 .Core features
 * Assert that the body of the response matches regex
+* Assert that a given RBelPath node exists
 * Assert that a given RBelPath node matches regex
+* Assert that a given RBelPath node does not match regex
 * Assert that a given RBelPath node matches a JSON struct using the JSONChecker feature set
 * Assert that a given RBelPath node matches an XML struct using the XMLUnit difference evaluator
 
-// as HTML pass through is not supported for pdf backend we need to keep this cucumber steps duplicated :(
-
-ifdef::backend-html5[]
 .Tiger response validation steps example
+[source,gherkin]
 --
-++++
-<pre class="CodeRay highlight">
-
-Feature Tiger validation steps
-
-  Scenario: Example steps
-    ...
-    <span class="comment"># find the first request matching criteria</span>
-    <b>When</b> TGR find request to path <span class="string">"/path/path/blabla"</span> with <span class="string">"$..tag.value.text"</span> matching <span class="string">"abc.*"</span>
-    <span class="comment"># validate response to the filtered request using RBelPath</span>
-    <b>Then</b> TGR current response with attribute <span class="string">"$..answer.result.text"</span> matches <span class="string">"OK.*"</span>
-    <span class="comment"># find the next request matching criteria</span>
-    <b>When</b> TGR find next request to path <span class="string">"/path"</span> with <span class="string">"$..value.text"</span> matching <span class="string">"abc.*"</span>
-    <span class="comment"># validate response to the filtered request comparing body content</span>
-    <b>Then</b> TGR current response body matches
-    <span class="string">"""
-         body content
-    """</span>
-    <span class="comment"># validate response to the filtered request based upon JSONChecker</span>
-    <b>And</b> TGR current response at <span class="string">"$..tag"</span> matches as JSON
-    <span class="string">"""
-      {
-        "arr1": [
-          "asso", "bsso"
-        ]
-      }
-    """</span>
-    <span class="comment"># validate response to the filtered request based upon XML comparison</span>
-    <b>And</b> TGR current response at <span class="string">"$..tag" matches as XML
-    <span class="string">"""
-      &lt;arr1>
-        &lt;entry index="1">asso&lt;/entry>
-        &lt;entry index="2">bsso&lt;/entry>
-      &lt;/arr1>
-    """</span>
-</pre>
-++++
+include::validation-example.feature[]
 --
-endif::[]
-
-
-ifdef::backend-pdf[]
-.Tiger response validation steps example
-----
-Feature Tiger validation steps
-
-  Scenario: Example steps
-    ...
-    # find the first request matching criteria
-    When TGR find request to path "/path/blabla" with "$..tag.value.text" matching "abc.*"
-    # validate response to the filtered request using RBelPath
-    Then TGR current response with attribute "$..answer.result.text" matches "OK.*"
-    # find the next request matching criteria
-    When TGR find next request to path "/path" with "$..value.text" matching "abc.*"
-    # validate response to the filtered request comparing body content
-    Then TGR current response body matches
-    """
-         body content
-    """
-    # validate response to the filtered request based upon JSONChecker
-    And TGR current response at "$..tag" matches as JSON
-    """
-      {
-        "arr1": [
-          "asso", "bsso"
-        ]
-      }
-    """
-    # validate response to the filtered request based upon XML comparison
-    And TGR current response at "$..tag" matches as XML
-    """
-      <arr1>
-        <entry index="1">asso</entry>
-        <entry index="2">bsso&</entry>
-      </arr1>
-    """
-----
-endif::[]
 
 ===== XMLUnit Diff Builder
 
@@ -295,7 +159,7 @@ The example above shows three main features of the JSONChecker.
 
 * Value specified as $NULL, meaning this value of this key is equal to null.
 * Usage of regular expression (e.g. ".\*" and "[\\d]*") to match values.
-* Usage of "____" preceeding a json key.- This indicates that the entry is optional but if it exists it must match the given value.
+* Usage of "____" preceeding a json key: This indicates that the entry is optional but if it exists it must match the given value.
 * if a value is specified as "${json-unit.ignore}", there is no check performed at all. This applies also to objects and arrays as seen in the dummyarray2 entry.
 * if we match key dummyEntry2 to the value of $REMOVE, it will return true, because this key does not exist.
 
@@ -306,217 +170,13 @@ only check for regex matches if they were not equal.
 
 ==== Complete set of steps in validation glue code
 
+// use the extractCommentsFromRbelValidatorGlue.sh in GitBash (Windows) or bash (Linux, Mac)
+// to extract anew the steps doc from RbelValidatorGlue.java
 [source, java]
 ----
-// copied from module /tiger-test-lib
+// extracted from module /tiger-test-lib
 // /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java
-
-/**
- * Specify the amount of seconds Tiger should wait when filtering for
- * requests / responses
- * before reporting them as not found.
- */
-@Gegebensei("TGR setze Anfrage Timeout auf {int} Sekunden")
-@Given("TGR set request wait timeout to {int} seconds")
-
-/**
- * clear all validatable rbel messages. This does not clear the recorded messages later on
- * reported via the rbel log HTML page or the messages shown on web ui of Tiger Proxies.
- */
-@Wenn("TGR lösche aufgezeichnete Nachrichten")
-@When("TGR clear recorded messages")
-
-/**
- * filter all subsequent findRequest steps for hostname. To reset set host name to
- * empty string "".
- *
- * @param hostname host name (regex supported) to filter for
- */
-@Wenn("TGR filtere Anfragen nach Server {string}")
-@When("TGR filter requests based on host {string}")
-
-/**
- * filter all subsequent findRequest steps for method.
- *
- * @param method method to filter for
- */
-@Wenn("TGR filtere Anfragen nach HTTP Methode {string}")
-@When("TGR filter requests based on method {string}")
-
-/**
- * reset filter for method for subsequent findRequest steps.
- */
-@Wenn("TGR lösche den gesetzten HTTP Methodenfilter")
-@When("TGR reset request method filter")
-
-/**
- * find the first request where the path equals or matches as regex and memorize it
- * in the {@link #rbelValidator} instance
- *
- * @param path path to match
- */
-@Wenn("TGR finde die erste Anfrage mit Pfad {string}")
-@When("TGR find request to path {string}")
-
-/**
- * find the first request where path and node value equal or match as regex and memorize it
- * in the {@link #rbelValidator} instance.
- *
- * @param path     path to match
- * @param rbelPath rbel path to node/attribute
- * @param value    value to match at given node/attribute
- */
-@Wenn("TGR finde die erste Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt")
-@When("TGR find request to path {string} with {string} matching {string}")
-
-/**
- * find the NEXT request where the path equals or matches as regex and memorize it
- * in the {@link #rbelValidator} instance.
- *
- * @param path path to match
- */
-@Wenn("TGR finde die nächste Anfrage mit dem Pfad {string}")
-@When("TGR find next request to path {string}")
-
-/**
- * find the NEXT request where path and node value equal or match as regex and memorize it
- * in the {@link #rbelValidator} instance.
- *
- * @param path     path to match
- * @param rbelPath rbel path to node/attribute
- * @param value    value to match at given node/attribute
- */
-@Wenn("TGR finde die nächste Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt")
-@When("TGR find next request to path {string} with {string} matching {string}")
-
-/**
- * find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
- * instance.
- *
- * @param path path to match
- */
-@Wenn("TGR finde die letzte Anfrage mit dem Pfad {string}")
-@When("TGR find last request to path {string}")
-
-/**
- * find the LAST request where path and node value equal or match as regex and memorize it in the {@link
- * #rbelValidator} instance.
- *
- * @param path     path to match
- * @param rbelPath rbel path to node/attribute
- * @param value    value to match at given node/attribute
- */
-@Wenn("TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt")
-@When("TGR find last request to path {string} with {string} matching {string}")
-
-/**
- * assert that there is any message with given rbel path node/attribute matching given value.
- * The result (request or response) will not be stored in the {@link #rbelValidator}
- * instance.
- *
- * @param rbelPath rbel path to node/attribute
- * @param value    value to match at given node/attribute
- * @deprecated
- */
-@Wenn("TGR finde eine Nachricht mit Knoten {string} der mit {string} übereinstimmt")
-@When("TGR any message with attribute {string} matches {string}")
-
-// ==========================================================================================
-//
-//    S T O R E   R E S P O N S E   N O D E   I N   C O N T E X T
-//
-// ==========================================================================================
-
-/**
- * store given rbel path node/attribute text value of curren tresponse.
- *
- * @param rbelPath path to node/attribute
- * @param varName  name of variable to store the node text value in
- */
-@Dann("TGR speichere Wert des Knotens {string} der aktuellen Antwort in der Variable {string}")
-@Then("TGR store current response node text value at {string} in variable {string}")
-
-// ==========================================================================================
-//
-//    R E S P O N S E   V A L I D A T I O N
-//
-// ==========================================================================================
-
-/**
- * assert that response body of filtered request matches.
- *
- * @param docString value / regex that should equal or match
- */
-@Dann("TGR prüfe aktuelle Antwort stimmt im Body überein mit:")
-@Then("TGR current response body matches")
-
-/**
- * assert that response of filtered request matches at given rbel path node/attribute.
- *
- * @param rbelPath path to node/attribute
- * @param value    value / regex that should equal or match as string content with MultiLine
- *                 and DotAll regex option
- */
-@Dann("TGR prüfe aktuelle Antwort stimmt im Knoten {string} überein mit {string}")
-@Then("TGR current response with attribute {string} matches {string}")
-
-/**
- * assert that response of filtered request matches at given rbel path node/attribute.
- *
- * @param rbelPath  path to node/attribute
- * @param docString value / regex that should equal or match as string content with MultiLine
- *                  and DotAll regex option supplied as DocString
- */
-@Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt überein mit:")
-@Then("TGR current response at {string} matches")
-
-/**
- * assert that response of filtered request matches at given rbel path node/attribute.
- *
- * @param rbelPath path to node/attribute
- * @param value    value / regex that should equal or match as string content with MultiLine
- *                 and DotAll regex option
- * @deprecated
- */
-@Then("TGR current response at {string} matches {string}")
-
-/**
- * assert that response of filtered request matches at given rbel path node/attribute
- * assuming its JSON or XML
- *
- * @param rbelPath     path to node/attribute
- * @param mode         one of JSON|XML
- * @param oracleDocStr value / regex that should equal or match as JSON or XML content
- * @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
- */
-@Dann("TGR prüfe aktuelle Antwort im Knoten stimmt als {word} überein mit:")
-@Then("TGR current response at {string} matches as {word}")
-
-/**
- * assert that response of filtered request matches at given rbel path node/attribute
- * assuming its XML with given list of diff options.
- *
- * @param rbelPath       path to node/attribute
- * @param diffOptionsCSV a csv separated list of diff option identifiers to be applied
- *                       to comparison of the two XML sources
- *                       <ul>
- *                           <li>nocomment ... {@link DiffBuilder#ignoreComments()}</li>
- *                           <li>
- *                             txtignoreempty ...
- *                             {@link  DiffBuilder#ignoreElementContentWhitespace()}
- *                           </li>
- *                           <li>txttrim ... {@link DiffBuilder#ignoreWhitespace()}</li>
- *                           <li>
- *                             txtnormalize ... {@link DiffBuilder#normalizeWhitespace()}
- *                           </li>
- *                       </ul>
- * @param xmlDocStr      value / regex that should equal or match as JSON content
- * @see <a href="https://github.com/xmlunit/user-guide/wiki/DifferenceEvaluator">
- *        More on DifferenceEvaluator
- *      </a>
- */
-@Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als XML mit folgenden diff Optionen {string} überein mit:")
-@Then("TGR current response at {string} matches as XML and diff options {string}")
+include::./RbelValidatorGlueCommentsOnly.java[]
 ----
 
 ==== Exemplaric scenario Konnektorfarm EAU validation
@@ -534,10 +194,21 @@ image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm pr
 [#_workflow_ui]
 ==== Workflow UI
 
-The Workflow UI is one of the new experimental features which are currently introduced to Tiger. If activated via the tiger.yaml configuration file (see xref:_tiger_test_lib_configuration[]), any TGR banner step will be displayed in the Monitor UI popup and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.
-This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.
+The Workflow UI is one of the new features which are currently introduced to Tiger. If activated via the `tiger.yaml` configuration file (see xref:_tiger_test_lib_configuration[]), the Workflow UI will be opened in the current browser window during the test run.
+If no browser is open at the time a new instance will be launched.
 
-image::media/uimonitor.png[title="Workflow UI popup"]
+image::media/WorkflowUIStartup.png[title="Workflow UI"]
+
+The image above shows the inital startup of the Workflow UI. The Workflow UI is divided into three sections. When the user clicks on the tigers head on the top left the overview section is shown. It tells the user about the overall status, the name of the features and scenarios and the server status and logs.
+The section in the middle of the Workflow UI shows the test suite results. Each scenario and the corresponding steps are displayed, showing the user which feature/scenario went through or failed. The communication requests that are called during the step execution are displayed beneath the step that initated the request.
+When the user clicks on the light blue rectangle with the number (whereas uneven numbers are requests, even number are responses) of the request then the Rbel Log view opens on the right hand side of the Workflow UI.
+These are the RbelMessages that are also saved as HTML files as described in the xref:tigerTestLibrary.adoc#_cucumber_hooks[Cucumber and Hooks] section.
+The image below shows all three sections of the Workflow UI.
+
+image::media/WorkflowUI.png[title="Workflow UI - all views expanded"]
+
+TGR banner step will be displayed at the bottom of the Workflow UI and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.
+This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.
 
 .Current message steps for Workflow UI
 [source,java]
@@ -554,11 +225,14 @@ image::media/uimonitor.png[title="Workflow UI popup"]
     @Gegebensei("TGR zeige Banner {string}")
     @Given("TGR show banner {string}")
 
+    @When("TGR pause test run execution")
+    @Wenn("TGR pausiere Testausführung")
+
     @When("TGR wait for user abort")
     @Wenn("TGR warte auf Abbruch")
 ----
-
-The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester  to perform demo transactions that will be logged and saved to HTML reports but are not validated.
+The penultimate step allows to pause the validation test suite.
+The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester to perform demo transactions that will be logged and saved to HTML reports but are not validated. The wait for user abort subsequently terminates the test execution.
 
 === Using Tiger test lib helper classes
 
@@ -574,7 +248,7 @@ For more details please check the code and its usages in the Tiger test framewor
 
 ==== TigerSerializationUtil
 
-This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps. If you are plannign to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described xref:tigerConfiguration.adoc[in detail here].
+This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps. If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described xref:tigerConfiguration.adoc#_tiger_configuration[in detail here].
 
 ==== TigerPkiIdentityLoader, TigerPkiIdentity
 

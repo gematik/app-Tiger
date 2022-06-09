@@ -266,7 +266,7 @@ tigerProxy:
     # Should the traffic currently available (cached) in the remote be download upon initial connection?
 ----
 
-Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.proxyPort`). The traffic from routes with `activateRbelLogging: false` will not show up here.
+Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.proxyPort`). The traffic from routes with `disableRbelLogging: true` will not show up here.
 
 NOTE: If you are setting up a Tiger Proxy to run constantly and simply forward traffic to a testsuite that is booted ad-hoc you might run into performance-problems. This is due to the Rbel-Logger being a very hungry beast. To stop Rbel from parsing all message simply add `tigerProxy.activateRbelParsing: false`. This will vastly reduce memory and CPU consumption of the application, while still forwarding logged traffic.
 
@@ -382,11 +382,12 @@ If `message` is a request, then the `message` itself will be returned.
 
 To help users create RbelPath-Expressions there is a Debug-Functionality which produces log message designed to help. These can be activated by `RbelOptions.activateRbelPathDebugging();`. Please note that this is strictly intended for development purposes and will flood the log with quite a lot of messages. Act accordingly!
 
-When you want to debug RbelPath in BDD test suites, you can add a tiger.yaml file to your project root and add the following property:
+When you want to debug RbelPath in BDD test suites, you can add a `tiger.yaml` file to your project root and add the following property (for more details see xref:tigerTestLibrary.adoc#_tiger_test_lib_configuration[this chapter]):
 
 [source,yaml]
 ----
-rbelPathDebugging: true
+lib:
+    rbelPathDebugging: true
 ----
 
 To get a better feel for a RbelElement (whether it being a complete message or just a part) you can print the tree with the `RbelElementTreePrinter`. It brings various options:

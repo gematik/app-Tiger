@@ -13,6 +13,8 @@ tiger-testenv-mgr/WinstoneHTTPServer
 /tiger-testenv-mgr/src/frontend/node/
 /tiger-testenv-mgr/src/frontend/package-lock.json
 /doc/user_manual/tiger_user_manual.adoc
+/doc/user_manual/RbelValidatorGlueCommentsOnly.java
+
 GitHub-Release.Jenkinsfile
 Internal-Release.Jenkinsfile
 Jenkinsfile

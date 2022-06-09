@@ -47,6 +47,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
 
     public void applyModifications(HttpRequest request) {
+        if (!tigerProxy.getModifications().isEmpty()) {
+            parseMessageAndApplyModifications(request);
+        }
+    }
+
+    public void parseMessageAndApplyModifications(HttpRequest request) {
         final RbelElement requestElement = tigerProxy.getRbelLogger().getRbelConverter().convertElement(
             tigerProxy.getMockServerToRbelConverter().requestToRbelMessage(request));
         final RbelElement modifiedRequest = tigerProxy.getRbelLogger().getRbelModifier()
@@ -91,6 +97,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     }
 
     public void applyModifications(HttpResponse response) {
+        if (!tigerProxy.getModifications().isEmpty()) {
+            parseMessageAndApplyModifications(response);
+        }
+    }
+
+    public void parseMessageAndApplyModifications(HttpResponse response) {
         final RbelElement responseElement = tigerProxy.getRbelLogger().getRbelConverter().convertElement(
             tigerProxy.getMockServerToRbelConverter().responseToRbelMessage(response));
         final RbelElement modifiedResponse = tigerProxy.getRbelLogger().getRbelModifier()
@@ -119,6 +131,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             requestTimingMap.put(req.getLogCorrelationId(), ZonedDateTime.now());
             return handleRequest(req);
         } catch (RuntimeException e) {
+            log.warn("Uncaught exception during handling of request", e);
             propagateExceptionMessageSafe(e);
             throw e;
         }
@@ -141,6 +154,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             requestTimingMap.remove(req);
             return httpResponse;
         } catch (RuntimeException e) {
+            log.warn("Uncaught exception during handling of response", e);
             propagateExceptionMessageSafe(e);
             throw e;
         }

@@ -87,7 +87,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/trafficLog.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public String downloadTraffic(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid) {
-        return tigerProxy.getRbelMessages().stream()
+        return new ArrayList<>(messsages()).stream()
             .dropWhile(msg -> {
                 if (StringUtils.isEmpty(lastMsgUuid)) {
                     return false;
@@ -246,7 +246,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         @RequestParam(name = "msgUuid") final String msgUuid,
         @RequestParam(name = "query") final String query) {
         RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
-        final RbelElement targetMessage = getTigerProxy().getRbelMessages().stream()
+        final RbelElement targetMessage = messsages().stream()
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .findFirst().orElseThrow();
         final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
@@ -323,7 +323,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         var jexlExecutor = new RbelJexlExecutor();
 
-        List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory().stream()
+        List<RbelElement> msgs = messsages().stream()
             .dropWhile(msg -> {
                 if (StringUtils.isEmpty(lastMsgUuid)) {
                     return false;
@@ -459,4 +459,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         }
     }
 
+    private List<RbelElement> messsages() {
+        return Collections.unmodifiableList(tigerProxy.getRbelMessages());
+    }
 }

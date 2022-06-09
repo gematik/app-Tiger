@@ -10,7 +10,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.22.3</version>
+        <version>0.23.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -105,10 +105,6 @@
             <artifactId>json-unit-spring</artifactId>
             <groupId>net.javacrumbs.json-unit</groupId>
             <version>2.33.0</version>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik</groupId>
-            <artifactId>rbellogger</artifactId>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

@@ -1,0 +1,14 @@
+tiger:
+  servers:
+    testExternalJar:
+      type: externalJar
+      source:
+        - http://localhost:${mockserver.port}/download
+      healthcheckUrl: http://127.0.0.1:${free.port.0}
+      logFile: 'target/serverLogs'
+      externalJarOptions:
+        workingDir: 'target/'
+        arguments:
+          - --httpPort=${free.port.0}
+          - --webroot=.
+

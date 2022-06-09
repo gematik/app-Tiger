@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.mock.Expectation;
@@ -41,21 +42,18 @@ import org.mockserver.netty.MockServer;
 @Getter
 public abstract class AbstractTestTigerTestEnvMgr {
 
-    private MockServer mockServer;
-    private MockServerClient mockServerClient;
-    private Expectation downloadExpectation;
-    private byte[] winstoneBytes;
+    private static MockServer mockServer;
+    private static MockServerClient mockServerClient;
+    private static Expectation downloadExpectation;
+    private static byte[] winstoneBytes;
 
     @AfterAll
     public static void resetProperties() {
         System.clearProperty("mockserver.port");
     }
 
-    @BeforeEach
-    public void startServer() throws IOException {
-        if (mockServer != null) {
-            return;
-        }
+    @BeforeAll
+    public static void startServer() throws IOException {
         log.info("Booting MockServer...");
         mockServer = new MockServer(TigerGlobalConfiguration.readIntegerOptional("free.port.200").orElseThrow());
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());

@@ -23,10 +23,8 @@ import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import java.net.MalformedURLException;
 import java.net.URL;
 import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-@Slf4j
 public class ExternalUrlServer extends AbstractExternalTigerServer {
 
     @Builder

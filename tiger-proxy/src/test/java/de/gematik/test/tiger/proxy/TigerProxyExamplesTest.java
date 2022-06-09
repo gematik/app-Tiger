@@ -36,6 +36,7 @@ import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.intellij.lang.annotations.Language;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -44,10 +45,10 @@ import org.mockserver.integration.ClientAndServer;
 @RequiredArgsConstructor
 public class TigerProxyExamplesTest {
 
-    private ClientAndServer mockServerClient = new ClientAndServer();
+    private static ClientAndServer mockServerClient = new ClientAndServer();
 
-    @BeforeEach
-    public void beforeEachLifecyleMethod() {
+    @BeforeAll
+    public static void beforeEachLifecyleMethod() {
         mockServerClient.when(request()
                 .withPath("/foo"))
             .respond(httpRequest ->

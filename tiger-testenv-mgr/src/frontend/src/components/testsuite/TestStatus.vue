@@ -32,8 +32,6 @@
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import TestResult from "@/types/testsuite/TestResult";
 
-const started = new Date();
-
 const features = {
   passed: 0,
   failed: 0
@@ -46,6 +44,7 @@ const scenarios = {
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
+  started: Date;
 }>();
 
 function createStats(map : Map<string, FeatureUpdate>) {

@@ -16,7 +16,7 @@
 
 import TestResult from "./TestResult";
 import StepUpdate, {IJsonSteps} from "./StepUpdate";
-import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
+import FeatureUpdate from "./FeatureUpdate";
 
 interface IScenarioUpdate {
   steps: Map<string, StepUpdate>;

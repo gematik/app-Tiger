@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
@@ -37,6 +38,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -191,10 +193,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     public void subscribeToTrafficEndpoints(final List<String> trafficEndpointUrls) {
-        remoteProxyClients.addAll(Optional.of(trafficEndpointUrls)
+        Optional.of(trafficEndpointUrls)
             .filter(Objects::nonNull)
             .stream()
             .flatMap(List::stream)
+            .parallel()
+            .peek(this::waitForRemoteTigerProxyToBeOnline)
             .map(url -> new TigerRemoteProxyClient(url, TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(
                     getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
@@ -204,7 +208,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 remoteClient.setRbelLogger(getRbelLogger());
                 remoteClient.addRbelMessageListener(this::triggerListener);
             })
-            .collect(Collectors.toList()));
+            .forEach(remoteProxyClients::add);
     }
 
     private void addRbelTrafficEndpoint() {

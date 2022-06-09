@@ -1,5 +1,26 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.0
+
+## Breaking changes
+
+* TGR-483 rbel validator steps using a doc string as parameter and not ending with a colon ":" are marked deprecated and are replaced with a correct version ending with ":" The old version will be removed with 0.23.1
+
+## Bugfixes
+
+* TGR-528: Solved Race-Condition on out-of-order Message-Parts
+* TGR-528: Solved ConcurrentModificationException in WebUi
+* TGR-530: Eliminate extraneous VauSessionFacet-Instances
+* TGR-530: Only apply modifications when needed
+* TGR-530: Standalone Tiger Proxy now respect tigerProxy.adminPort
+* TGR-529: Serverless test runs caused Workflow UI to not update
+* TGR-530: Sender & Receiver are transmitted via tracing/mesh-setup
+* TGR-532: When reading values directly from TigerGlobalConfiguration placeholders are now always implicitly resolved
+
+## Features
+
+* TGR-483 adding new steps to RbelValidator, allowing to check for existence of node in request / response and allowing to check for mismatching node in response
+
 # Release 0.22.2
 
 ## Bugfixes
@@ -13,12 +34,15 @@
 * Tiger maven plugin will by default only search for feature files in src/test/resources/features folder tree from now on, to avoid duplicate feature files also found in target subfolders.
 
 ## Features
-* A new step "TGR pause test run execution" will pause th eexecution and if workflow UI is active will display a nice banner with a continue button. Without workflow UI you can enter "next" in the console and press ENTER to continue test execution
+* A new step "TGR pause test run execution" will pause the execution and if workflow UI is active will display a nice banner with a continue button. Without workflow UI you can enter "next" in the console and press ENTER to continue test execution
 
 ## Bugfixes
 * TGR-516 "TGR wait for user abort" is now also working when workflow UI is disabled. You must have a console like environment like Bash or GitBash to be able to enter "quit" and press Enter
 * TGR-519: Fixed propagation in aggregating tiger proxies
 * TGR-521: Race-Condition fixed for heavy-duty TigerProxy settings
+
+## Features
+* TGR-236: Logs of Tiger server instances are now also written to server specific log files
 
 # Release 0.21.0
 

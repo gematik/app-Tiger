@@ -20,6 +20,7 @@ import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -29,13 +30,11 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
-@Slf4j
 public class TigerProxyServer extends AbstractExternalTigerServer {
 
     private ConfigurableApplicationContext applicationContext;
@@ -67,14 +66,10 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             route.setTo(getTigerTestEnvMgr().replaceSysPropsInString(route.getTo()));
         });
 
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("server.port", reverseProxyCfg.getAdminPort());
-        properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
-
         statusMessage("Starting Tiger Proxy " + getServerId() + " at " + reverseProxyCfg.getAdminPort() + "...");
         applicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(properties)
+            .properties(new HashMap<>(TigerSerializationUtil.toMap(standaloneCfg)))
             .sources(TigerProxyApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)
@@ -123,5 +118,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     @Override
     boolean isHealthCheckNone() {
         return false;
+    }
+
+    public TigerProxy getTigerProxy() {
+        return applicationContext.getBean(TigerProxy.class);
     }
 }

@@ -20,6 +20,8 @@ const summaryPatterns = {
   "node-settings": [
     ["single", "<b>", "$hostname", "</b>"],
     ["single", "<b>", "$healthcheckUrl", "</b>"],
+    ["single", "<b>", "$healthcheckReturnCode", "</b>"],
+    ["single", "<b>", "$logFile", "</b>"],
     ["group", "(", ", ",
       ["$active", "$type", "$template", ["", "$startupTimeoutSec", " sec"]], ")"
     ]

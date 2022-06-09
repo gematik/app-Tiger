@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,6 +59,8 @@ public class TigerProxyConfiguration {
     private boolean downloadInitialTrafficFromEndpoints = false;
     @Builder.Default
     private String trafficEndpointFilterString = "";
+    @Builder.Default
+    private int maximumPartialMessageAgeInSeconds = 300;
     @Builder.Default
     private int connectionTimeoutInSeconds = 10;
     @Builder.Default

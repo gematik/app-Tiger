@@ -18,6 +18,7 @@
   <div class="tab-pane active execution-pane-tabs" id="execution_pane" role="tabpanel">
     <BannerMessageWindow :banner-data="bannerData"></BannerMessageWindow>
     <div class="w-100">
+      <div class="mt-2 small text-muted text-end">Started: {{ started }}</div>
       <div id="execution_table" class="pt-1">
         <div v-if="featureUpdateMap.size === 0" class="alert w-100 text-center" style="height: 200px;">
           <i class="fa-solid fa-spinner left fa-2x"></i> Waiting for first Feature / Scenario to start...
@@ -111,6 +112,7 @@ defineProps<{
   bannerData: BannerMessage[];
   localProxyWebUiUrl: string;
   ui: Ui;
+  started: Date;
 }>();
 
 const maxOutlineTableColumns = 4;

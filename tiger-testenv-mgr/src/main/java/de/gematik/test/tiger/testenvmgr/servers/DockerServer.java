@@ -28,11 +28,9 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 
-@Slf4j
 public class DockerServer extends TigerServer {
 
     @Builder
