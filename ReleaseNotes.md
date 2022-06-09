@@ -15,6 +15,7 @@
 * TGR-530: Standalone Tiger Proxy now respect tigerProxy.adminPort
 * TGR-529: Serverless test runs caused Workflow UI to not update
 * TGR-530: Sender & Receiver are transmitted via tracing/mesh-setup
+* TGR-532: When reading values directly from TigerGlobalConfiguration placeholders are now always implicitly resolved
 
 ## Features
 

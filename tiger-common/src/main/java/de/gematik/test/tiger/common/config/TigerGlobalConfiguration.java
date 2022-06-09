@@ -22,8 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
 /**
- * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end up here and all configuration is loaded
- * from here (Testenv-mgr, local tiger-proxy, test-lib configuration and also user-defined values).
+ * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end up here and all
+ * configuration is loaded from here (Testenv-mgr, local tiger-proxy, test-lib configuration and also user-defined
+ * values).
  */
 @Slf4j
 public class TigerGlobalConfiguration {
@@ -82,24 +83,26 @@ public class TigerGlobalConfiguration {
             try {
                 serverSocket.close();
             } catch (IOException e) {
-                throw new TigerConfigurationException("Exception while closing temporary sockets for free port variables", e);
+                throw new TigerConfigurationException(
+                    "Exception while closing temporary sockets for free port variables", e);
             }
         });
     }
 
     public synchronized static String readString(String key) {
         assertGlobalConfigurationIsInitialized();
-        return globalConfigurationLoader.readString(key);
+        return resolvePlaceholders(globalConfigurationLoader.readString(key));
     }
 
     public synchronized static String readString(String key, String defaultValue) {
         assertGlobalConfigurationIsInitialized();
-        return globalConfigurationLoader.readString(key, defaultValue);
+        return resolvePlaceholders(globalConfigurationLoader.readString(key, defaultValue));
     }
 
     public synchronized static Optional<String> readStringOptional(String key) {
         assertGlobalConfigurationIsInitialized();
-        return globalConfigurationLoader.readStringOptional(key);
+        return globalConfigurationLoader.readStringOptional(key)
+            .map(TigerGlobalConfiguration::resolvePlaceholders);
     }
 
     @SneakyThrows
@@ -110,7 +113,8 @@ public class TigerGlobalConfiguration {
     }
 
     @SneakyThrows
-    public synchronized static <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType, String... baseKeys) {
+    public synchronized static <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType,
+        String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanType, baseKeys);
     }
@@ -299,8 +303,8 @@ public class TigerGlobalConfiguration {
     }
 
     /**
-     * Returns a local scope in which values can be added and code executed. This enables the use of very local values that can not (or
-     * should not) creep over into other parts of your testsuite.
+     * Returns a local scope in which values can be added and code executed. This enables the use of very local values
+     * that can not (or should not) creep over into other parts of your testsuite.
      *
      * @return
      */

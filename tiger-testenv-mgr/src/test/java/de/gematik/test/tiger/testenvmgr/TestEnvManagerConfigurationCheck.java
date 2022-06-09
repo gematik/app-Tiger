@@ -18,12 +18,15 @@ import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 @Getter
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -146,7 +149,8 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         + "    tigerProxyCfg:\n"
         + "      adminPort: ${free.port.3}\n"
         + "      proxiedServerProtocol: ${FOO_BAR}\n"
-        + "      proxyPort: ${free.port.4}\n",
+        + "      proxyPort: ${free.port.4}\n"
+        + "localProxyActive: false",
         additionalProperties = {"custom.value = ftp"})
     public void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
         final TigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
@@ -281,7 +285,8 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     @TigerTest(tigerYaml =
         "additionalYamls:\n"
             + "  - filename: src/test/resources/externalConfiguration.yaml\n"
-            + "    baseKey: foobar\n")
+            + "    baseKey: foobar\n"
+            + "localProxyActive: false")
     public void readAdditionalYamlFilesWithDifferingBaseKey() {
         assertThat(TigerGlobalConfiguration.readString("foobar.some.keys"))
             .isEqualTo("andValues");
@@ -292,7 +297,8 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "additionalYamls:\n"
             + "  - filename: src/test/resources/defineFooAsBar.yaml\n"
             + "  - filename: src/test/resources/${foo}.yaml\n"
-            + "    baseKey: baseKey\n")
+            + "    baseKey: baseKey\n"
+            + "localProxyActive: false")
     public void readAdditionalYamlFilesWithPlaceholdersInName() {
         assertThat(TigerGlobalConfiguration.readString("baseKey.someKey"))
             .isEqualTo("someValue");

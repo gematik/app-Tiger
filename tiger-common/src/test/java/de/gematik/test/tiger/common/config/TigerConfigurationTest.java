@@ -590,6 +590,25 @@ public class TigerConfigurationTest {
             .isEmpty();
     }
 
+    @Test
+    public void placeholdersShouldBeImplicitlyResolved() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.putValue("my.key", "1234");
+        TigerGlobalConfiguration.putValue("an.integer", "${my.key}");
+
+        assertThat(TigerGlobalConfiguration.readIntegerOptional("an.integer"))
+            .get()
+            .isEqualTo(1234);
+        assertThat(TigerGlobalConfiguration.readString("an.integer"))
+            .isEqualTo("1234");
+        assertThat(TigerGlobalConfiguration.readString("an.integer","fallback-unused"))
+            .isEqualTo("1234");
+        assertThat(TigerGlobalConfiguration.readString("wrong.key","${my.key}"))
+            .isEqualTo("1234");
+        assertThat(TigerGlobalConfiguration.readStringOptional("an.integer"))
+            .get()
+            .isEqualTo("1234");
+    }
 
     // Tests from removed OSEnvironment class, expects env with at least one entry
     @Test
