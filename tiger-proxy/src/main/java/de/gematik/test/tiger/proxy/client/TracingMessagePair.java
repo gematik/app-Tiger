@@ -7,6 +7,8 @@ package de.gematik.test.tiger.proxy.client;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.Optional;
 import lombok.Data;
+import lombok.ToString;
+import lombok.ToString.Exclude;
 import lombok.val;
 
 @Data
@@ -14,6 +16,7 @@ public class TracingMessagePair {
 
     private PartialTracingMessage request;
     private PartialTracingMessage response;
+    @ToString.Exclude
     private final TigerRemoteProxyClient remoteProxyClient;
 
     public void checkForCompletePairAndPropagateIfComplete() {

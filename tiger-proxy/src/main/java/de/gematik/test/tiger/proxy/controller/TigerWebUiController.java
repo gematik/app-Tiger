@@ -75,7 +75,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/trafficLog.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public String downloadTraffic(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid) {
-        return messsages().stream()
+        return new ArrayList<>(messsages()).stream()
             .dropWhile(msg -> {
                 if (StringUtils.isEmpty(lastMsgUuid)) {
                     return false;

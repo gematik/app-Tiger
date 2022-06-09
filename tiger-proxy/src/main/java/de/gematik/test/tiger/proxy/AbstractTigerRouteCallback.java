@@ -119,6 +119,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             requestTimingMap.put(req.getLogCorrelationId(), ZonedDateTime.now());
             return handleRequest(req);
         } catch (RuntimeException e) {
+            log.warn("Uncaught exception during handling of request", e);
             propagateExceptionMessageSafe(e);
             throw e;
         }
@@ -141,6 +142,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             requestTimingMap.remove(req);
             return httpResponse;
         } catch (RuntimeException e) {
+            log.warn("Uncaught exception during handling of response", e);
             propagateExceptionMessageSafe(e);
             throw e;
         }

@@ -13,12 +13,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -26,6 +24,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,7 +35,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +43,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -55,7 +52,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @TestPropertySource(
     properties = {"tigerProxy.activateRbelParsing: false"})
 @RequiredArgsConstructor
-@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @Slf4j
 public class TigerRemoteProxyClientTest {
     /*
@@ -79,7 +75,7 @@ public class TigerRemoteProxyClientTest {
 
     // the local TigerProxy-Client (which syphons the message from the remote Tiger Proxy)
     private static TigerRemoteProxyClient tigerRemoteProxyClient;
-    private UnirestInstance unirestInstance;
+    private static UnirestInstance unirestInstance;
 
     @LocalServerPort
     private int springServerPort;
@@ -92,9 +88,8 @@ public class TigerRemoteProxyClientTest {
                 TigerProxyConfiguration.builder()
                     .proxyLogLevel("WARN")
                     .build());
-        } else {
-            tigerRemoteProxyClient.clearAllRoutes();
-            tigerRemoteProxyClient.getRbelMessages().clear();
+
+            unirestInstance = new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));
         }
 
         remoteServer.getWireMock().register(get("/foo")
@@ -106,8 +101,10 @@ public class TigerRemoteProxyClientTest {
         remoteServer.getWireMock().register(get("/")
             .willReturn(aResponse()
                 .withBody("emptyPath!!!")));
-
         log.info("Configuring routes...");
+        tigerRemoteProxyClient.getRbelMessages().clear();
+        tigerRemoteProxyClient.clearAllRoutes();
+        tigerProxy.getRbelMessages().clear();
         try {
             tigerProxy.addRoute(TigerRoute.builder()
                 .from("http://myserv.er")
@@ -120,21 +117,6 @@ public class TigerRemoteProxyClientTest {
                 .to("http://localhost:" + remoteServer.getHttpPort())
                 .build());
         }
-
-        unirestInstance = new UnirestInstance(
-            new Config().proxy("localhost", tigerProxy.getProxyPort()));
-    }
-
-    @AfterEach
-    public void clearRoutes() {
-        log.info("Clearing all routes");
-        tigerRemoteProxyClient.unsubscribe();
-        tigerRemoteProxyClient.close();
-        tigerProxy.clearAllRoutes();
-        tigerProxy.getRbelLogger().getMessageHistory().clear();
-        log.info("Messages {}", tigerProxy.getRbelMessages().size());
-        tigerRemoteProxyClient = null;
-        unirestInstance.shutDown();
     }
 
     @Test
@@ -143,7 +125,7 @@ public class TigerRemoteProxyClientTest {
         tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
         unirestInstance.get("http://myserv.er/foo").asString()
-            .ifFailure(response -> fail(""));
+            .ifFailure(response -> fail( response.getStatus() + ": " + response.getBody()));
 
         await()
             .atMost(2, TimeUnit.SECONDS)
@@ -255,8 +237,7 @@ public class TigerRemoteProxyClientTest {
 
         assertThat(routes)
             .extracting("from", "to", "disableRbelLogging")
-            .contains(tuple("http://myserv.er", "http://localhost:" + remoteServer.getHttpPort(), false),
-                tuple("http://tiger.proxy", "http://localhost:" + springServerPort, true));
+            .contains(tuple("http://myserv.er", "http://localhost:" + remoteServer.getHttpPort(), false));
     }
 
     @Test
@@ -448,6 +429,24 @@ public class TigerRemoteProxyClientTest {
         await()
             .atMost(5, TimeUnit.SECONDS)
             .until(() -> receivedMessages.get() >= 2);
+    }
+
+    @Test
+    public void strayMessageReception_shouldBeCleanedAtInterval() {
+        tigerRemoteProxyClient.setMaximumPartialMessageAge(Duration.ZERO);
+
+        tigerRemoteProxyClient.getTigerStompSessionHandler().getTracingStompHandler()
+            .handleFrame(null, TigerTracingDto.builder()
+                .requestUuid("requestUuid")
+                .responseUuid("responseUuid")
+                .build());
+        addMessagePart("responseUuid", 1, 3);
+        addMessagePart("responseUuid", 0, 3);
+
+        tigerRemoteProxyClient.triggerPartialMessageCleanup();
+
+        assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap())
+            .isEmpty();
     }
 
     private void addMessagePart(String responseUuid, int index, int numberOfMessages) {

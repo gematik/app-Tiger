@@ -45,7 +45,7 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
     public void handleTransportError(StompSession session, Throwable exception) {
         if (exception instanceof ConnectionLostException) {
             log.warn("Remote client lost connection to url {}. Reconnecting...", remoteProxyClient.getRemoteProxyUrl());
-            remoteProxyClient.connectToRemoteUrl(remoteProxyClient.getRemoteProxyUrl(), this,
+            remoteProxyClient.connectToRemoteUrl( this,
                 remoteProxyClient.getTigerProxyConfiguration().getConnectionTimeoutInSeconds(),
                 true);
         } else {

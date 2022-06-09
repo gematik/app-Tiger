@@ -8,6 +8,7 @@ import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -105,5 +106,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     @Override
     boolean isHealthCheckNone() {
         return false;
+    }
+
+    public TigerProxy getTigerProxy() {
+        return applicationContext.getBean(TigerProxy.class);
     }
 }

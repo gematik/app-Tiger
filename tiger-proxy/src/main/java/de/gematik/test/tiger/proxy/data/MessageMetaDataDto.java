@@ -10,6 +10,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -58,7 +59,8 @@ public class MessageMetaDataDto {
                 .getResponseCode().getRawStringContent()));
         } else {
             throw new IllegalArgumentException(
-                "We do not support meta data for non http elements (" + el.getClass().getName() + ")");
+                "We do not support meta data for non http elements (" + el.getFacets().stream()
+                    .map(Object::getClass).map(Class::getSimpleName).collect(Collectors.joining(", ")) + ")");
         }
         return b.build();
     }

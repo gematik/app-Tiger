@@ -11,16 +11,20 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 
 @Data
 @Builder(toBuilder = true)
 public class PartialTracingMessage {
+    @ToString.Exclude
 
     private final TigerTracingDto tracingDto;
     private final RbelHostname sender;
     private final RbelHostname receiver;
+    @ToString.Exclude
     private final TracingMessagePair messagePair;
     private final ZonedDateTime transmissionTime;
+    private final ZonedDateTime receivedTime = ZonedDateTime.now();
     private final List<TracingMessagePart> messageParts = new ArrayList<>();
 
     public boolean isComplete() {

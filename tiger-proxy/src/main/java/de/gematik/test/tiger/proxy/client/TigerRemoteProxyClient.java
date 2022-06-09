@@ -14,6 +14,7 @@ import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -53,6 +54,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
     @Getter
     private final TigerStompSessionHandler tigerStompSessionHandler;
+    @Getter
+    @Setter
+    private Duration maximumPartialMessageAge;
 
     public TigerRemoteProxyClient(String remoteProxyUrl) {
         this(remoteProxyUrl, new TigerProxyConfiguration());
@@ -60,7 +64,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
         super(configuration);
-        final String tracingWebSocketUrl = remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
         this.remoteProxyUrl = remoteProxyUrl;
 
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
@@ -77,9 +80,14 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         tigerProxyStompClient.setMessageConverter(messageConverter);
         tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
         tigerStompSessionHandler = new TigerStompSessionHandler(this);
-        connectToRemoteUrl(tracingWebSocketUrl, tigerStompSessionHandler,
+        connectToRemoteUrl(tigerStompSessionHandler,
             configuration.getConnectionTimeoutInSeconds(),
             getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+        maximumPartialMessageAge = Duration.ofSeconds(configuration.getMaximumPartialMessageAgeInSeconds());
+    }
+
+    private String getTracingWebSocketUrl(String remoteProxyUrl) {
+        return remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
     }
 
     private void downloadTrafficFromRemoteProxy() {
@@ -93,16 +101,19 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             throw new TigerRemoteProxyClientException(
                 "Error while downloading message from remote '" + downloadUrl + "': " + response.getBody());
         }
-        log.info("Downloaded {} of traffic. Now parsing...", FileUtils.byteCountToDisplaySize(response.getBody().length()));
+        log.info("Downloaded {} of traffic. Now parsing...",
+            FileUtils.byteCountToDisplaySize(response.getBody().length()));
         RbelFileWriterUtils.convertFromRbelFile(response.getBody(), getRbelLogger().getRbelConverter());
         log.info("Successfully downloaded missed traffic from '{}'. Now {} message cached",
             downloadUrl, getRbelMessages().size());
     }
 
-    void connectToRemoteUrl(String tracingWebSocketUrl,
-        TigerStompSessionHandler tigerStompSessionHandler, int connectionTimeoutInSeconds, boolean downloadTraffic) {
-        final ListenableFuture<StompSession> connectFuture = tigerProxyStompClient.connect(
-            tracingWebSocketUrl, tigerStompSessionHandler);
+    void connectToRemoteUrl(TigerStompSessionHandler tigerStompSessionHandler,
+        int connectionTimeoutInSeconds, boolean downloadTraffic) {
+        waitForRemoteTigerProxyToBeOnline(remoteProxyUrl);
+        final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
+        final ListenableFuture<StompSession> connectFuture
+            = tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);
 
         connectFuture.addCallback(stompSession -> {
                 log.info("Succesfully opened stomp session {} to url",
@@ -302,4 +313,16 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         }
     }
 
+    public void triggerPartialMessageCleanup() {
+        final ZonedDateTime cutoff = ZonedDateTime.now().minus(maximumPartialMessageAge);
+        synchronized (partiallyReceivedMessageMap) {
+            final Iterator<PartialTracingMessage> entryIterator
+                = partiallyReceivedMessageMap.values().iterator();
+            while (entryIterator.hasNext()) {
+                if (entryIterator.next().getReceivedTime().isBefore(cutoff)) {
+                    entryIterator.remove();
+                }
+            }
+        }
+    }
 }
