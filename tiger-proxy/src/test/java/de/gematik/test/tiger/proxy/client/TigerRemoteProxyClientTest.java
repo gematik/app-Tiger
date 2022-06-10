@@ -49,6 +49,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -65,6 +67,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
     properties = {"tigerProxy.activateRbelParsing: false"})
 @RequiredArgsConstructor
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TigerRemoteProxyClientTest {
     /*
      *  Our Testsetup:
@@ -116,19 +119,12 @@ public class TigerRemoteProxyClientTest {
         log.info("Configuring routes...");
         tigerRemoteProxyClient.getRbelMessages().clear();
         tigerRemoteProxyClient.clearAllRoutes();
+        tigerProxy.clearAllRoutes();
         tigerProxy.getRbelMessages().clear();
-        try {
-            tigerProxy.addRoute(TigerRoute.builder()
-                .from("http://myserv.er")
-                .to("http://localhost:" + remoteServer.getHttpPort())
-                .build());
-        } catch (TigerProxyRouteConflictException e) {
-            tigerProxy.removeRoute(e.getExistingRoute().getId());
-            tigerProxy.addRoute(TigerRoute.builder()
-                .from("http://myserv.er")
-                .to("http://localhost:" + remoteServer.getHttpPort())
-                .build());
-        }
+        tigerProxy.addRoute(TigerRoute.builder()
+            .from("http://myserv.er")
+            .to("http://localhost:" + remoteServer.getHttpPort())
+            .build());
     }
 
     @Test
