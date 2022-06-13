@@ -348,7 +348,7 @@ public class TigerRemoteProxyClientTest {
             .isEqualTo("myserv.er:80");
         assertThat(tigerRemoteProxyClient.getRbelMessages().get(1)
             .getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiver().getRawStringContent())
-            .startsWith("localhost:");
+            .matches("(view-localhost|localhost):[\\d]*");
     }
 
     @Test

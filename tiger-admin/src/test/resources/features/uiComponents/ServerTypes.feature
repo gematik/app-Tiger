@@ -163,7 +163,7 @@ Feature: Check input fields and sections for all server types
     And he shows "General" tab
     #Then he sees input field "hostname" not shown on compose
     Then he sees check field "active"
-    And he sees check field "logFile"
+    And he sees input field "logFile"
     But he doesn't see field "healthcheckUrl"
     And he doesn't see field "healthcheckReturnCode"
     When he shows "PKI" tab

@@ -272,7 +272,7 @@ class TestTigerDirector {
                         TigerDirector.getLibConfig().activateWorkflowUi = true;
                         new Thread(TigerDirector::waitForQuit).start();
 
-                        await().atMost(2, TimeUnit.SECONDS)
+                        await().atMost(4, TimeUnit.SECONDS)
                             .until(() -> {
                                 envStatusController.getConfirmQuit();
                                 return false;
