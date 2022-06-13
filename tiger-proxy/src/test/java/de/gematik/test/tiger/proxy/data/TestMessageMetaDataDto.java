@@ -11,25 +11,23 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.data.Offset;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.SocketAddress;
 import org.mockserver.netty.MockServer;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
 
-    public MockServerClient forwardProxy;
+    public static MockServerClient forwardProxy;
 
-    @BeforeEach
-    public void setupForwardProxy() {
-        if (forwardProxy != null) {
-            return;
-        }
-
+    @BeforeAll
+    public static void setupForwardProxy() {
         final MockServer forwardProxyServer = new MockServer();
 
         forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
@@ -42,6 +40,11 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
                         "localhost", fakeBackendServer.port(), SocketAddress.Scheme.HTTP
                     ))
                     .getHttpRequest());
+    }
+
+    @AfterAll
+    public static void tearDownMockServer() throws ExecutionException, InterruptedException {
+        forwardProxy.stopAsync().get();
     }
 
     @Test

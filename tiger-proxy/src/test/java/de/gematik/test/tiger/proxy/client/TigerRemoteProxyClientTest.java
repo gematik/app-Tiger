@@ -45,6 +45,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -56,6 +57,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @RequiredArgsConstructor
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@DirtiesContext
 public class TigerRemoteProxyClientTest {
     /*
      *  Our Testsetup:

@@ -36,8 +36,11 @@ import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     @Test

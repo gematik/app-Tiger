@@ -52,6 +52,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.MediaType;
 import org.mockserver.model.SocketAddress;
@@ -59,6 +61,7 @@ import org.mockserver.netty.MockServer;
 import org.springframework.util.SocketUtils;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestTigerProxy extends AbstractTigerProxyTest {
 
     public MockServerClient forwardProxy;

@@ -20,8 +20,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 
 @Slf4j
 public abstract class AbstractTigerProxyTest {
@@ -62,6 +63,21 @@ public abstract class AbstractTigerProxyTest {
 
         RbelOptions.activateJexlDebugging();
         Unirest.config().reset();
+    }
+
+    @AfterAll
+    public static void stopWiremock() {
+        fakeBackendServer.stop();
+    }
+
+    @AfterEach
+    public void stopSpawnedTigerProxy() throws Exception {
+        if (tigerProxy != null) {
+            log.info("Closing tigerProxy from '{}'...", this.getClass().getSimpleName());
+            tigerProxy.close();
+            tigerProxy.shutdown();
+            System.gc();
+        }
     }
 
     public void spawnTigerProxyWith(TigerProxyConfiguration configuration) {

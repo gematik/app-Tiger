@@ -14,11 +14,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.SocketAddress;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
 
     @Test
