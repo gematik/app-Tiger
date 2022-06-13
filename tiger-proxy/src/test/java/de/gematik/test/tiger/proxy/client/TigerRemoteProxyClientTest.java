@@ -22,7 +22,6 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
 import java.time.Duration;
 import java.util.List;
@@ -430,8 +429,9 @@ public class TigerRemoteProxyClientTest {
     }
 
     @Test
-    public void strayMessageReception_shouldBeCleanedAtInterval() {
-        tigerRemoteProxyClient.setMaximumPartialMessageAge(Duration.ZERO);
+    public void strayMessageReception_shouldBeCleanedAtInterval() throws InterruptedException {
+        tigerRemoteProxyClient.getPartiallyReceivedMessageMap().clear();
+        tigerRemoteProxyClient.setMaximumPartialMessageAge(Duration.ofMillis(100));
 
         tigerRemoteProxyClient.getTigerStompSessionHandler().getTracingStompHandler()
             .handleFrame(null, TigerTracingDto.builder()
@@ -443,8 +443,12 @@ public class TigerRemoteProxyClientTest {
 
         tigerRemoteProxyClient.triggerPartialMessageCleanup();
 
-        assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap())
-            .isEmpty();
+        assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap().size()).isEqualTo(2);
+
+        Thread.sleep(110);
+        tigerRemoteProxyClient.triggerPartialMessageCleanup();
+
+        assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap().size()).isEqualTo(0);
     }
 
     private void addMessagePart(String responseUuid, int index, int numberOfMessages) {

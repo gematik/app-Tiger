@@ -25,13 +25,15 @@ import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.*;
+import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.util.Assert;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -319,7 +321,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             final Iterator<PartialTracingMessage> entryIterator
                 = partiallyReceivedMessageMap.values().iterator();
             while (entryIterator.hasNext()) {
-                if (entryIterator.next().getReceivedTime().isBefore(cutoff)) {
+                PartialTracingMessage next = entryIterator.next();
+                log.info("Trying to remove {}, cutoff is {}", next.getReceivedTime(), cutoff);
+                if (cutoff.isAfter(next.getReceivedTime())) {
                     entryIterator.remove();
                 }
             }
