@@ -5,9 +5,7 @@
 package de.gematik.test.tiger.proxy.data;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.*;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,17 +22,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MessageMetaDataDto {
 
-    String uuid;
-    String path;
-    String method;
-    Integer responseCode;
-    String recipient;
-    String sender;
-    long sequenceNumber;
+    private String uuid;
+    private String path;
+    private String method;
+    private Integer responseCode;
+    private String recipient;
+    private String sender;
+    private long sequenceNumber;
+    private String menuInfoString;
+    /**
+     * timestamp in epoche seconds
+     */
+    private long timestamp;
+    private boolean isRequest;
 
     public static MessageMetaDataDto createFrom(RbelElement el) {
-        MessageMetaDataDto.MessageMetaDataDtoBuilder b = MessageMetaDataDto.builder();
-        b = b.uuid(el.getUuid())
+        MessageMetaDataDto.MessageMetaDataDtoBuilder builder = MessageMetaDataDto.builder();
+        builder = builder.uuid(el.getUuid())
             .sequenceNumber(getElementSequenceNumber(el))
             .sender(el.getFacet(RbelTcpIpMessageFacet.class)
                 .map(RbelTcpIpMessageFacet::getSender)
@@ -51,18 +55,24 @@ public class MessageMetaDataDto {
 
         if (el.hasFacet(RbelHttpRequestFacet.class)) {
             RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
-            b = b.path(req.getPath().getRawStringContent())
+            builder = builder.path(req.getPath().getRawStringContent())
                 .method(req.getMethod().getRawStringContent())
                 .responseCode(null);
         } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
-            b.responseCode(Integer.parseInt(el.getFacetOrFail(RbelHttpResponseFacet.class)
+            builder.responseCode(Integer.parseInt(el.getFacetOrFail(RbelHttpResponseFacet.class)
                 .getResponseCode().getRawStringContent()));
         } else {
             throw new IllegalArgumentException(
                 "We do not support meta data for non http elements (" + el.getFacets().stream()
                     .map(Object::getClass).map(Class::getSimpleName).collect(Collectors.joining(", ")) + ")");
         }
-        return b.build();
+        builder.isRequest = el.hasFacet(RbelRequestFacet.class);
+        builder.menuInfoString = el.getFacet(RbelRequestFacet.class)
+            .map(RbelRequestFacet::getMenuInfoString)
+            .or(() -> el.getFacet(RbelResponseFacet.class)
+                .map(RbelResponseFacet::getMenuInfoString))
+            .orElse(null);
+        return builder.build();
     }
 
     private static long getElementSequenceNumber(RbelElement rbelElement) {

@@ -69,6 +69,7 @@ public class TigerWebUiControllerTest {
 
         fakeBackendServer.stubFor(get(urlPathEqualTo("/foobar"))
             .willReturn(aResponse()
+                .withStatus(666)
                 .withBody("{\"foo\":\"bar\"}")));
 
         RestAssured.proxy = null;
@@ -163,5 +164,16 @@ public class TigerWebUiControllerTest {
             .then()
             .statusCode(200)
             .body("metaMsgList.size()", equalTo(0));
+    }
+
+    @Test
+    public void checkCorrectMenuStringsAreSupplied() {
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter")
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(2))
+            .body("metaMsgList[0].menuInfoString", equalTo("GET /foobar"))
+            .body("metaMsgList[1].menuInfoString", equalTo("666"));
     }
 }

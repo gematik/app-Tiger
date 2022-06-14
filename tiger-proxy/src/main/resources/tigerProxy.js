@@ -37,19 +37,26 @@ let scrollLock = false;
 
 let testQuitParam = '';
 
-const menuReqHtmlTemplate = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
+const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"menu-label mb-1 has-text-link\"><span\n"
     + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
     + "            class=\"fas fa-share\"></i> REQUEST\n"
     + "        </div>\n"
     + "        <div style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3\">${methodNUrl}"
+    + "             class=\"is-size-6 ml-3\">${menuInfoString}"
     + "        </div>\n"
     + "      </a></div>";
-
-const menuResHtmlTemplate = "<a href=\"#${uuid}\" class=\"menu-label ml-5 mt-3 is-block has-text-success\">"
-    + "<span class=\"tag is-info is-light mr-1\">${sequence}</span><i class=\"fas fa-reply\"></i> RESPONSE</a>"
+const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
+    + "                               class=\"mt-3 is-block\">\n"
+    + "        <div class=\"menu-label mb-1 has-text-success\"><span\n"
+    + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
+    + "            class=\"fas fa-reply\"></i> RESPONSE\n"
+    + "        </div>\n"
+    + "        <div style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
+    + "             class=\"is-size-6 ml-3\">${menuInfoString}"
+    + "        </div>\n"
+    + "      </a></div>";
 
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
@@ -580,20 +587,24 @@ function addSingleMessage(msgMetaData, msgHtmlData) {
   addQueryBtn(reqEl);
   listDiv.appendChild(reqEl);
 
+  var menuItem;
   if (isRequest) {
-    const menuReq = menuReqHtmlTemplate
-    .replace("${uuid}", msgMetaData.uuid)
-    .replace("${sequence}", msgMetaData.sequenceNumber + 1)
-    .replace("${methodNUrl}", msgMetaData.method + "\n" + msgMetaData.path);
-    document.getElementById("sidebar-menu").appendChild(
-        htmlToElement(menuReq));
+    menuItem = menuHtmlTemplateRequest;
   } else {
-    const menuRes = menuResHtmlTemplate
-    .replace("${uuid}", msgMetaData.uuid)
-    .replace("${sequence}", msgMetaData.sequenceNumber + 1)
-    document.getElementById("sidebar-menu").appendChild(
-        htmlToElement(menuRes));
+    menuItem = menuHtmlTemplateResponse;
   }
+  menuItem = menuItem
+      .replace("${uuid}", msgMetaData.uuid)
+      .replace("${sequence}", msgMetaData.sequenceNumber + 1);
+  if (msgMetaData.menuInfoString != null) {
+    menuItem = menuItem
+        .replace("${menuInfoString}", msgMetaData.menuInfoString);
+  } else {
+    menuItem = menuItem
+        .replace("${menuInfoString}", " ");
+  }
+  document.getElementById("sidebar-menu")
+        .appendChild(htmlToElement(menuItem));
 }
 
 function updateMessageList(json) {
