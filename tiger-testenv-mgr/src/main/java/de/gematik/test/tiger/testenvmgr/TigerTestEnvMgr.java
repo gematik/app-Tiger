@@ -19,6 +19,7 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
@@ -40,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -70,6 +72,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     private boolean userAcknowledgedShutdown = false;
     private boolean userAcknowledgedContinueTestRun = false;
+
+    @Setter
+    @Getter
+    private boolean workflowUiSentFetch = false;
 
     public TigerTestEnvMgr() {
         Configuration configuration = readConfiguration();
@@ -331,6 +337,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     @Override
     public void registerNewListener(TigerUpdateListener listener) {
         listeners.add(listener);
+    }
+
+    @Override
+    public void registerLogListener(TigerServerLogListener listener) {
+        // do nothing here
     }
 
 

@@ -24,11 +24,15 @@ public class UpdatePushConfiguration implements WebSocketMessageBrokerConfigurer
     public void configureMessageBroker(final MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
         config.setApplicationDestinationPrefixes("/envStatus");
+        config.setApplicationDestinationPrefixes("/serverLog");
     }
 
     @Override
     public void registerStompEndpoints(final StompEndpointRegistry registry) {
         registry.addEndpoint("/testEnv")
+            .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
+            .withSockJS();
+        registry.addEndpoint("/testLog")
             .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
             .withSockJS();
     }

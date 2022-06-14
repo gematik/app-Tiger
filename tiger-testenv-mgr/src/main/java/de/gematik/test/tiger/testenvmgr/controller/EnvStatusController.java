@@ -137,6 +137,7 @@ public class EnvStatusController implements TigerUpdateListener {
                     + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
                     + "/webui");
         }
+        tigerTestEnvMgr.setWorkflowUiSentFetch(true);
         log.trace("Sending test env status {}", tigerEnvStatus);
         return tigerEnvStatus;
     }

@@ -19,10 +19,12 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +34,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.IOUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -70,9 +73,9 @@ public class TigerDirector {
         registerRestAssuredFilter();
         applyTestLibConfig();
         // get free port
-        startTestEnvMgr(); // pass in
+        startTestEnvMgr();
         tigerTestEnvMgr.getLocalTigerProxy().addRbelMessageListener(LocalProxyRbelMessageListener.rbelMessageListener);
-        startWorkflowUi(); // pass in
+        startWorkflowUi();
         setupTestEnvironent();
         setDefaultProxyToLocalTigerProxy();
 
@@ -179,6 +182,19 @@ public class TigerDirector {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
             TigerTestEnvMgr.openWorkflowUiInBrowser(TigerGlobalConfiguration.readIntegerOptional("free.port.255").get().toString());
+            log.info("Waiting for workflow Ui to fetch status...");
+            try {
+                await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofSeconds(1)).until(() -> tigerTestEnvMgr.isWorkflowUiSentFetch());
+            } catch (ConditionTimeoutException cte) {
+                libConfig.activateWorkflowUi = false;
+                throw new TigerTestEnvException("No feedback from workflow Ui, aborting!", cte);
+            }
+            try {
+                TimeUnit.MILLISECONDS.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new TigerTestEnvException("Interrupt received while waiting for workflow Ui to become ready", e);
+            }
         }
     }
 

@@ -21,10 +21,10 @@ public class TigerServerLogManager  {
 
     public static void addAppenders(TigerServer server) {
         ch.qos.logback.classic.Logger logbackLogger = ((ch.qos.logback.classic.Logger)server.getLog());
-        createAndAddAppenders(server.getServerId(), server.getConfiguration().getLogFile(), logbackLogger);
+        createAndAddAppenders(server, logbackLogger);
     }
 
-    private static void createAndAddAppenders(String serverId, String logFilePath, ch.qos.logback.classic.Logger log) {
+    private static void createAndAddAppenders(TigerServer server, ch.qos.logback.classic.Logger log) {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
         PatternLayoutEncoder patternLayoutEncoder = new PatternLayoutEncoder();
@@ -32,9 +32,9 @@ public class TigerServerLogManager  {
         patternLayoutEncoder.setContext(loggerContext);
         patternLayoutEncoder.start();
 
-        log.addAppender(createFileAppender(serverId, logFilePath, loggerContext, patternLayoutEncoder));
+        log.addAppender(createFileAppender(server.getServerId(), server.getConfiguration().getLogFile(), loggerContext, patternLayoutEncoder));
         log.addAppender(createConsoleAppender(loggerContext, patternLayoutEncoder));
-        // todo addCustomAppender for WorkflowUI
+        log.addAppender(createCustomerAppender(server, loggerContext));
 
         log.setAdditive(false);
     }
@@ -69,5 +69,13 @@ public class TigerServerLogManager  {
             }
         }
         return DEFAULT_LOGFILE_LOCATION + serverId + LOGFILE_EXTENSION;
+    }
+
+    private static CustomerAppender createCustomerAppender(TigerServer server, LoggerContext loggerContext) {
+        CustomerAppender customerAppender = new CustomerAppender(server);
+        customerAppender.setContext(loggerContext);
+        customerAppender.start();
+
+        return customerAppender;
     }
 }

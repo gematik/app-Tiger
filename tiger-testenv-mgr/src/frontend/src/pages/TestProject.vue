@@ -63,9 +63,7 @@
         <!-- tabs -->
         <div class="tab-content">
           <ExecutionPane :featureUpdateMap="featureUpdateMap" :bannerData="bannerData" :localProxyWebUiUrl="localProxyWebUiUrl" :ui="ui" :started="started"/>
-          <div class="tab-pane h-100 w-100 text-danger pt-3 execution-pane-tabs" id="logs_pane" role="tabpanel">
-            <i class="fa-solid fa-circle-exclamation fa-2x left"></i> Not implemented so far
-          </div>
+          <ServerLog :serverLogs="serverLogList"  :logServers="logServers" :selectedServers="selectedServers"/>
         </div>
 
       </div>
@@ -111,6 +109,7 @@ import ServerStatus from "@/components/server/ServerStatus.vue";
 import TigerServerStatusDto from "@/types/TigerServerStatusDto";
 import BannerMessage from "@/types/BannerMessage";
 import ExecutionPane from "@/components/testsuite/ExecutionPane.vue";
+import ServerLog from "@/components/serverlog/ServerLog.vue";
 import FeatureList from "@/components/testsuite/FeatureList.vue";
 import TestStatus from "@/components/testsuite/TestStatus.vue";
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
@@ -118,6 +117,7 @@ import {currentOverallServerStatus} from "@/types/TigerServerStatus";
 import {currentOverallTestRunStatus} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
 import BannerType from "@/types/BannerType";
+import TigerServerLogDto from "@/types/TigerServerLogDto";
 
 let baseURL = process.env.BASE_URL;
 let socket: WebSocket;
@@ -153,6 +153,14 @@ let currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(new Map<st
  */
 let featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, FeatureUpdate>());
 
+/** list of server logs which contain a log message, a timestamp, a server name and the log level.
+ */
+let serverLogList: Ref<Array<TigerServerLogDto>> = ref(new Array<TigerServerLogDto>());
+
+let logServers: Ref<Array<string>> = ref (new Array<string>());
+
+let selectedServers: Ref<Array<string>> = ref (new Array<string>("__all__"));
+
 let localProxyWebUiUrl: Ref<string> = ref("");
 
 let ui = ref(new Ui());
@@ -163,7 +171,7 @@ onMounted(() => {
   fetchInitialServerStatus();
 });
 
-const DEBUG = false;
+const DEBUG = true;
 
 function debug(message: string) {
   if (DEBUG) {
@@ -258,7 +266,34 @@ function connectToWebSocket() {
         console.error("Websocket error: " + JSON.stringify(error));
       }
   );
+
+
+
+  socketLog = new SockJS(baseURL + "testLog");
+  stompClientForLogs = Stomp.over(socketLog, {debug: false});
+  stompClientForLogs.connect(
+      {},
+      () => {
+        stompClientForLogs.subscribe(baseURL + "topic/serverLog", (tick: Message) => {
+          debug("RECEIVED LOG " + tick.body);
+          const receivedLogMessage: TigerServerLogDto = TigerServerLogDto.fromJson(JSON.parse(tick.body));
+
+          if (logServers.value.indexOf(receivedLogMessage.serverName as string) === -1) {
+            logServers.value.push(receivedLogMessage.serverName as string);
+          }
+          const index = serverLogList.value.findIndex((msg) => receivedLogMessage.localDateTime.isAfter(msg.localDateTime))
+          serverLogList.value.splice(index, 0, receivedLogMessage);
+        });
+      },
+      (error: Frame | CloseEvent) => {
+        console.error("Websocket error: " + JSON.stringify(error));
+      }
+  );
 }
+
+let socketLog: WebSocket;
+let stompClientForLogs: Client;
+
 
 function replayingCachedMessages() {
   debug("Check for replaying cached messages " + outOfOrderMessageList.length);
