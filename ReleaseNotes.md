@@ -1,5 +1,11 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.2
+
+## Features
+
+* TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable
+
 # Release 0.23.0
 
 ## Breaking changes

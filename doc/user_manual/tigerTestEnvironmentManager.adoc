@@ -598,8 +598,11 @@ tigerProxy:
     # which is valid for the configured routes
     serverIdentity: "certificateAndKeyAndChain.p12;Password"
     # Defines which SSL-Suites are allowed. This will delete all default-suites and only add
-    # the one defined here.
+    # the one defined here. This configures the server-side of the proxy.
     serverSslSuites:
+      - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+    # This configures the SSL-Suites for the client-side
+    clientSslSuites:
       - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
 
     # This identity will be used as a client-identity for mutual-TLS when forwarding to

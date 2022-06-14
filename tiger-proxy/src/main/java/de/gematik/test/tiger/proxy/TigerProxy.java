@@ -4,9 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -26,9 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -129,6 +124,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         if (configuration.getTls().getServerSslSuites() != null) {
             NettySslContextFactory.sslServerContextBuilderCustomizer = builder -> {
                 builder.ciphers(configuration.getTls().getServerSslSuites());
+                return builder;
+            };
+        }
+        if (configuration.getTls().getClientSslSuites() != null) {
+            NettySslContextFactory.sslClientContextBuilderCustomizer = builder -> {
+                builder.ciphers(configuration.getTls().getClientSslSuites());
                 return builder;
             };
         }
