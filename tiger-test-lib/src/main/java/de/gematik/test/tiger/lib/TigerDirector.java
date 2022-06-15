@@ -249,7 +249,6 @@ public class TigerDirector {
             } catch (NoSuchMethodException | ClassNotFoundException e) {
                 throw new TigerLibraryException("Unable to access Polarion Toolbox! "
                     + "Be sure to have it included in mvn dependencies.", e);
-                // TODO TGR-258 add the mvn dependency lines to log output
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new TigerLibraryException("Unable to call Polarion Toolbox's main method!", e);
             }
