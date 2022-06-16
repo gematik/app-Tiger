@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -50,13 +51,21 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private RbelLogger rbelLogger;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
+        this(configuration, null);
+    }
+
+    public AbstractTigerProxy(TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
         if (configuration.getTls() == null) {
             throw new TigerProxyStartupException("no TLS-configuration found!");
         }
-        rbelLogger = buildRbelLoggerConfiguration(configuration)
-            .constructRbelLogger();
+        if (rbelLogger == null) {
+            this.rbelLogger = buildRbelLoggerConfiguration(configuration)
+                .constructRbelLogger();
+        } else {
+            this.rbelLogger = rbelLogger;
+        }
         if (!configuration.isActivateRbelParsing()) {
-            rbelLogger.getRbelConverter().removeAllConverterPlugins();
+            this.rbelLogger.getRbelConverter().removeAllConverterPlugins();
         }
         addFixVauKey();
         this.tigerProxyConfiguration = configuration;
@@ -102,7 +111,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         rbelLogger.getRbelKeyManager().addKey(rbelPrivateVauKey);
     }
 
-    private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
+    private static  RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
         final RbelConfiguration rbelConfiguration = new RbelConfiguration();
         if (configuration.getKeyFolders() != null) {
             configuration.getKeyFolders()

@@ -9,6 +9,11 @@
 
 * TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable
 
+## Bugfixes
+
+* TGR-553: Fixed race-condition during initial connection to remote tiger-proxies
+* TGR-553: Fixe Race-Condition for multiple configured traffic sources
+
 # Release 0.23.0
 
 ## Breaking changes

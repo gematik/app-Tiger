@@ -194,11 +194,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .downloadInitialTrafficFromEndpoints(
                     getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
                 .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
-                .build()))
-            .peek(remoteClient -> {
-                remoteClient.setRbelLogger(getRbelLogger());
-                remoteClient.addRbelMessageListener(this::triggerListener);
-            })
+                .build(), this))
             .forEach(remoteProxyClients::add);
     }
 

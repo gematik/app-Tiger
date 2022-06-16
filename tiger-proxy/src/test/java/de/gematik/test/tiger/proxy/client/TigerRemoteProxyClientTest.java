@@ -4,10 +4,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
@@ -15,6 +12,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
@@ -22,17 +20,22 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Config;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,12 +44,15 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(SpringExtension.class)
 @WireMockTest
@@ -76,6 +82,8 @@ public class TigerRemoteProxyClientTest {
     // the remote proxy (routing the requests to the remote server)
     @Autowired
     private TigerProxy tigerProxy;
+    @SpyBean
+    private TigerWebUiController tigerWebUiController;
 
     // the local TigerProxy-Client (which syphons the message from the remote Tiger Proxy)
     private static TigerRemoteProxyClient tigerRemoteProxyClient;
@@ -122,7 +130,7 @@ public class TigerRemoteProxyClientTest {
         tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
         unirestInstance.get("http://myserv.er/foo").asString()
-            .ifFailure(response -> fail( response.getStatus() + ": " + response.getBody()));
+            .ifFailure(response -> fail(response.getStatus() + ": " + response.getBody()));
 
         await()
             .atMost(2, TimeUnit.SECONDS)
@@ -366,9 +374,36 @@ public class TigerRemoteProxyClientTest {
             .atMost(2, TimeUnit.SECONDS)
             .until(() -> !newlyConnectedRemoteClient.getRbelMessages().isEmpty());
 
+        Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull());
+
         assertThat(newlyConnectedRemoteClient.getRbelMessages().get(0)
             .findElement("$.path").get().getRawStringContent())
             .isEqualTo("/foobarString");
+    }
+
+    @Test
+    public void multipleTrafficSources_shouldOnlySkipKnownUuidsForGivenRemote() throws IOException {
+        unirestInstance.get("http://myserv.er/foobarString").asString();
+
+        final TigerProxy masterTigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
+        addRequestResponsePair(masterTigerProxy.getRbelLogger().getRbelConverter());
+        assertThat(masterTigerProxy.getRbelMessages()).hasSize(2);
+
+        TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient(
+            "http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder()
+                .downloadInitialTrafficFromEndpoints(true)
+                .build(),
+            masterTigerProxy);
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(() -> masterTigerProxy.getRbelMessages().size()>=4);
+
+        Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull());
+        assertThat(((AtomicReference<?>)ReflectionTestUtils.getField(newlyConnectedRemoteClient, "lastMsgUuid"))
+            .get())
+            .isNotNull();
     }
 
     @Test
@@ -449,6 +484,15 @@ public class TigerRemoteProxyClientTest {
         tigerRemoteProxyClient.triggerPartialMessageCleanup();
 
         assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap().size()).isEqualTo(0);
+    }
+
+    private void addRequestResponsePair(RbelConverter rbelConverter) throws IOException {
+        rbelConverter.parseMessage(
+            FileUtils.readFileToByteArray(new File("src/test/resources/messages/getRequest.curl")),
+            null, null);
+        rbelConverter.parseMessage(
+            FileUtils.readFileToByteArray(new File("src/test/resources/messages/getResponse.curl")),
+            null, null);
     }
 
     private void addMessagePart(String responseUuid, int index, int numberOfMessages) {

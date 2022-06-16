@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy.client;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -14,12 +15,15 @@ import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
@@ -59,13 +63,19 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     @Getter
     @Setter
     private Duration maximumPartialMessageAge;
+    private AtomicReference<String> lastMsgUuid = new AtomicReference();
 
     public TigerRemoteProxyClient(String remoteProxyUrl) {
-        this(remoteProxyUrl, new TigerProxyConfiguration());
+        this(remoteProxyUrl, new TigerProxyConfiguration(), null);
     }
 
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
-        super(configuration);
+        this(remoteProxyUrl, configuration, null);
+    }
+
+    public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration,
+        @Nullable TigerProxy masterTigerProxy) {
+        super(configuration, masterTigerProxy == null ? null : masterTigerProxy.getRbelLogger());
         this.remoteProxyUrl = remoteProxyUrl;
 
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
@@ -74,6 +84,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         SockJsClient webSocketClient = new SockJsClient(
             List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
         webSocketClient.stop();
+
+        if (masterTigerProxy != null) {
+            addRbelMessageListener(masterTigerProxy::triggerListener);
+        }
 
         final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
         messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
@@ -93,21 +107,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     private void downloadTrafficFromRemoteProxy() {
-        final String downloadUrl = remoteProxyUrl + "/webui/trafficLog.tgr" +
-            (getRbelMessages().isEmpty() ? ""
-                : "?lastMsgUuid=" + getRbelMessages().get(getRbelMessages().size() - 1).getUuid());
-        log.info("Downloading missed traffic from '{}' (currently cached {} messages)",
-            downloadUrl, getRbelMessages().size());
-        final HttpResponse<String> response = Unirest.get(downloadUrl).asString();
-        if (response.getStatus() != 200) {
-            throw new TigerRemoteProxyClientException(
-                "Error while downloading message from remote '" + downloadUrl + "': " + response.getBody());
-        }
-        log.info("Downloaded {} of traffic. Now parsing...",
-            FileUtils.byteCountToDisplaySize(response.getBody().length()));
-        RbelFileWriterUtils.convertFromRbelFile(response.getBody(), getRbelLogger().getRbelConverter());
-        log.info("Successfully downloaded missed traffic from '{}'. Now {} message cached",
-            downloadUrl, getRbelMessages().size());
+        new TigerRemoteTrafficDownloader(this, lastMsgUuid).execute();
     }
 
     void connectToRemoteUrl(TigerStompSessionHandler tigerStompSessionHandler,
@@ -312,6 +312,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         if (tracingMessage.isComplete()) {
             tracingMessage.getMessagePair().checkForCompletePairAndPropagateIfComplete();
             partiallyReceivedMessageMap.remove(messageUuid);
+            lastMsgUuid.set(messageUuid);
         }
     }
 
