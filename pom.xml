@@ -82,6 +82,8 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <version.maven.failsafe>3.0.0-M6</version.maven.failsafe>
+        <version.maven.surefire>3.0.0-M6</version.maven.surefire>
         <encoding>UTF-8</encoding>
         <version.rbellogger>0.27.1</version.rbellogger>
         <version.cucumber>7.2.3</version.cucumber>
@@ -396,7 +398,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>${version.maven.surefire}</version>
                 <configuration>
                     <argLine>${argLine}</argLine>
                     <properties>

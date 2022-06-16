@@ -68,8 +68,8 @@ serverKey_xxx:
   # type specific property for Tiger Proxy and docker container nodes
   version: string
   # OPTIONAL the logs of the server are also written to a file, if no logFile is
-  # specified a default name will be used (default is "./target/serverlogs/[key of server in tiger.yaml].log")
-  logFile: ./target/serverlogs/serverKey_xxx.log
+  # specified a default name will be used (default is "./target/serverLogs/[key of server in tiger.yaml].log")
+  logFile: ./target/serverLogs/serverKey_xxx.log
 
   # OPTIONAL list of pki certs and keys to initialize
   # the local Tiger Proxy of the test suite with
@@ -209,7 +209,7 @@ dockerContainer_001:
   version: 0.1.2
   # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
   # specified a default name will be used
-  logFile: ./target/serverlogs/dockerContainer_001.log
+  logFile: ./target/serverLogs/dockerContainer_001.log
 
   dockerOptions:
     # OPTIONAL Flag whether the container shall be modified by
@@ -246,7 +246,7 @@ For now we support the ePA2 FD module and the DEMIS Meldeportal.
   startupTimeoutSec: int
   # OPTIONAL the logs of the docker compose are also written to a file, if no logFile is
   # specified a default name will be used
-  logFile: ./target/serverlogs/dockerCompose.log
+  logFile: ./target/serverLogs/dockerCompose.log
 
   # MANDATORY list of yaml files to use to start up the services.
   # The entries can either be file paths or if starts with
@@ -305,7 +305,7 @@ externalJar_001:
   healthcheckReturnCode: int
   # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
   # specified a default name will be used
-  logFile: ./target/serverlogs/externalJar_001.log
+  logFile: ./target/serverLogs/externalJar_001.log
 
   externalJarOptions:
     # OPTIONAL folder from where to start the external jar.
@@ -364,7 +364,7 @@ externalUrl_001:
   healthcheckReturnCode: int
   # OPTIONAL the logs of the externalUrl are also written to a file, if no logFile is
   # specified a default name will be used
-  logFile: ./target/serverlogs/externalUrl_001.log
+  logFile: ./target/serverLogs/externalUrl_001.log
 
   # The following properties are explained in the General properties section above
   pkiKeys: []

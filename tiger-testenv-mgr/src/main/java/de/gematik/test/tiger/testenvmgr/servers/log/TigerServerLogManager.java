@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 public class TigerServerLogManager  {
 
-    private static final String DEFAULT_LOGFILE_LOCATION = "./target/serverlogs/";
+    private static final String DEFAULT_LOGFILE_LOCATION = "./target/serverLogs/";
     private static final String LOGFILE_EXTENSION = ".log";
     private static final String DEFAULT_PATTERN_LAYOUT = "%date %level [%thread] %logger{10} [%file:%line] %msg%n";
 

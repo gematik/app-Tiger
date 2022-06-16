@@ -112,8 +112,9 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>${version.maven.failsafe}</version>
                 <configuration>
                     <!--
                         WorkflowUI needs this to allow it to block execution of maven,
