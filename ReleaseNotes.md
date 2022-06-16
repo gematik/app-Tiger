@@ -2,6 +2,9 @@
 
 # Release 0.23.2
 
+## Breaking changes
+* TGR-487: glue code "TGR current response at {string} matches as {word}:" now accepts an enums (JSON|XML) instead of strings and deprecated glue code "TGR current response at {string} matches as {word}" is removed
+
 ## Features
 
 * TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable

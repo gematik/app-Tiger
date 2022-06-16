@@ -10,9 +10,11 @@ import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
 import de.gematik.test.tiger.lib.rbel.RequestParameter;
+import io.cucumber.java.ParameterType;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
@@ -410,6 +412,12 @@ public class RBelValidatorGlue {
         currentResponseMessageAttributeMatches(parsedRbelPath, parsedValue);
     }
 
+
+    @ParameterType("XML|JSON")
+    public ModeType ModeType(String mode) {
+        return ModeType.valueOf(mode);
+    }
+
     /**
      * assert that response of filtered request matches at given rbel path node/attribute assuming its JSON or XML
      *
@@ -418,20 +426,19 @@ public class RBelValidatorGlue {
      * @param oracleDocStr value / regex that should equal or match as JSON or XML content
      * @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
      */
-    @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {word} überein mit:")
-    @Then("TGR current response at {string} matches as {word}") // Deprecated
-    @Then("TGR current response at {string} matches as {word}:")
-    public void currentResponseAtMatchesAsJson(final String rbelPath, final String mode, final String oracleDocStr) {
+    @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {ModeType} überein mit:")
+    @Then("TGR current response at {string} matches as {ModeType}:")
+    public void currentResponseAtMatchesAsJson(final String rbelPath, final ModeType mode, final String oracleDocStr) {
         final String parsedRbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
         final String parsedOracleDocStr = TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr);
-        switch (mode.toUpperCase()) {
-            case "JSON":
+        switch (mode) {
+            case JSON:
                 new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(
                     rbelValidator.findElementInCurrentResponse(parsedRbelPath).getRawStringContent(),
                     parsedOracleDocStr,
                     false);
                 break;
-            case "XML":
+            case XML:
                 final RbelElement el = rbelValidator.findElementInCurrentResponse(parsedRbelPath);
                 assertThat(el.hasFacet(RbelXmlFacet.class))
                     .withFailMessage("Node '" + rbelPath + "' is not XML")
@@ -439,7 +446,10 @@ public class RBelValidatorGlue {
                 rbelValidator.compareXMLStructure(
                     el.getRawStringContent(),
                     parsedOracleDocStr);
-
+                break;
+            default:
+                Assertions.fail("Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+                break;
         }
     }
 
