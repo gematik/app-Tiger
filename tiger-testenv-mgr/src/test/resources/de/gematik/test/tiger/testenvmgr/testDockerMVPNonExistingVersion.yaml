@@ -1,0 +1,8 @@
+servers:
+  testDockerMVPNonExistingVersion:
+    startupTimeoutSec: 1
+    hostname: testDockerNonExistingVersion
+    source:
+      - eitzenbe/test-containers
+    type: docker
+    version: 200.200.200

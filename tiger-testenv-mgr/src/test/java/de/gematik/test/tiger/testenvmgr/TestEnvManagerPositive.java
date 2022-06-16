@@ -15,8 +15,10 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.testcontainers.DockerClientFactory;
 
 @Slf4j
 @Getter
@@ -53,6 +56,12 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     @ValueSource(strings = {"testComposeMVP", "testDockerMVP", "testTigerProxy", "testExternalJarMVP", "testExternalUrl"})
     public void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) throws IOException {
         log.info("Starting testSetUpEnvironmentNShutDownMinimumConfigPasses_OK for {}", cfgFileName);
+        if (cfgFileName.equals("testDockerMVP")) {
+            log.info("Active Docker containers: \n{}",
+                DockerClientFactory.instance().client().listContainersCmd().exec().stream()
+                    .map(container -> String.join(", ", container.getNames()) + " -> " + container.toString())
+                    .collect(Collectors.joining("\n")));
+        }
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.getConfiguration().getServers().get(cfgFileName);
@@ -88,8 +97,7 @@ public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     @Test
     public void testCreateDockerNonExistingVersion() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDockerMVP.yaml",
-            "tiger.servers.testDockerMVP.version", "200.200.200-2000"));
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDockerMVPNonExistingVersion.yaml"));
         createTestEnvMgrSafelyAndExecute(envMgr ->
             assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class));
     }
