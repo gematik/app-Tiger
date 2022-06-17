@@ -20,6 +20,7 @@ pipeline {
     }
 
     stages {
+	
         stage('Checkout') {
             steps {
                 git branch: BRANCH,
