@@ -26,12 +26,6 @@
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
             <version>${project.version}</version>
-            <type>test-jar</type>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>

@@ -233,14 +233,13 @@ class TestTigerDirector {
             .execute(() ->
                 executeWithSecureShutdown(() -> {
                     TigerDirector.start();
-                    new Thread(TigerDirector::pauseExecution).start();
+                    Thread thread = new Thread(TigerDirector::pauseExecution);
+                    thread.start();
 
                     Thread.sleep(400);
-
                     assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun())
                         .isFalse();
-                 //   fail(
-                 //       "Did not expect to continue test execution when entering something different than 'next' in console");
+                    thread.interrupt();
                 }));
     }
 
