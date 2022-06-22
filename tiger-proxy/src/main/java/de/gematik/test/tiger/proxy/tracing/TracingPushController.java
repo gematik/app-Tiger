@@ -56,12 +56,16 @@ public class TracingPushController {
 
     private void propagateRbelMessage(RbelElement msg) {
         if (!msg.hasFacet(RbelTcpIpMessageFacet.class)) {
-            log.trace("Skipping propagation, not a TCP/IP message");
+            log.trace("Skipping propagation, not a TCP/IP message {}", msg.getUuid());
             return;
         }
         if (!msg.hasFacet(RbelHttpResponseFacet.class)
             && !msg.hasFacet(TracingMessagePairFacet.class)) {
-            log.trace("Skipping propagation, not a response");
+            log.trace("Skipping propagation, not a response (facets: {}, uuid: {})", msg.getFacets().stream()
+                .map(Object::getClass)
+                .map(Class::getSimpleName)
+                .collect(Collectors.joining(", ")),
+                msg.getUuid());
             return;
         }
         RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
@@ -76,7 +80,8 @@ public class TracingPushController {
             .orElseThrow(() -> new TigerRemoteProxyClientException("Failure to correctly push message with id '"
                 + msg.getUuid() + "': Unable to find matching request"));
 
-        log.debug("Propagating new request/response pair (IDs: {} and {})", request.getUuid(), msg.getUuid());
+        log.trace("{}Propagating new request/response pair (IDs: {} and {})",
+            tigerProxy.proxyName(), request.getUuid(), msg.getUuid());
         template.convertAndSend(TigerRemoteProxyClient.WS_TRACING,
             TigerTracingDto.builder()
                 .receiver(receiver)

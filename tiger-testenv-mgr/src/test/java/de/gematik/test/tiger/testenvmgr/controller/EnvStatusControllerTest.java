@@ -29,8 +29,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 @Slf4j
 class EnvStatusControllerTest {
 
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(10);
-
     @Test
     @TigerTest(tigerYaml = "")
     public void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
@@ -141,7 +139,7 @@ class EnvStatusControllerTest {
                 .map(EnvStatusController.class::cast)
                 .findAny().orElseThrow();
 
-            executorService.submit(envMgr::setUpEnvironment);
+            new Thread(envMgr::setUpEnvironment).start();
 
             await()
                 .until(() -> envStatusController.getStatus().getServers().containsKey("winstoneServer")

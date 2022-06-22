@@ -189,10 +189,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             .stream()
             .flatMap(List::stream)
             .parallel()
-            .peek(this::waitForRemoteTigerProxyToBeOnline)
             .map(url -> new TigerRemoteProxyClient(url, TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(
                     getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
+                .name(getTigerProxyConfiguration().getName())
                 .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
                 .build(), this))
             .forEach(remoteProxyClients::add);

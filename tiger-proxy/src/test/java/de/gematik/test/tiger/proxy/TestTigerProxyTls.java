@@ -187,16 +187,17 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build())
             .build());
 
-        Unirest.config().reset();
-        Unirest.config().proxy("localhost", tigerProxy.getProxyPort());
-        Unirest.config().verifySsl(true);
-        Unirest.config().sslContext(tigerProxy.buildSslContext());
+        try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+            unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
+            unirestInstance.config().verifySsl(true);
+            unirestInstance.config().sslContext(tigerProxy.buildSslContext());
 
-        final HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
-            .asJson();
+            final HttpResponse<JsonNode> response = unirestInstance.get("https://backend/foobar")
+                .asJson();
 
-        assertThat(response.getStatus()).isEqualTo(666);
-        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+            assertThat(response.getStatus()).isEqualTo(666);
+            assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+        }
     }
 
     @Test

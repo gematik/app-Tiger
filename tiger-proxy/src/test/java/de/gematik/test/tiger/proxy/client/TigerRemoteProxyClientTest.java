@@ -26,13 +26,16 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import kong.unirest.Config;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -58,7 +61,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @WireMockTest
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(
-    properties = {"tigerProxy.activateRbelParsing: false"})
+    properties = "tigerProxy.activateRbelParsing: false")
 @RequiredArgsConstructor
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -91,6 +94,17 @@ public class TigerRemoteProxyClientTest {
 
     @LocalServerPort
     private int springServerPort;
+    private static byte[] request;
+    private static byte[] response;
+
+    static {
+        try {
+            request = FileUtils.readFileToByteArray(new File("src/test/resources/messages/getRequest.curl"));
+            response = FileUtils.readFileToByteArray(new File("src/test/resources/messages/getResponse.curl"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @BeforeEach
     public void setup(WireMockRuntimeInfo remoteServer) {
@@ -364,46 +378,77 @@ public class TigerRemoteProxyClientTest {
     public void laterConnect_shouldDownloadInitialTraffic() {
         unirestInstance.get("http://myserv.er/foobarString").asString();
 
-        TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient(
+        try (TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient(
             "http://localhost:" + springServerPort,
             TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(true)
-                .build());
+                .build())) {
 
-        await()
-            .atMost(2, TimeUnit.SECONDS)
-            .until(() -> !newlyConnectedRemoteClient.getRbelMessages().isEmpty());
+            await()
+                .atMost(2, TimeUnit.SECONDS)
+                .until(() -> !newlyConnectedRemoteClient.getRbelMessages().isEmpty());
 
-        Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull());
+            Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull(),
+                Mockito.any(), Mockito.any());
 
-        assertThat(newlyConnectedRemoteClient.getRbelMessages().get(0)
-            .findElement("$.path").get().getRawStringContent())
-            .isEqualTo("/foobarString");
+            assertThat(newlyConnectedRemoteClient.getRbelMessages().get(0)
+                .findElement("$.path").get().getRawStringContent())
+                .isEqualTo("/foobarString");
+        }
     }
 
     @Test
-    public void multipleTrafficSources_shouldOnlySkipKnownUuidsForGivenRemote() throws IOException {
+    public void multipleTrafficSources_shouldOnlySkipKnownUuidsForGivenRemote() throws Exception {
         unirestInstance.get("http://myserv.er/foobarString").asString();
 
-        final TigerProxy masterTigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
-        addRequestResponsePair(masterTigerProxy.getRbelLogger().getRbelConverter());
-        assertThat(masterTigerProxy.getRbelMessages()).hasSize(2);
+        try (TigerProxy masterTigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build())) {
+            addRequestResponsePair(masterTigerProxy.getRbelLogger().getRbelConverter());
+            assertThat(masterTigerProxy.getRbelMessages()).hasSize(2);
 
-        TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient(
+            try (TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient(
+                "http://localhost:" + springServerPort,
+                TigerProxyConfiguration.builder()
+                    .downloadInitialTrafficFromEndpoints(true)
+                    .build(),
+                masterTigerProxy)) {
+
+                await()
+                    .atMost(2, TimeUnit.SECONDS)
+                    .until(() -> masterTigerProxy.getRbelMessages().size() >= 4);
+
+                Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull(),
+                    Mockito.any(), Mockito.any());
+                assertThat(
+                    ((AtomicReference<?>) ReflectionTestUtils.getField(newlyConnectedRemoteClient, "lastMessageUuid"))
+                        .get())
+                    .isNotNull();
+            }
+        }
+    }
+
+    @Test
+    public void longBuffer_shouldDownloadTrafficPaged() {
+        for (int i = 0; i < 100; i++) {
+            addRequestResponsePair(tigerProxy.getRbelLogger().getRbelConverter());
+        }
+        try (TigerRemoteProxyClient newlyConnectedRemoteClient = new TigerRemoteProxyClient(
             "http://localhost:" + springServerPort,
             TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(true)
-                .build(),
-            masterTigerProxy);
+                .build())) {
 
-        await()
-            .atMost(2, TimeUnit.SECONDS)
-            .until(() -> masterTigerProxy.getRbelMessages().size()>=4);
+            log.info("after generation we now have {} messages", tigerProxy.getRbelMessages().size());
 
-        Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull());
-        assertThat(((AtomicReference<?>)ReflectionTestUtils.getField(newlyConnectedRemoteClient, "lastMsgUuid"))
-            .get())
-            .isNotNull();
+            await()
+                .atMost(2, TimeUnit.SECONDS)
+                .until(
+                    () -> newlyConnectedRemoteClient.getRbelMessages().size() == tigerProxy.getRbelMessages().size());
+        }
+
+        Mockito.verify(tigerWebUiController, Mockito.times(1)).downloadTraffic(
+            Mockito.isNull(), Mockito.eq(Optional.of(50)), Mockito.any());
+        Mockito.verify(tigerWebUiController, Mockito.times(3)).downloadTraffic(
+            Mockito.matches(".*"), Mockito.eq(Optional.of(50)), Mockito.any());
     }
 
     @Test
@@ -486,13 +531,10 @@ public class TigerRemoteProxyClientTest {
         assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap().size()).isEqualTo(0);
     }
 
-    private void addRequestResponsePair(RbelConverter rbelConverter) throws IOException {
-        rbelConverter.parseMessage(
-            FileUtils.readFileToByteArray(new File("src/test/resources/messages/getRequest.curl")),
-            null, null);
-        rbelConverter.parseMessage(
-            FileUtils.readFileToByteArray(new File("src/test/resources/messages/getResponse.curl")),
-            null, null);
+    @SneakyThrows
+    private void addRequestResponsePair(RbelConverter rbelConverter) {
+        rbelConverter.parseMessage(request, null, null);
+        rbelConverter.parseMessage(response,null, null);
     }
 
     private void addMessagePart(String responseUuid, int index, int numberOfMessages) {

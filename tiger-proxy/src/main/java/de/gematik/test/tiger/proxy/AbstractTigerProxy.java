@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
@@ -49,12 +50,14 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
     private final TigerProxyConfiguration tigerProxyConfiguration;
     private RbelLogger rbelLogger;
+    private Optional<String> name;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         this(configuration, null);
     }
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
+        name = Optional.ofNullable(configuration.getName());
         if (configuration.getTls() == null) {
             throw new TigerProxyStartupException("no TLS-configuration found!");
         }
@@ -177,5 +180,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
                     return false;
                 }
             });
+    }
+
+    public String proxyName() {
+        return name
+            .map(s -> s + ": ")
+            .orElse("");
     }
 }

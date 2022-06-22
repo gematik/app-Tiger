@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +45,8 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
     @Override
     public void handleTransportError(StompSession session, Throwable exception) {
         if (exception instanceof ConnectionLostException) {
-            log.warn("Remote client lost connection to url {}. Reconnecting...", remoteProxyClient.getRemoteProxyUrl());
+            log.warn("Remote client lost connection to url {} in session {} (isConnected = {}). Reconnecting...",
+                remoteProxyClient.getRemoteProxyUrl(), session.getSessionId(), session.isConnected());
             remoteProxyClient.connectToRemoteUrl( this,
                 remoteProxyClient.getTigerProxyConfiguration().getConnectionTimeoutInSeconds(),
                 true);

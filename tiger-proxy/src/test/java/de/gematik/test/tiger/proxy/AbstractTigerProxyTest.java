@@ -62,7 +62,6 @@ public abstract class AbstractTigerProxyTest {
                 .withBody(binaryMessageContent)));
 
         RbelOptions.activateJexlDebugging();
-        Unirest.config().reset();
     }
 
     @AfterAll

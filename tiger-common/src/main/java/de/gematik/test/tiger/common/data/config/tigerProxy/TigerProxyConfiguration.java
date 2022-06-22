@@ -67,6 +67,11 @@ public class TigerProxyConfiguration {
     private List<RbelModificationDescription> modifications = new ArrayList<>();
     @Builder.Default
     private boolean localResources = false;
+    @Builder.Default
+    private int maximumTrafficDownloadPageSize = 100_000;
+    @Builder.Default
+    private int trafficDownloadPageSize = 50;
+    private String name;
     /**
      * Management-port of the Tiger Proxy.
      */

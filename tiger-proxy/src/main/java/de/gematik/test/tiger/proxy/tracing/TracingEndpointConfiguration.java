@@ -6,7 +6,9 @@ package de.gematik.test.tiger.proxy.tracing;
 
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -20,14 +22,17 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
-public class TracingEndpointConfiguration implements WebSocketMessageBrokerConfigurer {
+public class TracingEndpointConfiguration implements WebSocketMessageBrokerConfigurer,
+    ApplicationListener<ContextClosedEvent> {
 
     private final TigerProxyConfiguration tigerProxyConfiguration;
+    private final ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes(tigerProxyConfiguration.getTrafficEndpointConfiguration().getStompTopic());
+        config.setApplicationDestinationPrefixes(
+            tigerProxyConfiguration.getTrafficEndpointConfiguration().getStompTopic());
     }
 
     @Override
@@ -44,6 +49,11 @@ public class TracingEndpointConfiguration implements WebSocketMessageBrokerConfi
 
     @Override
     public void configureClientOutboundChannel(ChannelRegistration registration) {
-        registration.taskExecutor(new ThreadPoolTaskExecutor());
+        registration.taskExecutor(taskExecutor);
+    }
+
+    @Override
+    public void onApplicationEvent(ContextClosedEvent event) {
+        taskExecutor.shutdown();
     }
 }

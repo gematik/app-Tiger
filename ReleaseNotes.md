@@ -20,7 +20,8 @@
 ## Bugfixes
 
 * TGR-553: Fixed race-condition during initial connection to remote tiger-proxies
-* TGR-553: Fixe Race-Condition for multiple configured traffic sources
+* TGR-553: Fixed Race-Condition for multiple configured traffic sources
+* TGR-553: Major resilience overhaul for reconnection in TigerProxy-Mesh-Setups
 
 # Release 0.23.0
 

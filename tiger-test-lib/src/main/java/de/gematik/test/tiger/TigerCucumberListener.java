@@ -371,8 +371,6 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
                     bulmaModalJsScript = IOUtils.toString(getClass().getResourceAsStream("/js/bulma-modal.js"),
                         StandardCharsets.UTF_8);
                 }
-                html = html.substring(0, html.indexOf("</html>")) +
-                    "<script>" + bulmaModalJsScript + "</script>" + modal + "</html>";
             }
             String name = getFileNameFor(scenarioName, currentScenarioDataVariantIndex);
             final File logFile = Paths.get("target", "rbellogs", name).toFile();
