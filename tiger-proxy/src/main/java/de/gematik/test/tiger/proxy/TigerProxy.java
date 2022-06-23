@@ -16,9 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -31,14 +29,13 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -142,6 +139,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 return builder;
             };
         }
+        if (configuration.getTls().getClientSslSuites() != null) {
+            NettySslContextFactory.sslClientContextBuilderCustomizer = builder -> {
+                builder.ciphers(configuration.getTls().getClientSslSuites());
+                return builder;
+            };
+        }
     }
 
     private BiFunction<MockServerLogger, Boolean, KeyAndCertificateFactory> buildKeyAndCertificateFactory() {
@@ -198,16 +201,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             .stream()
             .flatMap(List::stream)
             .parallel()
-            .peek(this::waitForRemoteTigerProxyToBeOnline)
             .map(url -> new TigerRemoteProxyClient(url, TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(
                     getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
+                .name(getTigerProxyConfiguration().getName())
                 .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
-                .build()))
-            .peek(remoteClient -> {
-                remoteClient.setRbelLogger(getRbelLogger());
-                remoteClient.addRbelMessageListener(this::triggerListener);
-            })
+                .build(), this))
             .forEach(remoteProxyClients::add);
     }
 
@@ -435,7 +434,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             TrustManager[] trustManagers = tmf.getTrustManagers();
-            log.info("Our trust managers: " + trustManagers);
             sslContext.init(null, trustManagers, null);
 
             final HttpClient httpClient = HttpClients.custom()
@@ -447,9 +445,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .config()
                 .httpClient(config -> ApacheClient.builder(httpClient).apply(config));
             return sslContext;
-        } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for Tiger Proxy",
-                e);
+        } catch (final RuntimeException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
+            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for Tiger Proxy", e);
         }
     }
 
@@ -495,7 +492,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         shutdown();
     }
 
-    private class TigerProxyTrustManagerBuildingException extends RuntimeException {
+    private static class TigerProxyTrustManagerBuildingException extends RuntimeException {
 
         public TigerProxyTrustManagerBuildingException(final String s, final Exception e) {
             super(s, e);

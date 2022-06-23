@@ -16,7 +16,17 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.core.StringContains.containsString;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
@@ -26,155 +36,156 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import io.restassured.specification.ProxySpecification;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.json.JSONObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @Slf4j
-public class TigerWebUiControllerTest extends AbstractTigerProxyTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class TigerWebUiControllerTest {
 
-    ConfigurableApplicationContext applicationContext;
+    public static WireMockServer fakeBackendServer;
+    @Autowired
+    private TigerProxy tigerProxy;
+    @LocalServerPort
+    private int adminPort;
 
-    int adminPort;
+    @BeforeAll
+    public static void setupBackendServer() {
+        fakeBackendServer = new WireMockServer(
+            new WireMockConfiguration()
+                .dynamicPort());
+        fakeBackendServer.start();
+
+        log.info("Started Backend-Server on ports {}", fakeBackendServer.port());
+
+        fakeBackendServer.stubFor(get(urlPathEqualTo("/foobar"))
+            .willReturn(aResponse()
+                .withStatus(666)
+                .withBody("{\"foo\":\"bar\"}")));
+
+        RestAssured.proxy = null;
+    }
+
+    @AfterAll
+    public static void closeDownTigerProxy() {
+        fakeBackendServer.stop();
+    }
 
     @BeforeEach
-    public void spawnTigerProxyAsSpringBootApplicationWith() {
-        TigerProxyConfiguration configuration = TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
-                .build()))
-            .build();
+    public void configureTigerProxy() {
+        if (tigerProxy.getRbelMessages().isEmpty()) {
+            val proxyRest = Unirest.spawnInstance();
+            proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
 
-        try (ServerSocket socket = new ServerSocket(0)) {
-            adminPort = socket.getLocalPort();
-            configuration.setAdminPort(adminPort);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            proxyRest.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asJson();
         }
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("server.port", configuration.getAdminPort());
-        properties.putAll(TigerSerializationUtil.toMap(configuration, "tigerProxy"));
-        applicationContext = new SpringApplicationBuilder()
-            .properties(properties)
-            .sources(TigerProxyApplication.class)
-            .web(WebApplicationType.SERVLET)
-            .initializers()
-            .run();
-
-        tigerProxy = applicationContext.getBean(TigerProxy.class);
-
-        proxyRest = Unirest.spawnInstance();
-        proxyRest.config()
-            .proxy("localhost", tigerProxy.getProxyPort())
-            .sslContext(tigerProxy.buildSslContext());
-
-        proxyRest.post("http://backend/notFoobar").asJson();
     }
 
     public String getWebUiUrl() {
+        log.info("Connecting to {}", "http://localhost:" + adminPort + "/webui");
+        log.info("Connected to server: {}", Unirest.get("http://localhost:" + adminPort + "/webui/getMsgAfter")
+            .asString()
+            .getStatus());
         return "http://localhost:" + adminPort + "/webui";
-    }
-
-    @AfterEach
-    public void stopSpringBootProxy() {
-        applicationContext.close();
     }
 
     @Test
     public void checkHtmlIsReturned() {
-        Response response = RestAssured.given().get(getWebUiUrl());
-
-        response.then().statusCode(200);
-        String responseStr = response.asString();
-        assertThat(responseStr).contains("msglist");
+        RestAssured.given().get(getWebUiUrl())
+            .then()
+            .statusCode(200)
+            .body(containsString("msgList"));
     }
 
     @Test
     public void checkMsgIsReturned() {
-        Response response = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter");
-        response.then().statusCode(200);
-
-        JSONObject json = new JSONObject(response.asString());
-        assertThat(json.getJSONArray("metaMsgList").length()).isEqualTo(2);
-        assertThat(json.getJSONArray("metaMsgList").getJSONObject(0).getString("uuid")).isEqualTo(
-            "" + tigerProxy.getRbelMessages().get(0).getUuid());
-        assertThat(json.getJSONArray("metaMsgList").getJSONObject(1).getString("uuid")).isEqualTo(
-            "" + tigerProxy.getRbelMessages().get(1).getUuid());
+        RestAssured.given().get(getWebUiUrl() + "/getMsgAfter")
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(2))
+            .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessages().get(0).getUuid()))
+            .body("metaMsgList[1].uuid", equalTo(tigerProxy.getRbelMessages().get(1).getUuid()));
     }
 
     @Test
     public void checkOnlyOneMsgIsReturnedWithLastMsgUuidSupplied() {
-        Response response = RestAssured.given()
-            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid());
-        response.then().statusCode(200);
-
-        JSONObject json = new JSONObject(response.asString());
-        assertThat(json.getJSONArray("metaMsgList").length()).isEqualTo(1);
-        assertThat(json.getJSONArray("metaMsgList").getJSONObject(0).getString("uuid")).isEqualTo(
-            "" + tigerProxy.getRbelMessages().get(1).getUuid());
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid())
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(1))
+            .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessages().get(1).getUuid()));
     }
 
     @Test
     public void checkAllTrafficSuppliedWhenDownloadWithoutFilteredUuids() {
-        Response response = RestAssured.given().get(getWebUiUrl() + "/trafficLog.tgr");
-        response.then().statusCode(200);
-
-        final String trafficResult = response.asString();
-        tigerProxy.getRbelMessages().stream()
-            .map(RbelElement::getUuid)
-            .forEach(uuid -> assertThat(trafficResult).contains(uuid));
+        RestAssured.given().get(getWebUiUrl() + "/trafficLog.tgr")
+            .then()
+            .statusCode(200)
+            .body(containsString(tigerProxy.getRbelMessages().get(0).getUuid()))
+            .body(containsString(tigerProxy.getRbelMessages().get(1).getUuid()));
     }
 
     @Test
     public void checkSuppliedUuidsAreFilteredOutWhenDownloadingTraffic() {
-        Response response = RestAssured.given()
-            .get(getWebUiUrl() + "/trafficLog.tgr?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid());
-        response.then().statusCode(200);
-
-        final String trafficResult = response.asString();
-        tigerProxy.getRbelMessages().stream()
-            .skip(1)
-            .map(RbelElement::getUuid)
-            .forEach(uuid -> assertThat(trafficResult).contains(uuid));
-
-        assertThat(trafficResult).doesNotContain(tigerProxy.getRbelMessages().get(0).getUuid());
+        RestAssured.given()
+            .get(getWebUiUrl() + "/trafficLog.tgr?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid())
+            .then()
+            .statusCode(200)
+            .body(containsString(tigerProxy.getRbelMessages().get(1).getUuid()));
     }
 
     @Test
     public void checkNoMsgIsReturnedIfNoneExistsAfterRequested() {
-        Response response = RestAssured.given()
-            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(1).getUuid());
-        response.then().statusCode(200);
-
-        JSONObject json = new JSONObject(response.asString());
-        assertThat(json.getJSONArray("metaMsgList").length()).isEqualTo(0);
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(1).getUuid())
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(0));
     }
 
 
     @Test
     public void checkNoMsgIsReturnedAfterReset() {
-        Response response = RestAssured.given().get(getWebUiUrl() + "/resetMsgs");
-        response.then().statusCode(200);
+        RestAssured.given().get(getWebUiUrl() + "/resetMsgs")
+            .then()
+            .statusCode(200);
 
-        response = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter");
-        response.then().statusCode(200);
+        RestAssured.given().get(getWebUiUrl() + "/getMsgAfter")
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(0));
+    }
 
-        JSONObject json = new JSONObject(response.asString());
-        assertThat(json.getJSONArray("metaMsgList").length()).isEqualTo(0);
+    @Test
+    public void checkCorrectMenuStringsAreSupplied() {
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter")
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(2))
+            .body("metaMsgList[0].menuInfoString", equalTo("GET /foobar"))
+            .body("metaMsgList[1].menuInfoString", equalTo("666"));
     }
 }

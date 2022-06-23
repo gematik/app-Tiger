@@ -43,66 +43,72 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 class EpaVauParsingTest {
 
     @Test
-    void shouldAddRecordIdFacetToAllHandshakeMessages() throws IOException {
-        var tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+    void shouldAddRecordIdFacetToAllHandshakeMessages() {
+        try (var tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .fileSaveInfo(TigerFileSaveInfo.builder()
                 .sourceFile("src/test/resources/vauEpa2Flow.tgr")
                 .build())
             .keyFolders(List.of("src/test/resources"))
             .activateVauAnalysis(true)
-            .build());
+            .build())) {
 
-        await()
-            .atMost(5, TimeUnit.SECONDS)
-            .until(() -> tigerProxy.getRbelMessages().size() >= 36);
+            await()
+                .atMost(20, TimeUnit.SECONDS)
+                .until(() -> tigerProxy.getRbelMessages().size() >= 36);
 
-        FileUtils.writeStringToFile(new File("target/vauFlow.html"),
-            RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory()), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(new File("target/vauFlow.html"),
+                RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory()), StandardCharsets.UTF_8);
 
-        assertThat(tigerProxy.getRbelMessages().get(24).findElement("$.body.recordId"))
-            .get()
-            .extracting(RbelElement::getRawStringContent)
-            .isEqualTo("X114428539");
-        assertThat(tigerProxy.getRbelMessages().get(25).findElement("$.body.recordId"))
-            .get()
-            .extracting(RbelElement::getRawStringContent)
-            .isEqualTo("X114428539");
+            assertThat(tigerProxy.getRbelMessages().get(24).findElement("$.body.recordId"))
+                .get()
+                .extracting(RbelElement::getRawStringContent)
+                .isEqualTo("X114428539");
+            assertThat(tigerProxy.getRbelMessages().get(25).findElement("$.body.recordId"))
+                .get()
+                .extracting(RbelElement::getRawStringContent)
+                .isEqualTo("X114428539");
 
-        assertThat(tigerProxy.getRbelMessages().get(28).findElement("$.body.recordId"))
-            .get()
-            .extracting(RbelElement::getRawStringContent)
-            .isEqualTo("X114428539");
-        assertThat(tigerProxy.getRbelMessages().get(29).findElement("$.body.recordId"))
-            .get()
-            .extracting(RbelElement::getRawStringContent)
-            .isEqualTo("X114428539");
+            assertThat(tigerProxy.getRbelMessages().get(28).findElement("$.body.recordId"))
+                .get()
+                .extracting(RbelElement::getRawStringContent)
+                .isEqualTo("X114428539");
+            assertThat(tigerProxy.getRbelMessages().get(29).findElement("$.body.recordId"))
+                .get()
+                .extracting(RbelElement::getRawStringContent)
+                .isEqualTo("X114428539");
 
-        assertThat(tigerProxy.getRbelMessages().get(30).findElement("$.body.recordId"))
-            .get()
-            .extracting(RbelElement::getRawStringContent)
-            .isEqualTo("X114428539");
-        assertThat(tigerProxy.getRbelMessages().get(31).findElement("$.body.recordId"))
-            .get()
-            .extracting(RbelElement::getRawStringContent)
-            .isEqualTo("X114428539");
+            assertThat(tigerProxy.getRbelMessages().get(30).findElement("$.body.recordId"))
+                .get()
+                .extracting(RbelElement::getRawStringContent)
+                .isEqualTo("X114428539");
+            assertThat(tigerProxy.getRbelMessages().get(31).findElement("$.body.recordId"))
+                .get()
+                .extracting(RbelElement::getRawStringContent)
+                .isEqualTo("X114428539");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
     void verifyRiseTraffic() {
-        var tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+        try (var tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .fileSaveInfo(TigerFileSaveInfo.builder()
                 .sourceFile("src/test/resources/rise-vau-log.tgr")
                 .build())
             .activateVauAnalysis(true)
-            .build());
+            .build())) {
 
-        await()
-            .atMost(5, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 16);
+            await()
+                .atMost(20, TimeUnit.SECONDS)
+                    .until(() -> tigerProxy.getRbelMessages().size() >= 16);
 
-        assertThat(tigerProxy.getRbelMessages().get(15).findElement("$.body.recordId"))
-            .get()
-            .extracting(RbelElement::getRawStringContent)
-            .isEqualTo("Y243631459");
+            assertThat(tigerProxy.getRbelMessages().get(15).findElement("$.body.recordId"))
+                .get()
+                .extracting(RbelElement::getRawStringContent)
+                .isEqualTo("Y243631459");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

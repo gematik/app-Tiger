@@ -62,6 +62,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     private final List<TigerRoute> routes = new ArrayList<>();
     private final TigerTestEnvMgr tigerTestEnvMgr;
     private final List<TigerUpdateListener> listeners = new ArrayList<>();
+    private final List<TigerServerLogListener> logListeners = new ArrayList<>();
     private CfgServer configuration;
     private TigerServerStatus status = TigerServerStatus.NEW;
 
@@ -422,6 +423,9 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         this.listeners.add(listener);
     }
 
+    public void registerLogListener(TigerServerLogListener listener) {
+        this.logListeners.add(listener);
+    }
     public void statusMessage(String statusMessage) {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .statusMessage(statusMessage)

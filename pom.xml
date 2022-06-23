@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.23.1</version>
+    <version>0.23.2</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -82,11 +82,13 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <version.maven.failsafe>3.0.0-M6</version.maven.failsafe>
+        <version.maven.surefire>3.0.0-M6</version.maven.surefire>
         <encoding>UTF-8</encoding>
-        <version.rbellogger>0.27.1</version.rbellogger>
+        <version.rbellogger>0.27.2</version.rbellogger>
         <version.cucumber>7.2.3</version.cucumber>
-        <version.serenity.core>3.2.3</version.serenity.core>
-        <version.serenity.maven.plugin>3.2.3</version.serenity.maven.plugin>
+        <version.serenity.core>3.2.4</version.serenity.core>
+        <version.serenity.maven.plugin>3.2.4</version.serenity.maven.plugin>
         <version.junit5>5.8.1</version.junit5>
         <version.assertj>3.22.0</version.assertj>
         <version.jackson>2.12.3</version.jackson>
@@ -96,7 +98,7 @@
         <version.mockserver>5.11.9</version.mockserver>
         <version.spring-boot>2.6.6</version.spring-boot>
         <version.spring>5.3.18</version.spring>
-        <version.io.rest-assured>4.5.0</version.io.rest-assured>
+        <version.io.rest-assured>5.0.1</version.io.rest-assured>
 
         <htmlunit.version>3.55.0</htmlunit.version>
 
@@ -396,9 +398,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>${version.maven.surefire}</version>
                 <configuration>
-                    <argLine>${argLine}</argLine>
+                    <argLine>
+                        ${argLine}
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.io=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                    </argLine>
                     <properties>
                         <property>
                             <name>listener</name>

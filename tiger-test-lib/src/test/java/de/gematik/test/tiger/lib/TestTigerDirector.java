@@ -245,14 +245,13 @@ class TestTigerDirector {
             .execute(() ->
                 executeWithSecureShutdown(() -> {
                     TigerDirector.start();
-                    new Thread(TigerDirector::pauseExecution).start();
+                    Thread thread = new Thread(TigerDirector::pauseExecution);
+                    thread.start();
 
                     Thread.sleep(400);
-
                     assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun())
                         .isFalse();
-                 //   fail(
-                 //       "Did not expect to continue test execution when entering something different than 'next' in console");
+                    thread.interrupt();
                 }));
     }
 
@@ -284,7 +283,7 @@ class TestTigerDirector {
                         TigerDirector.getLibConfig().activateWorkflowUi = true;
                         new Thread(TigerDirector::waitForQuit).start();
 
-                        await().atMost(2, TimeUnit.SECONDS)
+                        await().atMost(4, TimeUnit.SECONDS)
                             .until(() -> {
                                 envStatusController.getConfirmQuit();
                                 return false;
@@ -328,7 +327,6 @@ class TestTigerDirector {
             } catch (NoSuchMethodException | ClassNotFoundException e) {
                 throw new TigerLibraryException("Unable to access Polarion Toolbox! "
                     + "Be sure to have it included in mvn dependencies.", e);
-                // TODO add the mvn dependency lines to log output
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new TigerLibraryException("Unable to call Polarion Toolbox's main method!", e);
             }

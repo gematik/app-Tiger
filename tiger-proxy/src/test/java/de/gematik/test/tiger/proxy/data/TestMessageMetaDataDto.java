@@ -23,25 +23,23 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.data.Offset;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.SocketAddress;
 import org.mockserver.netty.MockServer;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
 
-    public MockServerClient forwardProxy;
+    public static MockServerClient forwardProxy;
 
-    @BeforeEach
-    public void setupForwardProxy() {
-        if (forwardProxy != null) {
-            return;
-        }
-
+    @BeforeAll
+    public static void setupForwardProxy() {
         final MockServer forwardProxyServer = new MockServer();
 
         forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
@@ -56,6 +54,11 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
                     .getHttpRequest());
     }
 
+    @AfterAll
+    public static void tearDownMockServer() throws ExecutionException, InterruptedException {
+        forwardProxy.stopAsync().get();
+    }
+
     @Test
     public void checkMessageMetaDataDtoConversion()  {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -68,19 +71,19 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         proxyRest.get("http://backend/foobar").asJson();
 
         MessageMetaDataDto message0 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessages().get(0));
-        assertThat(message0.path).isEqualTo("/foobar");
-        assertThat(message0.method).isEqualTo("GET");
-        assertThat(message0.responseCode).isNull();
-        assertThat(message0.recipient).isEqualTo("backend:80");
-        assertThat(message0.sender).matches("(view-|)localhost:\\d*");
-        assertThat(message0.sequenceNumber).isEqualTo(0);
+        assertThat(message0.getPath()).isEqualTo("/foobar");
+        assertThat(message0.getMethod()).isEqualTo("GET");
+        assertThat(message0.getResponseCode()).isNull();
+        assertThat(message0.getRecipient()).isEqualTo("backend:80");
+        assertThat(message0.getSender()).matches("(view-|)localhost:\\d*");
+        assertThat(message0.getSequenceNumber()).isEqualTo(0);
 
         MessageMetaDataDto message1 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessages().get(1));
-        assertThat(message1.path).isNull();
-        assertThat(message1.method).isNull();
-        assertThat(message1.responseCode).isEqualTo(666);
-        assertThat(message1.recipient).matches("(view-|)localhost:\\d*");
-        assertThat(message1.sender).isEqualTo("backend:80");
-        assertThat(message1.sequenceNumber).isEqualTo(1);
+        assertThat(message1.getPath()).isNull();
+        assertThat(message1.getMethod()).isNull();
+        assertThat(message1.getResponseCode()).isEqualTo(666);
+        assertThat(message1.getRecipient()).matches("(view-|)localhost:\\d*");
+        assertThat(message1.getSender()).isEqualTo("backend:80");
+        assertThat(message1.getSequenceNumber()).isEqualTo(1);
     }
 }

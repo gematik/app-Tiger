@@ -40,4 +40,5 @@ public class TigerTlsConfiguration {
     // localhost will be part of the certificates twice by default. This is done in case someone just sets the url
     // and assumes localhost will still be supported
     private List<String> serverSslSuites;
+    private List<String> clientSslSuites;
 }

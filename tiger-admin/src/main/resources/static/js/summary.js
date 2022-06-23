@@ -87,7 +87,8 @@ const summaryPatterns = {
       "<br/>"],
     ["single", "Server Identity ", "$.tigerProxyCfg.tls.serverIdentity", "<br/>"],
     ["single", "Additional Names:<br/> ", "$.tigerProxyCfg.tls.alternativeNames", "<br/>"],
-    ["single", "Server SSL Suites:<br/> ", "$.tigerProxyCfg.tls.serverSslSuites", ""]
+    ["single", "Server SSL Suites:<br/> ", "$.tigerProxyCfg.tls.serverSslSuites", ""],
+    ["single", "Client SSL Suites:<br/> ", "$.tigerProxyCfg.tls.clientSslSuites", ""]
   ],
   ".pkiKeys": [
     "$.pkiKeys"

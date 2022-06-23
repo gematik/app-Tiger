@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.23.1</version>
+        <version>0.23.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -22,12 +22,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-        </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
@@ -112,8 +106,9 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>${version.maven.failsafe}</version>
                 <configuration>
                     <!--
                         WorkflowUI needs this to allow it to block execution of maven,

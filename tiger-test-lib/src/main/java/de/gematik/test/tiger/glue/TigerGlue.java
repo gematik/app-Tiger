@@ -102,7 +102,7 @@ public class TigerGlue {
         final String resolvedKey = TigerGlobalConfiguration.resolvePlaceholders(key);
         final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(resolvedKey);
         assertThat(optionalValue)
-            .withFailMessage("Wanted to assert value of key {} (resolved to {}) was unset "
+            .withFailMessage("Wanted to assert value of key {} (resolved to {}) is not set "
                     + "but found value {}!",
                 key, resolvedKey, optionalValue)
             .isEmpty();

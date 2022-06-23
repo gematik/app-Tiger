@@ -27,6 +27,8 @@ import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -35,6 +37,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
 @ExtendWith(OutputCaptureExtension.class)
+@TestInstance(Lifecycle.PER_CLASS)
 public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows

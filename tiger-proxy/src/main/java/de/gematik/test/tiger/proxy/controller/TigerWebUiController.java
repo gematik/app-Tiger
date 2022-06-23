@@ -42,9 +42,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +63,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -86,8 +89,12 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "/trafficLog.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public String downloadTraffic(
-        @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid) {
-        return new ArrayList<>(messsages()).stream()
+        @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
+        @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
+        HttpServletResponse response) {
+        int actualPageSize = pageSize
+            .orElse(getApplicationConfiguration().getMaximumTrafficDownloadPageSize());
+        final ArrayList<RbelElement> filteredMessages = new ArrayList<>(messsages()).stream()
             .dropWhile(msg -> {
                 if (StringUtils.isEmpty(lastMsgUuid)) {
                     return false;
@@ -96,8 +103,20 @@ public class TigerWebUiController implements ApplicationContextAware {
                 }
             })
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
+            .collect(Collectors.toCollection(ArrayList::new));
+        final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
+        response.addHeader("available-messages", String.valueOf(filteredMessages.size()));
+        response.addHeader("returned-messages", String.valueOf(returnedMessages));
+
+        final String result = filteredMessages.stream()
+            .limit(actualPageSize)
             .map(RbelFileWriterUtils::convertToRbelFileString)
             .collect(Collectors.joining("\n\n"));
+
+        if (!result.isEmpty()) {
+            response.addHeader("last-uuid", filteredMessages.get(returnedMessages - 1).getUuid());
+        }
+        return result;
     }
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
@@ -342,7 +361,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);
-        log.debug("returning {} messages of total {}", msgs.size(), tigerProxy.getRbelMessages().size());
+        log.debug("Returning {} messages of total {}", msgs.size(), tigerProxy.getRbelMessages().size());
         result.setHtmlMsgList(msgs.stream()
             .map(msg -> new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
             .collect(Collectors.toList()));
@@ -354,7 +373,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "/resetMsgs", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResetMessagesDto resetMessages() {
-        log.info("resetting currently recorded messages on rbel logger..");
+        log.info("Resetting currently recorded messages on rbel logger..");
         List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory();
         ResetMessagesDto result = new ResetMessagesDto();
         result.setNumMsgs(msgs.size());
@@ -364,10 +383,10 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "/quit", produces = MediaType.APPLICATION_JSON_VALUE)
     public void quitProxy(@RequestParam(name = "noSystemExit", required = false) final String noSystemExit) {
-        log.info("shutting down tiger standalone proxy at port " + tigerProxy.getProxyPort() + "...");
+        log.info("Shutting down tiger standalone proxy at port " + tigerProxy.getProxyPort() + "...");
         tigerProxy.clearAllRoutes();
         tigerProxy.shutdown();
-        log.info("shutting down tiger standalone proxy ui...");
+        log.info("Shutting down tiger standalone proxy ui...");
         int exitCode = SpringApplication.exit(applicationContext);
         if (exitCode != 0) {
             log.warn("Exit of tiger proxy ui not successful - exit code: " + exitCode);
@@ -382,7 +401,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
             throw new TigerProxyConfigurationException("Upload feature is not configured!");
         }
-        log.info("uploading report...");
+        log.info("Uploading report...");
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
 

@@ -25,8 +25,11 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
 
     @Test

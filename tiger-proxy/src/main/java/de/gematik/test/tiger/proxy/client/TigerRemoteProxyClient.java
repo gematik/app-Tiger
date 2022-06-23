@@ -17,33 +17,35 @@
 package de.gematik.test.tiger.proxy.client;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.gson.JsonArray;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
-import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.*;
+import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.util.Assert;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -69,26 +71,40 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     @Getter
     @Setter
     private Duration maximumPartialMessageAge;
+    @Getter
+    private final ExecutorService trafficParserExecutor = Executors.newSingleThreadExecutor();
+    private final AtomicBoolean stompMessageShouldQueue = new AtomicBoolean(false);
+    private final Queue<Runnable> messageTaskQueue = new ConcurrentLinkedQueue<>();
+    private final AtomicReference<StompSession> stompSession = new AtomicReference<>();
+    @Getter
+    private final AtomicReference<String> lastMessageUuid = new AtomicReference<>();
 
     public TigerRemoteProxyClient(String remoteProxyUrl) {
-        this(remoteProxyUrl, new TigerProxyConfiguration());
+        this(remoteProxyUrl, new TigerProxyConfiguration(), null);
     }
 
     public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
-        super(configuration);
+        this(remoteProxyUrl, configuration, null);
+    }
+
+    public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration,
+        @Nullable TigerProxy masterTigerProxy) {
+        super(configuration, masterTigerProxy == null ? null : masterTigerProxy.getRbelLogger());
         this.remoteProxyUrl = remoteProxyUrl;
 
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
         container.setDefaultMaxTextMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
-        SockJsClient webSocketClient = new SockJsClient(
-            List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
-        webSocketClient.stop();
+
+        if (masterTigerProxy != null) {
+            addRbelMessageListener(masterTigerProxy::triggerListener);
+        }
 
         final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
         messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
 
-        tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
+        tigerProxyStompClient = new WebSocketStompClient(
+            new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient(container)))));
         tigerProxyStompClient.setMessageConverter(messageConverter);
         tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
         tigerStompSessionHandler = new TigerStompSessionHandler(this);
@@ -103,36 +119,26 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     private void downloadTrafficFromRemoteProxy() {
-        final String downloadUrl = remoteProxyUrl + "/webui/trafficLog.tgr" +
-            (getRbelMessages().isEmpty() ? ""
-                : "?lastMsgUuid=" + getRbelMessages().get(getRbelMessages().size() - 1).getUuid());
-        log.info("Downloading missed traffic from '{}' (currently cached {} messages)",
-            downloadUrl, getRbelMessages().size());
-        final HttpResponse<String> response = Unirest.get(downloadUrl).asString();
-        if (response.getStatus() != 200) {
-            throw new TigerRemoteProxyClientException(
-                "Error while downloading message from remote '" + downloadUrl + "': " + response.getBody());
-        }
-        log.info("Downloaded {} of traffic. Now parsing...",
-            FileUtils.byteCountToDisplaySize(response.getBody().length()));
-        RbelFileWriterUtils.convertFromRbelFile(response.getBody(), getRbelLogger().getRbelConverter());
-        log.info("Successfully downloaded missed traffic from '{}'. Now {} message cached",
-            downloadUrl, getRbelMessages().size());
+        new TigerRemoteTrafficDownloader(this).execute();
     }
 
     void connectToRemoteUrl(TigerStompSessionHandler tigerStompSessionHandler,
         int connectionTimeoutInSeconds, boolean downloadTraffic) {
         waitForRemoteTigerProxyToBeOnline(remoteProxyUrl);
         final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
+        final Optional<String> lastMsgUuid = Optional
+            .of(getRbelLogger().getMessageHistory().size() - 1)
+            .filter(i -> i > 0)
+            .map(i -> getRbelLogger().getMessageHistory().get(i))
+            .map(RbelElement::getUuid);
         final ListenableFuture<StompSession> connectFuture
             = tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);
 
         connectFuture.addCallback(stompSession -> {
-                log.info("Succesfully opened stomp session {} to url",
-                    stompSession.getSessionId(), tracingWebSocketUrl);
+                log.info("{}Successfully opened stomp session {} to url {}",
+                    proxyName(), stompSession.getSessionId(), tracingWebSocketUrl);
                 if (downloadTraffic) {
-                    new Thread(this::downloadTrafficFromRemoteProxy,
-                        "connectToRemoteUrl-Download").start();
+                    downloadTrafficFromRemoteProxy();
                 }
             },
             throwable -> {
@@ -141,7 +147,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
 
         try {
-            connectFuture.get(connectionTimeoutInSeconds, TimeUnit.SECONDS);
+            stompSession.set(connectFuture.get(connectionTimeoutInSeconds, TimeUnit.SECONDS));
         } catch (RuntimeException | ExecutionException | TimeoutException e) {
             throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
                 + tracingWebSocketUrl, e);
@@ -244,7 +250,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     Optional<RbelElement> buildNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes,
         Optional<ZonedDateTime> transmissionTime, String uuid) {
         if (messageBytes != null) {
-            log.debug("Received new message with ID '{}'", uuid);
+            log.trace("{}Received new message with ID '{}'", proxyName(), uuid);
 
             final RbelElement rbelMessage = getRbelLogger().getRbelConverter()
                 .parseMessage(RbelElement.builder()
@@ -281,6 +287,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     public void unsubscribe() {
+        if (stompSession.get() != null && stompSession.get().isConnected()) {
+            stompSession.get().disconnect();
+        }
         tigerProxyStompClient.stop();
     }
 
@@ -331,10 +340,47 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             final Iterator<PartialTracingMessage> entryIterator
                 = partiallyReceivedMessageMap.values().iterator();
             while (entryIterator.hasNext()) {
-                if (entryIterator.next().getReceivedTime().isBefore(cutoff)) {
+                PartialTracingMessage next = entryIterator.next();
+                log.trace("Trying to remove {}, cutoff is {}", next.getReceivedTime(), cutoff);
+                if (cutoff.isAfter(next.getReceivedTime())) {
                     entryIterator.remove();
                 }
             }
         }
+    }
+
+    public void submitNewMessageTask(Runnable messageTask) {
+        synchronized (stompMessageShouldQueue) {
+            if (stompMessageShouldQueue.get()) {
+                messageTaskQueue.add(messageTask);
+            } else {
+                trafficParserExecutor.submit(messageTask);
+            }
+        }
+    }
+
+    public void switchToQueueMode() {
+        synchronized (stompMessageShouldQueue) {
+            stompMessageShouldQueue.set(true);
+        }
+    }
+
+    public void switchToExecutorMode() {
+        synchronized (stompMessageShouldQueue) {
+            log.trace("Switching to executor mode, currently {} messages waiting", messageTaskQueue.size());
+            while (!messageTaskQueue.isEmpty()) {
+                log.trace("Submitting a new task");
+                trafficParserExecutor.submit(
+                    messageTaskQueue.poll()
+                );
+            }
+            log.trace("Flipping the switch");
+            stompMessageShouldQueue.set(false);
+        }
+    }
+
+    public boolean messageUuidKnown(final String messageUuid) {
+        return new ArrayList(getRbelMessages()).stream()
+            .anyMatch(msg -> ((RbelElement)msg).getUuid().equals(messageUuid));
     }
 }

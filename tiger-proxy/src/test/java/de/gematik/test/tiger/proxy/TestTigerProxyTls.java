@@ -48,8 +48,11 @@ import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     @Test
@@ -196,16 +199,17 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build())
             .build());
 
-        Unirest.config().reset();
-        Unirest.config().proxy("localhost", tigerProxy.getProxyPort());
-        Unirest.config().verifySsl(true);
-        Unirest.config().sslContext(tigerProxy.buildSslContext());
+        try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+            unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
+            unirestInstance.config().verifySsl(true);
+            unirestInstance.config().sslContext(tigerProxy.buildSslContext());
 
-        final HttpResponse<JsonNode> response = Unirest.get("https://backend/foobar")
-            .asJson();
+            final HttpResponse<JsonNode> response = unirestInstance.get("https://backend/foobar")
+                .asJson();
 
-        assertThat(response.getStatus()).isEqualTo(666);
-        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+            assertThat(response.getStatus()).isEqualTo(666);
+            assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+        }
     }
 
     @Test

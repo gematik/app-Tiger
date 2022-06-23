@@ -20,15 +20,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import com.google.common.collect.ImmutableList;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.lib.TigerLibraryException;
+import de.gematik.test.tiger.lib.enums.ModeType;
+import de.gematik.test.tiger.lib.json.JsonChecker;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -43,6 +42,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.api.Assertions;
 import org.awaitility.core.ConditionTimeoutException;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.builder.Input;
@@ -165,7 +165,8 @@ public class RbelMessageValidator {
                     + "Returning " + warnMsg + " message. This may not be deterministic!");
                 printAllPathsOfMessages(candidateMessages);
             }
-            return Optional.of(requestParameter.isFilterPreviousRequest() ? candidateMessages.get(candidateMessages.size() -1) : candidateMessages.get(0));
+            return Optional.of(requestParameter.isFilterPreviousRequest() ? candidateMessages.get(candidateMessages.size() - 1)
+                : candidateMessages.get(0));
         }
 
         if (requestParameter.isFilterPreviousRequest()) {
@@ -243,6 +244,42 @@ public class RbelMessageValidator {
         }
     }
 
+    public void assertAttributeOfCurrentResponseMatches(final String rbelPath, final String value, boolean shouldMatch) {
+        final String text = findElementsInCurrentResponse(rbelPath).stream()
+            .map(RbelElement::getRawStringContent)
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .collect(Collectors.joining());
+        if (shouldMatch) {
+            if (!text.equals(value)) {
+                assertThat(text).matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+            }
+        } else {
+            if (text.equals(value)) {
+                Assertions.fail("Did not expect that node '" + rbelPath + "' is equal to '" + value);
+            }
+            assertThat(text).doesNotMatch(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+        }
+    }
+
+    public void assertAttributeOfCurrentResponseMatchesAs(String rbelPath, ModeType mode, String oracle) {
+        switch (mode) {
+            case JSON:
+                new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(
+                    findElementInCurrentResponse(rbelPath).getRawStringContent(),
+                    oracle,
+                    false);
+                break;
+            case XML:
+                final RbelElement el = findElementInCurrentResponse(rbelPath);
+                compareXMLStructureOfRbelElement(el, oracle, "");
+                break;
+            default:
+                Assertions.fail("Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+                break;
+        }
+    }
+
     private void printAllPathsOfMessages(final List<RbelElement> msgs) {
         long requests = msgs.stream().filter(msg -> msg.getFacet(RbelHttpRequestFacet.class).isPresent()).count();
         log.info("Found the following {} messages:\n{} ", requests, msgs.stream()
@@ -292,6 +329,11 @@ public class RbelMessageValidator {
         compareXMLStructure(test, oracle, diffOptions);
     }
 
+    public void compareXMLStructureOfRbelElement(final RbelElement el, final String oracle, final String diffOptionCSV) {
+        assertThat(el.hasFacet(RbelXmlFacet.class)).withFailMessage("Node " + el.getKey() + " is not XML").isTrue();
+        compareXMLStructure(el.getRawStringContent(), oracle, diffOptionCSV);
+    }
+
     public RbelElement findElementInCurrentResponse(final String rbelPath) {
         try {
             final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
@@ -312,6 +354,17 @@ public class RbelMessageValidator {
             throw new AssertionError("Unable to find element in last response for rbel path '" + rbelPath + "'");
         }
     }
+
+    public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
+        getRbelMessages().stream()
+            .map(msg -> new RbelPathExecutor(msg, rbelPath).execute().get(0).getRawStringContent())
+            .filter(Objects::nonNull)
+            .filter(msg -> msg.equals(value))
+            .findAny()
+            .orElseThrow(() -> new AssertionError(
+                "No message with matching value '" + value + "' at path '" + rbelPath + "'"));
+    }
+
 
     public class JexlToolbox {
 
