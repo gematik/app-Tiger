@@ -5,7 +5,8 @@
 <template>
   <span :class="`${highlightText ? 'statustext' : ''}`">
     <i :class="`statusbadge ${testStatus.toLowerCase()} left fa-solid ${getTestResultIcon(testStatus)}`"
-       :title="`${testStatus}`"></i>
+       :title="`${testStatus}`"
+       :id="`${link}`" ></i>
     {{ text }}
   </span>
   <span :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill`">
@@ -21,6 +22,7 @@ defineProps<{
   testStatus: string
   highlightText: boolean
   text: string
+  link: string
 }>();
 
 function getStatusFGAndBGColorClass(status: string): string {

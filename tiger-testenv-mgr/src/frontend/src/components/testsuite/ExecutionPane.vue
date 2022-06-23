@@ -21,7 +21,8 @@
                 <TestStatusBadge
                     :test-status="scenario[1].status"
                     :highlight-text="false"
-                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`">
+                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
+                    :link="scenario[1].getLink(feature[1].description)">
                 </TestStatusBadge>
               </h4>
               <div v-if="scenario[1].variantIndex !== -1">
