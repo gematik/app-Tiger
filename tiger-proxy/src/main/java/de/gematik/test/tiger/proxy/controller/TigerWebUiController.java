@@ -16,10 +16,7 @@ import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
-import de.gematik.test.tiger.proxy.data.GetMessagesAfterDto;
-import de.gematik.test.tiger.proxy.data.JexlQueryResponseDto;
-import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
-import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
+import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import j2html.tags.ContainerTag;
@@ -30,7 +27,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -51,7 +47,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -343,7 +338,8 @@ public class TigerWebUiController implements ApplicationContextAware {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
                 }
-                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty());
+                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
+                    || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
             })
             .collect(Collectors.toList());
 
@@ -357,6 +353,18 @@ public class TigerWebUiController implements ApplicationContextAware {
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList()));
         return result;
+    }
+
+    private RbelElement findPartner(RbelElement msg) {
+        return msg.getFacet(TracingMessagePairFacet.class)
+            .map(pairFacet -> {
+                if (pairFacet.getRequest() == msg) {
+                    return pairFacet.getResponse();
+                } else {
+                    return pairFacet.getRequest();
+                }
+            })
+            .orElse(null);
     }
 
     @GetMapping(value = "/resetMsgs", produces = MediaType.APPLICATION_JSON_VALUE)

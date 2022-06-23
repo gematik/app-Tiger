@@ -1,5 +1,11 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.3
+
+## Bugfixes
+
+* TGR-536: Filtering on the website no longer splits up message-pairs
+
 # Release 0.23.2
 
 ## Dependencies
@@ -10,6 +16,7 @@
 * Appium 8.0.0
 
 ## Breaking changes
+
 * TGR-487: glue code "TGR current response at {string} matches as {word}:" now accepts an enums (JSON|XML) instead of strings and deprecated glue code "TGR current response at {string} matches as {word}" is removed
 * TGR-493: The Test library no longer produces a test jar as we moved all BDD stuff to src/main, thus including the tiger-test-lib jar will suffice. Please adapt your pom.xml to not anymore depend on tiger-test-lib test-jar
 

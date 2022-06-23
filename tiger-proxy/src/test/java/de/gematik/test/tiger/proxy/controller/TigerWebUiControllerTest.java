@@ -176,4 +176,22 @@ public class TigerWebUiControllerTest {
             .body("metaMsgList[0].menuInfoString", equalTo("GET /foobar"))
             .body("metaMsgList[1].menuInfoString", equalTo("666"));
     }
+
+    @Test
+    public void filterOutResponses_shouldStillAppearInPairs() {
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter?filterCriterion=isRequest")
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(2));
+    }
+
+    @Test
+    public void filterOutRequests_shouldStillAppearInPairs() {
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMsgAfter?filterCriterion=isResponse")
+            .then()
+            .statusCode(200)
+            .body("metaMsgList.size()", equalTo(2));
+    }
 }

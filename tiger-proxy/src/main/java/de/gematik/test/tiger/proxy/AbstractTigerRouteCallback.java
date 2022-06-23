@@ -11,6 +11,7 @@ import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import org.mockserver.model.HttpRequest;
@@ -159,6 +161,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                 Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
                     .ifPresent(requestTime -> addTimingFacet(request, requestTime));
                 addTimingFacet(response, ZonedDateTime.now());
+                val pairFacet = TracingMessagePairFacet.builder()
+                    .response(response)
+                    .request(request)
+                    .build();
+                request.addFacet(pairFacet);
+                response.addFacet(pairFacet);
                 response.addOrReplaceFacet(
                     response.getFacet(RbelHttpResponseFacet.class)
                         .map(RbelHttpResponseFacet::toBuilder)
