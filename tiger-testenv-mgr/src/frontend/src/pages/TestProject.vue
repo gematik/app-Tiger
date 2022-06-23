@@ -51,8 +51,8 @@
           <div class="container-fluid">
             <div class="navbar-nav justify-content-start"></div>
             <div class="navbar-nav execution-pane-nav justify-content-between">
-              <a class="btn active execution-pane-buttons" v-on:click="showTab('execution_pane', $event)">Test execution</a>
-              <a class="btn execution-pane-buttons" v-on:click="showTab('logs_pane', $event)">Server Logs</a>
+              <a class="btn active execution-pane-buttons" @click="showTab('execution_pane', $event)">Test execution</a>
+              <a class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server Logs</a>
             </div>
             <div class="navbar-nav justify-content-end px-5">
               <img alt="gematik logo" class="gematik-logo" src="/img/gematik.svg">
@@ -63,9 +63,8 @@
         <!-- tabs -->
         <div class="tab-content">
           <ExecutionPane :featureUpdateMap="featureUpdateMap" :bannerData="bannerData" :localProxyWebUiUrl="localProxyWebUiUrl" :ui="ui" :started="started"/>
-          <ServerLog :serverLogs="serverLogList"  :logServers="logServers" :selectedServers="selectedServers"/>
+          <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers" :selectedLoglevel="LogLevel.ALL" />
         </div>
-
       </div>
     </div>
   </div>
@@ -118,6 +117,7 @@ import {currentOverallTestRunStatus} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
 import BannerType from "@/types/BannerType";
 import TigerServerLogDto from "@/types/TigerServerLogDto";
+import LogLevel from "@/types/LogLevel";
 
 let baseURL = process.env.BASE_URL;
 let socket: WebSocket;
