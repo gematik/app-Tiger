@@ -6,6 +6,10 @@
 
 * TGR-536: Filtering on the website no longer splits up message-pairs
 
+## Features
+
+* TGR-541: TigerProxy WebUI now displays message timestamp in the menu
+
 # Release 0.23.2
 
 ## Dependencies

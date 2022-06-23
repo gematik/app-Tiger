@@ -39,23 +39,29 @@ let testQuitParam = '';
 
 const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
-    + "        <div class=\"menu-label mb-1 has-text-link\"><span\n"
+    + "        <div class=\"is-size-6 mb-1 has-text-link\"><span\n"
     + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
     + "            class=\"fas fa-share\"></i> REQUEST\n"
+    + "            <span style=\"float:right\"\n"
+    + "                 class=\"is-size-6 ml-3 has-text-dark\">${timestamp}"
+    + "            </span>\n"
     + "        </div>\n"
-    + "        <div style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3\">${menuInfoString}"
-    + "        </div>\n"
+    + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
+    + "             class=\"is-size-6 ml-3 has-text-weight-bold\">${menuInfoString}"
+    + "        </span>\n"
     + "      </a></div>";
 const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
-    + "        <div class=\"menu-label mb-1 has-text-success\"><span\n"
+    + "        <div class=\"is-size-6 mb-1 has-text-success\"><span\n"
     + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
     + "            class=\"fas fa-reply\"></i> RESPONSE\n"
+    + "            <span style=\"float:right\"\n"
+    + "                 class=\"is-size-6 ml-3 has-text-dark\">${timestamp}"
+    + "            </span>\n"
     + "        </div>\n"
-    + "        <div style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3\">${menuInfoString}"
-    + "        </div>\n"
+    + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
+    + "             class=\"is-size-6 ml-3 has-text-weight-bold\">${menuInfoString}"
+    + "        </span>\n"
     + "      </a></div>";
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -602,6 +608,14 @@ function addSingleMessage(msgMetaData, msgHtmlData) {
   } else {
     menuItem = menuItem
         .replace("${menuInfoString}", " ");
+  }
+  if (msgMetaData.timestamp != null) {
+    menuItem = menuItem
+    .replace("${timestamp}",
+        msgMetaData.timestamp.split("T")[1].split("+")[0]);
+  } else {
+    menuItem = menuItem
+    .replace("${timestamp}", " ");
   }
   document.getElementById("sidebar-menu")
         .appendChild(htmlToElement(menuItem));

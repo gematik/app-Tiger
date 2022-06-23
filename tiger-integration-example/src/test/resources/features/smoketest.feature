@@ -11,7 +11,8 @@ Feature: Test Tiger BDD
     Given TGR clear recorded messages
 
   Scenario Outline: JEXL Rbel Namespace Test
-    Given TGR show banner "<txt>"
+    Given TGR show banner "Starting üöäß <txt>..."
+    # And TGR pausiere Testausführung
     When User requests the startpage
     Then TGR find request to path "/"
     And TGR print current request as rbel-tree
@@ -28,7 +29,7 @@ Feature: Test Tiger BDD
     When User requests the startpage
     Then TGR find request to path "/"
     Then TGR current response with attribute "$.body.html.head.link.href" matches "jetty-dir.css"
-    #Given TGR warte auf Abbruch
+    # Given TGR warte auf Abbruch
 
   Scenario: Test Find Last Request
     Given TGR show banner "text1"
@@ -47,4 +48,8 @@ Feature: Test Tiger BDD
     Then TGR find last request to path "/classes" with "$.path.foobar.value" matching "1"
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
+    #And TGR current response body matches
+    #"""
+    #wdfersdferd
+    #"""
     Then TGR current response with attribute "$.header.Location.xyz.value" matches "4"

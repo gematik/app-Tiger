@@ -6,6 +6,8 @@ package de.gematik.test.tiger.proxy.data;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,10 +32,7 @@ public class MessageMetaDataDto {
     private String sender;
     private long sequenceNumber;
     private String menuInfoString;
-    /**
-     * timestamp in epoche seconds
-     */
-    private long timestamp;
+    private ZonedDateTime timestamp;
     private boolean isRequest;
 
     public static MessageMetaDataDto createFrom(RbelElement el) {
@@ -66,12 +65,15 @@ public class MessageMetaDataDto {
                 "We do not support meta data for non http elements (" + el.getFacets().stream()
                     .map(Object::getClass).map(Class::getSimpleName).collect(Collectors.joining(", ")) + ")");
         }
-        builder.isRequest = el.hasFacet(RbelRequestFacet.class);
-        builder.menuInfoString = el.getFacet(RbelRequestFacet.class)
+        builder.isRequest(el.hasFacet(RbelRequestFacet.class));
+        builder.timestamp(el.getFacet(RbelMessageTimingFacet.class)
+            .map(RbelMessageTimingFacet::getTransmissionTime)
+            .orElse(null));
+        builder.menuInfoString(el.getFacet(RbelRequestFacet.class)
             .map(RbelRequestFacet::getMenuInfoString)
             .or(() -> el.getFacet(RbelResponseFacet.class)
                 .map(RbelResponseFacet::getMenuInfoString))
-            .orElse(null);
+            .orElse(null));
         return builder.build();
     }
 

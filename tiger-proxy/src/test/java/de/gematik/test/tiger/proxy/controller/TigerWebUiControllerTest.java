@@ -16,6 +16,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -174,7 +175,9 @@ public class TigerWebUiControllerTest {
             .statusCode(200)
             .body("metaMsgList.size()", equalTo(2))
             .body("metaMsgList[0].menuInfoString", equalTo("GET /foobar"))
-            .body("metaMsgList[1].menuInfoString", equalTo("666"));
+            .body("metaMsgList[1].menuInfoString", equalTo("666"))
+            .body("metaMsgList[1].timestamp", equalTo(tigerProxy.getRbelMessages().get(1)
+                .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toOffsetDateTime().toString()));
     }
 
     @Test
