@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import javax.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
@@ -126,7 +127,7 @@ public class TigerDirector {
 
     private static void setupTestEnvironent() {
         if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
-            log.info("\n" + Banner.toBannerStr("SETTING UP TESTENV ...", RbelAnsiColors.BLUE_BOLD.toString()));
+            log.info("\n" + Banner.toBannerStr("SETTING UP TESTENV...", RbelAnsiColors.BLUE_BOLD.toString()));
             tigerTestEnvMgr.setUpEnvironment();
             log.info("\n" + Banner.toBannerStr("TESTENV SET UP OK", RbelAnsiColors.BLUE_BOLD.toString()));
         }

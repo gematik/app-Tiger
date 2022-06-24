@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
   updateBtn = document.getElementById("updateBtn");
   resetBtn = document.getElementById("resetMsgs");
   saveBtn = document.getElementById("saveMsgs");
+  importBtn = document.getElementById("importMsgs");
   uploadBtn = document.getElementById("uploadMsgs");
   quitBtn = document.getElementById("quitProxy");
   jexlInspectionResultDiv = document.getElementById("jexlResult");
@@ -88,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
   ledScrollLock = document.getElementById("scrollLockLed");
   btnOpenRouteModal.addEventListener('click', showModalsCB);
   saveBtn.addEventListener('click', showModalSave);
+  importBtn.addEventListener('click', showModalImport);
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -178,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has("updateMode")) {
     console.log("UpdateMode:" + urlParams.get("updateMode"));
-    window.setTimeout(function() {
+    window.setTimeout(function () {
       document.getElementById(urlParams.get("updateMode")).click();
     }, 100);
   }
@@ -189,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     elem = document.getElementsByClassName("main-content")[0];
     elem.setAttribute("class", elem.getAttribute("class") + " hidden");
     const not4embeddedelems = document.getElementsByClassName("not4embedded");
-    for (let i = 0; i < not4embeddedelems.length; i++ ) {
+    for (let i = 0; i < not4embeddedelems.length; i++) {
       not4embeddedelems[i].setAttribute("class",
           not4embeddedelems[i].getAttribute("class") + " hidden");
     }
@@ -228,6 +230,31 @@ function showModalSave(e) {
   const $target = document.getElementById("saveModalDialog");
   rootEl.classList.add('is-clipped');
   $target.classList.add('is-active');
+  e.preventDefault();
+  return false;
+}
+
+function showModalImport(e) {
+  var input = document.createElement("input");
+  input.setAttribute("type", "file");
+  input.click(); // opening dialog
+  input.onchange = function () {
+    fetch('/webui/traffic', {
+      method: "POST",
+      body: input.files[0]
+    })
+    .then(function (response) {
+      if (!response.ok) {
+        alert('Error while uploading: ' + response.statusText);
+      } else {
+        alert('The file has been uploaded successfully.');
+        pollMessages();
+      }
+      return response;
+    }).then(function (response) {
+      console.log("ok");
+    });
+  };
   e.preventDefault();
   return false;
 }
@@ -490,8 +517,8 @@ function openTab(sender, tabName) {
 }
 
 function copyToFilter() {
-  let jexlQuery = document.getElementById("jexlQueryInput").value;
-  document.getElementById("setFilterCriterionInput").value = jexlQuery;
+  document.getElementById("setFilterCriterionInput").value
+      = document.getElementById("jexlQueryInput").value;
   setFilterCriterion();
 }
 
@@ -517,13 +544,15 @@ function executeJexlQuery() {
         jexlInspectionNoContextDiv.classList.add("is-hidden");
         if (response.matchSuccessful) {
           jexlInspectionResultDiv.innerHTML = "<b>Condition is true: </b>"
-              + "<code class='has-background-dark has-text-danger'>" + jexlQuery+ "</code>";
+              + "<code class='has-background-dark has-text-danger'>" + jexlQuery
+              + "</code>";
           jexlInspectionResultDiv.classList.add("has-background-success");
           jexlInspectionResultDiv.classList.remove("has-background-primary");
           jexlInspectionResultDiv.classList.remove("is-hidden");
         } else {
           jexlInspectionResultDiv.innerHTML = "<b>Condition is false (or invalid): </b>"
-              + "<code class='has-background-dark has-text-danger'>" + jexlQuery + "</code>";
+              + "<code class='has-background-dark has-text-danger'>" + jexlQuery
+              + "</code>";
           jexlInspectionResultDiv.classList.remove("has-background-success");
           jexlInspectionResultDiv.classList.add("has-background-primary");
           jexlInspectionResultDiv.classList.remove("is-hidden");
@@ -600,14 +629,14 @@ function addSingleMessage(msgMetaData, msgHtmlData) {
     menuItem = menuHtmlTemplateResponse;
   }
   menuItem = menuItem
-      .replace("${uuid}", msgMetaData.uuid)
-      .replace("${sequence}", msgMetaData.sequenceNumber + 1);
+  .replace("${uuid}", msgMetaData.uuid)
+  .replace("${sequence}", msgMetaData.sequenceNumber + 1);
   if (msgMetaData.menuInfoString != null) {
     menuItem = menuItem
-        .replace("${menuInfoString}", msgMetaData.menuInfoString);
+    .replace("${menuInfoString}", msgMetaData.menuInfoString);
   } else {
     menuItem = menuItem
-        .replace("${menuInfoString}", " ");
+    .replace("${menuInfoString}", " ");
   }
   if (msgMetaData.timestamp != null) {
     menuItem = menuItem
@@ -618,7 +647,7 @@ function addSingleMessage(msgMetaData, msgHtmlData) {
     .replace("${timestamp}", " ");
   }
   document.getElementById("sidebar-menu")
-        .appendChild(htmlToElement(menuItem));
+  .appendChild(htmlToElement(menuItem));
 }
 
 function updateMessageList(json) {

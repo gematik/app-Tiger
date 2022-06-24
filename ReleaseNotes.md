@@ -5,10 +5,12 @@
 ## Bugfixes
 
 * TGR-536: Filtering on the website no longer splits up message-pairs
+* TGR-534: When a shutdown is triggered during Startup External-Jars are now terminated correctly
 
 ## Features
 
 * TGR-541: TigerProxy WebUI now displays message timestamp in the menu
+* TGR-534: Traffic can now be uploaded from the TigerProxy WebUI
 
 # Release 0.23.2
 

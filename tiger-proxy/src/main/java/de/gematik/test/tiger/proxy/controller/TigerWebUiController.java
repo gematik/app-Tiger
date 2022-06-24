@@ -181,6 +181,12 @@ public class TigerWebUiController implements ApplicationContextAware {
                         )
                     ),
                     div().withClass("navbar-item").with(
+                        button().withId("importMsgs").withClass("button is-outlined is-success").with(
+                            i().withClass("far fa-folder-open"),
+                            span("Import").withClass("ml-2").withStyle("color:inherit;")
+                        )
+                    ),
+                    div().withClass("navbar-item").with(
                         button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
                             i().withClass("fas fa-upload"),
                             span("Upload").withClass("ml-2").withStyle("color:inherit;")
@@ -392,7 +398,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         }
     }
 
-    @PostMapping(value = "/uploadReport", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/uploadReport")
     public void uploadReport(@RequestBody String htmlReport) {
         if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
             throw new TigerProxyConfigurationException("Upload feature is not configured!");
@@ -472,6 +478,11 @@ public class TigerWebUiController implements ApplicationContextAware {
         } catch (IOException e) {
             throw new TigerRemoteProxyClientException("Failed to upload report to '" + uploadUrl + "'", e);
         }
+    }
+    @PostMapping(value = "/traffic")
+    public void importTrafficFromFile(@RequestBody String rawTraffic) {
+        RbelFileWriterUtils.convertFromRbelFile(
+            rawTraffic, tigerProxy.getRbelLogger().getRbelConverter());
     }
 
     private List<RbelElement> messsages() {

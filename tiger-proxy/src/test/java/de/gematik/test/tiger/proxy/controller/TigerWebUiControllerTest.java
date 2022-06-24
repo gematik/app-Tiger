@@ -6,48 +6,25 @@ package de.gematik.test.tiger.proxy.controller;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.StringContains.containsString;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import de.gematik.rbellogger.RbelOptions;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.common.util.TigerSerializationUtil;
-import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import io.restassured.RestAssured;
-import io.restassured.response.Response;
-import io.restassured.specification.ProxySpecification;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import kong.unirest.Unirest;
-import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.json.JSONObject;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -178,6 +155,31 @@ public class TigerWebUiControllerTest {
             .body("metaMsgList[1].menuInfoString", equalTo("666"))
             .body("metaMsgList[1].timestamp", equalTo(tigerProxy.getRbelMessages().get(1)
                 .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toOffsetDateTime().toString()));
+    }
+
+    @Test
+    public void simulateTrafficDownloadResetAndUpload() {
+        try {
+            final String downloadedTraffic = RestAssured.given()
+                .get(getWebUiUrl() + "/trafficLog.tgr")
+                .body().asString();
+
+            RestAssured.given().get(getWebUiUrl() + "/resetMsgs")
+                .then()
+                .statusCode(200);
+
+            assertThat(tigerProxy.getRbelMessages()).isEmpty();
+
+            RestAssured
+                .with().body(downloadedTraffic)
+                .post(getWebUiUrl() + "/traffic")
+                .then()
+                .statusCode(200);
+
+            assertThat(tigerProxy.getRbelMessages()).hasSize(2);
+        } finally {
+            tigerProxy.getRbelMessages().clear();
+        }
     }
 
     @Test

@@ -45,6 +45,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -52,7 +53,7 @@ import org.springframework.boot.web.servlet.context.ServletWebServerApplicationC
 
 @Slf4j
 @Getter
-public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener {
+public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener, DisposableBean {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
@@ -388,5 +389,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public void resetUserAcknowledgedContinueTestRun() {
         userAcknowledgedContinueTestRun = false;
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        shutDown();
     }
 }
