@@ -20,14 +20,21 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
+        <version.maven>3.8.6</version.maven>
     </properties>
 
     <dependencies>
+        <!-- needed for MavenProject class -->
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <version>${version.maven}</version>
+        </dependency>
         <!-- dependencies to create a plugin -->
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.8.4</version>
+            <version>${version.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
@@ -35,21 +42,12 @@
             <version>3.6.4</version>
             <scope>provided</scope>
         </dependency>
-        <!-- needed for MavenProject class -->
+        <!-- maven dependencies use older commons io than serenity so pin it... -->
         <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-core</artifactId>
-            <version>3.8.4</version>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.11.0</version>
         </dependency>
-        <!-- we dont need any packages here from but it triggers to correct / compliant versions of needed poms
-         like commons io/lang/..., junit5
-         -->
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- using some internal class of this plugin to help with file list includes/excludes -->
         <dependency>
             <groupId>com.google.code.maven-replacer-plugin</groupId>
@@ -59,6 +57,11 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-reports</artifactId>
+            <version>${version.serenity.core}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd.maven.plugins</groupId>
+            <artifactId>serenity-maven-plugin</artifactId>
             <version>${version.serenity.core}</version>
         </dependency>
         <dependency>
@@ -76,19 +79,19 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>4.3.1</version>
+            <version>4.6.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>4.3.1</version>
+            <version>4.6.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
-            <version>3.24.0</version>
+            <version>3.24.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
