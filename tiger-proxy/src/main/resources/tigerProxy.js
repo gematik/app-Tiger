@@ -37,6 +37,11 @@ let scrollLock = false;
 
 let testQuitParam = '';
 
+let collapsibleRbel;
+let collapsibleJexl;
+let collapsibleRbelBtn;
+let collapsibleJexlBtn;
+
 const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"is-size-6 mb-1 has-text-link\"><span\n"
@@ -87,9 +92,16 @@ document.addEventListener('DOMContentLoaded', function () {
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
   ledScrollLock = document.getElementById("scrollLockLed");
+  collapsibleRbel = document.getElementById("rbel-help");
+  collapsibleJexl = document.getElementById("jexl-help");
+  collapsibleRbelBtn = document.getElementById("rbel-help-icon");
+  collapsibleJexlBtn = document.getElementById("jexl-help-icon");
+  collapsibleRbelBtn.addEventListener('click', (e) => {toggleHelp(null, collapsibleRbelBtn, collapsibleRbel)});
+  collapsibleJexlBtn.addEventListener('click', (e) => {toggleHelp(null, collapsibleJexlBtn, collapsibleJexl)});
   btnOpenRouteModal.addEventListener('click', showModalsCB);
   saveBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
+
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -267,6 +279,21 @@ function showModalsCB(e) {
   return false;
 }
 
+function toggleHelp(e, collapsibleBtn, collapsibleHelp, isDisabledSet = false) {
+  const classList = collapsibleBtn.classList;
+  if (classList.contains("fa-toggle-on") || ((isDisabledSet) && isDisabledSet == true)) {
+    classList.remove("fa-toggle-on");
+    classList.add("fa-toggle-off");
+    collapsibleHelp.style.display = "none";
+  } else {
+    classList.add("fa-toggle-on");
+    classList.remove("fa-toggle-off");
+    collapsibleHelp.style.display = "block";
+  }
+  if (e)
+    e.preventDefault();
+}
+
 function closeModals() {
   const $modals = getAll('.modal');
   rootEl.classList.remove('is-clipped');
@@ -340,7 +367,6 @@ function toggleCollapsableIcon(target) {
     classList.add("fa-toggle-on");
     classList.remove("fa-toggle-off");
   }
-
 }
 
 function pollMessages() {
@@ -523,6 +549,7 @@ function copyToFilter() {
 }
 
 function executeJexlQuery() {
+  toggleHelp(null, collapsibleJexlBtn, collapsibleJexl, true);
   const xhttp = new XMLHttpRequest();
   let jexlQuery = document.getElementById("jexlQueryInput").value;
   xhttp.open("GET", "/webui/testJexlQuery"
@@ -566,6 +593,7 @@ function executeJexlQuery() {
 }
 
 function testRbelExpression() {
+  toggleHelp(null, collapsibleRbelBtn, collapsibleRbel, true);
   const xhttp = new XMLHttpRequest();
   let rbelPath = document.getElementById("rbelExpressionInput").value;
   xhttp.open("GET", "/webui/testRbelExpression"

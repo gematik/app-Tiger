@@ -11,6 +11,7 @@
 
 * TGR-541: TigerProxy WebUI now displays message timestamp in the menu
 * TGR-534: Traffic can now be uploaded from the TigerProxy WebUI
+* TGR-548: JEXL Debugging/RbelPath Debugging: help text is now collapsible
 
 # Release 0.23.2
 
