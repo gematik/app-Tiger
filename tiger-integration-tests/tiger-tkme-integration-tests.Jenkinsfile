@@ -31,8 +31,6 @@ pipeline {
 
           stage('Set Tiger version in TKME') {
               steps {
-                  // use sed command to replace the previous version of tiger with a newest one, where @ is a delimiter
-                  // between a replaced element and a new element. parameter "s" refers to substitution
                    sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
               }
           }
