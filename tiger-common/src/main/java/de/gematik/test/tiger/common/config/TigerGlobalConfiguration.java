@@ -68,6 +68,18 @@ public class TigerGlobalConfiguration {
 
     private static void addFreePortVariables() {
         List<ServerSocket> sockets = new ArrayList<>();
+        String[] tigerApps = { "testenvmgr", "localproxy.admin" };
+        for (String tigerApp : tigerApps) {
+            try {
+                final ServerSocket serverSocket = new ServerSocket(0);
+                globalConfigurationLoader.putValue("tiger.internal." + tigerApp + ".port",
+                    Integer.toString(serverSocket.getLocalPort()),
+                    SourceType.RUNTIME_EXPORT);
+                sockets.add(serverSocket);
+            } catch (IOException e) {
+                throw new TigerConfigurationException("Exception while trying to add tiger internal port variables", e);
+            }
+        }
         for (int i = 0; i < 256; i++) {
             try {
                 final ServerSocket serverSocket = new ServerSocket(0);

@@ -391,6 +391,8 @@ tigerProxy_001:
     # OPTIONAL port of the web user interface and the proxy management
     # (e.g. rbel-message forwarding)
     # Default value is empty, which means a random port will be used.
+    # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
+    # the TigerGlobalConfiguration
     adminPort: 8080
     # OPTIONAL server key of the node this proxy shall be used as reverse proxy for.
     # If set the routes will be configured appropriately.
