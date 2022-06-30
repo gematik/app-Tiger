@@ -161,7 +161,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                     .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getClientAddress());
                 Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
                     .ifPresent(requestTime -> addTimingFacet(request, requestTime));
-                addTimingFacet(response, ZonedDateTime.now().truncatedTo(ChronoUnit.MICROS));
+                addTimingFacet(response, ZonedDateTime.now());
                 val pairFacet = TracingMessagePairFacet.builder()
                     .response(response)
                     .request(request)

@@ -15,6 +15,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import io.restassured.RestAssured;
+import java.time.OffsetDateTime;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -152,9 +153,15 @@ public class TigerWebUiControllerTest {
             .statusCode(200)
             .body("metaMsgList.size()", equalTo(2))
             .body("metaMsgList[0].menuInfoString", equalTo("GET /foobar"))
-            .body("metaMsgList[1].menuInfoString", equalTo("666"))
-            .body("metaMsgList[1].timestamp", equalTo(tigerProxy.getRbelMessages().get(1)
-                .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toOffsetDateTime().toString()));
+            .body("metaMsgList[1].menuInfoString", equalTo("666"));
+
+        //Somewhere the zeros are omitted (see: https://stackoverflow.com/questions/72008690/jackson-and-localdatetime-trailing-zeros-are-removed)
+        //Since they are not relevant for the UI, we just make a better assertion.
+        String timestamp = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter").then().extract()
+            .path("metaMsgList[1].timestamp");
+
+        assertThat(OffsetDateTime.parse(timestamp)).isEqualTo(tigerProxy.getRbelMessages().get(1)
+                .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toOffsetDateTime());
     }
 
     @Test
