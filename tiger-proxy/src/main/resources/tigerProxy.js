@@ -309,14 +309,14 @@ function closeModals() {
 }
 
 function enableCardToggles() {
-  let cardToggles = document.getElementsByClassName('card-toggle');
+  let cardToggles = document.getElementsByClassName('toggle-icon');
   for (let i = 0; i < cardToggles.length; i++) {
     cardToggles[i].addEventListener('click', toggleCardCB);
   }
 }
 
 function toggleCardCB(e) {
-  e.currentTarget.parentElement.parentElement.childNodes[1].classList.toggle(
+  e.currentTarget.parentElement.parentElement.parentElement.parentElement.childNodes[1].classList.toggle(
       'is-hidden');
   toggleCollapsableIcon(e.currentTarget);
   e.preventDefault();
@@ -359,7 +359,7 @@ function enableCollapseExpandAll() {
 }
 
 function toggleCollapsableIcon(target) {
-  const classList = target.children[0].children[1].classList;
+  const classList = target.classList;
   if (classList.contains("fa-toggle-on")) {
     classList.remove("fa-toggle-on");
     classList.add("fa-toggle-off");

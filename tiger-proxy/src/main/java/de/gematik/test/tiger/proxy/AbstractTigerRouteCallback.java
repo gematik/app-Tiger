@@ -14,6 +14,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -160,7 +161,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                     .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getClientAddress());
                 Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
                     .ifPresent(requestTime -> addTimingFacet(request, requestTime));
-                addTimingFacet(response, ZonedDateTime.now());
+                addTimingFacet(response, ZonedDateTime.now().truncatedTo(ChronoUnit.MICROS));
                 val pairFacet = TracingMessagePairFacet.builder()
                     .response(response)
                     .request(request)
