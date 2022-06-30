@@ -533,8 +533,8 @@ public class TigerRemoteProxyClientTest {
 
     @SneakyThrows
     private void addRequestResponsePair(RbelConverter rbelConverter) {
-        rbelConverter.parseMessage(request, null, null);
-        rbelConverter.parseMessage(response,null, null);
+        rbelConverter.parseMessage(request, null, null, Optional.empty());
+        rbelConverter.parseMessage(response,null, null, Optional.empty());
     }
 
     private void addMessagePart(String responseUuid, int index, int numberOfMessages) {

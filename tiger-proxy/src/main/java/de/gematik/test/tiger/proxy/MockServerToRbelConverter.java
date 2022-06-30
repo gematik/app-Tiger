@@ -12,7 +12,9 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +37,7 @@ public class MockServerToRbelConverter {
         }
 
         final RbelElement element = rbelConverter.parseMessage(responseToRbelMessage(response),
-            convertUri(serverProtocolAndHost), convertSocketAdress(clientAddress));
+            convertUri(serverProtocolAndHost), convertSocketAdress(clientAddress), Optional.of(ZonedDateTime.now()));
 
         if (!element.hasFacet(RbelHttpResponseFacet.class)) {
             element.addFacet(RbelHttpResponseFacet.builder()
@@ -55,7 +57,7 @@ public class MockServerToRbelConverter {
         }
 
         final RbelElement element = rbelConverter.parseMessage(requestToRbelMessage(request),
-            convertSocketAdress(request.getClientAddress()), convertUri(protocolAndHost));
+            convertSocketAdress(request.getClientAddress()), convertUri(protocolAndHost), Optional.of(ZonedDateTime.now()));
 
         if (!element.hasFacet(RbelHttpRequestFacet.class)) {
             element.addFacet(RbelHttpRequestFacet.builder()

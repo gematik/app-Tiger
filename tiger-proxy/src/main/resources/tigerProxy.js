@@ -135,14 +135,26 @@ document.addEventListener('DOMContentLoaded', function () {
     closeModals();
     saveHtmlToLocal();
   });
+  function todayAsString() {
+    var now = new Date();
+    var dateStr = padStr(now.getFullYear()-2000) +
+        padStr(1 + now.getMonth()) +
+        padStr(now.getDate());
+    return dateStr;
+  }
+
+  function padStr(i) {
+    return (i < 10) ? "0" + i : "" + i;
+  }
+
   document.getElementById("saveTrafficBtn")
   .addEventListener('click', e => {
     e.preventDefault();
     closeModals();
     const a = document.createElement('a');
     a.style.display = 'none';
-    a.href = "/webui/trafficLog.tgr";
-    a.download = 'trafficLog.tgr';
+    a.href = `/webui/trafficLog-${todayAsString()}.tgr`;
+    a.download = `trafficLog-${todayAsString()}.tgr`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -514,7 +526,7 @@ function addQueryBtn(reqEl) {
 
   let queryBtn = document.createElement('a');
   queryBtn.innerHTML =
-      "<span>Inspect with JEXL</span>";
+      "<span>Inspect</span>";
   queryBtn.setAttribute("class", "button modal-button is-pulled-right mx-3");
   queryBtn.setAttribute("data-target", msgUuid);
   queryBtn.addEventListener("click", function (e) {

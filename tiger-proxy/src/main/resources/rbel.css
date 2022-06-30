@@ -67,6 +67,18 @@
     margin-left: 0.5rem;
 }
 
+
+h1.title{
+    font-size: 2rem;
+}
+h2.title{
+    font-size: 1.5rem;
+}
+.title {
+    font-size: 1.5rem;
+    margin-bottom: .5rem;
+}
+
 pre {
     color: #fa4 !important;
     background-color: #444 !important;

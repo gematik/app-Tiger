@@ -82,7 +82,11 @@
       <i v-on:click="ui.toggleRightSideBar" class="fa-solid fa-angles-left resizer-right"></i>
     </div>
     <div class="d-none position-fixed pl-3 pt-3" id="rbellog_details_pane">
-      <h2><img alt="RBel logo" src="img/rbellog.png" class="rbel-logo"> Rbel Log Details</h2>
+      <h2>
+        <img alt="RBel logo" src="img/rbellog.png" class="rbel-logo">
+        Rbel Log Details
+        <a :href="`${localProxyWebUiUrl}`" target="poxywebui"><i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i></a>
+      </h2>
       <iframe id="rbellog-details-iframe" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
     </div>
   </div>
@@ -215,5 +219,12 @@ h4.scenariotitle {
 .rbel-logo {
   width: 50px;
   margin-left: 0.5rem;
+}
+
+#rbellog_details_pane > h2 i {
+  margin-left: 1rem;
+  font-size: 50%;
+  vertical-align: top;
+  color: var(--gem-primary-400);
 }
 </style>

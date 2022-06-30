@@ -75,7 +75,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         this.applicationContext = appContext;
     }
 
-    @GetMapping(value = "/trafficLog.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public String downloadTraffic(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
         @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
@@ -118,6 +118,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             }
         }
         String html = renderer.getEmptyPage();
+        // hide sidebar
         String targetDiv;
         if (embedded) {
             targetDiv = "<div class=\"column msglist embeddedlist\">";
