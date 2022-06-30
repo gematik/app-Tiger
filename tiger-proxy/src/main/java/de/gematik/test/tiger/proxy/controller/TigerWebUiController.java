@@ -13,6 +13,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelFileWriterUtils;
+import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -64,6 +66,9 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private final ApplicationConfiguration applicationConfiguration;
     private ApplicationContext applicationContext;
+    private final AtomicBoolean versionToBeAdded = new AtomicBoolean(false);
+    private boolean versionAdded = false;
+
 
     @Override
     public void setApplicationContext(ApplicationContext appContext) throws BeansException {
@@ -104,6 +109,14 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
+        TigerProperties tigerProperties = new TigerProperties();
+        synchronized (versionToBeAdded) {
+            if (!versionAdded) {
+                String versionHtml = "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">" + tigerProperties.getFullBuildVersion() + "</div>";
+                renderer.setSubTitle(versionHtml + renderer.getSubTitle());
+                versionAdded = true;
+            }
+        }
         String html = renderer.getEmptyPage();
         String targetDiv;
         if (embedded) {
@@ -122,6 +135,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
                     "/webui/css/all.min.css");
         }
+
         String navbar = nav().withClass("navbar is-dark is-fixed-bottom not4embedded").with(
             div().withClass("navbar-menu").with(
                 div().withClass("navbar-start").with(

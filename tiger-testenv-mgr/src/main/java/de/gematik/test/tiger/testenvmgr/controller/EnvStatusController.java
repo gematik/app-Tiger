@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
@@ -27,6 +28,8 @@ public class EnvStatusController implements TigerUpdateListener {
     private final TigerEnvStatusDto tigerEnvStatus = new TigerEnvStatusDto();
 
     TigerTestEnvMgr tigerTestEnvMgr;
+
+    private TigerProperties tigerProperties = new TigerProperties();
 
     public EnvStatusController(final TigerTestEnvMgr tigerTestEnvMgr) {
         this.tigerTestEnvMgr = tigerTestEnvMgr;
@@ -154,5 +157,16 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerTestEnvMgr.receivedResumeTestRunExecution();
         TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Resuming test run").bannerType(BannerType.MESSAGE).bannerColor("green").build();
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
+    }
+
+    @GetMapping(path = "/version")
+    public String getTigerVersion() {
+        log.trace("Fetch requests the tiger version");
+        return tigerProperties.getBuildVersion();
+    }
+    @GetMapping(path = "/build")
+    public String getBuildDate() {
+        log.trace("Fetch requests the build date");
+        return tigerProperties.getBuildDate();
     }
 }

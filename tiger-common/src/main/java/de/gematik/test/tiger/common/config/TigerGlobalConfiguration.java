@@ -64,6 +64,12 @@ public class TigerGlobalConfiguration {
         readYamlFiles();
 
         readAdditionalYamlFiles();
+        printBuildVersionAndDate();
+    }
+
+    static void printBuildVersionAndDate() {
+        TigerProperties tigerProperties = new TigerProperties();
+        log.info(tigerProperties.getFullBuildVersion());
     }
 
     private static void addFreePortVariables() {
