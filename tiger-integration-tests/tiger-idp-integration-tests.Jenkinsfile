@@ -9,7 +9,7 @@ pipeline {
       options {
           disableConcurrentBuilds()
       }
-      agent { label 'Docker-Maven' }
+      agent { label 'k8-maven' }
 
       tools {
           maven 'Default'
@@ -44,9 +44,7 @@ pipeline {
           stage('Tests') {
               steps {
                    withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                       dockerLogin()
                        mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
-                       dockerLogout()
                    }
               }
           }

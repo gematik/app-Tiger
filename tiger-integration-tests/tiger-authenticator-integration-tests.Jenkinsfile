@@ -1,7 +1,7 @@
 @Library('gematik-jenkins-shared-library') _
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
-def REPO_URL = createGitUrl('git/Testtools/tiger/tiger-konnektor-management-extensions')
+def REPO_URL = createGitUrl('git/authenticator/authenticator-testsuite')
 def BRANCH = 'master'
 def POM_PATH = 'pom.xml'
 
@@ -29,7 +29,7 @@ pipeline {
               }
           }
 
-          stage('Set Tiger version in TKME') {
+          stage('Set Tiger version in IDP') {
               steps {
                    sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
               }
@@ -44,8 +44,7 @@ pipeline {
           stage('Tests') {
               steps {
                    withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-//                        mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
-                       mavenVerify(POM_PATH)
+                       mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
                    }
               }
           }
@@ -53,15 +52,7 @@ pipeline {
 
       post {
          always {
-             sendEMailNotification(getTigerEMailList())
-         }
-         success {
-             sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
-             sh """
-                      git add -A
-                      git commit -m "Tiger version updated"
-                      git push origin ${branch}
-                """
+             sendEMailNotification(getAuthenticatorEMailList(), getTigerEMailList())
          }
       }
 }
