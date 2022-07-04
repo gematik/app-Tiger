@@ -52,7 +52,7 @@ pipeline {
 
       post {
          always {
-             sendEMailNotification(getAuthenticatorEMailList(), getTigerEMailList())
+             sendEMailNotification(getAuthenticatorTestsuiteEMailList(), getTigerEMailList())
          }
       }
 }
