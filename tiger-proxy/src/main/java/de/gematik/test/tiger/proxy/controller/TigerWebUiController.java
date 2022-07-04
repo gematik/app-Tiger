@@ -137,53 +137,74 @@ public class TigerWebUiController implements ApplicationContextAware {
                     "/webui/css/all.min.css");
         }
 
-        String navbar = nav().withClass("navbar is-dark is-fixed-bottom not4embedded").with(
-            div().withClass("navbar-menu").with(
-                div().withClass("navbar-start").with(
-                    div().withClass("navbar-item not4embedded").with(
-                        button().withId("routeModalBtn")
-                            .withClass("button is-dark")
-                            .attr("data-target", "routeModalDialog").with(
-                                div().withId("routeModalLed").withClass("led"),
-                                span("Routes")
-                            )
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("scrollLockBtn").withClass("button is-dark").with(
-                            div().withId("scrollLockLed").withClass("led"),
-                            span("Scroll Lock")
-                        )
-                    ),
-                    form().withClass("is-inline-flex").attr("onSubmit", "return false;")
-                        .with(
-                            div().withClass("navbar-item").with(
-                                div().withClass("field").with(
-                                    p().withClass("control has-icons-left").with(
-                                        input().withClass("input is-rounded has-text-dark")
-                                            .withType("text")
-                                            .withPlaceholder("RbelPath filter criterion")
-                                            .withId("setFilterCriterionInput")
-                                            .attr("autocomplete", "on")
-                                    )
+        String navbar;
+
+        if (embedded) {
+            navbar = createNavbar(tigerProxy, "margin-bottom: 4em;", "margin-inline: auto;");
+        } else {
+            navbar = createNavbar(tigerProxy, "", "");
+        }
+
+        String configJSSnippetStr = loadResourceToString("/configScript.html")
+            .replace("${ProxyPort}", String.valueOf(tigerProxy.getProxyPort()))
+            .replace("${FilenamePattern}", applicationConfiguration.getFilenamePattern())
+            .replace("${UploadUrl}", applicationConfiguration.getUploadUrl());
+        return html.replace("<div id=\"navbardiv\"></div>", navbar +
+                loadResourceToString("/routeModal.html") +
+                loadResourceToString("/jexlModal.html") +
+                loadResourceToString("/saveModal.html"))
+            .replace("</body>", configJSSnippetStr + "</body>");
+    }
+
+    private String createNavbar(TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart) {
+        return nav().withClass("navbar is-dark is-fixed-bottom").withStyle(styleNavbar)
+            .with(
+                div().withClass("navbar-menu").with(
+                    div().withClass("navbar-start").withStyle(styleNavbarStart).with(
+                        div().withClass("navbar-item not4embedded").with(
+                            button().withId("routeModalBtn")
+                                .withClass("button is-dark")
+                                .attr("data-target", "routeModalDialog").with(
+                                    div().withId("routeModalLed").withClass("led"),
+                                    span("Routes")
                                 )
-                            ),
-                            div().withClass("navbar-item").with(
-                                button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success")
-                                    .with(
-                                        i().withClass("fas fa-filter"),
-                                        span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
-                                    )
+                        ),
+                        div().withClass("navbar-item not4embedded").with(
+                            button().withId("scrollLockBtn").withClass("button is-dark").with(
+                                div().withId("scrollLockLed").withClass("led"),
+                                span("Scroll Lock")
                             )
                         ),
-                    div().withClass("navbar-item mr-3").with(
-                        div().withId("updateLed").withClass("led "),
-                        radio("1s", "updates", "update1", "1", "updates"),
-                        radio("2s", "updates", "update2", "2", "updates"),
-                        radio("5s", "updates", "update5", "5", "updates"),
-                        radio("Manual", "updates", "noupdate", "0", "updates"),
-                        button("Update").withId("updateBtn").withClass("button is-outlined is-success")
-                    ),
-                    div().withClass("navbar-item ml-3").with(
+                        form().withClass("is-inline-flex").attr("onSubmit", "return false;")
+                            .with(
+                                div().withClass("navbar-item").with(
+                                    div().withClass("field").with(
+                                        p().withClass("control has-icons-left").with(
+                                            input().withClass("input is-rounded has-text-dark")
+                                                .withType("text")
+                                                .withPlaceholder("RbelPath filter criterion")
+                                                .withId("setFilterCriterionInput")
+                                                .attr("autocomplete", "on")
+                                        )
+                                    )
+                                ),
+                                div().withClass("navbar-item").with(
+                                    button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success")
+                                        .with(
+                                            i().withClass("fas fa-filter"),
+                                            span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
+                                        )
+                                )
+                            ),
+                        div().withClass("navbar-item mr-3 not4embedded").with(
+                            div().withId("updateLed").withClass("led "),
+                            radio("1s", "updates", "update1", "1", "updates"),
+                            radio("2s", "updates", "update2", "2", "updates"),
+                            radio("5s", "updates", "update5", "5", "updates"),
+                            radio("Manual", "updates", "noupdate", "0", "updates"),
+                            button("Update").withId("updateBtn").withClass("button is-outlined is-success")
+                        ),
+                    div().withClass("navbar-item ml-3 not4embedded").with(
                         button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
                             i().withClass("far fa-trash-alt"),
                             span("Reset").withClass("ml-2").withStyle("color:inherit;")
@@ -195,13 +216,13 @@ public class TigerWebUiController implements ApplicationContextAware {
                             span("Save").withClass("ml-2").withStyle("color:inherit;")
                         )
                     ),
-                    div().withClass("navbar-item").with(
+                    div().withClass("navbar-item not4embedded").with(
                         button().withId("importMsgs").withClass("button is-outlined is-success").with(
                             i().withClass("far fa-folder-open"),
                             span("Import").withClass("ml-2").withStyle("color:inherit;")
                         )
                     ),
-                    div().withClass("navbar-item").with(
+                    div().withClass("navbar-item not4embedded").with(
                         button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
                             i().withClass("fas fa-upload"),
                             span("Upload").withClass("ml-2").withStyle("color:inherit;")
@@ -211,7 +232,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         span("Proxy port "),
                         b("" + tigerProxy.getProxyPort()).withClass("ml-3")
                     ),
-                    div().withClass("navbar-item").with(
+                    div().withClass("navbar-item not4embedded").with(
                         button().withId("quitProxy").withClass("button is-outlined is-danger").with(
                             i().withClass("fas fa-power-off"),
                             span("Quit").withClass("ml-2").withStyle("color:inherit;")
@@ -220,16 +241,6 @@ public class TigerWebUiController implements ApplicationContextAware {
                 )
             )
         ).render();
-
-        String configJSSnippetStr = loadResourceToString("/configScript.html")
-            .replace("${ProxyPort}", String.valueOf(tigerProxy.getProxyPort()))
-            .replace("${FilenamePattern}", applicationConfiguration.getFilenamePattern())
-            .replace("${UploadUrl}", applicationConfiguration.getUploadUrl());
-        return html.replace("<div id=\"navbardiv\"></div>", navbar +
-                loadResourceToString("/routeModal.html") +
-                loadResourceToString("/jexlModal.html") +
-                loadResourceToString("/saveModal.html"))
-            .replace("</body>", configJSSnippetStr + "</body>");
     }
 
     private String replaceScript(String html) {
