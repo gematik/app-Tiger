@@ -29,6 +29,14 @@ pipeline {
               }
           }
 
+          stage('set Tiger Integrationtest Version for IDP') {
+              steps {
+                script {
+                    mavenSetVersion("TigerIntegrationTest", POM_PATH)
+                }
+              }
+          }
+
           stage('Set Tiger version in IDP') {
               steps {
                    sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
@@ -37,15 +45,13 @@ pipeline {
 
           stage('Build') {
               steps {
-                  mavenBuild(POM_PATH)
+                  mavenBuild(POM_PATH, '-Dskip.unittests -Dskip.inttests')
               }
           }
 
           stage('Tests') {
               steps {
-                   withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                       mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
-                   }
+                   mavenVerify(POM_PATH, '-ntp -Dskip.unittests -Dcucumber.filter.tags="@Approval and not @OpenBug and not @WiP and not @LongRunning"')
               }
           }
       }
