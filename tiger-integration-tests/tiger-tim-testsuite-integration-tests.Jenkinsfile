@@ -1,9 +1,10 @@
 @Library('gematik-jenkins-shared-library') _
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
-def REPO_URL = createGitUrl('git/authenticator/authenticator-testsuite')
-def BRANCH = 'master'
-def POM_PATH = 'pom.xml'
+def REPO_URL = createGitUrl('git/communications/ti-m/ti-m-testsuite')
+def BRANCH = 'main'
+def POM_PATH_TEST = 'testsuite/pom.xml'
+def POM_PATH_BUILD = 'pom.xml'
 
 pipeline {
       options {
@@ -21,6 +22,12 @@ pipeline {
 
       // TODO: TGR-355 "Integrationstest für unwissentliche Changes aufbereiten"
       stages {
+          stage('Initialise') {
+              steps {
+                  useJdk("OPENJDK17")
+              }
+          }
+
           stage('Checkout') {
               steps {
                   git branch: BRANCH,
@@ -29,30 +36,36 @@ pipeline {
               }
           }
 
-          stage('Set Tiger version in Authenticator') {
+          stage('Set Tiger version in TI-M') {
               steps {
-                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH_TEST}"
               }
           }
 
           stage('Build') {
               steps {
-                  mavenBuild(POM_PATH)
+                  mavenBuild(POM_PATH_BUILD)
               }
           }
 
           stage('Tests') {
               steps {
-                   withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                       mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
-                   }
+                  mavenVerify(POM_PATH_TEST, "-P=ci-pipeline")
               }
           }
       }
 
       post {
          always {
-             sendEMailNotification(getAuthenticatorTestsuiteEMailList(), getTigerEMailList())
+             sendEMailNotification(getCommunicationsEMailList(), getTigerEMailList())
+         }
+         success {
+               sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+               sh """
+                        git add -A
+                        git commit -m "Tiger version updated"
+                        git push origin ${BRANCH}
+                  """
          }
       }
 }
