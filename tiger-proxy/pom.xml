@@ -26,19 +26,22 @@
     </dependencyManagement>
 
     <properties>
-        <docker.image.name>tiger-proxy</docker.image.name>
+        <version.commons-jexl3>3.2.1</version.commons-jexl3>
+        <version.io.rest-assured>5.1.1</version.io.rest-assured>
+        <version.jcommander>1.81</version.jcommander>
+        <version.jose4j>0.7.12</version.jose4j>
+        <version.okhttp>4.10.0</version.okhttp>
+        <version.unirest>3.11.11</version.unirest>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
-            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${version.spring-boot}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -63,7 +66,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -72,38 +74,32 @@
         <dependency>
             <artifactId>jose4j</artifactId>
             <groupId>org.bitbucket.b_c</groupId>
-            <version>0.7.9</version>
+            <version>${version.jose4j}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-jexl3</artifactId>
-            <version>3.2.1</version>
+            <version>${version.commons-jexl3}</version>
         </dependency>
         <dependency>
             <artifactId>commons-io</artifactId>
             <groupId>commons-io</groupId>
-            <version>2.7</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bctls-jdk15on</artifactId>
+            <artifactId>bctls-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
-            <version>2.32.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -119,7 +115,7 @@
         <dependency>
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
-            <version>1.81</version>
+            <version>${version.jcommander}</version>
         </dependency>
         <dependency>
             <groupId>io.github.arkinator</groupId>
@@ -139,7 +135,7 @@
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
-            <version>3.11.11</version>
+            <version>${version.unirest}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -149,7 +145,6 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>4.1.0</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
@@ -164,13 +159,13 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.9.0</version>
+            <version>${version.okhttp}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-junit-jupiter</artifactId>
-            <version>5.11.4</version>
+            <version>${version.mockserver}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -179,7 +174,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -231,6 +225,14 @@
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
+            </plugin>
+            <plugin>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
             </plugin>
         </plugins>
     </build>

@@ -29,7 +29,13 @@
         <version.asciidoctorj>2.5.2</version.asciidoctorj>
         <version.asciidoctorj.pdf>1.6.0</version.asciidoctorj.pdf>
         <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
+        <version.bootstrap>5.1.1</version.bootstrap>
+        <version.font-awesome>5.15.4</version.font-awesome>
         <version.selenium>4.1.1</version.selenium>
+        <version.jquery>3.6.0</version.jquery>
+        <version.jquery-ui>1.13.0</version.jquery-ui>
+        <version.jsonschema>4.20.0</version.jsonschema>
+        <version.junit-platform>1.8.2</version.junit-platform>
     </properties>
 
     <dependencyManagement>
@@ -135,22 +141,22 @@
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>bootstrap</artifactId>
-            <version>5.1.1</version>
+            <version>${version.bootstrap}</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>jquery</artifactId>
-            <version>3.6.0</version>
+            <version>${version.jquery}</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>jquery-ui</artifactId>
-            <version>1.13.0</version>
+            <version>${version.jquery-ui}</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>font-awesome</artifactId>
-            <version>5.15.4</version>
+            <version>${version.font-awesome}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -184,29 +190,24 @@
             <version>${version.spring-boot}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-generator</artifactId>
-            <version>4.20.0</version>
+            <version>${version.jsonschema}</version>
         </dependency>
         <dependency>
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-module-jackson</artifactId>
-            <version>4.20.0</version>
+            <version>${version.jsonschema}</version>
         </dependency>
-
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${version.junit5}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>${version.junit5}</version>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
@@ -241,13 +242,12 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
-            <version>1.8.1</version>
+            <version>${version.junit-platform}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.6.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -552,6 +552,14 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
+            </plugin>
+            <plugin>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
             </plugin>
         </plugins>
     </build>

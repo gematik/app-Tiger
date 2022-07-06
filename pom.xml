@@ -82,25 +82,36 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <encoding>UTF-8</encoding>
+
+        <version.assertj>3.22.0</version.assertj>
+        <version.awaitility>4.1.0</version.awaitility>
+        <version.bouncycastle>1.71</version.bouncycastle>
+        <version.commons-io>2.11.0</version.commons-io>
+        <version.commons-lang3>3.12.0</version.commons-lang3>
+        <version.datatable>3.5.0</version.datatable>
+        <version.gson>2.8.6</version.gson>
+        <version.htmlunit>3.55.0</version.htmlunit>
+        <version.jackson>2.12.3</version.jackson>
+        <version.javaparser>3.24.2</version.javaparser>
+        <version.json>20220320</version.json>
+        <version.junit4>4.13.2</version.junit4>
+        <version.junit5>5.8.2</version.junit5>
+        <version.lombok>1.18.24</version.lombok>
+        <version.maven>3.8.6</version.maven>
         <version.maven.failsafe>3.0.0-M6</version.maven.failsafe>
         <version.maven.surefire>3.0.0-M6</version.maven.surefire>
-        <encoding>UTF-8</encoding>
+        <version.maven-plugin-tools>3.6.4</version.maven-plugin-tools>
+        <version.mockserver>5.11.9</version.mockserver>
         <version.rbellogger>0.27.4-268</version.rbellogger>
-        <version.cucumber>7.2.3</version.cucumber>
         <version.serenity.core>3.2.4</version.serenity.core>
         <version.serenity.maven.plugin>3.2.4</version.serenity.maven.plugin>
-        <version.junit5>5.8.1</version.junit5>
-        <version.assertj>3.22.0</version.assertj>
-        <version.jackson>2.12.3</version.jackson>
         <version.slf4j>1.7.32</version.slf4j>
-        <version.junit4>4.13.2</version.junit4>
-        <version.lombok>1.18.22</version.lombok>
-        <version.mockserver>5.11.9</version.mockserver>
-        <version.spring-boot>2.6.6</version.spring-boot>
+        <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spring>5.3.18</version.spring>
-        <version.io.rest-assured>5.0.1</version.io.rest-assured>
-
-        <htmlunit.version>3.55.0</htmlunit.version>
+        <version.spring-boot>2.6.6</version.spring-boot>
+        <version.system-lambda>1.2.0</version.system-lambda>
+        <version.wiremock>2.32.0</version.wiremock>
 
         <sonar.language>java</sonar.language>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -243,13 +254,13 @@
             <dependency>
                 <groupId>io.cucumber</groupId>
                 <artifactId>datatable</artifactId>
-                <version>3.5.0</version>
+                <version>${version.datatable}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.cucumber</groupId>
                 <artifactId>datatable-matchers</artifactId>
-                <version>3.5.0</version>
+                <version>${version.datatable}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -257,7 +268,6 @@
                 <artifactId>assertj-core</artifactId>
                 <version>${version.assertj}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
@@ -273,13 +283,11 @@
                 <artifactId>jackson-annotations</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20220320</version>
+                <version>${version.json}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
@@ -294,11 +302,15 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>${version.junit5}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
+                <version>${version.junit5}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
                 <version>${version.junit5}</version>
             </dependency>
             <dependency>
@@ -309,28 +321,73 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.8.6</version>
+                <version>${version.gson}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.68</version>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${version.bouncycastle}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bctls-jdk15on</artifactId>
-                <version>1.68</version>
+                <artifactId>bctls-jdk18on</artifactId>
+                <version>${version.bouncycastle}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>1.68</version>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${version.bouncycastle}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
                 <artifactId>system-lambda</artifactId>
-                <version>1.2.0</version>
+                <version>${version.system-lambda}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.sonarsource.java</groupId>
+                <artifactId>sonar-jacoco-listeners</artifactId>
+                <version>${version.sonar-jacoco-listeners}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-plugin-api</artifactId>
+                <version>${version.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-core</artifactId>
+                <version>${version.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.plugin-tools</groupId>
+                <artifactId>maven-plugin-annotations</artifactId>
+                <version>${version.maven-plugin-tools}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.commons-io}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.commons-lang3}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.javaparser</groupId>
+                <artifactId>javaparser-core</artifactId>
+                <version>${version.javaparser}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-jre8</artifactId>
+                <version>${version.wiremock}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${version.awaitility}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -341,12 +398,6 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
             <version>${version.lombok}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.sonarsource.java</groupId>
-            <artifactId>sonar-jacoco-listeners</artifactId>
-            <version>3.8</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -383,6 +434,31 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <groupId>org.jacoco</groupId>
+                    <version>0.8.7</version>
+                    <executions>
+                        <execution>
+                            <id>default-prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>default-report</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <version>3.7.0.1746</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -414,32 +490,6 @@
                     </properties>
                     <excludedGroups>${excludedTestGroups}</excludedGroups>
                 </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <groupId>org.jacoco</groupId>
-                <version>0.8.7</version>
-                <executions>
-                    <execution>
-                        <id>default-prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>default-report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- to upload jacoco results to sonar server via mvn sonar:sonar-->
-            <plugin>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <version>3.7.0.1746</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
