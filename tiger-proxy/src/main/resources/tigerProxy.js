@@ -34,6 +34,7 @@ let btnAddRoute;
 let btnScrollLock;
 let ledScrollLock;
 let scrollLock = false;
+let collapseHeader = false;
 
 let testQuitParam = '';
 
@@ -41,6 +42,9 @@ let collapsibleRbel;
 let collapsibleJexl;
 let collapsibleRbelBtn;
 let collapsibleJexlBtn;
+
+let collapsibleHeader;
+let collapsibleHeaderBtn;
 
 const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
@@ -102,6 +106,8 @@ document.addEventListener('DOMContentLoaded', function () {
   saveBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
 
+  collapsibleHeader = document.getElementById("collapsibleHeader");
+  collapsibleHeaderBtn = document.getElementById("collapsibleHeaderBtn");
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -176,6 +182,47 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
 
+  collapsibleHeaderBtn.addEventListener('click',
+      e => {
+        let firstElementOfView = getFirstElementOfViewport();
+        collapseHeader = !collapseHeader;
+        let cardToggles = document.getElementsByClassName('card-toggle');
+        if (collapseHeader) {
+          collapsibleHeader.classList.add("lederror");
+          for (let i = 0; i < cardToggles.length; i++) {
+            const classListChild = cardToggles[i].childNodes[0].childNodes[1].classList;
+            if (classListChild.contains('has-text-primary')) {
+              const classList = cardToggles[i].parentElement.parentElement.childNodes[1].classList;
+              if (!classList.contains('is-hidden')) {
+                classList.add('is-hidden');
+              }
+              const classList2 = cardToggles[i].children[0].children[0].classList;
+              if (classList2.contains("fa-toggle-on")) {
+                classList2.remove("fa-toggle-on");
+                classList2.add("fa-toggle-off");
+              }
+            }
+          }
+        } else {
+          collapsibleHeader.classList.remove("lederror");
+          for (let i = 0; i < cardToggles.length; i++) {
+            const classListChild = cardToggles[i].childNodes[0].childNodes[1].classList;
+            if (classListChild.contains('has-text-primary')) {
+              const classList = cardToggles[i].parentElement.parentElement.childNodes[1].classList;
+              if (classList.contains('is-hidden')) {
+                classList.remove('is-hidden');
+              }
+              const classList2 = cardToggles[i].children[0].children[0].classList;
+              if (classList2.contains("fa-toggle-off")) {
+                classList2.remove("fa-toggle-off");
+                classList2.add("fa-toggle-on");
+              }
+            }
+          }
+        }
+        firstElementOfView.scrollIntoView();
+      });
+
   getAll("input.updates").forEach(function (el) {
     el.addEventListener("click", () => {
       updateTimeout = el.value;
@@ -223,6 +270,18 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Functions
+
+function getFirstElementOfViewport() {
+  var msgList = document.getElementsByClassName("msglist")[0];
+  var el;
+  for (var i = 0; i < msgList.getElementsByClassName("card").length; i++) {
+    el =  msgList.getElementsByClassName("card")[i];
+    if (el.getBoundingClientRect().top >= 0 ) {
+      break;
+    }
+  }
+  return el;
+}
 
 function getAll(selector, baseEl) {
   if (!baseEl) {
@@ -306,6 +365,7 @@ function toggleHelp(e, collapsibleBtn, collapsibleHelp, isDisabledSet = false) {
     e.preventDefault();
 }
 
+
 function closeModals() {
   const $modals = getAll('.modal');
   rootEl.classList.remove('is-clipped');
@@ -313,8 +373,6 @@ function closeModals() {
     $el.classList.remove('is-active');
   });
   btnOpenRouteModal.disabled = false;
-  document.getElementById("routeModalLed").classList.remove("ledactive");
-  document.getElementById("routeModalLed").classList.remove("lederror");
   jexlInspectionResultDiv.classList.add("is-hidden");
   jexlInspectionContextParentDiv.classList.add("is-hidden");
   jexlInspectionNoContextDiv.classList.remove("is-hidden");
@@ -448,6 +506,7 @@ function quitProxy() {
         resetBtn.disabled = true;
         uploadBtn.disabled = true;
         btnScrollLock.disabled = true;
+        collapsibleHeaderBtn.disabled = true;
         btnOpenRouteModal.disabled = true;
         getAll("input.updates").forEach(function (el) {
           el.disabled = true;
@@ -716,8 +775,6 @@ function updateMessageList(json) {
 }
 
 function getRoutes() {
-  document.getElementById("routeModalLed").classList.add("ledactive");
-  document.getElementById("routeModalLed").classList.remove("lederror");
   getAll(
       ".routeListDiv")[0].innerHTML = "<p align=\"center\" class=\"mt-5 mb-5\"><i class=\"fas fa-spinner\"></i> Loading...</p>";
   const xhttp = new XMLHttpRequest();
@@ -731,8 +788,6 @@ function getRoutes() {
         console.log("ERROR " + this.status + " " + this.responseText);
         getAll(".routeListDiv")[0].innerHTML = "ERROR " + this.status + " "
             + this.responseText;
-        document.getElementById("routeModalLed").classList.remove("ledactive");
-        document.getElementById("routeModalLed").classList.add("lederror");
       }
     }
   }

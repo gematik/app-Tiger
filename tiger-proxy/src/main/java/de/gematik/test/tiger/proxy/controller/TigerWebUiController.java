@@ -69,7 +69,6 @@ public class TigerWebUiController implements ApplicationContextAware {
     private final AtomicBoolean versionToBeAdded = new AtomicBoolean(false);
     private boolean versionAdded = false;
 
-
     @Override
     public void setApplicationContext(ApplicationContext appContext) throws BeansException {
         this.applicationContext = appContext;
@@ -156,28 +155,50 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("</body>", configJSSnippetStr + "</body>");
     }
 
+    private String getNavbarItemNot4embedded() {
+        return "navbar-item not4embedded";
+    }
+
+    private String navbarItem() {
+        return "navbar-item";
+    }
+
+    private String darkButton() {
+        return "button is-dark";
+    }
+
+    private String successOutlineButton() {
+        return "button is-outlined is-success";
+    }
+
+
     private String createNavbar(TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart) {
         return nav().withClass("navbar is-dark is-fixed-bottom").withStyle(styleNavbar)
             .with(
                 div().withClass("navbar-menu").with(
                     div().withClass("navbar-start").withStyle(styleNavbarStart).with(
-                        div().withClass("navbar-item not4embedded").with(
-                            button().withId("routeModalBtn")
-                                .withClass("button is-dark")
-                                .attr("data-target", "routeModalDialog").with(
-                                    div().withId("routeModalLed").withClass("led"),
-                                    span("Routes")
-                                )
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("routeModalBtn").withClass(successOutlineButton())
+                            .attr("data-target", "routeModalDialog").with(
+                                i().withClass("fas fa-exchange-alt"),
+                                span("Routes").withClass("ml-2").withStyle("color:inherit;")
+                            )
                         ),
-                        div().withClass("navbar-item not4embedded").with(
-                            button().withId("scrollLockBtn").withClass("button is-dark").with(
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("scrollLockBtn").withClass(darkButton()).with(
                                 div().withId("scrollLockLed").withClass("led"),
                                 span("Scroll Lock")
                             )
                         ),
+                        div().withClass(navbarItem()).with(
+                            button().withId("collapsibleHeaderBtn").withClass(darkButton()).with(
+                                div().withId("collapsibleHeader").withClass("led"),
+                                span("Hide headers")
+                            )
+                        ),
                         form().withClass("is-inline-flex").attr("onSubmit", "return false;")
                             .with(
-                                div().withClass("navbar-item").with(
+                                div().withClass(navbarItem()).with(
                                     div().withClass("field").with(
                                         p().withClass("control has-icons-left").with(
                                             input().withClass("input is-rounded has-text-dark")
@@ -188,51 +209,51 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         )
                                     )
                                 ),
-                                div().withClass("navbar-item").with(
-                                    button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success")
+                                div().withClass(navbarItem()).with(
+                                    button().withId("setFilterCriterionBtn").withClass(successOutlineButton())
                                         .with(
                                             i().withClass("fas fa-filter"),
                                             span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
                                         )
                                 )
                             ),
-                        div().withClass("navbar-item mr-3 not4embedded").with(
+                        div().withClass(getNavbarItemNot4embedded() + " mr-3").with(
                             div().withId("updateLed").withClass("led "),
                             radio("1s", "updates", "update1", "1", "updates"),
                             radio("2s", "updates", "update2", "2", "updates"),
                             radio("5s", "updates", "update5", "5", "updates"),
                             radio("Manual", "updates", "noupdate", "0", "updates"),
-                            button("Update").withId("updateBtn").withClass("button is-outlined is-success")
+                            button("Update").withId("updateBtn").withClass(successOutlineButton())
                         ),
-                    div().withClass("navbar-item ml-3 not4embedded").with(
+                    div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
                         button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
                             i().withClass("far fa-trash-alt"),
                             span("Reset").withClass("ml-2").withStyle("color:inherit;")
                         )
                     ),
                     div().withClass("navbar-item").with(
-                        button().withId("saveMsgs").withClass("button is-outlined is-success").with(
+                        button().withId("saveMsgs").withClass(successOutlineButton()).with(
                             i().withClass("far fa-save"),
                             span("Save").withClass("ml-2").withStyle("color:inherit;")
                         )
                     ),
-                    div().withClass("navbar-item not4embedded").with(
-                        button().withId("importMsgs").withClass("button is-outlined is-success").with(
+                    div().withClass(getNavbarItemNot4embedded()).with(
+                        button().withId("importMsgs").withClass(successOutlineButton()).with(
                             i().withClass("far fa-folder-open"),
                             span("Import").withClass("ml-2").withStyle("color:inherit;")
                         )
                     ),
-                    div().withClass("navbar-item not4embedded").with(
+                    div().withClass(getNavbarItemNot4embedded()).with(
                         button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
-                            i().withClass("fas fa-upload"),
+                            i().withClass("far fa-upload"),
                             span("Upload").withClass("ml-2").withStyle("color:inherit;")
                         )
                     ),
-                    div().withClass("navbar-item").with(
+                    div().withClass(navbarItem()).with(
                         span("Proxy port "),
                         b("" + tigerProxy.getProxyPort()).withClass("ml-3")
                     ),
-                    div().withClass("navbar-item not4embedded").with(
+                    div().withClass(getNavbarItemNot4embedded()).with(
                         button().withId("quitProxy").withClass("button is-outlined is-danger").with(
                             i().withClass("fas fa-power-off"),
                             span("Quit").withClass("ml-2").withStyle("color:inherit;")

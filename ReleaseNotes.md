@@ -24,6 +24,7 @@
 * TGR-548: JEXL Debugging/RbelPath Debugging: help text is now collapsible
 * TGR-547: Tiger Workflow UI now links the scenarios in the feature list section in the sidebar with the scenario and its steps shown in the central execution pane for easier navigation
 * TGR-564: Show timestampes for loaded messages too, some optimizations to reduce vertical spacing in rbel log report. Saving traffic data now is stored in a file with it's name containing the current date
+* RBEL-52: Headers im Rbel-Log in the WorkFlowUI and in the Tiger Proxy WebUI are now collapsable
 
 # Release 0.23.2
 
