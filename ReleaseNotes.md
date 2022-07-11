@@ -11,7 +11,6 @@
 
 ## Bugfixes
 
-* TGR-536: Filtering on the website no longer splits up message-pairs
 * TGR-534: When a shutdown is triggered during Startup External-Jars are now terminated correctly
 * TGR-486: Requirements are now correctly reported when using the Tiger maven plugin to create the serenity report
 * TGR-550: Fixed scenario outlines contain background steps multiple times
