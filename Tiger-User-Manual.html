@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.23.2 - 2022-06-23</span>
+<span id="revdate">Version 0.23.3 - 2022-07-11</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -630,7 +630,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
 
     <span class="tag">&lt;groupId&gt;</span>de.gematik.test.tiger.examples<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>TigerTestBDD<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>1.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>1.0.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 
     <span class="tag">&lt;properties&gt;</span>
         <span class="tag">&lt;maven.compiler.source&gt;</span>11<span class="tag">&lt;/maven.compiler.source&gt;</span>
@@ -642,18 +642,12 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
           or from gematik internal Nexus
           https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
         --&gt;</span>
-        <span class="tag">&lt;version.tiger&gt;</span>0.20.0<span class="tag">&lt;/version.tiger&gt;</span>
-        <span class="tag">&lt;version.serenity.core&gt;</span>3.2.2<span class="tag">&lt;/version.serenity.core&gt;</span>
+        <span class="tag">&lt;version.tiger&gt;</span>0.23.2<span class="tag">&lt;/version.tiger&gt;</span>
+        <span class="tag">&lt;version.serenity.core&gt;</span>3.2.4<span class="tag">&lt;/version.serenity.core&gt;</span>
     <span class="tag">&lt;/properties&gt;</span>
 
     <span class="comment">&lt;!-- tag::dependencies[] --&gt;</span>
     <span class="tag">&lt;dependencies&gt;</span>
-        <span class="tag">&lt;dependency&gt;</span>
-            <span class="tag">&lt;groupId&gt;</span>de.gematik.test<span class="tag">&lt;/groupId&gt;</span>
-            <span class="tag">&lt;artifactId&gt;</span>tiger-test-lib<span class="tag">&lt;/artifactId&gt;</span>
-            <span class="tag">&lt;version&gt;</span>${version.tiger}<span class="tag">&lt;/version&gt;</span>
-            <span class="tag">&lt;type&gt;</span>test-jar<span class="tag">&lt;/type&gt;</span>
-        <span class="tag">&lt;/dependency&gt;</span>
         <span class="tag">&lt;dependency&gt;</span>
             <span class="tag">&lt;groupId&gt;</span>de.gematik.test<span class="tag">&lt;/groupId&gt;</span>
             <span class="tag">&lt;artifactId&gt;</span>tiger-test-lib<span class="tag">&lt;/artifactId&gt;</span>
@@ -1726,6 +1720,8 @@ If it is ever necessary to change the external URL, the test suite does not have
     <span class="comment"># OPTIONAL port of the web user interface and the proxy management</span>
     <span class="comment"># (e.g. rbel-message forwarding)</span>
     <span class="comment"># Default value is empty, which means a random port will be used.</span>
+    <span class="comment"># The chosen port is stored with the key tiger.internal.localproxy.admin.port in</span>
+    <span class="comment"># the TigerGlobalConfiguration</span>
     <span class="key">adminPort</span>: <span class="string"><span class="content">8080</span></span>
     <span class="comment"># OPTIONAL server key of the node this proxy shall be used as reverse proxy for.</span>
     <span class="comment"># If set the routes will be configured appropriately.</span>
@@ -3782,7 +3778,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-06-23 11:44:08 +0200
+Last updated 2022-07-11 11:36:04 +0200
 </div>
 </div>
 </body>
