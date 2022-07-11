@@ -31,6 +31,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import javax.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
@@ -138,7 +140,7 @@ public class TigerDirector {
 
     private static void setupTestEnvironent() {
         if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
-            log.info("\n" + Banner.toBannerStr("SETTING UP TESTENV ...", RbelAnsiColors.BLUE_BOLD.toString()));
+            log.info("\n" + Banner.toBannerStr("SETTING UP TESTENV...", RbelAnsiColors.BLUE_BOLD.toString()));
             tigerTestEnvMgr.setUpEnvironment();
             log.info("\n" + Banner.toBannerStr("TESTENV SET UP OK", RbelAnsiColors.BLUE_BOLD.toString()));
         }
@@ -180,7 +182,7 @@ public class TigerDirector {
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(Map.of("server.port",
-                TigerGlobalConfiguration.readIntegerOptional("free.port.255").orElse(0)))
+                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElse(0)))
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)
@@ -193,7 +195,7 @@ public class TigerDirector {
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
-            TigerTestEnvMgr.openWorkflowUiInBrowser(TigerGlobalConfiguration.readIntegerOptional("free.port.255").get().toString());
+            TigerTestEnvMgr.openWorkflowUiInBrowser(TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElseThrow(() -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!")).toString());
             log.info("Waiting for workflow Ui to fetch status...");
             try {
                 await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofSeconds(1)).until(() -> tigerTestEnvMgr.isWorkflowUiSentFetch());

@@ -125,6 +125,14 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     }
   }
 
+  public getLink(featureName: string): string {
+    if (this.variantIndex === -1) {
+      return featureName.trim() + "_" + this.description.trim();
+    } else {
+      return featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex+1)+"]";
+    }
+  }
+
   public toString() {
     return `{ description: "${this.description}",\nstatus: "${
       this.status

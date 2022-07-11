@@ -40,7 +40,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SerenityReportMojoTest {
+class TigerSerenityReportMojoTest {
 
   @Mock
   private Log log;
@@ -48,19 +48,20 @@ class SerenityReportMojoTest {
   @TempDir
   private Path reportDir;
 
-  private SerenityReportMojo underTest;
+  private TigerSerenityReportMojo underTest;
 
   @BeforeEach
   void setUp() {
-    underTest = new SerenityReportMojo();
+    underTest = new TigerSerenityReportMojo();
     underTest.setLog(log);
     underTest.setReportDirectory(reportDir.toFile());
+    underTest.setRequirementsBaseDir("src/test/resources");
   }
 
   @Test
   @DisplayName("If the report directory does not exist, a warning should be shown")
   @SneakyThrows
-  void execute_IfTheReportDirectoryDoesNotExistAWarningShouldBeShown() {
+  void testIfTheReportDirectoryDoesNotExistAWarningShouldBeShown() {
     // Preparation
     Files.delete(reportDir);
 
@@ -72,9 +73,9 @@ class SerenityReportMojoTest {
   }
 
   @Test
-  @DisplayName("Sollte alle relevanten Reporttypen mit Informationen zu Fehlern enthalten")
+  @DisplayName("Should contain all relevant report info with failure data")
   @SneakyThrows
-  void execute_SollteAlleRelevantenReporttypenMitInformationenZuFehlernEnthalten() {
+  void testShouldContainAllRelevantReportInfoWithFailureData() {
     // Preparation
     prepareReportDir();
 

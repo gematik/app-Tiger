@@ -1,5 +1,31 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.3
+
+## Dependencies
+
+* Serenity BDD 3.2.4
+* RestAssured 5.0.1
+* Selenium 4.1.3
+* Appium 8.0.0
+
+## Bugfixes
+
+* TGR-534: When a shutdown is triggered during Startup External-Jars are now terminated correctly
+* TGR-486: Requirements are now correctly reported when using the Tiger maven plugin to create the serenity report
+* TGR-550: Fixed scenario outlines contain background steps multiple times
+* TGR-524: Tiger local proxy and Tiger WorkflowUI are now running on separate ports not interfering with ports from the free.port.x range
+
+## Features
+
+* TGR-541: Tiger Proxy WebUI now displays message timestamp in the menu
+* TGR-534: Traffic can now be uploaded from the Tiger Proxy WebUI
+* TGR-548: JEXL Debugging/RbelPath Debugging: help text is now collapsible
+* TGR-547: Tiger Workflow UI now links the scenarios in the feature list section in the sidebar with the scenario and its steps shown in the central execution pane for easier navigation
+* TGR-564: Show timestampes for loaded messages too, some optimizations to reduce vertical spacing in rbel log report. Saving traffic data now is stored in a file with it's name containing the current date
+* TGR-578: Headers im Rbel-Log in the WorkFlowUI and in the Tiger Proxy WebUI are now collapsable
+* TGR-551: Improve JEXL Debugging - each node is now linked to update filter
+
 # Release 0.23.2
 
 ## Dependencies
@@ -10,8 +36,9 @@
 * Appium 8.0.0
 
 ## Breaking changes
+
 * TGR-487: glue code "TGR current response at {string} matches as {word}:" now accepts an enums (JSON|XML) instead of strings and deprecated glue code "TGR current response at {string} matches as {word}" is removed
-* TGR-493: The Test library no longer produces a test jar as we moved all BDD stuff to src/main, thus including the tiger-test-lib jar will suffice. Please adapt your pom.xml to not anymore depend on tiger-test-lib test-jar
+* TGR-493: The Test library no longer produces a test jar as we moved all BDD stuff to src/main, thus including the tiger-test-lib jar will suffice. Please adapt your pom.xml to **not any more depend on tiger-test-lib test-jar**
 
 ## Features
 

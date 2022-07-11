@@ -6,7 +6,7 @@
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <relativePath>../pom.xml</relativePath>
-        <version>0.23.2</version>
+        <version>0.23.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,45 +20,45 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
+        <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
+        <version.mockito>4.6.1</version.mockito>
     </properties>
 
     <dependencies>
-        <!-- dependencies to create a plugin -->
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-plugin-api</artifactId>
-            <version>3.8.4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.plugin-tools</groupId>
-            <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.6.4</version>
-            <scope>provided</scope>
-        </dependency>
         <!-- needed for MavenProject class -->
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.8.4</version>
         </dependency>
-        <!-- we dont need any packages here from but it triggers to correct / compliant versions of needed poms
-         like commons io/lang/..., junit5
-         -->
+        <!-- dependencies to create a plugin -->
         <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.maven.plugin-tools</groupId>
+            <artifactId>maven-plugin-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- maven dependencies use older commons io than serenity so pin it... -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
         <!-- using some internal class of this plugin to help with file list includes/excludes -->
         <dependency>
             <groupId>com.google.code.maven-replacer-plugin</groupId>
             <artifactId>maven-replacer-plugin</artifactId>
-            <version>1.4.1</version>
+            <version>${version.maven-replacer-plugin}</version>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-reports</artifactId>
+            <version>${version.serenity.core}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd.maven.plugins</groupId>
+            <artifactId>serenity-maven-plugin</artifactId>
             <version>${version.serenity.core}</version>
         </dependency>
         <dependency>
@@ -70,25 +70,23 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${version.assertj}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>4.3.1</version>
+            <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>4.3.1</version>
+            <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
-            <version>3.24.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -116,6 +114,14 @@
                 <configuration>
                     <show>private</show>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
+            </plugin>
+            <plugin>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
             </plugin>
         </plugins>
     </build>

@@ -24,12 +24,8 @@
           </div>
           <div v-for="(scenario, key) in feature[1].scenarios" :key="key" class="container">
             <div class="truncate-text" :title="`${scenario[1].description}`">
-              <div v-if="scenario[1].variantIndex === -1">
-                {{ scenario[1].description }}
-              </div>
-              <div v-else>
-                {{ scenario[1].description}} [{{scenario[1].variantIndex+1}}]
-              </div>
+              <a class="scenarioLink" v-if="scenario[1].variantIndex === -1" :href="'#' + scenario[1].getLink(feature[1].description)">{{ scenario[1].description }}</a>
+              <a class="scenarioLink" v-else :href="'#' + scenario[1].getLink(feature[1].description)">{{ scenario[1].description }} [{{scenario[1].variantIndex+1}}]</a>
             </div>
           </div>
         </div>
@@ -53,5 +49,9 @@ defineProps<{
 
 .featurelist {
   font-size: 85%;
+}
+.scenarioLink {
+  text-decoration: none;
+  color: var(--gem-primary-400);
 }
 </style>

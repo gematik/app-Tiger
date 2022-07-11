@@ -25,13 +25,11 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelFileWriterUtils;
+import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
-import de.gematik.test.tiger.proxy.data.GetMessagesAfterDto;
-import de.gematik.test.tiger.proxy.data.JexlQueryResponseDto;
-import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
-import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
+import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import j2html.tags.ContainerTag;
@@ -42,7 +40,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collector;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -63,7 +61,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -81,13 +78,15 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private final ApplicationConfiguration applicationConfiguration;
     private ApplicationContext applicationContext;
+    private final AtomicBoolean versionToBeAdded = new AtomicBoolean(false);
+    private boolean versionAdded = false;
 
     @Override
     public void setApplicationContext(ApplicationContext appContext) throws BeansException {
         this.applicationContext = appContext;
     }
 
-    @GetMapping(value = "/trafficLog.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public String downloadTraffic(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
         @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
@@ -121,7 +120,16 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
+        TigerProperties tigerProperties = new TigerProperties();
+        synchronized (versionToBeAdded) {
+            if (!versionAdded) {
+                String versionHtml = "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">" + tigerProperties.getFullBuildVersion() + "</div>";
+                renderer.setSubTitle(versionHtml + renderer.getSubTitle());
+                versionAdded = true;
+            }
+        }
         String html = renderer.getEmptyPage();
+        // hide sidebar
         String targetDiv;
         if (embedded) {
             targetDiv = "<div class=\"column msglist embeddedlist\">";
@@ -139,83 +147,14 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
                     "/webui/css/all.min.css");
         }
-        String navbar = nav().withClass("navbar is-dark is-fixed-bottom not4embedded").with(
-            div().withClass("navbar-menu").with(
-                div().withClass("navbar-start").with(
-                    div().withClass("navbar-item not4embedded").with(
-                        button().withId("routeModalBtn")
-                            .withClass("button is-dark")
-                            .attr("data-target", "routeModalDialog").with(
-                                div().withId("routeModalLed").withClass("led"),
-                                span("Routes")
-                            )
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("scrollLockBtn").withClass("button is-dark").with(
-                            div().withId("scrollLockLed").withClass("led"),
-                            span("Scroll Lock")
-                        )
-                    ),
-                    form().withClass("is-inline-flex").attr("onSubmit", "return false;")
-                        .with(
-                            div().withClass("navbar-item").with(
-                                div().withClass("field").with(
-                                    p().withClass("control has-icons-left").with(
-                                        input().withClass("input is-rounded has-text-dark")
-                                            .withType("text")
-                                            .withPlaceholder("RbelPath filter criterion")
-                                            .withId("setFilterCriterionInput")
-                                            .attr("autocomplete", "on")
-                                    )
-                                )
-                            ),
-                            div().withClass("navbar-item").with(
-                                button().withId("setFilterCriterionBtn").withClass("button is-outlined is-success")
-                                    .with(
-                                        i().withClass("fas fa-filter"),
-                                        span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
-                                    )
-                            )
-                        ),
-                    div().withClass("navbar-item mr-3").with(
-                        div().withId("updateLed").withClass("led "),
-                        radio("1s", "updates", "update1", "1", "updates"),
-                        radio("2s", "updates", "update2", "2", "updates"),
-                        radio("5s", "updates", "update5", "5", "updates"),
-                        radio("Manual", "updates", "noupdate", "0", "updates"),
-                        button("Update").withId("updateBtn").withClass("button is-outlined is-success")
-                    ),
-                    div().withClass("navbar-item ml-3").with(
-                        button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
-                            i().withClass("far fa-trash-alt"),
-                            span("Reset").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("saveMsgs").withClass("button is-outlined is-success").with(
-                            i().withClass("far fa-save"),
-                            span("Save").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
-                            i().withClass("fas fa-upload"),
-                            span("Upload").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass("navbar-item").with(
-                        span("Proxy port "),
-                        b("" + tigerProxy.getProxyPort()).withClass("ml-3")
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("quitProxy").withClass("button is-outlined is-danger").with(
-                            i().withClass("fas fa-power-off"),
-                            span("Quit").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    )
-                )
-            )
-        ).render();
+
+        String navbar;
+
+        if (embedded) {
+            navbar = createNavbar(tigerProxy, "margin-bottom: 4em;", "margin-inline: auto;");
+        } else {
+            navbar = createNavbar(tigerProxy, "", "");
+        }
 
         String configJSSnippetStr = loadResourceToString("/configScript.html")
             .replace("${ProxyPort}", String.valueOf(tigerProxy.getProxyPort()))
@@ -226,6 +165,115 @@ public class TigerWebUiController implements ApplicationContextAware {
                 loadResourceToString("/jexlModal.html") +
                 loadResourceToString("/saveModal.html"))
             .replace("</body>", configJSSnippetStr + "</body>");
+    }
+
+    private String getNavbarItemNot4embedded() {
+        return "navbar-item not4embedded";
+    }
+
+    private String navbarItem() {
+        return "navbar-item";
+    }
+
+    private String darkButton() {
+        return "button is-dark";
+    }
+
+    private String successOutlineButton() {
+        return "button is-outlined is-success";
+    }
+
+
+    private String createNavbar(TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart) {
+        return nav().withClass("navbar is-dark is-fixed-bottom").withStyle(styleNavbar)
+            .with(
+                div().withClass("navbar-menu").with(
+                    div().withClass("navbar-start").withStyle(styleNavbarStart).with(
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("routeModalBtn").withClass(successOutlineButton())
+                            .attr("data-target", "routeModalDialog").with(
+                                i().withClass("fas fa-exchange-alt"),
+                                span("Routes").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("scrollLockBtn").withClass(darkButton()).with(
+                                div().withId("scrollLockLed").withClass("led"),
+                                span("Scroll Lock")
+                            )
+                        ),
+                        div().withClass(navbarItem()).with(
+                            button().withId("collapsibleHeaderBtn").withClass(darkButton()).with(
+                                div().withId("collapsibleHeader").withClass("led"),
+                                span("Hide headers")
+                            )
+                        ),
+                        form().withClass("is-inline-flex").attr("onSubmit", "return false;")
+                            .with(
+                                div().withClass(navbarItem()).with(
+                                    div().withClass("field").with(
+                                        p().withClass("control has-icons-left").with(
+                                            input().withClass("input is-rounded has-text-dark")
+                                                .withType("text")
+                                                .withPlaceholder("RbelPath filter criterion")
+                                                .withId("setFilterCriterionInput")
+                                                .attr("autocomplete", "on")
+                                        )
+                                    )
+                                ),
+                                div().withClass(navbarItem()).with(
+                                    button().withId("setFilterCriterionBtn").withClass(successOutlineButton())
+                                        .with(
+                                            i().withClass("fas fa-filter"),
+                                            span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
+                                        )
+                                )
+                            ),
+                        div().withClass(getNavbarItemNot4embedded() + " mr-3").with(
+                            div().withId("updateLed").withClass("led "),
+                            radio("1s", "updates", "update1", "1", "updates"),
+                            radio("2s", "updates", "update2", "2", "updates"),
+                            radio("5s", "updates", "update5", "5", "updates"),
+                            radio("Manual", "updates", "noupdate", "0", "updates"),
+                            button("Update").withId("updateBtn").withClass(successOutlineButton())
+                        ),
+                    div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
+                        button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
+                            i().withClass("far fa-trash-alt"),
+                            span("Reset").withClass("ml-2").withStyle("color:inherit;")
+                        )
+                    ),
+                    div().withClass("navbar-item").with(
+                        button().withId("saveMsgs").withClass(successOutlineButton()).with(
+                            i().withClass("far fa-save"),
+                            span("Save").withClass("ml-2").withStyle("color:inherit;")
+                        )
+                    ),
+                    div().withClass(getNavbarItemNot4embedded()).with(
+                        button().withId("importMsgs").withClass(successOutlineButton()).with(
+                            i().withClass("far fa-folder-open"),
+                            span("Import").withClass("ml-2").withStyle("color:inherit;")
+                        )
+                    ),
+                    div().withClass(getNavbarItemNot4embedded()).with(
+                        button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
+                            i().withClass("far fa-upload"),
+                            span("Upload").withClass("ml-2").withStyle("color:inherit;")
+                        )
+                    ),
+                    div().withClass(navbarItem()).with(
+                        span("Proxy port "),
+                        b("" + tigerProxy.getProxyPort()).withClass("ml-3")
+                    ),
+                    div().withClass(getNavbarItemNot4embedded()).with(
+                        button().withId("quitProxy").withClass("button is-outlined is-danger").with(
+                            i().withClass("fas fa-power-off"),
+                            span("Quit").withClass("ml-2").withStyle("color:inherit;")
+                        )
+                    )
+                )
+            )
+        ).render();
     }
 
     private String replaceScript(String html) {
@@ -308,7 +356,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         return JexlQueryResponseDto.builder()
             .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
                 .replace(RbelAnsiColors.RESET.toString(), "</span>")
-                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger'>")
+                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger jexlResponseLink' style='cursor: pointer;'>")
                 .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
                 .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
                     "<span class='has-text-primary has-text-weight-bold'>")
@@ -355,7 +403,8 @@ public class TigerWebUiController implements ApplicationContextAware {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
                 }
-                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty());
+                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
+                    || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
             })
             .collect(Collectors.toList());
 
@@ -369,6 +418,18 @@ public class TigerWebUiController implements ApplicationContextAware {
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList()));
         return result;
+    }
+
+    private RbelElement findPartner(RbelElement msg) {
+        return msg.getFacet(TracingMessagePairFacet.class)
+            .map(pairFacet -> {
+                if (pairFacet.getRequest() == msg) {
+                    return pairFacet.getResponse();
+                } else {
+                    return pairFacet.getRequest();
+                }
+            })
+            .orElse(null);
     }
 
     @GetMapping(value = "/resetMsgs", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -396,7 +457,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         }
     }
 
-    @PostMapping(value = "/uploadReport", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/uploadReport")
     public void uploadReport(@RequestBody String htmlReport) {
         if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
             throw new TigerProxyConfigurationException("Upload feature is not configured!");
@@ -476,6 +537,11 @@ public class TigerWebUiController implements ApplicationContextAware {
         } catch (IOException e) {
             throw new TigerRemoteProxyClientException("Failed to upload report to '" + uploadUrl + "'", e);
         }
+    }
+    @PostMapping(value = "/traffic")
+    public void importTrafficFromFile(@RequestBody String rawTraffic) {
+        RbelFileWriterUtils.convertFromRbelFile(
+            rawTraffic, tigerProxy.getRbelLogger().getRbelConverter());
     }
 
     private List<RbelElement> messsages() {

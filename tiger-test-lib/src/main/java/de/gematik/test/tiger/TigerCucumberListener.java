@@ -128,11 +128,13 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
         scenario.setId(currentScenarioId);
         scenarioStepsMap.computeIfAbsent(currentScenarioId, id -> scenario.getSteps());
 
-        if (feature.getBackground() != null) {
-            scenarioStepsMap.get(currentScenarioId).addAll(0, feature.getBackground().getSteps());
-        }
 
         processDataVariantsForScenarioOutlines(scenario);
+        if (feature.getBackground() != null && currentScenarioDataVariantIndex < 1) {
+            // currentScenarioDataVariantIndex -1 so its a normal scenario, add background
+            // currentScenarioDataVariantIndex 0 its an outline so add background to scenario only for first variant
+            scenarioStepsMap.get(currentScenarioId).addAll(0, feature.getBackground().getSteps());
+        }
         informWorkflowUiAboutCurrentScenario(feature, scenario);
 
         currentStepIndex = 0;
@@ -229,10 +231,6 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
                     .bannerColor(m.group(2))
                     .bannerMessage(m.group(4))
                     .build());
-            }
-            if (stepText.endsWith("TGR warte auf Abbruch") || stepText.endsWith("TGR wait for user abort")) {
-                // TODO notify workflow ui for next step button
-                // Eigentlich doch obsolete oder?
             }
         }
         currentStepIndex++;

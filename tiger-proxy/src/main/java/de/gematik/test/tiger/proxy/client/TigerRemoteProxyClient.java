@@ -256,10 +256,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                 .parseMessage(RbelElement.builder()
                     .uuid(uuid)
                     .rawContent(messageBytes)
-                    .build(), sender, receiver);
-
-            transmissionTime.ifPresent(
-                zonedDateTime -> rbelMessage.addFacet(new RbelMessageTimingFacet(zonedDateTime)));
+                    .build(), sender, receiver, transmissionTime);
             return Optional.of(rbelMessage);
         } else {
             log.warn("Received message with content 'null'. Skipping parsing...");

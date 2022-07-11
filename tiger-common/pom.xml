@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.23.2</version>
+        <version>0.23.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,27 +14,29 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <build.date>${maven.build.timestamp}</build.date>
+        <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
+        <version.jfiglet>1.0.0</version.jfiglet>
+        <version.reflection-utils>1.1.0</version.reflection-utils>
+        <version.snakeyaml>1.29</version.snakeyaml>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${version.junit5}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.8.0</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${version.assertj}</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>de.gematik</groupId>
@@ -42,42 +44,35 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
         </dependency>
-
         <!-- Jackson JSON Processor -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${version.jackson}</version>
         </dependency>
         <!-- For YAML -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.29</version>
+            <version>${version.snakeyaml}</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20220320</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bctls-jdk15on</artifactId>
-            <version>1.69</version>
+            <artifactId>bctls-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>5.7.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -94,18 +89,26 @@
         <dependency>
             <groupId>com.github.ekryd.reflection-utils</groupId>
             <artifactId>reflection-utils</artifactId>
-            <version>1.1.0</version>
+            <version>${version.reflection-utils}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.github.dtmo.jfiglet</groupId>
             <artifactId>jfiglet</artifactId>
-            <version>1.0.0</version>
+            <version>${version.jfiglet}</version>
         </dependency>
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/build.properties</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.projectlombok</groupId>
@@ -136,6 +139,14 @@
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
+            </plugin>
+            <plugin>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
             </plugin>
         </plugins>
     </build>

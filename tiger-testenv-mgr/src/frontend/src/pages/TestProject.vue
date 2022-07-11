@@ -54,6 +54,10 @@
           <span>Servers</span>
         </h4>
         <ServerStatus :serverStatusData="currentServerStatus"/>
+        <div class="container">
+          <div class="mt-2 small text-muted" style="margin-left: 1em;"> Tiger version: {{ version }}</div>
+          <div class="mt-2 small text-muted" style="margin-left: 1em;"> Build: {{ build }}</div>
+        </div>
       </div>
 
       <div class="col-md-11" id="main-content">
@@ -175,12 +179,17 @@ let selectedServers: Ref<Array<string>> = ref (new Array<string>("__all__"));
 
 let localProxyWebUiUrl: Ref<string> = ref("");
 
+let version: Ref<string> = ref("");
+let build: Ref<string> = ref("");
+
 let ui = ref(new Ui());
 
 onMounted(() => {
   ui = ref(new Ui());
   connectToWebSocket();
   fetchInitialServerStatus();
+  fetchTigerVersion();
+  fetchTigerBuild();
 });
 
 const DEBUG = true;
@@ -386,6 +395,24 @@ function fetchInitialServerStatus() {
     fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
     fetchedInitialStatus = true;
     debug("FETCH DONE " + currentMessageIndex);
+  });
+}
+
+function fetchTigerVersion() {
+  fetch(baseURL + "status/version")
+  .then((response) => response.text())
+  .then((data) => {
+    debug("FETCH Version: " + data);
+    version.value = data;
+  });
+}
+
+function fetchTigerBuild() {
+  fetch(baseURL + "status/build")
+  .then((response) => response.text())
+  .then((data) => {
+    debug("FETCH Build: " + data);
+    build.value = data;
   });
 }
 

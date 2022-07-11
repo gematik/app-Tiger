@@ -57,6 +57,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -64,7 +65,7 @@ import org.springframework.boot.web.servlet.context.ServletWebServerApplicationC
 
 @Slf4j
 @Getter
-public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener {
+public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener, DisposableBean {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
@@ -134,13 +135,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
         Map<String, Object> properties = new HashMap<>(TigerSerializationUtil.toMap(proxyConfig, "tigerProxy"));
         if (configuration.getTigerProxy().getAdminPort() == 0) {
-            try (ServerSocket serverSocket = new ServerSocket(0)) {
-                properties.put("server.port", Integer.toString(serverSocket.getLocalPort()));
-            } catch (IOException e) {
-                throw new TigerEnvironmentStartupException("Unable to obtain a free local port", e);
-            }
+            int port = TigerGlobalConfiguration.readIntegerOptional("tiger.internal.localproxy.admin.port")
+                .orElseThrow(() -> new TigerEnvironmentStartupException("No free port reserved for local Tiger Proxy admin"));
+            properties.put("server.port", Integer.toString(port));
         } else {
             properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
+            TigerGlobalConfiguration.putValue("tiger.internal.localproxy.port",
+                Integer.toString(configuration.getTigerProxy().getAdminPort()));
         }
         localTigerProxyApplicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
@@ -162,7 +163,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public static void waitForConsoleInput(String textToEnter) {
         Console c = System.console();
-        String message = "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.", RbelAnsiColors.RED_BOLD.toString());
+        String message = "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.",
+            RbelAnsiColors.RED_BOLD.toString());
         if (c != null) {
             String cmd = null;
             while (cmd == null || !cmd.equals(textToEnter)) {
@@ -400,5 +402,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public void resetUserAcknowledgedContinueTestRun() {
         userAcknowledgedContinueTestRun = false;
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        shutDown();
     }
 }

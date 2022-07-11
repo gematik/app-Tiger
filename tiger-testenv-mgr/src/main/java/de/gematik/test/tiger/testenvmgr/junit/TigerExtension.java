@@ -117,7 +117,7 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(Map.of("server.port",
-                TigerGlobalConfiguration.readIntegerOptional("free.port.255").orElse(0)))
+                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElse(0)))
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .initializers()

@@ -43,5 +43,4 @@ public class TigerTestEnvMgrApplication implements ServletContextListener {
         log.info(Ansi.colorize("Tiger standalone test environment manager UP!", RbelAnsiColors.GREEN_BOLD));
         return envMgr;
     }
-
 }

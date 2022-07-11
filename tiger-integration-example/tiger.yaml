@@ -1,5 +1,6 @@
 tigerProxy:
   skipTrafficEndpointsSubscription: true
+  # adminPort: 8080
   trafficEndpoints:
     - http://localhost:${free.port.2}
 
@@ -14,10 +15,12 @@ servers:
       arguments:
         - --httpPort=${free.port.0}
         - --webroot=.
+        - --debug=9
 
   remoteTigerProxy:
     type: tigerProxy
     tigerProxyCfg:
+      proxyLogLevel: "TRACE"
       adminPort: ${free.port.2}
       activateRbelParsing: false
       rbelBufferSizeInMb: 0

@@ -22,10 +22,10 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +41,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.yaml.snakeyaml.DumperOptions;
@@ -50,11 +51,12 @@ import org.yaml.snakeyaml.Yaml;
 @Slf4j
 public class TigerAdminUiController {
 
-
+    private TigerProperties tigerProperties = new TigerProperties();
     static String templatesYaml;
 
-    @GetMapping("/")
-    public String getStartPage() {
+    @GetMapping( "/")
+    public String getStartPage( Model model) {
+        model.addAttribute("tigerVersion", tigerProperties.getFullBuildVersion());
         return "adminui";
     }
 
