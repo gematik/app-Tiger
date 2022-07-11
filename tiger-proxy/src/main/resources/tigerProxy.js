@@ -38,13 +38,13 @@ let collapseHeader = false;
 
 let testQuitParam = '';
 
-let collapsibleRbel;
-let collapsibleJexl;
 let collapsibleRbelBtn;
 let collapsibleJexlBtn;
 
 let collapsibleHeader;
 let collapsibleHeaderBtn;
+
+let jexlResponseLink;
 
 const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
@@ -96,12 +96,14 @@ document.addEventListener('DOMContentLoaded', function () {
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
   ledScrollLock = document.getElementById("scrollLockLed");
-  collapsibleRbel = document.getElementById("rbel-help");
-  collapsibleJexl = document.getElementById("jexl-help");
   collapsibleRbelBtn = document.getElementById("rbel-help-icon");
   collapsibleJexlBtn = document.getElementById("jexl-help-icon");
-  collapsibleRbelBtn.addEventListener('click', (e) => {toggleHelp(null, collapsibleRbelBtn, collapsibleRbel)});
-  collapsibleJexlBtn.addEventListener('click', (e) => {toggleHelp(null, collapsibleJexlBtn, collapsibleJexl)});
+  collapsibleRbelBtn.addEventListener('click', (e) => {
+    toggleHelp(collapsibleRbelBtn, "rbel-help");
+  });
+  collapsibleJexlBtn.addEventListener('click', (e) => {
+    toggleHelp(collapsibleJexlBtn, "jexl-help")
+  });
   btnOpenRouteModal.addEventListener('click', showModalsCB);
   saveBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
@@ -141,9 +143,10 @@ document.addEventListener('DOMContentLoaded', function () {
     closeModals();
     saveHtmlToLocal();
   });
+
   function todayAsString() {
     var now = new Date();
-    var dateStr = padStr(now.getFullYear()-2000) +
+    var dateStr = padStr(now.getFullYear() - 2000) +
         padStr(1 + now.getMonth()) +
         padStr(now.getDate());
     return dateStr;
@@ -155,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById("saveTrafficBtn")
   .addEventListener('click', e => {
-    e.preventDefault();
     closeModals();
     const a = document.createElement('a');
     a.style.display = 'none';
@@ -164,63 +166,42 @@ document.addEventListener('DOMContentLoaded', function () {
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
+    e.preventDefault();
+    return false;
   });
   btnOpenRouteModal.addEventListener('click',
-      e => {
+      () => {
         btnOpenRouteModal.disabled = true;
         getRoutes();
         updateAddRouteBtnState();
       });
 
   btnScrollLock.addEventListener('click',
-      e => {
+      () => {
         scrollLock = !scrollLock;
-        if (scrollLock) {
-          ledScrollLock.classList.add("lederror");
-        } else {
-          ledScrollLock.classList.remove("lederror");
-        }
+        ledScrollLock.classList.toggle("lederror", scrollLock);
       });
 
   collapsibleHeaderBtn.addEventListener('click',
-      e => {
-        let firstElementOfView = getFirstElementOfViewport();
+      () => {
+        const firstElementOfView = getFirstElementOfViewport();
         collapseHeader = !collapseHeader;
         let cardToggles = document.getElementsByClassName('card-toggle');
-        if (collapseHeader) {
-          collapsibleHeader.classList.add("lederror");
-          for (let i = 0; i < cardToggles.length; i++) {
-            const classListChild = cardToggles[i].childNodes[0].childNodes[1].classList;
-            if (classListChild.contains('has-text-primary')) {
-              const classList = cardToggles[i].parentElement.parentElement.childNodes[1].classList;
-              if (!classList.contains('is-hidden')) {
-                classList.add('is-hidden');
-              }
-              const classList2 = cardToggles[i].children[0].children[0].classList;
-              if (classList2.contains("fa-toggle-on")) {
-                classList2.remove("fa-toggle-on");
-                classList2.add("fa-toggle-off");
-              }
-            }
+        collapsibleHeader.classList.toggle("lederror", collapseHeader);
+
+        Array.from(cardToggles).forEach(cardToggle => {
+          const classListChild = cardToggle.childNodes[0].childNodes[1].classList;
+          if (classListChild.contains('has-text-primary')) {
+            cardToggle.parentElement.parentElement.childNodes[1].classList.toggle('is-hidden', collapseHeader);
+            setCollapsableIcon(cardToggle.children[0].children[0], collapseHeader);
           }
-        } else {
-          collapsibleHeader.classList.remove("lederror");
-          for (let i = 0; i < cardToggles.length; i++) {
-            const classListChild = cardToggles[i].childNodes[0].childNodes[1].classList;
-            if (classListChild.contains('has-text-primary')) {
-              const classList = cardToggles[i].parentElement.parentElement.childNodes[1].classList;
-              if (classList.contains('is-hidden')) {
-                classList.remove('is-hidden');
-              }
-              const classList2 = cardToggles[i].children[0].children[0].classList;
-              if (classList2.contains("fa-toggle-off")) {
-                classList2.remove("fa-toggle-off");
-                classList2.add("fa-toggle-on");
-              }
-            }
-          }
+        });
+        if (firstElementOfView) {
+          window.setTimeout(() => {
+            firstElementOfView.scrollIntoView();
+            window.scrollBy(0, -15);
+          }, 50);
         }
-        firstElementOfView.scrollIntoView();
       });
 
   getAll("input.updates").forEach(function (el) {
@@ -273,14 +254,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function getFirstElementOfViewport() {
   var msgList = document.getElementsByClassName("msglist")[0];
-  var el;
-  for (var i = 0; i < msgList.getElementsByClassName("card").length; i++) {
-    el =  msgList.getElementsByClassName("card")[i];
-    if (el.getBoundingClientRect().top >= 0 ) {
-      break;
-    }
-  }
-  return el;
+  const messages = msgList.children;
+  const element = Array.from(messages).find(msg => {
+    const rect = msg.getBoundingClientRect();
+    return rect.top >= 0 && rect.width > 0 && rect.height > 0;
+  });
+  return element ? element : (messages.length ? messages[0] : undefined);
 }
 
 function getAll(selector, baseEl) {
@@ -350,21 +329,14 @@ function showModalsCB(e) {
   return false;
 }
 
-function toggleHelp(e, collapsibleBtn, collapsibleHelp, isDisabledSet = false) {
+function toggleHelp(collapsibleBtn, collapsibleHelpId, isDisabledSet = false) {
+  const collapsibleHelp = document.getElementById(collapsibleHelpId);
   const classList = collapsibleBtn.classList;
-  if (classList.contains("fa-toggle-on") || ((isDisabledSet) && isDisabledSet == true)) {
-    classList.remove("fa-toggle-on");
-    classList.add("fa-toggle-off");
-    collapsibleHelp.style.display = "none";
-  } else {
-    classList.add("fa-toggle-on");
-    classList.remove("fa-toggle-off");
-    collapsibleHelp.style.display = "block";
-  }
-  if (e)
-    e.preventDefault();
+  const flag = classList.contains("fa-toggle-on") || ((isDisabledSet) && isDisabledSet == true);
+  classList.toggle("fa-toggle-on", !flag);
+  classList.toggle("fa-toggle-off", flag);
+  collapsibleHelp.style.display = flag ? "none" : "block";
 }
-
 
 function closeModals() {
   const $modals = getAll('.modal');
@@ -381,7 +353,10 @@ function closeModals() {
 function enableCardToggles() {
   let cardToggles = document.getElementsByClassName('toggle-icon');
   for (let i = 0; i < cardToggles.length; i++) {
-    cardToggles[i].addEventListener('click', toggleCardCB);
+    if (!cardToggles[i].id ||
+        (cardToggles[i].id !== "rbel-help-icon" && cardToggles[i].id !== "jexl-help-icon")) {
+      cardToggles[i].addEventListener('click', toggleCardCB);
+    }
   }
 }
 
@@ -398,14 +373,8 @@ function enableCollapseExpandAll() {
   document.getElementById("collapse-all").addEventListener('click', e => {
     for (let i = 0; i < cardToggles.length; i++) {
       const classList = cardToggles[i].parentElement.parentElement.childNodes[1].classList;
-      if (!classList.contains('is-hidden')) {
-        classList.add('is-hidden');
-      }
-      const classList2 = cardToggles[i].children[0].children[1].classList;
-      if (classList2.contains("fa-toggle-on")) {
-        classList2.remove("fa-toggle-on");
-        classList2.add("fa-toggle-off");
-      }
+      classList.toggle('is-hidden', true);
+      setCollapsableIcon(cardToggles[i].children[0].children[1], true);
     }
     e.preventDefault();
     return false;
@@ -414,14 +383,8 @@ function enableCollapseExpandAll() {
   document.getElementById("expand-all").addEventListener('click', e => {
     for (let i = 0; i < cardToggles.length; i++) {
       const classList = cardToggles[i].parentElement.parentElement.childNodes[1].classList;
-      if (classList.contains('is-hidden')) {
-        classList.remove('is-hidden');
-      }
-      const classList2 = cardToggles[i].children[0].children[1].classList;
-      if (classList2.contains("fa-toggle-off")) {
-        classList2.remove("fa-toggle-off");
-        classList2.add("fa-toggle-on");
-      }
+      classList.toggle('is-hidden', false);
+      setCollapsableIcon(cardToggles[i].children[0].children[1], false);
     }
     e.preventDefault();
     return false;
@@ -430,13 +393,15 @@ function enableCollapseExpandAll() {
 
 function toggleCollapsableIcon(target) {
   const classList = target.classList;
-  if (classList.contains("fa-toggle-on")) {
-    classList.remove("fa-toggle-on");
-    classList.add("fa-toggle-off");
-  } else {
-    classList.add("fa-toggle-on");
-    classList.remove("fa-toggle-off");
-  }
+  const flag = classList.contains("fa-toggle-on");
+  classList.toggle("fa-toggle-on", !flag);
+  classList.toggle("fa-toggle-off", flag);
+}
+
+function setCollapsableIcon(target, collapsed) {
+  const classList = target.classList;
+  classList.toggle("fa-toggle-on", !collapsed);
+  classList.toggle("fa-toggle-off", collapsed);
 }
 
 function pollMessages() {
@@ -620,7 +585,7 @@ function copyToFilter() {
 }
 
 function executeJexlQuery() {
-  toggleHelp(null, collapsibleJexlBtn, collapsibleJexl, true);
+  toggleHelp(collapsibleJexlBtn, "jexl-help", true);
   const xhttp = new XMLHttpRequest();
   let jexlQuery = document.getElementById("jexlQueryInput").value;
   xhttp.open("GET", "/webui/testJexlQuery"
@@ -664,7 +629,7 @@ function executeJexlQuery() {
 }
 
 function testRbelExpression() {
-  toggleHelp(null, collapsibleRbelBtn, collapsibleRbel, true);
+  toggleHelp(collapsibleRbelBtn, "rbel-help", true);
   const xhttp = new XMLHttpRequest();
   let rbelPath = document.getElementById("rbelExpressionInput").value;
   xhttp.open("GET", "/webui/testRbelExpression"
@@ -685,12 +650,40 @@ function testRbelExpression() {
         });
         document.getElementById("rbelResult").innerHTML =
             rbelResultTree;
+        setAddEventListener();
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
       }
     }
   }
   xhttp.send();
+}
+
+function setAddEventListener() {
+  const jexlResponseLinks = document.getElementsByClassName("jexlResponseLink");
+  Array.from(jexlResponseLinks).forEach(element => {
+    element.addEventListener('click', (e) => copyPathToInputField(e, element));
+  });
+}
+
+function copyPathToInputField(event, element) {
+  event.preventDefault();
+  var text = element.textContent;
+  var el = element.previousElementSibling;
+  var marker = el.textContent;
+  while (el != null) {
+    if (el.classList) {
+      if (el.classList.contains('jexlResponseLink')) {
+        if (el.previousElementSibling.classList.contains('has-text-primary') &&
+            el.previousElementSibling.textContent.length < marker.length) {
+          text = el.textContent + "." + text;
+          marker = el.previousElementSibling.textContent;
+        }
+      }
+    }
+    el = el.previousElementSibling;
+  }
+  document.getElementById("rbelExpressionInput").value = "$." + text;
 }
 
 function shortenStrings(obj) {
@@ -775,6 +768,8 @@ function updateMessageList(json) {
 }
 
 function getRoutes() {
+  document.getElementById("routeModalLed").classList.add("ledactive");
+  document.getElementById("routeModalLed").classList.remove("lederror");
   getAll(
       ".routeListDiv")[0].innerHTML = "<p align=\"center\" class=\"mt-5 mb-5\"><i class=\"fas fa-spinner\"></i> Loading...</p>";
   const xhttp = new XMLHttpRequest();
@@ -788,6 +783,8 @@ function getRoutes() {
         console.log("ERROR " + this.status + " " + this.responseText);
         getAll(".routeListDiv")[0].innerHTML = "ERROR " + this.status + " "
             + this.responseText;
+        document.getElementById("routeModalLed").classList.remove("ledactive");
+        document.getElementById("routeModalLed").classList.add("lederror");
       }
     }
   }

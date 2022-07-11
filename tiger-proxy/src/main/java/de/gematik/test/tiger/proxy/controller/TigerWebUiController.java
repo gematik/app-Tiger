@@ -344,7 +344,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         return JexlQueryResponseDto.builder()
             .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
                 .replace(RbelAnsiColors.RESET.toString(), "</span>")
-                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger'>")
+                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger jexlResponseLink' style='cursor: pointer;'>")
                 .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
                 .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
                     "<span class='has-text-primary has-text-weight-bold'>")

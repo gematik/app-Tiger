@@ -67,7 +67,6 @@ function sendContinue(event: MouseEvent) {
   bottom: 0;
   margin: 0;
   width: 50%;
-  z-index: 20000;
   padding: 0.5rem;
   background: rgba(234, 236, 245, 0.9); /* --gem-primary-400) */
   border: 1px solid var(--gem-primary-400);
