@@ -44,24 +44,29 @@ pipeline {
           stage('Tests') {
               steps {
                    withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-//                        mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
                        mavenVerify(POM_PATH)
                    }
               }
           }
+
+           stage('Commit new Tiger version when needed') {
+               steps {
+                   catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                          sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                          sh """
+                              git add -A
+                              git commit -m "Tiger version updated"
+                              git push origin ${BRANCH}
+
+                          """
+                   }
+               }
+           }
       }
 
       post {
-         always {
-             sendEMailNotification(getTigerEMailList())
-         }
-         success {
-             sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
-             sh """
-                      git add -A
-                      git commit -m "Tiger version updated"
-                      git push origin ${branch}
-                """
-         }
+          always {
+             sendEMailNotification(getCommunicationsEMailList(), getTigerEMailList())
+          }
       }
 }
