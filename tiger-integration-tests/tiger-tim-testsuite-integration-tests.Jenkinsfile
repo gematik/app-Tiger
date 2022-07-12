@@ -57,7 +57,7 @@ pipeline {
           stage('Commit new Tiger version when needed') {
               steps {
                     catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                        sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                        sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH_TEST}"
                         sh """
                         git add -A
                         git commit -m "Tiger version updated"
