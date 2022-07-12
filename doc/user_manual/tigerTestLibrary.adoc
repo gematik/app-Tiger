@@ -55,9 +55,6 @@ The curl command shown in that section in the report allows to repeat the perfor
 
 After each scenario / data variant all collected RbelMessages are saved as HTML file to the `target/rbellogs` folder, and attached to the SerenityBDD report as test evidence. The current test run state (success/failed rate) is logged to the console.
 
-The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.
-Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports, using the Tiger test framework from non Cucumber test drivers, ...etc.
-
 NOTE: For now, the TigerDirector, TigerCucumberRunner, TigerCucumberListener are only for internal use and do not provide any implementation of the aforementioned features.
 
 === Using the Cucumber Tiger validation steps

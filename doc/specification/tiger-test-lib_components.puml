@@ -23,7 +23,7 @@ skinparam interface {
 
     component TigerProxy as tp <<Other>>
     component TigerEnvMgr as tem <<Other>>
-    component polc <<Other>> [PolarionConnector
+    component polc <<Other>> [PolarionToolbox
       ===
       parses feature files for annotated scenarios
       imports those scenarios as test cases to Polarion

@@ -47,11 +47,8 @@ import org.springframework.context.ConfigurableApplicationContext;
  * <ul>
  *     <li>read and apply Tiger test framework configuration from tiger.yaml</li>
  *     <li>start workflow UI, Tiger test environment manager and local Tiger Proxy</li>
- *     <li>Sync test cases with Polarion</li>
- *     <li>Sync test reports with Aurora and Polarion</li>
- *     <li>Create requirement coverage report based on @Afo annotations and requirements downloaded from Polarion</li>
  * </ul>
- * It also provides access to the Tiger test environment manager, the local Tiger Proxy and the Monitor UI interface.
+ * It also provides access to the Tiger test environment manager, the local Tiger Proxy and the Workflow UI interface.
  */
 @SuppressWarnings("unused")
 @Slf4j
@@ -233,33 +230,6 @@ public class TigerDirector {
     public static TigerTestEnvMgr getTigerTestEnvMgr() {
         assertThatTigerIsInitialized();
         return tigerTestEnvMgr;
-    }
-
-    public static void synchronizeTestCasesWithPolarion() {
-        assertThatTigerIsInitialized();
-
-        if (TigerGlobalConfiguration.readBoolean("TIGER_SYNC_TESTCASES", false)) {
-            try {
-                Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
-                    .getDeclaredMethod("main", String[].class);
-                String[] args = new String[]{"-m", "tcimp", "-dryrun"};
-                // TODO TGR-251 - read from tiger-testlib.yaml or env vars values for -h -u -p -prj -aq -fd -f -bdd
-
-                log.info("Syncing test cases with Polarion...");
-                polarionToolBoxMain.invoke(null, (Object[]) args);
-                log.info("Test cases synched with Polarion...");
-            } catch (NoSuchMethodException | ClassNotFoundException e) {
-                throw new TigerLibraryException("Unable to access Polarion Toolbox! "
-                    + "Be sure to have it included in mvn dependencies.", e);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new TigerLibraryException("Unable to call Polarion Toolbox's main method!", e);
-            }
-        }
-    }
-
-    public static void createAfoRepoort() {
-        assertThatTigerIsInitialized();
-        // TODO TGR-259 (see architecture decision about pluggable (TGR-253)) create Aforeport and embedd it into serenity report
     }
 
     public static String getLocalTigerProxyUrl() {

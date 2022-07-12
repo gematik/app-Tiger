@@ -38,7 +38,7 @@ rectangle "Current test project" as tiger {
       AfoReporter
       TestCodeParser
       TestResultParser
-      PolarionConnector
+      PolarionToolbox
       SerenityIntegration
     ]
 
