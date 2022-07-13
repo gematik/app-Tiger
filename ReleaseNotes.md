@@ -1,5 +1,18 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.4
+
+## Dependencies
+
+* Serenity BDD 3.2.4
+* RestAssured 5.0.1
+* Selenium 4.1.3
+* Appium 8.0.0
+
+## Bugfixes
+
+* TGR-561: Generated files from the tiger-maven-plugin now have leading zeros, so they execute in ascending order
+
 # Release 0.23.3
 
 ## Dependencies

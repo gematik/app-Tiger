@@ -71,7 +71,7 @@ public class DriverGenerator {
         final String featurePath)
         throws IOException {
         final String currentDriverClassName = driverClassName.replace(COUNTER_REPLACEMENT_TOKEN,
-            String.valueOf(ctr));
+            String.format("%03d", ctr));
 
         final String driverSourceCode = driverClassSourceCode(ctr, featurePath,
             currentDriverClassName);
