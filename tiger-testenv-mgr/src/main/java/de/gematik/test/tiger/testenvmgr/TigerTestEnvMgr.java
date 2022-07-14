@@ -190,6 +190,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                 log.warn("Unable to open input stream from console! Continuing with test run...", e);
             }
         }
+        log.info("Step wait acknowledged. Continueing...");
     }
 
     private static void readTemplates() {

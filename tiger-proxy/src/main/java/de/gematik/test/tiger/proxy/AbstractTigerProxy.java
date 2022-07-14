@@ -7,7 +7,6 @@ package de.gematik.test.tiger.proxy;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
@@ -25,20 +24,16 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @Data
 public abstract class AbstractTigerProxy implements ITigerProxy {
 
@@ -51,12 +46,15 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private final TigerProxyConfiguration tigerProxyConfiguration;
     private RbelLogger rbelLogger;
     private Optional<String> name;
+    @Getter
+    protected final org.slf4j.Logger log;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         this(configuration, null);
     }
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
+        log = LoggerFactory.getLogger(AbstractTigerProxy.class);
         name = Optional.ofNullable(configuration.getName());
         if (configuration.getTls() == null) {
             throw new TigerProxyStartupException("no TLS-configuration found!");

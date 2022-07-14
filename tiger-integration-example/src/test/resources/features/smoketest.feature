@@ -12,7 +12,7 @@ Feature: Test Tiger BDD
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR show banner "Starting üöäß <txt>..."
-    # And TGR pausiere Testausführung
+    #And TGR pausiere Testausführung
     When User requests the startpage
     Then TGR find request to path "/"
     And TGR print current request as rbel-tree

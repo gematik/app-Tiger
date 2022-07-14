@@ -9,6 +9,7 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
+import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
 import java.io.File;
 import org.slf4j.LoggerFactory;
@@ -77,5 +78,14 @@ public class TigerServerLogManager  {
         customerAppender.start();
 
         return customerAppender;
+    }
+
+    public static void addProxyCustomerAppender(TigerProxyServer tigerProxyServer) {
+        ch.qos.logback.classic.Logger logbackLogger = ((ch.qos.logback.classic.Logger)tigerProxyServer.getTigerProxy().getLog());
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        CustomerProxyAppender customerAppender = new CustomerProxyAppender(tigerProxyServer);
+        customerAppender.setContext(loggerContext);
+        customerAppender.start();
+        logbackLogger.addAppender(customerAppender);
     }
 }

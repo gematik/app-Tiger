@@ -34,7 +34,6 @@ import javax.net.ssl.X509TrustManager;
 import kong.unirest.Unirest;
 import kong.unirest.apache.ApacheClient;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.utils.URIBuilder;
@@ -55,7 +54,6 @@ import org.mockserver.socket.tls.KeyAndCertificateFactory;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 import org.mockserver.socket.tls.NettySslContextFactory;
 
-@Slf4j
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     private final List<TigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();

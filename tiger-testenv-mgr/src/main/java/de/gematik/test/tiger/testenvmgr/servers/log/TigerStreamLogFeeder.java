@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers.log;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,8 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 public class TigerStreamLogFeeder {
-
-
     public TigerStreamLogFeeder(Logger log, InputStream inputStream, Level logLevel) {
         new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
