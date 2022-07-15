@@ -12,7 +12,7 @@ Feature: Test Tiger BDD
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR show banner "Starting üöäß <txt>..."
-    #And TGR pausiere Testausführung
+    #And TGR pausiere Testausführung mit Nachricht "Bitte einmal im Kreis drehen"
     When User requests the startpage
     Then TGR find request to path "/"
     And TGR print current request as rbel-tree
@@ -25,6 +25,7 @@ Feature: Test Tiger BDD
 
   Scenario: Simple first test
     Given TGR show banner "text2"
+    #And TGR pausiere Testausführung
     Given TGR show red banner "Starting Demo..."
     When User requests the startpage
     Then TGR find request to path "/"
@@ -33,6 +34,7 @@ Feature: Test Tiger BDD
 
   Scenario: Test Find Last Request
     Given TGR show banner "text1"
+    #And TGR pausiere Testausführung mit Nachricht "Regnet es draußen?" und Meldung im Fehlerfall "Es scheint die Sonne"
     Then User requests "/classes" with parameter "foobar=1"
     Then User requests "/classes" with parameter "foobar=2"
     Then TGR find last request to path "/classes"

@@ -9,6 +9,10 @@
 * Selenium 4.1.3
 * Appium 8.0.0
 
+## Features
+
+* TGR-580: Added two new steps "TGR pause test run execution with message {string}" and "TGR pause test run execution with message {string} and message in case of error {string}". The first one is the same as "TGR pause test run execution" but you can alter the message now. The second one gives you the choice to fail the testcase, if whatever you are waiting for or checking is not like you expected. All three steps are Workflow UI only now.
+
 ## Bugfixes
 
 * TGR-561: Generated files from the tiger-maven-plugin now have leading zeros, so they execute in ascending order

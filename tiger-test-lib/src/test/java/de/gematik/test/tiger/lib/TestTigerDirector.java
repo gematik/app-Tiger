@@ -18,21 +18,15 @@ import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Permission;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Unirest;
 import lombok.SneakyThrows;
 import net.serenitybdd.rest.SerenityRest;
-import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -205,7 +199,7 @@ class TestTigerDirector {
 
                     await().atMost(400, TimeUnit.MILLISECONDS)
                         .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
-                    TigerDirector.getTigerTestEnvMgr().resetUserAcknowledgedContinueTestRun();
+                    TigerDirector.getTigerTestEnvMgr().resetUserInput();
                     assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
                 }));
     }

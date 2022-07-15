@@ -73,6 +73,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     private boolean userAcknowledgedShutdown = false;
     private boolean userAcknowledgedContinueTestRun = false;
+    private boolean userAcknowledgedFailingTestRun = false;
 
     @Setter
     @Getter
@@ -389,8 +390,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         userAcknowledgedContinueTestRun = true;
     }
 
-    public void resetUserAcknowledgedContinueTestRun() {
+    public void receivedCancelTestRunExecution() {
+        userAcknowledgedFailingTestRun = true;
+    }
+
+    public void resetUserInput() {
         userAcknowledgedContinueTestRun = false;
+        userAcknowledgedFailingTestRun = false;
     }
 
     @Override

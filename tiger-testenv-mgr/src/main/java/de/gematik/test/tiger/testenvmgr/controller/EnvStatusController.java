@@ -145,12 +145,12 @@ public class EnvStatusController implements TigerUpdateListener {
         return tigerEnvStatus;
     }
 
-
     @GetMapping(path = "/quit")
     public void getConfirmQuit() {
         log.trace("Fetch request to getQuit() received");
         tigerTestEnvMgr.receivedUserAcknowledgementForShutdown();
     }
+
     @GetMapping(path = "/continueExecution")
     public void getConfirmContinueExecution() {
         log.trace("Fetch request to continueExecution() received");
@@ -159,11 +159,20 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 
+    @GetMapping(path = "/failExecution")
+    public void getConfirmToFailExecution() {
+        log.trace("Fetch request to failExecution() received");
+        tigerTestEnvMgr.receivedCancelTestRunExecution();
+        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Ending test run").bannerType(BannerType.MESSAGE).bannerColor("red").build();
+        tigerTestEnvMgr.receiveTestEnvUpdate(update);
+    }
+
     @GetMapping(path = "/version")
     public String getTigerVersion() {
         log.trace("Fetch requests the tiger version");
         return tigerProperties.getBuildVersion();
     }
+
     @GetMapping(path = "/build")
     public String getBuildDate() {
         log.trace("Fetch requests the build date");
