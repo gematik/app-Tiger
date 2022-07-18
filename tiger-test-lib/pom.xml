@@ -18,7 +18,7 @@
         <version.commons-collections4>4.4</version.commons-collections4>
         <version.cucumber>7.2.3</version.cucumber>
         <version.jsonassert>1.5.0</version.jsonassert>
-        <version.json-unit>2.33.0</version.json-unit>
+        <version.json-unit>2.35.0</version.json-unit>
         <version.xmlunit-core>2.8.2</version.xmlunit-core>
     </properties>
 

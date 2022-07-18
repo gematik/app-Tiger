@@ -4,7 +4,7 @@
 
 ## Dependencies
 
-* Serenity BDD 3.2.4
+* Serenity BDD 3.2.5
 * RestAssured 5.0.1
 * Selenium 4.1.3
 * Appium 8.0.0

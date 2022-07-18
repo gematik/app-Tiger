@@ -28,7 +28,7 @@
     <properties>
         <version.commons-jexl3>3.2.1</version.commons-jexl3>
         <version.io.rest-assured>5.1.1</version.io.rest-assured>
-        <version.jcommander>1.81</version.jcommander>
+        <version.jcommander>1.82</version.jcommander>
         <version.jose4j>0.7.12</version.jose4j>
         <version.okhttp>4.10.0</version.okhttp>
         <version.unirest>3.11.11</version.unirest>

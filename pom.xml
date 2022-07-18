@@ -104,12 +104,12 @@
         <version.maven-plugin-tools>3.6.4</version.maven-plugin-tools>
         <version.mockserver>5.11.9</version.mockserver>
         <version.rbellogger>0.27.4</version.rbellogger>
-        <version.serenity.core>3.2.4</version.serenity.core>
-        <version.serenity.maven.plugin>3.2.4</version.serenity.maven.plugin>
+        <version.serenity.core>3.2.5</version.serenity.core>
+        <version.serenity.maven.plugin>3.2.5</version.serenity.maven.plugin>
         <version.slf4j>1.7.32</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spring>5.3.18</version.spring>
-        <version.spring-boot>2.6.6</version.spring-boot>
+        <version.spring-boot>2.7.0</version.spring-boot>
         <version.system-lambda>1.2.0</version.system-lambda>
         <version.wiremock>2.32.0</version.wiremock>
 
