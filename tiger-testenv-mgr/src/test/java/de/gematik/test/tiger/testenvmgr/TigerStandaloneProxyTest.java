@@ -139,7 +139,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
                 .asString();
             // check routing to winstone works
             if (response.isSuccess()) {
-                assertThat(response.getBody()).contains("Directory:").contains("tiger-testenv-mgr");
+                assertThat(response.getBody()).contains("Directory:").contains("winstone.jar");
                 log.info("connecting to proxy api:" +
                     "http://127.0.0.1:" + TigerGlobalConfiguration.readString("free.port.4") + "/webui");
                 // check webui is "working"
