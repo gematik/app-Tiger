@@ -6,7 +6,7 @@
 
 * Serenity BDD 3.2.5
 * RestAssured 5.0.1
-* Selenium 4.1.3
+* Selenium 4.1.4
 * Appium 8.0.0
 
 ## Features

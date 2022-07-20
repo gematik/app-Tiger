@@ -31,7 +31,7 @@
         <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
         <version.bootstrap>5.1.1</version.bootstrap>
         <version.font-awesome>5.15.4</version.font-awesome>
-        <version.selenium>4.1.1</version.selenium>
+        <version.selenium>4.1.4</version.selenium>
         <version.jquery>3.6.0</version.jquery>
         <version.jquery-ui>1.13.0</version.jquery-ui>
         <version.jsonschema>4.20.0</version.jsonschema>
@@ -435,10 +435,10 @@
                         <configuration>
                             <target>
                                 <condition property="isWindows">
-                                    <os family="windows" />
+                                    <os family="windows"/>
                                 </condition>
                                 <condition property="isUnix">
-                                    <os family="unix" />
+                                    <os family="unix"/>
                                 </condition>
                             </target>
                             <exportAntProperties>true</exportAntProperties>
@@ -451,7 +451,7 @@
                             <skip>${isWindows}</skip>
                             <tasks>
                                 <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromRbelValidatorGlue.sh" />
+                                    <arg value="extractCommentsFromRbelValidatorGlue.sh"/>
                                 </exec>
                             </tasks>
                         </configuration>
