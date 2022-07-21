@@ -142,33 +142,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <appendAssemblyId>true</appendAssemblyId>
-                            <descriptors>
-                                <descriptor>./assembly-fatjar.xml</descriptor>
-                            </descriptors>
-                            <archive>
-                                <manifest>
-                                    <mainClass>de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication</mainClass>
-                                </manifest>
-                            </archive>
-                            <outputDirectory>target</outputDirectory>
-                            <finalName>tiger-testenv-mgr-fat-${project.version}</finalName>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <!-- FIXME: marmer 10.03.2022 Fieser Hack, mus weg (mit tiger-testenv-yml -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -238,34 +211,20 @@
                         </configuration>
                     </execution>
                     <!-- Run Unit tests with Jest -->
-                    <!--
                    <execution>
-                       <id>npm run test:unit</id>
+                       <id>npm-unit-test</id>
                        <goals>
                            <goal>npm</goal>
                        </goals>
                        <phase>test</phase>
                        <configuration>
-                           <arguments>run test:unit</arguments>
+                           <arguments>run test</arguments>
                        </configuration>
                    </execution>
-                   -->
-                    <!-- Run End2End tests with Nightwatch -->
-                    <!--
-                    <execution>
-                    <id>npm run test:e2e</id>
-                    <goals>
-                        <goal>npm</goal>
-                    </goals>
-                    <phase>test</phase>
-                    <configuration>
-                          <arguments>run test:e2e</arguments>
-                    </configuration>
-                    </execution> -->
                 </executions>
                 <configuration>
                     <nodeVersion>${version.node}</nodeVersion>
-                    <workingDirectory>src/frontend</workingDirectory>
+                    <workingDirectory>${project.basedir}/src/frontend</workingDirectory>
                 </configuration>
             </plugin>
             <plugin>
@@ -297,6 +256,24 @@
             <plugin>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <groupId>org.sonarsource.scanner.maven</groupId>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${version.spring-boot}</version>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication</mainClass>
+                    <skip>false</skip>
+                    <classifier>springboot</classifier>
+                </configuration>
             </plugin>
         </plugins>
     </build>

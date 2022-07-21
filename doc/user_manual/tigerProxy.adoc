@@ -405,7 +405,7 @@ RbelElementTreePrinter.builder()
 
 === Running Tiger Proxy as standalone JAR
 
-If you only want to run a Tiger Proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups). A fat JAR is available via maven central.
+If you only want to run a Tiger Proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups). A spring boot executable JAR is available via https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy[maven central].
 
 Supplying an application.yaml file allows you to configure the standalone proxy just like an instance started by the test environment manager. All properties can be used the same way as described in xref:tigerTestEnvironmentManager.adoc#_configuring_the_local_test_suite_tiger_proxy[this chapter]. There is however one additional property for the standalone proxy specifically:
 

@@ -1,4 +1,4 @@
-import BannerType from "@/types/BannerType";
+import BannerType from "./BannerType";
 
 export default class BannerMessage {
   text: string | null;
