@@ -268,25 +268,27 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
 
         // defaulting work dir to temp folder on system if not set in config
         if (type == ServerType.EXTERNALJAR) {
-            String folder = getConfiguration().getExternalJarOptions().getWorkingDir();
-            if (folder == null) {
-                if (getConfiguration().getSource().get(0).startsWith("local:")) {
-                    final String jarPath = getConfiguration().getSource().get(0).split("local:")[1];
-                    folder = Paths.get(jarPath).toAbsolutePath().getParent().toString();
-                    getConfiguration().getSource().add(0,
-                        "local:" + jarPath.substring(jarPath.lastIndexOf('/')));
-                    log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, serverId);
-                } else {
-                    folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile()
-                        .getAbsolutePath();
-                    log.info("Defaulting to temp folder '{}' as working directory for server {}", folder, serverId);
+            if (getConfiguration().getExternalJarOptions() != null) {
+                String folder = getConfiguration().getExternalJarOptions().getWorkingDir();
+                if (folder == null) {
+                    if (getConfiguration().getSource().get(0).startsWith("local:")) {
+                        final String jarPath = getConfiguration().getSource().get(0).split("local:")[1];
+                        folder = Paths.get(jarPath).toAbsolutePath().getParent().toString();
+                        getConfiguration().getSource().add(0,
+                            "local:" + jarPath.substring(jarPath.lastIndexOf('/')));
+                        log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, serverId);
+                    } else {
+                        folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile()
+                            .getAbsolutePath();
+                        log.info("Defaulting to temp folder '{}' as working directory for server {}", folder, serverId);
+                    }
+                    getConfiguration().getExternalJarOptions().setWorkingDir(folder);
                 }
-                getConfiguration().getExternalJarOptions().setWorkingDir(folder);
-            }
-            File f = new File(folder);
-            if (!f.exists()) {
-                if (!f.mkdirs()) {
-                    throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
+                File f = new File(folder);
+                if (!f.exists()) {
+                    if (!f.mkdirs()) {
+                        throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
+                    }
                 }
             }
         }

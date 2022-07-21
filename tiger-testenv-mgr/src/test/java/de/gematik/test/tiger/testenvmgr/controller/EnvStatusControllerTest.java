@@ -128,7 +128,7 @@ class EnvStatusControllerTest {
 
             final DownloadManager mockDownloadManager = mock(DownloadManager.class);
             ReflectionTestUtils.setField(envMgr, "downloadManager", mockDownloadManager);
-            when(mockDownloadManager.downloadJarAndReturnFile(any(), any())).thenAnswer(
+            when(mockDownloadManager.downloadJarAndReturnFile(any(), any(), any())).thenAnswer(
                 (Answer<File>) invocation -> {
                     await().until(downloadShouldProceed::get);
                     return new File("target/winstone.jar");
