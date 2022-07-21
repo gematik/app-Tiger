@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -243,7 +244,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     @Override
-    public TigerRoute addRoute(final TigerRoute tigerRoute) {
+    public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
         tigerRouteMap.values().stream()
             .filter(existingRoute ->
                 uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
