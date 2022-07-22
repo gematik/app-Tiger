@@ -17,6 +17,7 @@
 
 * TGR-561: Generated files from the tiger-maven-plugin now have leading zeros, so they execute in ascending order
 * TGR-589: Massive amount of externalURL servers can lead to concurrentmodification errors in proxy addroute method and will cause the testenv mgr to abort on setup of test environment, fixed by synchronizing the addRoute method in Tiger Proxy
+* TGR-593: Fixing lookup of docker compose files (located in classpath and using relative path references containing "../")
 
 # Release 0.23.3
 

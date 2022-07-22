@@ -54,7 +54,9 @@ public class DockerMgr {
     @SuppressWarnings("OctalInteger")
     private static final int MOD_ALL_EXEC = 0777;
 
-    private static final String CLZPATH = "classpath:";
+    private static final String CLASSPATH = "classpath:";
+
+    private static final String DOCKER_COMPOSE_PROP_EXPOSE = "expose";
 
     private final Map<String, GenericContainer<?>> containers = new HashMap<>();
 
@@ -159,11 +161,24 @@ public class DockerMgr {
             .flatMap(services -> services.entrySet().stream())
             .forEach(serviceEntry -> {
                 var map = ((Map<String, ?>) serviceEntry.getValue());
-                if (map.containsKey("ports")) {
-                    ((List<Integer>) map.get("expose")).forEach(
+                if (map.containsKey(DOCKER_COMPOSE_PROP_EXPOSE)) {
+                    ((List<Integer>) map.get(DOCKER_COMPOSE_PROP_EXPOSE)).forEach(
                         port -> {
                             log.info("Exposing service {} with port {}", serviceEntry.getKey(), port);
                             composition.withExposedService(serviceEntry.getKey(), port);
+                        }
+                    );
+                } else if (map.containsKey("ports")) {
+                    ((List<String>) map.get("ports")).forEach(
+                        portString -> {
+                            if (!portString.contains(":")) {
+                                log.warn("Docker compose with ephemeral host ports not supported as of now"
+                                    + ", please specify manual host port for '{}'", portString);
+                            } else {
+                                int port = Integer.parseInt(portString.split(":")[0]);
+                                log.info("Exposing service {} with port {}", serviceEntry.getKey(), port);
+                                composition.withExposedService(serviceEntry.getKey(), port);
+                            }
                         }
                     );
                 }
@@ -180,8 +195,8 @@ public class DockerMgr {
             .flatMap(services -> services.entrySet().stream())
             .forEach(serviceEntry -> {
                 var map = ((Map<String, ?>) serviceEntry.getValue());
-                if (map.containsKey("expose")) {
-                    ((List<Integer>) map.get("expose")).forEach(port -> {
+                if (map.containsKey(DOCKER_COMPOSE_PROP_EXPOSE)) {
+                    ((List<Integer>) map.get(DOCKER_COMPOSE_PROP_EXPOSE)).forEach(port -> {
                             log.info("Service {} with port {} exposed via {}", serviceEntry.getKey(), port,
                                 composition.getServicePort(serviceEntry.getKey(), port));
                             ListContainersCmd cmd = DockerClientFactory.instance().client()
@@ -207,15 +222,8 @@ public class DockerMgr {
     private String readAndProcessComposeFile(String filePath, List<String> composeFileContents) {
         try {
             String content;
-            if (filePath.startsWith(CLZPATH)) {
-                try (InputStream is = getClass().getResourceAsStream(filePath)) {
-                    if (is == null) {
-                        throw new TigerTestEnvException("Missing docker compose file in classpath " + filePath);
-                    }
-                    content = IOUtils.toString(is, StandardCharsets.UTF_8);
-                } catch (IOException ioe) {
-                    throw new TigerTestEnvException("Unable to create temp docker compose file (" + filePath + ")", ioe);
-                }
+            if (filePath.startsWith(CLASSPATH)) {
+                content = readContentFromClassPath(filePath.substring(CLASSPATH.length()));
             } else {
                 content = FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8);
             }
@@ -228,12 +236,26 @@ public class DockerMgr {
         }
     }
 
+    private String readContentFromClassPath(String filePath) {
+        String content;
+        try (InputStream inputStream = getClass().getResourceAsStream(filePath)) {
+            if (inputStream == null) {
+                throw new TigerTestEnvException("Missing docker compose file in classpath " + filePath);
+            }
+            content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            throw new TigerTestEnvException("Unable to read docker compose file from classpath (" + filePath + ")", exception);
+        }
+        return content;
+    }
+
     private File saveComposeContentToTempFile(File folder, String filePath, String content) {
         try {
-            if (filePath.startsWith(CLZPATH)) {
-                filePath = filePath.substring(CLZPATH.length());
+            if (filePath.startsWith(CLASSPATH)) {
+                filePath = filePath.substring(CLASSPATH.length());
             }
-            var tmpFile = Paths.get(folder.getAbsolutePath(), filePath).toFile();
+            var filename = new File(filePath).getName() + "." + UUID.randomUUID() + ".yml";
+            var tmpFile = Paths.get(folder.getAbsolutePath(), filename).toFile();
             if (!tmpFile.getParentFile().exists() && !tmpFile.getParentFile().mkdirs()) {
                 throw new TigerTestEnvException(
                     "Unable to create temp folder " + tmpFile.getParentFile().getAbsolutePath());
