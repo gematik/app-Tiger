@@ -36,6 +36,7 @@
 * TGR-486: Requirements are now correctly reported when using the Tiger maven plugin to create the serenity report
 * TGR-550: Fixed scenario outlines contain background steps multiple times
 * TGR-524: Tiger local proxy and Tiger WorkflowUI are now running on separate ports not interfering with ports from the free.port.x range
+* TGR-370: Fixed standalone proxy failing on startup with null pointer exception
 
 ## Features
 
