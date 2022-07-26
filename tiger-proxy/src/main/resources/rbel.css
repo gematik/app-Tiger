@@ -105,6 +105,21 @@ pre.json {
     color: greenyellow !important;
 }
 
+
+.text-ellipsis {
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.card-header-title {
+    padding: 0.5rem 1rem;
+}
+
+.msg-sequence {
+    height: 2.5rem !important;
+}
+
 @media print {
     .column.menu {
         position: static !important;
@@ -199,11 +214,11 @@ pre.json {
     margin-right: 0.5rem;
 }
 
-.ledactive {
+.led-active {
     background: #469408;
 }
 
-.lederror {
+.led-error {
     background: #c04608;
 }
 

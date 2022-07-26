@@ -191,9 +191,9 @@ public class TigerWebUiController implements ApplicationContextAware {
                             )
                         ),
                         div().withClass(navbarItem()).with(
-                            button().withId("collapsibleHeaderBtn").withClass(darkButton()).with(
-                                div().withId("collapsibleHeader").withClass("led"),
-                                span("Hide headers")
+                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton()).with(
+                                div().withId("collapsibleMessageDetails").withClass("led"),
+                                span("Hide Details")
                             )
                         ),
                         form().withClass("is-inline-flex").attr("onSubmit", "return false;")

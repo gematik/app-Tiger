@@ -11,13 +11,15 @@
 
 ## Features
 
-* TGR-580: Added two new steps "TGR pause test run execution with message {string}" and "TGR pause test run execution with message {string} and message in case of error {string}". The first one is the same as "TGR pause test run execution" but you can alter the message now. The second one gives you the choice to fail the testcase, if whatever you are waiting for or checking is not like you expected. All three steps are Workflow UI only now.
+* TGR-580: Added two new steps "TGR pause test run execution with message {string}" and "TGR pause test run execution with message {string} and message in case of error {string}". The first one is the same as "TGR pause test run execution" but you can alter the message now. The second one gives you the choice to fail the testcase, if whatever you are waiting for or checking is not like you expected. All three steps are Workflow UI only now
+* TGR-594: optimize vertical spacing of messages in workflow UI rbel log details pane overview. Also changed hide header button to hide details button in bottom nav
 
 ## Bugfixes
 
 * TGR-561: Generated files from the tiger-maven-plugin now have leading zeros, so they execute in ascending order
 * TGR-589: Massive amount of externalURL servers can lead to concurrentmodification errors in proxy addroute method and will cause the testenv mgr to abort on setup of test environment, fixed by synchronizing the addRoute method in Tiger Proxy
 * TGR-593: Fixing lookup of docker compose files (located in classpath and using relative path references containing "../")
+* TGR-594: Fixing raw modal popup not working in all scenarios (workflow UI, Proxy webui, rbel log HTML file)
 
 # Release 0.23.3
 

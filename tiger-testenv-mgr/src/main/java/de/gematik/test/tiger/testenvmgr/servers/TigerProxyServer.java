@@ -75,6 +75,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
     @Override
     public void shutdown() {
+        log.info("Stopping tiger proxy {}...", getServerId());
         if (applicationContext != null
             && applicationContext.isRunning()) {
             applicationContext.close();
