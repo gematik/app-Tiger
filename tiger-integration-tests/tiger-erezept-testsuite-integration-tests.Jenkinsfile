@@ -1,7 +1,7 @@
 @Library('gematik-jenkins-shared-library') _
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
-def REPO_URL = createGitUrl('git/idp/idp-global')
+def REPO_URL = createGitUrl('git/erezept/fachdienst/erp-e2e')
 def BRANCH = 'master'
 def POM_PATH = 'pom.xml'
 
@@ -29,15 +29,7 @@ pipeline {
               }
           }
 
-          stage('set Tiger Integrationtest Version for IDP') {
-              steps {
-                script {
-                    mavenSetVersion("TigerIntegrationTest", POM_PATH)
-                }
-              }
-          }
-
-          stage('Set Tiger version in IDP') {
+          stage('Set Tiger version in Erezept Testsuite') {
               steps {
                    sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
               }
@@ -45,20 +37,20 @@ pipeline {
 
           stage('Build') {
               steps {
-                  mavenBuild(POM_PATH, '-Dskip.unittests -Dskip.inttests')
+                  mavenBuild(POM_PATH, '-Dskip.unittests=true -Dskip.inttests=true')
               }
           }
 
           stage('Tests') {
               steps {
-                   mavenVerify(POM_PATH, '-ntp -Dskip.unittests -Dcucumber.filter.tags="@Approval and not @OpenBug and not @WiP and not @LongRunning"')
+                  mavenTest()
               }
           }
       }
 
       post {
-         always {
-             sendEMailNotification(getIdpEMailList() + "," + getTigerEMailList())
-         }
+          always {
+                sendEMailNotification(getErpE2ETestsuiteEMailList() + "," + getTigerEMailList())
+          }
       }
 }

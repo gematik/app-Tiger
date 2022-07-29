@@ -88,7 +88,7 @@ pipeline {
 
       post {
           always {
-             sendEMailNotification("yana.stasevich@gematik.de", "rafael.schirru@gematik.de", "thomas.eitzenberger@gematik.de", "juliane.baerwind@gematik.de")
+             sendEMailNotification("yana.stasevich@gematik.de" + "," + "rafael.schirru@gematik.de" + "," + "thomas.eitzenberger@gematik.de" + "," + "juliane.baerwind@gematik.de")
           }
       }
 }

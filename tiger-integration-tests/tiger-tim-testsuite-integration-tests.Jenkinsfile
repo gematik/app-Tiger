@@ -71,7 +71,7 @@ pipeline {
 
       post {
          always {
-             sendEMailNotification(getCommunicationsEMailList(), getTigerEMailList())
+             sendEMailNotification(getCommunicationsEMailList() + "," + getTigerEMailList())
          }
       }
 }
