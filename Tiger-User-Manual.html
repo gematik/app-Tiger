@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.23.3 - 2022-07-11</span>
+<span id="revdate">Version 0.23.4 - 2022-08-01</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -643,7 +643,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
           https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
         --&gt;</span>
         <span class="tag">&lt;version.tiger&gt;</span>0.23.2<span class="tag">&lt;/version.tiger&gt;</span>
-        <span class="tag">&lt;version.serenity.core&gt;</span>3.2.4<span class="tag">&lt;/version.serenity.core&gt;</span>
+        <span class="tag">&lt;version.serenity.core&gt;</span>3.2.5<span class="tag">&lt;/version.serenity.core&gt;</span>
     <span class="tag">&lt;/properties&gt;</span>
 
     <span class="comment">&lt;!-- tag::dependencies[] --&gt;</span>
@@ -1552,6 +1552,12 @@ For containers that should exit after a single command you may enable the oneSho
 </div>
 <div class="paragraph">
 <p>For now we support the ePA2 FD module and the DEMIS Meldeportal.</p>
+</div>
+<div class="paragraph">
+<p>If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check <a href="#_tiger_configuration">this chapter</a>).</p>
+</div>
+<div class="paragraph">
+<p>The processing/copying flatens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have an random UUID appended to its filename.</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 8. Docker compose configuration</div>
@@ -2682,7 +2688,7 @@ If <code>message</code> is a request, then the <code>message</code> itself will 
 <div class="sect2">
 <h3 id="_running_tiger_proxy_as_standalone_jar">4.8. Running Tiger Proxy as standalone JAR</h3>
 <div class="paragraph">
-<p>If you only want to run a Tiger Proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups). A fat JAR is available via maven central.</p>
+<p>If you only want to run a Tiger Proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups). A spring boot executable JAR is available via <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy">maven central</a>.</p>
 </div>
 <div class="paragraph">
 <p>Supplying an application.yaml file allows you to configure the standalone proxy just like an instance started by the test environment manager. All properties can be used the same way as described in <a href="#_configuring_the_local_test_suite_tiger_proxy">this chapter</a>. There is however one additional property for the standalone proxy specifically:</p>
@@ -2807,10 +2813,6 @@ The curl command shown in that section in the report allows to repeat the perfor
 </div>
 <div class="paragraph">
 <p>After each scenario / data variant all collected RbelMessages are saved as HTML file to the <code>target/rbellogs</code> folder, and attached to the SerenityBDD report as test evidence. The current test run state (success/failed rate) is logged to the console.</p>
-</div>
-<div class="paragraph">
-<p>The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.<br>
-Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports, using the Tiger test framework from non Cucumber test drivers, &#8230;&#8203;etc.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -3117,12 +3119,18 @@ This feature is used in the EAU Konnektorfarm validation test suite to guide the
     <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution</span><span class="delimiter">&quot;</span></span>)
     <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung</span><span class="delimiter">&quot;</span></span>)
 
+    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution with message {string}</span><span class="delimiter">&quot;</span></span>)
+    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung mit Nachricht {string}</span><span class="delimiter">&quot;</span></span>)
+
+    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution with message {string} and message in case of error {string}</span><span class="delimiter">&quot;</span></span>)
+    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung mit Nachricht {string} und Meldung im Fehlerfall {string}</span><span class="delimiter">&quot;</span></span>)
+
     <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR wait for user abort</span><span class="delimiter">&quot;</span></span>)
     <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR warte auf Abbruch</span><span class="delimiter">&quot;</span></span>)</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The penultimate step allows to pause the validation test suite.<br>
+<p>The steps four, five and six allow to pause the validation test suite. Please note, these steps are only modified for the Workflow UI and don&#8217;t work on a regular console (no failure, there is just no pause).<br>
 The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester to perform demo transactions that will be logged and saved to HTML reports but are not validated. The wait for user abort subsequently terminates the test execution.</p>
 </div>
 </div>
@@ -3778,7 +3786,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-07-11 11:36:04 +0200
+Last updated 2022-08-01 12:55:36 +0200
 </div>
 </div>
 </body>
