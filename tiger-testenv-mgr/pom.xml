@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.23.4-SNAPSHOT</version>
+        <version>0.23.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
