@@ -20,6 +20,11 @@
 * TGR-589: Massive amount of externalURL servers can lead to concurrentmodification errors in proxy addroute method and will cause the testenv mgr to abort on setup of test environment, fixed by synchronizing the addRoute method in Tiger Proxy
 * TGR-593: Fixing lookup of docker compose files (located in classpath and using relative path references containing "../")
 * TGR-594: Fixing raw modal popup not working in all scenarios (workflow UI, Proxy webui, rbel log HTML file)
+* TGR-536: Filtering on the website no longer splits up message-pairs
+
+## Breaking changes
+
+* TGR-590: we removed tiger-aforeporter-plugin from Tiger
 
 # Release 0.23.3
 
