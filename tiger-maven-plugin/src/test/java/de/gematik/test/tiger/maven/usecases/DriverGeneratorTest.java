@@ -81,9 +81,9 @@ class DriverGeneratorTest {
                         + "feature: relativeRessourceFeatureFile.feature\n"
                         + "counter: 1\n"
                         + "glues: \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
-                        + "classname: Mops1IT\n"),
+                        + "classname: Mops001IT\n"),
                 getNormalizedJavaFrom(
-                    outputFolder.resolve(Paths.get("fancy", "pck", "of", "driver", "Mops1IT.java")))
+                    outputFolder.resolve(Paths.get("fancy", "pck", "of", "driver", "Mops001IT.java")))
             ),
             () -> assertEquals(
                 getNormalizedJavaFrom(
@@ -91,9 +91,9 @@ class DriverGeneratorTest {
                         + "feature: /absoluteRessourceFeatureFile\n"
                         + "counter: 2\n"
                         + "glues: \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
-                        + "classname: Mops2IT\n"),
+                        + "classname: Mops002IT\n"),
                 getNormalizedJavaFrom(
-                    outputFolder.resolve(Paths.get("fancy", "pck", "of", "driver", "Mops2IT.java")))
+                    outputFolder.resolve(Paths.get("fancy", "pck", "of", "driver", "Mops002IT.java")))
             )
         );
     }
@@ -125,11 +125,11 @@ class DriverGeneratorTest {
                 + " plugin = {\n" + "    \"json:target/cucumber-parallel/1.json\", \"de.gematik.test.tiger.TigerCucumberListener\" },"
                 + " glue = {\"de.gematik.test.tiger.glue\""
                 + "})\n"
-                + "public class Mops1IT {\n"
+                + "public class Mops001IT {\n"
                 + "\n"
                 + "}\n"),
             getNormalizedJavaFrom(
-                outputFolder.resolve(Paths.get("Mops1IT.java")))
+                outputFolder.resolve(Paths.get("Mops001IT.java")))
         );
     }
 

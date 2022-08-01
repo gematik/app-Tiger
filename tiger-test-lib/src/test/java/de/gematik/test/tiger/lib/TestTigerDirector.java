@@ -30,21 +30,15 @@ import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Permission;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Unirest;
 import lombok.SneakyThrows;
 import net.serenitybdd.rest.SerenityRest;
-import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -217,7 +211,7 @@ class TestTigerDirector {
 
                     await().atMost(400, TimeUnit.MILLISECONDS)
                         .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
-                    TigerDirector.getTigerTestEnvMgr().resetUserAcknowledgedContinueTestRun();
+                    TigerDirector.getTigerTestEnvMgr().resetUserInput();
                     assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
                 }));
     }
@@ -306,62 +300,4 @@ class TestTigerDirector {
             cleanup.run();
         }
     }
-
-    // TODO TGR-253 create test cases for polarion sync and afo reporter,  rethink architecture and make it pluggable
-/*
-    public static void synchronizeTestCasesWithPolarion() {
-        if (!checkIsInitialized()) {
-            return;
-        }
-
-        if (OSEnvironment.getAsBoolean("TIGER_SYNC_TESTCASES")) {
-            try {
-                Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
-                    .getDeclaredMethod("main", String[].class);
-                String[] args = new String[]{"-m", "tcimp", "-dryrun"};
-                // TODO read from tiger-testlib.yaml or env vars values for -h -u -p -prj -aq -fd -f -bdd
-
-                log.info("Syncing test cases with Polarion...");
-                polarionToolBoxMain.invoke(null, (Object[]) args);
-                log.info("Test cases synched with Polarion...");
-            } catch (NoSuchMethodException | ClassNotFoundException e) {
-                throw new TigerLibraryException("Unable to access Polarion Toolbox! "
-                    + "Be sure to have it included in mvn dependencies.", e);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new TigerLibraryException("Unable to call Polarion Toolbox's main method!", e);
-            }
-        }
-    }
-
-    public static void beforeTestThreadStart() {
-        if (!checkIsInitialized()) {
-            return;
-        }
-        if (proxiesMap.containsKey(tid())) {
-            log.warn("Proxy for given thread '" + tid() + "' already initialized!");
-            return;
-        }
-        // instantiate proxy and supply routes and register message provider as listener to proxy
-        final var threadProxy = new TigerProxy(tigerTestEnvMgr.getConfiguration().getTigerProxy());
-        getTigerTestEnvMgr().getRoutes().forEach(route -> threadProxy.addRoute(route[0], route[1]));
-        threadProxy.addRbelMessageListener(rbelMsgProviderMap.computeIfAbsent(tid(), key -> new RbelMessageProvider()));
-        proxiesMap.putIfAbsent(tid(), threadProxy);
-    }
-
-    public static void createAfoRepoort() {
-        if (!checkIsInitialized()) {
-            return;
-        }
-        // TODO create Aforeport and embedd it into serenity report
-    }
-
-    private static boolean checkIsInitialized() {
-        if (!initialized) {
-            throw new AssertionError("Tiger test environment has not been initialized. "
-                + "Did you call TigerDirector.beforeTestRun before starting test run?");
-        }
-        return initialized;
-    }
-}
-     */
 }

@@ -1174,7 +1174,7 @@ entity polc-->
        textLength="118"
        x="299.5"
        y="637.1426"
-       id="text1210">PolarionConnector</text>
+       id="text1210">PolarionToolbox</text>
     <line
        style="stroke:#0000FF;stroke-width:1.0;"
        x1="285.5"
@@ -1477,7 +1477,7 @@ skinparam interface {
 
     component TigerProxy as tp <<Other>>
     component TigerEnvMgr as tem <<Other>>
-    component polc <<Other>> [PolarionConnector
+    component polc <<Other>> [PolarionToolbox
       ===
       parses feature files for annotated scenarios
       imports those scenarios as test cases to Polarion

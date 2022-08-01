@@ -55,9 +55,6 @@ The curl command shown in that section in the report allows to repeat the perfor
 
 After each scenario / data variant all collected RbelMessages are saved as HTML file to the `target/rbellogs` folder, and attached to the SerenityBDD report as test evidence. The current test run state (success/failed rate) is logged to the console.
 
-The TigerDirector in the future will become a general high level access class to all the major features of the Tiger test framework.
-Such things as syncing test cases and test reports with Polarion, creating requirements coverage reports, using the Tiger test framework from non Cucumber test drivers, ...etc.
-
 NOTE: For now, the TigerDirector, TigerCucumberRunner, TigerCucumberListener are only for internal use and do not provide any implementation of the aforementioned features.
 
 === Using the Cucumber Tiger validation steps
@@ -228,10 +225,16 @@ This feature is used in the EAU Konnektorfarm validation test suite to guide the
     @When("TGR pause test run execution")
     @Wenn("TGR pausiere Testausführung")
 
+    @When("TGR pause test run execution with message {string}")
+    @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
+
+    @When("TGR pause test run execution with message {string} and message in case of error {string}")
+    @Wenn("TGR pausiere Testausführung mit Nachricht {string} und Meldung im Fehlerfall {string}")
+
     @When("TGR wait for user abort")
     @Wenn("TGR warte auf Abbruch")
 ----
-The penultimate step allows to pause the validation test suite.
+The steps four, five and six allow to pause the validation test suite. Please note, these steps are only modified for the Workflow UI and don't work on a regular console (no failure, there is just no pause).
 The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester to perform demo transactions that will be logged and saved to HTML reports but are not validated. The wait for user abort subsequently terminates the test execution.
 
 === Using Tiger test lib helper classes

@@ -154,10 +154,10 @@ public class GenerateDriverMojo extends AbstractMojo {
 
             getLog().info("Creating test drivers for " + files.size() + " feature files:");
 
-            final Path outuptFolder = Paths.get(targetFolder, "generated-test-sources",
+            final Path outputFolder = Paths.get(targetFolder, "generated-test-sources",
                 "tigerbdd");
 
-            new DriverGenerator(glues, driverPackage, outuptFolder, driverClassName,
+            new DriverGenerator(glues, driverPackage, outputFolder, driverClassName,
                 templateFile == null ? null : templateFile.toPath(),
                 new MavenLogger(getLog()))
                 .generateDriverForFeatureFiles(

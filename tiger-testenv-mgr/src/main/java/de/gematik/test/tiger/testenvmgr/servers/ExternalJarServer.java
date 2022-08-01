@@ -49,27 +49,34 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
     @Override
     public void performStartup() {
-        final String workingDir = getConfiguration().getExternalJarOptions().getWorkingDir();
+        final String workingDir;
+        final CfgExternalJarOptions externalJarOptions = getConfiguration().getExternalJarOptions();
+        if (externalJarOptions != null) {
+            workingDir = getConfiguration().getExternalJarOptions().getWorkingDir();
+        } else {
+            workingDir = new File(".").getAbsolutePath();
+        }
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .type(ServerType.EXTERNALJAR)
             .statusMessage("Starting external jar instance " + getServerId() + " in folder '" + workingDir + "'...")
             .build());
 
-        final CfgExternalJarOptions externalJarOptions = getConfiguration().getExternalJarOptions();
-
         var jarUrl = getConfiguration().getSource().get(0);
-
-        jarFile = getTigerTestEnvMgr().getDownloadManager().downloadJarAndReturnFile(this, jarUrl);
+        jarFile = getTigerTestEnvMgr().getDownloadManager().downloadJarAndReturnFile(this, jarUrl, workingDir);
 
         List<String> options = new ArrayList<>();
         String javaExe = findJavaExecutable();
         options.add(javaExe);
-        options.addAll(externalJarOptions.getOptions().stream()
-            .map(getTigerTestEnvMgr()::replaceSysPropsInString)
-            .collect(Collectors.toList()));
+        if (externalJarOptions != null && externalJarOptions.getOptions() != null) {
+            options.addAll(externalJarOptions.getOptions().stream()
+                .map(getTigerTestEnvMgr()::replaceSysPropsInString)
+                .collect(Collectors.toList()));
+        }
         options.add("-jar");
         options.add(jarFile.getName());
-        options.addAll(externalJarOptions.getArguments());
+        if (externalJarOptions != null && externalJarOptions.getArguments() != null) {
+            options.addAll(externalJarOptions.getArguments());
+        }
         statusMessage("Running '" + String.join(" ", options)
             + "' in folder '" + new File(workingDir).getAbsolutePath() + "'");
 

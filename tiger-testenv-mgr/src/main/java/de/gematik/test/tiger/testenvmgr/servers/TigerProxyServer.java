@@ -26,10 +26,10 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -47,7 +47,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     public void performStartup() {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .type(ServerType.TIGERPROXY)
-            .statusMessage("Ppre-start Tiger Proxy " + getServerId())
+            .statusMessage("Pre-start Tiger Proxy " + getServerId())
             .build());
 
         TigerProxyConfiguration reverseProxyCfg = getConfiguration().getTigerProxyCfg();
@@ -76,6 +76,8 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .initializers()
             .run();
 
+        TigerServerLogManager.addProxyCustomerAppender(this);
+
         waitForService(true);
         if (getStatus() == TigerServerStatus.STARTING) {
             waitForService(false);
@@ -85,6 +87,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
     @Override
     public void shutdown() {
+        log.info("Stopping tiger proxy {}...", getServerId());
         if (applicationContext != null
             && applicationContext.isRunning()) {
             applicationContext.close();

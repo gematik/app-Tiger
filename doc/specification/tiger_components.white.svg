@@ -512,7 +512,7 @@ entity TigerTestLib-->
        textLength="118"
        x="1115.5"
        y="382.182"
-       id="text1394">PolarionConnector</text>
+       id="text1394">PolarionToolbox</text>
     <text
        fill="#000000"
        font-family="sans-serif"
@@ -1365,7 +1365,7 @@ component TigerTestLib [
   - - -
   Basic steps
   - - -
-  PolarionConnector
+  PolarionToolbox
   Banner
   TestConfig
   Context
@@ -1496,7 +1496,7 @@ component TigerTestLib [
   - - -
   Basic steps
   - - -
-  PolarionConnector
+  PolarionToolbox
   Banner
   TestConfig
   Context

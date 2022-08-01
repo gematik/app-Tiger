@@ -85,6 +85,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     private boolean userAcknowledgedShutdown = false;
     private boolean userAcknowledgedContinueTestRun = false;
+    private boolean userAcknowledgedFailingTestRun = false;
 
     @Setter
     @Getter
@@ -202,6 +203,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                 log.warn("Unable to open input stream from console! Continuing with test run...", e);
             }
         }
+        log.info("Step wait acknowledged. Continueing...");
     }
 
     private static void readTemplates() {
@@ -400,8 +402,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         userAcknowledgedContinueTestRun = true;
     }
 
-    public void resetUserAcknowledgedContinueTestRun() {
+    public void receivedCancelTestRunExecution() {
+        userAcknowledgedFailingTestRun = true;
+    }
+
+    public void resetUserInput() {
         userAcknowledgedContinueTestRun = false;
+        userAcknowledgedFailingTestRun = false;
     }
 
     @Override

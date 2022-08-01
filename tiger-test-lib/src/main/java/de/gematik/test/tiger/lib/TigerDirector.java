@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.lib;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -34,8 +35,6 @@ import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -43,11 +42,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import javax.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.api.Fail;
 import org.awaitility.core.ConditionTimeoutException;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
@@ -59,11 +59,8 @@ import org.springframework.context.ConfigurableApplicationContext;
  * <ul>
  *     <li>read and apply Tiger test framework configuration from tiger.yaml</li>
  *     <li>start workflow UI, Tiger test environment manager and local Tiger Proxy</li>
- *     <li>Sync test cases with Polarion</li>
- *     <li>Sync test reports with Aurora and Polarion</li>
- *     <li>Create requirement coverage report based on @Afo annotations and requirements downloaded from Polarion</li>
  * </ul>
- * It also provides access to the Tiger test environment manager, the local Tiger Proxy and the Monitor UI interface.
+ * It also provides access to the Tiger test environment manager, the local Tiger Proxy and the Workflow UI interface.
  */
 @SuppressWarnings("unused")
 @Slf4j
@@ -108,7 +105,9 @@ public class TigerDirector {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 if (getLibConfig().isActivateWorkflowUi() && !tigerTestEnvMgr.isUserAcknowledgedShutdown()) {
-                    System.out.println(Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...", RbelAnsiColors.GREEN_BOLD));
+                    System.out.println(
+                        Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...",
+                            RbelAnsiColors.GREEN_BOLD));
                     if (tigerTestEnvMgr != null) {
                         tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
                             .bannerMessage("Test run finished, press QUIT")
@@ -195,10 +194,14 @@ public class TigerDirector {
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
-            TigerTestEnvMgr.openWorkflowUiInBrowser(TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElseThrow(() -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!")).toString());
+            TigerTestEnvMgr.openWorkflowUiInBrowser(
+                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElseThrow(
+                        () -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!"))
+                    .toString());
             log.info("Waiting for workflow Ui to fetch status...");
             try {
-                await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofSeconds(1)).until(() -> tigerTestEnvMgr.isWorkflowUiSentFetch());
+                await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofSeconds(1))
+                    .until(() -> tigerTestEnvMgr.isWorkflowUiSentFetch());
             } catch (ConditionTimeoutException cte) {
                 libConfig.activateWorkflowUi = false;
                 throw new TigerTestEnvException("No feedback from workflow Ui, aborting!", cte);
@@ -220,7 +223,9 @@ public class TigerDirector {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     RbelAnsiColors.RED_BOLD));
             } else {
-                log.info(Ansi.colorize("SETTING TIGER PROXY http://localhost:" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort() + "...", RbelAnsiColors.BLUE_BOLD));
+                log.info(Ansi.colorize(
+                    "SETTING TIGER PROXY http://localhost:" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort()
+                        + "...", RbelAnsiColors.BLUE_BOLD));
                 System.setProperty("http.proxyHost", "localhost");
                 System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
                 System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
@@ -230,7 +235,8 @@ public class TigerDirector {
                 SerenityRestUtils.setupSerenityRest(tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
             }
         } else {
-            log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as localProxyActive==false...", RbelAnsiColors.RED_BOLD));
+            log.info(
+                Ansi.colorize("SKIPPING TIGER PROXY settings as localProxyActive==false...", RbelAnsiColors.RED_BOLD));
         }
 
         // TODO TGR-295 DO NOT DELETE!
@@ -245,33 +251,6 @@ public class TigerDirector {
     public static TigerTestEnvMgr getTigerTestEnvMgr() {
         assertThatTigerIsInitialized();
         return tigerTestEnvMgr;
-    }
-
-    public static void synchronizeTestCasesWithPolarion() {
-        assertThatTigerIsInitialized();
-
-        if (TigerGlobalConfiguration.readBoolean("TIGER_SYNC_TESTCASES", false)) {
-            try {
-                Method polarionToolBoxMain = Class.forName("de.gematik.polarion.toolbox.ToolBox")
-                    .getDeclaredMethod("main", String[].class);
-                String[] args = new String[]{"-m", "tcimp", "-dryrun"};
-                // TODO TGR-251 - read from tiger-testlib.yaml or env vars values for -h -u -p -prj -aq -fd -f -bdd
-
-                log.info("Syncing test cases with Polarion...");
-                polarionToolBoxMain.invoke(null, (Object[]) args);
-                log.info("Test cases synched with Polarion...");
-            } catch (NoSuchMethodException | ClassNotFoundException e) {
-                throw new TigerLibraryException("Unable to access Polarion Toolbox! "
-                    + "Be sure to have it included in mvn dependencies.", e);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new TigerLibraryException("Unable to call Polarion Toolbox's main method!", e);
-            }
-        }
-    }
-
-    public static void createAfoRepoort() {
-        assertThatTigerIsInitialized();
-        // TODO TGR-259 (see architecture decision about pluggable (TGR-253)) create Aforeport and embedd it into serenity report
     }
 
     public static String getLocalTigerProxyUrl() {
@@ -303,7 +282,8 @@ public class TigerDirector {
         }
     }
 
-    private final static Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
+    private final static Pattern showSteps = Pattern.compile(
+        ".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
 
     private static void assertThatTigerIsInitialized() {
         if (!initialized) {
@@ -358,18 +338,53 @@ public class TigerDirector {
     }
 
     public static void pauseExecution() {
+        pauseExecution("");
+    }
+
+    public static void pauseExecution(String message) {
+        String defaultMessage = "Test execution paused, click to continue";
+        if (StringUtils.isBlank(message)) {
+            message = defaultMessage;
+        }
+
         if (getLibConfig().isActivateWorkflowUi()) {
             tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                .bannerMessage("Test execution paused, click to continue")
+                .bannerMessage(message)
                 .bannerColor("green")
                 .bannerType(BannerType.STEP_WAIT)
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
                 .atMost(5, TimeUnit.HOURS)
                 .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun());
-            tigerTestEnvMgr.resetUserAcknowledgedContinueTestRun();
+            tigerTestEnvMgr.resetUserInput();
         } else {
-            tigerTestEnvMgr.waitForConsoleInput("next");
+            // TGR-585
+            log.warn(String.format("The step 'TGR pause test run execution with message \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.", message));
+
+        }
+    }
+
+    public static void pauseExecutionAndFailIfDesired(String message, String errorMessage) {
+        if (getLibConfig().isActivateWorkflowUi()) {
+            tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder().bannerMessage(
+                    message)
+                .bannerColor("black")
+                .bannerType(BannerType.FAIL_PASS)
+                .build());
+            await().pollInterval(1, TimeUnit.SECONDS)
+                .atMost(5, TimeUnit.HOURS)
+                .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun()
+                    || tigerTestEnvMgr.isUserAcknowledgedFailingTestRun());
+            if (tigerTestEnvMgr.isUserAcknowledgedFailingTestRun()) {
+                tigerTestEnvMgr.resetUserInput();
+                Fail.fail(errorMessage);
+            } else {
+                tigerTestEnvMgr.resetUserInput();
+            }
+        } else {
+            // TGR-585
+            log.warn(String.format(
+                "The step 'TGR pause test run execution with message \"%s\" and message in case of error \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.", message, errorMessage));
         }
     }
 }

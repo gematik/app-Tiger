@@ -52,9 +52,9 @@ public class DownloadManager {
     private static final Set<String> DOWNLOADING_URLS = ConcurrentHashMap.newKeySet();
     private final Monitor monitor = new Monitor();
 
-    private static Stream<Path> streamOfCandidateFiles(CfgExternalJarOptions externalJarOptions, String jarName) {
+    private static Stream<Path> streamOfCandidateFiles(String workingDir, String jarName) {
         try {
-            return Files.walk(Path.of(externalJarOptions.getWorkingDir()), 1)
+            return Files.walk(Path.of(workingDir), 1)
                 .filter(path -> path.getFileName().startsWith(jarName))
                 .filter(path -> !path.getFileName().endsWith(DOWNLOAD_PROPERTIES_SUFFIX));
         } catch (IOException e) {
@@ -69,18 +69,18 @@ public class DownloadManager {
             .orElse(false);
     }
 
-    private static File seekNewUniqueFile(CfgExternalJarOptions externalJarOptions, String jarName) {
+    private static File seekNewUniqueFile(String workingDir, String jarName) {
         synchronized (RESERVED_FILES) {
-            if (streamOfCandidateFiles(externalJarOptions, jarName)
+            if (streamOfCandidateFiles(workingDir, jarName)
                 .findAny().isEmpty()) {
-                return Path.of(externalJarOptions.getWorkingDir(), jarName).toFile();
+                return Path.of(workingDir, jarName).toFile();
             } else {
                 AtomicReference<File> candidateFile = new AtomicReference<>();
                 do {
-                    candidateFile.set(Path.of(externalJarOptions.getWorkingDir(),
+                    candidateFile.set(Path.of(workingDir,
                             jarName + "_" + RandomStringUtils.randomAlphanumeric(10))//NOSONAR
                         .toFile());
-                } while (streamOfCandidateFiles(externalJarOptions, jarName)
+                } while (streamOfCandidateFiles(workingDir, jarName)
                     .anyMatch(path -> path.getFileName().equals(candidateFile.get().toPath())));
 
                 RESERVED_FILES.add(candidateFile.get());
@@ -102,11 +102,11 @@ public class DownloadManager {
         }
     }
 
-    private static void downloadJar(CfgExternalJarOptions externalJarOptions, String jarUrl, File jarFile, String
+    private static void downloadJar(String workingDir, String jarUrl, File jarFile, String
         serverId) {
         log.info("Downloading jar for external server {} from '{}'...", serverId, jarUrl);
 
-        var workDir = new File(externalJarOptions.getWorkingDir());
+        var workDir = new File(workingDir);
         if (!workDir.exists() && !workDir.mkdirs()) {
             throw new TigerTestEnvException("Unable to create working directory " + workDir.getAbsolutePath());
         }
@@ -162,11 +162,11 @@ public class DownloadManager {
             .getBytes(StandardCharsets.UTF_8);
     }
 
-    public File downloadJarAndReturnFile(ExternalJarServer externalJarServer, String jarUrl) {
+    public File downloadJarAndReturnFile(ExternalJarServer externalJarServer, String jarUrl, String workingDir) {
         if (jarUrl.startsWith("local:")) {
             var jarName = jarUrl.replaceFirst("local:", "").split("/");
             var jarFile = Paths.get(
-                externalJarServer.getConfiguration().getExternalJarOptions().getWorkingDir(),
+                workingDir,
                 jarName[jarName.length - 1]).toFile();
             if (!jarFile.exists()) {
                 throw new TigerTestEnvException("Local jar " + jarFile.getAbsolutePath() + " not found!");
@@ -176,13 +176,12 @@ public class DownloadManager {
             return jarFile;
         } else {
             externalJarServer.statusMessage("Downloading " + externalJarServer.getServerId() + " JAR-File from '" + jarUrl + "'...");
-            return executeDownload(externalJarServer.getConfiguration().getExternalJarOptions(), jarUrl,
-                externalJarServer.getServerId());
+            return executeDownload(workingDir, jarUrl, externalJarServer.getServerId());
         }
     }
 
     @SneakyThrows
-    private File executeDownload(CfgExternalJarOptions externalJarOptions, String jarUrl,
+    private File executeDownload(String workingDir, String jarUrl,
         String serverId) {
         var jarName = jarUrl
             .substring(jarUrl.lastIndexOf("/") + 1)
@@ -197,14 +196,14 @@ public class DownloadManager {
         log.trace("{} has entered the monitor!", serverId);
 
         try {
-            return streamOfCandidateFiles(externalJarOptions, jarName)
+            return streamOfCandidateFiles(workingDir, jarName)
                 .filter(path -> isJarDownloadedFromUrl(path, jarUrl))
                 .map(Path::toFile)
                 .findAny()
                 .orElseGet(() -> {
-                    File jarFile = seekNewUniqueFile(externalJarOptions, jarName);
+                    File jarFile = seekNewUniqueFile(workingDir, jarName);
 
-                    downloadJar(externalJarOptions, jarUrl, jarFile, serverId);
+                    downloadJar(workingDir, jarUrl, jarFile, serverId);
 
                     return jarFile;
                 });

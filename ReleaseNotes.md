@@ -1,5 +1,31 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.4
+
+## Dependencies
+
+* Serenity BDD 3.2.5
+* RestAssured 5.0.1
+* Selenium 4.1.4
+* Appium 8.0.0
+
+## Features
+
+* TGR-580: Added two new steps "TGR pause test run execution with message {string}" and "TGR pause test run execution with message {string} and message in case of error {string}". The first one is the same as "TGR pause test run execution" but you can alter the message now. The second one gives you the choice to fail the testcase, if whatever you are waiting for or checking is not like you expected. All three steps are Workflow UI only now
+* TGR-594: optimize vertical spacing of messages in workflow UI rbel log details pane overview. Also changed hide header button to hide details button in bottom nav
+
+## Bugfixes
+
+* TGR-561: Generated files from the tiger-maven-plugin now have leading zeros, so they execute in ascending order
+* TGR-589: Massive amount of externalURL servers can lead to concurrentmodification errors in proxy addroute method and will cause the testenv mgr to abort on setup of test environment, fixed by synchronizing the addRoute method in Tiger Proxy
+* TGR-593: Fixing lookup of docker compose files (located in classpath and using relative path references containing "../")
+* TGR-594: Fixing raw modal popup not working in all scenarios (workflow UI, Proxy webui, rbel log HTML file)
+* TGR-536: Filtering on the website no longer splits up message-pairs
+
+## Breaking changes
+
+* TGR-590: we removed tiger-aforeporter-plugin from Tiger
+
 # Release 0.23.3
 
 ## Dependencies
@@ -15,6 +41,7 @@
 * TGR-486: Requirements are now correctly reported when using the Tiger maven plugin to create the serenity report
 * TGR-550: Fixed scenario outlines contain background steps multiple times
 * TGR-524: Tiger local proxy and Tiger WorkflowUI are now running on separate ports not interfering with ports from the free.port.x range
+* TGR-370: Fixed standalone proxy failing on startup with null pointer exception
 
 ## Features
 

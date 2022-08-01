@@ -35,7 +35,7 @@
           https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
         -->
         <version.tiger>0.23.2</version.tiger>
-        <version.serenity.core>3.2.4</version.serenity.core>
+        <version.serenity.core>3.2.5</version.serenity.core>
     </properties>
 
     <!-- tag::dependencies[] -->

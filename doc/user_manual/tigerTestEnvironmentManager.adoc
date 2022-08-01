@@ -239,6 +239,10 @@ The docker compose node is a very tricky type of node because we use testcontain
 
 For now we support the ePA2 FD module and the DEMIS Meldeportal.
 
+If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check xref:tigerConfiguration.adoc#_tiger_configuration[this chapter]).
+
+The processing/copying flatens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have an random UUID appended to its filename.
+
 [source,yaml,title="Docker compose configuration"]
 ----
   type: compose
