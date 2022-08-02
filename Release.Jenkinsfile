@@ -1,5 +1,7 @@
 @Library('gematik-jenkins-shared-library') _
 
+def TEAMS_URL = 'https://gematikde.webhook.office.com/webhookb2/9c4c4366-476c-465d-8188-940f661574c3@30092c62-4dbf-43bf-a33f-10d21b5b660a/JenkinsCI/f7fb184ffab6425cae8e254ea3818449/0151c74f-c7f1-4fe1-834a-6aa680ab023f'
+
 pipeline {
     options {
         disableConcurrentBuilds()
@@ -21,6 +23,12 @@ pipeline {
     }
 
     stages {
+        stage('Initialise') {
+            steps {
+                setProperties([notifyTeams(TEAMS_URL)])
+            }
+        }
+
         stage('Internal-Release') {
             when {
                 expression { params.INTERNAL == 'YES' }
@@ -62,6 +70,9 @@ pipeline {
     post {
         always {
             sendEMailNotification(getTigerEMailList())
+        }
+        success {
+            sendTeamsNotification(TEAMS_URL)
         }
     }
 }
