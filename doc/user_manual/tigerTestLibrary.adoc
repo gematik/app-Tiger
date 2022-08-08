@@ -162,7 +162,7 @@ The example above shows three main features of the JSONChecker.
 
 ===== Regex matching
 
-When comparing values (e.g. in the `TGR current response body matches`) generally the algorithms check for equality and
+When comparing values (e.g. in the `TGR current response body matches:`) generally the algorithms check for equality and
 only check for regex matches if they were not equal.
 
 ==== Complete set of steps in validation glue code

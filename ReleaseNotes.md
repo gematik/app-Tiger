@@ -6,6 +6,9 @@
 
 * TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the message requests from and to a certain server. The corresponding JEXL expression will be added to the input field.
 
+## Breaking changes
+
+* TGR-613: We removed the deprecated Cucumber-Steps in RBelValidatorGlue for good
 
 # Release 0.23.4
 

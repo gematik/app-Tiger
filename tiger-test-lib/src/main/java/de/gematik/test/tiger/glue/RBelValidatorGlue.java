@@ -273,7 +273,6 @@ public class RBelValidatorGlue {
      * @param docString value / regex that should equal or match
      */
     @Dann("TGR prüfe aktuelle Antwort stimmt im Body überein mit:")
-    @Then("TGR current response body matches") //Deprecated
     @Then("TGR current response body matches:")
     public void currentResponseBodyMatches(final String docString) {
         currentResponseMessageAttributeMatches("$.body", docString);
@@ -326,7 +325,6 @@ public class RBelValidatorGlue {
      *                  DocString
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt überein mit:")
-    @Then("TGR current response at {string} matches") // Deprecated
     @Then("TGR current response at {string} matches:")
     public void currentResponseMessageAtMatchesDocString(final String rbelPath, final String docString) {
         currentResponseMessageAttributeMatches(rbelPath, docString);
@@ -400,7 +398,6 @@ public class RBelValidatorGlue {
      * @see <a href="https://github.com/xmlunit/user-guide/wiki/DifferenceEvaluator">More on DifferenceEvaluator</a>
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als XML mit folgenden diff Optionen {string} überein mit:")
-    @Then("TGR current response at {string} matches as XML and diff options {string}") // Deprecated
     @Then("TGR current response at {string} matches as XML and diff options {string}:")
     public void currentResponseAtMatchesAsXMLAndDiffOptions(final String rbelPath, String diffOptionsCSV,
         final String xmlDocStr) {
