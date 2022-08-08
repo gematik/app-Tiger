@@ -111,7 +111,9 @@ public class TigerWebUiController implements ApplicationContextAware {
         TigerProperties tigerProperties = new TigerProperties();
         synchronized (versionToBeAdded) {
             if (!versionAdded) {
-                String versionHtml = "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">" + tigerProperties.getFullBuildVersion() + "</div>";
+                String versionHtml =
+                    "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">"
+                        + tigerProperties.getFullBuildVersion() + "</div>";
                 renderer.setSubTitle(versionHtml + renderer.getSubTitle());
                 versionAdded = true;
             }
@@ -179,10 +181,10 @@ public class TigerWebUiController implements ApplicationContextAware {
                     div().withClass("navbar-start").withStyle(styleNavbarStart).with(
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("routeModalBtn").withClass(successOutlineButton())
-                            .attr("data-target", "routeModalDialog").with(
-                                i().withClass("fas fa-exchange-alt"),
-                                span("Routes").withClass("ml-2").withStyle("color:inherit;")
-                            )
+                                .attr("data-target", "routeModalDialog").with(
+                                    i().withClass("fas fa-exchange-alt"),
+                                    span("Routes").withClass("ml-2").withStyle("color:inherit;")
+                                )
                         ),
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("scrollLockBtn").withClass(darkButton()).with(
@@ -209,6 +211,35 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         )
                                     )
                                 ),
+                                div().withClass("navbar-item dropdown is-up").with(
+                                    div().withId("dropdown-filter-button").withClass("dropdown-trigger").with(
+                                        button().withClass("button").with(
+                                            span().withClass("icon is-small").with(
+                                                i().withClass("fas fa-angle-up")
+                                            )
+                                        )
+                                    ),
+                                    div().withClass("dropdown-menu").withRole("menu").with(
+                                        div().withClass("dropdown-content").with(
+                                            div().withClass("dropdown-item nested dropdown").with(
+                                                div().withClass("dropdown-trigger").with(
+                                                    button("Request from  ").withClass("button")
+                                                ),
+                                                div().withClass("dropdown-menu").withRole("menu").with(
+                                                    div().withId("requestFromContent").withClass("dropdown-content")
+                                                )
+                                            ),
+                                            div().withClass("dropdown-item nested dropdown").with(
+                                                div().withClass("dropdown-trigger").with(
+                                                    button("Request to  ").withClass("button")
+                                                ),
+                                                div().withClass("dropdown-menu").withRole("menu").with(
+                                                    div().withId("requestToContent").withClass("dropdown-content")
+                                                )
+                                            )
+                                        )
+                                    )
+                                ),
                                 div().withClass(navbarItem()).with(
                                     button().withId("setFilterCriterionBtn").withClass(successOutlineButton())
                                         .with(
@@ -225,43 +256,43 @@ public class TigerWebUiController implements ApplicationContextAware {
                             radio("Manual", "updates", "noupdate", "0", "updates"),
                             button("Update").withId("updateBtn").withClass(successOutlineButton())
                         ),
-                    div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
-                        button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
-                            i().withClass("far fa-trash-alt"),
-                            span("Reset").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("saveMsgs").withClass(successOutlineButton()).with(
-                            i().withClass("far fa-save"),
-                            span("Save").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass(getNavbarItemNot4embedded()).with(
-                        button().withId("importMsgs").withClass(successOutlineButton()).with(
-                            i().withClass("far fa-folder-open"),
-                            span("Import").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass(getNavbarItemNot4embedded()).with(
-                        button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
-                            i().withClass("far fa-upload"),
-                            span("Upload").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass(navbarItem()).with(
-                        span("Proxy port "),
-                        b("" + tigerProxy.getProxyPort()).withClass("ml-3")
-                    ),
-                    div().withClass(getNavbarItemNot4embedded()).with(
-                        button().withId("quitProxy").withClass("button is-outlined is-danger").with(
-                            i().withClass("fas fa-power-off"),
-                            span("Quit").withClass("ml-2").withStyle("color:inherit;")
+                        div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
+                            button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
+                                i().withClass("far fa-trash-alt"),
+                                span("Reset").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass("navbar-item").with(
+                            button().withId("saveMsgs").withClass(successOutlineButton()).with(
+                                i().withClass("far fa-save"),
+                                span("Save").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("importMsgs").withClass(successOutlineButton()).with(
+                                i().withClass("far fa-folder-open"),
+                                span("Import").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
+                                i().withClass("far fa-upload"),
+                                span("Upload").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass(navbarItem()).with(
+                            span("Proxy port "),
+                            b("" + tigerProxy.getProxyPort()).withClass("ml-3")
+                        ),
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("quitProxy").withClass("button is-outlined is-danger").with(
+                                i().withClass("fas fa-power-off"),
+                                span("Quit").withClass("ml-2").withStyle("color:inherit;")
+                            )
                         )
                     )
                 )
-            )
-        ).render();
+            ).render();
     }
 
     private String replaceScript(String html) {
@@ -526,6 +557,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             throw new TigerRemoteProxyClientException("Failed to upload report to '" + uploadUrl + "'", e);
         }
     }
+
     @PostMapping(value = "/traffic")
     public void importTrafficFromFile(@RequestBody String rawTraffic) {
         RbelFileWriterUtils.convertFromRbelFile(

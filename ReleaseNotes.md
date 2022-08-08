@@ -1,5 +1,12 @@
 # Changelog Tiger Testplattform
 
+# Release 0.23.5
+
+## Features
+
+* TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the message requests from and to a certain server. The corresponding JEXL expression will be added to the input field.
+
+
 # Release 0.23.4
 
 ## Dependencies
