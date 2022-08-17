@@ -1,9 +1,11 @@
 @Library('gematik-jenkins-shared-library') _
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
-def REPO_URL = createGitUrl('git/authenticator/authenticator-testsuite')
+def REPO_URL = createGitUrl('git/Testtools/epa-iop-tests')
 def BRANCH = 'master'
 def POM_PATH = 'pom.xml'
+def TEAMS_URL = 'https://teams.microsoft.com/l/channel/19%3ac0d9de5fe84a4a3da5278a9446049318%40thread.tacv2/Jenkins-CI?groupId=01cda61b-5c5e-4000-ad6a-7b087feaf0e8&tenantId=30092c62-4dbf-43bf-a33f-10d21b5b660a'
+
 
 pipeline {
       options {
@@ -20,6 +22,12 @@ pipeline {
       }
 
       stages {
+          stage('Initialise') {
+              steps {
+                  useJdk("OPENJDK17")
+              }
+          }
+
           stage('Checkout') {
               steps {
                   git branch: BRANCH,
@@ -28,9 +36,9 @@ pipeline {
               }
           }
 
-          stage('Set Tiger version in Authenticator') {
+          stage('Set Tiger version in Apollo Testsuite') {
               steps {
-                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                   sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' ${POM_PATH}"
               }
           }
 
@@ -42,16 +50,17 @@ pipeline {
 
           stage('Tests') {
               steps {
-                   withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                       mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
-                   }
+                  mavenVerify(POM_PATH)
               }
           }
       }
 
-      post {
-         always {
-             sendEMailNotification(getAuthenticatorTestsuiteEMailList() + "," + getTigerEMailList())
-         }
-      }
+       post {
+          always {
+              sendEMailNotification(getPatientEMailList() + "," + getTigerEMailList())
+          }
+          success {
+              sendTeamsNotification(TEAMS_URL)
+          }
+       }
 }

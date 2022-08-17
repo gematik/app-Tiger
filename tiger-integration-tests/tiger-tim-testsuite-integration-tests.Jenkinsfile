@@ -20,7 +20,6 @@ pipeline {
           string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die nächste Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
       }
 
-      // TODO: TGR-355 "Integrationstest für unwissentliche Changes aufbereiten"
       stages {
           stage('Initialise') {
               steps {
