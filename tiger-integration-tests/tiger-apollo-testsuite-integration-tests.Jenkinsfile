@@ -18,7 +18,8 @@ pipeline {
       }
 
       parameters {
-          string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die nächste Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
+            string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die aktuelle Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
+            booleanParam(name: 'UPDATE', defaultValue: false, description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll. Default: false')
       }
 
       stages {
@@ -56,11 +57,19 @@ pipeline {
       }
 
        post {
-          always {
-              sendEMailNotification(getPatientEMailList() + "," + getTigerEMailList())
-          }
-          success {
-              sendTeamsNotification(TEAMS_URL)
-          }
+            success {
+                 script {
+                     if (UPDATE == true)
+                         sendEMailNotification(getPatientEMailList() + "," + getTigerEMailList())
+                         sendTeamsNotification(TEAMS_URL)
+                 }
+            }
+
+            failure {
+                 script {
+                     if (UPDATE == true)
+                        sendEMailNotification(getPatientEMailList() + "," + getTigerEMailList())
+                 }
+            }
        }
 }

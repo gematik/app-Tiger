@@ -16,7 +16,8 @@ pipeline {
       }
 
       parameters {
-          string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die nächste Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
+           string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die aktuelle Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
+           booleanParam(name: 'UPDATE', defaultValue: false, description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll. Default: false')
       }
 
       stages {
@@ -49,23 +50,39 @@ pipeline {
           }
 
            stage('Commit new Tiger version when needed') {
-               steps {
-                   catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                          sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
-                          sh """
-                              git add -A
-                              git commit -m "Tiger version updated"
-                              git push origin ${BRANCH}
+               environment {
+                    UPDATE_FLAG = "${UPDATE}"
+               }
 
-                          """
-                   }
+               steps {
+                    script {
+                        if (UPDATE_FLAG == true) {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                                sh """
+                                    git add -A
+                                    git commit -m "Tiger version updated"
+                                   git push origin ${BRANCH}
+                                """
+                            }
+                        }
+                    }
                }
            }
-      }
 
       post {
-          always {
-             sendEMailNotification(getTigerEMailList())
+          success {
+              script {
+                  if (UPDATE == true)
+                      sendEMailNotification(getTigerEMailList() + "," + "rafael.schirru@gematik.de")
+              }
+          }
+
+          failure {
+              script {
+                  if (UPDATE == true)
+                      sendEMailNotification(getTigerEMailList() + "," + "rafael.schirru@gematik.de")
+              }
           }
       }
 }

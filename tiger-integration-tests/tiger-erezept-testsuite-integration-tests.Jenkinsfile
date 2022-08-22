@@ -15,9 +15,10 @@ pipeline {
           maven 'Default'
       }
 
-      parameters {
-          string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die nächste Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
-      }
+       parameters {
+                string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die aktuelle Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
+                booleanParam(name: 'UPDATE', defaultValue: false, description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll. Default: false')
+       }
 
       stages {
           stage('Checkout') {
@@ -48,8 +49,18 @@ pipeline {
       }
 
       post {
-          always {
-                sendEMailNotification(getErpE2ETestsuiteEMailList() + "," + getTigerEMailList())
-          }
+         success {
+            script {
+                if (UPDATE == true)
+                    sendEMailNotification(getErpE2ETestsuiteEMailList() + "," + getTigerEMailList())
+            }
+         }
+
+         failure {
+            script {
+                if (UPDATE == true)
+                    sendEMailNotification(getErpE2ETestsuiteEMailList() + "," + getTigerEMailList())
+            }
+         }
       }
 }
