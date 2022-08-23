@@ -166,5 +166,11 @@ pipeline {
               }
          }
     }
+
+   post {
+        always {
+             sendEMailNotification(getTigerEMailList())
+        }
+   }
 }
 
