@@ -3,8 +3,7 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def REPO_URL = createGitUrl('git/communications/ti-m/ti-m-testsuite')
 def BRANCH = 'main'
-def POM_PATH_TEST = 'testsuite/pom.xml'
-def POM_PATH_BUILD = 'pom.xml'
+def POM_PATH = 'pom.xml'
 
 pipeline {
       options {
@@ -38,19 +37,19 @@ pipeline {
 
           stage('Set Tiger version in TI-M') {
               steps {
-                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH_TEST}"
+                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
               }
           }
 
           stage('Build') {
               steps {
-                  mavenBuild(POM_PATH_BUILD)
+                  mavenBuild(POM_PATH)
               }
           }
 
           stage('Tests') {
               steps {
-                  mavenVerify(POM_PATH_TEST, "-P=ci-pipeline")
+                  mavenVerify(POM_PATH, "-P=ci-pipeline")
               }
           }
 
@@ -62,7 +61,7 @@ pipeline {
                    script {
                         if (UPDATE_FLAG == true) {
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH_TEST}"
+                                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
                                 sh """
                                     git add -A
                                     git commit -m "Tiger version updated"
