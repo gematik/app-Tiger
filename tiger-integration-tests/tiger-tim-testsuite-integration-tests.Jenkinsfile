@@ -24,6 +24,8 @@ pipeline {
           stage('Initialise') {
               steps {
                   useJdk("OPENJDK17")
+                  sh "git submodule init"
+                  sh "git submodule update --remote api-ti-messenger"
               }
           }
 
@@ -76,6 +78,9 @@ pipeline {
       }
 
       post {
+           changed {
+                sendEMailNotification(getTigerEMailList())
+           }
            success {
                 script {
                      if (UPDATE == true)

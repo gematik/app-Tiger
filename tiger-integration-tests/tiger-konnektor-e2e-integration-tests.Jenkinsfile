@@ -70,6 +70,9 @@ pipeline {
       }
 
       post {
+          changed {
+              sendEMailNotification(getTigerEMailList())
+          }
           success {
               script {
                    if (UPDATE == true)
