@@ -20,7 +20,6 @@ import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
-import j2html.tags.ContainerTag;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +49,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -68,6 +69,20 @@ public class TigerWebUiController implements ApplicationContextAware {
     private ApplicationContext applicationContext;
     private final AtomicBoolean versionToBeAdded = new AtomicBoolean(false);
     private boolean versionAdded = false;
+
+    public final SimpMessagingTemplate template;
+
+    private static final String WS_NEWMESSAGES = "/topic/ws";
+    @PostConstruct
+    public void addWebSocketListener() {
+        tigerProxy.addRbelMessageListener(this::informClientOfNewMessageArrival);
+    }
+
+    private void informClientOfNewMessageArrival(RbelElement element) {
+        log.info("{} Propagating new message (uUID: {})",
+            tigerProxy.proxyName(), element.getUuid());
+        template.convertAndSend(WS_NEWMESSAGES, element.getUuid());
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext appContext) throws BeansException {
@@ -248,14 +263,6 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         )
                                 )
                             ),
-                        div().withClass(getNavbarItemNot4embedded() + " mr-3").with(
-                            div().withId("updateLed").withClass("led "),
-                            radio("1s", "updates", "update1", "1", "updates"),
-                            radio("2s", "updates", "update2", "2", "updates"),
-                            radio("5s", "updates", "update5", "5", "updates"),
-                            radio("Manual", "updates", "noupdate", "0", "updates"),
-                            button("Update").withId("updateBtn").withClass(successOutlineButton())
-                        ),
                         div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
                             button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
                                 i().withClass("far fa-trash-alt"),
@@ -297,7 +304,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private String replaceScript(String html) {
         var jsoup = Jsoup.parse(html);
-        final Element script = jsoup.select("script").get(0);
+        final Element script = jsoup.select("script").get(2);
         script.dataNodes().get(0).replaceWith(
             new DataNode(loadResourceToString("/tigerProxy.js")));
         return jsoup.html();
@@ -483,20 +490,6 @@ public class TigerWebUiController implements ApplicationContextAware {
         }
         log.info("Uploading report...");
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
-    }
-
-    private ContainerTag radio(final String text, final String name, final String id, String value,
-        final String clazz) {
-        return radio(text, name, id, value, clazz, false);
-    }
-
-    private ContainerTag radio(final String text, final String name, final String id, String value, final String clazz,
-        boolean checked) {
-        return div().withClass("radio-item").with(
-            input().withType("radio").withName(name).withId(id).withValue(value).withClass(clazz)
-                .attr("checked", checked),
-            label(text).attr("for", id)
-        );
     }
 
     private void performUploadReport(String htmlReport) {

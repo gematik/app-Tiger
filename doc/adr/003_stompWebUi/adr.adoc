@@ -1,0 +1,31 @@
+= ADR 003: WebUi auf Stomp push umstellen
+
+== Kontext
+
+Geklärt werden soll wie das Stomp push in der WebUi funktionieren soll.
+
+== Status
+
+* Beim Klick auf den Update-Button wird von der WebUi ein Get-Request auf '/getMsgAfter' gemacht
+* Beim ersten Mal wird weder eine 'lastMsgUuid' noch ein 'filterCriterion' übergeben
+* Bei allen weiteren Malen ist 'lastMsgUuid' gesetzt und ggf auch 'filterCriterion'
+* Bisher werden von der WebUi entweder regelmäßig in einem best. Interval oder manuell die Messages gepullt.
+
+== Entscheidungen
+
+* Es soll ein Listener für die WebUI gebaut werden, der informiert, wenn neue Nachrichten vorhanden sind.
+* Dann soll die Info "neue Nachricht vorhanden" an das WebSocket rausgehen, worauf die WebUIs lauschen.
+* Diese machen dann mit der entsprechenden 'lastMsgUuid' und ggf auch 'filterCriterion' einen erneuten
+* GET-Request Aufruf um sich die neuen Nachrichten zu holen.
+
+* Eventuelles Problem: Existieren mehrere Clients, werden alle gleichzeitig informiert das neue Nachrichten
+* vorhanden sind und machen alle gleichzeitig einen GET-Request.
+* Weiteres Problem: Bei jeder neuen Nachricht wird ein GET-Request gemacht, vielleicht ist das zu viel Traffic.
+* Vorteil: Sobald der Lauf durchgelaufen ist, wird (nicht) mehr unnötig gepullt, da keine Nachrichten mehr über den
+  WebSocket kommen.
+
+== Verifikation
+
+* Wir schauen wie sich die Lösung mit dem WebSocket im Feld bei den Kunden macht, wenn sich herausstellt, dass
+  zu viele Clients gleichzeitig benutzt werden und es deshalb zu Problemen kommt, müssen wir uns diese Lösung noch
+  einmal genauer anschauen.

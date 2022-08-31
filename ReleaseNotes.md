@@ -6,6 +6,7 @@
 
 * TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the message requests from and to a certain server. The corresponding JEXL expression will be added to the input field
 * TGR-595: Spring boot health endpoints are added to the Tiger Proxy
+* TGR-545: In der WebUI we use a WebSocket now to inform the frontend that new traffic is available instead of pulling regularly or manual
 
 ## Breaking changes
 
