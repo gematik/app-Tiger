@@ -9,7 +9,7 @@ pipeline {
       options {
           disableConcurrentBuilds()
       }
-      agent { label 'k8-maven' }
+      agent { label 'k8-maven-large' }
 
       tools {
           maven 'Default'
@@ -22,18 +22,26 @@ pipeline {
 
       stages {
           stage('Initialise') {
-              steps {
-                  useJdk("OPENJDK17")
-                  sh "git submodule init"
-                  sh "git submodule update --remote api-ti-messenger"
-              }
-          }
+            steps {
+                useJdk("OPENJDK17")
+
+                // TODO: script block can be removed when JSL v1.21.0 is released
+                script {
+                    env.DOCKER_HOST_HOSTNAME = sh(
+                            script: "docker info -f '{{ index .Name}}'",
+                            returnStdout: true
+                    ).trim() + getServerDomain()
+                }
+            }
+        }
 
           stage('Checkout') {
               steps {
                   git branch: BRANCH,
                       credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
                       url: REPO_URL
+                  sh "git submodule init"
+                  sh "git submodule update --remote api-ti-messenger"
               }
           }
 
@@ -51,7 +59,7 @@ pipeline {
 
           stage('Tests') {
               steps {
-                  mavenVerify(POM_PATH, "-P=ci-pipeline")
+                  mavenVerify(POM_PATH, "-P ci-pipeline")
               }
           }
 
