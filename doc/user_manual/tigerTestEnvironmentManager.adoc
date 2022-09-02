@@ -97,6 +97,58 @@ serverKey_xxx:
     - systemProp2=Value2
 ----
 
+Here is a little example how the server keys are set and used and how there server is reachable via the Tiger Proxy.
+
+[source,yaml,title="Example with there servers"]
+----
+servers:
+  # here the servers key is "identityServer" and
+  # the server is reachable under "identityServer" via the Tiger Proxy
+  identityServer:
+    type: externalJar
+    source:
+      - local:../octopus-identity-service/target/octopus-identity-service-1.0-SNAPSHOT.jar
+    healthcheckUrl: http://localhost:${tiger.ports.identity}/status
+    externalJarOptions:
+      options:
+        - -Dhttp.proxyHost=127.0.0.1
+        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+      arguments:
+        - --server.port=${tiger.ports.identity}
+        - --services.shopping=http://myShoppingServer
+
+  # here the servers key is "shoppingServer"
+  # but the server is reachable under "myShoppingServer" via the Tiger Proxy because hostname is set
+  shoppingServer:
+    hostname: myShoppingServer
+    type: externalJar
+    source:
+      - local:../octopus-shopping-service/target/octopus-shopping-service-1.0-SNAPSHOT.jar
+    healthcheckUrl: http://localhost:${tiger.ports.shopping}/inventory/status
+    externalJarOptions:
+      options:
+        - -Dhttp.proxyHost=127.0.0.1
+        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+      arguments:
+        - --server.port = ${tiger.ports.shopping}
+        - --services.identity=http://identityServer
+
+  testClient:
+    type: externalJar
+    source:
+      - local:../octopus-example-client/target/octopus-example-client-1.0-SNAPSHOT.jar
+    healthcheckUrl: http://localhost:${tiger.ports.client}/testdriver/status
+    externalJarOptions:
+      options:
+        - -Dhttp.proxyHost=127.0.0.1
+        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+      arguments:
+        - --server.port=${tiger.ports.client}
+        # here are the examples how the servers are reachable
+        - --services.shopping=http://myShoppingServer
+        - --services.identity=http://identityServer
+----
+
 The general properties are followed by the type specific substructures, which configure specific aspects of each node type.
 Their meaning and format are explained in the related section.
 
@@ -316,6 +368,9 @@ externalJar_001:
     # The downloaded jar file will be stored and executed from here
     # The default value is empty, which means that the operating-system-specific
     # temporary folder will be used.
+    # hint: when the jar file is taken from a local directory and is set in source
+    # and the workingDir is set then the workingDir has to be the directory where
+    # the jar file is located
     workingDir: /home/user/test/myspecificjar
     # OPTIONAL Options to pass in to the java executable call.
     options: []
@@ -521,7 +576,7 @@ additionalYamls:
 # the block where all the Tiger Proxy configuration properties are located
 tigerProxy:
   # the port under which the server will be booted
-  port: 7777
+  adminPort: 7777
   # logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
   # section to configure whether and where the proxy should dump
@@ -575,7 +630,7 @@ tigerProxy:
   # can be used if the target-server (to) is behind another proxy
   forwardToProxy:
     hostname: 192.168.110.10
-    port: 3128
+    adminPort: 3128
     type: HTTP
   # The Tiger Proxy will route google.com to google.com even if no route is set.
   # The traffic routed via this "forwardAll"-routing will be logged by default
