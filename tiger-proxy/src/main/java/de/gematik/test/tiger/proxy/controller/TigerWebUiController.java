@@ -213,12 +213,13 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 span("Hide Details")
                             )
                         ),
-                        form().withClass("is-inline-flex").attr("onSubmit", "return false;")
+                        form().withStyle("display:inline;").attr("onSubmit", "return false;")
                             .with(
                                 div().withClass(navbarItem()).with(
                                     div().withClass("field").with(
                                         p().withClass("control has-icons-left").with(
                                             input().withClass("input is-rounded has-text-dark")
+                                                .withStyle("display:inherit;")
                                                 .withType("text")
                                                 .withPlaceholder("RbelPath filter criterion")
                                                 .withId("setFilterCriterionInput")
