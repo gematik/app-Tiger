@@ -241,7 +241,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                                 div().withClass("dropdown-trigger").with(
                                                     button("Request from  ").withClass("button")
                                                 ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;").withRole("menu").with(
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
                                                     div().withId("requestFromContent").withClass("dropdown-content")
                                                 )
                                             ),
@@ -249,7 +249,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                                 div().withClass("dropdown-trigger").with(
                                                     button("Request to  ").withClass("button")
                                                 ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;").withRole("menu").with(
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
                                                     div().withId("requestToContent").withClass("dropdown-content")
                                                 )
                                             )
