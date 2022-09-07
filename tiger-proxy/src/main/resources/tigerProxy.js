@@ -272,6 +272,7 @@ function getLabelId(label, id) {
 function updateDropdownContent(label, list) {
   let divDropdownContent = document.getElementById(label);
   let contained = false;
+
   if (list.length == 0) {
     initDropdownContent(label, list);
   } else {
@@ -313,11 +314,9 @@ function updateDropdownContent(label, list) {
   }
 }
 
-function reinitDropdownContent() {
+function deleteRequestsLists() {
   senders = [];
   receivers = [];
-  initDropdownContent(requestFrom, senders);
-  initDropdownContent(requestTo, receivers);
 }
 
 function updateNestedDropdownContent() {
@@ -329,6 +328,9 @@ function updateNestedDropdownContent() {
 function initDropdownContent(label, list) {
   let divDropdownContent = document.getElementById(label);
   if (list.length == 0) {
+    Array.from(divDropdownContent.children).forEach(child => {
+      divDropdownContent.removeChild(child);
+    });
     let element = document.createElement('A');
     element.textContent = "no requests";
     element.id = getLabelId(label, "empty");
@@ -396,9 +398,9 @@ function showModalImport(e) {
         alert('Error while uploading: ' + response.statusText);
       } else {
         alert('The file has been uploaded successfully.');
-        reinitDropdownContent();
         pollMessages();
         updateNestedDropdownContent();
+        filterBtn.parentElement.classList.remove("is-active");
       }
       return response;
     }).then(function (_response) {
@@ -545,6 +547,7 @@ function resetAllReceivedMessages() {
   sidebarMenu.innerHTML = "";
   const listDiv = getAll('.msglist')[0];
   listDiv.innerHTML = "";
+  deleteRequestsLists();
 }
 
 function resetMessages() {
