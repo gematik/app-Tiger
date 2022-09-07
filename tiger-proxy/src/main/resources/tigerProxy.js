@@ -605,6 +605,7 @@ function setFilterCriterion() {
   filterCriterion = setFilterCriterionInput.value;
   resetAllReceivedMessages();
   pollMessages();
+  collapsibleHeader.classList.remove("led-error");
 }
 
 function uploadReport() {
