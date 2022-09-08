@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>0.23.5-SNAPSHOT</version>
+    <version>0.24.0-SNAPSHOT</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -102,7 +102,7 @@
         <version.maven.surefire>3.0.0-M6</version.maven.surefire>
         <version.maven-plugin-tools>3.6.4</version.maven-plugin-tools>
         <version.mockserver>5.11.9</version.mockserver>
-        <version.rbellogger>0.27.6-280</version.rbellogger>
+        <version.rbellogger>0.28.0</version.rbellogger>
         <version.serenity.core>3.2.5</version.serenity.core>
         <version.serenity.maven.plugin>3.2.5</version.serenity.maven.plugin>
         <version.slf4j>1.7.32</version.slf4j>

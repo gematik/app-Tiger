@@ -1,6 +1,6 @@
 # Changelog Tiger Testplattform
 
-# Release 0.23.5
+# Release 0.24.0
 
 ## Features
 
@@ -11,6 +11,10 @@
 ## Breaking changes
 
 * TGR-613: We removed the deprecated Cucumber-Steps in RBelValidatorGlue for good
+
+## Bugfixes
+ 
+* TGR-624, TGR-630, TGR-633: Small fixes in the WebUi
 
 # Release 0.23.4
 
