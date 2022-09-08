@@ -1,5 +1,21 @@
 # Changelog Tiger Testplattform
 
+# Release 0.24.0
+
+## Features
+
+* TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the message requests from and to a certain server. The corresponding JEXL expression will be added to the input field
+* TGR-595: Spring boot health endpoints are added to the Tiger Proxy
+* TGR-545: In der WebUI we use a WebSocket now to inform the frontend that new traffic is available instead of pulling regularly or manual
+
+## Breaking changes
+
+* TGR-613: We removed the deprecated Cucumber-Steps in RBelValidatorGlue for good
+
+## Bugfixes
+ 
+* TGR-624, TGR-630, TGR-633: Small fixes in the WebUi
+
 # Release 0.23.4
 
 ## Dependencies

@@ -10,7 +10,7 @@ Feature Tiger validation steps
     And When TGR find request to path "/path/path/blabla" contaning "$..tag2"
     Then TGR current response with attribute "$..answer.result.text" matches "OK.*"
     But TGR current response with attribute "$..answer.reason.text" does not match "REQUEST.*"
-    And TGR current response body matches
+    And TGR current response body matches:
     """
          body content
         """

@@ -50,7 +50,7 @@ Feature: Test Tiger BDD
     Then TGR find last request to path "/classes" with "$.path.foobar.value" matching "1"
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
-    #And TGR current response body matches
+    #And TGR current response body matches:
     #"""
     #wdfersdferd
     #"""

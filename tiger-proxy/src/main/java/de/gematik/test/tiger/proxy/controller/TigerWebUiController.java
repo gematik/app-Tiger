@@ -32,7 +32,6 @@ import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
-import j2html.tags.ContainerTag;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +61,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -80,6 +81,20 @@ public class TigerWebUiController implements ApplicationContextAware {
     private ApplicationContext applicationContext;
     private final AtomicBoolean versionToBeAdded = new AtomicBoolean(false);
     private boolean versionAdded = false;
+
+    public final SimpMessagingTemplate template;
+
+    private static final String WS_NEWMESSAGES = "/topic/ws";
+    @PostConstruct
+    public void addWebSocketListener() {
+        tigerProxy.addRbelMessageListener(this::informClientOfNewMessageArrival);
+    }
+
+    private void informClientOfNewMessageArrival(RbelElement element) {
+        log.info("{} Propagating new message (uUID: {})",
+            tigerProxy.proxyName(), element.getUuid());
+        template.convertAndSend(WS_NEWMESSAGES, element.getUuid());
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext appContext) throws BeansException {
@@ -123,7 +138,9 @@ public class TigerWebUiController implements ApplicationContextAware {
         TigerProperties tigerProperties = new TigerProperties();
         synchronized (versionToBeAdded) {
             if (!versionAdded) {
-                String versionHtml = "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">" + tigerProperties.getFullBuildVersion() + "</div>";
+                String versionHtml =
+                    "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">"
+                        + tigerProperties.getFullBuildVersion() + "</div>";
                 renderer.setSubTitle(versionHtml + renderer.getSubTitle());
                 versionAdded = true;
             }
@@ -191,10 +208,10 @@ public class TigerWebUiController implements ApplicationContextAware {
                     div().withClass("navbar-start").withStyle(styleNavbarStart).with(
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("routeModalBtn").withClass(successOutlineButton())
-                            .attr("data-target", "routeModalDialog").with(
-                                i().withClass("fas fa-exchange-alt"),
-                                span("Routes").withClass("ml-2").withStyle("color:inherit;")
-                            )
+                                .attr("data-target", "routeModalDialog").with(
+                                    i().withClass("fas fa-exchange-alt"),
+                                    span("Routes").withClass("ml-2").withStyle("color:inherit;")
+                                )
                         ),
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("scrollLockBtn").withClass(darkButton()).with(
@@ -208,16 +225,46 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 span("Hide Details")
                             )
                         ),
-                        form().withClass("is-inline-flex").attr("onSubmit", "return false;")
+                        form().withStyle("display:inline;").attr("onSubmit", "return false;")
                             .with(
                                 div().withClass(navbarItem()).with(
                                     div().withClass("field").with(
                                         p().withClass("control has-icons-left").with(
                                             input().withClass("input is-rounded has-text-dark")
+                                                .withStyle("display:inherit;")
                                                 .withType("text")
                                                 .withPlaceholder("RbelPath filter criterion")
                                                 .withId("setFilterCriterionInput")
                                                 .attr("autocomplete", "on")
+                                        )
+                                    )
+                                ),
+                                div().withClass("navbar-item dropdown is-up").with(
+                                    div().withId("dropdown-filter-button").withClass("dropdown-trigger").with(
+                                        button().withClass("button").with(
+                                            span().withClass("icon is-small").with(
+                                                i().withClass("fas fa-angle-up")
+                                            )
+                                        )
+                                    ),
+                                    div().withClass("dropdown-menu").withRole("menu").with(
+                                        div().withClass("dropdown-content").with(
+                                            div().withClass("dropdown-item nested dropdown").with(
+                                                div().withClass("dropdown-trigger").with(
+                                                    button("Request from  ").withClass("button")
+                                                ),
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
+                                                    div().withId("requestFromContent").withClass("dropdown-content")
+                                                )
+                                            ),
+                                            div().withClass("dropdown-item nested dropdown").with(
+                                                div().withClass("dropdown-trigger").with(
+                                                    button("Request to  ").withClass("button")
+                                                ),
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
+                                                    div().withId("requestToContent").withClass("dropdown-content")
+                                                )
+                                            )
                                         )
                                     )
                                 ),
@@ -229,56 +276,48 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         )
                                 )
                             ),
-                        div().withClass(getNavbarItemNot4embedded() + " mr-3").with(
-                            div().withId("updateLed").withClass("led "),
-                            radio("1s", "updates", "update1", "1", "updates"),
-                            radio("2s", "updates", "update2", "2", "updates"),
-                            radio("5s", "updates", "update5", "5", "updates"),
-                            radio("Manual", "updates", "noupdate", "0", "updates"),
-                            button("Update").withId("updateBtn").withClass(successOutlineButton())
+                        div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
+                            button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
+                                i().withClass("far fa-trash-alt"),
+                                span("Reset").withClass("ml-2").withStyle("color:inherit;")
+                            )
                         ),
-                    div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
-                        button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
-                            i().withClass("far fa-trash-alt"),
-                            span("Reset").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass("navbar-item").with(
-                        button().withId("saveMsgs").withClass(successOutlineButton()).with(
-                            i().withClass("far fa-save"),
-                            span("Save").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass(getNavbarItemNot4embedded()).with(
-                        button().withId("importMsgs").withClass(successOutlineButton()).with(
-                            i().withClass("far fa-folder-open"),
-                            span("Import").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass(getNavbarItemNot4embedded()).with(
-                        button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
-                            i().withClass("far fa-upload"),
-                            span("Upload").withClass("ml-2").withStyle("color:inherit;")
-                        )
-                    ),
-                    div().withClass(navbarItem()).with(
-                        span("Proxy port "),
-                        b("" + tigerProxy.getProxyPort()).withClass("ml-3")
-                    ),
-                    div().withClass(getNavbarItemNot4embedded()).with(
-                        button().withId("quitProxy").withClass("button is-outlined is-danger").with(
-                            i().withClass("fas fa-power-off"),
-                            span("Quit").withClass("ml-2").withStyle("color:inherit;")
+                        div().withClass("navbar-item").with(
+                            button().withId("saveMsgs").withClass(successOutlineButton()).with(
+                                i().withClass("far fa-save"),
+                                span("Save").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("importMsgs").withClass(successOutlineButton()).with(
+                                i().withClass("far fa-folder-open"),
+                                span("Import").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
+                                i().withClass("far fa-upload"),
+                                span("Upload").withClass("ml-2").withStyle("color:inherit;")
+                            )
+                        ),
+                        div().withClass(navbarItem()).with(
+                            span("Proxy port "),
+                            b("" + tigerProxy.getProxyPort()).withClass("ml-3")
+                        ),
+                        div().withClass(getNavbarItemNot4embedded()).with(
+                            button().withId("quitProxy").withClass("button is-outlined is-danger").with(
+                                i().withClass("fas fa-power-off"),
+                                span("Quit").withClass("ml-2").withStyle("color:inherit;")
+                            )
                         )
                     )
                 )
-            )
-        ).render();
+            ).render();
     }
 
     private String replaceScript(String html) {
         var jsoup = Jsoup.parse(html);
-        final Element script = jsoup.select("script").get(0);
+        final Element script = jsoup.select("script").get(2);
         script.dataNodes().get(0).replaceWith(
             new DataNode(loadResourceToString("/tigerProxy.js")));
         return jsoup.html();
@@ -466,20 +505,6 @@ public class TigerWebUiController implements ApplicationContextAware {
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
 
-    private ContainerTag radio(final String text, final String name, final String id, String value,
-        final String clazz) {
-        return radio(text, name, id, value, clazz, false);
-    }
-
-    private ContainerTag radio(final String text, final String name, final String id, String value, final String clazz,
-        boolean checked) {
-        return div().withClass("radio-item").with(
-            input().withType("radio").withName(name).withId(id).withValue(value).withClass(clazz)
-                .attr("checked", checked),
-            label(text).attr("for", id)
-        );
-    }
-
     private void performUploadReport(String htmlReport) {
         // Connect to the web server endpoint
         String filename = applicationConfiguration.getFilenamePattern()
@@ -538,6 +563,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             throw new TigerRemoteProxyClientException("Failed to upload report to '" + uploadUrl + "'", e);
         }
     }
+
     @PostMapping(value = "/traffic")
     public void importTrafficFromFile(@RequestBody String rawTraffic) {
         RbelFileWriterUtils.convertFromRbelFile(

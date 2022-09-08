@@ -33,11 +33,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-//@Tag("de.gematik.test.tiger.common.LongrunnerTest")
 public class TestDockerMgr {
 
-    private static final String TEST_IMAGE = "eitzenbe/test-containers:1.0.19";
-    private static final String TEST_IMAGE_NO_HEALTHCHECK = "eitzenbe/test-containers:1.1.0";
+    private static final String TEST_IMAGE_NO_HEALTHCHECK = "gematik1/tiger-test-image:1.1.0";
+    private static final String TEST_IMAGE = "gematik1/tiger-test-image:1.0.0";
 
     private DockerMgr dmgr;
     private DockerServer server;
@@ -88,8 +87,6 @@ public class TestDockerMgr {
 
     @Test
     public void testDockerMgrStartupTimeoutFallback() {
-        // TGR-285 ensure image with given version is available locally
-        // see below
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck

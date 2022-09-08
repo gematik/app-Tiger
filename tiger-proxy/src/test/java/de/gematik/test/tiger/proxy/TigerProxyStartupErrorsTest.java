@@ -32,7 +32,7 @@ public class TigerProxyStartupErrorsTest {
     @Test
     public void shouldLoadCorrectKeystore() {
         ApplicationContextRunner contextRunner = tigerProxyStandaloneContext()
-            .withPropertyValues("tigerProxy.serverIdentity=hera.p12;00");
+            .withPropertyValues("tigerProxy.tls.serverIdentity=src/test/resources/hera.p12;00");
 
         contextRunner.run((context) -> assertThat(context).hasNotFailed());
     }
@@ -40,7 +40,7 @@ public class TigerProxyStartupErrorsTest {
     @Test
     public void noCertificateChainSupplied_shouldProduceError() {
         ApplicationContextRunner contextRunner = tigerProxyStandaloneContext()
-            .withPropertyValues("tigerProxy.tls.serverIdentity=tls_cert.jks;gematik");
+            .withPropertyValues("tigerProxy.tls.serverIdentity=src/test/resources/tls_cert.jks;gematik");
 
         contextRunner.run((context) -> {
             assertThat(context).hasFailed();

@@ -238,10 +238,6 @@ public class TigerDirector {
             log.info(
                 Ansi.colorize("SKIPPING TIGER PROXY settings as localProxyActive==false...", RbelAnsiColors.RED_BOLD));
         }
-
-        // TODO TGR-295 DO NOT DELETE!
-        // set proxy to local tigerproxy for erezept idp client
-        // Unirest.config().proxy("localhost", TigerDirector.getTigerTestEnvMgr().getLocalDockerProxy().getPort());
     }
 
     public static synchronized boolean isInitialized() {

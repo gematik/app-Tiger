@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-sed 's/^ *//;s/ *$//' < ../../tiger-test-lib/src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java | \
+sed 's/^ *//;s/ *$//' < ../../tiger-test-lib/src/main/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java | \
 grep -e "^[\*|\/|\@]" | \
 grep -ve "^//" | \
 sed 's/^\/\*/\n\//' | \

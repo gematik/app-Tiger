@@ -19,6 +19,7 @@ package de.gematik.test.tiger.common.config;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.Properties;
 import java.util.Set;
@@ -32,11 +33,10 @@ public class TigerProperties {
     private String buildVersion = "";
     private String buildDate = "";
 
-    public TigerProperties() {
+    public TigerProperties(URL url) {
         Properties properties = new Properties();
-        java.net.URL url = ClassLoader.getSystemResource("build.properties");
-
         if (url == null) {
+            log.warn("Unable to find build.properties at {}", url);
             buildVersion = "?.?.?";
             buildDate = ZonedDateTime.now().toLocalDate().toString();
         } else {
@@ -47,7 +47,6 @@ public class TigerProperties {
             } catch (IOException e) {
                 log.warn("Problems while reading 'build.properties'.");
             }
-
             Set<String> keys = properties.stringPropertyNames();
             for (String key : keys) {
                 if (key.equalsIgnoreCase("tiger.version")) {
@@ -57,6 +56,10 @@ public class TigerProperties {
                 }
             }
         }
+    }
+    
+    public TigerProperties() {
+        this(ClassLoader.getSystemResource("build.properties"));
     }
 
     public String getFullBuildVersion() {

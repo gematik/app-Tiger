@@ -3,6 +3,6 @@ servers:
     startupTimeoutSec: 1
     hostname: testDockerNonExistingVersion
     source:
-      - eitzenbe/test-containers
+      - gematik1/tiger-test-image
     type: docker
     version: 200.200.200

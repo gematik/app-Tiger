@@ -81,10 +81,6 @@ class TestTigerDirector {
             assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getBaseUrl()).startsWith(
                 "http://localhost");
             assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getRbelLogger()).isNotNull();
-            // TODO TGR-124 upgrading to testcontainer 1.16.0 causes the ports info
-            // to be not available in docker config network bindings
-            // so make sure we get ONE valid value here!
-            // see https://github.com/testcontainers/testcontainers-java/issues/4489
             assertThat(
                 TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
                     .getPorts()).hasSize(1);

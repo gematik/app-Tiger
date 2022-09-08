@@ -21,13 +21,11 @@ let filterCriterion = "";
 let rootEl;
 let jexlQueryElementUuid = "";
 
-let updateTimeout = 0;
-let updateHandler = null;
-let updateBtn;
 let resetBtn;
 let saveBtn;
 let uploadBtn;
 let quitBtn;
+let importBtn;
 
 let jexlInspectionResultDiv;
 let jexlInspectionContextDiv;
@@ -57,6 +55,15 @@ let collapsibleHeader;
 let collapsibleMessageDetailsBtn;
 
 let jexlResponseLink;
+let receivers = [];
+let senders = [];
+let filterBtn;
+
+let requestFrom = "requestFromContent";
+let requestTo  = "requestToContent";
+
+let socket;
+let stompClient;
 
 const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "                               class=\"mt-3 is-block\">\n"
@@ -87,7 +94,6 @@ const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
 
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
-  updateBtn = document.getElementById("updateBtn");
   resetBtn = document.getElementById("resetMsgs");
   saveBtn = document.getElementById("saveMsgs");
   importBtn = document.getElementById("importMsgs");
@@ -99,8 +105,18 @@ document.addEventListener('DOMContentLoaded', function () {
   jexlInspectionContextParentDiv = document.getElementById("contextParent");
   jexlInspectionNoContextDiv = document.getElementById("jexlNoContext");
 
+  filterBtn = document.getElementById("dropdown-filter-button");
+  filterBtn.addEventListener("click", updateNestedDropdownContent);
+
   setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
   setFilterCriterionInput = document.getElementById("setFilterCriterionInput");
+  setFilterCriterionInput.addEventListener("keypress", (event) => {
+    if (event.keyCode === 13) {
+      setFilterCriterion();
+      event.preventDefault();
+      return false;
+    }
+  });
 
   btnOpenRouteModal = document.getElementById("routeModalBtn");
   fieldRouteFrom = document.getElementById("addNewRouteFromField");
@@ -121,7 +137,8 @@ document.addEventListener('DOMContentLoaded', function () {
   importBtn.addEventListener('click', showModalImport);
 
   collapsibleHeader = document.getElementById("collapsibleMessageDetails");
-  collapsibleMessageDetailsBtn = document.getElementById("collapsibleMessageDetailsBtn");
+  collapsibleMessageDetailsBtn = document.getElementById(
+      "collapsibleMessageDetailsBtn");
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -134,7 +151,6 @@ document.addEventListener('DOMContentLoaded', function () {
   enableCardToggles();
   enableCollapseExpandAll();
 
-  updateBtn.addEventListener('click', pollMessages);
   setFilterCriterionBtn.addEventListener('click', setFilterCriterion);
   quitBtn.addEventListener('click', quitProxy);
   resetBtn.addEventListener('click', resetMessages);
@@ -204,8 +220,10 @@ document.addEventListener('DOMContentLoaded', function () {
         Array.from(msgCards).forEach(card => {
           const cardToggle = card.children[0].children[0];
           const classListChild = cardToggle.classList;
-          card.childNodes[1].classList.toggle('is-hidden', collapseMessageDetails);
-          setCollapsableIcon(cardToggle.children[0].children[1], collapseMessageDetails);
+          card.childNodes[1].classList.toggle('is-hidden',
+              collapseMessageDetails);
+          setCollapsableIcon(cardToggle.children[0].children[1],
+              collapseMessageDetails);
         });
         if (firstElementOfView) {
           window.setTimeout(() => {
@@ -215,22 +233,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
 
-  getAll("input.updates").forEach(function (el) {
-    el.addEventListener("click", () => {
-      updateTimeout = el.value;
-      if (updateHandler) {
-        clearInterval(updateHandler);
-      }
-      if (updateTimeout !== "0") {
-        updateHandler = setInterval(pollMessages, updateTimeout * 1000);
-        updateBtn.disabled = true;
-      } else {
-        updateBtn.removeAttribute("disabled");
-      }
-    })
-  });
+  initDropdownContent(requestFrom, senders);
+  initDropdownContent(requestTo, receivers);
 
-  document.getElementById("noupdate").click();
+  pollMessages();
 
   btnAddRoute.addEventListener("click", addRoute);
   fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
@@ -259,9 +265,92 @@ document.addEventListener('DOMContentLoaded', function () {
           not4embeddedelems[i].getAttribute("class") + " hidden");
     }
   }
+
+  connectToWebSocket();
 });
 
 // Functions
+function removeActiveFlag(label) {
+  let divDropdownContent = document.getElementById(label);
+  Array.from(divDropdownContent.children).forEach(child => {
+    child.classList.remove("is-active");
+  });
+}
+
+function getLabelId(label, id) {
+  return label + "_" + id;
+}
+
+function updateDropdownContent(label, list) {
+  let divDropdownContent = document.getElementById(label);
+  let contained = false;
+
+  if (list.length == 0) {
+    initDropdownContent(label, list);
+  } else {
+    if (divDropdownContent.children[0].id === getLabelId(label, "empty")) {
+      divDropdownContent.removeChild(divDropdownContent.children[0]);
+    }
+    for (let i = 0; i < list.length; i++) {
+      contained = false;
+      if (divDropdownContent !== null) {
+        Array.from(divDropdownContent.children).forEach(child => {
+          if (child.id === getLabelId(label, list[i])) {
+            contained = true;
+          }
+        });
+      }
+      if (!contained) {
+        let element = document.createElement('A');
+        element.textContent = list[i];
+        element.id = getLabelId(label, list[i]);
+        element.className = "dropdown-item";
+        element.setAttribute("href", "#");
+        element.addEventListener("click", (e) => {
+          removeActiveFlag(requestFrom);
+          removeActiveFlag(requestTo);
+          element.classList.add("is-active");
+          let filterField = document.getElementById(
+              "setFilterCriterionInput");
+          if (label === requestFrom) {
+            filterField.value = "@.sender == \"" + list[i] + "\"";
+          } else {
+            filterField.value = "@.receiver == \"" + list[i] + "\"";
+          }
+          let filterDropdownBtn = document.getElementById("dropdown-filter-button");
+          filterDropdownBtn.parentElement.classList.remove("is-active");
+        });
+        divDropdownContent.appendChild(element);
+      }
+    }
+  }
+}
+
+function deleteRequestsLists() {
+  senders = [];
+  receivers = [];
+}
+
+function updateNestedDropdownContent() {
+  filterBtn.parentElement.classList.toggle("is-active");
+  updateDropdownContent(requestFrom, senders);
+  updateDropdownContent(requestTo, receivers);
+}
+
+function initDropdownContent(label, list) {
+  let divDropdownContent = document.getElementById(label);
+  if (list.length == 0) {
+    Array.from(divDropdownContent.children).forEach(child => {
+      divDropdownContent.removeChild(child);
+    });
+    let element = document.createElement('A');
+    element.textContent = "no requests";
+    element.id = getLabelId(label, "empty");
+    element.className = "dropdown-item";
+    element.setAttribute("href", "#");
+    divDropdownContent.appendChild(element);
+  }
+}
 
 function getFirstElementOfViewport() {
   var msgList = document.getElementsByClassName("msglist")[0];
@@ -322,9 +411,11 @@ function showModalImport(e) {
       } else {
         alert('The file has been uploaded successfully.');
         pollMessages();
+        updateNestedDropdownContent();
+        filterBtn.parentElement.classList.remove("is-active");
       }
       return response;
-    }).then(function (response) {
+    }).then(function (_response) {
       console.log("ok");
     });
   };
@@ -428,9 +519,23 @@ function setCollapsableIcon(target, collapsed) {
   classList.toggle("fa-toggle-off", collapsed);
 }
 
+function connectToWebSocket() {
+  socket = new SockJS("/newMessages");
+  stompClient = Stomp.over(socket, {debug: false});
+  stompClient.connect(
+      {},
+      () => {
+        stompClient.subscribe('/topic/ws', () => {
+          pollMessages();
+        });
+      },
+      (error) => {
+        console.error("Websocket error: " + JSON.stringify(error));
+      }
+  );
+}
+
 function pollMessages() {
-  document.getElementById("updateLed").classList.remove("led-error");
-  document.getElementById("updateLed").classList.add("led-active");
   const xhttp = new XMLHttpRequest();
   xhttp.open("GET", "/webui/getMsgAfter"
       + "?lastMsgUuid=" + lastUuid
@@ -442,12 +547,7 @@ function pollMessages() {
         updateMessageList(response);
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
-        document.getElementById("updateLed").classList.add("led-error");
       }
-      setTimeout(() => {
-        updateBtn.blur();
-        document.getElementById("updateLed").classList.remove("led-active");
-      }, 200);
     }
   }
   xhttp.send();
@@ -459,6 +559,7 @@ function resetAllReceivedMessages() {
   sidebarMenu.innerHTML = "";
   const listDiv = getAll('.msglist')[0];
   listDiv.innerHTML = "";
+  deleteRequestsLists();
 }
 
 function resetMessages() {
@@ -491,7 +592,6 @@ function quitProxy() {
     if (this.readyState === 4) {
       if (this.status === 0) {
         alert("Tiger proxy shut down SUCCESSfully!");
-        updateBtn.disabled = true;
         resetBtn.disabled = true;
         uploadBtn.disabled = true;
         btnScrollLock.disabled = true;
@@ -517,6 +617,7 @@ function setFilterCriterion() {
   filterCriterion = setFilterCriterionInput.value;
   resetAllReceivedMessages();
   pollMessages();
+  collapsibleHeader.classList.remove("led-error");
 }
 
 function uploadReport() {
@@ -738,42 +839,49 @@ function addSingleMessage(msgMetaData, msgHtmlData) {
   addQueryBtn(reqEl);
   listDiv.appendChild(reqEl);
 
-  let msgCards = reqEl.getElementsByClassName('msg-card');
-  const cardToggle = msgCards[0].children[0].children[0];
-  const classListChild = cardToggle.classList;
-  msgCards[0].childNodes[1].classList.toggle('is-hidden', collapseMessageDetails);
-  setCollapsableIcon(cardToggle.children[0].children[1], collapseMessageDetails);
+    var menuItem;
+    if (isRequest) {
+      menuItem = menuHtmlTemplateRequest;
+    } else {
+      menuItem = menuHtmlTemplateResponse;
+    }
+    menuItem = menuItem
+    .replace("${uuid}", msgMetaData.uuid)
+    .replace("${sequence}", msgMetaData.sequenceNumber + 1);
+    if (msgMetaData.menuInfoString != null) {
+      menuItem = menuItem
+      .replace("${menuInfoString}", msgMetaData.menuInfoString);
+    } else {
+      menuItem = menuItem
+      .replace("${menuInfoString}", " ");
+    }
+    if (msgMetaData.timestamp != null) {
+      menuItem = menuItem
+      .replace("${timestamp}",
+          msgMetaData.timestamp.split("T")[1].split("+")[0]);
+    } else {
+      menuItem = menuItem
+      .replace("${timestamp}", " ");
+    }
+    document.getElementById("sidebar-menu")
+    .appendChild(htmlToElement(menuItem));
 
-  msgCards[0].getElementsByClassName("modal-button-details")[0].addEventListener("click", e => {
-    return showModalsCB(e);
-  });
-
-  var menuItem;
-  if (isRequest) {
-    menuItem = menuHtmlTemplateRequest;
-  } else {
-    menuItem = menuHtmlTemplateResponse;
-  }
-  menuItem = menuItem
-  .replace("${uuid}", msgMetaData.uuid)
-  .replace("${sequence}", msgMetaData.sequenceNumber + 1);
-  if (msgMetaData.menuInfoString != null) {
-    menuItem = menuItem
-    .replace("${menuInfoString}", msgMetaData.menuInfoString);
-  } else {
-    menuItem = menuItem
-    .replace("${menuInfoString}", " ");
-  }
-  if (msgMetaData.timestamp != null) {
-    menuItem = menuItem
-    .replace("${timestamp}",
-        msgMetaData.timestamp.split("T")[1].split("+")[0]);
-  } else {
-    menuItem = menuItem
-    .replace("${timestamp}", " ");
-  }
-  document.getElementById("sidebar-menu")
-  .appendChild(htmlToElement(menuItem));
+    if (msgMetaData.sender != null) {
+      const foundSender = Array.from(senders).find(msg => {
+        return msg === msgMetaData.sender;
+      });
+      if (foundSender == null) {
+        senders.push(msgMetaData.sender);
+      }
+    }
+    if (msgMetaData.recipient != null) {
+      const foundReceiver = Array.from(receivers).find(msg => {
+        return msg === msgMetaData.recipient;
+      });
+      if (foundReceiver == null) {
+        receivers.push(msgMetaData.recipient);
+      }
+    }
 }
 
 function updateMessageList(json) {
