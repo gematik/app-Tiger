@@ -30,7 +30,7 @@
         <version.asciidoctorj.pdf>2.3.0</version.asciidoctorj.pdf>
         <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
         <version.bootstrap>5.1.1</version.bootstrap>
-        <version.font-awesome>5.15.4</version.font-awesome>
+        <version.font-awesome>6.1.2</version.font-awesome>
         <version.selenium>4.1.4</version.selenium>
         <version.jquery>3.6.1</version.jquery>
         <version.jquery-ui>1.13.0</version.jquery-ui>
