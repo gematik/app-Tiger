@@ -107,7 +107,7 @@
         <version.serenity.maven.plugin>3.2.5</version.serenity.maven.plugin>
         <version.slf4j>1.7.32</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
-        <version.spring>5.3.18</version.spring>
+        <version.spring>5.3.22</version.spring>
         <version.spring-boot>2.7.0</version.spring-boot>
         <version.system-lambda>1.2.1</version.system-lambda>
         <version.wiremock>2.34.0</version.wiremock>
