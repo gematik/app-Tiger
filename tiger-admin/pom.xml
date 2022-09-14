@@ -33,7 +33,7 @@
         <version.font-awesome>5.15.4</version.font-awesome>
         <version.selenium>4.1.4</version.selenium>
         <version.jquery>3.6.0</version.jquery>
-        <version.jquery-ui>1.13.0</version.jquery-ui>
+        <version.jquery-ui>1.13.2</version.jquery-ui>
         <version.jsonschema>4.20.0</version.jsonschema>
         <version.junit-platform>1.8.2</version.junit-platform>
     </properties>
