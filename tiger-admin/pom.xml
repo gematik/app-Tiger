@@ -25,7 +25,7 @@
         <cucumber.filter.tags></cucumber.filter.tags>
         <mvn.asciidoc.css.style>default</mvn.asciidoc.css.style>
 
-        <version.asciidoctor.maven.plugin>2.2.1</version.asciidoctor.maven.plugin>
+        <version.asciidoctor.maven.plugin>2.2.2</version.asciidoctor.maven.plugin>
         <version.asciidoctorj>2.5.2</version.asciidoctorj>
         <version.asciidoctorj.pdf>1.6.0</version.asciidoctorj.pdf>
         <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
