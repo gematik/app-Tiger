@@ -31,7 +31,7 @@
         <version.jcommander>1.82</version.jcommander>
         <version.jose4j>0.7.12</version.jose4j>
         <version.okhttp>4.10.0</version.okhttp>
-        <version.unirest>3.11.11</version.unirest>
+        <version.unirest>3.13.11</version.unirest>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
     </properties>
