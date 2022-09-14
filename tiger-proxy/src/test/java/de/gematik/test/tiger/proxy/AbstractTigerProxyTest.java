@@ -15,11 +15,15 @@ import com.github.tomakehurst.wiremock.matching.RequestPattern;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomUtils;
+import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,9 +32,9 @@ import org.junit.jupiter.api.BeforeAll;
 public abstract class AbstractTigerProxyTest {
 
     public static WireMockServer fakeBackendServer;
+    public static byte[] binaryMessageContent = new byte[100];
     public TigerProxy tigerProxy;
     public UnirestInstance proxyRest;
-    public static byte[] binaryMessageContent = new byte[100];
 
     @BeforeAll
     public static void setupBackendServer() {
@@ -56,7 +60,10 @@ public abstract class AbstractTigerProxyTest {
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}")));
 
-        ThreadLocalRandom.current().nextBytes(binaryMessageContent);
+        binaryMessageContent = Arrays.concatenate(
+            "This is a meaningless string which will be binary content. And some more test chars: "
+                .getBytes(StandardCharsets.UTF_8),
+            RandomUtils.nextBytes(100));
         fakeBackendServer.stubFor(post(urlPathEqualTo("/foobar"))
             .willReturn(aResponse()
                 .withBody(binaryMessageContent)));

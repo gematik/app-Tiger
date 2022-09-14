@@ -2,6 +2,12 @@
 
 # Release 0.24.0
 
+* Serenity BDD 3.2.5
+* RestAssured 5.0.1
+* Selenium 4.1.4
+* Appium 8.0.0
+* Spring Boot 2.7.0
+
 ## Features
 
 * TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the message requests from and to a certain server. The corresponding JEXL expression will be added to the input field
@@ -10,6 +16,7 @@
 
 ## Breaking changes
 
+* TGR-540: Migration unto the main-branch mockserver. This breaks the client-address. Rbel-Messages no longer carry the information who sent the request (or who received the response). This will be added back in a later version (Ticket TGR-651)
 * TGR-613: We removed the deprecated Cucumber-Steps in RBelValidatorGlue for good
 
 ## Bugfixes
