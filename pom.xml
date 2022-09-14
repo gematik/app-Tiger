@@ -99,7 +99,7 @@
         <version.lombok>1.18.24</version.lombok>
         <version.maven>3.8.6</version.maven>
         <version.maven.failsafe>3.0.0-M6</version.maven.failsafe>
-        <version.maven.surefire>3.0.0-M6</version.maven.surefire>
+        <version.maven.surefire>3.0.0-M7</version.maven.surefire>
         <version.maven-plugin-tools>3.6.4</version.maven-plugin-tools>
         <version.mockserver>5.14.0</version.mockserver>
         <version.rbellogger>0.27.6-280</version.rbellogger>
