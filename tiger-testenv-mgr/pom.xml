@@ -19,7 +19,7 @@
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
         <version.testcontainers>1.17.1</version.testcontainers>
-        <version.webjars-locator-core>0.50</version.webjars-locator-core>
+        <version.webjars-locator-core>0.52</version.webjars-locator-core>
     </properties>
 
     <dependencyManagement>
