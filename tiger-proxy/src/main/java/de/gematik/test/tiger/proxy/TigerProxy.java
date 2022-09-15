@@ -72,7 +72,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
         ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType(ForwardProxyTLSX509CertificatesTrustManager.ANY);
-        ConfigurationProperties.maxLogEntries(10);
+        ConfigurationProperties.maxLogEntries(0);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
