@@ -35,10 +35,10 @@ to the reverse proxy.
 
 === Tiger Proxy basics
 
-The Tiger Proxy is a proxy-server. It has two types: Tiger Proxy and Tiger Standalone Proxy. Both types have a proxy-port (configurable via `tigerProxy.port`),
-which supports both http- and https-traffic (so you do not have to differentiate between the two).
+The Tiger Proxy is a proxy-server. It comes in two flavours: Tiger Proxy and Tiger Standalone Proxy. The standalone tiger proxy is started from a JAR-file. The test environment manager boots the main tiger proxy (local tiger proxy) and also any additional ones (normal tiger proxy, not standalone).
 
-The Tiger Standalone Proxy has an admin-port on top (configurable via `server.port`). This provides a webui to monitor the traffic,
+Both types have a proxy-port (configurable via `tigerProxy.proxyPort`),
+which supports both http- and https-traffic (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via `tigerProxy.adminPort`). This provides a webui to monitor the traffic,
 a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.
 
 === Understanding routes
@@ -243,7 +243,10 @@ tigerProxy:
 === Mesh set up
 
 One of the fundamental features of the Tiger Proxy is mesh set up AKA rbel-message forwarding.
-This forwards the messages, which the proxy has logged, to other Tiger Proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered Tiger Proxies.
+This transmits the information about the messages, which the proxy has logged, to other Tiger Proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered Tiger Proxies.
+
+In a mesh set up the "remote tiger proxy" is the one which intercepts the traffic and sends the information. Conversely, the "receiving tiger proxy" receives the information about the message from the remote tiger proxy. The "local tiger proxy" is the main tiger proxy booted by the testsuite. If you configured it to receive traffic from another tiger proxy (which should always be the case when you are doing a mesh set up) then it is also a receiving tiger proxy.
+
 Common scenario for this approach might be the use of multiple reverse-proxies on the root level (e.g. when the client only allows the configuration of the server IP or domain, but no path-prefix)
 or the aggregation of traffic across machine-boundaries (e.g. one constantly running Tiger Proxy which is used by a testsuite on another machine).
 
