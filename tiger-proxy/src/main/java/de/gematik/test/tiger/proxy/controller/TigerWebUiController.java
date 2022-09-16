@@ -79,7 +79,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     private void informClientOfNewMessageArrival(RbelElement element) {
-        log.info("{} Propagating new message (uUID: {})",
+        log.trace("{} Propagating new message (uUID: {})",
             tigerProxy.proxyName(), element.getUuid());
         template.convertAndSend(WS_NEWMESSAGES, element.getUuid());
     }
@@ -489,7 +489,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
             throw new TigerProxyConfigurationException("Upload feature is not configured!");
         }
-        log.info("Uploading report...");
+        log.info("Uploading report to {}...", applicationConfiguration.getUploadUrl());
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
 
