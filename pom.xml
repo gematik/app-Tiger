@@ -119,7 +119,7 @@
             ${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
 
-        <!-- skipts the usermanual creation per default. Acrivate with -Dasciidoctor.skip=false -->
+        <!-- skips the user-manual creation per default. Activate with -Dasciidoctor.skip=false -->
         <asciidoctor.skip>true</asciidoctor.skip>
     </properties>
 
