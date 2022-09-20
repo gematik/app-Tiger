@@ -21,6 +21,12 @@ pipeline {
       }
 
       stages {
+          stage('Initialise') {
+             steps {
+                  useJdk("OPENJDK17")
+             }
+          }
+
           stage('Checkout') {
               steps {
                   git branch: BRANCH,

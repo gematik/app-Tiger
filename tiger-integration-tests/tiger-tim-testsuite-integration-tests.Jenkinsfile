@@ -40,8 +40,6 @@ pipeline {
                   git branch: BRANCH,
                       credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
                       url: REPO_URL
-                  sh "git submodule init"
-                  sh "git submodule update --remote api-ti-messenger"
               }
           }
 
