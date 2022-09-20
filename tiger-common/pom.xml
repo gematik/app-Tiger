@@ -18,7 +18,7 @@
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
         <version.jfiglet>1.0.1</version.jfiglet>
         <version.reflection-utils>1.1.0</version.reflection-utils>
-        <version.snakeyaml>1.30</version.snakeyaml>
+        <version.snakeyaml>1.32</version.snakeyaml>
     </properties>
 
     <dependencies>
@@ -76,7 +76,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.github.arkinator</groupId>
+            <groupId>org.mock-server</groupId>
             <artifactId>mockserver-core</artifactId>
             <version>${version.mockserver}</version>
             <scope>compile</scope>

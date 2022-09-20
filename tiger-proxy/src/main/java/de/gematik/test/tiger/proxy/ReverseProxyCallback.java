@@ -35,7 +35,8 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
     @Override
     public HttpRequest handleRequest(HttpRequest httpRequest) {
         applyModifications(httpRequest);
-        final HttpRequest request = httpRequest.withSocketAddress(
+        final HttpRequest request = cloneRequest(httpRequest)
+            .withSocketAddress(
                 getTigerRoute().getTo().startsWith("https://"),
                 targetUri.getHost(),
                 port

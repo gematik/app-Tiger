@@ -19,7 +19,7 @@
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
         <version.testcontainers>1.17.1</version.testcontainers>
-        <version.webjars-locator-core>0.50</version.webjars-locator-core>
+        <version.webjars-locator-core>0.52</version.webjars-locator-core>
     </properties>
 
     <dependencyManagement>
@@ -145,7 +145,7 @@
                 <!-- FIXME: marmer 10.03.2022 Fieser Hack, mus weg (mit tiger-testenv-yml -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>copy</id>

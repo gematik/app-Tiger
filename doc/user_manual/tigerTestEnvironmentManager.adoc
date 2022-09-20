@@ -39,9 +39,9 @@ The general properties apply to each node type.
 [source,yaml,title="General properties"]
 ----
 serverKey_xxx:
-  # OPTIONAL host name of this node when accessing it via the test suite
+  # OPTIONAL hostname of this node when accessing it via the test suite
   # (rerouted via the local test suite Tiger Proxy).
-  # Defaults to the server key (serverKey_xxx)
+  # Defaults to the server name (serverKey_xxx)
   hostname: string
   # MANDATORY one of [tigerProxy|docker|compose|externalJar|externalUrl]
   type: string
@@ -97,12 +97,12 @@ serverKey_xxx:
     - systemProp2=Value2
 ----
 
-Here is a little example how the server keys are set and used and how there server is reachable via the Tiger Proxy.
+Here is a little example how the server names are set and used and how there server is reachable via the Tiger Proxy.
 
 [source,yaml,title="Example with there servers"]
 ----
 servers:
-  # here the servers key is "identityServer" and
+  # here the server name is "identityServer" and
   # the server is reachable under "identityServer" via the Tiger Proxy
   identityServer:
     type: externalJar
@@ -117,7 +117,7 @@ servers:
         - --server.port=${tiger.ports.identity}
         - --services.shopping=http://myShoppingServer
 
-  # here the servers key is "shoppingServer"
+  # here the server name is "shoppingServer"
   # but the server is reachable under "myShoppingServer" via the Tiger Proxy because hostname is set
   shoppingServer:
     hostname: myShoppingServer
@@ -453,7 +453,7 @@ tigerProxy_001:
     # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
     # the TigerGlobalConfiguration
     adminPort: 8080
-    # OPTIONAL server key of the node this proxy shall be used as reverse proxy for.
+    # OPTIONAL server name of the node this proxy shall be used as reverse proxy for.
     # If set the routes will be configured appropriately.
     # Default value is empty.
     proxiedServer: externalJar_001
