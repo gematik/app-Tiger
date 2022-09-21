@@ -110,7 +110,7 @@
         <version.spring>5.3.18</version.spring>
         <version.spring-boot>2.7.0</version.spring-boot>
         <version.system-lambda>1.2.1</version.system-lambda>
-        <version.wiremock>2.32.0</version.wiremock>
+        <version.wiremock>2.34.0</version.wiremock>
 
         <sonar.language>java</sonar.language>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
