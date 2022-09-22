@@ -7,6 +7,7 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -18,6 +19,7 @@ import io.restassured.RestAssured;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -34,6 +36,10 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
+import org.apache.hc.client5.http.ssl.TrustAllStrategy;
+import org.apache.hc.core5.ssl.SSLContexts;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -239,7 +245,7 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException, IOException {
+    public void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException {
         final TigerConfigurationPkiIdentity ca = new TigerConfigurationPkiIdentity(
             "src/test/resources/selfSignedCa/rootCa.p12;00");
 
@@ -257,6 +263,43 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
         assertThat(proxyRest.get("https://backend/foobar").asString()
             .getStatus())
             .isEqualTo(666);
+    }
+
+    @Test
+    public void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("https://localhost:" + fakeBackendServer.httpsPort())
+                .build()))
+            .build());
+
+        try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+            unirestInstance.config().httpClient(loadSslContextForClientCert());
+            unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        }
+
+        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.clientTlsCertificateChain.0.subject")
+            .get().getRawStringContent())
+            .contains("CN=mailuser-rsa1");
+    }
+
+    private CloseableHttpClient loadSslContextForClientCert() throws Exception {
+        KeyStore trustStore = KeyStore.getInstance("PKCS12");
+
+        FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12");
+        try {
+            trustStore.load(instream, "00".toCharArray());
+        } finally {
+            instream.close();
+        }
+
+        final SSLContext sslContext = SSLContexts.custom()
+            .loadTrustMaterial(trustStore, new TrustAllStrategy())
+            .loadKeyMaterial(trustStore, "00".toCharArray(), (aliases, socket) -> "alias")
+            .build();
+
+        return HttpClients.custom().setSSLContext(sslContext).build();
     }
 
     @Test

@@ -15,6 +15,7 @@
 * TGR-545: In der WebUI we use a WebSocket now to inform the frontend that new traffic is available instead of pulling regularly or manual
 * TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
 * TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
+* TGR-463: The client certificate chain for mutual-authentication TLS scenarios is now stored in the request-message ($.clientTlsCertificateChain)
 
 ## Breaking changes
 
