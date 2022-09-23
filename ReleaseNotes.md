@@ -16,6 +16,7 @@
 * TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
 * TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
 * TGR-463: The client certificate chain for mutual-authentication TLS scenarios is now stored in the request-message ($.clientTlsCertificateChain)
+* TGR-662: Responses are now available as first-class members in JEXL expressions (documentation updated)
 
 ## Breaking changes
 
@@ -25,6 +26,7 @@
 ## Bugfixes
  
 * TGR-624, TGR-630, TGR-633: Small fixes in the WebUi
+* TGR-662: trafficEndpointFilterString are now honored for standalone tiger proxies
 
 # Release 0.23.4
 

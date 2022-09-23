@@ -373,9 +373,18 @@ The variables that can be used are listed below:
 * `element` contains the current RBeL-Element
 * `parent` gives direct access to the parent element of the current element.
 Is `null` if not present
-* `message` contains the HTTP-Message under which this element was found
-* `request` is the corresponding HTTP-Request. If `message` is a response, then the corresponding Request will be returned.
-If `message` is a request, then the `message` itself will be returned.
+* `message` contains the HTTP-Message under which this element was found. It contains:
+** `method` is the HTTP-Method (or null if it is a response)
+** `url` is the request URL (or null if it is a response)
+** `statusCode` is the status response code (or null if it is a request)
+** `request` is a boolean denoting whether this message is a request
+** `response` is a boolean denoting whether this message is a response
+** `header` is a map containing all headers (as `Map<String, List<String>>`)
+** `bodyAsString` is the body of the message as a raw string, or null if none given
+** `body` is the RbelElement of the message-body, or null if none given
+
+* `request` is the corresponding HTTP-Request. If `message` is a response, then the corresponding Request will be returned. If `message` is a request, then the `message` itself will be returned.
+* `response` is the corresponding HTTP-Response. If `message` is a request, then the corresponding Response will be returned. If `message` is a response, then the `message` itself will be returned.
 * `key` is a string containing the key that the current element can be found under in the parent-element.
 * `path` contains the complete sequence of keys from `message` to `element`.
 * `type` is a string containing the class-name of `element` (eg `RbelJsonElement`).

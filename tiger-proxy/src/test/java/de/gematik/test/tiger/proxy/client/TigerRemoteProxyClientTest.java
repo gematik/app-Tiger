@@ -318,11 +318,13 @@ public class TigerRemoteProxyClientTest {
 
     @Test
     public void downstreamTigerProxyWithFilterCriterion_shouldOnlyShowMatchingMessages() {
-        var filteredTigerProxy = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
+        var filteredTigerProxy = new TigerProxy(
             TigerProxyConfiguration.builder()
-                .proxyLogLevel("WARN")
+                .trafficEndpoints(List.of("http://localhost:" + springServerPort))
                 .trafficEndpointFilterString("request.url =$ 'faa'")
-                .build());
+                .proxyLogLevel("WARN")
+                .build()
+        );
 
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
         filteredTigerProxy.addRbelMessageListener(message -> {

@@ -235,23 +235,29 @@ public class TigerWebUiController implements ApplicationContextAware {
                                             )
                                         )
                                     ),
-                                    div().withClass("dropdown-menu").withRole("menu").with(
+                                    div().withClass("dropdown-menu")
+                                        .attr("role", "menu")
+                                        .with(
                                         div().withClass("dropdown-content").with(
                                             div().withClass("dropdown-item nested dropdown").with(
                                                 div().withClass("dropdown-trigger").with(
                                                     button("Request from  ").withClass("button")
                                                 ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
-                                                    div().withId("requestFromContent").withClass("dropdown-content")
-                                                )
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
+                                                    .attr("role", "menu")
+                                                    .with(
+                                                        div().withId("requestFromContent").withClass("dropdown-content")
+                                                    )
                                             ),
                                             div().withClass("dropdown-item nested dropdown").with(
                                                 div().withClass("dropdown-trigger").with(
                                                     button("Request to  ").withClass("button")
                                                 ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
-                                                    div().withId("requestToContent").withClass("dropdown-content")
-                                                )
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
+                                                    .attr("role", "menu")
+                                                    .with(
+                                                        div().withId("requestToContent").withClass("dropdown-content")
+                                                    )
                                             )
                                         )
                                     )

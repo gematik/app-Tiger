@@ -188,6 +188,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             .map(url -> new TigerRemoteProxyClient(url, TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(
                     getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
+                .trafficEndpointFilterString(getTigerProxyConfiguration().getTrafficEndpointFilterString())
                 .name(getTigerProxyConfiguration().getName())
                 .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
                 .build(), this))
