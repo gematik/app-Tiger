@@ -74,21 +74,35 @@ pipeline {
                 }
                 stage('prepare external release') {
                     steps {
+                        dockerLoginGematikRegistry()
                         mavenSetVersion("${RELEASE_VERSION}")
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+
+                        sh 'git stash'
                         //GH Pages
-                        mavenBuild(POM_PATH, "-Dasciidoctor.skip=false -Dmvn.asciidoc.css.style=gematik")
-                        stash includes: 'tiger-admin/target/adoc/user_manual/tiger_user_manual.html,tiger-admin/target/adoc/user_manual/examples/**/*,tiger-admin/target/adoc/user_manual/media/**/*', name: 'manual'
+
+                        sh '''
+                          docker pull eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest
+                          docker create --name tiger-gemdoc-'''+BUILD_NUMBER+''' eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
+                          docker cp '''+pwd()+''' tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata
+                          docker start --attach tiger-gemdoc-'''+BUILD_NUMBER+'''
+                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
+                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.html .
+                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/media .
+                          docker rm tiger-gemdoc-'''+BUILD_NUMBER+'''
+                        '''
+                        stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*', name: 'manual'
+
                         sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages
                             git clean -df
                             """
                         unstash 'manual'
-                        sh label: 'moveManualsToRoot', script: """
-                            mv ./tiger-admin/target/adoc/user_manual/tiger_user_manual.html ./Tiger-User-Manual.html
-                            mv ./tiger-admin/target/adoc/user_manual/examples ./examples
-                            mv ./tiger-admin/target/adoc/user_manual/media ./media
+                        sh label: 'createManual', script: """
+                            mv ./tiger_user_manual.pdf ./Tiger-User-Manual.pdf
+                            mv ./tiger_user_manual.html ./Tiger-User-Manual.html
                             """
+
                         gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
                         sh "git checkout master"
                     }
