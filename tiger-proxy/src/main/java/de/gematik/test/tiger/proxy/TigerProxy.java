@@ -27,6 +27,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import kong.unirest.Unirest;
@@ -71,7 +72,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
-        ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType(ForwardProxyTLSX509CertificatesTrustManager.ANY);
+        ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType(
+            ForwardProxyTLSX509CertificatesTrustManager.ANY);
         ConfigurationProperties.maxLogEntries(0);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
@@ -119,17 +121,28 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     private void customizeSslSuitesIfApplicable() {
-        if (getTigerProxyConfiguration().getTls().getServerSslSuites() != null) {
+        final TigerTlsConfiguration tlsConfiguration = getTigerProxyConfiguration().getTls();
+        if (tlsConfiguration.getServerSslSuites() != null
+            || tlsConfiguration.getServerTlsProtocols() != null) {
             NettySslContextFactory.sslServerContextBuilderCustomizer = builder -> {
-                builder.ciphers(getTigerProxyConfiguration().getTls().getServerSslSuites());
+                if (tlsConfiguration.getServerSslSuites() != null) {
+                    builder.ciphers(tlsConfiguration.getServerSslSuites());
+                }
+                if (tlsConfiguration.getServerTlsProtocols() != null) {
+                    builder.protocols(tlsConfiguration.getServerTlsProtocols());
+                }
                 return builder;
             };
+        } else {
+            NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
         }
-        if (getTigerProxyConfiguration().getTls().getClientSslSuites() != null) {
+        if (tlsConfiguration.getClientSslSuites() != null) {
             NettySslContextFactory.sslClientContextBuilderCustomizer = builder -> {
-                builder.ciphers(getTigerProxyConfiguration().getTls().getClientSslSuites());
+                builder.ciphers(tlsConfiguration.getClientSslSuites());
                 return builder;
             };
+        } else {
+            NettySslContextFactory.sslClientContextBuilderCustomizer = UnaryOperator.identity();
         }
     }
 

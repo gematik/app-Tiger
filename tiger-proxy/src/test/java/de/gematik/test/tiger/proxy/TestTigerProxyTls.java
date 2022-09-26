@@ -7,7 +7,6 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -29,8 +28,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.net.ssl.*;
 import kong.unirest.*;
+import kong.unirest.apache.ApacheClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -38,12 +40,15 @@ import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.client5.http.ssl.TrustAllStrategy;
 import org.apache.hc.core5.ssl.SSLContexts;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -263,6 +268,51 @@ public class TestTigerProxyTls extends AbstractTigerProxyTest {
         assertThat(proxyRest.get("https://backend/foobar").asString()
             .getStatus())
             .isEqualTo(666);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'TLSv1,TLSv1.2', 'TLSv1.2', true, TLSv1.2",
+        "'TLSv1,TLSv1.2,TLSv1.3', 'TLSv1.2', true, TLSv1.2",
+        "'TLSv1', 'TLSv1.2', false, TLSv1",
+        "'TLSv1.3', 'TLSv1.3', true, TLSv1.3"
+    })
+    public void serverSslVersion_shouldBeHonored(String clientTlsSuites, String serverTlsSuites,
+        boolean shouldConnect, String assertSuiteUsed) {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("https://localhost:" + fakeBackendServer.httpsPort())
+                .build()))
+            .tls(TigerTlsConfiguration.builder()
+                .serverTlsProtocols(Stream.of(serverTlsSuites.split(","))
+                    .collect(Collectors.toList()))
+                .build())
+            .build());
+
+        try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+                tigerProxy.getConfiguredTigerProxySslContext(),
+                clientTlsSuites.split(","),
+                null,
+                (hostname, session) -> {
+                    assertThat(session.getProtocol())
+                        .isEqualTo(assertSuiteUsed);
+                    return true;
+                });
+            var httpClient = HttpClients.custom()
+                .setSSLSocketFactory(sslSocketFactory)
+                .build();
+            unirestInstance.config().httpClient(ApacheClient.builder(httpClient));
+            final GetRequest request = unirestInstance.get(
+                "https://localhost:" + tigerProxy.getProxyPort() + "/foobar");
+            if (shouldConnect) {
+                request.asString();
+            } else {
+                assertThatThrownBy(request::asString)
+                    .hasCauseInstanceOf(SSLHandshakeException.class);
+            }
+        }
     }
 
     @Test

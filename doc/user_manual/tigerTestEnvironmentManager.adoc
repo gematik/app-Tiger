@@ -658,13 +658,19 @@ tigerProxy:
     # This might be easier but requires a certificate
     # which is valid for the configured routes
     serverIdentity: "certificateAndKeyAndChain.p12;Password"
-    # Defines which SSL-Suites are allowed. This will delete all default-suites and only add
-    # the one defined here. This configures the server-side of the proxy.
+    # Defines which SSL-Suites are allowed. This will delete all default-suites and only add the one
+    # defined here. This configures the server-side of the proxy. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
     serverSslSuites:
       - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
-    # This configures the SSL-Suites for the client-side
+    # This configures the SSL-Suites for the client-side. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
     clientSslSuites:
       - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+    # Define which TLS protocols the server will allow/use. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
+    serverTlsProtocols:
+      - "TLSv1.2"
 
     # This identity will be used as a client-identity for mutual-TLS when forwarding to
     # other servers. The information string can be

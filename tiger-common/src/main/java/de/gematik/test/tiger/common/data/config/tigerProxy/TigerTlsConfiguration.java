@@ -29,4 +29,5 @@ public class TigerTlsConfiguration {
     // and assumes localhost will still be supported
     private List<String> serverSslSuites;
     private List<String> clientSslSuites;
+    private List<String> serverTlsProtocols;
 }
