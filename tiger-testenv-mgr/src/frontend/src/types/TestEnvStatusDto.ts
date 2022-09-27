@@ -9,6 +9,7 @@ export default class TestEnvStatusDto {
   bannerMessage:string | null = null;
   bannerColor: string | null = null;
   bannerType: BannerType = BannerType.MESSAGE;
+  bannerIsHtml: boolean = false;
 
   public static sortArray(array:Array<TestEnvStatusDto>) {
     // sort prefetched Messages based on index;

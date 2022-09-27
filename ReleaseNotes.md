@@ -1,6 +1,6 @@
 # Changelog Tiger Testplattform
 
-# Release 0.24.0
+# Release 0.24.1
 
 * Serenity BDD 3.2.5
 * RestAssured 5.0.1
@@ -10,13 +10,25 @@
 
 ## Features
 
+* TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
+* TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
+* TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message 
+
+## Breaking changes
+
+* TGR-540: Migration unto the main-branch mockserver. This breaks the client-address. Rbel-Messages no longer carry the information who sent the request (or who received the response). This will be added back in a later version (Ticket TGR-651)
+
+## Bugfixes
+
+* TGR-662: trafficEndpointFilterString are now honored for standalone tiger proxies
+
+# Release 0.24.0
+
+## Features
+
 * TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the message requests from and to a certain server. The corresponding JEXL expression will be added to the input field
 * TGR-595: Spring boot health endpoints are added to the Tiger Proxy
 * TGR-545: In der WebUI we use a WebSocket now to inform the frontend that new traffic is available instead of pulling regularly or manual
-* TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
-* TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
-* TGR-463: The client certificate chain for mutual-authentication TLS scenarios is now stored in the request-message ($.clientTlsCertificateChain)
-* TGR-662: Responses are now available as first-class members in JEXL expressions (documentation updated)
 
 ## Breaking changes
 
@@ -26,7 +38,6 @@
 ## Bugfixes
  
 * TGR-624, TGR-630, TGR-633: Small fixes in the WebUi
-* TGR-662: trafficEndpointFilterString are now honored for standalone tiger proxies
 
 # Release 0.23.4
 

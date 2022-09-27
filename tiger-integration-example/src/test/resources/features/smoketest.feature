@@ -55,3 +55,14 @@ Feature: Test Tiger BDD
     #wdfersdferd
     #"""
     Then TGR current response with attribute "$.header.Location.xyz.value" matches "4"
+
+  Scenario: Test show HTML
+    Given TGR show HTML Notification:
+    """
+      <b>Fetter Text</b>
+      <p>Mit details</p>
+    """
+    And TGR show HTML Notification:
+    """
+      <span style="color: red">This should be red.</span>
+    """
