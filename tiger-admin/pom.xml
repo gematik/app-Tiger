@@ -34,7 +34,7 @@
         <version.selenium>4.1.4</version.selenium>
         <version.jquery>3.6.1</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>
-        <version.jsonschema>4.26.0</version.jsonschema>
+        <version.jsonschema>4.27.0</version.jsonschema>
         <version.junit-platform>1.9.1</version.junit-platform>
     </properties>
 
