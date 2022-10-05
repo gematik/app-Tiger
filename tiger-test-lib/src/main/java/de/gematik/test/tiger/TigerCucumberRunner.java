@@ -5,17 +5,16 @@
 package de.gematik.test.tiger;
 
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import io.cucumber.core.options.CommandlineOptionsParser;
 import io.cucumber.core.options.RuntimeOptions;
-import io.cucumber.core.plugin.Options;
 import io.cucumber.core.plugin.SerenityReporter;
 import io.cucumber.core.resource.ClassLoaders;
 import io.cucumber.core.runtime.Runtime;
 import io.cucumber.junit.CucumberSerenityRunner;
 import io.cucumber.plugin.Plugin;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.thucydides.core.guice.Injectors;
 import net.thucydides.core.webdriver.Configuration;
@@ -51,7 +50,18 @@ public class TigerCucumberRunner extends CucumberSerenityRunner {
     }
 
     public static byte run(String[] argv, Supplier<ClassLoader> classLoaderSupplier) {
-        RuntimeOptions runtimeOptions = (new CommandlineOptionsParser(System.out)).parse(argv).build();
+        ArrayList<String> argvList = new ArrayList<>(Arrays.asList(argv));
+        int index = argvList.indexOf("--tags");
+        if (index > 0) {
+            String tags = argvList.get(++index);
+            tags = "(" + tags + ") and not @Ignore";
+            argvList.set(index, tags);
+        } else {
+            argvList.add("--tags");
+            argvList.add("not @Ignore");
+        }
+        String[] arr = argvList.toArray(new String[argvList.size()]);
+        RuntimeOptions runtimeOptions = (new CommandlineOptionsParser(System.out)).parse(arr).build();
         setRuntimeOptions(runtimeOptions);
         Runtime runtime = using(classLoaderSupplier, runtimeOptions);
         runtime.run();

@@ -13,6 +13,7 @@
 * TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
 * TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
 * TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message 
+* TGR-577: User can ignore scenarios or whole features by adding "@Ignore" above the scenario/feature in the feature file
 
 ## Breaking changes
 
