@@ -207,11 +207,32 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 span("Scroll Lock")
                             )
                         ),
-                        div().withClass(navbarItem()).with(
-                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton()).with(
-                                div().withId("collapsibleMessageDetails").withClass("led"),
-                                span("Hide Details")
-                            )
+                        div().withClass("navbar-item dropdown is-up").with(
+                            div().withId("dropdown-hide-button").withClass("dropdown-trigger").with(
+                                button().withClass(darkButton()).with(
+                                    span().withClass("icon is-small").with(
+                                        i().withClass("fas fa-toggle-on")
+                                    )
+                                )
+                            ),
+                            div().withClass("dropdown-menu")
+                                .attr("role", "menu")
+                                .with(
+                                    div().withClass("dropdown-content-black").with(
+                                        div().withClass("dropdown-item dropdown").with(
+                                            button().withId("collapsibleMessageHeaderBtn").withClass(darkButton()).with(
+                                                div().withId("collapsibleMessageHeader").withClass("led"),
+                                                span("Hide Headers")
+                                            )
+                                        ),
+                                        div().withClass("dropdown-item dropdown").with(
+                                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton()).with(
+                                                div().withId("collapsibleMessageDetails").withClass("led"),
+                                                span("Hide Details")
+                                            )
+                                        )
+                                    )
+                                )
                         ),
                         form().withStyle("display:inline;").attr("onSubmit", "return false;")
                             .with(

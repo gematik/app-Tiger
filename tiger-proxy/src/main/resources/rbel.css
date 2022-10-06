@@ -302,4 +302,7 @@ pre.json {
     font-weight: 400;
     height: 2em;
 }
+.dropdown-content-black {
+    background-color: #373a3c;
+}
 
