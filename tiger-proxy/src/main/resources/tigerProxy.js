@@ -66,7 +66,8 @@ const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "            </span>\n"
     + "        </div>\n"
     + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3 has-text-weight-bold\">${menuInfoString}"
+    + "             class=\"is-size-6 ml-3 has-text-weight-bold\"\n"
+    + "             title=\"${menuInfoString}\">${menuInfoString}"
     + "        </span>\n"
     + "      </a></div>";
 const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
@@ -79,7 +80,8 @@ const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "            </span>\n"
     + "        </div>\n"
     + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3 has-text-weight-bold\">${menuInfoString}"
+    + "             class=\"is-size-6 ml-3 has-text-weight-bold\"\n"
+    + "             title=\"${menuInfoString}\">${menuInfoString}"
     + "        </span>\n"
     + "      </a></div>";
 
@@ -879,10 +881,10 @@ function addSingleMessage(msgMetaData, msgHtmlData) {
     .replace("${sequence}", msgMetaData.sequenceNumber + 1);
     if (msgMetaData.menuInfoString != null) {
       menuItem = menuItem
-      .replace("${menuInfoString}", msgMetaData.menuInfoString);
+      .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
     } else {
       menuItem = menuItem
-      .replace("${menuInfoString}", " ");
+      .replaceAll("${menuInfoString}", " ");
     }
     if (msgMetaData.timestamp != null) {
       menuItem = menuItem
