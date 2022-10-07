@@ -23,6 +23,7 @@ import java.io.File;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -89,6 +90,8 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
     private int scFailed = 0;
 
     private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|üß ]*)(Banner|banner|text|Text) \"(.*)\"");
+
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     @Override
     public void setEventPublisher(EventPublisher eventPublisher) {
@@ -338,10 +341,8 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
         try {
             // make sure target/rbellogs folder exists
             final File folder = Paths.get("target", "rbellogs").toFile();
-            if (!folder.exists()) {
-                if (!folder.mkdirs()) {
-                    throw new TigerOsException("Unable to create folder '" + folder.getAbsolutePath() + "'");
-                }
+            if (!folder.exists() && !folder.mkdirs()) {
+                throw new TigerOsException("Unable to create folder '" + folder.getAbsolutePath() + "'");
             }
             var rbelRenderer = new RbelHtmlRenderer();
             rbelRenderer.setSubTitle(
@@ -388,15 +389,16 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
     public String getFileNameFor(String scenarioName, int dataVariantIndex) {
         String name = scenarioName;
         final String map = "äaÄAöoÖOüuÜUßs _(_)_[_]_{_}_<_>_|_$_%_&_/_\\_?_:_*_\"_";
-        for (int i = 0; i < map.length(); i += 2) {
-            name = name.replace(map.charAt(i), map.charAt(i + 1));
-        }
-        if (name.length() > 100) { // Serenity can not deal with longer filenames
+        if (name.length() > 80) { // Serenity can not deal with longer filenames
             name = name.substring(0, 60) + UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
         }
         if (dataVariantIndex != -1) {
             name = name + "_" + (dataVariantIndex + 1);
         }
-        return name + ".html";
+        name = name + "_" + sdf.format(new Date()) + ".html";
+        for (int i = 0; i < map.length(); i += 2) {
+            name = name.replace(map.charAt(i), map.charAt(i + 1));
+        }
+        return name;
     }
 }
