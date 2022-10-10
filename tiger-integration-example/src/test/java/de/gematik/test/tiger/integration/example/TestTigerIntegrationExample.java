@@ -33,4 +33,10 @@ public class TestTigerIntegrationExample {
         SerenityRest.get("http://winstone" + path
             + "?" + param);
     }
+
+    @Then("Hier erwarte ich einen Fehler")
+    public void hier_erwarte_ich_einen_fehler() {
+        // Write code here that turns the phrase above into concrete actions
+        throw new io.cucumber.java.PendingException();
+    }
 }

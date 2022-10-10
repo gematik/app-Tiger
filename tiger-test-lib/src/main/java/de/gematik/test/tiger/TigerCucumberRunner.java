@@ -52,11 +52,7 @@ public class TigerCucumberRunner extends CucumberSerenityRunner {
     public static byte run(String[] argv, Supplier<ClassLoader> classLoaderSupplier) {
         ArrayList<String> argvList = new ArrayList<>(Arrays.asList(argv));
         int index = argvList.indexOf("--tags");
-        if (index > 0) {
-            String tags = argvList.get(++index);
-            tags = "(" + tags + ") and not @Ignore";
-            argvList.set(index, tags);
-        } else {
+        if (index <= 0) {
             argvList.add("--tags");
             argvList.add("not @Ignore");
         }

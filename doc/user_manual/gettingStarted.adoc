@@ -78,6 +78,8 @@ It is important to activate the **testFailureIgnore** property, to ensure that e
 
 To filter the scenarios/features to be run you may pass in the Java system property cucumber.filter.tags. You can do so either within the <systemPropertyVariables> tag or via the command line using -Dcucumber.filter.tags
 
+The "not @Ignore" is the default setting for maven verify as well as for IntelliJ, therefore scenarios that should be ignored are to be tagged with @Ignore. If the user uses the cucumber option "-Dcucumber.options" to set own tags then the default setting of "not @Ignore" is overridden. The same counts for own tag settings in the IntelliJ run configuration.
+
 For more details about how to use filter tags see https://cucumber.io/docs/cucumber/api/#tags
 [source,xml]
 ----

@@ -66,3 +66,8 @@ Feature: Test Tiger BDD
     """
       <span style="color: red">This should be red.</span>
     """
+
+  @Ignore
+  Scenario: Dieses Scenario sollte ignoriert werden
+    Given TGR show banner "Das solltest du nicht sehen"
+    Then Hier erwarte ich einen Fehler

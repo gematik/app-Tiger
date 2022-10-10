@@ -7,7 +7,6 @@ package de.gematik.test.tiger.maven.usecases;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import java.io.IOException;
@@ -111,8 +110,9 @@ class DriverGeneratorTest {
                 + "@RunWith(TigerCucumberRunner.class)\n"
                 + "@CucumberOptions(" + "features = {\"featureFile.feature\"},"
                 + " plugin = {\n" + "    \"json:target/cucumber-parallel/1.json\", \"de.gematik.test.tiger.TigerCucumberListener\" },"
-                + " glue = {\"de.gematik.test.tiger.glue\""
-                + "})\n"
+                + " glue = {\"de.gematik.test.tiger.glue\"},"
+                + " tags = \"not @Ignore\""
+                + ")\n"
                 + "public class Mops001IT {\n"
                 + "\n"
                 + "}\n"),
