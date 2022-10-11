@@ -40,14 +40,6 @@ pipeline {
                   mavenBuild(POM_PATH)
               }
           }
-
-          stage('Tests') {
-              steps {
-                   withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                       mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PWithUiTests")
-                   }
-              }
-          }
       }
 
 
