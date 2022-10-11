@@ -630,7 +630,8 @@ tigerProxy:
   # can be used if the target-server (to) is behind another proxy
   forwardToProxy:
     hostname: 192.168.110.10
-    adminPort: 3128
+    port: 3128
+    # for https based traffic you will have to adapt the type to HTTPS
     type: HTTP
   # The Tiger Proxy will route google.com to google.com even if no route is set.
   # The traffic routed via this "forwardAll"-routing will be logged by default
