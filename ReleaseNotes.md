@@ -16,6 +16,7 @@
 * TGR-663: WebUi: All headers are now collapsable
 * TGR-577: User can ignore scenarios or whole features by adding "@Ignore" above the scenario/feature in the feature file
 * TGR-678: The log files in the target/rbellogs directory are now saved with a timestamp at the end of the file name
+* TGR-596: WebUi: Text based Regex/Search as search filter
 
 ## Breaking changes
 

@@ -457,8 +457,14 @@ public class TigerWebUiController implements ApplicationContextAware {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
                 }
-                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
-                    || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
+                if (filterCriterion.startsWith("\"") &&  filterCriterion.endsWith("\"")) {
+                    final String textFilter = filterCriterion.substring(1, filterCriterion.length()-1);
+                    return jexlExecutor.matchAsTextExpression(msg, textFilter)
+                        || jexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
+                } else {
+                    return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
+                        || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
+                }
             })
             .collect(Collectors.toList());
 
