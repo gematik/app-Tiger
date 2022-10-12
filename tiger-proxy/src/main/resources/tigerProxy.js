@@ -408,6 +408,20 @@ function enableModals() {
   // Modals
   let $modalCloses = getAll(
       '.modal-background, .modal-close, .message-header .delete, .modal-card-foot .button');
+  let $modalButtons = getAll('.modal-button');
+
+  if ($modalButtons.length > 0) {
+     $modalButtons.forEach(function ($el) {
+      $el.addEventListener('click', function (e) {
+        let target = $el.dataset.target;
+        let $target = document.getElementById(target);
+        rootEl.classList.add('is-clipped');
+        $target.classList.add('is-active');
+        e.preventDefault();
+        return false;
+      });
+    });
+  }
 
   if ($modalCloses.length > 0) {
     $modalCloses.forEach(function ($el) {
@@ -423,6 +437,7 @@ function showModalSave(e) {
   e.preventDefault();
   return false;
 }
+
 
 function showModalImport(e) {
   var input = document.createElement("input");
