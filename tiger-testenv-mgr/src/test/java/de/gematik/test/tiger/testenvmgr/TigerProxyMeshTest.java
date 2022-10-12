@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -50,7 +51,7 @@ public class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "      adminPort: ${free.port.4}\n"
         + "      proxiedServer: winstone\n"
         + "      proxyPort: ${free.port.5}\n")
-    public void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
+    public void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
         final String path = "/foobarschmar";
         Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
             .asString()
@@ -63,5 +64,61 @@ public class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     .findElement("$.path").map(RbelElement::getRawStringContent)
                     .map(p -> p.endsWith(path))
                     .orElse(false));
+    }
+    @Test
+    @TigerTest(tigerYaml = "tigerProxy:\n"
+        + "  skipTrafficEndpointsSubscription: true\n"
+        + "  trafficEndpoints:\n"
+        + "    - http://localhost:${free.port.2}\n"
+        + "\n"
+        + "servers:\n"
+        + "  winstone:\n"
+        + "    type: externalJar\n"
+        + "    source:\n"
+        + "      - local:target/winstone.jar\n"
+        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
+        + "    externalJarOptions:\n"
+        + "      arguments:\n"
+        + "        - --httpPort=${free.port.0}\n"
+        + "        - --webroot=.\n"
+        + "  aggregatingProxy:\n"
+        + "    type: tigerProxy\n"
+        + "    dependsUpon: reverseProxy1, reverseProxy2\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${free.port.2}\n"
+        + "      proxyPort: ${free.port.3}\n"
+        + "      activateRbelParsing: false\n"
+        + "      rbelBufferSizeInMb: 0\n"
+        + "      trafficEndpoints:\n"
+        + "        - http://localhost:${free.port.4}\n"
+        + "        - http://localhost:${free.port.6}\n"
+        + "  reverseProxy1:\n"
+        + "    type: tigerProxy\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${free.port.4}\n"
+        + "      proxiedServer: winstone\n"
+        + "      proxyPort: ${free.port.5}\n"
+        + "  reverseProxy2:\n"
+        + "    type: tigerProxy\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${free.port.6}\n"
+        + "      proxiedServer: winstone\n"
+        + "      proxyPort: ${free.port.7}\n")
+    public void testWithMultipleUpstreamProxies(TigerTestEnvMgr envMgr) {
+        assertThat(envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory())
+            .isEmpty();
+
+        assertThat(Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5"))
+            .asString()
+            .getStatus())
+            .isEqualTo(200);
+        assertThat(Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.7"))
+            .asString()
+            .getStatus())
+            .isEqualTo(200);
+
+        await().atMost(10, TimeUnit.SECONDS)
+            .until(() ->
+                envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().size() >= 4);
     }
 }
