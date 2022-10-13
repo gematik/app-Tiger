@@ -45,14 +45,17 @@ let btnScrollLock;
 let ledScrollLock;
 let scrollLock = false;
 let collapseMessageDetails = false;
+let collapseMessageHeaders = false;
 
 let testQuitParam = '';
 
 let collapsibleRbelBtn;
 let collapsibleJexlBtn;
 
-let collapsibleHeader;
+let collapsibleDetails;
 let collapsibleMessageDetailsBtn;
+let collapsibleHeaders;
+let collapsibleMessageHeaderBtn;
 
 let jexlResponseLink;
 let receivers = [];
@@ -75,7 +78,8 @@ const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "            </span>\n"
     + "        </div>\n"
     + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3 has-text-weight-bold\">${menuInfoString}"
+    + "             class=\"is-size-6 ml-3 has-text-weight-bold\"\n"
+    + "             title=\"${menuInfoString}\">${menuInfoString}"
     + "        </span>\n"
     + "      </a></div>";
 const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
@@ -88,7 +92,8 @@ const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "            </span>\n"
     + "        </div>\n"
     + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3 has-text-weight-bold\">${menuInfoString}"
+    + "             class=\"is-size-6 ml-3 has-text-weight-bold\"\n"
+    + "             title=\"${menuInfoString}\">${menuInfoString}"
     + "        </span>\n"
     + "      </a></div>";
 
@@ -108,6 +113,9 @@ document.addEventListener('DOMContentLoaded', function () {
   filterBtn = document.getElementById("dropdown-filter-button");
   filterBtn.addEventListener("click", updateNestedDropdownContent);
 
+  hideBtn = document.getElementById("dropdown-hide-button");
+  hideBtn.addEventListener("click", hideDropdownContent);
+
   setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
   setFilterCriterionInput = document.getElementById("setFilterCriterionInput");
   setFilterCriterionInput.addEventListener("keypress", (event) => {
@@ -126,19 +134,23 @@ document.addEventListener('DOMContentLoaded', function () {
   ledScrollLock = document.getElementById("scrollLockLed");
   collapsibleRbelBtn = document.getElementById("rbel-help-icon");
   collapsibleJexlBtn = document.getElementById("jexl-help-icon");
-  collapsibleRbelBtn.addEventListener('click', (e) => {
+  collapsibleRbelBtn.addEventListener('click', () => {
     toggleHelp(collapsibleRbelBtn, "rbel-help");
   });
-  collapsibleJexlBtn.addEventListener('click', (e) => {
+  collapsibleJexlBtn.addEventListener('click', () => {
     toggleHelp(collapsibleJexlBtn, "jexl-help")
   });
   btnOpenRouteModal.addEventListener('click', showModalsCB);
   saveBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
 
-  collapsibleHeader = document.getElementById("collapsibleMessageDetails");
+  collapsibleDetails = document.getElementById("collapsibleMessageDetails");
   collapsibleMessageDetailsBtn = document.getElementById(
       "collapsibleMessageDetailsBtn");
+
+  collapsibleHeaders = document.getElementById("collapsibleMessageHeader");
+  collapsibleMessageHeaderBtn = document.getElementById(
+      "collapsibleMessageHeaderBtn");
 
   enableModals();
   document.addEventListener('keydown', event => {
@@ -174,10 +186,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function todayAsString() {
     var now = new Date();
-    var dateStr = padStr(now.getFullYear() - 2000) +
+    return padStr(now.getFullYear() - 2000) +
         padStr(1 + now.getMonth()) +
         padStr(now.getDate());
-    return dateStr;
   }
 
   function padStr(i) {
@@ -214,12 +225,11 @@ document.addEventListener('DOMContentLoaded', function () {
       () => {
         const firstElementOfView = getFirstElementOfViewport();
         collapseMessageDetails = !collapseMessageDetails;
-        collapsibleHeader.classList.toggle("led-error", collapseMessageDetails);
+        collapsibleDetails.classList.toggle("led-error", collapseMessageDetails);
 
         let msgCards = document.getElementsByClassName('msg-card');
         Array.from(msgCards).forEach(card => {
           const cardToggle = card.children[0].children[0];
-          const classListChild = cardToggle.classList;
           card.childNodes[1].classList.toggle('is-hidden',
               collapseMessageDetails);
           setCollapsableIcon(cardToggle.children[0].children[1],
@@ -231,7 +241,33 @@ document.addEventListener('DOMContentLoaded', function () {
             window.scrollBy(0, -15);
           }, 50);
         }
+        let hideDropdownBtn = document.getElementById("dropdown-hide-button");
+        hideDropdownBtn.parentElement.classList.remove("is-active");
       });
+
+  collapsibleMessageHeaderBtn.addEventListener('click',
+      () => {
+        const firstElementOfView = getFirstElementOfViewport();
+        collapseMessageHeaders = !collapseMessageHeaders;
+        collapsibleHeaders.classList.toggle("led-error", collapseMessageHeaders);
+
+        let msgCards = document.getElementsByClassName('card full-width is-primary notification');
+        Array.from(msgCards).forEach(card => {
+          const cardToggle = card.children[0].children[0];
+          card.childNodes[1].classList.toggle('is-hidden',
+              collapseMessageHeaders);
+          setCollapsableIcon(cardToggle.children[0].children[0],
+              collapseMessageHeaders);
+        });
+        if (firstElementOfView) {
+          window.setTimeout(() => {
+            firstElementOfView.scrollIntoView();
+            window.scrollBy(0, -15);
+          }, 50);
+        }
+        let hideDropdownBtn = document.getElementById("dropdown-hide-button");
+        hideDropdownBtn.parentElement.classList.remove("is-active");
+  });
 
   initDropdownContent(requestFrom, senders);
   initDropdownContent(requestTo, receivers);
@@ -285,7 +321,7 @@ function updateDropdownContent(label, list) {
   let divDropdownContent = document.getElementById(label);
   let contained = false;
 
-  if (list.length == 0) {
+  if (list.length === 0) {
     initDropdownContent(label, list);
   } else {
     if (divDropdownContent.children[0].id === getLabelId(label, "empty")) {
@@ -306,7 +342,7 @@ function updateDropdownContent(label, list) {
         element.id = getLabelId(label, list[i]);
         element.className = "dropdown-item";
         element.setAttribute("href", "#");
-        element.addEventListener("click", (e) => {
+        element.addEventListener("click", () => {
           removeActiveFlag(requestFrom);
           removeActiveFlag(requestTo);
           element.classList.add("is-active");
@@ -337,9 +373,13 @@ function updateNestedDropdownContent() {
   updateDropdownContent(requestTo, receivers);
 }
 
+function hideDropdownContent() {
+  hideBtn.parentElement.classList.toggle("is-active");
+}
+
 function initDropdownContent(label, list) {
   let divDropdownContent = document.getElementById(label);
-  if (list.length == 0) {
+  if (list.length === 0) {
     Array.from(divDropdownContent.children).forEach(child => {
       divDropdownContent.removeChild(child);
     });
@@ -380,6 +420,20 @@ function enableModals() {
   // Modals
   let $modalCloses = getAll(
       '.modal-background, .modal-close, .message-header .delete, .modal-card-foot .button');
+  let $modalButtons = getAll('.modal-button');
+
+  if ($modalButtons.length > 0) {
+     $modalButtons.forEach(function ($el) {
+      $el.addEventListener('click', function (e) {
+        let target = $el.dataset.target;
+        let $target = document.getElementById(target);
+        rootEl.classList.add('is-clipped');
+        $target.classList.add('is-active');
+        e.preventDefault();
+        return false;
+      });
+    });
+  }
 
   if ($modalCloses.length > 0) {
     $modalCloses.forEach(function ($el) {
@@ -395,6 +449,7 @@ function showModalSave(e) {
   e.preventDefault();
   return false;
 }
+
 
 function showModalImport(e) {
   var input = document.createElement("input");
@@ -413,6 +468,7 @@ function showModalImport(e) {
         pollMessages();
         updateNestedDropdownContent();
         filterBtn.parentElement.classList.remove("is-active");
+        hideBtn.parentElement.classList.remove("is-active");
       }
       return response;
     }).then(function (_response) {
@@ -596,6 +652,7 @@ function quitProxy() {
         uploadBtn.disabled = true;
         btnScrollLock.disabled = true;
         collapsibleMessageDetailsBtn.disabled = true;
+        collapsibleMessageHeaderBtn.disabled = true;
         btnOpenRouteModal.disabled = true;
         getAll("input.updates").forEach(function (el) {
           el.disabled = true;
@@ -617,7 +674,8 @@ function setFilterCriterion() {
   filterCriterion = setFilterCriterionInput.value;
   resetAllReceivedMessages();
   pollMessages();
-  collapsibleHeader.classList.remove("led-error");
+  collapsibleDetails.classList.remove("led-error");
+  collapsibleHeaders.classList.remove("led-error");
 }
 
 function uploadReport() {
@@ -850,10 +908,10 @@ function addSingleMessage(msgMetaData, msgHtmlData) {
     .replace("${sequence}", msgMetaData.sequenceNumber + 1);
     if (msgMetaData.menuInfoString != null) {
       menuItem = menuItem
-      .replace("${menuInfoString}", msgMetaData.menuInfoString);
+      .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
     } else {
       menuItem = menuItem
-      .replace("${menuInfoString}", " ");
+      .replaceAll("${menuInfoString}", " ");
     }
     if (msgMetaData.timestamp != null) {
       menuItem = menuItem

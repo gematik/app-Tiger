@@ -22,8 +22,13 @@
       <i class="fa-solid fa-bullhorn fa-flip-horizontal"></i>
       Workflow message
     </h4>
-    <div v-if="bannerData.length > 0" :style="`color: ${bannerData[bannerData.length-1].color};`" class="banner">
-      {{ bannerData[bannerData.length - 1].text }}
+    <div v-if="bannerData.length > 0" class="banner">
+      <div v-if="bannerData[bannerData.length-1].isHtml">
+        <div v-html="`${bannerData[bannerData.length - 1].text}`"></div>
+      </div>
+      <div v-else :style="`color: ${bannerData[bannerData.length-1].color};`">
+        {{ bannerData[bannerData.length - 1].text }}
+      </div>
     </div>
     <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.TESTRUN_ENDED"
          v-on:click="sendQuit"

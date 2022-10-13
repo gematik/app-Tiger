@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.lib;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -334,10 +333,10 @@ public class TigerDirector {
     }
 
     public static void pauseExecution() {
-        pauseExecution("");
+        pauseExecution("", false);
     }
 
-    public static void pauseExecution(String message) {
+    public static void pauseExecution(String message, boolean isHtml) {
         String defaultMessage = "Test execution paused, click to continue";
         if (StringUtils.isBlank(message)) {
             message = defaultMessage;
@@ -348,6 +347,7 @@ public class TigerDirector {
                 .bannerMessage(message)
                 .bannerColor("green")
                 .bannerType(BannerType.STEP_WAIT)
+                .bannerIsHtml(isHtml)
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
                 .atMost(5, TimeUnit.HOURS)
@@ -356,8 +356,11 @@ public class TigerDirector {
         } else {
             // TGR-585
             log.warn(String.format("The step 'TGR pause test run execution with message \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.", message));
-
         }
+    }
+
+    public static void pauseExecution(String message) {
+        pauseExecution(message, false);
     }
 
     public static void pauseExecutionAndFailIfDesired(String message, String errorMessage) {

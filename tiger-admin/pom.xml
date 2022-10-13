@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.24.0</version>
+        <version>0.24.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -25,17 +25,17 @@
         <cucumber.filter.tags></cucumber.filter.tags>
         <mvn.asciidoc.css.style>default</mvn.asciidoc.css.style>
 
-        <version.asciidoctor.maven.plugin>2.2.1</version.asciidoctor.maven.plugin>
+        <version.asciidoctor.maven.plugin>2.2.2</version.asciidoctor.maven.plugin>
         <version.asciidoctorj>2.5.2</version.asciidoctorj>
-        <version.asciidoctorj.pdf>1.6.0</version.asciidoctorj.pdf>
+        <version.asciidoctorj.pdf>2.3.0</version.asciidoctorj.pdf>
         <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
         <version.bootstrap>5.1.1</version.bootstrap>
-        <version.font-awesome>5.15.4</version.font-awesome>
+        <version.font-awesome>6.2.0</version.font-awesome>
         <version.selenium>4.1.4</version.selenium>
-        <version.jquery>3.6.0</version.jquery>
-        <version.jquery-ui>1.13.0</version.jquery-ui>
-        <version.jsonschema>4.20.0</version.jsonschema>
-        <version.junit-platform>1.8.2</version.junit-platform>
+        <version.jquery>3.6.1</version.jquery>
+        <version.jquery-ui>1.13.2</version.jquery-ui>
+        <version.jsonschema>4.27.0</version.jsonschema>
+        <version.junit-platform>1.9.1</version.junit-platform>
     </properties>
 
     <dependencyManagement>
@@ -303,7 +303,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.10.1</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
@@ -521,34 +521,6 @@
                             <requires>
                                 <require>asciidoctor-diagram</require>
                             </requires>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <id>copy-manual-to-adminui</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/target/classes/static/manual</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>target/adoc/user_manual</directory>
-                                    <includes>
-                                        <include>media/**</include>
-                                        <include>*.html</include>
-                                        <include>*.svg</include>
-                                        <include>examples/**</include>
-                                    </includes>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
                         </configuration>
                     </execution>
                 </executions>

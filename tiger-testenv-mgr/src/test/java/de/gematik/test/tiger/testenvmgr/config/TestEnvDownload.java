@@ -37,6 +37,7 @@ import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.Delay;
 import org.mockserver.model.HttpResponse;
@@ -76,6 +77,8 @@ public class TestEnvDownload {
             return;
         }
         log.info("Booting MockServer...");
+        // this is necessary to actually find the downloads later on in the mockserver event log
+        ConfigurationProperties.maxLogEntries(10);
         mockServer = new MockServer(MOCKSERVER_PORT);
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 

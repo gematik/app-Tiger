@@ -149,4 +149,10 @@ public class TigerGlue {
     public void tgrPauseExecutionWithMessageAndErrorMessage(String message, String errorMessage) {
         TigerDirector.pauseExecutionAndFailIfDesired(message, errorMessage);
     }
+
+    @When("TGR show HTML Notification:")
+    @Wenn("TGR zeige HTML Notification:")
+    public void tgrShowHtmlNotification(String message) {
+        TigerDirector.pauseExecution(message, true);
+    }
 }

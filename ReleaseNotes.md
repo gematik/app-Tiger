@@ -1,5 +1,38 @@
 # Changelog Tiger Testplattform
 
+# Release 0.24.1/0.24.2
+
+* Serenity BDD 3.2.5
+* RestAssured 5.0.1
+* Selenium 4.1.4
+* Appium 8.0.0
+* Spring Boot 2.7.0
+
+## Features
+
+* TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
+* TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
+* TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message 
+* TGR-663: WebUi: All headers are now collapsable
+* TGR-577: User can ignore scenarios or whole features by adding "@Ignore" above the scenario/feature in the feature file
+* TGR-678: The log files in the target/rbellogs directory are now saved with a timestamp at the end of the file name
+* TGR-596: WebUi: Text based Regex/Search as search filter
+* TGR-683: WebUi: Button for binary content fixed
+* TGR-544: TigerProxy: Added option for TLS-version
+* TGR-463: re-/create TigerProxy ID from client certificate 
+* TGR-609: Tiger-Test-Library: A step to get the absolute last request (no path input)
+
+## Breaking changes
+
+* TGR-540: Migration unto the main-branch mockserver. This breaks the client-address. Rbel-Messages no longer carry the information who sent the request (or who received the response). This will be added back in a later version (Ticket TGR-651)
+
+## Bugfixes
+
+* TGR-662: trafficEndpointFilterString are now honored for standalone tiger proxies
+* TGR-682: The TigerProxy no longer alters the Host-header for reverse-proxy routes
+* TGR-679: mouse-over for long requests fixed
+* TGR-660: Admin UI fixed
+
 # Release 0.24.0
 
 ## Features

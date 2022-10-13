@@ -7,19 +7,19 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.24.0</version>
+        <version>0.24.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
-        <version.axios>0.26.0</version.axios>
+        <version.axios>1.1.2</version.axios>
         <version.frontend-maven-plugin>1.12.1</version.frontend-maven-plugin>
         <version.node>v16.14.0</version.node>
         <version.npm>8.3.1</version.npm>
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
-        <version.testcontainers>1.17.1</version.testcontainers>
-        <version.webjars-locator-core>0.50</version.webjars-locator-core>
+        <version.testcontainers>1.17.5</version.testcontainers>
+        <version.webjars-locator-core>0.52</version.webjars-locator-core>
     </properties>
 
     <dependencyManagement>
@@ -145,7 +145,7 @@
                 <!-- FIXME: marmer 10.03.2022 Fieser Hack, mus weg (mit tiger-testenv-yml -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>copy</id>

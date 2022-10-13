@@ -1,5 +1,21 @@
+//
+// Copyright (c) 2022 gematik GmbH
+// 
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an 'AS IS' BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 :version: ${project.version}
-:toc:
+:toc: left
 :toc-title: Contents
 :toclevels: 2
 :text-align: justify
@@ -107,12 +123,12 @@ The displayed buttons can trigger the following actions:
 
 * *Routes* … allows you to modify the routes configured on this Tiger Proxy
 * *Scroll Lock* … allows you to lock the scroll position. Incoming messages wills till be added to the list at the bottom of the page.
-* *Hide details*  … collapses all the detailed information of the requests and responses.
-* *Input field*  … allows you to filter the incoming messages with a RbelPath or a JEXL expression by using the "Set filter" button.
+* *Toggle Button*  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as reponse headers) or all the detailed information of the requests and responses.
+* *Input field*  … allows you to filter the incoming messages with a RbelPath or a JEXL expression by using the "Set filter" button. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").
 * *DropUp* … allows you to filter the incoming messages for requests from or to a certain server. The JEXL expression will then be automatically filled in the input field and the user triggers the filter by pressing the "Set filter" button.
-* *Update buttons* allow you to specify how often the list shall be updated. The Update button is only active if you have choosen manual update mode. To the left of the 1s choice there is a small LED that will indicate active retrieval of new data (green) or failure while retrieving data (red).
 * *Reset* … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!
-* *Save* … allows you to save the current HTML page.
+* *Save* … allows you to save the current HTML page or the raw traffic as tgr file.
+* *Import* … allows you to import the previously stored traffic file.
 * *Quit* … allows you to quit the Tiger Proxy instance
 
 == Links to test relevant topics

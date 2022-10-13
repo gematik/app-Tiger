@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.junit.platform.commons.util.StringUtils;
+import org.slf4j.helpers.MessageFormatter;
 import org.springframework.util.SocketUtils;
 
 @Getter
@@ -163,12 +164,12 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         try {
             performStartup();
         } catch (RuntimeException e) {
-            log.warn("Error during startup of server {}. Used configuration was {}",
-                getServerId(), TigerSerializationUtil.toJson(getConfiguration()));
+            log.warn(String.format("Error during startup of server %s. Used configuration was %s",
+                getServerId(), TigerSerializationUtil.toJson(getConfiguration())), e);
             throw e;
         } catch (Throwable t) {
-            log.warn("Throwable during startup of server {}. Used configuration was {}",
-                getServerId(), TigerSerializationUtil.toJson(getConfiguration()));
+            log.warn(String.format("Throwable during startup of server %s. Used configuration was %s",
+                getServerId(), TigerSerializationUtil.toJson(getConfiguration())), t);
             throw t;
         }
         statusMessage(getServerId() + " started");

@@ -60,6 +60,7 @@ public class EnvStatusController implements TigerUpdateListener {
                 tigerEnvStatus.setBannerMessage(update.getBannerMessage());
                 tigerEnvStatus.setBannerColor(update.getBannerColor());
                 tigerEnvStatus.setBannerType(update.getBannerType());
+                tigerEnvStatus.setBannerHtml(update.isBannerIsHtml());
             }
             // TODO make sure to check that the index is the expected next number, if not we do have to cache this and wait for the correct message
             //  TODO to be received and then process the cached messages in order, currently this is done on the client side

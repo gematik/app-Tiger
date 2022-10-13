@@ -91,7 +91,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     private void informClientOfNewMessageArrival(RbelElement element) {
-        log.info("{} Propagating new message (uUID: {})",
+        log.trace("{} Propagating new message (uUID: {})",
             tigerProxy.proxyName(), element.getUuid());
         template.convertAndSend(WS_NEWMESSAGES, element.getUuid());
     }
@@ -219,11 +219,32 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 span("Scroll Lock")
                             )
                         ),
-                        div().withClass(navbarItem()).with(
-                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton()).with(
-                                div().withId("collapsibleMessageDetails").withClass("led"),
-                                span("Hide Details")
-                            )
+                        div().withClass("navbar-item dropdown is-up").with(
+                            div().withId("dropdown-hide-button").withClass("dropdown-trigger").with(
+                                button().withClass(darkButton()).with(
+                                    span().withClass("icon is-small").with(
+                                        i().withClass("fas fa-toggle-on")
+                                    )
+                                )
+                            ),
+                            div().withClass("dropdown-menu")
+                                .attr("role", "menu")
+                                .with(
+                                    div().withClass("dropdown-content-black").with(
+                                        div().withClass("dropdown-item dropdown").with(
+                                            button().withId("collapsibleMessageHeaderBtn").withClass(darkButton()).with(
+                                                div().withId("collapsibleMessageHeader").withClass("led"),
+                                                span("Hide Headers")
+                                            )
+                                        ),
+                                        div().withClass("dropdown-item dropdown").with(
+                                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton()).with(
+                                                div().withId("collapsibleMessageDetails").withClass("led"),
+                                                span("Hide Details")
+                                            )
+                                        )
+                                    )
+                                )
                         ),
                         form().withStyle("display:inline;").attr("onSubmit", "return false;")
                             .with(
@@ -247,23 +268,29 @@ public class TigerWebUiController implements ApplicationContextAware {
                                             )
                                         )
                                     ),
-                                    div().withClass("dropdown-menu").withRole("menu").with(
+                                    div().withClass("dropdown-menu")
+                                        .attr("role", "menu")
+                                        .with(
                                         div().withClass("dropdown-content").with(
                                             div().withClass("dropdown-item nested dropdown").with(
                                                 div().withClass("dropdown-trigger").with(
                                                     button("Request from  ").withClass("button")
                                                 ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
-                                                    div().withId("requestFromContent").withClass("dropdown-content")
-                                                )
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
+                                                    .attr("role", "menu")
+                                                    .with(
+                                                        div().withId("requestFromContent").withClass("dropdown-content")
+                                                    )
                                             ),
                                             div().withClass("dropdown-item nested dropdown").with(
                                                 div().withClass("dropdown-trigger").with(
                                                     button("Request to  ").withClass("button")
                                                 ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;").withRole("menu").with(
-                                                    div().withId("requestToContent").withClass("dropdown-content")
-                                                )
+                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
+                                                    .attr("role", "menu")
+                                                    .with(
+                                                        div().withId("requestToContent").withClass("dropdown-content")
+                                                    )
                                             )
                                         )
                                     )
@@ -442,8 +469,14 @@ public class TigerWebUiController implements ApplicationContextAware {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
                 }
-                return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
-                    || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
+                if (filterCriterion.startsWith("\"") &&  filterCriterion.endsWith("\"")) {
+                    final String textFilter = filterCriterion.substring(1, filterCriterion.length()-1);
+                    return jexlExecutor.matchAsTextExpression(msg, textFilter)
+                        || jexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
+                } else {
+                    return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
+                        || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
+                }
             })
             .collect(Collectors.toList());
 
@@ -501,7 +534,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
             throw new TigerProxyConfigurationException("Upload feature is not configured!");
         }
-        log.info("Uploading report...");
+        log.info("Uploading report to {}...", applicationConfiguration.getUploadUrl());
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
 

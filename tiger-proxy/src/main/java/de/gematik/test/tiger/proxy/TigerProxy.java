@@ -27,6 +27,7 @@ import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
+import io.netty.handler.ssl.SslContextBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
@@ -36,14 +37,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import kong.unirest.Unirest;
 import kong.unirest.apache.ApacheClient;
 import lombok.Getter;
@@ -53,6 +51,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.logging.MockServerLogger;
@@ -63,6 +62,7 @@ import org.mockserver.model.ExpectationId;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
+import org.mockserver.socket.tls.ForwardProxyTLSX509CertificatesTrustManager;
 import org.mockserver.socket.tls.KeyAndCertificateFactory;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 import org.mockserver.socket.tls.NettySslContextFactory;
@@ -84,13 +84,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
-        ConfigurationProperties.useBouncyCastleForKeyAndCertificateGeneration(true);
-        ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType("ANY");
-        ConfigurationProperties.maxLogEntries(10);
+        ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType(
+            ForwardProxyTLSX509CertificatesTrustManager.ANY);
+        ConfigurationProperties.maxLogEntries(0);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
         }
-        customizeSslSuitesIfApplicable(configuration);
+
+        customizeSslSuitesIfApplicable();
 
         final Optional<ProxyConfiguration> forwardProxyConfig = configuration.convertForwardProxyConfigurationToMockServerConfiguration();
         outputForwardProxyConfigLogs(forwardProxyConfig);
@@ -131,18 +132,29 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         }
     }
 
-    private void customizeSslSuitesIfApplicable(final TigerProxyConfiguration configuration) {
-        if (configuration.getTls().getServerSslSuites() != null) {
+    private void customizeSslSuitesIfApplicable() {
+        final TigerTlsConfiguration tlsConfiguration = getTigerProxyConfiguration().getTls();
+        if (tlsConfiguration.getServerSslSuites() != null
+            || tlsConfiguration.getServerTlsProtocols() != null) {
             NettySslContextFactory.sslServerContextBuilderCustomizer = builder -> {
-                builder.ciphers(configuration.getTls().getServerSslSuites());
+                if (tlsConfiguration.getServerSslSuites() != null) {
+                    builder.ciphers(tlsConfiguration.getServerSslSuites());
+                }
+                if (tlsConfiguration.getServerTlsProtocols() != null) {
+                    builder.protocols(tlsConfiguration.getServerTlsProtocols());
+                }
                 return builder;
             };
+        } else {
+            NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
         }
-        if (configuration.getTls().getClientSslSuites() != null) {
+        if (tlsConfiguration.getClientSslSuites() != null) {
             NettySslContextFactory.sslClientContextBuilderCustomizer = builder -> {
-                builder.ciphers(configuration.getTls().getClientSslSuites());
+                builder.ciphers(tlsConfiguration.getClientSslSuites());
                 return builder;
             };
+        } else {
+            NettySslContextFactory.sslClientContextBuilderCustomizer = UnaryOperator.identity();
         }
     }
 
@@ -157,17 +169,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 || getTigerProxyConfiguration().getTls() == null
                 || getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity() == null) {
                 final TigerKeyAndCertificateFactory factory = new TigerKeyAndCertificateFactory(mockServerLogger,
-                    determineServerRootCa().orElse(null),
-                    getTigerProxyConfiguration().getTls().getServerIdentity(),
-                    getTigerProxyConfiguration().getTls());
+                    getTigerProxyConfiguration(),
+                    determineServerRootCa().orElse(null));
                 if (isServerInstance) {
                     tlsFactories.add(factory);
                 }
                 return factory;
             } else {
                 return new TigerKeyAndCertificateFactory(mockServerLogger,
-                    null, getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity(),
-                    getTigerProxyConfiguration().getTls());
+                    getTigerProxyConfiguration(), null);
             }
         };
     }
@@ -203,6 +213,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             .map(url -> new TigerRemoteProxyClient(url, TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(
                     getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
+                .trafficEndpointFilterString(getTigerProxyConfiguration().getTrafficEndpointFilterString())
                 .name(getTigerProxyConfiguration().getName())
                 .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
                 .build(), this))
@@ -216,7 +227,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .withHeader("content-type", "text/html; charset=utf-8")
                 .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
         mockServerClient.when(request()
-                .withHeader("Host", null)
+                .withHeader("Host", ".*")
                 .withPath("/rbel"))
             .respond(httpRequest ->
                 HttpResponse.response()

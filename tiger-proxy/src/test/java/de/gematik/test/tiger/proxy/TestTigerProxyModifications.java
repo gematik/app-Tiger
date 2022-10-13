@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import java.util.List;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -89,8 +90,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified value");
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.header.Content-Length"))
-            .get().extracting(RbelElement::getRawStringContent)
-            .isEqualTo(Integer.toString(jsonBody.length()));
+            .isEmpty(); // not present in mocked response, not added by tiger-proxy
         assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.another.node.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("correctValue");

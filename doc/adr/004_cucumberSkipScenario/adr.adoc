@@ -1,0 +1,39 @@
+= ADR 004: Ignore Tag for Cucumber Code
+
+== Kontext
+
+Geklärt werden ob es ein vordefiniertes Tag für das Ignoriern einzelner Scenarien oder ganzer Feature gibt und wie das
+umgesetzt werden kann.
+
+== Status
+
+* Es gibt verschiedene Möglichkeiten.
+* Configuration Option: Man kann über die die Cucumber Tag Expression einzelne Scenarien exkluden.
+** Zum Beispiel: mvn test -Dcucumber.filter.tags="not @Ignore"
+* CucumberTag über die CucumberOptions setzen
+** `@CucumberOptions(tags = "not @ignore")`
+** `public class RunCucumberTest {}`
+* JUnit5 Tag Expression: mvn verify -DexcludedGroups="Ignore"
+** Für den Serenity-Report generiert unter /target/site/serenity/serenity-summary.html werden die Test die im "@Ignore" getaggt sind bereits ignoriert.
+** Für die Ausführung der Tests im IntelliJ muss zusätzlich '--tags "not @Ignore"' bei den Programmargumenten hinzugegeben werden.
+* Man kann auch mittels Before-Annotation in einer Hook-Klasse den Skip-Schritt abfangen:
+** public class CucumberHooks {
+**  @Before("@skip_scenario")
+**  public void skip_scenario(Scenario scenario){
+**     System.out.println("SKIP SCENARIO: " + scenario.getName());
+**     Assume.assumeTrue(false); } }
+
+* Nach einigen Tests stellte sich heraus das Serenity bereits das @Ignore Tag als ignorierten Test erkennt und auch
+IntelliJ ignorierte Scenarien und Feature wenn sie mit @Ignore getaggt sind und in der Run Configuration folgendes bei den Programmargumenten hinzugefügt wird: --tags
+"not @Ignore"
+* Für maven verify kann der Nutzer -Dcucumber.filter.tags="not @Ignore" hinzufügen, damit die Scenarien ignoriert werden.
+
+== Entscheidungen
+
+* Es wurden zwei Änderungen vorgenommen, damit das Ignorieren der Tests für maven als auch über IntelliJ out-of-the-box funktioniert.
+* 1. Änderung (IntelliJ): Für eine leichtere Bedienbarkeit wird das --tags "not @Ignore" standardmäßig in den TigerCucumberRunner eingebaut. In den run configuraion können zusätzliche Tags angegeben werden. Das "and not @Ignore" wird automatisch im TigerCucumberRunner hinzugefügt.
+* 2. Änderung (maven): Für maven haben wir das driverClassTemplate.jtmpl Template angepasst und das tag "not @Ignore" hinzugefügt.
+
+== Verifikation
+
+

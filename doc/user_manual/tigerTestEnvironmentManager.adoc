@@ -39,9 +39,9 @@ The general properties apply to each node type.
 [source,yaml,title="General properties"]
 ----
 serverKey_xxx:
-  # OPTIONAL host name of this node when accessing it via the test suite
+  # OPTIONAL hostname of this node when accessing it via the test suite
   # (rerouted via the local test suite Tiger Proxy).
-  # Defaults to the server key (serverKey_xxx)
+  # Defaults to the server name (serverKey_xxx)
   hostname: string
   # MANDATORY one of [tigerProxy|docker|compose|externalJar|externalUrl]
   type: string
@@ -97,12 +97,12 @@ serverKey_xxx:
     - systemProp2=Value2
 ----
 
-Here is a little example how the server keys are set and used and how there server is reachable via the Tiger Proxy.
+Here is a little example how the server names are set and used and how there server is reachable via the Tiger Proxy.
 
 [source,yaml,title="Example with there servers"]
 ----
 servers:
-  # here the servers key is "identityServer" and
+  # here the server name is "identityServer" and
   # the server is reachable under "identityServer" via the Tiger Proxy
   identityServer:
     type: externalJar
@@ -117,7 +117,7 @@ servers:
         - --server.port=${tiger.ports.identity}
         - --services.shopping=http://myShoppingServer
 
-  # here the servers key is "shoppingServer"
+  # here the server name is "shoppingServer"
   # but the server is reachable under "myShoppingServer" via the Tiger Proxy because hostname is set
   shoppingServer:
     hostname: myShoppingServer
@@ -453,7 +453,7 @@ tigerProxy_001:
     # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
     # the TigerGlobalConfiguration
     adminPort: 8080
-    # OPTIONAL server key of the node this proxy shall be used as reverse proxy for.
+    # OPTIONAL server name of the node this proxy shall be used as reverse proxy for.
     # If set the routes will be configured appropriately.
     # Default value is empty.
     proxiedServer: externalJar_001
@@ -630,7 +630,8 @@ tigerProxy:
   # can be used if the target-server (to) is behind another proxy
   forwardToProxy:
     hostname: 192.168.110.10
-    adminPort: 3128
+    port: 3128
+    # for https based traffic you will have to adapt the type to HTTPS
     type: HTTP
   # The Tiger Proxy will route google.com to google.com even if no route is set.
   # The traffic routed via this "forwardAll"-routing will be logged by default
@@ -658,13 +659,19 @@ tigerProxy:
     # This might be easier but requires a certificate
     # which is valid for the configured routes
     serverIdentity: "certificateAndKeyAndChain.p12;Password"
-    # Defines which SSL-Suites are allowed. This will delete all default-suites and only add
-    # the one defined here. This configures the server-side of the proxy.
+    # Defines which SSL-Suites are allowed. This will delete all default-suites and only add the one
+    # defined here. This configures the server-side of the proxy. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
     serverSslSuites:
       - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
-    # This configures the SSL-Suites for the client-side
+    # This configures the SSL-Suites for the client-side. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
     clientSslSuites:
       - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+    # Define which TLS protocols the server will allow/use. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
+    serverTlsProtocols:
+      - "TLSv1.2"
 
     # This identity will be used as a client-identity for mutual-TLS when forwarding to
     # other servers. The information string can be

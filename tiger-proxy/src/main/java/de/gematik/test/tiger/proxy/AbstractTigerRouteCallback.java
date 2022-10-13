@@ -17,28 +17,27 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.Header.header;
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelUriFacet;
-import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.model.Parameters;
+import org.mockserver.model.*;
 
 @RequiredArgsConstructor
 @Data
@@ -169,8 +168,9 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             try {
                 final RbelElement request = getTigerProxy().getMockServerToRbelConverter()
                     .convertRequest(req, extractProtocolAndHostForRequest(req));
+                //TODO TGR-651 null ersetzen durch echten wert
                 final RbelElement response = getTigerProxy().getMockServerToRbelConverter()
-                    .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getClientAddress());
+                    .convertResponse(resp, extractProtocolAndHostForRequest(req), null);
                 Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
                     .ifPresent(requestTime -> addTimingFacet(request, requestTime));
                 addTimingFacet(response, ZonedDateTime.now());
@@ -187,6 +187,9 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                         .request(request)
                         .build());
 
+                parseCertificateChainIfPresent(req, request)
+                    .ifPresent(request::addFacet);
+
                 getTigerProxy().triggerListener(request);
                 getTigerProxy().triggerListener(response);
             } catch (RuntimeException e) {
@@ -194,7 +197,37 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                 log.error("Rbel-parsing failed!", e);
             }
         }
-        return resp;
+        return resp.withBody(resp.getBodyAsRawBytes());
+    }
+
+    private Optional<RbelFacet> parseCertificateChainIfPresent(HttpRequest httpRequest, RbelElement message) {
+        if (httpRequest.getClientCertificateChain() == null ||
+            httpRequest.getClientCertificateChain().isEmpty()) {
+            return Optional.empty();
+        }
+        RbelElement certificateChainElement = new RbelElement(null, message);
+        certificateChainElement.addFacet(RbelListFacet.builder()
+            .childNodes(httpRequest.getClientCertificateChain().stream()
+                .map(X509Certificate::getCertificate)
+                .map(cert -> mapToRbelElement(cert, message))
+                .collect(Collectors.toList()))
+            .build());
+
+        return Optional.of(
+            TlsFacet.builder()
+                .clientCertificateChain(certificateChainElement)
+                .build()
+        );
+    }
+
+    private RbelElement mapToRbelElement(Certificate certificate, RbelElement parentNode) {
+        try {
+            final RbelElement certificateNode = new RbelElement(certificate.getEncoded(), parentNode);
+            getTigerProxy().getRbelLogger().getRbelConverter().convertElement(certificateNode);
+            return certificateNode;
+        } catch (CertificateEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     boolean shouldLogTraffic() {
@@ -207,5 +240,14 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         return message.addFacet(RbelMessageTimingFacet.builder()
             .transmissionTime(requestTime)
             .build());
+    }
+
+    HttpRequest cloneRequest(HttpRequest req) {
+        final HttpOverrideForwardedRequest clonedRequest = forwardOverriddenRequest(req);
+        if (req.getBody() != null) {
+            return clonedRequest.getRequestOverride().withBody(req.getBodyAsRawBytes());
+        } else {
+            return clonedRequest.getRequestOverride();
+        }
     }
 }

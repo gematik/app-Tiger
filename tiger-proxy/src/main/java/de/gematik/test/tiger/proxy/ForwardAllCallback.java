@@ -32,7 +32,7 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
                 req.isSecure(),
                 req.socketAddressFromHostHeader().getHostName(),
                 req.socketAddressFromHostHeader().getPort()
-            )).getHttpRequest();
+            )).getRequestOverride();
     }
 
     @Override

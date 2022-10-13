@@ -69,6 +69,7 @@ construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh]
 .Core features
 * Filter for server, method, path, RBelPath node existing / matching given value in request
 * Find first / next / last matching request
+* Find absolute last request (no path input needed)
 * Find first / next / last request containing a RBelPath node
 * Clear all recorded messages
 * Specify timeout for filtering request

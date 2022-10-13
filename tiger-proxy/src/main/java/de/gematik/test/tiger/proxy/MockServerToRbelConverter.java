@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -68,8 +69,9 @@ public class MockServerToRbelConverter {
                 request.getHeaders(), request.getBodyAsString());
         }
 
+        //TODO TGR-651 null ersetzen durch echten wert
         final RbelElement element = rbelConverter.parseMessage(requestToRbelMessage(request),
-            convertSocketAdress(request.getClientAddress()), convertUri(protocolAndHost), Optional.of(ZonedDateTime.now()));
+            null, convertUri(protocolAndHost), Optional.of(ZonedDateTime.now()));
 
         if (!element.hasFacet(RbelHttpRequestFacet.class)) {
             element.addFacet(RbelHttpRequestFacet.builder()

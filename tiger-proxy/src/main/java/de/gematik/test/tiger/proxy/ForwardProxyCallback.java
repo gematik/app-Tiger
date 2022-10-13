@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.mockserver.model.HttpOverrideForwardedRequest;
 import org.mockserver.model.HttpRequest;
 
 @Slf4j
@@ -55,8 +56,7 @@ public class ForwardProxyCallback extends AbstractTigerRouteCallback {
         final String path = req.getPath().toString().equals("/") ?
             targetUri.getPath()
             : targetUri.getPath() + req.getPath();
-        return forwardOverriddenRequest(req)
-            .getHttpRequest()
+        return cloneRequest(req)
             .withPath(path)
             .withSecure(getTigerRoute().getTo().startsWith("https://"))
             .withQueryStringParameters(req.getQueryStringParameters());

@@ -30,6 +30,7 @@ public class TigerEnvStatusDto {
     private String bannerMessage;
     private String bannerColor;
     private BannerType bannerType;
+    private boolean bannerHtml;
 
     private String localProxyWebUiUrl;
 }

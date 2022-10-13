@@ -16,8 +16,20 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Stream;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -41,19 +53,6 @@ import org.mockserver.logging.MockServerLogger;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 import org.slf4j.event.Level;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static org.mockserver.socket.tls.jdk.CertificateSigningRequest.NOT_AFTER;
-import static org.mockserver.socket.tls.jdk.CertificateSigningRequest.NOT_BEFORE;
-
 public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
     static {
@@ -66,21 +65,21 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     private final String serverName;
     private final List<String> serverAlternativeNames;
     private TigerPkiIdentity eeIdentity;
-    private boolean canEeIdentityBeReset;
+    private final boolean canEeIdentityBeReset;
 
     @Builder
     public TigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
-                                         TigerPkiIdentity caIdentity, TigerPkiIdentity eeIdentity,
-                                         TigerTlsConfiguration tls) {
-        super(mockServerLogger);
+                                         TigerProxyConfiguration tigerProxyConfiguration,
+                                         TigerPkiIdentity caIdentity) {
+        super(tigerProxyConfiguration.convertToMockServerConfiguration(), mockServerLogger);
         this.certificateChain = new ArrayList<>();
         this.mockServerLogger = mockServerLogger;
         this.caIdentity = caIdentity;
-        this.eeIdentity = eeIdentity;
-        this.serverName = tls.getDomainName();
+        this.eeIdentity = tigerProxyConfiguration.getTls().getServerIdentity();
+        this.serverName = tigerProxyConfiguration.getTls().getDomainName();
         this.serverAlternativeNames = new ArrayList<>();
-        if (tls.getAlternativeNames() != null) {
-            serverAlternativeNames.addAll(tls.getAlternativeNames());
+        if (tigerProxyConfiguration.getTls().getAlternativeNames() != null) {
+            serverAlternativeNames.addAll(tigerProxyConfiguration.getTls().getAlternativeNames());
         }
         this.canEeIdentityBeReset = eeIdentity == null;
     }
@@ -131,8 +130,8 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
                 this.mockServerLogger.logEvent((new LogEntry()).setLogLevel(Level.TRACE)
                     .setMessageFormat("created new X509 {} with SAN Domain Names {} and IPs {}").setArguments(
                         this.x509Certificate(),
-                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains()),
-                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps())));
+                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains().toArray()),
+                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps().toArray())));
             }
         } catch (Exception e) {
             this.mockServerLogger.logEvent(new LogEntry()
@@ -184,15 +183,15 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
     private X509Certificate signTheCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey privateKey)
         throws OperatorCreationException, CertificateException {
+        ContentSigner signer;
         if (privateKey instanceof RSAPrivateKey) {
-            ContentSigner signer = (new JcaContentSignerBuilder("SHA256WithRSAEncryption")).setProvider("BC")
+            signer = (new JcaContentSignerBuilder("SHA256WithRSAEncryption")).setProvider("BC")
                 .build(privateKey);
-            return (new JcaX509CertificateConverter()).setProvider("BC").getCertificate(certificateBuilder.build(signer));
         } else {
-            ContentSigner signer = (new JcaContentSignerBuilder("SHA256withECDSA")).setProvider("BC")
+            signer = (new JcaContentSignerBuilder("SHA256withECDSA")).setProvider("BC")
                 .build(privateKey);
-            return (new JcaX509CertificateConverter()).setProvider("BC").getCertificate(certificateBuilder.build(signer));
         }
+        return (new JcaX509CertificateConverter()).setProvider("BC").getCertificate(certificateBuilder.build(signer));
     }
 
     private KeyPair generateRsaKeyPair(int keySize) throws Exception {

@@ -9,7 +9,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.24.0</version>
+        <version>0.24.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -27,11 +27,11 @@
 
     <properties>
         <version.commons-jexl3>3.2.1</version.commons-jexl3>
-        <version.io.rest-assured>5.1.1</version.io.rest-assured>
+        <version.io.rest-assured>5.2.0</version.io.rest-assured>
         <version.jcommander>1.82</version.jcommander>
-        <version.jose4j>0.7.12</version.jose4j>
+        <version.jose4j>0.9.0</version.jose4j>
         <version.okhttp>4.10.0</version.okhttp>
-        <version.unirest>3.11.11</version.unirest>
+        <version.unirest>3.13.11</version.unirest>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
     </properties>
@@ -126,7 +126,7 @@
             <version>${version.jcommander}</version>
         </dependency>
         <dependency>
-            <groupId>io.github.arkinator</groupId>
+            <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>
             <version>${version.mockserver}</version>
             <exclusions>
@@ -171,7 +171,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.github.arkinator</groupId>
+            <groupId>org.mock-server</groupId>
             <artifactId>mockserver-junit-jupiter</artifactId>
             <version>${version.mockserver}</version>
             <scope>test</scope>

@@ -232,10 +232,10 @@ function connectToWebSocket() {
           pushedMessage.index = json.index;
           pushedMessage.bannerMessage = json.bannerMessage;
           pushedMessage.bannerColor = json.bannerColor;
+          pushedMessage.bannerIsHtml = json.bannerIsHtml;
           if (json.bannerType) {
             pushedMessage.bannerType = json.bannerType as BannerType;
           }
-
           if (json.featureMap) {
             FeatureUpdate.addToMapFromJson(pushedMessage.featureMap, json.featureMap);
           }
@@ -343,6 +343,7 @@ function mergeMessage(map: Map<string, TigerServerStatusDto>, message: TestEnvSt
     bm.text = message.bannerMessage;
     bm.color = message.bannerColor;
     bm.type = message.bannerType;
+    bm.isHtml = message.bannerIsHtml;
     bannerData.value.push(bm);
   }
   currentMessageIndex = message.index;
