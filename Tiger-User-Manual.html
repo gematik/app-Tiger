@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="generator" content="Asciidoctor 2.0.17">
 <meta name="description" content="User Manual for Tiger">
 <meta name="author" content="TIGER@gematik.de">
 <title>Tiger User Manual</title>
@@ -141,18 +141,18 @@ video {
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <style>
-/* Stylesheet for CodeRay to match GitHub theme | MIT License | http://foundation.zurb.com */
+/*! Stylesheet for CodeRay to loosely match GitHub themes | MIT License */
 pre.CodeRay{background:#f7f7f8}
-.CodeRay .line-numbers{border-right:1px solid currentColor;opacity:.35;padding:0 .5em 0 0}
+.CodeRay .line-numbers{border-right:1px solid;opacity:.35;padding:0 .5em 0 0;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
 .CodeRay span.line-numbers{display:inline-block;margin-right:.75em}
 .CodeRay .line-numbers strong{color:#000}
 table.CodeRay{border-collapse:separate;border:0;margin-bottom:0;background:none}
 table.CodeRay td{vertical-align:top;line-height:inherit}
 table.CodeRay td.line-numbers{text-align:right}
 table.CodeRay td.code{padding:0 0 0 .75em}
-.CodeRay .debug{color:#fff !important;background:#000080 !important}
+.CodeRay .debug{color:#fff!important;background:navy!important}
 .CodeRay .annotation{color:#007}
-.CodeRay .attribute-name{color:#000080}
+.CodeRay .attribute-name{color:navy}
 .CodeRay .attribute-value{color:#700}
 .CodeRay .binary{color:#509}
 .CodeRay .comment{color:#998;font-style:italic}
@@ -161,7 +161,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 .CodeRay .char .delimiter{color:#039}
 .CodeRay .class{color:#458;font-weight:bold}
 .CodeRay .complex{color:#a08}
-.CodeRay .constant,.CodeRay .predefined-constant{color:#008080}
+.CodeRay .constant,.CodeRay .predefined-constant{color:teal}
 .CodeRay .color{color:#099}
 .CodeRay .class-variable{color:#369}
 .CodeRay .decorator{color:#b0b}
@@ -176,7 +176,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 .CodeRay .exception{color:inherit}
 .CodeRay .filename{color:#099}
 .CodeRay .function{color:#900;font-weight:bold}
-.CodeRay .global-variable{color:#008080}
+.CodeRay .global-variable{color:teal}
 .CodeRay .hex{color:#058}
 .CodeRay .integer,.CodeRay .float{color:#099}
 .CodeRay .include{color:#555}
@@ -187,7 +187,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 .CodeRay .inline-delimiter{color:#d14}
 .CodeRay .important{color:#555;font-weight:bold}
 .CodeRay .interpreted{color:#b2b}
-.CodeRay .instance-variable{color:#008080}
+.CodeRay .instance-variable{color:teal}
 .CodeRay .label{color:#970}
 .CodeRay .local-variable{color:#963}
 .CodeRay .octal{color:#40e}
@@ -197,7 +197,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 .CodeRay .directive{font-weight:bold}
 .CodeRay .type{font-weight:bold}
 .CodeRay .predefined-type{color:inherit}
-.CodeRay .reserved,.CodeRay .keyword {color:#000;font-weight:bold}
+.CodeRay .reserved,.CodeRay .keyword{color:#000;font-weight:bold}
 .CodeRay .key{color:#808}
 .CodeRay .key .delimiter{color:#606}
 .CodeRay .key .char{color:#80f}
@@ -217,7 +217,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 .CodeRay .symbol{color:#990073}
 .CodeRay .symbol .content{color:#a60}
 .CodeRay .symbol .delimiter{color:#630}
-.CodeRay .tag{color:#008080}
+.CodeRay .tag{color:teal}
 .CodeRay .tag-special{color:#d70}
 .CodeRay .variable{color:#036}
 .CodeRay .insert{background:#afa}
@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.24.0 - 2022-09-08</span>
+<span id="revdate">Version 0.24.2-SNAPSHOT - 2022-10-13</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -1025,6 +1025,9 @@ It is important to activate the <strong>testFailureIgnore</strong> property, to 
 <p>To filter the scenarios/features to be run you may pass in the Java system property cucumber.filter.tags. You can do so either within the &lt;systemPropertyVariables&gt; tag or via the command line using -Dcucumber.filter.tags</p>
 </div>
 <div class="paragraph">
+<p>The "not @Ignore" is the default setting for maven verify as well as for IntelliJ, therefore scenarios that should be ignored are to be tagged with @Ignore. If the user uses the cucumber option "-Dcucumber.options" to set own tags then the default setting of "not @Ignore" is overridden. The same counts for own tag settings in the IntelliJ run configuration.</p>
+</div>
+<div class="paragraph">
 <p>For more details about how to use filter tags see <a href="https://cucumber.io/docs/cucumber/api/#tags" class="bare">https://cucumber.io/docs/cucumber/api/#tags</a></p>
 </div>
 <div class="listingblock">
@@ -1108,7 +1111,7 @@ making it very complicated to make sure your validations are working as expected
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="media/tigerOnly-file-structure.svg" alt="tigerOnly file structure" width="1047" height="548">
+<img src="media/structureTigerOnly.png" alt="structureTigerOnly">
 </div>
 <div class="title">Figure 4. File structure of TigerOnly example project</div>
 </div>
@@ -1299,9 +1302,9 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 <div class="title">Listing 4. General properties</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">serverKey_xxx</span>:
-  <span class="comment"># OPTIONAL host name of this node when accessing it via the test suite</span>
+  <span class="comment"># OPTIONAL hostname of this node when accessing it via the test suite</span>
   <span class="comment"># (rerouted via the local test suite Tiger Proxy).</span>
-  <span class="comment"># Defaults to the server key (serverKey_xxx)</span>
+  <span class="comment"># Defaults to the server name (serverKey_xxx)</span>
   <span class="key">hostname</span>: <span class="string"><span class="content">string</span></span>
   <span class="comment"># MANDATORY one of [tigerProxy|docker|compose|externalJar|externalUrl]</span>
   <span class="key">type</span>: <span class="string"><span class="content">string</span></span>
@@ -1358,13 +1361,13 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Here is a little example how the server keys are set and used and how there server is reachable via the Tiger Proxy.</p>
+<p>Here is a little example how the server names are set and used and how there server is reachable via the Tiger Proxy.</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 5. Example with there servers</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
-  <span class="comment"># here the servers key is &quot;identityServer&quot; and</span>
+  <span class="comment"># here the server name is &quot;identityServer&quot; and</span>
   <span class="comment"># the server is reachable under &quot;identityServer&quot; via the Tiger Proxy</span>
   <span class="key">identityServer</span>:
     <span class="key">type</span>: <span class="string"><span class="content">externalJar</span></span>
@@ -1379,7 +1382,7 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
         - <span class="string"><span class="content">--server.port=${tiger.ports.identity}</span></span>
         - <span class="string"><span class="content">--services.shopping=http://myShoppingServer</span></span>
 
-  <span class="comment"># here the servers key is &quot;shoppingServer&quot;</span>
+  <span class="comment"># here the server name is &quot;shoppingServer&quot;</span>
   <span class="comment"># but the server is reachable under &quot;myShoppingServer&quot; via the Tiger Proxy because hostname is set</span>
   <span class="key">shoppingServer</span>:
     <span class="key">hostname</span>: <span class="string"><span class="content">myShoppingServer</span></span>
@@ -1786,7 +1789,7 @@ If it is ever necessary to change the external URL, the test suite does not have
     <span class="comment"># The chosen port is stored with the key tiger.internal.localproxy.admin.port in</span>
     <span class="comment"># the TigerGlobalConfiguration</span>
     <span class="key">adminPort</span>: <span class="string"><span class="content">8080</span></span>
-    <span class="comment"># OPTIONAL server key of the node this proxy shall be used as reverse proxy for.</span>
+    <span class="comment"># OPTIONAL server name of the node this proxy shall be used as reverse proxy for.</span>
     <span class="comment"># If set the routes will be configured appropriately.</span>
     <span class="comment"># Default value is empty.</span>
     <span class="key">proxiedServer</span>: <span class="string"><span class="content">externalJar_001</span></span>
@@ -1990,7 +1993,8 @@ For more information about what the Tiger Proxy is and how it works see the chap
   <span class="comment"># can be used if the target-server (to) is behind another proxy</span>
   <span class="key">forwardToProxy</span>:
     <span class="key">hostname</span>: <span class="string"><span class="content">192.168.110.10</span></span>
-    <span class="key">adminPort</span>: <span class="string"><span class="content">3128</span></span>
+    <span class="key">port</span>: <span class="string"><span class="content">3128</span></span>
+    <span class="comment"># for https based traffic you will have to adapt the type to HTTPS</span>
     <span class="key">type</span>: <span class="string"><span class="content">HTTP</span></span>
   <span class="comment"># The Tiger Proxy will route google.com to google.com even if no route is set.</span>
   <span class="comment"># The traffic routed via this &quot;forwardAll&quot;-routing will be logged by default</span>
@@ -2018,13 +2022,19 @@ For more information about what the Tiger Proxy is and how it works see the chap
     <span class="comment"># This might be easier but requires a certificate</span>
     <span class="comment"># which is valid for the configured routes</span>
     <span class="key">serverIdentity</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">certificateAndKeyAndChain.p12;Password</span><span class="delimiter">&quot;</span></span>
-    <span class="comment"># Defines which SSL-Suites are allowed. This will delete all default-suites and only add</span>
-    <span class="comment"># the one defined here. This configures the server-side of the proxy.</span>
+    <span class="comment"># Defines which SSL-Suites are allowed. This will delete all default-suites and only add the one</span>
+    <span class="comment"># defined here. This configures the server-side of the proxy. Available values can be found here:</span>
+    <span class="comment"># https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html</span>
     <span class="key">serverSslSuites</span>:
       - <span class="string"><span class="delimiter">&quot;</span><span class="content">TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA</span><span class="delimiter">&quot;</span></span>
-    <span class="comment"># This configures the SSL-Suites for the client-side</span>
+    <span class="comment"># This configures the SSL-Suites for the client-side. Available values can be found here:</span>
+    <span class="comment"># https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html</span>
     <span class="key">clientSslSuites</span>:
       - <span class="string"><span class="delimiter">&quot;</span><span class="content">TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA</span><span class="delimiter">&quot;</span></span>
+    <span class="comment"># Define which TLS protocols the server will allow/use. Available values can be found here:</span>
+    <span class="comment"># https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html</span>
+    <span class="key">serverTlsProtocols</span>:
+      - <span class="string"><span class="delimiter">&quot;</span><span class="content">TLSv1.2</span><span class="delimiter">&quot;</span></span>
 
     <span class="comment"># This identity will be used as a client-identity for mutual-TLS when forwarding to</span>
     <span class="comment"># other servers. The information string can be</span>
@@ -2237,11 +2247,11 @@ to the reverse proxy.</p>
 <div class="sect2">
 <h3 id="_tiger_proxy_basics">4.2. Tiger Proxy basics</h3>
 <div class="paragraph">
-<p>The Tiger Proxy is a proxy-server. It has two types: Tiger Proxy and Tiger Standalone Proxy. Both types have a proxy-port (configurable via <code>tigerProxy.port</code>),<br>
-which supports both http- and https-traffic (so you do not have to differentiate between the two).</p>
+<p>The Tiger Proxy is a proxy-server. It comes in two flavours: Tiger Proxy and Tiger Standalone Proxy. The standalone tiger proxy is started from a JAR-file. The test environment manager boots the main tiger proxy (local tiger proxy) and also any additional ones (normal tiger proxy, not standalone).</p>
 </div>
 <div class="paragraph">
-<p>The Tiger Standalone Proxy has an admin-port on top (configurable via <code>server.port</code>). This provides a webui to monitor the traffic,<br>
+<p>Both types have a proxy-port (configurable via <code>tigerProxy.proxyPort</code>),<br>
+which supports both http- and https-traffic (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>). This provides a webui to monitor the traffic,<br>
 a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
 </div>
 </div>
@@ -2498,8 +2508,13 @@ You can add, modify and remove reason phrases.</p>
 <h3 id="_mesh_setup_traffic_endpoints">4.6. Mesh set up</h3>
 <div class="paragraph">
 <p>One of the fundamental features of the Tiger Proxy is mesh set up AKA rbel-message forwarding.<br>
-This forwards the messages, which the proxy has logged, to other Tiger Proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered Tiger Proxies.<br>
-Common scenario for this approach might be the use of multiple reverse-proxies on the root level (e.g. when the client only allows the configuration of the server IP or domain, but no path-prefix)<br>
+This transmits the information about the messages, which the proxy has logged, to other Tiger Proxies (where they will be logged as well). This enables the creation of "proxy-meshes", staggered Tiger Proxies.</p>
+</div>
+<div class="paragraph">
+<p>In a mesh set up the "remote tiger proxy" is the one which intercepts the traffic and sends the information. Conversely, the "receiving tiger proxy" receives the information about the message from the remote tiger proxy. The "local tiger proxy" is the main tiger proxy booted by the testsuite. If you configured it to receive traffic from another tiger proxy (which should always be the case when you are doing a mesh set up) then it is also a receiving tiger proxy.</p>
+</div>
+<div class="paragraph">
+<p>Common scenario for this approach might be the use of multiple reverse-proxies on the root level (e.g. when the client only allows the configuration of the server IP or domain, but no path-prefix)<br>
 or the aggregation of traffic across machine-boundaries (e.g. one constantly running Tiger Proxy which is used by a testsuite on another machine).</p>
 </div>
 <div class="imageblock">
@@ -2691,11 +2706,41 @@ For each received traffic data pair (request/response) the Tiger Proxy will push
 Is <code>null</code> if not present</p>
 </li>
 <li>
-<p><code>message</code> contains the HTTP-Message under which this element was found</p>
+<p><code>message</code> contains the HTTP-Message under which this element was found. It contains:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>method</code> is the HTTP-Method (or null if it is a response)</p>
 </li>
 <li>
-<p><code>request</code> is the corresponding HTTP-Request. If <code>message</code> is a response, then the corresponding Request will be returned.<br>
-If <code>message</code> is a request, then the <code>message</code> itself will be returned.</p>
+<p><code>url</code> is the request URL (or null if it is a response)</p>
+</li>
+<li>
+<p><code>statusCode</code> is the status response code (or null if it is a request)</p>
+</li>
+<li>
+<p><code>request</code> is a boolean denoting whether this message is a request</p>
+</li>
+<li>
+<p><code>response</code> is a boolean denoting whether this message is a response</p>
+</li>
+<li>
+<p><code>header</code> is a map containing all headers (as <code>Map&lt;String, List&lt;String&gt;&gt;</code>)</p>
+</li>
+<li>
+<p><code>bodyAsString</code> is the body of the message as a raw string, or null if none given</p>
+</li>
+<li>
+<p><code>body</code> is the RbelElement of the message-body, or null if none given</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>request</code> is the corresponding HTTP-Request. If <code>message</code> is a response, then the corresponding Request will be returned. If <code>message</code> is a request, then the <code>message</code> itself will be returned.</p>
+</li>
+<li>
+<p><code>response</code> is the corresponding HTTP-Response. If <code>message</code> is a request, then the corresponding Response will be returned. If <code>message</code> is a response, then the <code>message</code> itself will be returned.</p>
 </li>
 <li>
 <p><code>key</code> is a string containing the key that the current element can be found under in the parent-element.</p>
@@ -2904,6 +2949,9 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
 <p>Find first / next / last matching request</p>
 </li>
 <li>
+<p>Find absolute last request (no path input needed)</p>
+</li>
+<li>
 <p>Find first / next / last request containing a RBelPath node</p>
 </li>
 <li>
@@ -3105,14 +3153,15 @@ only check for regex matches if they were not equal.</p>
 <span class="comment">// /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java</span>
 
 <span class="comment">/*
-* Specify the amount of seconds Tiger should wait when filtering for requests / responses before reporting them as not found.
+* Specify the amount of seconds Tiger should wait when filtering for requests / responses before reporting them as
+* not found.
 */</span>
 <span class="annotation">@Gegebensei</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze Anfrage Timeout auf {int} Sekunden</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Given</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set request wait timeout to {int} seconds</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* clear all validatable rbel messages. This does not clear the recorded messages later on reported via the rbel log HTML page or the
-* messages shown on web ui of tiger proxies.
+* clear all validatable rbel messages. This does not clear the recorded messages later on reported via the rbel log
+* HTML page or the messages shown on web ui of tiger proxies.
 */</span>
 <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR lösche aufgezeichnete Nachrichten</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR clear recorded messages</span><span class="delimiter">&quot;</span></span>)
@@ -3140,7 +3189,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR reset request method filter</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* find the first request where the path equals or matches as regex and memorize it in the {@link #rbelValidator} instance
+* find the first request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+* instance
 *
 * @param path path to match
 */</span>
@@ -3148,7 +3198,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find request to path {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* find the first request where path and node value equal or match as regex and memorize it in the {@link #rbelValidator} instance.
+* find the first request where path and node value equal or match as regex and memorize it in the
+* {@link #rbelValidator} instance.
 *
 * @param path     path to match
 * @param rbelPath rbel path to node/attribute
@@ -3158,7 +3209,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find request to path {string} with {string} matching {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* find the NEXT request where the path equals or matches as regex and memorize it in the {@link #rbelValidator} instance.
+* find the NEXT request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+* instance.
 *
 * @param path path to match
 */</span>
@@ -3166,7 +3218,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find next request to path {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* find the NEXT request where path and node value equal or match as regex and memorize it in the {@link #rbelValidator} instance.
+* find the NEXT request where path and node value equal or match as regex and memorize it in the
+* {@link #rbelValidator} instance.
 *
 * @param path     path to match
 * @param rbelPath rbel path to node/attribute
@@ -3186,8 +3239,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find request to path {string} containing node {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* find the NEXT request where path matches and request contains node with given rbel path and memorize it in the {@link #rbelValidator}
-* instance.
+* find the NEXT request where path matches and request contains node with given rbel path and memorize it in the
+* {@link #rbelValidator} instance.
 *
 * @param path     path to match
 * @param rbelPath rbel path to node/attribute
@@ -3196,7 +3249,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find next request to path {string} containing node {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator} instance.
+* find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+* instance.
 *
 * @param path path to match
 */</span>
@@ -3204,7 +3258,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find last request to path {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* find the LAST request where path and node value equal or match as regex and memorize it in the {@link #rbelValidator} instance.
+* find the LAST request where path and node value equal or match as regex and memorize it in the
+* {@link #rbelValidator} instance.
 *
 * @param path     path to match
 * @param rbelPath rbel path to node/attribute
@@ -3214,9 +3269,15 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find last request to path {string} with {string} matching {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* assert that there is any message with given rbel path node/attribute matching given value. The matching will NOT perform regular
-* expression matching but only checks for identical string content The result (request or response) will not be stored in the
-* {@link #rbelValidator} instance.
+* find the LAST request.
+*/</span>
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR finde die letzte Anfrage</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR find the last request</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* assert that there is any message with given rbel path node/attribute matching given value. The matching will NOT
+* perform regular expression matching but only checks for identical string content The result (request or response)
+* will not be stored in the {@link #rbelValidator} instance.
 *
 * @param rbelPath rbel path to node/attribute
 * @param value    value to match at given node/attribute
@@ -3264,7 +3325,8 @@ only check for regex matches if they were not equal.</p>
 * assert that response of filtered request matches at given rbel path node/attribute.
 *
 * @param rbelPath path to node/attribute
-* @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex option
+* @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex
+*                 option
 */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe aktuelle Antwort stimmt im Knoten {string} überein mit {string}</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response with attribute {string} matches {string}</span><span class="delimiter">&quot;</span></span>)
@@ -3273,7 +3335,8 @@ only check for regex matches if they were not equal.</p>
 * assert that response of filtered request does not match at given rbel path node/attribute.
 *
 * @param rbelPath path to node/attribute
-* @param value    value / regex that should NOT BE equal or should NOT match as string content with MultiLine and DotAll regex option
+* @param value    value / regex that should NOT BE equal or should NOT match as string content with MultiLine and
+*                 DotAll regex option
 */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe aktuelle Antwort stimmt im Knoten {string} nicht überein mit {string}</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response with attribute {string} does not match {string}</span><span class="delimiter">&quot;</span></span>)
@@ -3282,8 +3345,8 @@ only check for regex matches if they were not equal.</p>
 * assert that response of filtered request matches at given rbel path node/attribute.
 *
 * @param rbelPath  path to node/attribute
-* @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex option supplied as
-*                  DocString
+* @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex
+*                  option supplied as DocString
 */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe aktuelle Antwort im Knoten {string} stimmt überein mit:</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response at {string} matches:</span><span class="delimiter">&quot;</span></span>)
@@ -3292,8 +3355,8 @@ only check for regex matches if they were not equal.</p>
 * assert that response of filtered request does not match at given rbel path node/attribute.
 *
 * @param rbelPath  path to node/attribute
-* @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex option supplied as
-*                  DocString
+* @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex
+*                  option supplied as DocString
 */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe aktuelle Antwort im Knoten {string} stimmt nicht überein mit:</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response at {string} does not match:</span><span class="delimiter">&quot;</span></span>)
@@ -3302,7 +3365,8 @@ only check for regex matches if they were not equal.</p>
 * assert that response of filtered request matches at given rbel path node/attribute.
 *
 * @param rbelPath path to node/attribute
-* @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex option
+* @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex
+*                 option
 * @deprecated
 */</span>
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response at {string} matches {string}</span><span class="delimiter">&quot;</span></span>)
@@ -3320,10 +3384,12 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response at {string} matches as {ModeType}:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* assert that response of filtered request matches at given rbel path node/attribute assuming its XML with given list of diff options.
+* assert that response of filtered request matches at given rbel path node/attribute assuming its XML with given
+* list of diff options.
 *
 * @param rbelPath       path to node/attribute
-* @param diffOptionsCSV a csv separated list of diff option identifiers to be applied to comparison of the two XML sources
+* @param diffOptionsCSV a csv separated list of diff option identifiers to be applied to comparison of the two XML
+*                       sources
 *                       &lt;ul&gt;
 *                           &lt;li&gt;nocomment ... {@link DiffBuilder#ignoreComments()}&lt;/li&gt;
 *                           &lt;li&gt;txtignoreempty ... {@link  DiffBuilder#ignoreElementContentWhitespace()}&lt;/li&gt;
@@ -3969,22 +4035,22 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <p><strong>Scroll Lock</strong> … allows you to lock the scroll position. Incoming messages wills till be added to the list at the bottom of the page.</p>
 </li>
 <li>
-<p><strong>Hide details</strong>  … collapses all the detailed information of the requests and responses.</p>
+<p><strong>Toggle Button</strong>  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as reponse headers) or all the detailed information of the requests and responses.</p>
 </li>
 <li>
-<p><strong>Input field</strong>  … allows you to filter the incoming messages with a RbelPath or a JEXL expression by using the "Set filter" button.</p>
+<p><strong>Input field</strong>  … allows you to filter the incoming messages with a RbelPath or a JEXL expression by using the "Set filter" button. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").</p>
 </li>
 <li>
 <p><strong>DropUp</strong> … allows you to filter the incoming messages for requests from or to a certain server. The JEXL expression will then be automatically filled in the input field and the user triggers the filter by pressing the "Set filter" button.</p>
 </li>
 <li>
-<p><strong>Update buttons</strong> allow you to specify how often the list shall be updated. The Update button is only active if you have choosen manual update mode. To the left of the 1s choice there is a small LED that will indicate active retrieval of new data (green) or failure while retrieving data (red).</p>
-</li>
-<li>
 <p><strong>Reset</strong> … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!</p>
 </li>
 <li>
-<p><strong>Save</strong> … allows you to save the current HTML page.</p>
+<p><strong>Save</strong> … allows you to save the current HTML page or the raw traffic as tgr file.</p>
+</li>
+<li>
+<p><strong>Import</strong> … allows you to import the previously stored traffic file.</p>
 </li>
 <li>
 <p><strong>Quit</strong> … allows you to quit the Tiger Proxy instance</p>
@@ -4108,7 +4174,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-09-08 11:53:48 +0200
+Last updated 2022-10-13 12:05:38 UTC
 </div>
 </div>
 </body>

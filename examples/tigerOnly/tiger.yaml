@@ -1,5 +1,0 @@
-# minimum viable test environment specification
-# default local Tiger Proxy
-tigerProxy:
-# no server nodes
-servers: {}
