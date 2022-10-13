@@ -72,6 +72,17 @@ pipeline {
                         jiraCreateNewVersion(JIRA_PROJECT_ID, NEW_VERSION)
                     }
                 }
+                stage('Build') {
+                    steps {
+                        mavenBuild(POM_PATH)
+                    }
+                }
+                stage('generate resources') {
+                    steps {
+                        sh "cd doc/user_manual && ./extractCommentsFromRbelValidatorGlue.sh"
+                        sh "cd tiger-admin && mvn generate-resources"
+                    }
+                }
                 stage('prepare external release') {
                     steps {
                         dockerLoginGematikRegistry()

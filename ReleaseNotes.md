@@ -1,6 +1,6 @@
 # Changelog Tiger Testplattform
 
-# Release 0.24.1
+# Release 0.24.1/0.24.2
 
 * Serenity BDD 3.2.5
 * RestAssured 5.0.1
