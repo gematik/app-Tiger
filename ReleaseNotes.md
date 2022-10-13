@@ -20,6 +20,7 @@
 * TGR-683: WebUi: Button for binary content fixed
 * TGR-544: TigerProxy: Added option for TLS-version
 * TGR-463: re-/create TigerProxy ID from client certificate 
+* TGR-609: Tiger-Test-Library: A step to get the absolute last request (no path input)
 
 ## Breaking changes
 

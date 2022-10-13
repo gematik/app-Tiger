@@ -6,8 +6,10 @@ package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
@@ -19,6 +21,7 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,7 +44,8 @@ public class RBelValidatorGlue {
     // =================================================================================================================
 
     /**
-     * Specify the amount of seconds Tiger should wait when filtering for requests / responses before reporting them as not found.
+     * Specify the amount of seconds Tiger should wait when filtering for requests / responses before reporting them as
+     * not found.
      */
     @Gegebensei("TGR setze Anfrage Timeout auf {int} Sekunden")
     @Given("TGR set request wait timeout to {int} seconds")
@@ -50,8 +54,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * clear all validatable rbel messages. This does not clear the recorded messages later on reported via the rbel log HTML page or the
-     * messages shown on web ui of tiger proxies.
+     * clear all validatable rbel messages. This does not clear the recorded messages later on reported via the rbel log
+     * HTML page or the messages shown on web ui of tiger proxies.
      */
     @Wenn("TGR lösche aufgezeichnete Nachrichten")
     @When("TGR clear recorded messages")
@@ -79,7 +83,8 @@ public class RBelValidatorGlue {
     @Wenn("TGR filtere Anfragen nach HTTP Methode {string}")
     @When("TGR filter requests based on method {string}")
     public void tgrFilterBasedOnMethod(final String method) {
-        TigerGlobalConfiguration.putValue("tiger.rbel.request.filter.method", method.toUpperCase(), SourceType.TEST_CONTEXT);
+        TigerGlobalConfiguration.putValue("tiger.rbel.request.filter.method", method.toUpperCase(),
+            SourceType.TEST_CONTEXT);
     }
 
     /**
@@ -92,7 +97,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * find the first request where the path equals or matches as regex and memorize it in the {@link #rbelValidator} instance
+     * find the first request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+     * instance
      *
      * @param path path to match
      */
@@ -104,7 +110,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * find the first request where path and node value equal or match as regex and memorize it in the {@link #rbelValidator} instance.
+     * find the first request where path and node value equal or match as regex and memorize it in the
+     * {@link #rbelValidator} instance.
      *
      * @param path     path to match
      * @param rbelPath rbel path to node/attribute
@@ -118,7 +125,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * find the NEXT request where the path equals or matches as regex and memorize it in the {@link #rbelValidator} instance.
+     * find the NEXT request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+     * instance.
      *
      * @param path path to match
      */
@@ -130,7 +138,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * find the NEXT request where path and node value equal or match as regex and memorize it in the {@link #rbelValidator} instance.
+     * find the NEXT request where path and node value equal or match as regex and memorize it in the
+     * {@link #rbelValidator} instance.
      *
      * @param path     path to match
      * @param rbelPath rbel path to node/attribute
@@ -140,7 +149,8 @@ public class RBelValidatorGlue {
     @When("TGR find next request to path {string} with {string} matching {string}")
     public void findNextRequestToPathWithCommand(final String path, final String rbelPath, final String value) {
         rbelValidator.filterRequestsAndStoreInContext(
-            RequestParameter.builder().path(path).rbelPath(rbelPath).value(value).startFromLastRequest(true).build().resolvePlaceholders());
+            RequestParameter.builder().path(path).rbelPath(rbelPath).value(value).startFromLastRequest(true).build()
+                .resolvePlaceholders());
     }
 
     /**
@@ -158,8 +168,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * find the NEXT request where path matches and request contains node with given rbel path and memorize it in the {@link #rbelValidator}
-     * instance.
+     * find the NEXT request where path matches and request contains node with given rbel path and memorize it in the
+     * {@link #rbelValidator} instance.
      *
      * @param path     path to match
      * @param rbelPath rbel path to node/attribute
@@ -172,7 +182,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator} instance.
+     * find the LAST request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
+     * instance.
      *
      * @param path path to match
      */
@@ -184,7 +195,8 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * find the LAST request where path and node value equal or match as regex and memorize it in the {@link #rbelValidator} instance.
+     * find the LAST request where path and node value equal or match as regex and memorize it in the
+     * {@link #rbelValidator} instance.
      *
      * @param path     path to match
      * @param rbelPath rbel path to node/attribute
@@ -199,9 +211,33 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * assert that there is any message with given rbel path node/attribute matching given value. The matching will NOT perform regular
-     * expression matching but only checks for identical string content The result (request or response) will not be stored in the
-     * {@link #rbelValidator} instance.
+     * find the LAST request.
+     */
+    @Wenn("TGR finde die letzte Anfrage")
+    @When("TGR find the last request")
+    public void findLastRequest() {
+        List<RbelElement> validatableRbelMessages = LocalProxyRbelMessageListener.getValidatableRbelMessages();
+        if (validatableRbelMessages.isEmpty()) {
+            throw new TigerLibraryException("No Request found.");
+        }
+        String lastRbelRequestFacetString = validatableRbelMessages.get(validatableRbelMessages.size() - 2).getFacets()
+            .get(0).toString();
+
+        String menuInfoString = lastRbelRequestFacetString.substring(lastRbelRequestFacetString.indexOf("=") + 1,
+            lastRbelRequestFacetString.indexOf(")"));
+
+        String path = menuInfoString.substring(menuInfoString.indexOf(" ") + 1,
+            menuInfoString.indexOf("?") - 1);
+
+        rbelValidator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(path).filterPreviousRequest(true).build()
+                .resolvePlaceholders());
+    }
+
+    /**
+     * assert that there is any message with given rbel path node/attribute matching given value. The matching will NOT
+     * perform regular expression matching but only checks for identical string content The result (request or response)
+     * will not be stored in the {@link #rbelValidator} instance.
      *
      * @param rbelPath rbel path to node/attribute
      * @param value    value to match at given node/attribute
@@ -286,14 +322,16 @@ public class RBelValidatorGlue {
     @Dann("TGR prüfe aktuelle Antwort enthält Knoten {string}")
     @Then("TGR current response contains node {string}")
     public void currentResponseMessageContainsNode(final String rbelPath) {
-        assertThat(rbelValidator.findElementsInCurrentResponse(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))).isNotEmpty();
+        assertThat(rbelValidator.findElementsInCurrentResponse(
+            TigerGlobalConfiguration.resolvePlaceholders(rbelPath))).isNotEmpty();
     }
 
     /**
      * assert that response of filtered request matches at given rbel path node/attribute.
      *
      * @param rbelPath path to node/attribute
-     * @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex option
+     * @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex
+     *                 option
      */
     @Dann("TGR prüfe aktuelle Antwort stimmt im Knoten {string} überein mit {string}")
     @Then("TGR current response with attribute {string} matches {string}")
@@ -307,7 +345,8 @@ public class RBelValidatorGlue {
      * assert that response of filtered request does not match at given rbel path node/attribute.
      *
      * @param rbelPath path to node/attribute
-     * @param value    value / regex that should NOT BE equal or should NOT match as string content with MultiLine and DotAll regex option
+     * @param value    value / regex that should NOT BE equal or should NOT match as string content with MultiLine and
+     *                 DotAll regex option
      */
     @Dann("TGR prüfe aktuelle Antwort stimmt im Knoten {string} nicht überein mit {string}")
     @Then("TGR current response with attribute {string} does not match {string}")
@@ -321,8 +360,8 @@ public class RBelValidatorGlue {
      * assert that response of filtered request matches at given rbel path node/attribute.
      *
      * @param rbelPath  path to node/attribute
-     * @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex option supplied as
-     *                  DocString
+     * @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex
+     *                  option supplied as DocString
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt überein mit:")
     @Then("TGR current response at {string} matches:")
@@ -334,8 +373,8 @@ public class RBelValidatorGlue {
      * assert that response of filtered request does not match at given rbel path node/attribute.
      *
      * @param rbelPath  path to node/attribute
-     * @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex option supplied as
-     *                  DocString
+     * @param docString value / regex that should equal or match as string content with MultiLine and DotAll regex
+     *                  option supplied as DocString
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt nicht überein mit:")
     @Then("TGR current response at {string} does not match:")
@@ -349,7 +388,8 @@ public class RBelValidatorGlue {
      * assert that response of filtered request matches at given rbel path node/attribute.
      *
      * @param rbelPath path to node/attribute
-     * @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex option
+     * @param value    value / regex that should equal or match as string content with MultiLine and DotAll regex
+     *                 option
      * @deprecated
      */
     @Then("TGR current response at {string} matches {string}")
@@ -375,7 +415,8 @@ public class RBelValidatorGlue {
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {ModeType} überein mit:")
     @Then("TGR current response at {string} matches as {ModeType}:")
-    public void currentResponseAtMatchesAsJsonOrXml(final String rbelPath, final ModeType mode, final String oracleDocStr) {
+    public void currentResponseAtMatchesAsJsonOrXml(final String rbelPath, final ModeType mode,
+        final String oracleDocStr) {
         rbelValidator.assertAttributeOfCurrentResponseMatchesAs(
             TigerGlobalConfiguration.resolvePlaceholders(rbelPath),
             mode,
@@ -384,10 +425,12 @@ public class RBelValidatorGlue {
     }
 
     /**
-     * assert that response of filtered request matches at given rbel path node/attribute assuming its XML with given list of diff options.
+     * assert that response of filtered request matches at given rbel path node/attribute assuming its XML with given
+     * list of diff options.
      *
      * @param rbelPath       path to node/attribute
-     * @param diffOptionsCSV a csv separated list of diff option identifiers to be applied to comparison of the two XML sources
+     * @param diffOptionsCSV a csv separated list of diff option identifiers to be applied to comparison of the two XML
+     *                       sources
      *                       <ul>
      *                           <li>nocomment ... {@link DiffBuilder#ignoreComments()}</li>
      *                           <li>txtignoreempty ... {@link  DiffBuilder#ignoreElementContentWhitespace()}</li>
