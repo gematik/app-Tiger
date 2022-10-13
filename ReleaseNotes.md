@@ -29,10 +29,9 @@
 ## Bugfixes
 
 * TGR-662: trafficEndpointFilterString are now honored for standalone tiger proxies
-* TGR-682: reverse-proxy does not delete host-header-field
+* TGR-682: The TigerProxy no longer alters the Host-header for reverse-proxy routes
 * TGR-679: mouse-over for long requests fixed
 * TGR-660: Admin UI fixed
-
 
 # Release 0.24.0
 

@@ -147,6 +147,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .header("foo", "bar")
             .header("x-forwarded-for", "someStuff")
+            .header("Host", "RandomStuffShouldBePreserved")
             .asString();
 
         assertThat(tigerProxy.getRbelMessages().get(0)
@@ -160,7 +161,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessages().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
-            .isEqualTo("localhost:" + fakeBackendServer.port());
+            .isEqualTo("RandomStuffShouldBePreserved");
     }
 
     @Test
@@ -588,7 +589,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessages().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
-            .isEqualTo("localhost:" + fakeBackendServer.port());
+            .isEqualTo("localhost:" + tigerProxy.getProxyPort());
     }
 
     @Test

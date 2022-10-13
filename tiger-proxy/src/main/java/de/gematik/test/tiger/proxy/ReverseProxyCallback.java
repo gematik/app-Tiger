@@ -41,10 +41,8 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
                 targetUri.getHost(),
                 port
             ).withSecure(getTigerRoute().getTo().startsWith("https://"))
-            .removeHeader("Host")
             .withPath(patchPath(httpRequest.getPath().getValue()));
 
-        request.withHeader("Host", targetUri.getHost() + ":" + port);
         if (getTigerRoute().getBasicAuth() != null) {
             request.withHeader("Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue());
         }
