@@ -4,6 +4,7 @@
 # Release 0.24.3
 
 * Serenity BDD 3.3.4
+* Cucumber 7.4.1
 * RestAssured 5.1.1
 * Selenium 4.4.0
 * Appium 8.1.1
