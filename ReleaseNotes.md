@@ -11,6 +11,10 @@
 * Spring Boot 2.7.0
 
 ## Features
+
+* TGR-664: WebUi: Copys body of response via click on button
+
+ 
 ## Breaking changes
 ## Bugfixes
 
@@ -27,14 +31,14 @@
 
 * TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
 * TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
-* TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message 
+* TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message
 * TGR-663: WebUi: All headers are now collapsable
 * TGR-577: User can ignore scenarios or whole features by adding "@Ignore" above the scenario/feature in the feature file
 * TGR-678: The log files in the target/rbellogs directory are now saved with a timestamp at the end of the file name
 * TGR-596: WebUi: Text based Regex/Search as search filter
 * TGR-683: WebUi: Button for binary content fixed
 * TGR-544: TigerProxy: Added option for TLS-version
-* TGR-463: re-/create TigerProxy ID from client certificate 
+* TGR-463: re-/create TigerProxy ID from client certificate
 * TGR-609: Tiger-Test-Library: A step to get the absolute last request (no path input)
 
 ## Breaking changes
@@ -62,7 +66,7 @@
 * TGR-613: We removed the deprecated Cucumber-Steps in RBelValidatorGlue for good
 
 ## Bugfixes
- 
+
 * TGR-624, TGR-630, TGR-633: Small fixes in the WebUi
 
 -------
@@ -178,7 +182,7 @@
 # Release 0.22.1
 
 ## Breaking Changes
-* Tiger maven plugin now purges the target/generated-test-sources/tigerbdd folder to avoid left over driver class files from previous runs. 
+* Tiger maven plugin now purges the target/generated-test-sources/tigerbdd folder to avoid left over driver class files from previous runs.
 * Tiger maven plugin will by default only search for feature files in src/test/resources/features folder tree from now on, to avoid duplicate feature files also found in target subfolders.
 
 ## Features
@@ -239,7 +243,7 @@
   * serverPort is renamed in adminPort
   * port is renamed to proxyPort
   * proxyCfg under tigerProxyCfg is omitted
-  
+
 ## Features
 * TGR-461: Smaller improvements in TigerGlobalConfiguration:
   * `TigerGlobalConfiguration.localScope()` allows scoped value addition
@@ -247,14 +251,14 @@
   * `TigerGlobalConfiguration.putValue()` now resolves nested values from objects
   * instantiateConfigurationBean now returns an optional, allowing greater control when key was not found in configuration.
 * TGR-450,434,347: Updates im User manual (Failsafe plugin, chapter 5.4, smaller glitches)
-* TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD 
+* TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD
 * TGR-456: Useability review of admin ui
 * Tiger maven plugin has a second goal to replace the SerenityBDD maven plugin for generation of reports.
 * RBEL-54: RbelMessages now contain transmission timestamps.
 
 ## Bugfixes
 
-* TGR-485: fix IndexOutOfBoundsException when using identical names for feature scenarios 
+* TGR-485: fix IndexOutOfBoundsException when using identical names for feature scenarios
 * TGR-411: pki keys saved correctly via admin ui
 * TGR-308: order of nodes now restored on load in admin ui
 * TGR-461: Base key in `additionalYamls` is now honored
@@ -440,8 +444,8 @@
   separated list of servers that need to be started prior to the given server. Please review & change all testenv.ymls
   accordingly.
 * TGR-193:
-    * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
-    * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
+  * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
+  * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
 
 ## Features
 

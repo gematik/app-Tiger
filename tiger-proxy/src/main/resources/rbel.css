@@ -306,3 +306,8 @@ pre.json {
     background-color: #373a3c;
 }
 
+.copyToClipboard-button {
+    filter: invert(100%);
+    margin-left: 1em;
+}
+

@@ -409,6 +409,8 @@ function enableModals() {
   let $modalCloses = getAll(
       '.modal-background, .modal-close, .message-header .delete, .modal-card-foot .button');
   let $modalButtons = getAll('.modal-button');
+  let $copyButtons = getAll('.copyToClipboard-button');
+
 
   if ($modalButtons.length > 0) {
      $modalButtons.forEach(function ($el) {
@@ -418,6 +420,18 @@ function enableModals() {
         rootEl.classList.add('is-clipped');
         $target.classList.add('is-active');
         e.preventDefault();
+        return false;
+      });
+    });
+  }
+
+  if ($copyButtons.length > 0) {
+    $copyButtons.forEach(function ($el) {
+      $el.addEventListener('click', function (e) {
+        e.preventDefault();
+        let target = $el.dataset.target;
+        let $target = document.getElementById(target);
+        navigator.clipboard.writeText($target.textContent);
         return false;
       });
     });
