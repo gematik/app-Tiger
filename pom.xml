@@ -122,6 +122,11 @@
 
         <!-- skips the user-manual creation per default. Activate with -Dasciidoctor.skip=false -->
         <asciidoctor.skip>true</asciidoctor.skip>
+
+        <!-- work around for owasp plugin requiring yarn to perform its task, alas we don't use yarn at all
+             https://service.gematik.de/browse/DEVOPS-1233
+        -->
+        <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
     </properties>
 
     <profiles>
