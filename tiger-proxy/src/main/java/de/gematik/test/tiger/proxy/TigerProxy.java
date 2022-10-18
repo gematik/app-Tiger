@@ -15,7 +15,10 @@ import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
-import io.netty.handler.ssl.SslContextBuilder;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
+import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
+import de.gematik.test.tiger.proxy.handler.ForwardProxyCallback;
+import de.gematik.test.tiger.proxy.handler.ReverseProxyCallback;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
@@ -29,7 +32,10 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import kong.unirest.Unirest;
 import kong.unirest.apache.ApacheClient;
 import lombok.Getter;
@@ -39,9 +45,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.mockserver.client.MockServerClient;
-import org.mockserver.configuration.ConfigurationProperties;
+import org.mockserver.configuration.Configuration;
 import org.mockserver.logging.MockServerLogger;
 import org.mockserver.matchers.TimeToLive;
 import org.mockserver.matchers.Times;
@@ -49,6 +54,7 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.model.ExpectationId;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
+import org.mockserver.netty.proxy.BinaryHandler;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.socket.tls.ForwardProxyTLSX509CertificatesTrustManager;
 import org.mockserver.socket.tls.KeyAndCertificateFactory;
@@ -72,11 +78,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
         mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
-        ConfigurationProperties.forwardProxyTLSX509CertificatesTrustManagerType(
+        Configuration mockServerConfiguration = Configuration.configuration();
+        mockServerConfiguration.forwardProxyTLSX509CertificatesTrustManagerType(
             ForwardProxyTLSX509CertificatesTrustManager.ANY);
-        ConfigurationProperties.maxLogEntries(0);
+        mockServerConfiguration.maxLogEntries(0);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
-            ConfigurationProperties.logLevel(configuration.getProxyLogLevel());
+            mockServerConfiguration.logLevel(configuration.getProxyLogLevel());
         }
 
         customizeSslSuitesIfApplicable();
@@ -84,17 +91,17 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         final Optional<ProxyConfiguration> forwardProxyConfig = configuration.convertForwardProxyConfigurationToMockServerConfiguration();
         outputForwardProxyConfigLogs(forwardProxyConfig);
 
-        mockServer = forwardProxyConfig
-            .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
-            .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
-        log.info("Proxy started on port " + mockServer.getLocalPort());
+        if (configuration.getDirectReverseProxy() == null) {
+            mockServer = forwardProxyConfig
+                .map(proxyConfiguration -> new MockServer(proxyConfiguration, configuration.getPortAsArray()))
+                .orElseGet(() -> new MockServer(configuration.getPortAsArray()));
+        } else {
+            mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration, forwardProxyConfig);
+        }
+        log.info("Proxy started on port {}", mockServer.getLocalPort());
 
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
-        if (configuration.getProxyRoutes() != null) {
-            for (final TigerRoute tigerRoute : configuration.getProxyRoutes()) {
-                addRoute(tigerRoute);
-            }
-        }
+        addRoutesToTigerProxy();
         if (configuration.isActivateRbelEndpoint()) {
             addRbelTrafficEndpoint();
         }
@@ -118,6 +125,45 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                     .withPath(".*"), Times.unlimited(), TimeToLive.unlimited(), Integer.MIN_VALUE)
                 .forward(new ForwardAllCallback(this));
         }
+    }
+
+    private void addRoutesToTigerProxy() {
+        if (getTigerProxyConfiguration().getProxyRoutes() != null) {
+            for (final TigerRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
+                addRoute(tigerRoute);
+            }
+        }
+    }
+
+    private MockServer spawnDirectInverseTigerProxy(Configuration mockServerConfiguration,
+        Optional<ProxyConfiguration> forwardProxyConfig) {
+        if (forwardProxyConfig.isPresent()) {
+            throw new TigerProxyStartupException("DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy is always HTTP!)");
+        }
+        MockServer mockServer = new MockServer(mockServerConfiguration,
+            getTigerProxyConfiguration().getDirectReverseProxy().getPort(),
+            getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
+            getTigerProxyConfiguration().getPortAsArray());
+        BinaryHandler.binaryExchangeCallback = BinaryExchangeHandler.builder()
+            .rbelLogger(getRbelLogger())
+            .tigerProxy(this)
+            .build();
+        addReverseProxyRouteIfNotPresent();
+        return mockServer;
+    }
+
+    private void addReverseProxyRouteIfNotPresent() {
+        if (getTigerProxyConfiguration().getProxyRoutes() == null) {
+            getTigerProxyConfiguration().setProxyRoutes(new ArrayList<>());
+        }
+        getTigerProxyConfiguration().getProxyRoutes().add(
+            TigerRoute.builder()
+                .from("/")
+                .to("http://" + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
+                    + ":" +
+                    getTigerProxyConfiguration().getDirectReverseProxy().getPort())
+                .build()
+        );
     }
 
     private void customizeSslSuitesIfApplicable() {

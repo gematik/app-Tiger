@@ -12,9 +12,9 @@
 
 ## Features
 
-* TGR-664: WebUi: Copys body of response via click on button
+* TGR-685: DirectReverseProxy added
+* TGR-664: WebUi: Copies body of response via click on button
 
- 
 ## Breaking changes
 ## Bugfixes
 

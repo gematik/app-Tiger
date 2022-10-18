@@ -29,6 +29,7 @@ public class TigerProxyConfiguration {
 
     private List<TigerRoute> proxyRoutes;
     private ForwardProxyInfo forwardToProxy;
+    private DirectReverseProxyInfo directReverseProxy;
     @Builder.Default
     private String proxyLogLevel = "WARN";
     @Builder.Default

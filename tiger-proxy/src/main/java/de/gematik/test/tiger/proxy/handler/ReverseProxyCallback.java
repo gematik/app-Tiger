@@ -2,21 +2,22 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.proxy.TigerProxy;
+import java.net.URI;
+import java.net.URISyntaxException;
+import lombok.EqualsAndHashCode;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import org.mockserver.model.SocketAddress;
 
 @Slf4j
+@EqualsAndHashCode
 public class ReverseProxyCallback extends AbstractTigerRouteCallback {
 
+    private static final String HTTPS_PREFIX = "https://";
     private final URI targetUri;
     private final int port;
 
@@ -25,7 +26,7 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
         super(tigerProxy, route);
         this.targetUri = new URI(route.getTo());
         if (targetUri.getPort() < 0) {
-            port = route.getTo().startsWith("https://") ? 443 : 80;
+            port = route.getTo().startsWith(HTTPS_PREFIX) ? 443 : 80;
         } else {
             port = targetUri.getPort();
         }
@@ -37,10 +38,10 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
         applyModifications(httpRequest);
         final HttpRequest request = cloneRequest(httpRequest)
             .withSocketAddress(
-                getTigerRoute().getTo().startsWith("https://"),
+                getTigerRoute().getTo().startsWith(HTTPS_PREFIX),
                 targetUri.getHost(),
                 port
-            ).withSecure(getTigerRoute().getTo().startsWith("https://"))
+            ).withSecure(getTigerRoute().getTo().startsWith(HTTPS_PREFIX))
             .withPath(patchPath(httpRequest.getPath().getValue()));
 
         if (getTigerRoute().getBasicAuth() != null) {

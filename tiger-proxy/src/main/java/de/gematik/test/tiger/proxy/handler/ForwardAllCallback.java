@@ -2,9 +2,10 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.proxy.handler;
 
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import org.mockserver.model.HttpRequest;
 
 public class ForwardAllCallback extends AbstractTigerRouteCallback {
@@ -29,6 +30,7 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
             + request.getSocketAddress().getPort();
     }
 
+    @Override
     boolean shouldLogTraffic() {
         return true;
     }

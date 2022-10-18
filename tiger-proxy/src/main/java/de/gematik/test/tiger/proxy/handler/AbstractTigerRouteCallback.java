@@ -2,13 +2,15 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.proxy.handler;
 
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
@@ -141,7 +143,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     public final HttpResponse handle(HttpRequest req, HttpResponse resp) {
         try {
             final HttpResponse httpResponse = handleResponse(req, resp);
-            requestTimingMap.remove(req);
+            requestTimingMap.remove(req.getLogCorrelationId());
             return httpResponse;
         } catch (RuntimeException e) {
             log.warn("Uncaught exception during handling of response", e);
@@ -214,7 +216,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             getTigerProxy().getRbelLogger().getRbelConverter().convertElement(certificateNode);
             return certificateNode;
         } catch (CertificateEncodingException e) {
-            throw new RuntimeException(e);
+            final RbelElement rbelElement = new RbelElement(null, parentNode);
+            rbelElement.addFacet(RbelNoteFacet.builder()
+                .style(NoteStyling.ERROR)
+                .value("Error while trying to get binary representation for certificate: " + e.getMessage())
+                .build());
+            return rbelElement;
         }
     }
 

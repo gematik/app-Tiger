@@ -2,16 +2,16 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.proxy.handler;
 
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.mockserver.model.HttpOverrideForwardedRequest;
 import org.mockserver.model.HttpRequest;
 
 @Slf4j
