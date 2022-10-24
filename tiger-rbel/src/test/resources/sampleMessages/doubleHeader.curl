@@ -1,0 +1,7 @@
+HTTP/1.1 200
+Cache-Control: no-store
+foo: bar1
+foo: bar2
+Connection: keep-alive
+
+{"challenge":"eyJhbGciOiJCUDI1NlIxIiwiZXhwIjoxNjE0MzU0NTM3LCJ0eXAiOiJKV1QiLCJraWQiOiJpZHBTaWcifQ.eyJpc3MiOiJodHRwczovL2lkcC56ZW50cmFsLmlkcC5zcGxpdGRucy50aS1kaWVuc3RlLmRlIiwicmVzcG9uc2VfdHlwZSI6ImNvZGUiLCJzbmMiOiJHSmllSXBPRkoyV3RzdEJoYkd6cnJCS3BmRXk1b2dRVW1ramlPNU8yRmxZPSIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJ0b2tlbl90eXBlIjoiY2hhbGxlbmdlIiwibm9uY2UiOiI5ODc2NSIsImNsaWVudF9pZCI6ImVSZXplcHRBcHAiLCJzY29wZSI6ImUtcmV6ZXB0IG9wZW5pZCIsInN0YXRlIjoieHh4c3RhdGV4eHgiLCJyZWRpcmVjdF91cmkiOiJodHRwOi8vcmVkaXJlY3QuZ2VtYXRpay5kZS9lcmV6ZXB0IiwiZXhwIjoxNjE0MzU0NTM3LCJpYXQiOjE2MTQzNTQzNTcsImNvZGVfY2hhbGxlbmdlIjoiQ2EzVmU4alNzQlFPQkZWcVF2THMxRS1kR1YxQlhnMkZUdnJkLVRnMTlWZyIsImp0aSI6IjgyYjA3ODUzYzU5ZGYxMTQifQ.qKS9g1dzDZ0el8uvanegyh6Dx42gQACfbuZfWD9Ar8MO-m8dnIAjI2yG-U4-wil4ukAR-1T_dagdSL3pax5oqg","user_consent":{"requested_scopes":{"e-rezept":"Zugriff auf die E-Rezept-Funktionalität.","openid":"Zugriff auf den ID-Token."},"requested_claims":{"organizationName":"Zustimmung zur Verarbeitung der Organisationszugehörigkeit","professionOID":"Zustimmung zur Verarbeitung der Rolle","idNummer":"Zustimmung zur Verarbeitung der Id (z.B. Krankenversichertennummer, Telematik-Id)","given_name":"Zustimmung zur Verarbeitung des Vornamens"}}}

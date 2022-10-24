@@ -1,0 +1,7 @@
+HTTP/1.1 200
+Cache-Control: no-store
+foo: bar1
+Connection: keep-alive
+Content-Type: text/html; charset=latin1
+
+אבגדהוזחטיךכלםמן
