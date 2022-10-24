@@ -388,16 +388,20 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
     @NotNull
     public String getFileNameFor(String scenarioName, int dataVariantIndex) {
         String name = scenarioName;
-        final String map = "äaÄAöoÖOüuÜUßs _(_)_[_]_{_}_<_>_|_$_%_&_/_\\_?_:_*_\"_";
         if (name.length() > 80) { // Serenity can not deal with longer filenames
             name = name.substring(0, 60) + UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
         }
         if (dataVariantIndex != -1) {
             name = name + "_" + (dataVariantIndex + 1);
         }
-        name = name + "_" + sdf.format(new Date()) + ".html";
-        for (int i = 0; i < map.length(); i += 2) {
-            name = name.replace(map.charAt(i), map.charAt(i + 1));
+        name = replaceSpecialCharacters(name) + "_" + sdf.format(new Date()) + ".html";
+        return name;
+    }
+
+    public String replaceSpecialCharacters(String name) {
+        final String tokenMap = "äaÄAöoÖOüuÜUßs _(_)_[_]_{_}_<_>_|_$_%_&_/_\\_?_:_*_\"_";
+        for (int i = 0; i < tokenMap.length(); i += 2) {
+            name = name.replace(tokenMap.charAt(i), tokenMap.charAt(i + 1));
         }
         return name;
     }

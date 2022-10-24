@@ -31,7 +31,7 @@ import org.xmlunit.builder.DiffBuilder;
 @Slf4j
 public class RBelValidatorGlue {
 
-    static final RbelMessageValidator rbelValidator = new RbelMessageValidator();
+    static final RbelMessageValidator rbelValidator = RbelMessageValidator.instance;
 
     public static RbelMessageValidator getRbelValidator() {
         return rbelValidator;

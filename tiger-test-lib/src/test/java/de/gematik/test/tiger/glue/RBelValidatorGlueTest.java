@@ -7,6 +7,7 @@ class RBelValidatorGlueTest {
 
     @Test
     void testFindLastRequestWithNoRequestFound() {
+        RBelValidatorGlue.getRbelValidator().clearRBelMessages();
         assertThatThrownBy(
             () -> new RBelValidatorGlue().findLastRequest())
             .hasMessageContaining("No Request found");

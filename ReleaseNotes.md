@@ -17,6 +17,9 @@
 * TGR-525: Rbel moved into Tiger
 
 ## Breaking changes
+
+* TGR-700: RbelMessageValidator is now enforcing singleton pattern
+
 ## Bugfixes
 
 -------

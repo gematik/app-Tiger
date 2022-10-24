@@ -43,6 +43,8 @@ import org.xmlunit.diff.Difference;
 @Slf4j
 public class RbelMessageValidator {
 
+    public final static RbelMessageValidator instance = new RbelMessageValidator();
+
     private static final Map<String, Function<DiffBuilder, DiffBuilder>> diffOptionMap = new HashMap<>();
 
     static {
@@ -59,7 +61,7 @@ public class RbelMessageValidator {
     @Getter
     protected RbelElement currentResponse;
 
-    public RbelMessageValidator() {
+    private RbelMessageValidator() {
         TigerJexlExecutor.registerAdditionalNamespace("rbel", new JexlToolbox());
     }
 
