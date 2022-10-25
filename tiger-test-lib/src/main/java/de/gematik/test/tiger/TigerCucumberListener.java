@@ -91,7 +91,7 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
 
     private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|üß ]*)(Banner|banner|text|Text) \"(.*)\"");
 
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 
     @Override
     public void setEventPublisher(EventPublisher eventPublisher) {
