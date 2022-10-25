@@ -4,25 +4,23 @@
 
 package de.gematik.rbellogger.converter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import java.io.File;
+import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.Base64;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Base64;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class RbelMtomConverterTest {
 
@@ -41,9 +39,9 @@ public class RbelMtomConverterTest {
     }
 
     @Test
-    public void shouldRenderCleanHtml() throws IOException {
-        FileUtils.writeStringToFile(new File("target/vauEpa2.html"),
-                RbelHtmlRenderer.render(rbelLogger.getMessageHistory()));
+    void shouldRenderCleanHtml() {
+        assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory()))
+            .isNotBlank();
     }
 
     @Test

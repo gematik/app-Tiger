@@ -6,6 +6,7 @@ package de.gematik.test.tiger.testenvmgr.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -46,7 +47,7 @@ public class TestDockerMgr {
     }
 
     @Test
-    public void testDockerMgrStartUpOK() {
+    void testDockerMgrStartUpOK() {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE));
@@ -60,7 +61,7 @@ public class TestDockerMgr {
     }
 
     @Test
-    public void testDockerMgrStartUpTooShort() {
+    void testDockerMgrStartUpTooShort() {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE));
@@ -74,7 +75,7 @@ public class TestDockerMgr {
     }
 
     @Test
-    public void testDockerMgrStartupTimeoutFallback() {
+    void testDockerMgrStartupTimeoutFallback() {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
@@ -88,7 +89,7 @@ public class TestDockerMgr {
     }
 
     @Test
-    public void testDockerMgrPauseUnpause() {
+    void testDockerMgrPauseUnpause() {
         final CfgServer srv = new CfgServer();
         srv.setType(ServerType.DOCKER);
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck
@@ -98,6 +99,8 @@ public class TestDockerMgr {
         dmgr.startContainer(server);
         dmgr.pauseContainer(server);
         dmgr.unpauseContainer(server);
+
+        assertThatNoException();
     }
 
     private void buildDockerServerFromConfiguration(String serverId, CfgServer srv) {

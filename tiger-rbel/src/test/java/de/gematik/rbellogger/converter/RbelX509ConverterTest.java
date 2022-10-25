@@ -10,13 +10,11 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,14 +33,14 @@ public class RbelX509ConverterTest {
 
     @SneakyThrows
     @Test
-    public void shouldRenderCleanHtml() {
-        FileUtils.writeStringToFile(new File("target/x509Message.html"),
-            RbelHtmlRenderer.render(List.of(xmlMessage)));
+    void shouldRenderCleanHtml() {
+        assertThat(RbelHtmlRenderer.render(List.of(xmlMessage)))
+            .isNotBlank();
     }
 
     @SneakyThrows
     @Test
-    public void shouldBeAccessibleViaRbelPath() {
+    void shouldBeAccessibleViaRbelPath() {
         final RbelElement certificateElement = xmlMessage.findElement("$..[?(@.subject=~'.*TEST-ONLY.*')]").get();
 
         assertThat(certificateElement)

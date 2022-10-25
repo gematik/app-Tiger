@@ -16,12 +16,10 @@ import de.gematik.rbellogger.data.facet.RbelAsn1TaggedValueFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -48,14 +46,14 @@ public class RbelAsn1ConverterTest {
 
     @SneakyThrows
     @Test
-    public void shouldRenderCleanHtml() {
+    void shouldRenderCleanHtml() {
         parseRezepsCapture();
-        FileUtils.writeStringToFile(new File("target/asn1TestRender.html"),
-            RbelHtmlRenderer.render(rbelLogger.getMessageHistory()));
+        assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory()))
+            .isNotBlank();
     }
 
     @Test
-    public void checkXmlInPkcs7InXml() throws IOException {
+    void checkXmlInPkcs7InXml() throws IOException {
         // check OID
         final RbelElement convertMessage = rbelLogger.getRbelConverter().convertElement(
             readCurlFromFileWithCorrectedLineBreaks("src/test/resources/xmlWithNestedPkcs7.curl"), null
@@ -67,7 +65,7 @@ public class RbelAsn1ConverterTest {
     }
 
     @Test
-    public void asn1EnumeratedShouldBeParsed() {
+    void asn1EnumeratedShouldBeParsed() {
         final RbelElement convertMessage = rbelLogger.getRbelConverter().convertElement("MAMKAVU=", null);
 
         assertThat(convertMessage.findRbelPathMembers("$.0").get(0).seekValue(BigInteger.class))

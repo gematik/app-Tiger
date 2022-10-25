@@ -4,13 +4,17 @@
 
 package de.gematik.rbellogger.renderer;
 
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelValueShader;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -18,34 +22,30 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
-
-import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
+import org.jsoup.Jsoup;
 import org.junit.jupiter.api.Test;
 
-import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class RbelHtmlRendererTest {
+class RbelHtmlRendererTest {
 
     private static final RbelConverter RBEL_CONVERTER = RbelLogger.build()
         .getRbelConverter();
     private static final RbelHtmlRenderer RENDERER = new RbelHtmlRenderer();
 
     @Test
-    public void convertToHtml() throws IOException {
+    void convertToHtml() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/jwtMessage.curl");
 
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-        FileUtils.writeStringToFile(new File("target/out.html"),
-            RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now())), Charset.defaultCharset());
+        final String render = RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+        FileUtils.writeStringToFile(new File("target/out.html"), render, Charset.defaultCharset());
+        assertThat(Jsoup.parse(render))
+            .isNotNull();
     }
 
     @Test

@@ -82,8 +82,8 @@ public class VauEpaConverterTest {
     @SneakyThrows
     @Test
     void shouldRenderCleanHtml() {
-        FileUtils.writeStringToFile(new File("target/vauFlow.html"),
-            RbelHtmlRenderer.render(rbelLogger.getMessageHistory()));
+        assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory()))
+            .isNotBlank();
     }
 
     @Test

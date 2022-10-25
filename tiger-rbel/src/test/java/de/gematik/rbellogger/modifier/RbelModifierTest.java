@@ -4,9 +4,7 @@
 
 package de.gematik.rbellogger.modifier;
 
-import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
@@ -17,10 +15,10 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
-public class RbelModifierTest extends AbstractModifierTest {
+class RbelModifierTest extends AbstractModifierTest {
 
     @Test
-    public void simpleHeaderReplace() throws IOException {
+    void simpleHeaderReplace() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .name("blub")
@@ -39,7 +37,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void responseCodeReplace() throws IOException {
+    void responseCodeReplace() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .name("blub")
@@ -55,7 +53,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void reasonPhraseReplaceWithAnotherReasonPhrase() throws IOException {
+    void reasonPhraseReplaceWithAnotherReasonPhrase() throws IOException {
         final RbelElement message = readAndConvertCurlMessage(
             "src/test/resources/sampleMessages/reasonPhraseMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
@@ -71,7 +69,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void reasonPhraseReplaceWithEmptyString() throws IOException {
+    void reasonPhraseReplaceWithEmptyString() throws IOException {
         final RbelElement message = readAndConvertCurlMessage(
             "src/test/resources/sampleMessages/reasonPhraseMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
@@ -90,7 +88,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void reasonPhraseReplaceWithNull() throws IOException {
+    void reasonPhraseReplaceWithNull() throws IOException {
         final RbelElement message = readAndConvertCurlMessage(
             "src/test/resources/sampleMessages/reasonPhraseMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
@@ -109,7 +107,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void reasonPhraseReplaceWithASpace() throws IOException {
+    void reasonPhraseReplaceWithASpace() throws IOException {
         final RbelElement message = readAndConvertCurlMessage(
             "src/test/resources/sampleMessages/reasonPhraseMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
@@ -128,7 +126,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void reasonPhraseAdd() throws IOException {
+    void reasonPhraseAdd() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.reasonPhrase")
@@ -145,7 +143,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void responseCodeAndReasonPhraseReplace() throws IOException {
+    void responseCodeAndReasonPhraseReplace() throws IOException {
         final RbelElement message = readAndConvertCurlMessage(
             "src/test/resources/sampleMessages/reasonPhraseMessage.curl");
 
@@ -170,7 +168,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void bodyCompleteReplace() throws IOException {
+    void bodyCompleteReplace() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.body")
@@ -185,7 +183,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void replaceFieldInJson() throws IOException {
+    void replaceFieldInJson() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.body.keys.0.kid")
@@ -205,7 +203,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void replaceHttpVerbInRequest() throws IOException {
+    void replaceHttpVerbInRequest() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/getRequest.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.method")
@@ -220,7 +218,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void modificationButWithConditionNeverTrue() throws IOException {
+    void modificationButWithConditionNeverTrue() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/getRequest.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.method")
@@ -236,7 +234,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void modificationWithConditionWhichIsTrue() throws IOException {
+    void modificationWithConditionWhichIsTrue() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/getRequest.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.method")
@@ -252,7 +250,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void regexReplacement() throws IOException {
+    void regexReplacement() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/xmlMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.body")
@@ -271,18 +269,20 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void targetElementDoesNotExist_modificationShouldConcludeWithoutException() throws IOException {
+    void targetElementDoesNotExist_modificationShouldConcludeWithoutException() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/getRequest.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.foobar")
             .replaceWith("novalue")
             .build());
 
-        modifyMessageAndParseResponse(message);
+        assertThat(modifyMessageAndParseResponse(message)
+            .getRawStringContent())
+            .isEqualTo(message.getRawStringContent());
     }
 
     @Test
-    public void multipleModifications_shouldApplyAll() throws IOException {
+    void multipleModifications_shouldApplyAll() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .name("blub")
@@ -306,7 +306,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void modifyRequestPath() throws IOException {
+    void modifyRequestPath() throws IOException {
         String specialCaseParameter = RandomStringUtils.randomPrint(300);
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/getRequest.curl",
             in -> in.replace("?", "?first=parameter&"));
@@ -342,7 +342,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void checkTtlEqualsOneWorksCorrectly() throws IOException {
+    void checkTtlEqualsOneWorksCorrectly() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .name("blub")
@@ -365,7 +365,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void checkTtlEqualsFiveWorksCorrectly() throws IOException {
+    void checkTtlEqualsFiveWorksCorrectly() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .name("blub")
@@ -390,7 +390,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void checkTtlEqualsZeroWorksCorrectly() throws IOException {
+    void checkTtlEqualsZeroWorksCorrectly() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .name("blub")
@@ -406,7 +406,7 @@ public class RbelModifierTest extends AbstractModifierTest {
     }
 
     @Test
-    public void checkTtlEqualsNullWorksCorrectly() throws IOException {
+    void checkTtlEqualsNullWorksCorrectly() throws IOException {
         final RbelElement message = readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .name("blub")

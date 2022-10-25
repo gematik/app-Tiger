@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Predicate;
@@ -23,12 +24,15 @@ public class GenericPrettyPrinterTest {
     );
 
     @Test
-    public void printAsn1P12() throws IOException {
+    void printAsn1P12() throws IOException {
         ASN1Encodable rootNode =
             readData(
                 FileUtils.readFileToByteArray(
                     new File("src/test/resources/vau_cert.der")));
-        System.out.println(genericPrettyPrinter.prettyPrint(rootNode));
+        final String prettyPrint = genericPrettyPrinter.prettyPrint(rootNode);
+        System.out.println(prettyPrint);
+        assertThat(prettyPrint)
+            .isNotBlank();
     }
 
     private ASN1Encodable readData(byte[] data) {

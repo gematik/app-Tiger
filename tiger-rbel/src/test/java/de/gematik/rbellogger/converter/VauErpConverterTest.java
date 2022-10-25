@@ -11,13 +11,11 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import java.io.File;
 import java.util.Base64;
 import java.util.stream.Collectors;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -44,8 +42,8 @@ public class VauErpConverterTest {
     @SneakyThrows
     @Test
     void shouldRenderCleanHtml() {
-        FileUtils.writeStringToFile(new File("target/vauErp.html"),
-            RbelHtmlRenderer.render(rbelLogger.getMessageHistory()));
+        assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory()))
+            .isNotBlank();
     }
 
     @Test

@@ -35,7 +35,7 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "      adminPort: ${free.port.2}\n"
         + "      proxiedServer: testWinstone2\n"
         + "      proxyPort: ${free.port.3}\n")
-    public void testReverseProxy() {
+    void testReverseProxy() {
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();
         assertThat(httpResponse.getBody().trim())
@@ -46,7 +46,7 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
 
     @Test
     @TigerTest(cfgFilePath = "src/test/resources/de/gematik/test/tiger/testenvmgr/testReverseProxyManual.yaml")
-    public void testReverseProxyManual() {
+    void testReverseProxyManual() {
         log.info("Entering test");
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.2").get()).asString();
@@ -76,7 +76,7 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "      adminPort: ${free.port.2}\n"
         + "      proxiedServer: testWinstone2\n"
         + "      proxyPort: ${free.port.3}\n")
-    public void deepPathHealthcheckUrl_routeShouldTargetBaseUrl() {
+    void deepPathHealthcheckUrl_routeShouldTargetBaseUrl() {
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();
         assertThat(httpResponse.getBody())
@@ -103,8 +103,10 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "      proxyPort: ${free.port.2}\n"
         + "      tls:\n"
         + "        serverIdentity: \"src/test/resources/c.ak.aut-konsim.p12;00\"")
-    public void remoteProxyWithConfiguredTlsIdentity(UnirestInstance proxyRest) {
-        proxyRest.get(
+    void remoteProxyWithConfiguredTlsIdentity(UnirestInstance proxyRest) {
+        var response = proxyRest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.0").get()).asString();
+        assertThat(response.isSuccess())
+            .isTrue();
     }
 }
