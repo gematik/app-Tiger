@@ -126,7 +126,7 @@
             <version>${version.jcommander}</version>
         </dependency>
         <dependency>
-            <groupId>org.mock-server</groupId>
+            <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-netty</artifactId>
             <version>${version.mockserver}</version>
             <exclusions>
@@ -171,7 +171,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mock-server</groupId>
+            <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-junit-jupiter</artifactId>
             <version>${version.mockserver}</version>
             <scope>test</scope>

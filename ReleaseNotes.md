@@ -22,6 +22,8 @@
 
 ## Bugfixes
 
+* TGR-680: The Tiger-Proxy can again use MutualTls as a client
+
 -------
 # Release 0.24.1/0.24.2
 

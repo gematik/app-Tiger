@@ -76,7 +76,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mock-server</groupId>
+            <groupId>io.github.arkinator</groupId>
             <artifactId>mockserver-core</artifactId>
             <version>${version.mockserver}</version>
             <scope>compile</scope>

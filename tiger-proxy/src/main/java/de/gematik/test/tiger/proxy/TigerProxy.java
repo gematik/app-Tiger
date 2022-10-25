@@ -19,6 +19,8 @@ import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
 import de.gematik.test.tiger.proxy.handler.ForwardProxyCallback;
 import de.gematik.test.tiger.proxy.handler.ReverseProxyCallback;
+import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
+import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
@@ -28,7 +30,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -47,23 +48,23 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.Configuration;
-import org.mockserver.logging.MockServerLogger;
 import org.mockserver.matchers.TimeToLive;
 import org.mockserver.matchers.Times;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.ExpectationId;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
-import org.mockserver.netty.proxy.BinaryHandler;
+import org.mockserver.netty.proxy.BinaryRequestProxyingHandler;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.socket.tls.ForwardProxyTLSX509CertificatesTrustManager;
-import org.mockserver.socket.tls.KeyAndCertificateFactory;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
+import org.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import org.mockserver.socket.tls.NettySslContextFactory;
+import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
-    private final List<TigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
+    private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
     private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
     private final MockServer mockServer;
     private final MockServerClient mockServerClient;
@@ -138,13 +139,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     private MockServer spawnDirectInverseTigerProxy(Configuration mockServerConfiguration,
         Optional<ProxyConfiguration> forwardProxyConfig) {
         if (forwardProxyConfig.isPresent()) {
-            throw new TigerProxyStartupException("DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy is always HTTP!)");
+            throw new TigerProxyStartupException(
+                "DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy is always HTTP!)");
         }
         MockServer mockServer = new MockServer(mockServerConfiguration,
             getTigerProxyConfiguration().getDirectReverseProxy().getPort(),
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getPortAsArray());
-        BinaryHandler.binaryExchangeCallback = BinaryExchangeHandler.builder()
+        BinaryRequestProxyingHandler.binaryExchangeCallback = BinaryExchangeHandler.builder()
             .rbelLogger(getRbelLogger())
             .tigerProxy(this)
             .build();
@@ -192,26 +194,37 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         }
     }
 
-    private BiFunction<MockServerLogger, Boolean, KeyAndCertificateFactory> buildKeyAndCertificateFactory() {
+    private KeyAndCertificateFactorySupplier buildKeyAndCertificateFactory() {
         if (getTigerProxyConfiguration().getTls().getServerIdentity() != null
             && !getTigerProxyConfiguration().getTls().getServerIdentity().hasValidChainWithRootCa()) {
             throw new TigerProxyStartupException("Configured server-identity has no valid chain!");
         }
 
-        return (mockServerLogger, isServerInstance) -> {
-            if (isServerInstance
-                || getTigerProxyConfiguration().getTls() == null
-                || getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity() == null) {
-                final TigerKeyAndCertificateFactory factory = new TigerKeyAndCertificateFactory(mockServerLogger,
-                    getTigerProxyConfiguration(),
-                    determineServerRootCa().orElse(null));
-                if (isServerInstance) {
-                    tlsFactories.add(factory);
+        return (mockServerLogger, isServerInstance, mockServerConfiguration) -> {
+            if (isServerInstance) {
+                if (getTigerProxyConfiguration().getTls() != null
+                    && getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
+                    return new StaticTigerKeyAndCertificateFactory(mockServerLogger,
+                        getTigerProxyConfiguration(),
+                        getTigerProxyConfiguration().getTls().getServerIdentity());
+                } else {
+                    final DynamicTigerKeyAndCertificateFactory dynamicTigerKeyAndCertificateFactory = new DynamicTigerKeyAndCertificateFactory(
+                        mockServerLogger,
+                        getTigerProxyConfiguration(),
+                        determineServerRootCa()
+                            .orElseThrow(() -> new TigerProxyStartupException("Unrecoverable TLS startup state")));
+                    this.tlsFactories.add(dynamicTigerKeyAndCertificateFactory);
+                    return dynamicTigerKeyAndCertificateFactory;
                 }
-                return factory;
             } else {
-                return new TigerKeyAndCertificateFactory(mockServerLogger,
-                    getTigerProxyConfiguration(), null);
+                if (getTigerProxyConfiguration().getTls() != null
+                    && getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity() != null) {
+                    return new StaticTigerKeyAndCertificateFactory(mockServerLogger,
+                        getTigerProxyConfiguration(),
+                        getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity());
+                } else {
+                    return new BCKeyAndCertificateFactory(mockServerConfiguration, mockServerLogger);
+                }
             }
         };
     }
@@ -370,7 +383,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         newAlternativeNames.add(host);
         getTigerProxyConfiguration().getTls().setAlternativeNames(newAlternativeNames);
 
-        for (final TigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
+        for (final DynamicTigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
             tlsFactory.addAlternativeName(host);
             tlsFactory.resetEeCertificate();
         }

@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -41,7 +41,7 @@ import org.mockserver.logging.MockServerLogger;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 import org.slf4j.event.Level;
 
-public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
+public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -53,23 +53,21 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     private final String serverName;
     private final List<String> serverAlternativeNames;
     private TigerPkiIdentity eeIdentity;
-    private final boolean canEeIdentityBeReset;
 
     @Builder
-    public TigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
-                                         TigerProxyConfiguration tigerProxyConfiguration,
-                                         TigerPkiIdentity caIdentity) {
+    public DynamicTigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
+        TigerProxyConfiguration tigerProxyConfiguration,
+        TigerPkiIdentity caIdentity) {
         super(tigerProxyConfiguration.convertToMockServerConfiguration(), mockServerLogger);
         this.certificateChain = new ArrayList<>();
         this.mockServerLogger = mockServerLogger;
         this.caIdentity = caIdentity;
-        this.eeIdentity = tigerProxyConfiguration.getTls().getServerIdentity();
+        this.eeIdentity = null;
         this.serverName = tigerProxyConfiguration.getTls().getDomainName();
         this.serverAlternativeNames = new ArrayList<>();
         if (tigerProxyConfiguration.getTls().getAlternativeNames() != null) {
             serverAlternativeNames.addAll(tigerProxyConfiguration.getTls().getAlternativeNames());
         }
-        this.canEeIdentityBeReset = eeIdentity == null;
     }
 
     public boolean certificateAuthorityCertificateNotYetCreated() {
@@ -77,6 +75,7 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     }
 
     public X509Certificate certificateAuthorityX509Certificate() {
+        buildAndSavePrivateKeyAndX509Certificate();
         if (caIdentity != null) {
             return this.caIdentity.getCertificate();
         }
@@ -88,16 +87,18 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     }
 
     public PrivateKey privateKey() {
+        buildAndSavePrivateKeyAndX509Certificate();
         return eeIdentity.getPrivateKey();
     }
 
     public X509Certificate x509Certificate() {
+        buildAndSavePrivateKeyAndX509Certificate();
         return eeIdentity.getCertificate();
     }
 
     public void buildAndSavePrivateKeyAndX509Certificate() {
-        try {
-            if (eeIdentity == null) {
+        if (eeIdentity == null) {
+            try {
                 KeyPair keyPair = this.generateRsaKeyPair(2048);
                 X509Certificate x509Certificate =
                     this.createCertificateSignedByCa(keyPair.getPublic(), this.caIdentity.getCertificate(),
@@ -107,46 +108,42 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
                 certificateChain.add(x509Certificate);
                 certificateChain.add(caIdentity.getCertificate());
-            } else {
-                if (certificateChain.isEmpty()) {
-                    certificateChain.add(eeIdentity.getCertificate());
-                    certificateChain.addAll(eeIdentity.getCertificateChain());
+                if (MockServerLogger.isEnabled(Level.TRACE)) {
+                    this.mockServerLogger.logEvent((new LogEntry()).setLogLevel(Level.TRACE)
+                        .setMessageFormat("created new X509 {} with SAN Domain Names {} and IPs {}").setArguments(
+                            this.x509Certificate(),
+                            Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains().toArray()),
+                            Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps().toArray())));
                 }
+            } catch (Exception e) {
+                this.mockServerLogger.logEvent(new LogEntry()
+                    .setLogLevel(Level.ERROR)
+                    .setMessageFormat("exception while generating private key and X509 certificate")
+                    .setThrowable(e));
             }
-
-            if (MockServerLogger.isEnabled(Level.TRACE)) {
-                this.mockServerLogger.logEvent((new LogEntry()).setLogLevel(Level.TRACE)
-                    .setMessageFormat("created new X509 {} with SAN Domain Names {} and IPs {}").setArguments(
-                        this.x509Certificate(),
-                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains().toArray()),
-                        Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps().toArray())));
-            }
-        } catch (Exception e) {
-            this.mockServerLogger.logEvent(new LogEntry()
-                .setLogLevel(Level.ERROR)
-                .setMessageFormat("exception while generating private key and X509 certificate")
-                .setThrowable(e));
         }
     }
 
     @Override
     public List<X509Certificate> certificateChain() {
+        buildAndSavePrivateKeyAndX509Certificate();
         return certificateChain;
     }
 
     private X509Certificate createCertificateSignedByCa(PublicKey publicKey, X509Certificate certificateAuthorityCert,
-                                                        PrivateKey certificateAuthorityPrivateKey,
-                                                        PublicKey certificateAuthorityPublicKey) throws Exception {
+        PrivateKey certificateAuthorityPrivateKey,
+        PublicKey certificateAuthorityPublicKey) throws Exception {
         X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
         X500Name subject = new X500Name("CN=" + serverName + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
 
         BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE)); //NOSONAR
 
-        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial, NOT_BEFORE, NOT_AFTER, subject, publicKey);
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial, NOT_BEFORE, NOT_AFTER,
+            subject, publicKey);
         builder.addExtension(Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
         builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
 
-        if (serverAlternativeNames.size() > 0) {
+        if (!serverAlternativeNames.isEmpty()) {
             DERSequence subjectAlternativeNamesExtension = new DERSequence(
                 Stream.concat(serverAlternativeNames.stream(), Stream.of(serverName))
                     .distinct()
@@ -201,9 +198,7 @@ public class TigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
     }
 
     public void resetEeCertificate() {
-        if (canEeIdentityBeReset) {
-            eeIdentity = null;
-        }
+        eeIdentity = null;
     }
 
     public void addAlternativeName(String host) {

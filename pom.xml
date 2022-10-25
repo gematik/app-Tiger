@@ -103,7 +103,7 @@
         <version.maven.failsafe>3.0.0-M7</version.maven.failsafe>
         <version.maven.surefire>3.0.0-M7</version.maven.surefire>
         <version.maven-plugin-tools>3.6.4</version.maven-plugin-tools>
-        <version.mockserver>5.14.0</version.mockserver>
+        <version.mockserver>5.14.1-PREVIEW</version.mockserver>
         <version.serenity.core>3.3.4</version.serenity.core>
         <version.serenity.maven.plugin>3.3.4</version.serenity.maven.plugin>
         <version.slf4j>1.7.32</version.slf4j>
