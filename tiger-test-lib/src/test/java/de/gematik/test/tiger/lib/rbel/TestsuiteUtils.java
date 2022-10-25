@@ -1,0 +1,64 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
+package de.gematik.test.tiger.lib.rbel;
+
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.FileUtils;
+
+public class TestsuiteUtils {
+
+    public static void addSomeMessagesToTigerTestHooks() {
+        final RbelLogger logger = RbelLogger.build(RbelConfiguration.builder()
+            .capturer(RbelFileReaderCapturer.builder()
+                .rbelFile("src/test/resources/testdata/ssoTokenFlow.tgr")
+                .build())
+            .build());
+        logger.getRbelCapturer().initialize();
+        LocalProxyRbelMessageListener.getValidatableRbelMessages()
+            .addAll(logger.getMessageHistory());
+    }
+
+    public static void addTwoRequestsToTigerTestHooks() {
+        TigerGlobalConfiguration.putValue("tiger.rbel.request.timeout", 1);
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
+        RbelElement request = buildRequestFromCurlFile("getRequestLocalhost.curl");
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessage.curl", request));
+        request = buildRequestFromCurlFile("getRequestEitzenAt.curl");
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
+    }
+
+    public static RbelElement buildRequestFromCurlFile(String curlFileName) {
+        String curlMessage = readCurlFromFileWithCorrectedLineBreaks(curlFileName, StandardCharsets.UTF_8);
+        return RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    }
+
+    public static RbelElement buildResponseFromCurlFile(String curlFileName, RbelElement request) {
+        String curlMessage = readCurlFromFileWithCorrectedLineBreaks(curlFileName, StandardCharsets.UTF_8);
+        RbelElement message = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+        message.addOrReplaceFacet(message.getFacet(RbelHttpResponseFacet.class).get().toBuilder().request(request).build());
+        return message;
+    }
+
+    public static String readCurlFromFileWithCorrectedLineBreaks(String fileName, Charset charset) {
+        try {
+            return FileUtils.readFileToString(new File("src/test/resources/testdata/sampleCurlMessages/" + fileName), charset)
+                .replaceAll("(?<!\\r)\\n", "\r\n");
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unable to read curl file", ioe);
+        }
+    }
+}
