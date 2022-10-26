@@ -1,7 +1,7 @@
 # Changelog Tiger Testplattform
 
 -------
-# Release 0.24.3
+# Release 1.0.0
 
 * Serenity BDD 3.3.4
 * Cucumber 7.4.1
