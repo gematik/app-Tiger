@@ -16,9 +16,10 @@ pipeline {
       }
 
       parameters {
-           string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die aktuelle Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
-           booleanParam(name: 'UPDATE', defaultValue: false, description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll. Default: false')
+          string(name: 'TIGER_VERSION', defaultValue: '', description: 'Bitte die aktuelle Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
+          choice(name: 'UPDATE', choices: ['NO', 'YES'], description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll')
       }
+
 
       stages {
           stage('Checkout') {
@@ -50,13 +51,9 @@ pipeline {
           }
 
            stage('Commit new Tiger version when needed') {
-               environment {
-                    UPDATE_FLAG = "${UPDATE}"
-               }
-
                steps {
                     script {
-                        if (UPDATE_FLAG == true) {
+                        if (params.UPDATE == 'YES') {
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                                 sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
                                 sh """
@@ -77,14 +74,14 @@ pipeline {
           }
           success {
               script {
-                  if (UPDATE == true)
+                  if (params.UPDATE == 'YES')
                       sendEMailNotification(getTigerEMailList() + "," + "rafael.schirru@gematik.de")
               }
           }
 
           failure {
               script {
-                  if (UPDATE == true)
+                  if (params.UPDATE == 'YES')
                       sendEMailNotification(getTigerEMailList() + "," + "rafael.schirru@gematik.de")
               }
           }

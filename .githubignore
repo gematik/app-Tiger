@@ -5,3 +5,4 @@ Maven-Central-Release.Jenkinsfile
 Nightly.Jenkinsfile
 Release.Jenkinsfile
 /tiger-integration-tests/
+IntegrationTest.Jenkinsfile
