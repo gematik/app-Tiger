@@ -43,7 +43,7 @@ public class StaticTigerKeyAndCertificateFactory extends BCKeyAndCertificateFact
             return identity.getCertificateChain()
                 .get(identity.getCertificateChain().size() - 1);
         }
-        throw new RuntimeException("Should not be called");
+        return identity.getCertificate(); // necessary because of missing null check in NettySslContextFactory
     }
 
     @Override

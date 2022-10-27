@@ -13,6 +13,7 @@
 ## Features
 
 * TGR-685: DirectReverseProxy added
+* TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable
 * TGR-664: WebUi: Copies body of response via click on button
 * TGR-525: Rbel moved into Tiger
 * TGR-687: Rbel-Namespace extended (lastRequest/lastMessage/getValueAtLocationAsString)

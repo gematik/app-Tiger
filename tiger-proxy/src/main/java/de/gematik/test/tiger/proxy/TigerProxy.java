@@ -21,6 +21,7 @@ import de.gematik.test.tiger.proxy.handler.ForwardProxyCallback;
 import de.gematik.test.tiger.proxy.handler.ReverseProxyCallback;
 import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
+import io.netty.handler.ssl.SslProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
@@ -39,6 +40,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import kong.unirest.Unirest;
 import kong.unirest.apache.ApacheClient;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
@@ -62,8 +64,13 @@ import org.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import org.mockserver.socket.tls.NettySslContextFactory;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 
+@EqualsAndHashCode
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
+    public static final TigerPkiIdentity DEFAULT_CA_IDENTITY = new TigerPkiIdentity(
+        "CertificateAuthorityCertificate.pem;" +
+            "PKCS8CertificateAuthorityPrivateKey.pem;" +
+            "PKCS8");
     private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
     private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
     private final MockServer mockServer;
@@ -179,6 +186,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 if (tlsConfiguration.getServerTlsProtocols() != null) {
                     builder.protocols(tlsConfiguration.getServerTlsProtocols());
                 }
+                builder.sslProvider(SslProvider.JDK);
+
                 return builder;
             };
         } else {
@@ -187,6 +196,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         if (tlsConfiguration.getClientSslSuites() != null) {
             NettySslContextFactory.sslClientContextBuilderCustomizer = builder -> {
                 builder.ciphers(tlsConfiguration.getClientSslSuites());
+                builder.sslProvider(SslProvider.JDK);
                 return builder;
             };
         } else {
@@ -195,11 +205,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     private KeyAndCertificateFactorySupplier buildKeyAndCertificateFactory() {
-        if (getTigerProxyConfiguration().getTls().getServerIdentity() != null
-            && !getTigerProxyConfiguration().getTls().getServerIdentity().hasValidChainWithRootCa()) {
-            throw new TigerProxyStartupException("Configured server-identity has no valid chain!");
-        }
-
         return (mockServerLogger, isServerInstance, mockServerConfiguration) -> {
             if (isServerInstance) {
                 if (getTigerProxyConfiguration().getTls() != null
@@ -236,10 +241,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             if (getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
                 return Optional.empty();
             } else {
-                return Optional.of(new TigerPkiIdentity(
-                    "CertificateAuthorityCertificate.pem;" +
-                        "PKCS8CertificateAuthorityPrivateKey.pem;" +
-                        "PKCS8"));
+                return Optional.of(DEFAULT_CA_IDENTITY);
             }
         }
     }

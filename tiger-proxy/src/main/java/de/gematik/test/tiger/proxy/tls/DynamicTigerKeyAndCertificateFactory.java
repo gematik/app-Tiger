@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -70,10 +71,12 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
         }
     }
 
+    @Override
     public boolean certificateAuthorityCertificateNotYetCreated() {
         return false;
     }
 
+    @Override
     public X509Certificate certificateAuthorityX509Certificate() {
         buildAndSavePrivateKeyAndX509Certificate();
         if (caIdentity != null) {
@@ -83,26 +86,29 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
             && eeIdentity.getCertificateChain().size() > 0) {
             return eeIdentity.getCertificateChain().get(0);
         }
-        return null;
+        return TigerProxy.DEFAULT_CA_IDENTITY.getCertificate();
     }
 
+    @Override
     public PrivateKey privateKey() {
         buildAndSavePrivateKeyAndX509Certificate();
         return eeIdentity.getPrivateKey();
     }
 
+    @Override
     public X509Certificate x509Certificate() {
         buildAndSavePrivateKeyAndX509Certificate();
         return eeIdentity.getCertificate();
     }
 
+    @Override
     public void buildAndSavePrivateKeyAndX509Certificate() {
         if (eeIdentity == null) {
             try {
                 KeyPair keyPair = this.generateRsaKeyPair(2048);
                 X509Certificate x509Certificate =
                     this.createCertificateSignedByCa(keyPair.getPublic(), this.caIdentity.getCertificate(),
-                        this.caIdentity.getPrivateKey(), this.caIdentity.getCertificate().getPublicKey());
+                        this.caIdentity.getPrivateKey());
 
                 eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
 
@@ -131,8 +137,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
     }
 
     private X509Certificate createCertificateSignedByCa(PublicKey publicKey, X509Certificate certificateAuthorityCert,
-        PrivateKey certificateAuthorityPrivateKey,
-        PublicKey certificateAuthorityPublicKey) throws Exception {
+                                                        PrivateKey certificateAuthorityPrivateKey) throws Exception {
         X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
         X500Name subject = new X500Name("CN=" + serverName + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
 
@@ -193,6 +198,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
         }
     }
 
+    @Override
     public boolean certificateNotYetCreated() {
         return eeIdentity == null;
     }

@@ -16,7 +16,43 @@ servers:
         - --httpPort=${free.port.0}
         - --webroot=.
         - --debug=9
-
+      adminPort: 8080
+      activateRbelParsing: true
+      proxyPort: 4742
+      directReverseProxy:
+#        hostname: 10.150.9.173
+#        port: 4742
+        hostname: 10.150.92.12
+        port: 4742
+#      proxyRoutes:
+#        - from: /
+#          to: http://10.11.220.157:4742
+      tls:
+        serverIdentity: gsmckt.p12;00
+        serverSslSuites:
+          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+          - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+          - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+          - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+          - TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+          - TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+          - TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+        clientSslSuites:
+          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+          - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+          - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+          - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+          - TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+          - TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+          - TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+        forwardMutualTlsIdentity: cert.p12;00
+      fileSaveInfo:
+        writeToFile: true
+        filename: cats_traffic.tgr
   remoteTigerProxy:
     type: tigerProxy
     tigerProxyCfg:

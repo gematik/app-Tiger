@@ -891,11 +891,13 @@ function shortenStrings(obj) {
 function addSingleMessage(msgMetaData, msgHtmlData) {
   const listDiv = getAll('.msglist')[0];
 
-  let isRequest = msgMetaData.path;
+  let isRequest = msgMetaData.request;
   const reqEl = htmlToElement(msgHtmlData);
   let span = getAll(".msg-sequence", reqEl)[0];
-  span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
-  span.textContent = msgMetaData.sequenceNumber + 1;
+  if (span != null) {
+    span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
+    span.textContent = msgMetaData.sequenceNumber + 1;
+  }
   addQueryBtn(reqEl);
   listDiv.appendChild(reqEl);
 
@@ -970,8 +972,6 @@ function updateMessageList(json) {
 }
 
 function getRoutes() {
-  document.getElementById("routeModalLed").classList.add("led-active");
-  document.getElementById("routeModalLed").classList.remove("led-error");
   getAll(
       ".routeListDiv")[0].innerHTML = "<p align=\"center\" class=\"mt-5 mb-5\"><i class=\"fas fa-spinner\"></i> Loading...</p>";
   const xhttp = new XMLHttpRequest();
@@ -985,8 +985,6 @@ function getRoutes() {
         console.log("ERROR " + this.status + " " + this.responseText);
         getAll(".routeListDiv")[0].innerHTML = "ERROR " + this.status + " "
             + this.responseText;
-        document.getElementById("routeModalLed").classList.remove("led-active");
-        document.getElementById("routeModalLed").classList.add("led-error");
       }
     }
   }

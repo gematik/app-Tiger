@@ -185,8 +185,9 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    @TigerTest(tigerYaml = "servers:\n"
-        + "  testExternalJarMVP:\n"
+    @TigerTest(tigerYaml =
+        "servers:\n"
+            + "  testExternalJarMVP:\n"
         + "    type: externalJar\n"
         + "    source:\n"
         + "      - local:target/winstone.jar\n"

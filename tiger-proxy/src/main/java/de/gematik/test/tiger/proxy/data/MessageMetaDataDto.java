@@ -6,11 +6,9 @@ package de.gematik.test.tiger.proxy.data;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -60,10 +58,6 @@ public class MessageMetaDataDto {
         } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
             builder.responseCode(Integer.parseInt(el.getFacetOrFail(RbelHttpResponseFacet.class)
                 .getResponseCode().getRawStringContent()));
-        } else {
-            throw new IllegalArgumentException(
-                "We do not support meta data for non http elements (" + el.getFacets().stream()
-                    .map(Object::getClass).map(Class::getSimpleName).collect(Collectors.joining(", ")) + ")");
         }
         builder.isRequest(el.hasFacet(RbelRequestFacet.class));
         builder.timestamp(el.getFacet(RbelMessageTimingFacet.class)
