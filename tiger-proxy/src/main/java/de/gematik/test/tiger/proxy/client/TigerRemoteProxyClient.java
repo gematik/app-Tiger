@@ -5,11 +5,9 @@
 package de.gematik.test.tiger.proxy.client;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.gson.JsonArray;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
@@ -258,7 +256,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         } else {
             getRbelLogger().getMessageHistory().remove(rbelMessage);
         }
-
     }
 
     private boolean messageMatchesFilterCriterion(RbelElement rbelMessage) {

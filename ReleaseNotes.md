@@ -24,6 +24,7 @@
 
 ## Bugfixes
 
+* TGR-706: Traffic filter for EPA-VAU KVNR works
 * TGR-680: The Tiger-Proxy can again use MutualTls as a client
 
 -------

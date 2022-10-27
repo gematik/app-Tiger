@@ -8,7 +8,6 @@ import static de.gematik.rbellogger.RbelOptions.ACTIVATE_JEXL_DEBUGGING;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
-
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -80,9 +79,19 @@ public class RbelJexlExecutor {
             .filter(str -> str.startsWith("$.")
                 && str.length() > 2)
             .findAny().orElseThrow();
-        return jexlExpression.replace(rbelPath, "\"" + ((RbelElement) element).findElement(rbelPath)
-            .map(RbelElement::getRawStringContent)
-            .orElse("") + "\"");
+        return jexlExpression.replace(rbelPath, "\"" + extractPathAndConvertToString((RbelElement) element, rbelPath) + "\"");
+    }
+
+    private static String extractPathAndConvertToString(RbelElement source, String rbelPath) {
+        final Optional<RbelElement> target = source.findElement(rbelPath);
+        if (target.isPresent()) {
+            if (target.get().getRawContent() != null) {
+                return target.get().getRawStringContent();
+            } else if (target.get().hasFacet(RbelValueFacet.class)) {
+                return target.get().getFacetOrFail(RbelValueFacet.class).getValue().toString();
+            }
+        }
+        return "";
     }
 
     private JexlExpression buildExpression(String jexlExpression) {
