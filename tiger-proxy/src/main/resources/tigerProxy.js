@@ -597,7 +597,7 @@ function pollMessages() {
   const xhttp = new XMLHttpRequest();
   xhttp.open("GET", "/webui/getMsgAfter"
       + "?lastMsgUuid=" + lastUuid
-      + "&filterCriterion=" + filterCriterion, true);
+      + "&filterCriterion=" + encodeURIComponent(filterCriterion), true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
