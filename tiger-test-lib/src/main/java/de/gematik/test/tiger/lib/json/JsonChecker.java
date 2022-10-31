@@ -5,18 +5,19 @@
 package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import groovy.util.logging.Slf4j;
 import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 import lombok.SneakyThrows;
 import net.thucydides.core.annotations.Step;
 import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.skyscreamer.jsonassert.Customization;
-import org.skyscreamer.jsonassert.JSONAssert;
-import org.skyscreamer.jsonassert.JSONCompareMode;
-import org.skyscreamer.jsonassert.JSONCompareResult;
+import org.skyscreamer.jsonassert.*;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
 /**
@@ -28,9 +29,12 @@ import org.skyscreamer.jsonassert.comparator.CustomComparator;
  * TODO TGR-256 check JSONObject as parameter yields unreadable output in serenity output, maybe reintroduce
  * SerenityJSONObject
  */
+@Slf4j
 public class JsonChecker {
 
     public static final String IGNORE_JSON_VALUE = "${json-unit.ignore}";
+    private static final String OPTIONAL_MARKER = "____";
+    private static final String NULL_MARKER = "$NULL";
 
     @Step
     @SneakyThrows
@@ -55,17 +59,12 @@ public class JsonChecker {
     @Step
     public void assertJsonObjectShouldMatchOrContainInAnyOrder(final String jsonStr, final String oracleStr,
         boolean checkExtraAttributes) {
-        JSONObject json = null;
-        JSONObject oracle = null;
+        final JSONObject json = convertToJsonObject(jsonStr);
+        final JSONObject oracle = convertToJsonObject(oracleStr);
 
         try {
-            json = convertToJsonObject(jsonStr);
-            oracle = convertToJsonObject(oracleStr);
             for (String oracleKey : oracle.keySet()) {
-                if (oracleKey.startsWith("____")) {
-                    continue;
-                }
-                if (!json.has(oracleKey)) {
+                if (!keyContainedInSetOrOptional(oracleKey, json.keySet())) {
                     throw new JsonCheckerAssertionError("Expected JSON to have key '" + oracleKey
                         + "', but only found keys '" + json.keySet() + "'");
                 }
@@ -73,20 +72,39 @@ public class JsonChecker {
 
             if (checkExtraAttributes) {
                 // check json keys are all in oracle (either as name or as ____name
-                final JSONObject finalOracle = oracle;
-                json.keySet().forEach(
-                    key -> assertThat(finalOracle.has(key) || finalOracle.has("____" + key))
-                        .withFailMessage("EXTRA Key " + key + " detected in received in JSON").isTrue()
-                );
+                final Optional<JsonCheckerAssertionError> checkerAssertionError = json.keySet().stream()
+                    .filter(key -> !keyContainedInSetOrOptional(key, oracle.keySet()))
+                    .findAny()
+                    .map(key -> new JsonCheckerAssertionError("EXTRA Key " + key + " detected in received in JSON"));
+                if (checkerAssertionError.isPresent()) {
+                    throw checkerAssertionError.get();
+                }
             }
 
             compareAllAttributes(json, oracle);
         } catch (final NoSuchMethodError nsme) {
             Assertions.fail(dumpComparisonBetween(
                 "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
-                null, oracle == null ? "Oracle is null" : oracle.toString(2),
-                json == null ? "Received is null" : json.toString(2)), nsme);
+                null, oracle.toString(2), json.toString(2)), nsme);
         }
+    }
+
+    private boolean keyContainedInSetOrOptional(String oracleKey, Set<String> keySet) {
+        if (oracleKey.startsWith(OPTIONAL_MARKER)) {
+            return true;
+        }
+
+        return keySet.stream()
+            .map(key -> StringUtils.stripStart(key, OPTIONAL_MARKER))
+            .anyMatch(oracleKey::equals);
+    }
+
+    private Optional<Object> findTargetByKey(JSONObject json, String jsonKey) {
+        return json.keySet().stream()
+            .filter(key -> StringUtils.stripStart(key, OPTIONAL_MARKER).equals(
+                StringUtils.stripStart(jsonKey, OPTIONAL_MARKER)))
+            .map(json::get)
+            .findAny();
     }
 
     private JSONObject convertToJsonObject(String jsonStr) {
@@ -101,32 +119,39 @@ public class JsonChecker {
         final Iterator<String> keyIt = oracle.keys();
         while (keyIt.hasNext()) {
             final String oracleKey = keyIt.next();
-            final boolean optionalAttribute = oracleKey.startsWith("____");
-            final String jsonKey = optionalAttribute ? oracleKey.substring(4) : oracleKey;
             final var oracleValue = oracle.get(oracleKey).toString();
-            if ((optionalAttribute && !json.has(jsonKey))
-                || ("$NULL".equals(oracleValue) && json.get(jsonKey) == JSONObject.NULL)) {
+            final Optional<Object> jsonTargetOptional = findTargetByKey(json, oracleKey);
+            final Optional<Object> oracleTargetOptional = findTargetByKey(oracle, oracleKey);
+            if ((jsonTargetOptional.isEmpty() && oracleKey.startsWith(OPTIONAL_MARKER))
+                || (oracleTargetOptional.isEmpty() && oracleKey.startsWith(OPTIONAL_MARKER))) {
+                continue;
+            }
+            final Object jsonTarget = jsonTargetOptional.orElseThrow(() -> new JsonCheckerAssertionError(
+                "Could not find attribute by key '" + oracleKey + "' in '" + json + "'"));
+            final Object oracleTarget = oracleTargetOptional.orElseThrow(() -> new JsonCheckerAssertionError(
+                "Could not find attribute by key '" + oracleKey + "' in '" + oracle + "'"));
+            if ((NULL_MARKER.equals(oracleValue) && jsonTarget == JSONObject.NULL)
+                || (NULL_MARKER.equals(jsonTarget) && oracleTarget == JSONObject.NULL)) {
                 continue;
             }
             if (IGNORE_JSON_VALUE.equals(oracleValue)) {
                 continue;
             }
-            if (!json.get(jsonKey).getClass()
-                .equals(oracle.get(oracleKey).getClass())) {
+            if (!jsonTarget.getClass().equals(oracleTarget.getClass())) {
                 throw new JsonCheckerAssertionError("Expected an '"
-                    + oracle.get(jsonKey).getClass().getSimpleName()
-                    + "' at key '" + jsonKey + "', but found '"
-                    + json.get(jsonKey).getClass().getSimpleName() + "'");
+                    + oracleTarget.getClass().getSimpleName()
+                    + "' at key '" + oracleKey + "', but found '"
+                    + jsonTarget.getClass().getSimpleName() + "'");
             }
 
-            if (oracle.get(oracleKey) instanceof JSONObject) {
-                assertJsonObjectShouldMatchOrContainInAnyOrder(json.get(jsonKey).toString(),
-                    oracle.get(oracleKey).toString(), true);
-            } else if (oracle.get(oracleKey) instanceof JSONArray) {
-                JSONAssert.assertEquals(oracle.get(oracleKey).toString(), json.get(jsonKey).toString(),
+            if (oracleTarget instanceof JSONObject) {
+                assertJsonObjectShouldMatchOrContainInAnyOrder(jsonTarget.toString(),
+                    oracleTarget.toString(), true);
+            } else if (oracleTarget instanceof JSONArray) {
+                JSONAssert.assertEquals(oracleTarget.toString(), jsonTarget.toString(),
                     customComparator);
             } else {
-                final var jsoValue = json.get(jsonKey).toString();
+                final var jsoValue = jsonTarget.toString();
                 if (!jsoValue.equals(oracleValue)) {
                     try {
                         assertThat(jsoValue)
@@ -185,35 +210,9 @@ public class JsonChecker {
                 Assertions.fail(dumpComparisonAtKeyDiffer(claimName, regex, jsoValue));
             }
         }
-    }    final CustomComparator customComparator = new CustomComparator(JSONCompareMode.LENIENT,
-        new Customization("***", (oracleJson, testJson) -> {
-            try {
-                new JSONObject(testJson.toString());
-                new JSONObject(oracleJson.toString());
-                assertJsonObjectShouldMatchOrContainInAnyOrder(testJson.toString(), oracleJson.toString(), true);
-            } catch (final RuntimeException e) {
-                try {
-                    new JSONArray(testJson.toString());
-                    new JSONArray(oracleJson.toString());
-                    assertJsonArrayShouldMatchInAnyOrder(testJson.toString(), oracleJson.toString());
-                } catch (final RuntimeException e2) {
-                    return oracleJson.toString().equals(IGNORE_JSON_VALUE) ||
-                        testJson.toString().equals(oracleJson.toString()) ||
-                        testJson.toString().matches(oracleJson.toString());
-                }
-            }
-            return true;
-        })) {
-        @Override
-        protected void compareJSONArrayOfJsonObjects(final String key, final JSONArray expected,
-            final JSONArray actual, final JSONCompareResult result) throws JSONException {
-            if (expected.length() == 1 && actual.length() == 1) {
-                compareJSON(expected.getJSONObject(0), actual.getJSONObject(0));
-                return;
-            }
-            super.compareJSONArrayOfJsonObjects(key, expected, actual, result);
-        }
-    };
+    }
+
+    final CustomComparator customComparator = new JsonCheckerComparator();
 
     private String dumpComparisonAtKeyDiffer(String key, String expected, String received) {
         return dumpComparisonBetween("JSON object does match at key '%s'\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
@@ -239,6 +238,63 @@ public class JsonChecker {
 
         public JsonCheckerAssertionError(String s) {
             super(s);
+        }
+    }
+
+    private class CustomValueMatcher implements ValueMatcher<Object> {
+
+        @Override
+        public boolean equal(Object oracleJson, Object testJson) {
+            try {
+                new JSONObject(testJson.toString());
+                new JSONObject(oracleJson.toString());
+                JsonChecker.this.assertJsonObjectShouldMatchOrContainInAnyOrder(testJson.toString(),
+                    oracleJson.toString(), true);
+            } catch (final RuntimeException e1) {
+                try {
+                    new JSONArray(testJson.toString());
+                    new JSONArray(oracleJson.toString());
+                    JsonChecker.this.assertJsonArrayShouldMatchInAnyOrder(testJson.toString(),
+                        oracleJson.toString());
+                } catch (final RuntimeException e2) {
+                    try {
+                        return oracleJson.toString().equals(IGNORE_JSON_VALUE) ||
+                            patchString(testJson.toString())
+                                .equals(patchString(oracleJson.toString())) ||
+                            testJson.toString().matches(oracleJson.toString());
+                    } catch (final RuntimeException e3) {
+                        e1.printStackTrace();
+                        e2.printStackTrace();
+                        e3.printStackTrace();
+                        throw new JsonCheckerAssertionError(
+                            "Unequal JSON-parts: oracle '" + oracleJson + "' and target '" + testJson
+                                + "' do not match");
+                    }
+                }
+            }
+            return true;
+        }
+    }
+
+    private static String patchString(String sourceString) {
+        return sourceString
+            .replace(NULL_MARKER, "null");
+    }
+
+    private class JsonCheckerComparator extends CustomComparator {
+
+        public JsonCheckerComparator() {
+            super(JSONCompareMode.LENIENT, new Customization("***", new CustomValueMatcher()));
+        }
+
+        @Override
+        protected void compareJSONArrayOfJsonObjects(final String key, final JSONArray expected,
+            final JSONArray actual, final JSONCompareResult result) throws JSONException {
+            if (expected.length() == 1 && actual.length() == 1) {
+                compareJSON(expected.getJSONObject(0), actual.getJSONObject(0));
+                return;
+            }
+            super.compareJSONArrayOfJsonObjects(key, expected, actual, result);
         }
     }
 }
