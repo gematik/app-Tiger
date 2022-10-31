@@ -6,6 +6,7 @@ package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class TestAbstractTigerServer {
+class TestAbstractTigerServer {
 
     @Test
     void testfindCommandInPath_OK() {
@@ -37,7 +38,7 @@ public class TestAbstractTigerServer {
             } else {
                 server.findCommandInPath("bashNOTFOUND");
             }
-        });
+        }).isInstanceOf(TigerEnvironmentStartupException.class);
     }
 
     @ParameterizedTest
@@ -46,7 +47,7 @@ public class TestAbstractTigerServer {
         TestServer server = new TestServer();
         TestConfigClass config = new TestConfigClass();
         assertThatThrownBy(() -> server.assertCfgPropertySet(config, propName)).isInstanceOf(TigerTestEnvException.class)
-            .hasMessageContaining("contain at least one not empty entry");
+            .hasMessageContaining("contain at least one non empty entry");
     }
     @ParameterizedTest
     @CsvSource(value = { "emptyStr, empty", "nullStr, NULL!"})

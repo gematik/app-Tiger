@@ -24,6 +24,7 @@ public class DockerComposeServer extends AbstractTigerServer {
         }
     }
 
+    @Override
     public void assertThatConfigurationIsCorrect() {
         super.assertThatConfigurationIsCorrect();
 

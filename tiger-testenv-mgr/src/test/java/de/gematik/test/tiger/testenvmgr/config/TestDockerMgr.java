@@ -22,7 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
+class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
 
     private static final String TEST_IMAGE_NO_HEALTHCHECK = "gematik1/tiger-test-image:1.1.0";
     private static final String TEST_IMAGE = "gematik1/tiger-test-image:1.0.0";
@@ -47,7 +47,7 @@ public class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    public void testDockerMgrStartUpOK() {
+    void testDockerMgrStartUpOK() {
         final CfgServer srv = new CfgServer();
         srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE));
@@ -63,7 +63,7 @@ public class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    public void testDockerMgrStartUpTooShort() {
+    void testDockerMgrStartUpTooShort() {
         final CfgServer srv = new CfgServer();
         srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE));
@@ -79,7 +79,7 @@ public class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    public void testDockerMgrStartupTimeoutFallback() {
+    void testDockerMgrStartupTimeoutFallback() {
         final CfgServer srv = new CfgServer();
         srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
@@ -95,7 +95,7 @@ public class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    public void testDockerMgrPauseUnpause() {
+    void testDockerMgrPauseUnpause() {
         final CfgServer srv = new CfgServer();
         srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck

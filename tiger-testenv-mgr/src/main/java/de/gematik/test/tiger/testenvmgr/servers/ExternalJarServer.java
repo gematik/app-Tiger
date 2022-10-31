@@ -29,6 +29,7 @@ import org.slf4j.event.Level;
 @TigerServerType("externalJar")
 public class ExternalJarServer extends AbstractExternalTigerServer {
 
+    public static final String LOCAL = "local:";
     private final AtomicReference<Process> processReference = new AtomicReference<>();
     private File jarFile;
     private LocalDateTime processStartTime;
@@ -38,6 +39,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
     }
 
+    @Override
     public void assertThatConfigurationIsCorrect() {
         super.assertThatConfigurationIsCorrect();
 
@@ -51,11 +53,11 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         } else {
             folder = getConfiguration().getExternalJarOptions().getWorkingDir();
             if (folder == null) {
-                if (getConfiguration().getSource().get(0).startsWith("local:")) {
-                    final String jarPath = getConfiguration().getSource().get(0).split("local:")[1];
+                if (getConfiguration().getSource().get(0).startsWith(LOCAL)) {
+                    final String jarPath = getConfiguration().getSource().get(0).split(LOCAL)[1];
                     folder = Paths.get(jarPath).toAbsolutePath().getParent().toString();
                     getConfiguration().getSource().add(0,
-                        "local:" + jarPath.substring(jarPath.lastIndexOf('/')));
+                        LOCAL + jarPath.substring(jarPath.lastIndexOf('/')));
                     log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, getServerId());
                 } else {
                     folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile()
@@ -66,10 +68,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         }
         getConfiguration().getExternalJarOptions().setWorkingDir(folder);
         File f = new File(folder);
-        if (!f.exists()) {
-            if (!f.mkdirs()) {
-                throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
-            }
+        if (!f.exists() && !f.mkdirs()) {
+            throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
         }
         assertCfgPropertySet(getConfiguration(), "healthcheckUrl");
     }
@@ -154,7 +154,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
     }
 
     private void cleanupDefunctJar() {
-        if (!getConfiguration().getSource().get(0).startsWith("local:")
+        if (!getConfiguration().getSource().get(0).startsWith(LOCAL)
             && jarFile.exists()) {
             if (!jarFile.delete()) {
                 log.warn("Unable to delete jar file {}", jarFile.getAbsolutePath());

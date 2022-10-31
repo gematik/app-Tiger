@@ -9,6 +9,14 @@ public class TigerEnvironmentStartupException extends RuntimeException {
         super(s, e);
     }
 
+    public TigerEnvironmentStartupException(final String pattern, Object... args) {
+        super(String.format(pattern, args));
+    }
+
+    public TigerEnvironmentStartupException(final Throwable t, final String pattern, Object... args) {
+        super(String.format(pattern, args), t);
+    }
+
     public TigerEnvironmentStartupException(String s) {
         super(s);
     }

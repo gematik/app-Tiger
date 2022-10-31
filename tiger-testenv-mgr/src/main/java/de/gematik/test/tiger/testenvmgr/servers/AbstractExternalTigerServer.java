@@ -127,9 +127,8 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
             if (!getConfiguration().getHealthcheckReturnCode()
                 .equals(httpConnection.getResponseCode())) {
                 throw new TigerEnvironmentStartupException(
-                    "Return code for server '" + getServerId() + "' does not match:"
-                        + " Expected " + getConfiguration().getHealthcheckReturnCode() + " but got "
-                        + httpConnection.getResponseCode());
+                    "Return code for server '%s' does not match: %nExpected %d but got %d",
+                    getServerId(),  getConfiguration().getHealthcheckReturnCode(), httpConnection.getResponseCode());
             }
         }
     }

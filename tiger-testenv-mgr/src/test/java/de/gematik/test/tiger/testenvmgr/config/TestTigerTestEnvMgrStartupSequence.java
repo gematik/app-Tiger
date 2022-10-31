@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
-public class TestTigerTestEnvMgrStartupSequence {
+class TestTigerTestEnvMgrStartupSequence {
 
     private static final List<String> startupSequence = new ArrayList<>();
     private static TigerTestEnvMgr envMgr;
@@ -183,7 +183,7 @@ public class TestTigerTestEnvMgrStartupSequence {
 
     @ParameterizedTest
     @MethodSource("checkSuccessfullStartupSequencesParameters")
-    public void checkSuccessfullStartupSequences(Map<String, AbstractTigerServer> serverMap,
+    void checkSuccessfullStartupSequences(Map<String, AbstractTigerServer> serverMap,
         List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
         try {
@@ -210,7 +210,7 @@ public class TestTigerTestEnvMgrStartupSequence {
 
     @ParameterizedTest
     @MethodSource("cyclicGraphParameters")
-    public void cyclicGraph_expectError(Map<String, AbstractTigerServer> serverMap) {
+    void cyclicGraph_expectError(Map<String, AbstractTigerServer> serverMap) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
 
         assertThatThrownBy(() -> envMgr.setUpEnvironment())
@@ -219,7 +219,7 @@ public class TestTigerTestEnvMgrStartupSequence {
     }
 
     @Test
-    public void dependsUponNonExistingServer_shouldFail() {
+    void dependsUponNonExistingServer_shouldFail() {
         ReflectionTestUtils.setField(envMgr, "servers", Map.ofEntries(
             buildServerMockDependingUpon("a", "b")));
 

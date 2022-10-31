@@ -16,6 +16,10 @@ public class TigerTestEnvException extends RuntimeException {
         super(String.format(pattern, args));
     }
 
+    public TigerTestEnvException(final Throwable t, final String pattern, Object... args) {
+        super(String.format(pattern, args), t);
+    }
+
     public TigerTestEnvException(final String msg, final Throwable t) {
         super(msg, t);
     }

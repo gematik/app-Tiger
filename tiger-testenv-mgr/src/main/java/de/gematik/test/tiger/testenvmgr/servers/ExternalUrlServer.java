@@ -21,6 +21,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
     }
 
+    @Override
     public void assertThatConfigurationIsCorrect() {
         super.assertThatConfigurationIsCorrect();
 

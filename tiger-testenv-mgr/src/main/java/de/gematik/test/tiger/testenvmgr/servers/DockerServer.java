@@ -24,13 +24,14 @@ import org.apache.http.client.utils.URIBuilder;
 @TigerServerType("docker")
 public class DockerServer extends AbstractTigerServer {
 
-    public final static DockerMgr dockerManager = new DockerMgr();
+    public static final DockerMgr dockerManager = new DockerMgr();
 
     @Builder
     public DockerServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, tigerTestEnvMgr, configuration);
     }
 
+    @Override
     public void assertThatConfigurationIsCorrect() {
         super.assertThatConfigurationIsCorrect();
 

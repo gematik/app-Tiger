@@ -132,7 +132,7 @@ public class DownloadManager {
                 })
             .ifFailure(errorResponse -> {
                 throw new TigerEnvironmentStartupException(
-                    "Error during jar-file download (status " + errorResponse.getStatus() + ")");
+                    "Error during jar-file download (status %s)", errorResponse.getStatus());
             });
     }
 

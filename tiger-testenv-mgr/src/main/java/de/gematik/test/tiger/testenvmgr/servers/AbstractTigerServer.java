@@ -51,7 +51,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
     protected final org.slf4j.Logger log;
 
-    public AbstractTigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
+    protected AbstractTigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
         this.hostname = hostname;
         this.serverId = serverId;
         this.tigerTestEnvMgr = tigerTestEnvMgr;
@@ -81,7 +81,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     public void start(TigerTestEnvMgr testEnvMgr) {
         synchronized (this) {
             if (getStatus() != TigerServerStatus.NEW) {
-                throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
+                throw new TigerEnvironmentStartupException("Server %s was already started!", getServerId());
             }
         }
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
@@ -118,12 +118,8 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
         try {
             performStartup();
-        } catch (RuntimeException e) {
-            log.warn(String.format("Error during startup of server %s. Used configuration was %s",
-                getServerId(), TigerSerializationUtil.toJson(getConfiguration())), e);
-            throw e;
         } catch (Throwable t) {
-            log.warn(String.format("Throwable during startup of server %s. Used configuration was %s",
+            log.warn(String.format(t.getClass().getSimpleName() + " during startup of server %s. Used configuration was %s",
                 getServerId(), TigerSerializationUtil.toJson(getConfiguration())), t);
             throw t;
         }
@@ -141,7 +137,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
             this.configuration = TigerGlobalConfiguration.instantiateConfigurationBean(CfgServer.class,
                     "tiger", "servers", getServerId())
                 .orElseThrow(
-                    () -> new TigerEnvironmentStartupException("Could not reload configuration for server with id " + getServerId()));
+                    () -> new TigerEnvironmentStartupException("Could not reload configuration for server with id %s", getServerId()));
             tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
         } catch (TigerConfigurationException e) {
             log.warn("Could not reload configuration for server {}", getServerId(), e);
@@ -215,28 +211,27 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
             target = mthd.invoke(target);
             if (target == null) {
                 throw new TigerTestEnvException(
-                    "Server " + getServerId() + " must have property " + propertyName + " be set and not be NULL!");
+                    "Server %s must have property %s be set and not be NULL!", getServerId(), propertyName);
             }
             if (target instanceof List) {
-                List<?> l = (List<?>) target;
-                if (l.isEmpty() ||
-                    l.get(0) == null) {
-                    throw new TigerTestEnvException(
-                        "Server " + getServerId() + " must have property " + propertyName
-                            + " be set and must contain at least one not empty entry!");
-                }
-                if (l.get(0) instanceof String && ((String) l.get(0)).isBlank()) {
-                    throw new TigerTestEnvException(
-                        "Server " + getServerId() + " must have property " + propertyName
-                            + " be set and contain at least one not empty entry!");
-                }
-            } else {
-                if (target instanceof String && ((String) target).isBlank()) {
-                    throw new TigerTestEnvException(
-                        "Server " + getServerId() + " must have property " + propertyName
-                            + " be set and not be empty!");
-                }
+                assertListCfgPropertySet((List<?>) target, propertyName);
+            } else if (target instanceof String && ((String) target).isBlank()) {
+                throw new TigerTestEnvException(
+                    "Server %s must have property %s be set and not be empty!", getServerId(), propertyName);
             }
+        }
+    }
+
+    private void assertListCfgPropertySet(List<?> target, String propertyName) {
+        List<?> l = target;
+        if (l.isEmpty() ||
+            l.get(0) == null) {
+            throw new TigerTestEnvException(
+                "Server %s must have property %s be set and must contain at least one non empty entry", getServerId(), propertyName);
+        }
+        if (l.get(0) instanceof String && ((String) l.get(0)).isBlank()) {
+            throw new TigerTestEnvException(
+                "Server %s must have property %s be set and contain at least one non empty entry!", getServerId(), propertyName);
         }
     }
 
@@ -286,13 +281,13 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
             .map(String::trim)
             .map(serverName -> tigerTestEnvMgr.findServer(serverName)
                 .orElseThrow(() -> new TigerEnvironmentStartupException(
-                    "Unknown server: '" + serverName + "' in dependUponList of server '" + getServerId() + "'")))
+                    "Unknown server: '%s' in dependUponList of server '%s'", serverName, getServerId())))
             .collect(Collectors.toUnmodifiableList());
     }
 
     public String getDestinationUrl(String fallbackProtocol) {
         throw new TigerTestEnvException(
-            "Sophisticated reverse proxy for '" + getClass().getSimpleName() + "' is not supported!");
+            "Sophisticated reverse proxy for '%s' is not supported!", getClass().getSimpleName());
     }
 
     public void setStatus(TigerServerStatus newStatus) {
@@ -305,13 +300,11 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
             .status(newStatus)
             .statusMessage(statusMessage)
             .build());
-        if (statusMessage != null) {
-            if (log.isInfoEnabled()) {
-                if (newStatus == TigerServerStatus.STOPPED) {
-                    log.info(Ansi.colorize(statusMessage, RbelAnsiColors.RED_BOLD));
-                } else {
-                    log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
-                }
+        if (statusMessage != null && log.isInfoEnabled()) {
+            if (newStatus == TigerServerStatus.STOPPED) {
+                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.RED_BOLD));
+            } else {
+                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
             }
         }
     }
@@ -352,6 +345,6 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         return Arrays.stream(System.getenv("PATH").split(File.pathSeparator))
             .map(folder -> folder + File.separator + command)
             .filter(file -> new File(file).canExecute())
-            .findFirst().orElseThrow(() -> new TigerEnvironmentStartupException("Unable to locate script '" + command + "'"));
+            .findFirst().orElseThrow(() -> new TigerEnvironmentStartupException("Unable to locate script '%s'", command));
     }
 }

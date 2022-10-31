@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.common.data.config;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
@@ -37,7 +36,7 @@ public class TigerServerTypeImpl extends StdScalarDeserializer<TigerServerType> 
     }
 
     @Override
-    public TigerServerType deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+    public TigerServerType deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
         return new TigerServerTypeImpl(jsonParser.getValueAsString());
     }
 }

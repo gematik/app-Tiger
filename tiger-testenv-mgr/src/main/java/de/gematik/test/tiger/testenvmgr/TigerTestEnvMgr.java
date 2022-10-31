@@ -180,23 +180,23 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         String message = "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.",
             RbelAnsiColors.RED_BOLD.toString());
         if (c != null) {
-            readCommandFromInput(textToEnter, message, (v) -> c.readLine(), c);
+            readCommandFromInput(textToEnter, message, v -> c.readLine());
         } else {
             log.warn("No Console interface found, trying System in stream...");
             BufferedReader rdr = new BufferedReader(new InputStreamReader(System.in));
-            readCommandFromInput(textToEnter, message, (v) -> {
+            readCommandFromInput(textToEnter, message, v -> {
                 try {
                     return rdr.readLine();
                 } catch (IOException e) {
                     log.warn("Unable to open input stream from console! Continuing with test run...", e);
                     return null;
                 }
-            }, c);
+            });
         }
         log.info("Step wait acknowledged. Continueing...");
     }
 
-    private static void readCommandFromInput(String textToEnter, String message, Function<Void, String> readLine, Console c) {
+    private static void readCommandFromInput(String textToEnter, String message, Function<Void, String> readLine) {
         String cmd = null;
         while (cmd == null || !cmd.equals(textToEnter)) {
             log.info(message);
@@ -247,7 +247,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private void cycleChecker(final AbstractTigerServer currentPosition, final Set<AbstractTigerServer> visitedServer) {
         if (visitedServer.contains(currentPosition)) {
             throw new TigerEnvironmentStartupException(
-                "Cyclic graph detected in startup sequence: " + visitedServer.stream()
+                "Cyclic graph detected in startup sequence: %s", visitedServer.stream()
                     .map(AbstractTigerServer::getServerId)
                     .collect(Collectors.toList()));
         }
