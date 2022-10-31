@@ -369,10 +369,11 @@ public class DockerMgr {
     }
 
     private String getContainerWorkingDirectory(ContainerConfig containerConfig) {
-        if (containerConfig.getWorkingDir() == null || containerConfig.getWorkingDir().isBlank()) {
+        final String workingDir = containerConfig.getWorkingDir();
+        if (StringUtils.isBlank(workingDir)) {
             return "";
         } else {
-            return "cd " + containerConfig.getWorkingDir() + "\n";
+            return "cd " + workingDir + "\n";
         }
     }
 

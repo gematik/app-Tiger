@@ -89,19 +89,22 @@ public class RbelHttpResponseWriter implements RbelElementWriter {
         }
     }
 
-    private byte[] getResponseCode(Optional<RbelHttpResponseFacet> responseFacet, RbelElement oldTargetModifiedChild,
+    private String getResponseCode(Optional<RbelHttpResponseFacet> responseFacet, RbelElement oldTargetModifiedChild,
         byte[] newContent) {
+        if (responseFacet.isEmpty()) {
+            return "200";
+        }
         if (responseFacet.get().getResponseCode() == oldTargetModifiedChild) {
-            return newContent;
+            return new String(newContent);
         } else {
-            return responseFacet.get().getResponseCode().getRawContent();
+            return responseFacet.get().getResponseCode().getRawStringContent();
         }
     }
 
     private Optional<byte[]> getReasonPhrase(Optional<RbelHttpResponseFacet> responseFacet,
         RbelElement oldTargetModifiedChild,
         byte[] newContent) {
-        if (responseFacet.get().getReasonPhrase() == null) {
+        if (responseFacet.isEmpty() || responseFacet.get().getReasonPhrase() == null) {
             return Optional.empty();
         }
         if (responseFacet.get().getReasonPhrase() == oldTargetModifiedChild) {
@@ -119,13 +122,11 @@ public class RbelHttpResponseWriter implements RbelElementWriter {
         if (request != null) {
             return request;
         }
-        String responseCodeContent = new String(getResponseCode(responseFacet, oldTargetModifiedChild, newContent));
+        String responseCodeContent = getResponseCode(responseFacet, oldTargetModifiedChild, newContent);
 
-        if (getReasonPhrase(responseFacet, oldTargetModifiedChild, newContent).isPresent()
-            && new String(getReasonPhrase(responseFacet, oldTargetModifiedChild, newContent).get()).trim().length() > 0) {
-            String reasonPhraseContent =
-                " " + new String(getReasonPhrase(responseFacet, oldTargetModifiedChild, newContent).get(),
-                    StandardCharsets.UTF_8);
+        final Optional<byte[]> reasonPhrase = getReasonPhrase(responseFacet, oldTargetModifiedChild, newContent);
+        if (reasonPhrase.isPresent() && new String(reasonPhrase.get()).trim().length() > 0) {
+            String reasonPhraseContent = " " + new String(reasonPhrase.get(), StandardCharsets.UTF_8);
             return "HTTP/1.1 " + responseCodeContent + reasonPhraseContent;
         }
 

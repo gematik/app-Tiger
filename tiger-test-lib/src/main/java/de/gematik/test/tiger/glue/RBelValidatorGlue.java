@@ -23,7 +23,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.xmlunit.builder.DiffBuilder;
@@ -289,10 +288,9 @@ public class RBelValidatorGlue {
     @Dann("TGR ersetze {string} mit {string} im Inhalt der Variable {string}")
     @Then("TGR replace {string} with {string} in content of variable {string}")
     public void replaceContentOfVariable(final String regexPattern, final String replace, final String varName) {
-        Optional<String> content = TigerGlobalConfiguration.readStringOptional(varName);
-        assertThat(content).withFailMessage("No configuration property '" + varName + "' found!")
-            .isNotEmpty();
-        String newContent = content.get().replaceAll(regexPattern, replace);
+        String newContent = TigerGlobalConfiguration.readStringOptional(varName)
+            .orElseThrow(() -> new TigerLibraryException("No configuration property '" + varName + "' found!"))
+            .replaceAll(regexPattern, replace);
         TigerGlobalConfiguration.putValue(varName, newContent, SourceType.TEST_CONTEXT);
         log.info(String.format("Modified content in variable '%s' to '%s'", varName, newContent));
     }

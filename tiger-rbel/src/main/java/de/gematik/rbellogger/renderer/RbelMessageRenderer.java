@@ -4,18 +4,14 @@
 
 package de.gematik.rbellogger.renderer;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.*;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static j2html.TagCreator.*;
-
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.*;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
-
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,10 +101,10 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                 getRequestOrReplySymbol(isRequest),
                 httpRequestFacet.map(f ->
                     span().with(
-                        span(" " + f.getMethod().getRawStringContent() + " " + f.getPathAsString())
-                            .withClass("is-family-monospace title is-size-4 ml-3")
-                            .withTitle(f.getPathAsString())
-                            .with(addNotes(f.getPath())))
+                            span(" " + f.getMethod().getRawStringContent() + " " + f.getPathAsString())
+                                .withClass("is-family-monospace title is-size-4 ml-3")
+                                .withTitle(f.getPathAsString())
+                                .with(addNotes(f.getPath())))
                         .withClass("has-text-link text-ellipsis")).orElse(span()),
                 httpResponseFacet.map(response ->
                     span(response.getResponseCode().getRawStringContent())
@@ -118,8 +114,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                     buildTimingInfo(element), buildAddressInfo(element)
                 ).withStyle(isRequest.map(r -> (isRequest.get() ? "display: block;" : "")).orElse(""))
             ).withClasses("title", "ml-3", "text-ellipsis", isRequest
-                .map(req -> req ? "has-text-link" : "has-text-success")
-                .orElse(""))
+                    .map(req -> req ? "has-text-link" : "has-text-success")
+                    .orElse(""))
                 .withStyle("overflow: hidden;"));
         messageTitleElements.addAll(addNotes(element));
         //////////////////////////////// HEADER & BODY //////////////////////////////////////
@@ -134,7 +130,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
             div()
                 .with(messageTitleElements)
                 .withClass("full-width"),
-            ancestorTitle().with(messageBodyElements), "msg-card", "mx-3 " + isRequest.map(r -> r ? "mt-5" : "mt-2").orElse("mt-3"));
+            ancestorTitle().with(messageBodyElements), "msg-card",
+            "mx-3 " + isRequest.map(r -> Boolean.TRUE.equals(r) ? "mt-5" : "mt-2").orElse("mt-3"));
     }
 
     private List<DomContent> performRenderingForBody(RbelHtmlRenderingToolkit renderingToolkit,
@@ -144,14 +141,16 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         List<DomContent> headerTitleElements = new ArrayList<>();
         headerTitleElements.add(
             i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3 has-text-primary"));
-        httpMessageFacet.map(a -> headerTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getHeader(), renderingToolkit)));
+        httpMessageFacet.map(
+            a -> headerTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getHeader(), renderingToolkit)));
         headerTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Headers")).orElseGet(() -> t2("RES Headers")))
             .withClass("has-text-primary"));
 
         List<DomContent> bodyTitleElements = new ArrayList<>();
         bodyTitleElements.add(
             i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3 has-text-info"));
-        httpMessageFacet.map(a -> bodyTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getBody(), renderingToolkit)));
+        httpMessageFacet.map(
+            a -> bodyTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getBody(), renderingToolkit)));
         bodyTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Body")).orElseGet(() -> t2("RES Body")))
             .withClass("has-text-info"));
 
@@ -162,14 +161,19 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                     div().with(collapsibleCard(
                         div().withClass("tile is-child pr-3")
                             .with(headerTitleElements),
-                        renderingToolkit.convert(httpMessageFacet.get().getHeader(), Optional.empty()),
+                        httpMessageFacet.map(facet -> renderingToolkit.convert(facet.getHeader(), Optional.empty()))
+                            .orElse(div()),
                         CLS_HEADER + " notification", "my-3")),
-                    StringUtils.isBlank(httpMessageFacet.get().getBody().getRawStringContent()) ?
-                        div("Empty body").withClass(CLS_BODY + " notification tile is-child") :
-                        div().with(collapsibleCard(
-                            div().withClass("tile is-child pr-3").with(bodyTitleElements),
-                            renderingToolkit.convert(httpMessageFacet.get().getBody(), Optional.empty()),
-                            CLS_BODY + " notification", "my-3")))));
+                    httpMessageFacet.map(RbelHttpMessageFacet::getBody)
+                        .map(RbelElement::getRawStringContent)
+                        .map(s -> StringUtils.isBlank(s) ?
+                            div("Empty body").withClass(CLS_BODY + " notification tile is-child") :
+                            div().with(collapsibleCard(
+                                div().withClass("tile is-child pr-3").with(bodyTitleElements),
+                                renderingToolkit.convert(httpMessageFacet.get().getBody(), Optional.empty()),
+                                CLS_BODY + " notification", "my-3")))
+                        .orElse(div())
+                )));
 
         return messageBodyElements;
     }

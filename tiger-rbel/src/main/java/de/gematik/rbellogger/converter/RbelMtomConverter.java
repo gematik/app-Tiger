@@ -9,9 +9,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
 import de.gematik.rbellogger.data.facet.RbelMtomFacet;
 import de.gematik.rbellogger.data.util.MtomPart;
-import lombok.extern.slf4j.Slf4j;
-import org.dom4j.*;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +19,8 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+import org.dom4j.*;
 
 @Slf4j
 public class RbelMtomConverter implements RbelConverterPlugin {
@@ -71,18 +70,18 @@ public class RbelMtomConverter implements RbelConverterPlugin {
             Map<String, String> mtomMap = mtomParts.stream()
                 .collect(Collectors.toMap(
                     p -> p.getMessageHeader().get("Content-ID"),
-                    p -> p.getMessageContent()));
+                    MtomPart::getMessageContent));
 
             final XPath xPath = DocumentHelper.createXPath("//xop:Include");
             xPath.setNamespaceURIs(Map.of("xop", "http://www.w3.org/2004/08/xop/include"));
-            final List includeNodes = xPath.selectNodes(document);
+            final List<Node> includeNodes = xPath.selectNodes(document);
 
-            for (Object includeNode : includeNodes) {
+            for (Node includeNode : includeNodes) {
                 if (includeNode instanceof Element) {
                     Element newEl = DocumentHelper.parseText(
-                        mtomMap.get("<" + extractContentIdFromInclude(includeNode).get() + ">"))
+                            mtomMap.get("<" + extractContentIdFromInclude(includeNode).get() + ">"))
                         .getRootElement();
-                    List elepar = ((Element) includeNode).getParent().content();
+                    List<Node> elepar = includeNode.getParent().content();
                     elepar.set(elepar.indexOf(includeNode), newEl);
                 }
             }
@@ -104,11 +103,11 @@ public class RbelMtomConverter implements RbelConverterPlugin {
 
     private List<MtomPart> divideMessageIntoMtomParts(RbelElement rbelElement, MediaType mediaType) {
         final List<String> boundary = mediaType.parameters().get("boundary");
-        if (boundary.size() == 0) {
+        if (boundary.isEmpty()) {
             return List.of();
         }
         return Stream.of(rbelElement.getRawStringContent()
-            .split("(\r\n|\n)--" + Pattern.quote(boundary.get(0))))
+                .split("(\r\n|\n)--" + Pattern.quote(boundary.get(0))))
             .map(MtomPart::new)
             .filter(mtomPart -> mtomPart.getMessageHeader().size() > 0)
             .collect(Collectors.toList());
@@ -125,6 +124,7 @@ public class RbelMtomConverter implements RbelConverterPlugin {
             .stream()
             .flatMap(header -> header.getCaseInsensitiveMatches("content-type"))
             .map(RbelElement::getRawStringContent)
+            .filter(Objects::nonNull)
             .map(String::trim)
             .map(value -> {
                 try {

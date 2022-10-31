@@ -354,15 +354,15 @@ public class RbelMessageValidator {
     }
 
     public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
-        getRbelMessages().stream()
+        if (getRbelMessages().stream()
             .map(msg -> new RbelPathExecutor(msg, rbelPath).execute().get(0).getRawStringContent())
             .filter(Objects::nonNull)
             .filter(msg -> msg.equals(value))
-            .findAny()
-            .orElseThrow(() -> new AssertionError(
-                "No message with matching value '" + value + "' at path '" + rbelPath + "'"));
+            .findAny().isEmpty()) {
+            throw new AssertionError(
+                "No message with matching value '" + value + "' at path '" + rbelPath + "'");
+        }
     }
-
 
     public class JexlToolbox {
 

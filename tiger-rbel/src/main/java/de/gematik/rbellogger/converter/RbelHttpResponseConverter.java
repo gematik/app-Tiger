@@ -4,26 +4,25 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.converter.RbelHttpRequestConverter.findEolInHttpMessage;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.net.MediaType;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelResponseFacet;
 import de.gematik.rbellogger.util.RbelArrayUtils;
-import lombok.extern.slf4j.Slf4j;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static de.gematik.rbellogger.converter.RbelHttpRequestConverter.findEolInHttpMessage;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class RbelHttpResponseConverter implements RbelConverterPlugin {
@@ -51,7 +50,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
         final RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol);
 
         final byte[] bodyData = extractBodyData(targetElement, separator,
-            headerElement.getFacet(RbelHttpHeaderFacet.class).get(), eol);
+            headerElement.getFacetOrFail(RbelHttpHeaderFacet.class), eol);
         final RbelElement bodyElement = new RbelElement(bodyData, targetElement,
             findCharsetInHeader(headerElement.getFacetOrFail(RbelHttpHeaderFacet.class)));
         final RbelElement responseCode = extractResponseCodeFromMessage(targetElement, content);

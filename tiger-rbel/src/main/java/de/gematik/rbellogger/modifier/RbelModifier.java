@@ -8,14 +8,11 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
-
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
-import org.checkerframework.checker.units.qual.K;
 
 public class RbelModifier {
 
@@ -153,6 +150,10 @@ public class RbelModifier {
 
         public RbelModificationException(String s) {
             super(s);
+        }
+
+        public RbelModificationException(String s, Exception e) {
+            super(s, e);
         }
     }
 }

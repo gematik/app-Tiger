@@ -9,20 +9,17 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.util.RbelException;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import javax.annotation.Nullable;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import javax.annotation.Nullable;
 
 @Getter
 @Slf4j
@@ -34,7 +31,8 @@ public class RbelElement {
     private final List<RbelFacet> facets = new ArrayList<>();
     @Setter
     @Getter(AccessLevel.PRIVATE)
-    private Optional<Charset> charset;
+    @Builder.Default
+    private Optional<Charset> charset = Optional.empty();
 
     private final long size;
 
@@ -47,7 +45,7 @@ public class RbelElement {
     }
 
     @Builder(toBuilder = true)
-    public RbelElement(@Nullable String uuid, byte[] rawContent, RbelElement parentNode, Optional<Charset> charset) {
+    public RbelElement(@Nullable String uuid, byte[] rawContent, RbelElement parentNode,  Optional<Charset> charset) {
         if (StringUtils.isNotEmpty(uuid)) {
             this.uuid = uuid;
         } else {
@@ -257,9 +255,8 @@ public class RbelElement {
 
     public void addOrReplaceFacet(RbelFacet facet) {
         synchronized (facets) {
-            if (hasFacet(facet.getClass())) {
-                facets.remove(getFacet(facet.getClass()).get());
-            }
+            getFacet(facet.getClass())
+                .ifPresent(facets::remove);
             facets.add(facet);
         }
     }

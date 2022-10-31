@@ -7,20 +7,20 @@ package de.gematik.rbellogger.modifier;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelVauEpaFacet;
 import de.gematik.rbellogger.key.RbelKey;
+import de.gematik.rbellogger.modifier.RbelModifier.RbelModificationException;
 import de.gematik.rbellogger.util.CryptoUtils;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Optional;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -68,20 +68,20 @@ public class RbelVauEpaWriter implements RbelElementWriter {
             encrypt(newCleartext, decryptionKey.get().getKey().getEncoded(), oldIv));
         var splitVauMessage = splitVauMessage(newVauMessage);
         log.info("splitted into {} and {}",
-            Base64.getEncoder().encodeToString(splitVauMessage.get().getLeft()),
-            Base64.getEncoder().encodeToString(splitVauMessage.get().getRight()));
+            Base64.getEncoder().encodeToString(splitVauMessage.getLeft()),
+            Base64.getEncoder().encodeToString(splitVauMessage.getRight()));
         return newVauMessage;
     }
 
-    private Optional<Pair<byte[], byte[]>> splitVauMessage(byte[] vauMessage) {
+    private Pair<byte[], byte[]> splitVauMessage(byte[] vauMessage) {
         try {
             byte[] keyID = new byte[32];
             System.arraycopy(vauMessage, 0, keyID, 0, 32);
             byte[] enc = new byte[vauMessage.length - 32];
             System.arraycopy(vauMessage, 32, enc, 0, vauMessage.length - 32);
-            return Optional.of(Pair.of(keyID, enc));
+            return Pair.of(keyID, enc);
         } catch (ArrayIndexOutOfBoundsException e) {
-            return Optional.empty();
+            throw new RbelModificationException("Unable to write VAU message", e);
         }
     }
 }
