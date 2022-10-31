@@ -13,7 +13,7 @@ templates:
     version: 19.4.0-272
     # max time to get the container up (with health check causes an error,
     # if no health check wait at least this time before going on without error)
-    startupTimeoutSec: 60
+    startupTimeoutSec: 80
     # list of keys and certs used by TigerProxy/RbelLogger in unpacking the traffic data
     pkiKeys:
       - id: disc_sig

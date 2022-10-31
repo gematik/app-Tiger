@@ -10,6 +10,7 @@ import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -156,7 +157,7 @@ public class TestEnvDownload {
             "http://localhost:" + mockServer.getLocalPort() + "/failDownload");
 
         assertThatThrownBy(() -> createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment))
-            .isInstanceOf(TigerEnvironmentStartupException.class);
+            .isInstanceOf(TigerTestEnvException.class);
 
         assertThat(Files.walk(DOWNLOAD_FOLDER_PATH)
             .filter(path -> path.toString().endsWith("failDownload"))
@@ -164,7 +165,7 @@ public class TestEnvDownload {
             .isEmpty();
 
         assertThatThrownBy(() -> createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment))
-            .isInstanceOf(TigerEnvironmentStartupException.class);
+            .isInstanceOf(TigerTestEnvException.class);
 
         assertThat(getNumberOfDownloads(failingExpectation))
             .isEqualTo(initialNumberOfDownloads + 2);
@@ -192,6 +193,7 @@ public class TestEnvDownload {
             final Integer port = availableTcpPorts.next();
             yamlSource += "  externalJarServer" + i + ":\n" +
                 "    type: externalJar\n" +
+                "    startupTimeoutSec: 50\n" +
                 "    source:\n" +
                 "      - " + jarDownloadUrl[i] + "\n" +
                 "    healthcheckUrl: http://127.0.0.1:" + port + "\n" +

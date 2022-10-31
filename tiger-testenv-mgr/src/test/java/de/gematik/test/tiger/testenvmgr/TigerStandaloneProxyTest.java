@@ -89,6 +89,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
         + "        - --webroot=.\n"
         + "  externalProxy:\n"
         + "    type: externalJar\n"
+        + "    startupTimeoutSec: 40\n"
         + "    source:\n"
         + "      - local:test.jar\n"
         + "    healthcheckUrl: http://127.0.0.1:${free.port.5}\n"
@@ -99,7 +100,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
         skipEnvironmentSetup = true)
     public void testCreateStandaloneProxyAsExternalJarViaTestEnvMgr(TigerTestEnvMgr envMgr) throws IOException {
         setUpEnvAndExecuteWithSecureShutdown(() -> {
-            await().atMost(30, TimeUnit.SECONDS).pollInterval(500, TimeUnit.MILLISECONDS)
+            await().atMost(50, TimeUnit.SECONDS).pollInterval(500, TimeUnit.MILLISECONDS)
                 .until(() -> checkProxyOnline());
         }, envMgr);
     }

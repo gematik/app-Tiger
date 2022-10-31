@@ -9,6 +9,7 @@ servers:
   idp2-simple:
     template: idp-ref
     active: true
+    startupTimeoutSec: 50
 
   idp:
     template: idp-ref

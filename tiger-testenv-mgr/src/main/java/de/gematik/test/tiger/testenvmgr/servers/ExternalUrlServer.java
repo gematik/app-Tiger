@@ -4,26 +4,33 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 
+@TigerServerType("externalUrl")
 public class ExternalUrlServer extends AbstractExternalTigerServer {
 
     @Builder
-    ExternalUrlServer(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
+    public ExternalUrlServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+    }
+
+    public void assertThatConfigurationIsCorrect() {
+        super.assertThatConfigurationIsCorrect();
+
+        assertCfgPropertySet(getConfiguration(), "source");
     }
 
     @Override
     public void performStartup() {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type(ServerType.EXTERNALURL)
+            .type("externalUrl")
             .statusMessage("Starting external URL instance " + getServerId() + "...")
             .build());
 
@@ -32,12 +39,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .baseUrl(extractBaseUrl(url))
             .build());
-
-        log.info("  Waiting 50% of start up time for external URL instance  {} to come up ...", getServerId());
-        waitForService(true);
-        if (getStatus() == TigerServerStatus.STARTING) {
-            waitForService(false);
-        }
+        waitForServerUp();
     }
 
     @Override
@@ -48,12 +50,12 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     }
 
     @Override
-    String getHealthcheckUrl() {
+    Optional<String> getHealthcheckUrl() {
         if (getConfiguration().getExternalJarOptions() == null
-        || StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())){
-            return getConfiguration().getSource().get(0);
+            || StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
+            return Optional.of(getConfiguration().getSource().get(0));
         } else {
-            return getConfiguration().getHealthcheckUrl();
+            return Optional.ofNullable(getConfiguration().getHealthcheckUrl());
         }
     }
 

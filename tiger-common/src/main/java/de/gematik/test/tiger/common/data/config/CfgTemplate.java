@@ -4,8 +4,10 @@
 
 package de.gematik.test.tiger.common.data.config;
 
-import de.gematik.test.tiger.common.config.ServerType;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -14,7 +16,9 @@ import lombok.Data;
 public class CfgTemplate {
 
     private String templateName;
-    private ServerType type;
+    @JsonDeserialize(using = TigerServerTypeImpl.class)
+    @JsonSerialize(using = TigerServerTypeSerlializer.class)
+    private TigerServerType type;
     private List<String> source = new ArrayList<>();
     private String version;
     private Integer startupTimeoutSec;
@@ -26,6 +30,7 @@ public class CfgTemplate {
     private CfgExternalJarOptions externalJarOptions;
     private CfgDockerOptions dockerOptions = new CfgDockerOptions();
     private TigerProxyConfiguration tigerProxyCfg;
+    private CfgHelmChartOptions helmChartOptions = new CfgHelmChartOptions();
 
     private final List<CfgKey> pkiKeys = new ArrayList<>();
     /** list of env vars to be set for docker, external Jar/TigerProxy */

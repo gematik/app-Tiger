@@ -307,7 +307,7 @@ public class TigerRemoteProxyClientTest {
         unirestInstance.get("http://myserv.er").asString();
 
         await()
-            .atMost(2, TimeUnit.SECONDS)
+            .atMost(8, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
 
         assertThat(tigerRemoteProxyClient.getRbelMessages().get(0).findElement("$.path"))

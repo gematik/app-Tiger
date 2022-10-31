@@ -43,6 +43,8 @@ function getServerIcon(type: string): string {
       return "fas fa-rocket";
     case 'externalUrl':
       return "fas fa-external-link-alt";
+    case 'helmChart':
+        return 'fas fa-network-wired';
     default:
       return "far fa-question";
   }

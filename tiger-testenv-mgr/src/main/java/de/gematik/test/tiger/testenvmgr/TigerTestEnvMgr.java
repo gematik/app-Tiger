@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -18,7 +19,8 @@ import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.env.*;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
+import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
@@ -30,7 +32,7 @@ import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.ServerSocket;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -39,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,10 +49,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 @Slf4j
 @Getter
@@ -60,11 +66,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
     public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
     private final Configuration configuration;
-    private final DockerMgr dockerManager;
     private final Map<String, Object> environmentVariables;
     private final TigerProxy localTigerProxy;
     private final List<TigerRoute> routesList = new ArrayList<>();
-    private final Map<String, TigerServer> servers = new HashMap<>();
+    private final Map<String, AbstractTigerServer> servers = new HashMap<>();
     private final ExecutorService executor = Executors
         .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
     private final List<TigerUpdateListener> listeners = new ArrayList<>();
@@ -79,10 +84,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     @Getter
     private boolean workflowUiSentFetch = false;
 
+    private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
+
     public TigerTestEnvMgr() {
         Configuration configuration = readConfiguration();
 
-        dockerManager = new DockerMgr();
+        lookupServerPluginsInClasspath();
 
         localTigerProxy = startLocalTigerProxy(configuration);
 
@@ -103,6 +110,24 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         createServerObjects();
 
         log.info("Tiger Testenv mgr created OK");
+    }
+
+    private void lookupServerPluginsInClasspath() {
+        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(TigerServerType.class));
+        Set<BeanDefinition> serverBeanDefinitions = scanner.findCandidateComponents("de.gematik.test.tiger");
+
+        for (BeanDefinition serverBeanDefinition : serverBeanDefinitions) {
+            try {
+                Class<?> clz = Class.forName(serverBeanDefinition.getBeanClassName());
+                String typeToken = clz.getAnnotation(TigerServerType.class).value();
+                serverClasses.put(typeToken, clz.asSubclass(AbstractTigerServer.class));
+                log.info("Registered server type {} with class {}", typeToken, serverBeanDefinition.getBeanClassName());
+            } catch (ClassNotFoundException e) {
+                throw new TigerTestEnvException("Unable to instantiate / find class "
+                    + serverBeanDefinition.getBeanClassName() + " for server", e);
+            }
+        }
     }
 
     private TigerProxy startLocalTigerProxy(Configuration configuration) {
@@ -155,43 +180,37 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         String message = "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.",
             RbelAnsiColors.RED_BOLD.toString());
         if (c != null) {
-            String cmd = null;
-            while (cmd == null || !cmd.equals(textToEnter)) {
-                log.info(message);
-                if (cmd != null) {
-                    log.warn("Received: '{}'", cmd);
-                }
-                cmd = c.readLine();
-                try {
-                    TimeUnit.MILLISECONDS.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new TigerTestEnvException("Interrupt received while waiting for console input", e);
-                }
-            }
+            readCommandFromInput(textToEnter, message, (v) -> c.readLine(), c);
         } else {
             log.warn("No Console interface found, trying System in stream...");
-            try {
-                BufferedReader rdr = new BufferedReader(new InputStreamReader(System.in));
-                String cmd = null;
-                while (cmd == null || !cmd.equals(textToEnter)) {
-                    log.info(message);
-                    if (cmd != null) {
-                        log.warn("Received: '{}'", cmd);
-                    }
-                    cmd = rdr.readLine();
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(100);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new TigerTestEnvException("Interrupt received while waiting for console input", e);
-                    }
+            BufferedReader rdr = new BufferedReader(new InputStreamReader(System.in));
+            readCommandFromInput(textToEnter, message, (v) -> {
+                try {
+                    return rdr.readLine();
+                } catch (IOException e) {
+                    log.warn("Unable to open input stream from console! Continuing with test run...", e);
+                    return null;
                 }
-            } catch (IOException e) {
-                log.warn("Unable to open input stream from console! Continuing with test run...", e);
-            }
+            }, c);
         }
         log.info("Step wait acknowledged. Continueing...");
+    }
+
+    private static void readCommandFromInput(String textToEnter, String message, Function<Void, String> readLine, Console c) {
+        String cmd = null;
+        while (cmd == null || !cmd.equals(textToEnter)) {
+            log.info(message);
+            if (cmd != null) {
+                log.warn("Received: '{}'", cmd);
+            }
+            cmd = readLine.apply(null);
+            try {
+                TimeUnit.MILLISECONDS.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new TigerTestEnvException("Interrupt received while waiting for console input", e);
+            }
+        }
     }
 
     private static void readTemplates() {
@@ -225,18 +244,18 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         servers.values().forEach(server -> cycleChecker(server, new HashSet<>()));
     }
 
-    private void cycleChecker(final TigerServer currentPosition, final Set<TigerServer> visitedServer) {
+    private void cycleChecker(final AbstractTigerServer currentPosition, final Set<AbstractTigerServer> visitedServer) {
         if (visitedServer.contains(currentPosition)) {
             throw new TigerEnvironmentStartupException(
                 "Cyclic graph detected in startup sequence: " + visitedServer.stream()
-                    .map(TigerServer::getServerId)
+                    .map(AbstractTigerServer::getServerId)
                     .collect(Collectors.toList()));
         }
         if (currentPosition.getDependUponList().isEmpty()) {
             System.out.println(visitedServer);
             return;
         }
-        for (TigerServer server : currentPosition.getDependUponList()) {
+        for (AbstractTigerServer server : currentPosition.getDependUponList()) {
             var newSet = new HashSet<>(visitedServer);
             newSet.add(currentPosition);
             cycleChecker(server, newSet);
@@ -246,25 +265,51 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private void createServerObjects() {
         for (Map.Entry<String, CfgServer> serverEntry : configuration.getServers().entrySet()) {
             if (serverEntry.getValue().isActive()) {
-                final TigerServer server = TigerServer.create(serverEntry.getKey(), serverEntry.getValue(), this);
+                AbstractTigerServer server = createServer(serverEntry.getKey(), serverEntry.getValue());
                 servers.put(serverEntry.getKey(), server);
                 server.registerNewListener(this);
             }
         }
     }
 
+    public AbstractTigerServer createServer(String serverId, CfgServer config) {
+        if (config.getType() == null) {
+            throw new TigerTestEnvException("Unable to instantiate server of null type! PLease check your config");
+        }
+        try {
+            String serverType = config.getType().value();
+            if (!serverClasses.containsKey(serverType)) {
+                throw new TigerTestEnvException("No server class registered for type " + serverType + " used in server " + serverId);
+            }
+            return serverClasses.get(serverType)
+                .getDeclaredConstructor(TigerTestEnvMgr.class, String.class, CfgServer.class)
+                .newInstance(this, serverId, config);
+        } catch (RuntimeException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            if (e.getCause() != null) {
+                if (e.getCause() instanceof TigerConfigurationException) {
+                    throw (TigerConfigurationException) e.getCause();
+                } else if (e.getCause() instanceof TigerTestEnvException) {
+                    throw (TigerTestEnvException) e.getCause();
+                }
+            }
+            throw new TigerTestEnvException("Unable to instantiate server of type "
+                + config.getType() + ", does it have a constructor(TigerTestenvMgr, String, CfgServer)?", e);
+        }
+    }
+
+
     @Override
     public void setUpEnvironment() {
         assertNoCyclesInGraph();
         assertNoUnknownServersInDependencies();
 
-        final List<TigerServer> initialServersToBoot = servers.values().parallelStream()
+        final List<AbstractTigerServer> initialServersToBoot = servers.values().parallelStream()
             .filter(server -> server.getDependUponList().isEmpty())
             .collect(Collectors.toList());
 
         log.info("Booting following server(s): {}",
             initialServersToBoot.stream()
-                .map(TigerServer::getHostname)
+                .map(AbstractTigerServer::getHostname)
                 .collect(Collectors.toList()));
 
         initialServersToBoot.parallelStream()
@@ -276,10 +321,10 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     }
 
     private void assertNoUnknownServersInDependencies() {
-        getServers().values().forEach(TigerServer::getDependUponList);
+        getServers().values().forEach(AbstractTigerServer::getDependUponList);
     }
 
-    private void startServer(TigerServer server) {
+    private void startServer(AbstractTigerServer server) {
         synchronized (server) { //NOSONAR
             // we REALLY want to synchronize ONLY on the server!
             if (server.getStatus() != TigerServerStatus.NEW) {
@@ -307,7 +352,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     @Override
     public void shutDown() {
         log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
-        servers.values().forEach(TigerServer::shutdown);
+        servers.values().forEach(AbstractTigerServer::shutdown);
 
         log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));
         localTigerProxy.shutdown();
@@ -322,12 +367,12 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public List<TigerRoute> getRoutes() {
         return servers.values().stream()
-            .map(TigerServer::getRoutes)
+            .map(AbstractTigerServer::getRoutes)
             .flatMap(List::stream)
             .collect(Collectors.toUnmodifiableList());
     }
 
-    public Optional<TigerServer> findServer(String serverName) {
+    public Optional<AbstractTigerServer> findServer(String serverName) {
         return Optional.ofNullable(servers.get(serverName));
     }
 

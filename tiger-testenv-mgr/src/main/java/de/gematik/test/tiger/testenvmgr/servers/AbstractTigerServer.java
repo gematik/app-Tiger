@@ -7,12 +7,10 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.PkiType;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -29,19 +27,15 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.junit.platform.commons.util.StringUtils;
-import org.slf4j.helpers.MessageFormatter;
-import org.springframework.util.SocketUtils;
 
 @Getter
-public abstract class TigerServer implements TigerEnvUpdateSender {
+public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
     public static final int DEFAULT_STARTUP_TIMEOUT_IN_SECONDS = 20;
 
@@ -57,7 +51,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
 
     protected final org.slf4j.Logger log;
 
-    public TigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
+    public AbstractTigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
         this.hostname = hostname;
         this.serverId = serverId;
         this.tigerTestEnvMgr = tigerTestEnvMgr;
@@ -66,41 +60,13 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         TigerServerLogManager.addAppenders(this);
     }
 
-    public static TigerServer create(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
-        if (configuration.getType() == null) {
-            throw new TigerTestEnvException("No server type configured for server '" + serverId + "'");
-        }
-
-        switch (configuration.getType()) {
-            case DOCKER:
-                return DockerServer.builder()
-                    .configuration(configuration)
-                    .tigerTestEnvMgr(tigerTestEnvMgr)
-                    .serverId(serverId)
-                    .build();
-            case DOCKER_COMPOSE:
-                return DockerComposeServer.builder()
-                    .configuration(configuration)
-                    .tigerTestEnvMgr(tigerTestEnvMgr)
-                    .serverId(serverId)
-                    .build();
-            case EXTERNALURL:
-                return ExternalUrlServer.builder()
-                    .configuration(configuration)
-                    .serverId(serverId)
-                    .tigerTestEnvMgr(tigerTestEnvMgr)
-                    .build();
-            case EXTERNALJAR:
-                return ExternalJarServer.builder()
-                    .configuration(configuration)
-                    .serverId(serverId)
-                    .tigerTestEnvMgr(tigerTestEnvMgr)
-                    .build();
-            case TIGERPROXY:
-                return new TigerProxyServer(serverId, configuration, tigerTestEnvMgr);
-            default:
-                throw new TigerTestEnvException(
-                    String.format("Unsupported server type %s found in server %s", configuration.getType(), serverId));
+    @SuppressWarnings("unused")
+    public String getServerTypeToken() {
+        try {
+            return getClass().getAnnotation(TigerServerType.class).value();
+        } catch (NullPointerException npe) {
+            throw new TigerTestEnvException("Server class " + this.getClass() + " has no "
+                + TigerServerType.class.getCanonicalName() + " Annotation!");
         }
     }
 
@@ -118,20 +84,21 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                 throw new TigerEnvironmentStartupException("Server " + getServerId() + " was already started!");
             }
         }
-        setStatus(TigerServerStatus.STARTING, "Starting " + getServerId());
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(getServerTypeToken())
+            .status(TigerServerStatus.STARTING)
+            .statusMessage("Checking configuration " + getServerId() + "...").build());
 
         reloadConfiguration();
 
         assertThatConfigurationIsCorrect();
 
-        final ServerType type = configuration.getType();
-
         configuration.getEnvironment().stream()
             .map(testEnvMgr::replaceSysPropsInString)
             .forEach(environmentProperties::add);
 
-        // apply routes to local proxy
         if (configuration.getUrlMappings() != null) {
+            statusMessage("Adding routes to local tiger proxy for server " + getServerId() + "...");
             configuration.getUrlMappings().forEach(mapping -> {
                 if (StringUtils.isBlank(mapping) || !mapping.contains("-->") || mapping.split(" --> ", 2).length != 2) {
                     throw new TigerConfigurationException("The urlMappings configuration '" + mapping
@@ -162,19 +129,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
         }
         statusMessage(getServerId() + " started");
 
-        configuration.getExports().forEach(exp -> {
-            String[] kvp = exp.split("=", 2);
-            // ports substitution are only supported for docker based instances
-            if (type == ServerType.DOCKER && configuration.getDockerOptions().getPorts() != null) {
-                configuration.getDockerOptions().getPorts().forEach((localPort, externPort) ->
-                    kvp[1] = kvp[1].replace("${PORT:" + localPort + "}", String.valueOf(externPort))
-                );
-            }
-            kvp[1] = kvp[1].replace("${NAME}", getHostname());
-
-            log.info("Setting global property {}={}", kvp[0], kvp[1]);
-            TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
-        });
+        processExports();
 
         synchronized (this) {
             setStatus(TigerServerStatus.RUNNING, getServerId() + " READY");
@@ -194,7 +149,9 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     }
 
     private void loadPkiForProxy() {
-        log.info("Loading PKI resources for instance {}...", getServerId());
+        if (!getConfiguration().getPkiKeys().isEmpty()) {
+            log.info("Loading PKI resources for instance {}...", getServerId());
+        }
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Certificate)
             .forEach(key -> {
@@ -227,87 +184,38 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
 
     public abstract void performStartup();
 
+    protected void processExports() {
+        configuration.getExports().forEach(exp -> {
+            String[] kvp = exp.split("=", 2);
+            // ports substitution are only supported for docker based instances
+            kvp[1] = kvp[1].replace("${NAME}", getHostname());
+
+            log.info("Setting global property {}={}", kvp[0], kvp[1]);
+            TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
+        });
+    }
+
     public void assertThatConfigurationIsCorrect() {
-        var type = getConfiguration().getType();
-        assertThat(serverId)
-            .withFailMessage("Server Id must not be blank!")
-            .isNotBlank();
-
-        if (this instanceof DockerComposeServer && StringUtils.isNotBlank(getHostname())) {
-            throw new TigerConfigurationException("Docker compose does not support a hostname for the node!");
-        }
-
+        assertThat(serverId).withFailMessage("Server Id must not be blank!").isNotBlank();
         assertCfgPropertySet(getConfiguration(), "type");
-
-        if (type == ServerType.DOCKER) {
-            assertCfgPropertySet(getConfiguration(), "version");
-        }
-
-        // assert that server-port is set for the Tiger Proxy
-        if (type == ServerType.TIGERPROXY) {
-            if (getConfiguration().getTigerProxyCfg() == null) {
-                getConfiguration().setTigerProxyCfg(new TigerProxyConfiguration());
-            }
-            if (getConfiguration().getTigerProxyCfg().getAdminPort() <= 0) {
-                getConfiguration().getTigerProxyCfg().setAdminPort(SocketUtils.findAvailableTcpPort());
-            }
-            if (getConfiguration().getTigerProxyCfg().getProxyPort() == null
-                || getConfiguration().getTigerProxyCfg().getProxyPort() <= 0) {
-                throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getServerId() + "'");
-            }
-        }
 
         // set default values for all types
         if (getConfiguration().getStartupTimeoutSec() == null) {
             log.info("Defaulting startup timeout sec to 20sec for server {}", serverId);
             getConfiguration().setStartupTimeoutSec(20);
         }
-
-        if (type != ServerType.TIGERPROXY) {
-            assertCfgPropertySet(getConfiguration(), "source");
-        }
-
-        // defaulting work dir to temp folder on system if not set in config
-        if (type == ServerType.EXTERNALJAR) {
-            if (getConfiguration().getExternalJarOptions() != null) {
-                String folder = getConfiguration().getExternalJarOptions().getWorkingDir();
-                if (folder == null) {
-                    if (getConfiguration().getSource().get(0).startsWith("local:")) {
-                        final String jarPath = getConfiguration().getSource().get(0).split("local:")[1];
-                        folder = Paths.get(jarPath).toAbsolutePath().getParent().toString();
-                        getConfiguration().getSource().add(0,
-                            "local:" + jarPath.substring(jarPath.lastIndexOf('/')));
-                        log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, serverId);
-                    } else {
-                        folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile()
-                            .getAbsolutePath();
-                        log.info("Defaulting to temp folder '{}' as working directory for server {}", folder, serverId);
-                    }
-                    getConfiguration().getExternalJarOptions().setWorkingDir(folder);
-                }
-                File f = new File(folder);
-                if (!f.exists()) {
-                    if (!f.mkdirs()) {
-                        throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
-                    }
-                }
-            }
-        }
-
-        if (type == ServerType.EXTERNALJAR) {
-            assertCfgPropertySet(getConfiguration(), "healthcheckUrl");
-        }
     }
 
     @SneakyThrows
-    private void assertCfgPropertySet(Object target, String... propertyNames) {
+    protected void assertCfgPropertySet(Object target, String... propertyNames) {
         for (String propertyName : propertyNames) {
             Method mthd = target.getClass()
-                .getMethod("get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1));
+                .getMethod("get" + Character.toUpperCase(propertyName.charAt(0))
+                    + propertyName.substring(1));
             target = mthd.invoke(target);
             if (target == null) {
-                throw new TigerTestEnvException("Server " + getServerId() + " must have property " + propertyName
-                    + " be set and not be NULL!");
+                throw new TigerTestEnvException(
+                    "Server " + getServerId() + " must have property " + propertyName + " be set and not be NULL!");
             }
             if (target instanceof List) {
                 List<?> l = (List<?>) target;
@@ -317,20 +225,16 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                         "Server " + getServerId() + " must have property " + propertyName
                             + " be set and must contain at least one not empty entry!");
                 }
-                if (l.get(0) instanceof String) {
-                    if (((String) l.get(0)).isBlank()) {
-                        throw new TigerTestEnvException(
-                            "Server " + getServerId() + " must have property " + propertyName
-                                + " be set and contain at least one not empty entry!");
-                    }
+                if (l.get(0) instanceof String && ((String) l.get(0)).isBlank()) {
+                    throw new TigerTestEnvException(
+                        "Server " + getServerId() + " must have property " + propertyName
+                            + " be set and contain at least one not empty entry!");
                 }
             } else {
-                if (target instanceof String) {
-                    if (((String) target).isBlank()) {
-                        throw new TigerTestEnvException(
-                            "Server " + getServerId() + " must have property " + propertyName
-                                + " be set and not be empty!");
-                    }
+                if (target instanceof String && ((String) target).isBlank()) {
+                    throw new TigerTestEnvException(
+                        "Server " + getServerId() + " must have property " + propertyName
+                            + " be set and not be empty!");
                 }
             }
         }
@@ -373,7 +277,7 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
 
     public abstract void shutdown();
 
-    public List<TigerServer> getDependUponList() {
+    public List<AbstractTigerServer> getDependUponList() {
         if (StringUtils.isBlank(getConfiguration().getDependsUpon())) {
             return List.of();
         }
@@ -402,10 +306,12 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
             .statusMessage(statusMessage)
             .build());
         if (statusMessage != null) {
-            if (newStatus == TigerServerStatus.STOPPED) {
-                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.RED_BOLD));
-            } else {
-                log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
+            if (log.isInfoEnabled()) {
+                if (newStatus == TigerServerStatus.STOPPED) {
+                    log.info(Ansi.colorize(statusMessage, RbelAnsiColors.RED_BOLD));
+                } else {
+                    log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
+                }
             }
         }
     }
@@ -417,11 +323,14 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
     public void registerLogListener(TigerServerLogListener listener) {
         this.logListeners.add(listener);
     }
+
     public void statusMessage(String statusMessage) {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .statusMessage(statusMessage)
             .build());
-        log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
+        if (log.isInfoEnabled()) {
+            log.info(Ansi.colorize(statusMessage, RbelAnsiColors.GREEN_BOLD));
+        }
     }
 
     void publishNewStatusUpdate(TigerServerStatusUpdate update) {
@@ -433,5 +342,16 @@ public abstract class TigerServer implements TigerEnvUpdateSender {
                         .build()))
             );
         }
+    }
+
+    @SuppressWarnings("unused")
+    protected String findCommandInPath(String command) {
+        if (System.getenv("PATH") == null) {
+            throw new TigerEnvironmentStartupException("No PATH variable set, unable to find helm and kubectl commands!");
+        }
+        return Arrays.stream(System.getenv("PATH").split(File.pathSeparator))
+            .map(folder -> folder + File.separator + command)
+            .filter(file -> new File(file).canExecute())
+            .findFirst().orElseThrow(() -> new TigerEnvironmentStartupException("Unable to locate script '" + command + "'"));
     }
 }

@@ -14,23 +14,53 @@ import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.net.*;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.awaitility.core.ConditionTimeoutException;
 
-public abstract class AbstractExternalTigerServer extends TigerServer {
+public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
+
+    /** Container to store exceptions while performing startup of server, useful if you start external processes
+     * and want to monitor them in a separate thread...
+     * @See de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer
+     */
+    protected final AtomicReference<Throwable> startupException = new AtomicReference<>();
 
     AbstractExternalTigerServer(String hostname, String serverId, CfgServer configuration,
         TigerTestEnvMgr tigerTestEnvMgr) {
         super(hostname, serverId, tigerTestEnvMgr, configuration);
     }
 
-    void waitForService(boolean quiet) {
-        final long timeOutInMs = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L;
+    protected void waitForServerUp() {
+        if (getStatus() == TigerServerStatus.NEW) {
+            setStatus(TigerServerStatus.STARTING);
+        }
+        waitForServiceHalfTime(true);
+        String exMsg = "Unable to start " + getConfiguration().getType() + " '" + getServerId()
+            + "' (Status " + getStatus() + ")!";
+        if (startupException.get() != null) {
+            throw new TigerTestEnvException(exMsg, startupException.get());
+        } else if (getStatus() == TigerServerStatus.STOPPED) {
+            throw new TigerTestEnvException(exMsg);
+        } else if (getStatus() == TigerServerStatus.STARTING) {
+            waitForServiceHalfTime(false);
+            if (startupException.get() != null) {
+                throw new TigerTestEnvException(exMsg, startupException.get());
+            } else {
+                throw new TigerTestEnvException(exMsg);
+            }
+        }
+        statusMessage(getConfiguration().getType() + " " + getServerId() + " started");
+    }
+
+    protected void waitForServiceHalfTime(boolean quiet) {
+        final long timeOutInMs = getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L / 2;
         if (isHealthCheckNone()) {
             waitForConfiguredTimeAndSetRunning(timeOutInMs);
         } else {
@@ -40,14 +70,12 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             try {
                 await().atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
                     .pollInterval(200, TimeUnit.MILLISECONDS)
-                    .until(() -> updateStatus(quiet) != TigerServerStatus.STARTING);
+                    .until(() -> updateStatus(quiet) != TigerServerStatus.STARTING
+                        && getStatus() != TigerServerStatus.NEW);
             } catch (ConditionTimeoutException cte) {
                 if (!quiet) {
-                    final String healthcheckUrl = getConfiguration() != null ?
-                        getConfiguration().getHealthcheckUrl()
-                        : "<null>";
                     throw new TigerTestEnvException("Timeout waiting for external server '"
-                        + getServerId() + "' to respond at '" + healthcheckUrl + "'!");
+                        + getServerId() + "' to respond at '" + getHealthcheckUrl().orElse("<null>") + "'!");
                 }
             }
         }
@@ -128,7 +156,9 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
 
     URL buildHealthcheckUrl() {
         try {
-            return new URL(getHealthcheckUrl());
+            return new URL(getHealthcheckUrl().orElseThrow(
+                () -> new TigerTestEnvException("No Healthcheck Url is set for server " + getServerId()))
+            );
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(
                 "Could not build healthcheck URL from '" + getConfiguration().getHealthcheckUrl()
@@ -136,14 +166,16 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
         }
     }
 
-    String getHealthcheckUrl() {
-        return getConfiguration().getHealthcheckUrl();
+    Optional<String> getHealthcheckUrl() {
+        return Optional.ofNullable(getConfiguration().getHealthcheckUrl());
     }
 
     @Override
     public String getDestinationUrl(String fallbackProtocol) {
         try {
-            final URIBuilder uriBuilder = new URIBuilder(getHealthcheckUrl()).setPath("");
+            final URIBuilder uriBuilder = new URIBuilder(getHealthcheckUrl().orElseThrow(
+                    () -> new TigerTestEnvException("No Healthcheck Url is set for server " + getServerId()))
+            ).setPath("");
             if (StringUtils.isNotEmpty(fallbackProtocol)) {
                 uriBuilder.setScheme(fallbackProtocol);
             }
@@ -158,4 +190,15 @@ public abstract class AbstractExternalTigerServer extends TigerServer {
             getConfiguration().getHealthcheckUrl().isEmpty() ||
             getConfiguration().getHealthcheckUrl().equals("NONE");
     }
+
+    protected void applyEnvPropertiesToProcess(ProcessBuilder processBuilder) {
+        processBuilder.environment().putAll(getEnvironmentProperties().stream()
+            .map(str -> str.split("=", 2))
+            .filter(ar -> ar.length == 2)
+            .collect(Collectors.toMap(
+                ar -> ar[0].trim(),
+                ar -> ar[1].trim()
+            )));
+    }
+
 }

@@ -1,4 +1,3 @@
-import ServerType from "./ServerType";
 import TigerServerStatus from "./TigerServerStatus";
 import TigerServerStatusUpdateDto from "@/types/TigerServerStatusUpdateDto";
 
@@ -18,7 +17,7 @@ interface IJsonServerStatuus {
 export default class TigerServerStatusDto {
   name: string = "";
   baseUrl: string = "";
-  type: ServerType = ServerType.UNSET;
+  type: string = "UNSET";
   status: TigerServerStatus = TigerServerStatus.NEW;
   statusMessage: string = "";
   statusUpdates: Array<string> = new Array<string>();
@@ -32,7 +31,7 @@ export default class TigerServerStatusDto {
       status.baseUrl = json.baseUrl;
     }
     if (json.type) {
-      status.type = json.type as ServerType;
+      status.type = json.type;
     }
     if (json.status) {
       status.status = json.status as TigerServerStatus;

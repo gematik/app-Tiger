@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static java.time.LocalDateTime.now;
-import de.gematik.test.tiger.common.config.ServerType;
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -15,6 +15,8 @@ import de.gematik.test.tiger.testenvmgr.servers.log.TigerStreamLogFeeder;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import org.slf4j.event.Level;
 
+@TigerServerType("externalJar")
 public class ExternalJarServer extends AbstractExternalTigerServer {
 
     private final AtomicReference<Process> processReference = new AtomicReference<>();
@@ -31,8 +34,44 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
     private LocalDateTime processStartTime;
 
     @Builder
-    ExternalJarServer(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
+    public ExternalJarServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+    }
+
+    public void assertThatConfigurationIsCorrect() {
+        super.assertThatConfigurationIsCorrect();
+
+        assertCfgPropertySet(getConfiguration(), "source");
+
+        // defaulting work dir to temp folder on system if not set in config
+        String folder;
+        if (getConfiguration().getExternalJarOptions() == null) {
+            folder = new File(".").getAbsolutePath();
+            log.info("Defaulting to current working folder '{}' as working directory for server {}", folder, getServerId());
+        } else {
+            folder = getConfiguration().getExternalJarOptions().getWorkingDir();
+            if (folder == null) {
+                if (getConfiguration().getSource().get(0).startsWith("local:")) {
+                    final String jarPath = getConfiguration().getSource().get(0).split("local:")[1];
+                    folder = Paths.get(jarPath).toAbsolutePath().getParent().toString();
+                    getConfiguration().getSource().add(0,
+                        "local:" + jarPath.substring(jarPath.lastIndexOf('/')));
+                    log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, getServerId());
+                } else {
+                    folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile()
+                        .getAbsolutePath();
+                    log.info("Defaulting to temp folder '{}' as working directory for server {}", folder, getServerId());
+                }
+            }
+        }
+        getConfiguration().getExternalJarOptions().setWorkingDir(folder);
+        File f = new File(folder);
+        if (!f.exists()) {
+            if (!f.mkdirs()) {
+                throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
+            }
+        }
+        assertCfgPropertySet(getConfiguration(), "healthcheckUrl");
     }
 
     @Override
@@ -44,10 +83,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         } else {
             workingDir = new File(".").getAbsolutePath();
         }
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type(ServerType.EXTERNALJAR)
-            .statusMessage("Starting external jar instance " + getServerId() + " in folder '" + workingDir + "'...")
-            .build());
+        setStatus(TigerServerStatus.STARTING, "Starting external jar instance " + getServerId() + " in folder '" + workingDir + "'...");
 
         var jarUrl = getConfiguration().getSource().get(0);
         jarFile = getTigerTestEnvMgr().getDownloadManager().downloadJarAndReturnFile(this, jarUrl, workingDir);
@@ -67,9 +103,6 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         }
         statusMessage("Running '" + String.join(" ", options)
             + "' in folder '" + new File(workingDir).getAbsolutePath() + "'");
-
-        final AtomicReference<Throwable> exception = new AtomicReference<>();
-
         processStartTime = now();
         getTigerTestEnvMgr().getExecutor().submit(() -> {
             try {
@@ -78,22 +111,14 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                     .command(options.toArray(String[]::new))
                     .directory(new File(workingDir))
                     .inheritIO();
-
-                processBuilder.environment().putAll(getEnvironmentProperties().stream()
-                    .map(str -> str.split("=", 2))
-                    .filter(ar -> ar.length == 2)
-                    .collect(Collectors.toMap(
-                        ar -> ar[0].trim(),
-                        ar -> ar[1].trim()
-                    )));
-
+                applyEnvPropertiesToProcess(processBuilder);
                 processReference.set(processBuilder.start());
                 new TigerStreamLogFeeder(log, processReference.get().getInputStream(), Level.INFO);
                 new TigerStreamLogFeeder(log, processReference.get().getErrorStream(), Level.ERROR);
                 statusMessage("Started JAR-File for " + getServerId() + " with PID '" + processReference.get().pid() + "'");
             } catch (Throwable t) {
                 log.error("Failed to start process", t);
-                exception.set(t);
+                startupException.set(t);
             }
             log.debug("Proc set in atomic var {}", processReference.get());
         });
@@ -107,23 +132,10 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                 .build());
         }
 
-        if (exception.get() != null) {
-            throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!", exception.get());
+        if (startupException.get() != null) {
+            throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!", startupException.get());
         }
-        waitForService(true);
-        if (exception.get() != null) {
-            throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!", exception.get());
-        } else if (getStatus() == TigerServerStatus.STOPPED) {
-            throw new TigerEnvironmentStartupException("Unable to start external jar '" + getServerId() + "'!");
-        } else if (getStatus() == TigerServerStatus.STARTING) {
-            waitForService(false);
-            if (exception.get() != null) {
-                throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!",
-                    exception.get());
-            } else {
-                throw new TigerTestEnvException("Unable to start external jar '" + getServerId() + "'!");
-            }
-        }
+        waitForServerUp();
     }
 
     public TigerServerStatus updateStatus(boolean quiet) {
@@ -137,7 +149,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             }
             return getStatus();
         } else {
-            return super.updateStatus(quiet);
+            return super.updateStatus(false);
         }
     }
 
@@ -172,9 +184,9 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
     private String findJavaExecutable() {
         final String javaHomeDirectory = TigerGlobalConfiguration.readStringOptional("tiger.lib.javaHome")
-                .or(() -> TigerGlobalConfiguration.readStringOptional("java.home"))
-                .orElseThrow(() -> new TigerEnvironmentStartupException("Could not determine java-home. "
-                    + "Expected either 'tiger.lib.javaHome' oder 'java.home' to be set, but neither was!"));
+            .or(() -> TigerGlobalConfiguration.readStringOptional("java.home"))
+            .orElseThrow(() -> new TigerEnvironmentStartupException("Could not determine java-home. "
+                + "Expected either 'tiger.lib.javaHome' oder 'java.home' to be set, but neither was!"));
         if (System.getProperty("os.name").startsWith("Win")) {
             return javaHomeDirectory + File.separator + "bin" + File.separator + "java.exe";
         } else {

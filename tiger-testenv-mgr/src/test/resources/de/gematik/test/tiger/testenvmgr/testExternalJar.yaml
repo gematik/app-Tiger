@@ -4,6 +4,7 @@ servers:
     source:
       - http://localhost:${mockserver.port}/download
     healthcheckUrl: http://127.0.0.1:${free.port.0}
+    healthcheckReturnCode: 200
     externalJarOptions:
       workingDir: 'target/'
       arguments:

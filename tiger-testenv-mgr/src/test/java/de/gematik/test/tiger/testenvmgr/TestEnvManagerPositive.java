@@ -11,17 +11,19 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -29,7 +31,7 @@ import org.testcontainers.DockerClientFactory;
 
 @Slf4j
 @Getter
-class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
+public class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
     // -----------------------------------------------------------------------------------------------------------------
     //
@@ -40,14 +42,14 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
     @ParameterizedTest
     @ValueSource(strings = {"testDocker", "testTigerProxy", "testExternalJar", "testExternalUrl"})
-    void testCheckCfgPropertiesMinimumConfigPasses_OK(String cfgFileName) {
+    public void testCheckCfgPropertiesMinimumConfigPasses_OK(String cfgFileName) {
         log.info("Starting testCheckCfgPropertiesMinimumConfigPasses_OK for {}", cfgFileName);
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml"));
 
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFileName);
-            TigerServer.create("blub", srv, mockTestEnvMgr()).assertThatConfigurationIsCorrect();
+            envMgr.createServer("blub", srv).assertThatConfigurationIsCorrect();
         });
     }
 
@@ -64,25 +66,24 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         }
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
         createTestEnvMgrSafelyAndExecute(envMgr -> {
-            envMgr.getConfiguration().getServers().get(cfgFileName);
             envMgr.setUpEnvironment();
         }, "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
     }
 
     @Test
-    void testHostnameIsAutosetIfMissingK() {
+    public void testHostnameIsAutosetIfMissingK() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testServerWithNoHostname.yaml"));
 
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
-            TigerServer srv = envMgr.getServers().get("testServerWithNoHostname");
+            AbstractTigerServer srv = envMgr.getServers().get("testServerWithNoHostname");
             assertThat(srv.getHostname()).isEqualTo("testServerWithNoHostname");
         });
     }
 
     @Test
-    void testHostnameForDockerComposeNotAllowed_NOK() {
+    public void testHostnameForDockerComposeNotAllowed_NOK() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testComposeWithHostname.yaml"));
 
@@ -95,7 +96,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     //
 
     @Test
-    void testCreateDockerNonExistingVersion() {
+    public void testCreateDockerNonExistingVersion() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDockerMVPNonExistingVersion.yaml"));
         createTestEnvMgrSafelyAndExecute(envMgr ->
@@ -103,7 +104,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    void testCreateDockerComposeAndCheckPortIsAvailable() {
+    public void testCreateDockerComposeAndCheckPortIsAvailable() throws IOException {
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             String host = System.getenv("DOCKER_HOST");
@@ -134,7 +135,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     //
 
     @Test
-    void testExternalUrlViaProxy() {
+    public void testExternalUrlViaProxy() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml"));
         createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
@@ -143,7 +144,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
     @ParameterizedTest
     @ValueSource(strings = {"withPkiKeys", "withUrlMappings"})
-    void testExternalUrl_withDetails(String cfgFileName) {
+    public void testExternalUrl_withDetails(String cfgFileName) {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_" + cfgFileName + ".yaml"));
         createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
@@ -153,7 +154,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     @Test
     @TigerTest(cfgFilePath = "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrlInternalServer.yaml",
         skipEnvironmentSetup = true)
-    void testExternalUrlInternalUrl(TigerTestEnvMgr envMgr) {
+    public void testExternalUrlInternalUrl(TigerTestEnvMgr envMgr) {
         executeWithSecureShutdown(() -> {
             envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
             CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
@@ -177,7 +178,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "        - --httpPort=${free.port.0}\n"
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
-    void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
+    public void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
         executeWithSecureShutdown(() -> {
             envMgr.setUpEnvironment();
             assertThatNoException();
@@ -185,9 +186,8 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    @TigerTest(tigerYaml =
-        "servers:\n"
-            + "  testExternalJarMVP:\n"
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  testExternalJarMVP:\n"
         + "    type: externalJar\n"
         + "    source:\n"
         + "      - local:target/winstone.jar\n"
@@ -198,7 +198,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "        - --httpPort=${free.port.0}\n"
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
-    void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
+    public void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
         executeWithSecureShutdown(() -> {
             envMgr.setUpEnvironment();
             assertThatNoException();
@@ -206,7 +206,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    void testCreateExternalJarNonExistingWorkingDir() throws IOException {
+    public void testCreateExternalJarNonExistingWorkingDir() throws IOException {
         File folder = new File("NonExistingFolder");
         if (folder.exists()) {
             FileUtils.deleteDirectory(folder);
@@ -238,7 +238,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "      arguments:\n" +
         "        - \"--httpPort=${free.port.0}\"\n" +
         "        - \"--webroot=.\"\n")
-    void workingDirNotSet_ShouldDefaultToOsTempDirectory(TigerTestEnvMgr envMgr) {
+    public void workingDirNotSet_ShouldDefaultToOsTempDirectory(TigerTestEnvMgr envMgr) {
         final String workingDir = envMgr.getServers().get("externalJarServer")
             .getConfiguration().getExternalJarOptions().getWorkingDir();
         assertThat(new File(workingDir))
@@ -260,7 +260,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         + "      arguments:\n"
         + "        - \"--httpPort=${free.port.0}\"\n"
         + "        - \"--webroot=.\"\n", skipEnvironmentSetup = true)
-    void healthcheckEndpointGives404AndExpecting200_environmentShouldNotStartUp(TigerTestEnvMgr envMgr) {
+    public void healthcheckEndpointGives404AndExpecting200_environmentShouldNotStartUp(TigerTestEnvMgr envMgr) {
         executeWithSecureShutdown(() -> {
             assertThatThrownBy(() -> envMgr.setUpEnvironment())
                 .isInstanceOf(TigerTestEnvException.class)
@@ -274,7 +274,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         additionalProperties = {"tiger.servers.testExternalJarMVP.source.0=local://miniJarWHICHDOESNOTEXIST.jar",
             "tiger.servers.testExternalJarMVP.externalJarOptions.workingDir=src/test/resources"},
         skipEnvironmentSetup = true)
-    void testCreateExternalJarRelativePathFileNotFound(TigerTestEnvMgr envMgr) {
+    public void testCreateExternalJarRelativePathFileNotFound(TigerTestEnvMgr envMgr) {
         executeWithSecureShutdown(() -> {
             assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
                 .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
@@ -299,13 +299,11 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--httpPort=${free.port.0}\"\n" +
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
-    void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
-            .get()).isBetween(0,
-            655536);
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT)
-            .get()).isBetween(0,
-            655536);
+    public void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).get())
+            .isBetween(0, 655536);
+        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get())
+            .isBetween(0, 655536);
     }
 
     @Test
@@ -324,13 +322,11 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--httpPort=${free.port.0}\"\n" +
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
-    void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch(TigerTestEnvMgr envMgr) {
+    public void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch(TigerTestEnvMgr envMgr) {
         assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
-            .get()).isEqualTo(
-            TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
+            .get()).isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
         assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT)
-            .get()).isEqualTo(
-            TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
+            .get()).isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
     }
 
     private void executeWithSecureShutdown(Runnable test, TigerTestEnvMgr envMgr) {
