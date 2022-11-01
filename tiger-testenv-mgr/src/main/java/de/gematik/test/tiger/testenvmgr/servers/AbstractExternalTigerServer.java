@@ -28,7 +28,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
 
     /** Container to store exceptions while performing startup of server, useful if you start external processes
      * and want to monitor them in a separate thread...
-     * @See de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer
+     * @see de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer
      */
     protected final AtomicReference<Throwable> startupException = new AtomicReference<>();
 
@@ -42,21 +42,22 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
             setStatus(TigerServerStatus.STARTING);
         }
         waitForServiceHalfTime(true);
-        String exMsg = "Unable to start " + getConfiguration().getType() + " '" + getServerId()
-            + "' (Status " + getStatus() + ")!";
+        String exMsg = "Unable to start %s '%s' (Status %s)!";
         if (startupException.get() != null) {
-            throw new TigerTestEnvException(exMsg, startupException.get());
+            throw new TigerTestEnvException( startupException.get(), exMsg,  getConfiguration().getType().value(), getServerId(), getStatus());
         } else if (getStatus() == TigerServerStatus.STOPPED) {
-            throw new TigerTestEnvException(exMsg);
+            throw new TigerTestEnvException(exMsg, getConfiguration().getType().value(), getServerId(), getStatus());
         } else if (getStatus() == TigerServerStatus.STARTING) {
             waitForServiceHalfTime(false);
             if (startupException.get() != null) {
-                throw new TigerTestEnvException(exMsg, startupException.get());
+                throw new TigerTestEnvException(startupException.get(), exMsg, getConfiguration().getType().value(), getServerId(), getStatus());
             } else {
-                throw new TigerTestEnvException(exMsg);
+                if (getStatus() != TigerServerStatus.RUNNING) {
+                    throw new TigerTestEnvException(exMsg, startupException.get());
+                }
             }
         }
-        statusMessage(getConfiguration().getType() + " " + getServerId() + " started");
+        statusMessage(getConfiguration().getType().value() + " " + getServerId() + " started");
     }
 
     protected void waitForServiceHalfTime(boolean quiet) {

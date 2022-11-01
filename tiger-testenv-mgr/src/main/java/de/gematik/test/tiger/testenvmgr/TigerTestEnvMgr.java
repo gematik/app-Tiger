@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -252,7 +251,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                     .collect(Collectors.toList()));
         }
         if (currentPosition.getDependUponList().isEmpty()) {
-            System.out.println(visitedServer);
             return;
         }
         for (AbstractTigerServer server : currentPosition.getDependUponList()) {
@@ -292,8 +290,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                     throw (TigerTestEnvException) e.getCause();
                 }
             }
-            throw new TigerTestEnvException("Unable to instantiate server of type "
-                + config.getType() + ", does it have a constructor(TigerTestenvMgr, String, CfgServer)?", e);
+            throw new TigerTestEnvException(e, "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr, String, CfgServer)?", config.getType().value());
         }
     }
 
