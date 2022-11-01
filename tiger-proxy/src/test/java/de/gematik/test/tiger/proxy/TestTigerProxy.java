@@ -15,10 +15,10 @@ import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
@@ -309,21 +309,6 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .findRbelPathMembers("$.body").get(0)
             .getRawContent())
             .containsExactly("Hallo".getBytes());
-    }
-
-    @Test
-    public void testTigerWebEndpoint() throws UnirestException {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .activateRbelEndpoint(true)
-            .build());
-
-        assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/rbel").asString()
-            .getBody())
-            .contains("<html");
-
-        assertThat(proxyRest.get("http://rbel").asString()
-            .getBody())
-            .contains("<html");
     }
 
     @Test

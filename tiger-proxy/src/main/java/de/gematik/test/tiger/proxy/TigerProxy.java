@@ -6,7 +6,6 @@ package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
@@ -54,7 +53,6 @@ import org.mockserver.matchers.TimeToLive;
 import org.mockserver.matchers.Times;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.ExpectationId;
-import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 import org.mockserver.netty.proxy.BinaryRequestProxyingHandler;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -110,9 +108,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
         addRoutesToTigerProxy();
-        if (configuration.isActivateRbelEndpoint()) {
-            addRbelTrafficEndpoint();
-        }
 
         if (!configuration.isSkipTrafficEndpointsSubscription()) {
             subscribeToTrafficEndpoints(configuration);
@@ -267,21 +262,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
                 .build(), this))
             .forEach(remoteProxyClients::add);
-    }
-
-    private void addRbelTrafficEndpoint() {
-        mockServerClient.when(request()
-                .withHeader("Host", "rbel"))
-            .respond(HttpResponse.response()
-                .withHeader("content-type", "text/html; charset=utf-8")
-                .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
-        mockServerClient.when(request()
-                .withHeader("Host", ".*")
-                .withPath("/rbel"))
-            .respond(httpRequest ->
-                HttpResponse.response()
-                    .withHeader("content-type", "text/html; charset=utf-8")
-                    .withBody(new RbelHtmlRenderer().doRender(getRbelLogger().getMessageHistory())));
     }
 
     @Override

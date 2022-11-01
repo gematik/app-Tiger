@@ -55,7 +55,6 @@ Feature: Check advanced input fields and sections for all server types
     And he sees input field ".tigerProxyCfg.adminPort"
     And he sees select field ".tigerProxyCfg.proxyLogLevel"
     And he sees check field ".tigerProxyCfg.activateRbelParsing"
-    And he sees check field ".tigerProxyCfg.activateRbelEndpoint"
     And he sees check field ".tigerProxyCfg.activateForwardAllLogging"
     And he sees check field ".tigerProxyCfg.activateAsn1Parsing"
 
@@ -99,7 +98,6 @@ Feature: Check advanced input fields and sections for all server types
     And he doesn't see field ".tigerProxyCfg.adminPort"
     And he doesn't see field ".tigerProxyCfg.proxyLogLevel"
     And he doesn't see field ".tigerProxyCfg.activateRbelParsing"
-    And he doesn't see field ".tigerProxyCfg.activateRbelEndpoint"
     And he doesn't see field ".tigerProxyCfg.activateForwardAllLogging"
     And he doesn't see field ".tigerProxyCfg.activateAsn1Parsing"
     And he doesn't see field ".tigerProxyCfg.proxyRoutes.internalRoute"
@@ -119,7 +117,6 @@ Feature: Check advanced input fields and sections for all server types
     Then he sees select field ".tigerProxyCfg.proxiedServerProtocol"
     And he sees select field ".tigerProxyCfg.proxyLogLevel"
     And he sees check field ".tigerProxyCfg.activateRbelParsing"
-    And he sees check field ".tigerProxyCfg.activateRbelEndpoint"
     And he sees check field ".tigerProxyCfg.activateForwardAllLogging"
     And he sees check field ".tigerProxyCfg.activateAsn1Parsing"
 
@@ -164,7 +161,6 @@ Feature: Check advanced input fields and sections for all server types
     Then he doesn't see field ".tigerProxyCfg.proxiedServerProtocol"
     And he doesn't see field ".tigerProxyCfg.proxyLogLevel"
     And he doesn't see field ".tigerProxyCfg.activateRbelParsing"
-    And he doesn't see field ".tigerProxyCfg.activateRbelEndpoint"
     And he doesn't see field ".tigerProxyCfg.activateForwardAllLogging"
     And he doesn't see field ".tigerProxyCfg.activateAsn1Parsing"
 

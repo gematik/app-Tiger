@@ -374,10 +374,6 @@
                 },
                 "description":""
               },
-              "activateRbelEndpoint":{
-                "type":"boolean",
-                "description":""
-              },
               "activateAsn1Parsing":{
                 "type":"boolean",
                 "description":""
@@ -580,9 +576,6 @@
           "type":"boolean"
         },
         "activateForwardAllLogging":{
-          "type":"boolean"
-        },
-        "activateRbelEndpoint":{
           "type":"boolean"
         },
         "activateRbelParsing":{
