@@ -16,6 +16,7 @@
 * TGR-685: DirectReverseProxy added
 * TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable
 * TGR-664: WebUi: Copies body of response via click on button
+* TGR-694: JSON-Arrays can now be used as root-objects in JsonChecker-Assertions
 * TGR-525: Rbel moved into Tiger
 * TGR-687: Rbel-Namespace extended (lastRequest/lastMessage/getValueAtLocationAsString)
 * TGR-694: JsonChecker can now correctly check nested structures

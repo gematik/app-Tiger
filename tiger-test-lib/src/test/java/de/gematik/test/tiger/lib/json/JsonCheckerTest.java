@@ -19,7 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(Lifecycle.PER_CLASS)
 @Slf4j
-public class JsonCheckerTest {
+class JsonCheckerTest {
 
     final JsonChecker check = new JsonChecker();
 
@@ -357,7 +357,7 @@ public class JsonCheckerTest {
 
     @ParameterizedTest
     @MethodSource("provideDataForNotMatchingJsonAttributes")
-    public void testJsonAttributeShouldNotMatch(String testInfo, String jsonObject, String claimName, String
+    void testJsonAttributeShouldNotMatch(String testInfo, String jsonObject, String claimName, String
         regex,
         Optional<Class<Error>> exception) {
         log.info(testInfo);
@@ -370,6 +370,106 @@ public class JsonCheckerTest {
                 new JSONObject(jsonObject),
                 claimName, regex))
                 .isInstanceOf(exception.get());
+        }
+    }
+
+    private static Stream<Arguments> provideDataForCompareJsonStrings() {
+        return Stream.of(
+            Arguments.of("Compare two simple objects (success)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                false, Optional.empty()),
+
+            Arguments.of("Compare two simple objects (fail)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val2', attr3: 'val3' }",
+                false, Optional.of("JSON object does match at key 'attr1'")),
+
+            Arguments.of("Compare two simple arrays (success)",
+                "[0,1,2,3345]",
+                "[0,1,2,3345]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare two simple arrays (fail)",
+                "[0,1,2,3345]",
+                "[0,1,2,3]",
+                false, Optional.of("Unexpected: 3345")),
+
+            Arguments.of("Compare two different types (1)",
+                "{'foo':'bar'}",
+                "[0,1,2,3]",
+                false, Optional.of("Could not compare JSONObject to JSONArray: Different types!")),
+
+            Arguments.of("Compare two different types (2)",
+                "[0,1,2,3]",
+                "{'foo':'bar'}",
+                false, Optional.of("Could not compare JSONArray to JSONObject: Different types!")),
+
+            Arguments.of("Compare two different types (2)",
+                "{'foo':'bar'}",
+                "hallo du",
+                false, Optional.of("Could not compare JSONObject to String: Different types!")),
+
+            Arguments.of("Compare two objects with extra attribute (pass)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val1' }",
+                false, Optional.empty()),
+
+            Arguments.of("Compare object with extra attribute (fail)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val1' }",
+                true, Optional.of("EXTRA Key attr3 detected in received in JSON")),
+
+            Arguments.of("Compare object in array with extra attribute (pass)",
+                "[{ attr1: 'val1', attr3: 'val3' }]",
+                "[{ attr1: 'val1' }]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare object in array with extra attribute (fail)",
+                "[{ attr1: 'val1', attr3: 'val3' }]",
+                "[{ attr1: 'val1' }]",
+                true, Optional.of("EXTRA Key attr3 detected in received in JSON")),
+
+            Arguments.of("Compare two arrays with different containing types (1)",
+                "[{'foo':'bar'}]",
+                "['notAnObject']",
+                false, Optional.of("Unexpected: a JSON object")),
+
+            Arguments.of("Compare two objects in array with extra attribute (pass)",
+                "[{ attr1: 'val1'}, { attr2: 'val1'}]",
+                "[{ attr1: 'val1'}, { attr2: 'val1'}]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare two objects in array with extra attribute (fail)",
+                "[{ attr1: 'val1'}, { attr2: 'val1'}]",
+                "[{ attr1: 'val1'}, { attr2: 'val2'}]",
+                false, Optional.of("Could not find match for element {\"attr2\":\"val2\"}")),
+
+            Arguments.of("Compare array in array",
+                "[[1,2],[foo, bar]]",
+                "[[1,2],[foo, bar]]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare object in array with extra attribute (fail)",
+                "[{ attr1: 'val1' }]",
+                "[{ attr1: 'val1', attr3: 'val3' }]",
+                false, Optional.of("Expected JSON to have key 'attr3', but only found keys '[attr1]'"))
+            );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideDataForCompareJsonStrings")
+    void compareJsonStrings(String testInfo, String jsonStr, String oracleStr, Boolean checkExtraAttributes,
+        Optional<String> exception) {
+
+        log.info(testInfo);
+        if (exception.isEmpty()) {
+            check.compareJsonStrings(jsonStr, oracleStr, checkExtraAttributes);
+        } else {
+            assertThatThrownBy(() -> check.compareJsonStrings(
+                jsonStr,
+                oracleStr, checkExtraAttributes))
+                .hasMessageContaining(exception.get());
         }
     }
 

@@ -409,7 +409,7 @@ public class RBelValidatorGlue {
      * @param rbelPath     path to node/attribute
      * @param mode         one of JSON|XML
      * @param oracleDocStr value / regex that should equal or match as JSON or XML content
-     * @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
+     * @see JsonChecker#compareJsonStrings(String, String, boolean)
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {ModeType} überein mit:")
     @Then("TGR current response at {string} matches as {ModeType}:")

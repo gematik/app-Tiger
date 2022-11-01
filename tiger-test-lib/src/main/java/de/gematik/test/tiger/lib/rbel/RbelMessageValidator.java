@@ -262,7 +262,7 @@ public class RbelMessageValidator {
     public void assertAttributeOfCurrentResponseMatchesAs(String rbelPath, ModeType mode, String oracle) {
         switch (mode) {
             case JSON:
-                new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(
+                new JsonChecker().compareJsonStrings(
                     findElementInCurrentResponse(rbelPath).getRawStringContent(),
                     oracle,
                     false);
