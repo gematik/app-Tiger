@@ -69,6 +69,11 @@ public class Scenario extends GherkinStruct {
             .map(Tag::getParameter)
             .collect(Collectors.toList()));
         json.put(JSON.AFOLINKS, afos);
+        final JSONArray anwendungsfaelle = new JSONArray(getTags().stream()
+            .filter(tag -> tag.getName().equals("@AF-ID"))
+            .map(Tag::getParameter)
+            .collect(Collectors.toList()));
+        json.put(JSON.AF_ID, anwendungsfaelle);
         json.put(JSON.TITEL, getName());
         json.put(JSON.DESCRIPTION, getDescription().replace("\n", "</br>"));
         json.put(JSON.VORBEDINGUNG, "");

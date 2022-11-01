@@ -18,6 +18,7 @@ public interface JSON {
     String PRIO = "Priorität";
     String TESTART = "Testart";
     String AFOLINKS = "AFO-Verknüpfungen";
+    String AF_ID = "Anwendungsfälle";
     String DATAVARIANTS = "Datenvarianten";
     String NEGATIVE_TF = "NegativTestfall";
 }
