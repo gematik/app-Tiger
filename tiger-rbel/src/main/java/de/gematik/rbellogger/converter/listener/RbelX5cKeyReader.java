@@ -2,8 +2,10 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.rbellogger.converter;
+package de.gematik.rbellogger.converter.listener;
 
+import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.key.RbelKey;

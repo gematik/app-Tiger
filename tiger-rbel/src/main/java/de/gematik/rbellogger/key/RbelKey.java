@@ -4,15 +4,14 @@
 
 package de.gematik.rbellogger.key;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Optional;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @AllArgsConstructor
@@ -20,6 +19,7 @@ public class RbelKey {
 
     public static final int PRECEDENCE_X5C_HEADER_VALUE = 100;
     public static final int PRECEDENCE_KEY_FOLDER = 110;
+    public static final int PRECEDENCE_JWK_VALUE = 200;
 
     private final Key key;
     private final String keyName;

@@ -13,6 +13,7 @@
 ## Features
 
 * TGR-707, TGR-691: Tiger now supports Helm charts (you need to include the tiger-helm-extensions to your project)
+* RBEL-69: Keys from JWKs structures are now added to the key store
 * TGR-685: DirectReverseProxy added
 * TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable
 * TGR-664: WebUi: Copies body of response via click on button

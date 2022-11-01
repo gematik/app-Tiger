@@ -5,21 +5,21 @@
 package de.gematik.rbellogger;
 
 import de.gematik.rbellogger.captures.RbelCapturer;
-import de.gematik.rbellogger.converter.RbelAsn1Converter;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelAsn1Converter;
 import de.gematik.rbellogger.converter.RbelBundleCriterion;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelValueShader;
-import de.gematik.rbellogger.converter.RbelX5cKeyReader;
 import de.gematik.rbellogger.converter.listener.RbelBundledMessagesPlugin;
 import de.gematik.rbellogger.converter.listener.RbelFileAppenderPlugin;
+import de.gematik.rbellogger.converter.listener.RbelJwkReader;
+import de.gematik.rbellogger.converter.listener.RbelX5cKeyReader;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.modifier.RbelModifier;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-
-import de.gematik.rbellogger.modifier.RbelModifier;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -51,6 +51,7 @@ public class RbelLogger {
             .build();
 
         rbelConverter.registerListener(new RbelX5cKeyReader());
+        rbelConverter.registerListener(new RbelJwkReader());
         rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
         if (configuration.getPreConversionMappers() != null) {
             configuration.getPreConversionMappers().entrySet().stream()

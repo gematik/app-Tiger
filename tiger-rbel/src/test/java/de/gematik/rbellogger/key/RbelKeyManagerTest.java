@@ -4,18 +4,23 @@
 
 package de.gematik.rbellogger.key;
 
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.converter.RbelConverter;
+import java.io.IOException;
 import java.security.Key;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RbelKeyManagerTest {
+class RbelKeyManagerTest {
 
-    private RbelKeyManager keyManager = new RbelKeyManager();
-    private Key mock = mock(Key.class);
+    private final RbelKeyManager keyManager = new RbelKeyManager();
+    private final Key mock = mock(Key.class);
 
     @BeforeEach
     public void initEach() {
@@ -23,7 +28,7 @@ public class RbelKeyManagerTest {
     }
 
     @Test
-    public void shouldFindPrivateKeyIfPresent() {
+    void shouldFindPrivateKeyIfPresent() {
         RbelKey publicKey = RbelKey.builder()
             .keyName("publicKey")
             .key(mock)
@@ -52,7 +57,7 @@ public class RbelKeyManagerTest {
     }
 
     @Test
-    public void shouldThrowExceptionWhenPrivateKeyNotPresent() {
+    void shouldThrowExceptionWhenPrivateKeyNotPresent() {
         keyManager.getAllKeys().collect(Collectors.toList()).clear();
 
         RbelKey publicKey = RbelKey.builder()
@@ -63,5 +68,15 @@ public class RbelKeyManagerTest {
 
         assertThat(keyManager.findCorrespondingPrivateKey(publicKey.getKeyName()))
             .isEmpty();
+    }
+
+    @Test
+    void shouldGrepJwkKeys() throws IOException {
+        RbelConverter converter = RbelLogger.build().getRbelConverter();
+
+        converter.parseMessage(readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/jwtWithKeysClaim.curl").getBytes(), null, null, Optional.empty());
+
+        assertThat(converter.getRbelKeyManager().findKeyByName("puk_fed_sig"))
+            .isPresent();
     }
 }
