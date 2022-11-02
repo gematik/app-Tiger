@@ -34,7 +34,7 @@ pipeline {
                   catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                       build job: 'Tiger-Integrationtest-Apollo-Testsuite',
                       parameters: [
-                           string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                           string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                            string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                       ]
                   }
@@ -51,7 +51,7 @@ pipeline {
                  catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                      build job: 'Tiger-Integrationtest-Authenticator',
                      parameters: [
-                         string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                         string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                          string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                      ]
                  }
@@ -69,7 +69,7 @@ pipeline {
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                 build job: 'Tiger-Integrationtest-EAU',
                 parameters: [
-                   string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                   string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                 ]
                 }
@@ -87,7 +87,7 @@ pipeline {
                  catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                  build job: 'Tiger-Integrationtest-Erezept-Testsuite',
                  parameters: [
-                      string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                      string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                       string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                  ]
                  }
@@ -105,7 +105,7 @@ pipeline {
                   catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                   build job: 'Tiger-Integrationtest-IDP',
                   parameters: [
-                       string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                       string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                        string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                   ]
                   }
@@ -123,7 +123,7 @@ pipeline {
                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                    build job: 'Tiger-Integrationtest-Konnektor-e2e',
                    parameters: [
-                       string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                       string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                        string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                    ]
                    }
@@ -141,7 +141,7 @@ pipeline {
                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                    build job: 'Tiger-Integrationtest-TI-M-Testsuite',
                    parameters: [
-                        string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                        string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                         string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                    ]
                    }
@@ -159,7 +159,7 @@ pipeline {
                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                    build job: 'Tiger-Integrationtest-TKME',
                    parameters: [
-                        string(name: 'TIGER_VERSION', value: String.valueOf(params.NEW_VERSION)),
+                        string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                         string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
                    ]
                    }
