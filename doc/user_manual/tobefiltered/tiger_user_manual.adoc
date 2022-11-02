@@ -1,7 +1,3 @@
-//
-// ${GEMATIK_COPYRIGHT_STATEMENT}
-//
-
 :version: ${project.version}
 :toc: left
 :toc-title: Contents
