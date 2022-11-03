@@ -520,7 +520,11 @@ public class TigerWebUiController implements ApplicationContextAware {
             .limit(pageSize)
             .dropWhile(messageIsBefore(lastMsgUuid))
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
-            .map(msg -> new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
+            .map(msg -> HtmlMessage.builder()
+                .html(new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
+                .uuid(msg.getUuid())
+                .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
+                .build())
             .collect(Collectors.toList()));
         result.setMetaMsgList(msgs.stream()
             .dropWhile(messageIsBefore(lastMsgUuid))

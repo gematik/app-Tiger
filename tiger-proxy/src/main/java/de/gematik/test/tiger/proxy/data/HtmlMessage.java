@@ -4,19 +4,18 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class GetMessagesAfterDto {
-    String lastMsgUuid;
-    List<HtmlMessage> htmlMsgList;
-    List<MessageMetaDataDto> metaMsgList;
-    Integer pagesAvailable;
+public class HtmlMessage {
+
+    private String html;
+    private long sequenceNumber;
+    private String uuid;
 }

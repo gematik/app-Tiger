@@ -71,7 +71,7 @@ public class MessageMetaDataDto {
         return builder.build();
     }
 
-    private static long getElementSequenceNumber(RbelElement rbelElement) {
+    public static long getElementSequenceNumber(RbelElement rbelElement) {
         return rbelElement.getFacet(RbelTcpIpMessageFacet.class)
             .map(RbelTcpIpMessageFacet::getSequenceNumber)
             .orElse(0L);

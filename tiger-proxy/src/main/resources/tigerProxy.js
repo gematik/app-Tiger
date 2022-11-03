@@ -914,22 +914,22 @@ function shortenStrings(obj) {
   }
 }
 
-function addMessageToMainView(msgHtmlData, msgNumber) {
+function addMessageToMainView(msgHtmlData) {
   const listDiv = getAll('.msglist')[0];
-  const reqEl = htmlToElement(msgHtmlData);
+  const reqEl = htmlToElement(msgHtmlData.html);
   let span = getAll(".msg-sequence", reqEl)[0];
   if (span != null) {
     span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
-    span.textContent = msgNumber + 1;
+    span.textContent = msgHtmlData.sequenceNumber;
   }
-  addQueryBtn(reqEl);
+    addQueryBtn(reqEl);
   listDiv.appendChild(reqEl);
   if (!scrollLock) {
     reqEl.scrollIntoView({behaviour: "smooth", alignToTop: true});
   }
 }
 
-function addMessageToMenu(msgMetaData) {
+function addMessageToMenu(msgMetaData, index) {
   let isRequest = msgMetaData.request;
 
   var menuItem;
@@ -941,7 +941,7 @@ function addMessageToMenu(msgMetaData) {
   menuItem = menuItem
   .replace("${uuid}", msgMetaData.uuid)
   .replace("${sequence}", msgMetaData.sequenceNumber + 1)
-  .replace("${sequenceNumber}", msgMetaData.sequenceNumber);
+  .replace("${sequenceNumber}", index);
   if (msgMetaData.menuInfoString != null) {
     menuItem = menuItem
     .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
@@ -981,10 +981,11 @@ function addMessageToMenu(msgMetaData) {
 function updateMessageList(json) {
   updatePageSelector(json.pagesAvailable);
   for (htmlMsg of json.htmlMsgList) {
-    addMessageToMainView(htmlMsg, metaMsg.sequenceNumber + 1);
+    addMessageToMainView(htmlMsg);
   }
+  let index = 0;
   for (metaMsg of json.metaMsgList) {
-    addMessageToMenu(metaMsg);
+    addMessageToMenu(metaMsg, index++);
   }
   if (json.metaMsgList.length > 0) {
     lastUuid = json.metaMsgList[json.metaMsgList.length - 1].uuid;
