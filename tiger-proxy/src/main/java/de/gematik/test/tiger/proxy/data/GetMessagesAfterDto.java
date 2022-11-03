@@ -18,4 +18,5 @@ public class GetMessagesAfterDto {
     String lastMsgUuid;
     List<String> htmlMsgList;
     List<MessageMetaDataDto> metaMsgList;
+    Integer pagesAvailable;
 }

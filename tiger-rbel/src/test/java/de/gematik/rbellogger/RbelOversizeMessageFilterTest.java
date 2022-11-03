@@ -4,23 +4,17 @@
 
 package de.gematik.rbellogger;
 
-import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
 import java.util.Optional;
-
-import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 class RbelOversizeMessageFilterTest {
 
@@ -39,7 +33,7 @@ class RbelOversizeMessageFilterTest {
 
     @Test
     void oversizedMessageShouldNotBeParsed() {
-        assertThat(rbelLogger.getMessageHistory().get(0).getFirst("body").get().getFacets())
+        assertThat(rbelLogger.getMessageHistory().getFirst().getFirst("body").get().getFacets())
             .isEmpty();
     }
 

@@ -9,12 +9,13 @@ import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.data.Offset;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.SocketAddress;
@@ -58,7 +59,7 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
 
         proxyRest.get("http://backend/foobar").asJson();
 
-        MessageMetaDataDto message0 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessages().get(0));
+        MessageMetaDataDto message0 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(0));
         assertThat(message0.getPath()).isEqualTo("/foobar");
         assertThat(message0.getMethod()).isEqualTo("GET");
         assertThat(message0.getResponseCode()).isNull();
@@ -67,7 +68,7 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         // assertThat(message0.getSender()).matches("(view-|)localhost:\\d*");
         assertThat(message0.getSequenceNumber()).isEqualTo(0);
 
-        MessageMetaDataDto message1 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessages().get(1));
+        MessageMetaDataDto message1 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(1));
         assertThat(message1.getPath()).isNull();
         assertThat(message1.getMethod()).isNull();
         assertThat(message1.getResponseCode()).isEqualTo(666);

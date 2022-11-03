@@ -91,18 +91,18 @@ public class TigerWebUiControllerTest {
             .then()
             .statusCode(200)
             .body("metaMsgList.size()", equalTo(2))
-            .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessages().get(0).getUuid()))
-            .body("metaMsgList[1].uuid", equalTo(tigerProxy.getRbelMessages().get(1).getUuid()));
+            .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessagesList().get(0).getUuid()))
+            .body("metaMsgList[1].uuid", equalTo(tigerProxy.getRbelMessagesList().get(1).getUuid()));
     }
 
     @Test
     public void checkOnlyOneMsgIsReturnedWithLastMsgUuidSupplied() {
         RestAssured.given()
-            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid())
+            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(0).getUuid())
             .then()
             .statusCode(200)
             .body("metaMsgList.size()", equalTo(1))
-            .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessages().get(1).getUuid()));
+            .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessagesList().get(1).getUuid()));
     }
 
     @Test
@@ -110,23 +110,23 @@ public class TigerWebUiControllerTest {
         RestAssured.given().get(getWebUiUrl() + "/trafficLog.tgr")
             .then()
             .statusCode(200)
-            .body(containsString(tigerProxy.getRbelMessages().get(0).getUuid()))
-            .body(containsString(tigerProxy.getRbelMessages().get(1).getUuid()));
+            .body(containsString(tigerProxy.getRbelMessagesList().get(0).getUuid()))
+            .body(containsString(tigerProxy.getRbelMessagesList().get(1).getUuid()));
     }
 
     @Test
     public void checkSuppliedUuidsAreFilteredOutWhenDownloadingTraffic() {
         RestAssured.given()
-            .get(getWebUiUrl() + "/trafficLog.tgr?lastMsgUuid=" + tigerProxy.getRbelMessages().get(0).getUuid())
+            .get(getWebUiUrl() + "/trafficLog.tgr?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(0).getUuid())
             .then()
             .statusCode(200)
-            .body(containsString(tigerProxy.getRbelMessages().get(1).getUuid()));
+            .body(containsString(tigerProxy.getRbelMessagesList().get(1).getUuid()));
     }
 
     @Test
     public void checkNoMsgIsReturnedIfNoneExistsAfterRequested() {
         RestAssured.given()
-            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessages().get(1).getUuid())
+            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(1).getUuid())
             .then()
             .statusCode(200)
             .body("metaMsgList.size()", equalTo(0));
@@ -160,12 +160,12 @@ public class TigerWebUiControllerTest {
         String timestamp = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter").then().extract()
             .path("metaMsgList[1].timestamp");
 
-        assertThat(OffsetDateTime.parse(timestamp)).isEqualTo(tigerProxy.getRbelMessages().get(1)
+        assertThat(OffsetDateTime.parse(timestamp)).isEqualTo(tigerProxy.getRbelMessagesList().get(1)
                 .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toOffsetDateTime());
     }
 
     @Test
-    public void simulateTrafficDownloadResetAndUpload() {
+    void simulateTrafficDownloadResetAndUpload() {
         try {
             final String downloadedTraffic = RestAssured.given()
                 .get(getWebUiUrl() + "/trafficLog.tgr")
@@ -199,7 +199,10 @@ public class TigerWebUiControllerTest {
     }
 
     @Test
-    public void filterOutRequests_shouldStillAppearInPairs() {
+    void filterOutRequests_shouldStillAppearInPairs() {
+        tigerProxy.getRbelMessages()
+            .forEach(e -> System.out.println(e.printTreeStructure()));
+
         RestAssured.given()
             .get(getWebUiUrl() + "/getMsgAfter?filterCriterion=isResponse")
             .then()

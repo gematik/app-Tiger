@@ -97,7 +97,7 @@ public class VauEpaConverterTest {
             .map(Base64.getDecoder()::decode)
             .forEach(msgBytes -> epa2Logger.getRbelConverter().parseMessage(msgBytes, null, null, Optional.of(ZonedDateTime.now())));
 
-        assertThat(epa2Logger.getMessageHistory().get(24)
+        assertThat(epa2Logger.getMessageList().get(24)
             .findRbelPathMembers("$.body.Data.content.decoded.AuthorizationAssertion.content.decoded.Assertion.Issuer.text")
             .get(0).getRawStringContent())
             .isEqualTo("https://aktor-gateway.gematik.de/authz");
@@ -113,7 +113,7 @@ public class VauEpaConverterTest {
         String rawSavedVauMessages = FileUtils.readFileToString(new File("src/test/resources/trafficLog.tgr"));
         RbelFileWriterUtils.convertFromRbelFile(rawSavedVauMessages, epa2Logger.getRbelConverter());
 
-        assertThat(epa2Logger.getMessageHistory().get(9)
+        assertThat(epa2Logger.getMessageList().get(9)
             .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()
             .getRawStringContent())
             .isEqualTo("urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b");
@@ -130,7 +130,7 @@ public class VauEpaConverterTest {
 
         RbelFileWriterUtils.convertFromRbelFile(rawSavedVauMessages, epa2Logger.getRbelConverter());
 
-        assertThat(epa2Logger.getMessageHistory().get(5)
+        assertThat(epa2Logger.getMessageList().get(5)
             .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()
             .getRawStringContent())
             .isEqualTo("urn:ihe:iti:2007:RetrieveDocumentSetResponse");
@@ -141,14 +141,14 @@ public class VauEpaConverterTest {
         assertThat(rbelLogger.getMessageHistory())
             .hasSize(8);
 
-        assertThat(rbelLogger.getMessageHistory().get(0).findRbelPathMembers("$.body.Data.content.decoded.DataType.content")
+        assertThat(rbelLogger.getMessageHistory().getFirst().findRbelPathMembers("$.body.Data.content.decoded.DataType.content")
             .get(0).getRawStringContent())
             .isEqualTo("VAUClientHelloData");
     }
 
     @Test
     void vauClientSigFin_shouldDecipherMessageWithCorrectKeyId() {
-        final RbelElement vauMessage = rbelLogger.getMessageHistory().get(2)
+        final RbelElement vauMessage = rbelLogger.getMessageList().get(2)
             .findRbelPathMembers("$.body.FinishedData.content").get(0);
         assertThat(vauMessage.getFirst("keyId").get().getRawStringContent())
             .isEqualTo("f787a8db0b2e0d7c418ea20aba6125349871dfe36ab0f60a3d55bf4d1b556023");
@@ -156,7 +156,7 @@ public class VauEpaConverterTest {
 
     @Test
     void clientPayload_shouldParseEncapsulatedXml() {
-        assertThat(rbelLogger.getMessageHistory().get(4)
+        assertThat(rbelLogger.getMessageList().get(4)
             .findRbelPathMembers("$.body.message.Envelope.Body.sayHello.arg0.text")
             .get(0).getRawStringContent())
             .isEqualTo("hello from integration client");
@@ -164,7 +164,7 @@ public class VauEpaConverterTest {
 
     @Test
     void parentKeysForVauKeysShouldBeCorrect() {
-        assertThat(rbelLogger.getMessageHistory().get(7)
+        assertThat(rbelLogger.getMessageList().get(7)
             .findRbelPathMembers("$.body").get(0)
             .getFacetOrFail(RbelVauEpaFacet.class)
             .getKeyUsed())

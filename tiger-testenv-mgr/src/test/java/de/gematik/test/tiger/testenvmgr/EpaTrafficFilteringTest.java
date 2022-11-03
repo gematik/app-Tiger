@@ -35,7 +35,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
         + "    tigerProxyCfg:\n"
         + "      adminPort: ${free.port.1}\n"
         + "      proxyPort: ${free.port.2}\n")
-    void filterForEpaKvnr(TigerTestEnvMgr envMgr) throws InterruptedException {
+    void filterForEpaKvnr(TigerTestEnvMgr envMgr) {
         final TigerProxy upstreamTigerProxy = ((TigerProxyServer) envMgr.getServers().get("upstreamProxy"))
             .getTigerProxy();
         final RbelConverter upstreamRbelConverter = upstreamTigerProxy.getRbelLogger().getRbelConverter();
@@ -48,7 +48,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
 
         await()
             .atMost(5, TimeUnit.SECONDS)
-            .until(() -> envMgr.getLocalTigerProxy().getRbelMessages().get(0).findElement("$.body.recordId")
+            .until(() -> envMgr.getLocalTigerProxy().getRbelMessages().getFirst().findElement("$.body.recordId")
                 .get()
                 .getFacetOrFail(RbelValueFacet.class)
                 .getValue().equals("X114428539"));

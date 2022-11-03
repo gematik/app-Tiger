@@ -310,4 +310,7 @@ pre.json {
     filter: invert(100%);
     margin-left: 1em;
 }
-
+.dropdown-content {
+    max-height: 100vh;
+    overflow: auto;
+}

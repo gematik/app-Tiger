@@ -60,7 +60,7 @@ public class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         await().atMost(10, TimeUnit.SECONDS)
             .until(() ->
                 envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().size() >= 2
-                    && envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().get(0)
+                    && envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().getFirst()
                     .findElement("$.path").map(RbelElement::getRawStringContent)
                     .map(p -> p.endsWith(path))
                     .orElse(false));

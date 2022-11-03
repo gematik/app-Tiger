@@ -21,6 +21,7 @@ import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -91,9 +92,8 @@ public class TracingResilienceTest {
             // this line makes it easier to catch up: we remove the race condition of new traffic coming in
             // WHILE aggregating and receiving proxy are trying to catch up.
             // giveAggregatingProxyTimeToCatchUpIfRunning(testEnvMgr);
-            String randomMarker = "";
             for (int j = 0; j < MESSAGES_PER_ROUND; j++) {
-                randomMarker = RandomStringUtils.randomAlphanumeric(20);
+                var randomMarker = RandomStringUtils.randomAlphanumeric(20);
                 log.info("Sending message {}", randomMarker);
                 instance.get(
                         TigerGlobalConfiguration.resolvePlaceholders(
@@ -138,12 +138,12 @@ public class TracingResilienceTest {
                     aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
                     getReceivingTigerProxyMessages(testEnvMgr).size());
                 final List<RbelElement> sendingMsgs
-                    = getLastRequestPaths(testEnvMgr.getLocalTigerProxy().getRbelMessages());
+                    = getLastRequestPaths(testEnvMgr.getLocalTigerProxy().getRbelMessagesList());
                 final List<RbelElement> aggregatingMsgs = getLastRequestPaths(
-                    aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages());
+                    aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessagesList());
                 final List<RbelElement> receivingMsgs = getLastRequestPaths(
                     ((TigerProxyServer) testEnvMgr.getServers().get("receivingTigerProxy")).getTigerProxy()
-                        .getRbelMessages());
+                        .getRbelMessagesList());
                 for (int i = 0; i < sendingMsgs.size(); i++) {
                     if (makeReadable(sendingMsgs.get(i)).contains("/")) {
                         log.error("{}, {}, {}",
@@ -196,7 +196,7 @@ public class TracingResilienceTest {
         }
     }
 
-    private List<RbelElement> getReceivingTigerProxyMessages(TigerTestEnvMgr testEnvMgr) {
+    private Deque<RbelElement> getReceivingTigerProxyMessages(TigerTestEnvMgr testEnvMgr) {
         return testEnvMgr.findServer("receivingTigerProxy")
             .map(TigerProxyServer.class::cast)
             .map(TigerProxyServer::getTigerProxy)

@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -80,11 +81,6 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         new Thread(() -> {
             log.info("Trying to read traffic from file '{}'...", sourceFile);
             try {
-                rbelLogger.getRbelConverter().addPostConversionListener((msg, conv) -> {
-                    if (msg.getParentNode() == null) {
-                        triggerListener(msg);
-                    }
-                });
                 RbelFileWriterUtils.convertFromRbelFile(
                     Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8),
                     getRbelLogger().getRbelConverter());
@@ -131,8 +127,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     }
 
     @Override
-    public List<RbelElement> getRbelMessages() {
+    public Deque<RbelElement> getRbelMessages() {
         return rbelLogger.getMessageHistory();
+    }
+
+    public List<RbelElement> getRbelMessagesList() {
+        return new ArrayList<>(rbelLogger.getMessageHistory());
     }
 
     @Override

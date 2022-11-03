@@ -83,7 +83,7 @@ public class VauModifierTest {
                 .build())
         );
         rbelLogger.getRbelCapturer().initialize();
-        final RbelElement message = rbelLogger.getMessageHistory().get(4);
+        final RbelElement message = rbelLogger.getMessageList().get(4);
 
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.body.message")

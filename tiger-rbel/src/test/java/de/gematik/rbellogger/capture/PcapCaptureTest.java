@@ -97,10 +97,10 @@ class PcapCaptureTest {
 
         fileReaderCapturer.initialize();
 
-        assertThat(rbelLogger.getMessageHistory().get(0)
+        assertThat(rbelLogger.getMessageHistory().getFirst()
             .getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname().toString())
             .hasToString("127.0.0.1:51441");
-        assertThat(rbelLogger.getMessageHistory().get(0)
+        assertThat(rbelLogger.getMessageHistory().getFirst()
             .getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname().toString())
             .hasToString("127.0.0.1:8080");
     }
@@ -154,14 +154,14 @@ class PcapCaptureTest {
             render, Charset.defaultCharset());
         log.info("completed rendering " + LocalDateTime.now());
 
-        assertThat(rbelLogger.getMessageHistory().get(0).hasFacet(RbelHttpRequestFacet.class))
+        assertThat(rbelLogger.getMessageList().get(0).hasFacet(RbelHttpRequestFacet.class))
             .isTrue();
-        assertThat(rbelLogger.getMessageHistory().get(1).hasFacet(RbelHttpResponseFacet.class))
+        assertThat(rbelLogger.getMessageList().get(1).hasFacet(RbelHttpResponseFacet.class))
             .isTrue();
-        assertThat(rbelLogger.getMessageHistory().get(0).getNotes())
+        assertThat(rbelLogger.getMessageList().get(0).getNotes())
             .extracting("value")
             .containsExactly("Discovery Document anfragen");
-        assertThat(rbelLogger.getMessageHistory().get(1).getNotes())
+        assertThat(rbelLogger.getMessageList().get(1).getNotes())
             .extracting("value")
             .containsExactly("Discovery Document Response");
         assertThat(render).contains("Hier gibts die pairings")

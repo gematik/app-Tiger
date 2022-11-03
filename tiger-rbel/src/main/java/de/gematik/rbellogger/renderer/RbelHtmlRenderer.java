@@ -4,12 +4,16 @@
 
 package de.gematik.rbellogger.renderer;
 
+import static j2html.TagCreator.*;
 import de.gematik.rbellogger.converter.RbelValueShader;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelAsn1Facet;
 import de.gematik.rbellogger.util.BinaryClassifier;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -17,12 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bouncycastle.util.encoders.Hex;
-
-import javax.annotation.Nullable;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static j2html.TagCreator.*;
 
 @Slf4j
 @Getter
@@ -58,11 +56,11 @@ public class RbelHtmlRenderer {
         rbelValueShader = new RbelValueShader();
     }
 
-    public static String render(final List<RbelElement> elements) {
+    public static String render(final Collection<RbelElement> elements) {
         return render(elements, new RbelValueShader());
     }
 
-    public static String render(final List<RbelElement> elements, final RbelValueShader valueShader) {
+    public static String render(final Collection<RbelElement> elements, final RbelValueShader valueShader) {
         return new RbelHtmlRenderer(valueShader)
             .performRendering(elements);
     }
@@ -142,12 +140,12 @@ public class RbelHtmlRenderer {
         htmlRenderer.add(rbelFacetRenderer);
     }
 
-    public String doRender(final List<RbelElement> elements) {
+    public String doRender(final Collection<RbelElement> elements) {
         return performRendering(elements);
     }
 
     @SneakyThrows
-    private String performRendering(final List<RbelElement> elements) {
+    private String performRendering(final Collection<RbelElement> elements) {
         RbelHtmlRenderingToolkit renderingToolkit = new RbelHtmlRenderingToolkit(this);
 
         return renderingToolkit.renderDocument(new ArrayList(elements));

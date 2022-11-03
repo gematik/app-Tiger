@@ -48,7 +48,7 @@ public class VauErpConverterTest {
 
     @Test
     void testNestedRbelPathIntoErpRequest() {
-        assertThat(rbelLogger.getMessageHistory().get(52)
+        assertThat(rbelLogger.getMessageList().get(52)
             .findRbelPathMembers("$.body.message.body.Parameters.parameter.valueCoding.system.value")
             .get(0).getRawStringContent())
             .isEqualTo("https://gematik.de/fhir/CodeSystem/Flowtype");
@@ -65,7 +65,7 @@ public class VauErpConverterTest {
         fileReaderCapturer.initialize();
         fileReaderCapturer.close();
 
-        assertThat(rbelLogger.getMessageHistory().get(47)
+        assertThat(rbelLogger.getMessageList().get(47)
             .findElement("$.body.keyId")
             .get().seekValue(String.class).get())
             .isEqualTo("VAU Secret Key krTNhsSUEfXvy6BZFp5G4g");
@@ -73,7 +73,7 @@ public class VauErpConverterTest {
 
     @Test
     void testNestedRbelPathIntoErpVauResponse() {
-        assertThat(rbelLogger.getMessageHistory().get(54)
+        assertThat(rbelLogger.getMessageList().get(54)
             .findRbelPathMembers("$.body.message.body.Task.identifier.system.value")
             .stream().map(RbelElement::getRawStringContent).collect(Collectors.toList()))
             .containsExactly("https://gematik.de/fhir/NamingSystem/PrescriptionID",
@@ -82,7 +82,7 @@ public class VauErpConverterTest {
 
     @Test
     void testNestedRbelPathIntoSignedErpVauMessage() {
-//          assertThat(rbelLogger.getMessageHistory().get(95)
+//          assertThat(rbelLogger.getMessageList().get(95)
 //            .findRbelPathMembers("$.body.message.body.Bundle.entry.resource.Binary.data.value.1.content.2.1.content")
 //            .get(0).getFacet(RbelXmlElement.class))
 //            .isPresent();

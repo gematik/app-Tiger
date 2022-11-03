@@ -100,10 +100,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
 
         assertThat(
-            tigerProxy.getRbelMessages().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname())
+            tigerProxy.getRbelMessagesList().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname())
             .isEqualTo(new RbelHostname("backend", 80));
         assertThat(
-            tigerProxy.getRbelMessages().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname())
+            tigerProxy.getRbelMessagesList().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname())
             .isEqualTo(new RbelHostname("backend", 80));
     }
 
@@ -121,15 +121,15 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .header("x-forwarded-for", "someStuff")
             .asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.foo")
             .get().getRawStringContent())
             .isEqualTo("bar");
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.x-forwarded-for")
             .get().getRawStringContent())
             .isEqualTo("someStuff");
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("localhost:" + fakeBackendServer.port());
@@ -150,15 +150,15 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .header("Host", "RandomStuffShouldBePreserved")
             .asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.foo")
             .get().getRawStringContent())
             .isEqualTo("bar");
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.x-forwarded-for")
             .get().getRawStringContent())
             .isEqualTo("someStuff");
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("RandomStuffShouldBePreserved");
@@ -175,12 +175,12 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.receiver")
             .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
             .map(Object::toString)).get()
             .isEqualTo("localhost:" + fakeBackendServer.port());
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessagesList().get(1)
             .findElement("$.sender")
             .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
             .map(Object::toString)).get()
@@ -240,12 +240,12 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         proxyRest.get("http://foo.bar/foobar").asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.receiver")
             .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
             .map(Object::toString)).get()
             .isEqualTo("foo.bar:80");
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessagesList().get(1)
             .findElement("$.sender")
             .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
             .map(Object::toString)).get()
@@ -267,7 +267,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         assertThat(response.getStatus()).isEqualTo(666);
 
-        assertThat(tigerProxy.getRbelMessages().get(1).getFacetOrFail(RbelHttpResponseFacet.class)
+        assertThat(tigerProxy.getRbelMessagesList().get(1).getFacetOrFail(RbelHttpResponseFacet.class)
             .getResponseCode().getRawStringContent())
             .isEqualTo("666");
     }
@@ -305,7 +305,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         proxyRest.get("http://backend/binary").asBytes();
 
-        assertThat(tigerProxy.getRbelMessages().get(tigerProxy.getRbelMessages().size() - 1)
+        assertThat(tigerProxy.getRbelMessagesList().get(tigerProxy.getRbelMessagesList().size() - 1)
             .findRbelPathMembers("$.body").get(0)
             .getRawContent())
             .containsExactly("Hallo".getBytes());
@@ -322,7 +322,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         proxyRest.get("http://backend/foobar").asString().getBody();
 
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessagesList().get(1)
             .findRbelPathMembers("$.body.foo.content")
             .get(0).getRawStringContent()
         ).isEqualTo("bar");
@@ -362,7 +362,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/notAServer/foobar").asString();
 
         assertThat(callCounter.get()).isEqualTo(2);
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessagesList().get(1)
             .findRbelPathMembers("$.body.foo.content")
             .get(0).getRawStringContent()
         ).isEqualTo("bar");
@@ -504,7 +504,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .getStatus())
             .isEqualTo(777);
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("localhost:" + fakeBackendServer.port());
@@ -523,7 +523,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .getStatus())
             .isEqualTo(666);
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("localhost:" + fakeBackendServer.port());
@@ -552,7 +552,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         proxyRest.get("http://backend?jws=" + jwsSerialized)
             .asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.path.jws.value.signature.isValid")
             .get().seekValue(Boolean.class).get())
             .isTrue();
@@ -571,7 +571,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .getStatus())
             .isEqualTo(777);
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
             .isEqualTo("localhost:" + tigerProxy.getProxyPort());
@@ -721,10 +721,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         proxyRest.get("http://backend/foobar").asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
             .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessagesList().get(1)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
             .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
     }
@@ -740,10 +740,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
             .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessagesList().get(1)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
             .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
     }
@@ -756,10 +756,10 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
 
-        assertThat(tigerProxy.getRbelMessages().get(0)
+        assertThat(tigerProxy.getRbelMessagesList().get(0)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
             .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
-        assertThat(tigerProxy.getRbelMessages().get(1)
+        assertThat(tigerProxy.getRbelMessagesList().get(1)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
             .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
     }
@@ -779,7 +779,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .header("x-forwarded-for", "someStuff")
             .asString();
 
-        assertThat(tigerProxy.getRbelMessages())
+        assertThat(tigerProxy.getRbelMessagesList())
             .isEmpty();
     }
 
@@ -801,19 +801,19 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
     }
 
     private void checkPortsAreCorrect() {
-        assertThat(tigerProxy.getRbelMessages().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class)
+        assertThat(tigerProxy.getRbelMessagesList().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class)
             .getSenderHostname().getPort())
-            .isEqualTo(tigerProxy.getRbelMessages().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class)
+            .isEqualTo(tigerProxy.getRbelMessagesList().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname().getPort());
 /* TODO TGR-651 as we have no more client adress method in mock, we are not able to get the client port from where the request originated
    so for now we use the local adress which is equal to the proxy port :(
-       assertThat(tigerProxy.getRbelMessages().get(2).getFacetOrFail(RbelTcpIpMessageFacet.class)
+       assertThat(tigerProxy.getRbelMessagesList().get(2).getFacetOrFail(RbelTcpIpMessageFacet.class)
             .getSenderHostname().getPort())
-            .isEqualTo(tigerProxy.getRbelMessages().get(3).getFacetOrFail(RbelTcpIpMessageFacet.class)
+            .isEqualTo(tigerProxy.getRbelMessagesList().get(3).getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname().getPort());
-        assertThat(tigerProxy.getRbelMessages().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class)
+        assertThat(tigerProxy.getRbelMessagesList().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class)
             .getSenderHostname().getPort())
-            .isNotEqualTo(tigerProxy.getRbelMessages().get(2).getFacetOrFail(RbelTcpIpMessageFacet.class)
+            .isNotEqualTo(tigerProxy.getRbelMessagesList().get(2).getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname().getPort());
  */
 
@@ -821,7 +821,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
     @NotNull
     private Stream<String> extractHostnames(final Function<RbelTcpIpMessageFacet, RbelElement> hostnameExtractor) {
-        return tigerProxy.getRbelMessages().stream()
+        return tigerProxy.getRbelMessagesList().stream()
             .map(msg -> msg.getFacetOrFail(RbelTcpIpMessageFacet.class))
             .map(hostnameExtractor)
             .filter(Objects::nonNull)

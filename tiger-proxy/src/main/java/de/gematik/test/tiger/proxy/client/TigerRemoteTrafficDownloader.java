@@ -41,7 +41,7 @@ public class TigerRemoteTrafficDownloader {
 
         tigerRemoteProxyClient.getTrafficParserExecutor()
             .submit(() -> log.info("{}Successfully downloaded & parsed missed traffic from '{}'. Now {} message cached",
-                tigerRemoteProxyClient.proxyName(), getRemoteProxyUrl(), getRbelMessages().size()));
+                tigerRemoteProxyClient.proxyName(), getRemoteProxyUrl(), getRbelLogger().getMessageHistory().size()));
 
         tigerRemoteProxyClient.getTrafficParserExecutor()
             .submit(tigerRemoteProxyClient::switchToExecutorMode);
@@ -63,7 +63,7 @@ public class TigerRemoteTrafficDownloader {
             log.trace(
                 "{}Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was filtered). Now standing at {} messages overall",
                 tigerRemoteProxyClient.proxyName(), count, convertedMessages.size(), (count + 2) / 3,
-                getRbelMessages().size());
+                getRbelLogger().getMessageHistory().size());
         }
         if (!convertedMessages.isEmpty()) {
             tigerRemoteProxyClient.getLastMessageUuid().set(
@@ -106,7 +106,7 @@ public class TigerRemoteTrafficDownloader {
         final String downloadUrl = getRemoteProxyUrl() + "/webui/trafficLog.tgr";
         log.debug(
             "{}Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached {} messages)",
-            tigerRemoteProxyClient.proxyName(), currentLastUuid, downloadUrl, pageSize, getRbelMessages().size());
+            tigerRemoteProxyClient.proxyName(), currentLastUuid, downloadUrl, pageSize, getRbelLogger().getMessageHistory().size());
 
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("pageSize", pageSize);
@@ -126,10 +126,6 @@ public class TigerRemoteTrafficDownloader {
 
     private RbelLogger getRbelLogger() {
         return tigerRemoteProxyClient.getRbelLogger();
-    }
-
-    private List<RbelElement> getRbelMessages() {
-        return tigerRemoteProxyClient.getRbelMessages();
     }
 
     private String getRemoteProxyUrl() {

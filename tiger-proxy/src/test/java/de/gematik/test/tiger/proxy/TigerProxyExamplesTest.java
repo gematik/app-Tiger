@@ -73,7 +73,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu").asString();
 
-            assertThat(tigerProxy.getRbelMessages().get(1).getRawStringContent())
+            assertThat(tigerProxy.getRbelMessagesList().get(1).getRawStringContent())
                 .contains("barschmoolildu");
         }
     }
@@ -86,7 +86,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu")
                 .asString();
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body")
                 .get().getRawStringContent())
                 .isEqualTo("barschmoolildu");
         }
@@ -101,7 +101,7 @@ public class TigerProxyExamplesTest {
                     "http://localhost:" + mockServerClient.getPort() + "/read?filename=src/test/resources/test.json")
                 .asString();
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.webdriver.*.driver")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.webdriver.*.driver")
                 .get().getRawStringContent())
                 .contains("targetValue");
         }
@@ -117,7 +117,7 @@ public class TigerProxyExamplesTest {
                 .asString();
 
             RbelOptions.activateRbelPathDebugging();
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$..textTest.hier")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$..textTest.hier")
                 .get().getRawStringContent())
                 .isEqualTo("ist kein text");
         }
@@ -135,7 +135,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get("http://norealserver/foo").asString();
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body")
                 .get().getRawStringContent())
                 .isEqualTo("bar");
         }
@@ -155,7 +155,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("http://norealserver/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
@@ -172,7 +172,7 @@ public class TigerProxyExamplesTest {
             Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
@@ -189,7 +189,7 @@ public class TigerProxyExamplesTest {
             Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/wuff/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
@@ -208,7 +208,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
@@ -231,7 +231,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("https://blub/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
@@ -255,7 +255,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("https://blub/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
@@ -271,7 +271,7 @@ public class TigerProxyExamplesTest {
             System.out.println("curl -v https://api.twitter.com/1.1/jot/client_event.json -x http://localhost:6666 -k");
 
             await().atMost(2, TimeUnit.HOURS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 4);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 4);
         }
     }
 
@@ -303,7 +303,7 @@ public class TigerProxyExamplesTest {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get("http://blub/foo").asString();
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body")
                 .get().getRawStringContent())
                 .isEqualTo("horridoh!");
         }

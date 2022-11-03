@@ -9,7 +9,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import java.util.List;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -68,18 +67,18 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
         proxyRest.post("http://backend/notFoobar").asJson();
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.header.user-agent"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.user-agent"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified user-agent");
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.path"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("/foobar");
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.header.Matched-Stub-Id"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Matched-Stub-Id"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified value");
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.header.Content-Length"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Content-Length"))
             .isEmpty(); // not present in mocked response, not added by tiger-proxy
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.another.node.path"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.another.node.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("correctValue");
     }
@@ -107,10 +106,10 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.header.user-agent"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.user-agent"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified user-agent");
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.another.node.path"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.another.node.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("correctValue");
     }
@@ -134,7 +133,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.foo"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.foo"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("boo");
     }
@@ -152,10 +151,10 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .body(binaryMessageContent)
             .asBytes().getBody();
 
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
         assertThat(body).isEqualTo(binaryMessageContent);
@@ -174,10 +173,10 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .body(binaryMessageContent)
             .asBytes().getBody();
 
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
         assertThat(body).isEqualTo(binaryMessageContent);

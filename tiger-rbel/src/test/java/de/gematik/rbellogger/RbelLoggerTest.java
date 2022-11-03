@@ -113,7 +113,7 @@ public class RbelLoggerTest {
                 new RbelHtmlRenderer()
                         .doRender(rbelLogger.getMessageHistory()), Charset.defaultCharset());
 
-        assertThat(rbelLogger.getMessageHistory().get(9)
+        assertThat(rbelLogger.getMessageList().get(9)
                 .findRbelPathMembers("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")
                 .get(0)
                 .seekValue())

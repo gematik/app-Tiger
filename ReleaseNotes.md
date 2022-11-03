@@ -21,6 +21,7 @@
 * TGR-525: Rbel moved into Tiger
 * TGR-688: /rbel endpoint removed from Tiger Proxy
 * TGR-687: Rbel-Namespace extended (lastRequest/lastMessage/getValueAtLocationAsString)
+* TGR-701: Paged view added to Tiger Proxy WebUI
 * TGR-694: JsonChecker can now correctly check nested structures
 
 ## Breaking changes

@@ -52,33 +52,33 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
                 ZonedDateTime afterRespone = ZonedDateTime.now();
 
                 // check content
-                assertThat(tigerProxy.getRbelMessages().get(0).getRawContent())
+                assertThat(tigerProxy.getRbelMessagesList().get(0).getRawContent())
                     .isEqualTo(requestPayload);
-                assertThat(tigerProxy.getRbelMessages().get(1).getRawContent())
+                assertThat(tigerProxy.getRbelMessagesList().get(1).getRawContent())
                     .isEqualTo(responsePayload);
 
                 // check request adresses
-                assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.receiver.port")
+                assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.receiver.port")
                     .get().getRawStringContent())
                     .isEqualTo("" + serverSocket.getLocalPort());
-                assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.sender.port")
+                assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.sender.port")
                     .get().getRawStringContent())
                     .isEqualTo("" + clientSocket.getLocalPort());
 
                 // check response adresses
-                assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.sender.port")
+                assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.sender.port")
                     .get().getRawStringContent())
                     .isEqualTo("" + serverSocket.getLocalPort());
-                assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.receiver.port")
+                assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.receiver.port")
                     .get().getRawStringContent())
                     .isEqualTo("" + clientSocket.getLocalPort());
 
-                System.out.println(tigerProxy.getRbelMessages().get(0).printTreeStructure());
+                System.out.println(tigerProxy.getRbelMessagesList().get(0).printTreeStructure());
                 // check timing
-                final ZonedDateTime requestTime = tigerProxy.getRbelMessages().get(0)
+                final ZonedDateTime requestTime = tigerProxy.getRbelMessagesList().get(0)
                     .getFacetOrFail(RbelMessageTimingFacet.class)
                     .getTransmissionTime();
-                final ZonedDateTime responseTime = tigerProxy.getRbelMessages().get(0)
+                final ZonedDateTime responseTime = tigerProxy.getRbelMessagesList().get(0)
                     .getFacetOrFail(RbelMessageTimingFacet.class)
                     .getTransmissionTime();
 
@@ -107,7 +107,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
         // no proxyRest, direct connection (assume reverseProxy behavior)
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .asString();
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.responseCode")
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.responseCode")
             .get().getRawStringContent())
             .isEqualTo("666");
     }

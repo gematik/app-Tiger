@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -11,17 +12,13 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelSicctEnvelopeFacet;
 import de.gematik.rbellogger.data.sicct.SicctMessageType;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import java.io.File;
+import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.IOException;
-
-import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class RbelSicctConverterTest {
+class RbelSicctConverterTest {
 
     private RbelLogger rbelLogger;
 
@@ -37,7 +34,7 @@ public class RbelSicctConverterTest {
     }
 
     @Test
-    public void shouldRecognizeSicctMessages() throws IOException {
+    void shouldRecognizeSicctMessages() throws IOException {
         FileUtils.writeStringToFile(new File("target/sicctFlow.html"),
             RbelHtmlRenderer.render(rbelLogger.getMessageHistory()));
 
@@ -50,22 +47,22 @@ public class RbelSicctConverterTest {
     }
 
     @Test
-    public void testForBasicAttributesInSicctEnvelope() {
-        System.out.println(rbelLogger.getMessageHistory().get(0).printTreeStructure());
+    void testForBasicAttributesInSicctEnvelope() {
+        System.out.println(rbelLogger.getMessageHistory().getFirst().printTreeStructure());
 
-        assertThat(rbelLogger.getMessageHistory().get(0).findElement("$.messageType")
+        assertThat(rbelLogger.getMessageHistory().getFirst().findElement("$.messageType")
             .get().seekValue().get())
             .isEqualTo(SicctMessageType.C_COMMAND);
-        assertThat(rbelLogger.getMessageHistory().get(0).findElement("$.srcOrDesAddress")
+        assertThat(rbelLogger.getMessageHistory().getFirst().findElement("$.srcOrDesAddress")
             .get().getRawContent())
             .isEqualTo(new byte[]{0,0});
-        assertThat(rbelLogger.getMessageHistory().get(0).findElement("$.sequenceNumber")
+        assertThat(rbelLogger.getMessageHistory().getFirst().findElement("$.sequenceNumber")
             .get().getRawContent())
             .isEqualTo(new byte[]{1,0x41});
-        assertThat(rbelLogger.getMessageHistory().get(0).findElement("$.abRfu")
+        assertThat(rbelLogger.getMessageHistory().getFirst().findElement("$.abRfu")
             .get().getRawContent())
             .isEqualTo(new byte[]{0});
-        assertThat(rbelLogger.getMessageHistory().get(0).findElement("$.length")
+        assertThat(rbelLogger.getMessageHistory().getFirst().findElement("$.length")
             .get().getRawContent())
             .isEqualTo(new byte[]{0, 0, 0, 0x0e});
     }

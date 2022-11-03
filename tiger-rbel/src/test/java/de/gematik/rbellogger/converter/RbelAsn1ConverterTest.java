@@ -78,7 +78,7 @@ public class RbelAsn1ConverterTest {
     public void testVariousRbelPathInPcap() {
         parseRezepsCapture();
         // check OID
-        final RbelElement rbelMessage = rbelLogger.getMessageHistory().get(58);
+        final RbelElement rbelMessage = rbelLogger.getMessageList().get(58);
         assertThat(rbelMessage
             .findRbelPathMembers("$.body.0.2.0")
             .get(0).getFacet(RbelValueFacet.class)

@@ -48,18 +48,18 @@ class FileConverterTest {
         assertThat(rbelLogger.getMessageHistory())
             .hasSameSizeAs(initialRbelLogger.getMessageHistory());
 
-        assertThat(rbelLogger.getMessageHistory().get(0)
+        assertThat(rbelLogger.getMessageHistory().getFirst()
             .getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiver().getFacet(RbelHostnameFacet.class).get().getDomain().getRawStringContent())
-            .isEqualTo(initialRbelLogger.getMessageHistory().get(0)
+            .isEqualTo(initialRbelLogger.getMessageHistory().getFirst()
                 .getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiver().getFacet(RbelHostnameFacet.class).get().getDomain().getRawStringContent());
 
-        assertThat(rbelLogger.getMessageHistory().get(0)
+        assertThat(rbelLogger.getMessageHistory().getFirst()
             .getFacetOrFail(RbelTcpIpMessageFacet.class).getSender().getFacet(RbelHostnameFacet.class).get().getDomain().getRawStringContent())
-            .isEqualTo(initialRbelLogger.getMessageHistory().get(0)
+            .isEqualTo(initialRbelLogger.getMessageHistory().getFirst()
                 .getFacetOrFail(RbelTcpIpMessageFacet.class).getSender().getFacet(RbelHostnameFacet.class).get().getDomain().getRawStringContent());
-        assertThat(rbelLogger.getMessageHistory().get(0)
+        assertThat(rbelLogger.getMessageHistory().getFirst()
             .getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber())
-            .isEqualTo(initialRbelLogger.getMessageHistory().get(0)
+            .isEqualTo(initialRbelLogger.getMessageHistory().getFirst()
                 .getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber());
     }
 

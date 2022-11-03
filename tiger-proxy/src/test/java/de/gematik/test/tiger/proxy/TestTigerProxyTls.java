@@ -279,7 +279,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         assertThat(response.getStatus())
             .isEqualTo(666);
 
-        assertThat(secondProxy.getRbelMessages().get(0)
+        assertThat(secondProxy.getRbelMessagesList().get(0)
             .findElement("$.clientTlsCertificateChain.0.subject")
             .map(RbelElement::getRawStringContent))
             .get()
@@ -353,7 +353,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
         }
 
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.clientTlsCertificateChain.0.subject")
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.clientTlsCertificateChain.0.subject")
             .get().getRawStringContent())
             .contains("CN=mailuser-rsa1");
     }

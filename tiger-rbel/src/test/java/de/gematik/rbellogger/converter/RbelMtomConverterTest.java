@@ -47,12 +47,12 @@ public class RbelMtomConverterTest {
     @Test
     @DisplayName("MTOM XML - should be parsed correctly")
     public void mtomXml_shouldBeParsedCorrectly() {
-        assertThat(rbelLogger.getMessageHistory().get(34)
+        assertThat(rbelLogger.getMessageList().get(34)
                 .findRbelPathMembers("$..Envelope.soap").get(0)
                 .getRawStringContent())
                 .isEqualTo("http://www.w3.org/2003/05/soap-envelope");
 
-        assertThat(rbelLogger.getMessageHistory().get(34)
+        assertThat(rbelLogger.getMessageList().get(34)
             .findRbelPathMembers("$..EncryptionMethod.Algorithm")
             .stream()
             .map(RbelElement::getRawStringContent)

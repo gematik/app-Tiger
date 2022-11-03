@@ -6,20 +6,19 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import java.nio.charset.StandardCharsets;
+import java.security.Security;
 import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import java.nio.charset.StandardCharsets;
-import java.security.Security;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PUBLIC)
@@ -31,7 +30,7 @@ public class RbelConverter {
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
     private boolean manageBuffer = false;
-    private final List<RbelElement> messageHistory = new ArrayList<>();
+    private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
     private final List<RbelBundleCriterion> bundleCriterionList = new ArrayList<>();
     private final RbelKeyManager rbelKeyManager;
     private final RbelValueShader rbelValueShader = new RbelValueShader();
@@ -110,12 +109,10 @@ public class RbelConverter {
     }
 
     private Optional<RbelElement> findLastRequest() {
-        final List<RbelElement> messageHistory = getMessageHistory();
-        for (int i = messageHistory.size() - 1; i >= 0; i--) {
-            if (this.messageHistory.get(i)
-                .getFacet(RbelHttpRequestFacet.class)
-                .isPresent()) {
-                return Optional.ofNullable(this.messageHistory.get(i));
+        for (var iterator = messageHistory.descendingIterator(); iterator.hasNext(); ) {
+            var element = iterator.next();
+            if (element.hasFacet(RbelHttpRequestFacet.class)) {
+                return Optional.ofNullable(element);
             }
         }
         return Optional.empty();
@@ -225,7 +222,7 @@ public class RbelConverter {
                     }
                     while (exceedingLimit > 0 && !getMessageHistory().isEmpty()) {
                         log.trace("Exceeded buffer size, dropping oldest message in history");
-                        exceedingLimit -= getMessageHistory().get(0).getSize();
+                        exceedingLimit -= getMessageHistory().getFirst().getSize();
                         getMessageHistory().remove(0);
                     }
                 }

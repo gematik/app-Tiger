@@ -112,11 +112,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         int connectionTimeoutInSeconds, boolean downloadTraffic) {
         waitForRemoteTigerProxyToBeOnline(remoteProxyUrl);
         final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
-        final Optional<String> lastMsgUuid = Optional
-            .of(getRbelLogger().getMessageHistory().size() - 1)
-            .filter(i -> i > 0)
-            .map(i -> getRbelLogger().getMessageHistory().get(i))
-            .map(RbelElement::getUuid);
         final ListenableFuture<StompSession> connectFuture
             = tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);
 
@@ -141,6 +136,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             log.error("InterruptedException while opening tracing-connection to {}", tracingWebSocketUrl);
             Thread.currentThread().interrupt();
         }
+    }
+
+    private Optional<String> calculateLastMessageUuid() {
+        return Optional.ofNullable(getRbelLogger().getMessageHistory())
+            .filter(dq -> !dq.isEmpty())
+            .map(Deque::getLast)
+            .map(RbelElement::getUuid);
     }
 
     @Override

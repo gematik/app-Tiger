@@ -8,6 +8,8 @@ let lastUuid = "";
 let filterCriterion = "";
 let rootEl;
 let jexlQueryElementUuid = "";
+let pageSize = 20;
+let pageNumber = 0;
 
 let resetBtn;
 let saveBtn;
@@ -51,12 +53,12 @@ let senders = [];
 let filterBtn;
 
 let requestFrom = "requestFromContent";
-let requestTo  = "requestToContent";
+let requestTo = "requestToContent";
 
 let socket;
 let stompClient;
 
-const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
+const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"is-size-6 mb-1 has-text-link\"><span\n"
     + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
@@ -70,7 +72,7 @@ const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "             title=\"${menuInfoString}\">${menuInfoString}"
     + "        </span>\n"
     + "      </a></div>";
-const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
+const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"is-size-6 mb-1 has-text-success\"><span\n"
     + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
@@ -103,6 +105,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   hideBtn = document.getElementById("dropdown-hide-button");
   hideBtn.addEventListener("click", hideDropdownContent);
+  addDropdownClickListener(document.getElementById("dropdown-page-selection"));
+  addDropdownClickListener(document.getElementById("dropdown-page-size"));
 
   setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
   setFilterCriterionInput = document.getElementById("setFilterCriterionInput");
@@ -213,7 +217,8 @@ document.addEventListener('DOMContentLoaded', function () {
       () => {
         const firstElementOfView = getFirstElementOfViewport();
         collapseMessageDetails = !collapseMessageDetails;
-        collapsibleDetails.classList.toggle("led-error", collapseMessageDetails);
+        collapsibleDetails.classList.toggle("led-error",
+            collapseMessageDetails);
 
         let msgCards = document.getElementsByClassName('msg-card');
         Array.from(msgCards).forEach(card => {
@@ -237,9 +242,11 @@ document.addEventListener('DOMContentLoaded', function () {
       () => {
         const firstElementOfView = getFirstElementOfViewport();
         collapseMessageHeaders = !collapseMessageHeaders;
-        collapsibleHeaders.classList.toggle("led-error", collapseMessageHeaders);
+        collapsibleHeaders.classList.toggle("led-error",
+            collapseMessageHeaders);
 
-        let msgCards = document.getElementsByClassName('card full-width is-primary notification');
+        let msgCards = document.getElementsByClassName(
+            'card full-width is-primary notification');
         Array.from(msgCards).forEach(card => {
           const cardToggle = card.children[0].children[0];
           card.childNodes[1].classList.toggle('is-hidden',
@@ -255,12 +262,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         let hideDropdownBtn = document.getElementById("dropdown-hide-button");
         hideDropdownBtn.parentElement.classList.remove("is-active");
-  });
+      });
 
   initDropdownContent(requestFrom, senders);
   initDropdownContent(requestTo, receivers);
-
-  pollMessages();
 
   btnAddRoute.addEventListener("click", addRoute);
   fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
@@ -291,6 +296,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   connectToWebSocket();
+
+  setPageSize(pageSize);
 });
 
 // Functions
@@ -341,7 +348,8 @@ function updateDropdownContent(label, list) {
           } else {
             filterField.value = "@.receiver == \"" + list[i] + "\"";
           }
-          let filterDropdownBtn = document.getElementById("dropdown-filter-button");
+          let filterDropdownBtn = document.getElementById(
+              "dropdown-filter-button");
           filterDropdownBtn.parentElement.classList.remove("is-active");
         });
         divDropdownContent.appendChild(element);
@@ -355,13 +363,21 @@ function deleteRequestsLists() {
   receivers = [];
 }
 
+function closeAllDropdowns() {
+  for (let item of document.getElementsByClassName("is-active dropdown")) {
+    item.classList.remove("is-active");
+  }
+}
+
 function updateNestedDropdownContent() {
+  closeAllDropdowns()
   filterBtn.parentElement.classList.toggle("is-active");
   updateDropdownContent(requestFrom, senders);
   updateDropdownContent(requestTo, receivers);
 }
 
 function hideDropdownContent() {
+  closeAllDropdowns()
   hideBtn.parentElement.classList.toggle("is-active");
 }
 
@@ -411,9 +427,8 @@ function enableModals() {
   let $modalButtons = getAll('.modal-button');
   let $copyButtons = getAll('.copyToClipboard-button');
 
-
   if ($modalButtons.length > 0) {
-     $modalButtons.forEach(function ($el) {
+    $modalButtons.forEach(function ($el) {
       $el.addEventListener('click', function (e) {
         let target = $el.dataset.target;
         let $target = document.getElementById(target);
@@ -451,7 +466,6 @@ function showModalSave(e) {
   e.preventDefault();
   return false;
 }
-
 
 function showModalImport(e) {
   var input = document.createElement("input");
@@ -492,7 +506,8 @@ function showModalsCB(e) {
 function toggleHelp(collapsibleBtn, collapsibleHelpId, isDisabledSet = false) {
   const collapsibleHelp = document.getElementById(collapsibleHelpId);
   const classList = collapsibleBtn.classList;
-  const flag = classList.contains("fa-toggle-on") || ((isDisabledSet) && isDisabledSet == true);
+  const flag = classList.contains("fa-toggle-on") || ((isDisabledSet)
+      && isDisabledSet == true);
   classList.toggle("fa-toggle-on", !flag);
   classList.toggle("fa-toggle-off", flag);
   collapsibleHelp.style.display = flag ? "none" : "block";
@@ -514,7 +529,8 @@ function enableCardToggles() {
   let cardToggles = document.getElementsByClassName('toggle-icon');
   for (let i = 0; i < cardToggles.length; i++) {
     if (!cardToggles[i].id ||
-        (cardToggles[i].id !== "rbel-help-icon" && cardToggles[i].id !== "jexl-help-icon")) {
+        (cardToggles[i].id !== "rbel-help-icon" && cardToggles[i].id
+            !== "jexl-help-icon")) {
       cardToggles[i].addEventListener('click', toggleCardCB);
     }
   }
@@ -577,6 +593,8 @@ function setCollapsableIcon(target, collapsed) {
   classList.toggle("fa-toggle-off", collapsed);
 }
 
+let currentlyPolling = false;
+
 function connectToWebSocket() {
   socket = new SockJS("/newMessages");
   stompClient = Stomp.over(socket, {debug: false});
@@ -584,20 +602,25 @@ function connectToWebSocket() {
       {},
       () => {
         stompClient.subscribe('/topic/ws', () => {
-          pollMessages();
+          if (!currentlyPolling) {
+            currentlyPolling = true;
+            pollMessages(() => {currentlyPolling = false;});
+          }
         });
       },
       (error) => {
         console.error("Websocket error: " + JSON.stringify(error));
       }
-  );
+  )
 }
 
-function pollMessages() {
+function pollMessages(callback) {
   const xhttp = new XMLHttpRequest();
   xhttp.open("GET", "/webui/getMsgAfter"
       + "?lastMsgUuid=" + lastUuid
-      + "&filterCriterion=" + encodeURIComponent(filterCriterion), true);
+      + "&filterCriterion=" + encodeURIComponent(filterCriterion)
+      + "&pageSize=" + pageSize
+      + "&pageNumber=" + pageNumber, true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
@@ -605,6 +628,9 @@ function pollMessages() {
         updateMessageList(response);
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
+      }
+      if (callback !== undefined) {
+        callback();
       }
     }
   }
@@ -888,87 +914,84 @@ function shortenStrings(obj) {
   }
 }
 
-function addSingleMessage(msgMetaData, msgHtmlData) {
+function addMessageToMainView(msgHtmlData, msgNumber) {
   const listDiv = getAll('.msglist')[0];
-
-  let isRequest = msgMetaData.request;
   const reqEl = htmlToElement(msgHtmlData);
   let span = getAll(".msg-sequence", reqEl)[0];
   if (span != null) {
     span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
-    span.textContent = msgMetaData.sequenceNumber + 1;
+    span.textContent = msgNumber + 1;
   }
   addQueryBtn(reqEl);
   listDiv.appendChild(reqEl);
+  if (!scrollLock) {
+    reqEl.scrollIntoView({behaviour: "smooth", alignToTop: true});
+  }
+}
 
-    var menuItem;
-    if (isRequest) {
-      menuItem = menuHtmlTemplateRequest;
-    } else {
-      menuItem = menuHtmlTemplateResponse;
-    }
+function addMessageToMenu(msgMetaData) {
+  let isRequest = msgMetaData.request;
+
+  var menuItem;
+  if (isRequest) {
+    menuItem = menuHtmlTemplateRequest;
+  } else {
+    menuItem = menuHtmlTemplateResponse;
+  }
+  menuItem = menuItem
+  .replace("${uuid}", msgMetaData.uuid)
+  .replace("${sequence}", msgMetaData.sequenceNumber + 1)
+  .replace("${sequenceNumber}", msgMetaData.sequenceNumber);
+  if (msgMetaData.menuInfoString != null) {
     menuItem = menuItem
-    .replace("${uuid}", msgMetaData.uuid)
-    .replace("${sequence}", msgMetaData.sequenceNumber + 1);
-    if (msgMetaData.menuInfoString != null) {
-      menuItem = menuItem
-      .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
-    } else {
-      menuItem = menuItem
-      .replaceAll("${menuInfoString}", " ");
-    }
-    if (msgMetaData.timestamp != null) {
-      menuItem = menuItem
-      .replace("${timestamp}",
-          msgMetaData.timestamp.split("T")[1].split("+")[0]);
-    } else {
-      menuItem = menuItem
-      .replace("${timestamp}", " ");
-    }
-    document.getElementById("sidebar-menu")
-    .appendChild(htmlToElement(menuItem));
+    .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
+  } else {
+    menuItem = menuItem
+    .replaceAll("${menuInfoString}", " ");
+  }
+  if (msgMetaData.timestamp != null) {
+    menuItem = menuItem
+    .replace("${timestamp}",
+        msgMetaData.timestamp.split("T")[1].split("+")[0]);
+  } else {
+    menuItem = menuItem
+    .replace("${timestamp}", " ");
+  }
+  document.getElementById("sidebar-menu")
+  .appendChild(htmlToElement(menuItem));
 
-    if (msgMetaData.sender != null) {
-      const foundSender = Array.from(senders).find(msg => {
-        return msg === msgMetaData.sender;
-      });
-      if (foundSender == null) {
-        senders.push(msgMetaData.sender);
-      }
+  if (msgMetaData.sender != null) {
+    const foundSender = Array.from(senders).find(msg => {
+      return msg === msgMetaData.sender;
+    });
+    if (foundSender == null) {
+      senders.push(msgMetaData.sender);
     }
-    if (msgMetaData.recipient != null) {
-      const foundReceiver = Array.from(receivers).find(msg => {
-        return msg === msgMetaData.recipient;
-      });
-      if (foundReceiver == null) {
-        receivers.push(msgMetaData.recipient);
-      }
+  }
+  if (msgMetaData.recipient != null) {
+    const foundReceiver = Array.from(receivers).find(msg => {
+      return msg === msgMetaData.recipient;
+    });
+    if (foundReceiver == null) {
+      receivers.push(msgMetaData.recipient);
     }
+  }
 }
 
 function updateMessageList(json) {
-  if (json.metaMsgList.length === 0) {
-    return;
+  updatePageSelector(json.pagesAvailable);
+  for (htmlMsg of json.htmlMsgList) {
+    addMessageToMainView(htmlMsg, metaMsg.sequenceNumber + 1);
   }
-  let i = 0;
-  while (i < json.htmlMsgList.length) {
-    addSingleMessage(json.metaMsgList[i], json.htmlMsgList[i]);
-    i = i + 1;
+  for (metaMsg of json.metaMsgList) {
+    addMessageToMenu(metaMsg);
   }
-  lastUuid = json.metaMsgList[json.metaMsgList.length - 1].uuid;
+  if (json.metaMsgList.length > 0) {
+    lastUuid = json.metaMsgList[json.metaMsgList.length - 1].uuid;
+  }
 
   enableCardToggles();
   enableModals();
-  if (!scrollLock) {
-    const sidebar = getAll('.menu')[0];
-    const msgListDiv = sidebar.nextElementSibling;
-    sidebar.children[sidebar.children.length - 1].scrollIntoView(
-        {behaviour: "smooth", block: "end"});
-    if (msgListDiv.children[msgListDiv.children.length - 1] !== undefined) {
-      msgListDiv.children[msgListDiv.children.length - 1].scrollIntoView(
-          {behaviour: "smooth", block: "end"});
-    }
-  }
 }
 
 function getRoutes() {
@@ -1061,3 +1084,67 @@ function addRoute() {
 function testActivateNoSystemExitOnQuit() {
   testQuitParam = '?noSystemExit=true';
 }
+
+function setPageSize(newSize) {
+  pageSize = newSize;
+  pageNumber = 0;
+  document.getElementById("pageSizeDisplay").textContent =
+      "Page size " + newSize;
+  closeAllDropdowns();
+  resetAllReceivedMessages();
+  pollMessages();
+}
+
+function setPageNumber(newPageNumber) {
+  pageNumber = newPageNumber;
+  document.getElementById("pageNumberDisplay").textContent =
+      "Page " + (newPageNumber + 1);
+  closeAllDropdowns();
+  resetAllReceivedMessages();
+  pollMessages();
+}
+
+function updatePageSelector(pagesAvailable) {
+  let selector = document.getElementById("pageSelector");
+  let selectorInnerHtml = '';
+  for (let i = 0; i < pagesAvailable; i++) {
+    selectorInnerHtml +=
+        '<a class="dropdown-item" onclick="event.stopPropagation(); setPageNumber(' + i + ');">'
+        + (i + 1)
+        + '</a>';
+  }
+  selector.innerHTML = selectorInnerHtml;
+}
+
+function scrollToMessage(uuid, sequenceNumber) {
+//    const sidebar = getAll('.menu')[0];
+  if ((sequenceNumber < pageNumber * pageSize)
+      || (sequenceNumber > (pageNumber + 1) * pageSize)) {
+    setPageNumber(Math.ceil(sequenceNumber / pageSize) - 1)
+  }
+
+  let elements = document.getElementsByName(uuid);
+  if (elements.length > 0) {
+    elements[0].scrollIntoView({behaviour: "smooth", alignToTop: true});
+  }
+}
+
+function addDropdownClickListener(el) {
+  el.addEventListener('click', function(e) {
+    e.stopPropagation();
+    el.classList.toggle('is-active');
+  });
+}
+
+document.addEventListener('keydown', function (event) {
+  let e = event || window.event;
+  if (e.key === 'Esc' || e.key === 'Escape') {
+    closeAllDropdowns();
+  }
+});
+
+document.addEventListener('click', function(e) {
+  closeAllDropdowns();
+});
+
+document.onr
