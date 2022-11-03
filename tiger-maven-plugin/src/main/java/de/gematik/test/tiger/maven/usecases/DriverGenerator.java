@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.maven.usecases;
 
+import static de.gematik.test.tiger.maven.adapter.mojos.GenerateDriverMojo.DEFAULT_TAGS;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
@@ -73,9 +75,7 @@ public class DriverGenerator {
         final String currentDriverClassName = driverClassName.replace(COUNTER_REPLACEMENT_TOKEN,
             String.format("%03d", ctr));
 
-        final String driverSourceCode = driverClassSourceCode(ctr, featurePath,
-            currentDriverClassName);
-
+        final String driverSourceCode = driverClassSourceCode(ctr, featurePath, currentDriverClassName);
         write(currentDriverClassName, driverSourceCode);
     }
 
@@ -84,12 +84,14 @@ public class DriverGenerator {
         final String packageLine = StringUtils.isBlank(
             driverPackage) ? "" : "package " + driverPackage + ";\n";
         log.info("    '" + featurePath + "'");
+        String tagsFilter = Optional.ofNullable(System.getenv("cucumber.filter.tags")).orElse(DEFAULT_TAGS);
         return getTemplate().replace(COUNTER_REPLACEMENT_TOKEN,
                 String.valueOf(ctr))
             .replace("${package}", packageLine)
             .replace("${driverClassName}", currentDriverClassName)
             .replace("${feature}", featurePath.replace("\\", "/"))
-            .replace("${glues}", commaseparatedGlues);
+            .replace("${glues}", commaseparatedGlues)
+            .replace("${tags}", tagsFilter);
     }
 
     private void write(final String currentDriverClassName, final String driverSourceCode)

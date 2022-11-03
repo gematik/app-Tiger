@@ -8,6 +8,6 @@ import org.junit.runner.RunWith;
     features = {"${feature}"},
     plugin = {"json:target/cucumber-parallel/${ctr}.json", "de.gematik.test.tiger.TigerCucumberListener"},
     glue = { ${glues} },
-    tags = "not @Ignore")
+    tags = "${tags}")
 public class ${driverClassName} {
 }

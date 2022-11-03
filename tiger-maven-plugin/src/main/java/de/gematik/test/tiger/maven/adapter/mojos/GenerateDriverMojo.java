@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,6 +34,8 @@ import org.apache.maven.project.MavenProject;
 @EqualsAndHashCode(callSuper = true)
 @Mojo(name = "generate-drivers", defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES)
 public class GenerateDriverMojo extends AbstractMojo {
+
+    public static final String DEFAULT_TAGS = "not @Ignore";
 
     /**
      * Skip running this plugin. Default is false.
@@ -131,6 +134,7 @@ public class GenerateDriverMojo extends AbstractMojo {
             getLog().info("Using base dir: " + featuresDir);
             getLog().info("Using build dir: " + targetFolder);
             getLog().debug("Using glues:" + String.join(", ", glues));
+            getLog().debug("Using tags:" + Optional.ofNullable(System.getenv("cucumber.filter.tags")).orElse(DEFAULT_TAGS));
 
             final List<String> files = fileSelector.listIncludes(featuresDir,
                 includes,
