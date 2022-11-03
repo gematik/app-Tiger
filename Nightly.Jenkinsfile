@@ -31,7 +31,7 @@ pipeline {
 
         stage('set Version') {
             steps {
-                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH)
+                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH, true, "", false)
             }
         }
 
