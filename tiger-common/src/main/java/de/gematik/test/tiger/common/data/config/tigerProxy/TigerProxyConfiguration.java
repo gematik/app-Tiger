@@ -62,6 +62,8 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private boolean activateVauAnalysis = false;
     @Builder.Default
+    private boolean rewriteHostHeader = false;
+    @Builder.Default
     private TrafficEndpointConfiguration trafficEndpointConfiguration = new TrafficEndpointConfiguration();
     @Builder.Default
     private List<RbelModificationDescription> modifications = new ArrayList<>();

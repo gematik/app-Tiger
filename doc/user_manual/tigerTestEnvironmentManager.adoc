@@ -648,6 +648,8 @@ tigerProxy:
   # This will share the WebUI-Resources (various CSS-files) from the Tiger Proxy
   # locally, thus enabling usage when no internet connection exists
   localResources: true
+  # When active the host-headers are rewritten even for a reverse-proxy-route
+  rewriteHostHeader: true
 
   tls:
     # Can be used to define a CA-Identity to be used with TLS. The Tiger Proxy will
