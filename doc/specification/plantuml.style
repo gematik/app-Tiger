@@ -78,3 +78,5 @@ interface {
     BackgroundColor White
 }
 </style>
+
+skinparam ActivityBarColor lightgreen

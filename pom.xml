@@ -84,14 +84,14 @@
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
 
-        <version.assertj>3.22.0</version.assertj>
-        <version.awaitility>4.1.0</version.awaitility>
+        <version.assertj>3.23.1</version.assertj>
+        <version.awaitility>4.2.0</version.awaitility>
         <version.bouncycastle>1.71</version.bouncycastle>
         <version.commons-io>2.11.0</version.commons-io>
         <version.commons-lang3>3.12.0</version.commons-lang3>
-        <version.cucumber>7.4.1</version.cucumber>
+        <version.cucumber>7.8.1</version.cucumber>
         <version.datatable>7.8.1</version.datatable>
-        <version.gson>2.9.1</version.gson>
+        <version.gson>2.10</version.gson>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jackson>2.13.4</version.jackson>
         <version.javaparser>3.24.2</version.javaparser>
@@ -104,12 +104,12 @@
         <version.maven.surefire>3.0.0-M7</version.maven.surefire>
         <version.maven-plugin-tools>3.6.4</version.maven-plugin-tools>
         <version.mockserver>5.14.1-PREVIEW</version.mockserver>
-        <version.serenity.core>3.3.4</version.serenity.core>
-        <version.serenity.maven.plugin>3.3.4</version.serenity.maven.plugin>
+        <version.serenity.core>3.3.10</version.serenity.core>
+        <version.serenity.maven.plugin>3.3.10</version.serenity.maven.plugin>
         <version.slf4j>1.7.32</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
-        <version.spring>5.3.22</version.spring>
-        <version.spring-boot>2.7.0</version.spring-boot>
+        <version.spring>5.3.23</version.spring>
+        <version.spring-boot>2.7.5</version.spring-boot>
         <version.system-lambda>1.2.1</version.system-lambda>
         <version.wiremock>2.34.0</version.wiremock>
 

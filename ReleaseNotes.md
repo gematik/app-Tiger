@@ -3,12 +3,12 @@
 -------
 # Release 1.0.0
 
-* Serenity BDD 3.3.4
+* Serenity BDD 3.3.8
 * Cucumber 7.4.1
-* RestAssured 5.1.1
-* Selenium 4.4.0
+* RestAssured 5.2.0
+* Selenium 4.5.2
 * Appium 8.1.1
-* Spring Boot 2.7.0
+* Spring Boot 2.7.5
 
 ## Features
 

@@ -251,23 +251,23 @@ class TestTigerDirector {
                     ).isEqualTo(0)));
     }
 
+    /*
+    * see doc/specification/TigerTestEnvWaitForQuit.puml
+    */
     @Test
     void testQuitTestRunViaWorkFlowUi() throws Exception {
+        TigerDirector.start();
+        EnvStatusController envStatusController = new EnvStatusController(
+            TigerDirector.getTigerTestEnvMgr());
+        TigerDirector.getLibConfig().activateWorkflowUi = true;
+
         withTextFromSystemIn("quit\n")
             .execute(() ->
                 executeWithSecureShutdown(() ->
                     assertThat(catchSystemExit(() -> {
-                        TigerDirector.start();
-                        EnvStatusController envStatusController = new EnvStatusController(
-                            TigerDirector.getTigerTestEnvMgr());
-                        TigerDirector.getLibConfig().activateWorkflowUi = true;
                         new Thread(TigerDirector::waitForQuit).start();
-
-                        await().atMost(4, TimeUnit.SECONDS)
-                            .until(() -> {
-                                envStatusController.getConfirmQuit();
-                                return false;
-                            });
+                        envStatusController.getConfirmQuit();
+                        Thread.sleep(600); // Director polls at 200ms so give it time to system exit
                     })).isEqualTo(0)));
     }
 

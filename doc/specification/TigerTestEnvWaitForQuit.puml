@@ -1,0 +1,31 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+!include plantuml.style
+
+start
+
+:TigerDirector.start();
+:activate workflow ui via flag;
+group SystemLambda.catchSystemExit() {
+    fork
+        group TigerDirector.waitForQuit() {
+            if (workflow ui active) then
+                #lightgreen:wait for user\nacknowledgment flag\n to be set;
+                :System.exit();
+            else
+                #orange:#waitForConsoleInput();
+                #orange:System.exit();
+            endif
+        }
+    fork again
+      :sleep(600);
+      #lightgreen:envStatusController.getConfirmQuit()
+
+      //sets the user acknowledgemnet flag//;
+      :sleep(600);
+    end fork
+}
+stop
+
+@enduml
