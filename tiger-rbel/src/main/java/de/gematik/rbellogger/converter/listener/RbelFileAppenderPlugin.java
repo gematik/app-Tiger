@@ -4,12 +4,12 @@
 
 package de.gematik.rbellogger.converter.listener;
 
-import static de.gematik.rbellogger.util.RbelFileWriterUtils.convertToRbelFileString;
 import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.util.RbelFileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,9 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 public class RbelFileAppenderPlugin implements RbelConverterPlugin {
 
     private final RbelFileSaveInfo fileSaveInfo;
+    private final RbelFileWriter rbelFileWriter;
 
-    public RbelFileAppenderPlugin(RbelFileSaveInfo fileSaveInfo) {
+    public RbelFileAppenderPlugin(RbelFileSaveInfo fileSaveInfo, RbelConverter rbelConverter) {
         this.fileSaveInfo = fileSaveInfo;
+        this.rbelFileWriter = new RbelFileWriter(rbelConverter);
         if (fileSaveInfo.isWriteToFile()
             && StringUtils.isNotEmpty(fileSaveInfo.getFilename())
             && fileSaveInfo.isClearFileOnBoot()) {
@@ -38,7 +40,7 @@ public class RbelFileAppenderPlugin implements RbelConverterPlugin {
             && rbelElement.hasFacet(RbelTcpIpMessageFacet.class)) {
             try {
                 FileUtils.writeStringToFile(new File(fileSaveInfo.getFilename()),
-                    convertToRbelFileString(rbelElement), StandardCharsets.UTF_8, true);
+                    rbelFileWriter.convertToRbelFileString(rbelElement), StandardCharsets.UTF_8, true);
             } catch (IOException e) {
                 throw new RuntimeException("Exception while trying to save RbelElement to file '" + fileSaveInfo.getFilename() + "'!", e);
             }

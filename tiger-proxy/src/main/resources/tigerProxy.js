@@ -920,9 +920,9 @@ function addMessageToMainView(msgHtmlData) {
   let span = getAll(".msg-sequence", reqEl)[0];
   if (span != null) {
     span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
-    span.textContent = msgHtmlData.sequenceNumber;
+    span.textContent = msgHtmlData.sequenceNumber + 1;
   }
-    addQueryBtn(reqEl);
+  addQueryBtn(reqEl);
   listDiv.appendChild(reqEl);
   if (!scrollLock) {
     reqEl.scrollIntoView({behaviour: "smooth", alignToTop: true});
@@ -1090,7 +1090,7 @@ function setPageSize(newSize) {
   pageSize = newSize;
   pageNumber = 0;
   document.getElementById("pageSizeDisplay").textContent =
-      "Page size " + newSize;
+      "Size " + newSize;
   closeAllDropdowns();
   resetAllReceivedMessages();
   pollMessages();

@@ -5,7 +5,7 @@
 package de.gematik.rbellogger.captures;
 
 import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
+import de.gematik.rbellogger.util.RbelFileWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import lombok.Builder;
@@ -23,7 +23,8 @@ public class RbelFileReaderCapturer extends RbelCapturer {
     @Override
     public RbelCapturer initialize() {
         try {
-            RbelFileWriterUtils.convertFromRbelFile(Paths.get(rbelFile), getRbelConverter());
+            new RbelFileWriter(getRbelConverter())
+                .convertFromRbelFile(Paths.get(rbelFile));
             return this;
         } catch (UncheckedIOException e) {
             throw new RbelFileIoException("Error while reading from rbel-file with path '" + rbelFile + "'", e);

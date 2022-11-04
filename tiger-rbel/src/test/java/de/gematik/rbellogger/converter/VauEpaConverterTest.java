@@ -20,7 +20,6 @@ import de.gematik.rbellogger.key.RbelVauKey;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import j2html.tags.ContainerTag;
 import java.io.File;
 import java.io.IOException;
@@ -108,10 +107,11 @@ public class VauEpaConverterTest {
     void parseAnotherLogFile() throws IOException {
         RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false)
-            .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
-
-        String rawSavedVauMessages = FileUtils.readFileToString(new File("src/test/resources/trafficLog.tgr"));
-        RbelFileWriterUtils.convertFromRbelFile(rawSavedVauMessages, epa2Logger.getRbelConverter());
+            .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+            .addCapturer(RbelFileReaderCapturer.builder()
+                .rbelFile("src/test/resources/trafficLog.tgr")
+                .build()));
+        epa2Logger.getRbelCapturer().initialize();
 
         assertThat(epa2Logger.getMessageList().get(9)
             .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()
@@ -124,11 +124,11 @@ public class VauEpaConverterTest {
     void parseIbmLogFile() throws IOException {
         RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false)
-            .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
-
-        String rawSavedVauMessages = FileUtils.readFileToString(new File("src/test/resources/mtomVauTraffic.tgr"));
-
-        RbelFileWriterUtils.convertFromRbelFile(rawSavedVauMessages, epa2Logger.getRbelConverter());
+            .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+            .addCapturer(RbelFileReaderCapturer.builder()
+                .rbelFile("src/test/resources/mtomVauTraffic.tgr")
+                .build()));
+        epa2Logger.getRbelCapturer().initialize();
 
         assertThat(epa2Logger.getMessageList().get(5)
             .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()

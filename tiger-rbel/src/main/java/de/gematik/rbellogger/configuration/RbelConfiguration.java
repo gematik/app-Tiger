@@ -40,7 +40,6 @@ public class RbelConfiguration {
     private RbelCapturer capturer;
     @Builder.Default
     private boolean activateAsn1Parsing = true;
-    private RbelFileSaveInfo fileSaveInfo;
     @Builder.Default
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
@@ -50,11 +49,6 @@ public class RbelConfiguration {
 
     public RbelConfiguration addPostConversionListener(RbelConverterPlugin listener) {
         postConversionListener.add(listener);
-        return this;
-    }
-
-    public RbelConfiguration withFileSaveInfo(RbelFileSaveInfo fileSaveInfo) {
-        this.fileSaveInfo = fileSaveInfo;
         return this;
     }
 

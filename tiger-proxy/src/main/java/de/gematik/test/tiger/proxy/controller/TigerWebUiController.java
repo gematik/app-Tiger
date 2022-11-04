@@ -12,7 +12,6 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
@@ -111,7 +110,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         final String result = filteredMessages.stream()
             .limit(actualPageSize)
-            .map(RbelFileWriterUtils::convertToRbelFileString)
+            .map(tigerProxy.getRbelFileWriter()::convertToRbelFileString)
             .collect(Collectors.joining("\n\n"));
 
         if (!result.isEmpty()) {
@@ -333,7 +332,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         .attr("aria-haspopup", "true")
                                         .attr("aria-controls", "dropdown-menu")
                                         .with(
-                                            span().withId("pageSizeDisplay").withText("Page Size"),
+                                            span().withId("pageSizeDisplay").withText("Size"),
                                             span().withClass("icon is-small").with(
                                                 i().withClass("fas fa-angle-down").attr("aria-hidden", "true")
                                             )
@@ -654,7 +653,6 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @PostMapping(value = "/traffic")
     public void importTrafficFromFile(@RequestBody String rawTraffic) {
-        RbelFileWriterUtils.convertFromRbelFile(
-            rawTraffic, tigerProxy.getRbelLogger().getRbelConverter());
+        tigerProxy.getRbelFileWriter().convertFromRbelFile(rawTraffic);
     }
 }

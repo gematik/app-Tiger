@@ -10,13 +10,14 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
+import de.gematik.rbellogger.util.RbelFileWriter;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -32,6 +33,7 @@ import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
 import lombok.Getter;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +45,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         "7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx\n" +
         "9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==\n" +
         "-----END PRIVATE KEY-----\n";
+    private static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
     private final TigerProxyConfiguration tigerProxyConfiguration;
     private RbelLogger rbelLogger;
+    private RbelFileWriter rbelFileWriter;
     private Optional<String> name;
     @Getter
     protected final org.slf4j.Logger log;
@@ -70,6 +74,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
             this.rbelLogger.getRbelConverter().removeAllConverterPlugins();
         }
         addFixVauKey();
+        initializeFileWriter();
         this.tigerProxyConfiguration = configuration;
         if (configuration.getFileSaveInfo() != null
             && StringUtils.isNotEmpty(configuration.getFileSaveInfo().getSourceFile())) {
@@ -77,13 +82,40 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         }
     }
 
+    private void initializeFileWriter() {
+        rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
+        rbelFileWriter.preSaveListener.add((el, json) ->
+            el.getFacet(TracingMessagePairFacet.class)
+                .filter(pairFacet -> pairFacet.getResponse().equals(el))
+                .ifPresent(pairFacet -> json.put(
+                    PAIRED_MESSAGE_UUID,
+                    pairFacet.getRequest().getUuid())));
+
+    }
+
     protected void readTrafficFromSourceFile(String sourceFile) {
         new Thread(() -> {
             log.info("Trying to read traffic from file '{}'...", sourceFile);
             try {
-                RbelFileWriterUtils.convertFromRbelFile(
-                    Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8),
-                    getRbelLogger().getRbelConverter());
+                rbelFileWriter.postConversionListener.add((el, conv, json) -> {
+                    if (json.has(PAIRED_MESSAGE_UUID)) {
+                        final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
+                        for (var it = conv.getMessageHistory().descendingIterator(); it.hasNext(); ) {
+                            final RbelElement element = it.next();
+                            if (element.getUuid().equals(partnerUuid)) {
+                                final TracingMessagePairFacet pairFacet = TracingMessagePairFacet.builder()
+                                    .response(el)
+                                    .request(element)
+                                    .build();
+                                el.addFacet(pairFacet);
+                                element.addFacet(pairFacet);
+                                break;
+                            }
+                        }
+                    }
+                });
+                rbelFileWriter.convertFromRbelFile(
+                    Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -108,7 +140,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         rbelLogger.getRbelKeyManager().addKey(rbelPrivateVauKey);
     }
 
-    private static  RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
+    private RbelConfiguration buildRbelLoggerConfiguration(TigerProxyConfiguration configuration) {
         final RbelConfiguration rbelConfiguration = new RbelConfiguration();
         if (configuration.getKeyFolders() != null) {
             configuration.getKeyFolders()
@@ -117,13 +149,35 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         if (configuration.isActivateVauAnalysis()) {
             rbelConfiguration.addPostConversionListener(new RbelVauSessionListener());
         }
-        rbelConfiguration.setFileSaveInfo(Optional.ofNullable(configuration.getFileSaveInfo())
-            .map(TigerFileSaveInfo::toRbelFileSaveInfo)
-            .orElse(null));
+        initializeFileSaver(configuration);
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
         rbelConfiguration.setRbelBufferSizeInMb(configuration.getRbelBufferSizeInMb());
         rbelConfiguration.setManageBuffer(true);
         return rbelConfiguration;
+    }
+
+    private void initializeFileSaver(TigerProxyConfiguration configuration) {
+        if (configuration.getFileSaveInfo() != null && configuration.getFileSaveInfo().isWriteToFile()) {
+            if (configuration.getFileSaveInfo().isClearFileOnBoot() &&
+                new File(configuration.getFileSaveInfo().getFilename()).exists()) {
+                try {
+                    FileUtils.delete(new File(configuration.getFileSaveInfo().getFilename()));
+                } catch (IOException e) {
+                    throw new TigerProxyStartupException("Error while deleting file on startup '"
+                        + configuration.getFileSaveInfo().getFilename() + "'");
+                }
+            }
+            addRbelMessageListener(msg -> {
+                final String msgString = rbelFileWriter.convertToRbelFileString(msg);
+                try {
+                    FileUtils.writeStringToFile(new File(configuration.getFileSaveInfo().getFilename()), msgString,
+                        StandardCharsets.UTF_8, true);
+                } catch (IOException e) {
+                    log.warn("Error while saving to file '"
+                        + configuration.getFileSaveInfo().getFilename() + "':", e);
+                }
+            });
+        }
     }
 
     @Override

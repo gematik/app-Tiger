@@ -20,6 +20,7 @@
 * TGR-664: WebUi: Copies body of response via click on button
 * TGR-694: JSON-Arrays can now be used as root-objects in JsonChecker-Assertions
 * TGR-525: Rbel moved into Tiger
+* TGR-710: FileWriter now saves Pairing Information
 * TGR-688: /rbel endpoint removed from Tiger Proxy
 * TGR-687: Rbel-Namespace extended (lastRequest/lastMessage/getValueAtLocationAsString)
 * TGR-701: Paged view added to Tiger Proxy WebUI

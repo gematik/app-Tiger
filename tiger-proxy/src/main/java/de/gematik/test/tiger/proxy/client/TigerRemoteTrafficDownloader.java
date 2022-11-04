@@ -6,7 +6,6 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.HashMap;
@@ -48,8 +47,8 @@ public class TigerRemoteTrafficDownloader {
     }
 
     private void parseTrafficChunk(String rawTraffic) {
-        final List<RbelElement> convertedMessages = RbelFileWriterUtils.convertFromRbelFile(
-            rawTraffic, getRbelLogger().getRbelConverter());
+        final List<RbelElement> convertedMessages = tigerRemoteProxyClient.getRbelFileWriter()
+            .convertFromRbelFile(rawTraffic);
         final long count = rawTraffic.lines().count();
         convertedMessages.forEach(msg -> msg.addFacet(new TigerDownloadedMessageFacet()));
         for (int i = 0; i < convertedMessages.size(); i += 2) {

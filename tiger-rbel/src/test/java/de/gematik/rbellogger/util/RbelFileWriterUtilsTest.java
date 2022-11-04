@@ -4,15 +4,13 @@
 
 package de.gematik.rbellogger.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.io.IOException;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Test;
 
 class RbelFileWriterUtilsTest {
 
@@ -20,12 +18,13 @@ class RbelFileWriterUtilsTest {
     public void readFileTwice_shouldOnlyReadMsgsOnceBasedOnUuid() throws IOException {
         RbelLogger rbelLogger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false));
+        var rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
 
         String rawSavedVauMessages = FileUtils.readFileToString(new File("src/test/resources/trafficLog.tgr"));
-        RbelFileWriterUtils.convertFromRbelFile(rawSavedVauMessages, rbelLogger.getRbelConverter());
+        rbelFileWriter.convertFromRbelFile(rawSavedVauMessages);
 
         int initialNumberOfMessage = rbelLogger.getMessageHistory().size();
-        RbelFileWriterUtils.convertFromRbelFile(rawSavedVauMessages, rbelLogger.getRbelConverter());
+        rbelFileWriter.convertFromRbelFile(rawSavedVauMessages);
 
         assertThat(rbelLogger.getMessageHistory().size())
             .isEqualTo(initialNumberOfMessage);

@@ -17,11 +17,11 @@ import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 
-public class JweConverterTest {
+class JweConverterTest {
 
     @Test
     @SneakyThrows
-    public void shouldConvertJwe() {
+    void shouldConvertJwe() {
         final RbelLogger rbelConverter = RbelLogger.build(new RbelConfiguration()
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
             .addCapturer(RbelFileReaderCapturer.builder()

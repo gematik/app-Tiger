@@ -11,7 +11,6 @@ import de.gematik.rbellogger.converter.RbelBundleCriterion;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelValueShader;
 import de.gematik.rbellogger.converter.listener.RbelBundledMessagesPlugin;
-import de.gematik.rbellogger.converter.listener.RbelFileAppenderPlugin;
 import de.gematik.rbellogger.converter.listener.RbelJwkReader;
 import de.gematik.rbellogger.converter.listener.RbelX5cKeyReader;
 import de.gematik.rbellogger.data.RbelElement;
@@ -71,10 +70,6 @@ public class RbelLogger {
         rbelConverter.getRbelKeyManager().addAll(configuration.getKeys());
         if (configuration.isActivateAsn1Parsing()) {
             rbelConverter.addConverter(new RbelAsn1Converter());
-        }
-
-        if (configuration.getFileSaveInfo() != null) {
-            rbelConverter.addPostConversionListener(new RbelFileAppenderPlugin(configuration.getFileSaveInfo()));
         }
 
         rbelConverter.addPostConversionListener(new RbelBundledMessagesPlugin());
