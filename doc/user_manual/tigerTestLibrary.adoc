@@ -288,13 +288,14 @@ To use this feature the scenarios need a minimal set of annotations:
 
 * **@TCID:XXXXX** ... Mandatory - an unique test case identifier, where XXXXX matches the value of the custom field "cfInternalId" in Polarion
 * **@Product:PPPPP** ... Mandatory - reference to the custom field "cfProductType". As the value most likely is identical for all scenarios you may attach this annotation also to the feature.
-* **@PRIO:N** .... Mandatory - priority number (1-3)
+* **@PRIO:N** .... Mandatory - priority number (1-4)
 * and the following optional annotations:
 ** @Ready ... sets status of test case to "Implemented". If not set defaults to "In progress"
 ** @Negative ... reference to the custom field "cfNegPosTF". If not set defaults to be "Positive"
 ** @manual ... to mark the test case as being manually executed. If not set defaults to "Automatic"
-** @Afo:AAAAA ... a link to a defined requirement in Polarion, where AAAAA matches the custom field "cfAfoId"
+** @Afo:AAAAA ... a link to a defined requirement (Anforderung) in Polarion, where AAAAA matches the custom field "cfAfoId"
+** @AF-ID:AAAAA ... a link to a defined requirement (Anwendungsfall) in Polarion, where AAAAA matches the custom field "cfAfId"
 
 If a scenario is identified that has no test case with a matching TCID, it will be created automatically in the sync run. Background blocks will be merged to each scenario before exporting its steps to Polarion.
 
-For more details on how to perform the synchronisation and how to also upload generated test run reports to Polarion and Aurora, please check the PolarionToolbox project on the Gematik GitLab.
+For more details on how to perform the synchronisation and how to also upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.
