@@ -94,7 +94,7 @@ public class RbelFileWriter {
     private Optional<RbelElement> parseFileObject(JSONObject messageObject) {
         try {
             final String msgUuid = messageObject.optString(MESSAGE_UUID);
-            if (new ArrayList<>(rbelConverter.getMessageHistory()).stream()
+            if (rbelConverter.getMessageHistory().stream()
                 .anyMatch(msg -> msg.getUuid().equals(msgUuid))) {
                 return Optional.empty();
             }

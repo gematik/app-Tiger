@@ -62,7 +62,7 @@ import org.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import org.mockserver.socket.tls.NettySslContextFactory;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     public static final TigerPkiIdentity DEFAULT_CA_IDENTITY = new TigerPkiIdentity(

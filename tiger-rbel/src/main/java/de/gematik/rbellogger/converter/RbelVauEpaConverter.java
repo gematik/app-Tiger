@@ -25,7 +25,9 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
 
     @Override
     public void consumeElement(RbelElement element, RbelConverter context) {
-        log.trace("Trying to decipher '{}'...", element.getRawStringContent());
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to decipher '{}'...", element.getRawStringContent());
+        }
         tryToExtractRawVauContent(element)
             .flatMap(content -> decipherVauMessage(content, context, element))
             .ifPresent(vauMsg -> {
@@ -75,7 +77,9 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
             }
             if (decryptedBytes.isPresent()) {
                 try {
-                    log.trace("Succesfully deciphered VAU message! ({})", new String(decryptedBytes.get()));
+                    if (log.isTraceEnabled()) {
+                        log.trace("Succesfully deciphered VAU message! ({})", new String(decryptedBytes.get()));
+                    }
                     return buildVauMessageFromCleartext(converter, splitVauMessage, decryptedBytes.get(),
                         parentNode, rbelKey);
                 } catch (RuntimeException e) {

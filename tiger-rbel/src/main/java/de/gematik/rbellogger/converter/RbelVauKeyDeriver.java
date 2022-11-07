@@ -62,7 +62,9 @@ public class RbelVauKeyDeriver implements RbelConverterPlugin {
             if (privateKey.isEmpty()) {
                 continue;
             }
-            log.debug("Trying key derivation with {}...", rbelKey.getKeyName());
+            if (log.isDebugEnabled()) {
+                log.debug("Trying key derivation with {}...", rbelKey.getKeyName());
+            }
             final List<RbelKey> derivedKeys = keyDerivation(otherSidePublicKey.get(), privateKey.get(), rbelKey);
             if (derivedKeys.isEmpty()) {
                 continue;
@@ -71,7 +73,9 @@ public class RbelVauKeyDeriver implements RbelConverterPlugin {
                 if (converter.getRbelKeyManager()
                     .findKeyByName(derivedKey.getKeyName())
                     .isEmpty()) {
-                    log.trace("Adding VAU key");
+                    if (log.isTraceEnabled()) {
+                        log.trace("Adding VAU key");
+                    }
                     converter.getRbelKeyManager().addKey(derivedKey);
                 }
             }
@@ -108,13 +112,19 @@ public class RbelVauKeyDeriver implements RbelConverterPlugin {
             if (!"brainpoolP256r1".equals(spec.getName())) {
                 return List.of();
             }
-            log.trace("Performing ECKA with {} and {}",
-                Base64.getEncoder().encodeToString(privateKey.getEncoded()),
-                Base64.getEncoder().encodeToString(otherSidePublicKey.getEncoded()));
+            if (log.isTraceEnabled()) {
+                log.trace("Performing ECKA with {} and {}",
+                    Base64.getEncoder().encodeToString(privateKey.getEncoded()),
+                    Base64.getEncoder().encodeToString(otherSidePublicKey.getEncoded()));
+            }
             byte[] sharedSecret = ecka(privateKey, otherSidePublicKey);
-            log.trace("shared secret: " + Hex.toHexString(sharedSecret));
+            if (log.isTraceEnabled()) {
+                log.trace("shared secret: " + Hex.toHexString(sharedSecret));
+            }
             byte[] keyId = hkdf(sharedSecret, KEY_ID, 256);
-            log.trace("keyID: " + Hex.toHexString(keyId));
+            if (log.isTraceEnabled()) {
+                log.trace("keyID: " + Hex.toHexString(keyId));
+            }
             return List.of(
                 mapToRbelKey(AES_256_GCM_KEY_CLIENT_TO_SERVER, "_client", keyId, sharedSecret, parentKey),
                 mapToRbelKey(AES_256_GCM_KEY_SERVER_TO_CLIENT, "_server", keyId, sharedSecret, parentKey),
@@ -126,7 +136,9 @@ public class RbelVauKeyDeriver implements RbelConverterPlugin {
 
     private RbelKey mapToRbelKey(String deriver, String suffix, byte[] keyId, byte[] sharedSecret, RbelKey parentKey) {
         var keyRawBytes = hkdf(sharedSecret, deriver, 256);
-        log.trace("symKey: {}", Hex.toHexString(keyRawBytes));
+        if (log.isTraceEnabled()) {
+            log.trace("symKey: {}", Hex.toHexString(keyRawBytes));
+        }
         return new RbelVauKey(new SecretKeySpec(keyRawBytes, "AES"),
             Hex.toHexString(keyId) + suffix, 0, parentKey);
     }

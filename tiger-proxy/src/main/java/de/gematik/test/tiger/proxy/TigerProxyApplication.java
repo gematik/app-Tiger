@@ -20,7 +20,6 @@ import javax.servlet.ServletContextListener;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -36,9 +35,6 @@ public class TigerProxyApplication implements ServletContextListener {
     @Getter
     private final ApplicationConfiguration applicationConfiguration;
     private TigerProxy tigerProxy;
-
-    @Autowired
-    private TigerProxyReference proxyReference;
 
     public static void main(String[] args) { //NOSONAR
         // Necessary hack to avoid mockserver activating java.util.logging - which would not work in combination
@@ -64,7 +60,6 @@ public class TigerProxyApplication implements ServletContextListener {
         tigerProxy = new TigerProxy(
             Objects.requireNonNullElseGet(applicationConfiguration,
                 TigerProxyConfiguration::new));
-        proxyReference.setProxy(tigerProxy);
         return tigerProxy;
     }
 
