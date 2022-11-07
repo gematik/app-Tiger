@@ -4,24 +4,21 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.util.CryptoUtils.decryptUnsafe;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
-
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static de.gematik.rbellogger.util.CryptoUtils.decrypt;
 
 @Slf4j
 public class RbelVauEpaConverter implements RbelConverterPlugin {
@@ -51,7 +48,9 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
         }
     }
 
-    private Optional<RbelVauEpaFacet> decipherVauMessage(byte[] content, RbelConverter converter, RbelElement parentNode) {
+    private Optional<RbelVauEpaFacet> decipherVauMessage(byte[] content, RbelConverter converter,
+        RbelElement parentNode) {
+        List<RbelNoteFacet> errorNotes = new ArrayList<>();
         final Optional<Pair<byte[], byte[]>> splitOptional = splitVauMessage(content);
         if (splitOptional.isEmpty()) {
             return Optional.empty();
@@ -63,8 +62,17 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
             .collect(Collectors.toList());
 
         for (RbelKey rbelKey : potentialVauKeys) {
-            Optional<byte[]> decryptedBytes = decrypt(splitVauMessage.getValue(), rbelKey.getKey(),
-                CryptoUtils.GCM_IV_LENGTH_IN_BYTES, CryptoUtils.GCM_TAG_LENGTH_IN_BYTES);
+            Optional<byte[]> decryptedBytes;
+            try {
+                decryptedBytes = Optional.ofNullable(decryptUnsafe(splitVauMessage.getValue(), rbelKey.getKey(),
+                    CryptoUtils.GCM_IV_LENGTH_IN_BYTES, CryptoUtils.GCM_TAG_LENGTH_IN_BYTES));
+            } catch (GeneralSecurityException e) {
+                errorNotes.add(RbelNoteFacet.builder()
+                    .style(NoteStyling.ERROR)
+                    .value("Error during decryption: " + e.getMessage())
+                    .build());
+                decryptedBytes = Optional.empty();
+            }
             if (decryptedBytes.isPresent()) {
                 try {
                     log.trace("Succesfully deciphered VAU message! ({})", new String(decryptedBytes.get()));
@@ -76,12 +84,30 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
                 }
             }
         }
+        if (potentialVauKeys.isEmpty()) {
+            errorNotes.add(RbelNoteFacet.builder()
+                .value("Found no matching key! (Was the handshake logged?) key-name: '"
+                    + Hex.toHexString(splitVauMessage.getKey()) + "'")
+                .style(NoteStyling.WARN)
+                .build());
+            errorNotes.add(RbelNoteFacet.builder()
+                .style(NoteStyling.INFO)
+                .value("Known keys: <br/>" +
+                    converter.getRbelKeyManager().getAllKeys()
+                        .map(RbelKey::getKeyName)
+                        .collect(Collectors.joining("<br/>")))
+                .build());
+        }
+        if (parentNode.getParentNode() != null
+            && parentNode.getParentNode().hasFacet(RbelHttpMessageFacet.class)) {
+            parentNode.addFacet(new RbelUndecipherableVauEpaFacet(errorNotes));
+        }
         return Optional.empty();
     }
 
     private Optional<RbelVauEpaFacet> buildVauMessageFromCleartext(RbelConverter converter,
-                                                                   Pair<byte[], byte[]> splitVauMessage,
-                                                                   byte[] decryptedBytes, RbelElement parentNode, RbelKey rbelKey) {
+        Pair<byte[], byte[]> splitVauMessage,
+        byte[] decryptedBytes, RbelElement parentNode, RbelKey rbelKey) {
         final String cleartextString = new String(decryptedBytes);
         if (cleartextString.startsWith("VAUClientSigFin")
             || cleartextString.startsWith("VAUServerFin")) {
@@ -99,7 +125,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
     }
 
     private RbelVauEpaFacet fromRaw(Pair<byte[], byte[]> payloadPair, RbelConverter converter,
-                                    byte[] decryptedBytes, RbelElement parentNode, RbelKey rbelKey) {
+        byte[] decryptedBytes, RbelElement parentNode, RbelKey rbelKey) {
         byte[] raw = new byte[decryptedBytes.length - 8 - 1];
         System.arraycopy(decryptedBytes, 8 + 1, raw, 0, raw.length);
 

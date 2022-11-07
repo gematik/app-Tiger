@@ -4,12 +4,23 @@
 
 package de.gematik.rbellogger.renderer;
 
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static j2html.TagCreator.*;
 import com.google.gson.*;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.*;
 import j2html.TagCreator;
 import j2html.tags.*;
+import j2html.tags.specialized.DivTag;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,19 +35,6 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.jsoup.Jsoup;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static j2html.TagCreator.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -83,11 +81,16 @@ public class RbelHtmlRenderingToolkit {
     public static List<DomContent> addNotes(final RbelElement el, final String... extraClasses) {
         final String className = StringUtils.join(extraClasses, " ");
         return el.getNotes().stream()
-            .map(note -> div(i().withText(note.getValue()))
-                .withClass(
-                    "is-family-primary has-text-weight-light m-3 " + className + " " + note.getStyle().toCssClass())
-                .withStyle("word-break: normal;"))
+            .map(note -> createNote(className, note))
             .collect(Collectors.toUnmodifiableList());
+    }
+
+    public static DivTag createNote(String className, RbelNoteFacet note) {
+        return div(i().with(new UnescapedText(note.getValue()
+            .replace("\n", "<br/>"))))
+            .withClass(
+                "is-family-primary has-text-weight-light m-3 " + className + " " + note.getStyle().toCssClass())
+            .withStyle("word-break: normal;");
     }
 
     public static EmptyTag link2CSS(final String url) {
@@ -124,11 +127,20 @@ public class RbelHtmlRenderingToolkit {
     }
 
     public ContainerTag convert(final RbelElement element) {
-        return convert(element, Optional.empty());
+        final ContainerTag elementTag = convert(element, Optional.empty());
+        return elementTag;
+    }
+
+    private static void addNotes(RbelElement element, ContainerTag elementTag) {
+        elementTag.with(element.getFacets().stream()
+            .filter(RbelNoteFacet.class::isInstance)
+            .map(RbelNoteFacet.class::cast)
+            .map(note -> div(i(note.getValue())).withClass(note.getStyle().toCssClass()))
+            .collect(Collectors.toList()));
     }
 
     public ContainerTag convert(final RbelElement element, final Optional<String> key) {
-        return convertUnforced(element, key)
+        final ContainerTag containerTag = convertUnforced(element, key)
             .orElseGet(() -> {
                 if (shouldRenderEntitiesWithSize(element.getRawContent().length)) {
                     if (element.hasFacet(RbelBinaryFacet.class)) {
@@ -140,6 +152,8 @@ public class RbelHtmlRenderingToolkit {
                     return span(RbelHtmlRenderer.buildOversizeReplacementString(element));
                 }
             });
+        addNotes(element, containerTag);
+        return containerTag;
     }
 
     private String performElementToTextConversion(final RbelElement el) {
@@ -307,7 +321,7 @@ public class RbelHtmlRenderingToolkit {
     }
 
     public JsonElement shadeJson(final JsonElement input, final Optional<String> key,
-                                 final RbelElement originalElement) {
+        final RbelElement originalElement) {
         if (input.isJsonPrimitive()) {
             final JsonElement jsonElement = rbelHtmlRenderer.getRbelValueShader().shadeValue(input, key)
                 .map(shadedValue -> (JsonElement) new JsonPrimitive(StringEscapeUtils.escapeHtml4(shadedValue)))

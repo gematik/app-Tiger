@@ -58,15 +58,20 @@ public class CryptoUtils {
     public static Optional<byte[]> decrypt(byte[] encMessage, Key secretKey, int gcmIvLengthInBytes,
         int gcmTagLengthInBytes) {
         try {
-            byte[] iv = Arrays.copyOfRange(encMessage, 0, gcmIvLengthInBytes);
-            byte[] cipherText = Arrays.copyOfRange(encMessage, GCM_IV_LENGTH_IN_BYTES, encMessage.length);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", BOUNCY_CASTLE_PROVIDER);//NOSONAR
-
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(gcmTagLengthInBytes * 8, iv));
-
-            return Optional.ofNullable(cipher.doFinal(cipherText));
-        } catch (Exception e) {
+            return Optional.ofNullable(decryptUnsafe(encMessage, secretKey, gcmIvLengthInBytes, gcmTagLengthInBytes));
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             return Optional.empty();
         }
+    }
+
+    public static byte[] decryptUnsafe(byte[] encMessage, Key secretKey, int gcmIvLengthInBytes,
+        int gcmTagLengthInBytes) throws GeneralSecurityException {
+        byte[] iv = Arrays.copyOfRange(encMessage, 0, gcmIvLengthInBytes);
+        byte[] cipherText = Arrays.copyOfRange(encMessage, GCM_IV_LENGTH_IN_BYTES, encMessage.length);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", BOUNCY_CASTLE_PROVIDER);//NOSONAR
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(gcmTagLengthInBytes * 8, iv));
+
+        return cipher.doFinal(cipherText);
     }
 }
