@@ -131,29 +131,29 @@ public class RbelHtmlRenderingToolkit {
         return elementTag;
     }
 
-    private static void addNotes(RbelElement element, ContainerTag elementTag) {
+    private static ContainerTag addNotes(RbelElement element, ContainerTag elementTag) {
         elementTag.with(element.getFacets().stream()
             .filter(RbelNoteFacet.class::isInstance)
             .map(RbelNoteFacet.class::cast)
             .map(note -> div(i(note.getValue())).withClass(note.getStyle().toCssClass()))
             .collect(Collectors.toList()));
+        return elementTag;
     }
 
     public ContainerTag convert(final RbelElement element, final Optional<String> key) {
-        final ContainerTag containerTag = convertUnforced(element, key)
+        if (element.getRawContent() != null
+            && !shouldRenderEntitiesWithSize(element.getRawContent().length)) {
+            return addNotes(element, span(RbelHtmlRenderer.buildOversizeReplacementString(element)));
+        }
+
+        return convertUnforced(element, key)
             .orElseGet(() -> {
-                if (shouldRenderEntitiesWithSize(element.getRawContent().length)) {
-                    if (element.hasFacet(RbelBinaryFacet.class)) {
-                        return printAsBinary(element);
-                    } else {
-                        return span(performElementToTextConversion(element));
-                    }
+                if (element.hasFacet(RbelBinaryFacet.class)) {
+                    return addNotes(element, printAsBinary(element));
                 } else {
-                    return span(RbelHtmlRenderer.buildOversizeReplacementString(element));
+                    return addNotes(element, span(performElementToTextConversion(element)));
                 }
             });
-        addNotes(element, containerTag);
-        return containerTag;
     }
 
     private String performElementToTextConversion(final RbelElement el) {

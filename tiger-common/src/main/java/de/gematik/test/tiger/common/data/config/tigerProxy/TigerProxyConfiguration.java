@@ -58,6 +58,10 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
+    private int skipParsingWhenMessageLargerThanKb = 8_000;
+    @Builder.Default
+    private int skipDisplayWhenMessageLargerThanKb = 512;
+    @Builder.Default
     private boolean activateRbelParsing = true;
     @Builder.Default
     private boolean activateVauAnalysis = false;

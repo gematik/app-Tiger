@@ -152,6 +152,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         initializeFileSaver(configuration);
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
         rbelConfiguration.setRbelBufferSizeInMb(configuration.getRbelBufferSizeInMb());
+        rbelConfiguration.setSkipParsingWhenMessageLargerThanKb(
+            configuration.getSkipParsingWhenMessageLargerThanKb()
+        );
         rbelConfiguration.setManageBuffer(true);
         return rbelConfiguration;
     }

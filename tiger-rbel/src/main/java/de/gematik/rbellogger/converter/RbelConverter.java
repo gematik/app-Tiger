@@ -59,7 +59,7 @@ public class RbelConverter {
     @Builder.Default
     private long messageSequenceNumber = 0;
     @Builder.Default
-    private int skipParsingWhenMessageLargerThanMb = -1;
+    private int skipParsingWhenMessageLargerThanKb = -1;
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -84,8 +84,8 @@ public class RbelConverter {
     public RbelElement convertElement(final RbelElement rawInput) {
         log.trace("Converting {}...", rawInput);
         final RbelElement convertedInput = filterInputThroughPreConversionMappers(rawInput);
-        boolean elementIsOversized = skipParsingWhenMessageLargerThanMb > -1
-            && (convertedInput.getRawContent().length > skipParsingWhenMessageLargerThanMb*1024*1024);
+        boolean elementIsOversized = skipParsingWhenMessageLargerThanKb > -1
+            && (convertedInput.getRawContent().length > skipParsingWhenMessageLargerThanKb * 1024);
         for (RbelConverterPlugin plugin : converterPlugins) {
             if (!plugin.ignoreOversize() && elementIsOversized) {
              continue;

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
@@ -88,5 +89,12 @@ public class TigerProxyApplication implements ServletContextListener {
         if (tigerProxy != null) {
             tigerProxy.shutdown();
         }
+    }
+
+    @Bean
+    public RbelHtmlRenderer rbelHtmlRenderer() {
+        var renderer = new RbelHtmlRenderer();
+        renderer.setMaximumEntitySizeInBytes(applicationConfiguration.getSkipDisplayWhenMessageLargerThanKb() * 1024);
+        return renderer;
     }
 }

@@ -12,12 +12,12 @@ import org.springframework.boot.test.context.ConfigDataApplicationContextInitial
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 
-public class TigerProxyStartupErrorsTest {
+class TigerProxyStartupErrorsTest {
 // test adapted from
 // https://stackoverflow.com/questions/31692863/what-is-the-best-way-to-test-that-a-spring-application-context-fails-to-start
 
     @Test
-    public void shouldLoadCorrectKeystore() {
+    void shouldLoadCorrectKeystore() {
         ApplicationContextRunner contextRunner = tigerProxyStandaloneContext()
             .withPropertyValues("tigerProxy.tls.serverIdentity=src/test/resources/hera.p12;00");
 

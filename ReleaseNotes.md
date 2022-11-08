@@ -17,6 +17,7 @@
 * RBEL-69: Keys from JWKs structures are now added to the key store
 * TGR-685: DirectReverseProxy added
 * TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable
+* TGR-708: Maximum parseable and displayable message size of the Tiger Proxy can now be configured
 * TGR-664: WebUi: Copies body of response via click on button
 * TGR-694: JSON-Arrays can now be used as root-objects in JsonChecker-Assertions
 * TGR-525: Rbel moved into Tiger

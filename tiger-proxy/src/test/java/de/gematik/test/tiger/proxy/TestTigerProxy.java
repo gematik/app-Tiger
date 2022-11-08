@@ -45,6 +45,7 @@ import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
@@ -819,6 +820,24 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .asString();
 
         assertThat(tigerProxy.getRbelMessagesList())
+            .isEmpty();
+    }
+
+    @Test
+    void limitMaxMessageSize_shouldSkipParsing() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .skipParsingWhenMessageLargerThanKb(1)
+            .build());
+
+        Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+            .body("{'foobar':'" + RandomStringUtils.randomAlphanumeric(2_000) + "'}")
+            .asString();
+
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body.foobar"))
             .isEmpty();
     }
 

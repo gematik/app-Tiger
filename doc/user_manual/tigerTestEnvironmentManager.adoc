@@ -704,6 +704,11 @@ tigerProxy:
   keyFolders:
   - .
 
+  # Filter out any messages larger from parsing (saving performance)
+  skipParsingWhenMessageLargerThanKb: 8000
+  # Filter out any messages (or message parts) from displaying
+  skipDisplayWhenMessageLargerThanKb: 512
+
   # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
   # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible
   # the server will not boot. (fail fast, fail early)

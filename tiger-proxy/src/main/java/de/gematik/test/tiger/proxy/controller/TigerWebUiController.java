@@ -66,7 +66,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class TigerWebUiController implements ApplicationContextAware {
 
     private final TigerProxy tigerProxy;
-    private final RbelHtmlRenderer renderer = new RbelHtmlRenderer();
+    private final RbelHtmlRenderer renderer;
 
     private final ApplicationConfiguration applicationConfiguration;
     private ApplicationContext applicationContext;
