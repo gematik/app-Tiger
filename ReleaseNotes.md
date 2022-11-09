@@ -3,7 +3,7 @@
 -------
 # Release 1.0.0
 
-* Serenity BDD 3.3.8
+* Serenity BDD 3.3.10
 * Cucumber 7.4.1
 * RestAssured 5.2.0
 * Selenium 4.5.2

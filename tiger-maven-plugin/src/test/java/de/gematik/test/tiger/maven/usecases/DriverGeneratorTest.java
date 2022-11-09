@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import de.gematik.test.tiger.maven.adapter.mojos.GenerateDriverProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +17,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.maven.monitor.logging.DefaultLog;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -25,19 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 @Slf4j
 class DriverGeneratorTest {
 
-    private final Logger logger = new Logger() {
-        @Override
-        public void info(final CharSequence message) {
-            log.info(message.toString());
-        }
-
-        @Override
-        public void debug(final CharSequence message) {
-            log.debug(message.toString());
-
-        }
-    };
-
+    private final Log logger = new SystemStreamLog();
     final JavaParser javaParser = new JavaParser();
 
     @Test
@@ -50,11 +42,14 @@ class DriverGeneratorTest {
         Files.copy(getClass().getResourceAsStream(
             "customDriverTemplate.jtmpl"), customTemplatePath);
         Files.delete(outputFolder); // Simulate not existing output dir
-        final var underTest = new DriverGenerator(List.of("pck.of.glue1", "glue2.pck"),
-            "fancy.pck.of.driver",
-            outputFolder,
-            "Mops${ctr}IT",
-            customTemplatePath, logger);
+        var props = GenerateDriverProperties.builder()
+            .glues(List.of("pck.of.glue1", "glue2.pck"))
+            .driverPackage("fancy.pck.of.driver")
+            .outputFolder(outputFolder)
+            .driverClassName("Mops${ctr}IT")
+            .templateFile(customTemplatePath)
+            .build();
+        final var underTest = new DriverGenerator(props, logger);
 
         // Execution
         underTest.generateDriverForFeatureFiles(
@@ -91,10 +86,13 @@ class DriverGeneratorTest {
     void generateDriverForFeatureFiles_ShouldUseAppropriateDefaultsForOptionalParameters(
         @TempDir final Path outputFolder) {
         // Preparation
-        final var underTest = new DriverGenerator(emptyList(), null,
-            outputFolder,
-            "Mops${ctr}IT",
-            null, logger);
+        var props = GenerateDriverProperties.builder()
+            .glues(emptyList())
+            .outputFolder(outputFolder)
+            .driverClassName("Mops${ctr}IT")
+            .build();
+
+        final var underTest = new DriverGenerator(props, logger);
 
         // Execution
         underTest.generateDriverForFeatureFiles(List.of("featureFile.feature"));

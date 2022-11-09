@@ -35,8 +35,6 @@ import org.apache.maven.project.MavenProject;
 @Mojo(name = "generate-drivers", defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES)
 public class GenerateDriverMojo extends AbstractMojo {
 
-    public static final String DEFAULT_TAGS = "not @Ignore";
-
     /**
      * Skip running this plugin. Default is false.
      */
@@ -113,13 +111,9 @@ public class GenerateDriverMojo extends AbstractMojo {
     @Parameter(property = "project", readonly = true, required = true)
     private MavenProject project;
 
-    private final FileUtils fileUtils;
-    private final FileSelector fileSelector;
 
     public GenerateDriverMojo() {
         super();
-        fileUtils = new FileUtils();
-        fileSelector = new FileSelector();
     }
 
     @Override
@@ -131,30 +125,36 @@ public class GenerateDriverMojo extends AbstractMojo {
         checkParams();
         try {
 
-            getLog().info("Using base dir: " + featuresDir);
-            getLog().info("Using build dir: " + targetFolder);
-            getLog().debug("Using glues:" + String.join(", ", glues));
-            getLog().debug("Using tags:" + Optional.ofNullable(System.getenv("cucumber.filter.tags")).orElse(DEFAULT_TAGS));
+            Path outputFolder = Paths.get(targetFolder, "generated-test-sources",
+                "tigerbdd");
+            outputFolder = StringUtils.isBlank(driverPackage) ?
+                outputFolder :
+                outputFolder.resolve(driverPackage.replace(".", File.separator));
 
-            final List<String> files = fileSelector.listIncludes(featuresDir,
+            GenerateDriverProperties props = GenerateDriverProperties.builder()
+                .glues(glues)
+                .driverPackage(driverPackage)
+                .driverClassName(driverClassName)
+                .templateFile(templateFile == null ? null : templateFile.toPath())
+                .outputFolder(outputFolder)
+                .featuresRootFolder(featuresDir)
+                .build();
+
+            props.log(getLog());
+
+            final List<String> featureFiles = new FileSelector().listIncludes(featuresDir,
                 includes,
                 excludes);
-            if (files.isEmpty()) {
+            if (featureFiles.isEmpty()) {
                 throw new MojoExecutionException(
                     "No matching feature file found! Please check your include and exclude values");
             }
 
-            getLog().info("Creating test drivers for " + files.size() + " feature files:");
+            getLog().info("Creating test drivers for " + featureFiles.size() + " feature files:");
 
-            final Path outputFolder = Paths.get(targetFolder, "generated-test-sources",
-                "tigerbdd");
-
-            new DriverGenerator(glues, driverPackage, outputFolder, driverClassName,
-                templateFile == null ? null : templateFile.toPath(),
-                new MavenLogger(getLog()))
-                .generateDriverForFeatureFiles(
-                    files.stream().map(this::addBasedirPrefix)
-                        .collect(Collectors.toList()));
+            new DriverGenerator(props, getLog()) .generateDriverForFeatureFiles(
+                featureFiles.stream().map(this::addBasedirPrefix)
+                    .collect(Collectors.toList()));
 
             project.addTestCompileSourceRoot(
                 Paths.get(targetFolder, "generated-test-sources", "tigerbdd").toAbsolutePath()

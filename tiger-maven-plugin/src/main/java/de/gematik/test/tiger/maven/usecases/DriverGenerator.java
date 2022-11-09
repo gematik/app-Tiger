@@ -4,8 +4,9 @@
 
 package de.gematik.test.tiger.maven.usecases;
 
-import static de.gematik.test.tiger.maven.adapter.mojos.GenerateDriverMojo.DEFAULT_TAGS;
+import de.gematik.test.tiger.maven.adapter.mojos.GenerateDriverProperties;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -13,34 +14,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.plugin.logging.Log;
 
 public class DriverGenerator {
 
     public static final String COUNTER_REPLACEMENT_TOKEN = "${ctr}";
-    private final String commaseparatedGlues;
-    private final String driverClassName;
-    private final Path templateFile;
-    private final Logger log;
-    private final String driverPackage;
-    private final Path outputFolder;
 
-    public DriverGenerator(final List<String> glues, final String driverPackage,
-        final Path outputFolder,
-        final String driverClassName, final Path templateFile, final Logger logger) {
-        this.driverPackage = driverPackage;
-        this.outputFolder = StringUtils.isBlank(driverPackage) ?
-            outputFolder :
-            outputFolder.resolve(driverPackage.replace(".", File.separator));
-        commaseparatedGlues = toCommaseparatedQuotedList(glues);
-        this.driverClassName = driverClassName;
-        this.templateFile = templateFile;
-        log = logger;
+    private GenerateDriverProperties props;
+
+    private final Log log;
+
+    public DriverGenerator(final GenerateDriverProperties props, Log log) {
+      this.props = props;
+      this.log = log;
     }
 
     private String toCommaseparatedQuotedList(final List<String> glues) {
@@ -63,56 +54,58 @@ public class DriverGenerator {
     }
 
     private void createTargetFolderIfNotExists() throws IOException {
-        if (outputFolder.toFile().exists()) {
-            FileUtils.deleteDirectory(outputFolder.toFile());
+        if (props.getOutputFolder().toFile().exists()) {
+            FileUtils.deleteDirectory(props.getOutputFolder().toFile());
         }
-        Files.createDirectories(outputFolder);
+        Files.createDirectories(props.getOutputFolderToPackage());
     }
 
-    private void createTestDriverSourceFile(final int ctr,
-        final String featurePath)
+    private void createTestDriverSourceFile(final int ctr, final String featurePath)
         throws IOException {
-        final String currentDriverClassName = driverClassName.replace(COUNTER_REPLACEMENT_TOKEN,
-            String.format("%03d", ctr));
+        final String currentDriverClassName = props.getDriverClassName()
+            .replace(COUNTER_REPLACEMENT_TOKEN, String.format("%03d", ctr));
 
-        final String driverSourceCode = driverClassSourceCode(ctr, featurePath, currentDriverClassName);
-        write(currentDriverClassName, driverSourceCode);
+        final String driverSourceCode = getDriverClassSourceCodeAsString(ctr, featurePath, currentDriverClassName);
+        final String filePath = writeToDriverSourceFile(currentDriverClassName, driverSourceCode);
+        log.info(" Feature '" + featurePath + "'");
+        log.info(" Java => '" + filePath + "'");
     }
 
-    private String driverClassSourceCode(final int ctr, final String featurePath,
+    private String getDriverClassSourceCodeAsString(final int ctr, final String featurePath,
         final String currentDriverClassName) throws IOException {
         final String packageLine = StringUtils.isBlank(
-            driverPackage) ? "" : "package " + driverPackage + ";\n";
-        log.info("    '" + featurePath + "'");
-        String tagsFilter = Optional.ofNullable(System.getenv("cucumber.filter.tags")).orElse(DEFAULT_TAGS);
+            props.getDriverPackage()) ? "" : "package " + props.getDriverPackage() + ";\n";
         return getTemplate().replace(COUNTER_REPLACEMENT_TOKEN,
                 String.valueOf(ctr))
             .replace("${package}", packageLine)
             .replace("${driverClassName}", currentDriverClassName)
             .replace("${feature}", featurePath.replace("\\", "/"))
-            .replace("${glues}", commaseparatedGlues)
-            .replace("${tags}", tagsFilter);
+            .replace("${glues}", toCommaseparatedQuotedList(props.getGlues()))
+            .replace("${tags}", props.getCucumberFilterTags());
     }
 
-    private void write(final String currentDriverClassName, final String driverSourceCode)
+    private String writeToDriverSourceFile(final String currentDriverClassName, final String driverSourceCode)
         throws IOException {
-        final Path sourceFile = outputFolder.resolve(currentDriverClassName + ".java");
-        log.info("=> '" + sourceFile.toAbsolutePath() + "'");
+        final Path sourceFile = props.getOutputFolderToPackage().resolve(currentDriverClassName + ".java");
         Files.write(sourceFile, driverSourceCode.getBytes(StandardCharsets.UTF_8),
             StandardOpenOption.CREATE,
             StandardOpenOption.WRITE,
             StandardOpenOption.TRUNCATE_EXISTING);
+        return sourceFile.toFile().getAbsolutePath();
     }
 
     private String getTemplate() throws IOException {
-        if (templateFile == null) {
-            try (final InputStream is = getClass().getResourceAsStream(
-                "/driverClassTemplate.jtmpl")) {
+        if (props.getTemplateFile() == null) {
+            try (final InputStream is = getClass().getResourceAsStream("/driverClassTemplate.jtmpl")) {
+                if (is == null) {
+                    throw new FileNotFoundException("Unable to find template file resource '/driverClassTemplate.jtmpl' in jar!");
+                }
+                log.debug("Using template file from jar ressource");
                 return IOUtils.toString(is, StandardCharsets.UTF_8);
             }
         } else {
-            log.info("Using template file '" + templateFile + "'");
-            return Files.readString(templateFile, StandardCharsets.UTF_8);
+            log.info("Using template file '" + props.getTemplateFile() + "'");
+            return Files.readString(props.getTemplateFile(), StandardCharsets.UTF_8);
         }
     }
 
