@@ -4,14 +4,23 @@
 
 package de.gematik.rbellogger;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.function.Function;
+import org.apache.commons.io.FileUtils;
 
 public class TestUtils {
+
+    public static RbelElement readAndConvertCurlMessage(String fileName, Function<String, String>... messageMappers) throws IOException {
+        String curlMessage = readCurlFromFileWithCorrectedLineBreaks(fileName);
+        for (Function<String, String> mapper : messageMappers) {
+            curlMessage = mapper.apply(curlMessage);
+        }
+        return RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    }
 
     public static String readCurlFromFileWithCorrectedLineBreaks(String fileName) throws IOException {
         return readCurlFromFileWithCorrectedLineBreaks(fileName, Charset.defaultCharset());

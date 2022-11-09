@@ -319,6 +319,17 @@ public class RbelElement {
         return position;
     }
 
+    public Optional<RbelElement> findAncestorWithFacet(Class<? extends RbelFacet> rbelFacetClass) {
+        RbelElement position = getParentNode();
+        while (position != null) {
+            if (position.hasFacet(rbelFacetClass)) {
+                return Optional.of(position);
+            }
+            position = position.getParentNode();
+        }
+        return Optional.empty();
+    }
+
     private static class RbelPathNotUniqueException extends RuntimeException {
 
         public RbelPathNotUniqueException(String s) {

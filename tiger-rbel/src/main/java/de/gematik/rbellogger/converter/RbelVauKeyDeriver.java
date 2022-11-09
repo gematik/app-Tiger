@@ -79,9 +79,10 @@ public class RbelVauKeyDeriver implements RbelConverterPlugin {
                     converter.getRbelKeyManager().addKey(derivedKey);
                 }
             }
-            rbelElement.addFacet(RbelNoteFacet.builder()
+            rbelElement.findMessage()
+                .addFacet(RbelNoteFacet.builder()
                 .style(NoteStyling.INFO)
-                .value(rbelElement.getUuid() + " Added keys with name '" + rbelKey.getKeyName() + "'")
+                .value("Added keys with name '" + rbelKey.getKeyName() + "'")
                 .build());
         }
     }
