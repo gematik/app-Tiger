@@ -15,11 +15,8 @@ import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -31,7 +28,7 @@ class EnvStatusControllerTest {
 
     @Test
     @TigerTest(tigerYaml = "")
-    public void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
+    void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr);
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
@@ -46,17 +43,21 @@ class EnvStatusControllerTest {
                 ))).build()
             ))).build());
 
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo("feature");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo(
+            "feature");
         assertThat(
-            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getDescription()).isEqualTo(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario")
+                .getDescription()).isEqualTo(
             "scenario");
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("0")
-            .getDescription()).isEqualTo("step");
+        assertThat(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps()
+                .get("0")
+                .getDescription()).isEqualTo("step");
     }
 
     @Test
     @TigerTest(tigerYaml = "")
-    public void mergeStepsOfScenario(final TigerTestEnvMgr envMgr) {
+    void mergeStepsOfScenario(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr);
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
@@ -75,27 +76,36 @@ class EnvStatusControllerTest {
                 .description("feature")
                 .scenarios(new LinkedHashMap<>(Map.of(
                     "scenario", ScenarioUpdate.builder().description("scenario")
-                        .steps(new LinkedHashMap<>(Map.of("0", StepUpdate.builder().description("step00").status(TestResult.PASSED).build()
-                            , "1", StepUpdate.builder().description("step1").build()
-                        ))).build()
+                        .steps(new LinkedHashMap<>(
+                            Map.of("0", StepUpdate.builder().description("step00").status(TestResult.PASSED).build()
+                                , "1", StepUpdate.builder().description("step1").build()
+                            ))).build()
                 ))).build()
             ))).build());
 
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo("feature");
+        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription()).isEqualTo(
+            "feature");
         assertThat(
-            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getDescription()).isEqualTo(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario")
+                .getDescription()).isEqualTo(
             "scenario");
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("0")
-            .getDescription()).isEqualTo("step00");
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("0")
-            .getStatus()).isEqualTo(TestResult.PASSED);
-        assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps().get("1")
-            .getDescription()).isEqualTo("step1");
+        assertThat(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps()
+                .get("0")
+                .getDescription()).isEqualTo("step00");
+        assertThat(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps()
+                .get("0")
+                .getStatus()).isEqualTo(TestResult.PASSED);
+        assertThat(
+            envStatusController.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario").getSteps()
+                .get("1")
+                .getDescription()).isEqualTo("step1");
     }
 
     @Test
     @TigerTest(tigerYaml = "")
-    public void checkBannerMessages(final TigerTestEnvMgr envMgr) {
+    void checkBannerMessages(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr);
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
@@ -122,7 +132,7 @@ class EnvStatusControllerTest {
         + "        - --httpPort=${free.port.0}\n"
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
-    public void verifyServerStatusDuringStartup(final TigerTestEnvMgr envMgr) {
+    void verifyServerStatusDuringStartup(final TigerTestEnvMgr envMgr) {
         try {
             final AtomicBoolean downloadShouldProceed = new AtomicBoolean(false);
 
@@ -149,9 +159,10 @@ class EnvStatusControllerTest {
             assertThat(envStatusController.getStatus().getServers().get("winstoneServer"))
                 .hasFieldOrPropertyWithValue("name", "winstoneServer")
                 .hasFieldOrPropertyWithValue("status", TigerServerStatus.STARTING);
-            assertThat(envStatusController.getStatus().getServers().get("winstoneServer")
-                .getStatusMessage())
-                .matches("Starting external jar instance winstoneServer in folder .*");
+            await()
+                .until(() -> envStatusController.getStatus().getServers().get("winstoneServer")
+                    .getStatusMessage()
+                    .matches("Starting external jar instance winstoneServer in folder .*"));
 
             downloadShouldProceed.set(true);
 
