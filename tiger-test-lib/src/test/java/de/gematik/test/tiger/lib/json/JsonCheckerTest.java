@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @Slf4j
 class JsonCheckerTest {
 
-    private static final String TEST_STRUCT = "{\n"
+    private static final String IDP_STRUCT = "{\n"
         + "  iss: 'http.*',\n"
         + "  sub: 'http.*',\n"
         + "  iat: \"${json-unit.ignore}\",\n"
@@ -39,31 +39,7 @@ class JsonCheckerTest {
         + "      }\n"
         + "    ]\n"
         + "  },\n"
-        + "  authority_hints: [\"todo Bezeichnung des Federation Master\"],\n"
-        + "  metadata: {\n"
-        + "    openid_relying_party: {\n"
-        + "      signed_jwks_uri: 'http.*/jws.json',\n"
-        + "      organization_name: \"Fachdienst007 des FedIdp POCs\",\n"
-        + "      client_name: \"Fachdienst007\",\n"
-        + "      logo_uri: 'http.*',\n"
-        + "      redirect_uris: [\"https://Fachdienst007.de/client\"],\n"
-        + "      response_types: [\"code\"],\n"
-        + "      client_registration_types: [\"automatic\"],\n"
-        + "      grant_types: [\"authorization_code\"],\n"
-        + "      require_pushed_authorization_requests: true,\n"
-        + "      token_endpoint_auth_method: \"private_key_jwt\",\n"
-        + "      token_endpoint_auth_signing_alg: \"ES256\",\n"
-        + "      id_token_signed_response_alg: \"ES256\",\n"
-        + "      id_token_encrypted_response_alg: \"ECDH-ES\",\n"
-        + "      id_token_encrypted_response_enc: \"A256GCM\",\n"
-        + "      scope: \"profile telematik openid\"\n"
-        + "    },\n"
-        + "    federation_entity: {\n"
-        + "      name: \"Fachdienst007\",\n"
-        + "      contacts: \"Support@Fachdienst007.de\",\n"
-        + "      homepage_uri: \"https://Fachdienst007.de\"\n"
-        + "    }\n"
-        + "  }\n"
+        + "  authority_hints: [\"todo Bezeichnung des Federation Master\"]\n"
         + "}\n";
     final JsonChecker check = new JsonChecker();
 
@@ -533,7 +509,13 @@ class JsonCheckerTest {
     }
 
     @Test
-    void idpJsonFail() {
-        check.compareJsonStrings(TEST_STRUCT, TEST_STRUCT, false);
+    void idpJson() {
+        check.compareJsonStrings(IDP_STRUCT, IDP_STRUCT, false);
+    }
+
+    @Test
+    void nestedFunctionalAttributeValues() {
+        check.compareJsonStrings("{jwks: {keys: [{y: \"some-value\"}]}}", "{jwks: {keys: [{y: \"${json-unit.ignore}\"}]}}", false);
+        check.compareJsonStrings("{'blub':[{'foo':'bar'}]}", "{'blub':[{'foo': '${json-unit.ignore}'}]}", false);
     }
 }

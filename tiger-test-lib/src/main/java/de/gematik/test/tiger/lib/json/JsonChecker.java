@@ -303,7 +303,7 @@ public class JsonChecker {
     private class CustomValueMatcher implements ValueMatcher<Object> {
 
         @Override
-        public boolean equal(Object oracleJson, Object testJson) {
+        public boolean equal(Object testJson, Object oracleJson) {
             JsonChecker.this.compareJsonStrings(testJson, oracleJson, true);
             return true;
         }
