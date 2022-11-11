@@ -36,6 +36,7 @@
 
 * TGR-706: Traffic filter for EPA-VAU KVNR works
 * TGR-680: The Tiger-Proxy can again use MutualTls as a client
+* TigerConfigurationHelper now correctly parses multiple keys in a single YAML-line
 
 -------
 # Release 0.24.1/0.24.2

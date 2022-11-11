@@ -5,12 +5,9 @@
 package de.gematik.test.tiger.common.config;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.DOUBLE;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
 import java.io.File;
@@ -27,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class TigerConfigurationTest {
@@ -640,6 +636,15 @@ public class TigerConfigurationTest {
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TigerProxyType.class, key))
             .get()
             .isEqualTo(TigerProxyType.HTTP);
+    }
+
+    @Test
+    void yamlWithoutNewLineSeperation_shouldSplitKeysCorrectly() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.readFromYaml(
+            "map.camelCase1: fooBar");
+        assertThat(TigerGlobalConfiguration.readString("map.camelCase1"))
+            .isEqualTo("fooBar");
     }
 
     @Data

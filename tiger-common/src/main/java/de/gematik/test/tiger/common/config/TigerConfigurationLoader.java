@@ -338,7 +338,7 @@ public class TigerConfigurationLoader {
             ((Map<String, ?>) value).entrySet()
                 .forEach(entry -> {
                     var newList = new TigerConfigurationKey(baseKeys);
-                    newList.add(wrapAsKey(entry.getKey()));
+                    newList.add(entry.getKey());
                     addYamlToMap(entry.getValue(), newList, valueMap);
                 });
         } else if (value instanceof List) {
