@@ -240,10 +240,6 @@ pre.json {
     height: 100%;
 }
 
-.navbar-item span {
-    color: #aaa;
-}
-
 #sidebar-menu, .menu + div {
     padding-bottom: 10rem;
 }

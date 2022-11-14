@@ -50,7 +50,6 @@ let collapsibleMessageHeaderBtn;
 let jexlResponseLink;
 let receivers = [];
 let senders = [];
-let filterBtn;
 
 let requestFrom = "requestFromContent";
 let requestTo = "requestToContent";
@@ -100,11 +99,11 @@ document.addEventListener('DOMContentLoaded', function () {
   jexlInspectionContextParentDiv = document.getElementById("contextParent");
   jexlInspectionNoContextDiv = document.getElementById("jexlNoContext");
 
-  filterBtn = document.getElementById("dropdown-filter-button");
-  filterBtn.addEventListener("click", updateNestedDropdownContent);
-
-  hideBtn = document.getElementById("dropdown-hide-button");
-  hideBtn.addEventListener("click", hideDropdownContent);
+  addDropdownClickListener(document.getElementById("dropdown-filter-button").parentNode, () => {
+    updateDropdownContent(requestFrom, senders);
+    updateDropdownContent(requestTo, receivers);
+  });
+  addDropdownClickListener(document.getElementById("dropdown-hide-button").parentNode);
   addDropdownClickListener(document.getElementById("dropdown-page-selection"));
   addDropdownClickListener(document.getElementById("dropdown-page-size"));
 
@@ -220,22 +219,17 @@ document.addEventListener('DOMContentLoaded', function () {
         collapsibleDetails.classList.toggle("led-error",
             collapseMessageDetails);
 
-        let msgCards = document.getElementsByClassName('msg-card');
-        Array.from(msgCards).forEach(card => {
-          const cardToggle = card.children[0].children[0];
-          card.childNodes[1].classList.toggle('is-hidden',
-              collapseMessageDetails);
-          setCollapsableIcon(cardToggle.children[0].children[1],
-              collapseMessageDetails);
-        });
+        document.getElementsByClassName('msglist')[0]
+            .childNodes.forEach(message => {
+              updateHidingForMessageElement(message)
+            });
         if (firstElementOfView) {
           window.setTimeout(() => {
             firstElementOfView.scrollIntoView();
             window.scrollBy(0, -15);
           }, 50);
         }
-        let hideDropdownBtn = document.getElementById("dropdown-hide-button");
-        hideDropdownBtn.parentElement.classList.remove("is-active");
+        closeAllDropdowns();
       });
 
   collapsibleMessageHeaderBtn.addEventListener('click',
@@ -245,23 +239,17 @@ document.addEventListener('DOMContentLoaded', function () {
         collapsibleHeaders.classList.toggle("led-error",
             collapseMessageHeaders);
 
-        let msgCards = document.getElementsByClassName(
-            'card full-width is-primary notification');
-        Array.from(msgCards).forEach(card => {
-          const cardToggle = card.children[0].children[0];
-          card.childNodes[1].classList.toggle('is-hidden',
-              collapseMessageHeaders);
-          setCollapsableIcon(cardToggle.children[0].children[0],
-              collapseMessageHeaders);
-        });
+        document.getElementsByClassName('msglist')[0]
+            .childNodes.forEach(message => {
+              updateHidingForMessageElement(message)
+            });
         if (firstElementOfView) {
           window.setTimeout(() => {
             firstElementOfView.scrollIntoView();
             window.scrollBy(0, -15);
           }, 50);
         }
-        let hideDropdownBtn = document.getElementById("dropdown-hide-button");
-        hideDropdownBtn.parentElement.classList.remove("is-active");
+        closeAllDropdowns();
       });
 
   initDropdownContent(requestFrom, senders);
@@ -369,18 +357,6 @@ function closeAllDropdowns() {
   }
 }
 
-function updateNestedDropdownContent() {
-  closeAllDropdowns()
-  filterBtn.parentElement.classList.toggle("is-active");
-  updateDropdownContent(requestFrom, senders);
-  updateDropdownContent(requestTo, receivers);
-}
-
-function hideDropdownContent() {
-  closeAllDropdowns()
-  hideBtn.parentElement.classList.toggle("is-active");
-}
-
 function initDropdownContent(label, list) {
   let divDropdownContent = document.getElementById(label);
   if (list.length === 0) {
@@ -483,8 +459,7 @@ function showModalImport(e) {
         alert('The file has been uploaded successfully.');
         pollMessages();
         updateNestedDropdownContent();
-        filterBtn.parentElement.classList.remove("is-active");
-        hideBtn.parentElement.classList.remove("is-active");
+        closeAllDropdowns();
       }
       return response;
     }).then(function (_response) {
@@ -914,19 +889,33 @@ function shortenStrings(obj) {
   }
 }
 
+function updateHidingForMessageElement(messageElement) {
+  setCollapsableIcon(
+      messageElement.getElementsByClassName("header-toggle")[0],
+      collapseMessageHeaders);
+  messageElement.getElementsByClassName("msg-header-content")[0].classList
+  .toggle('is-hidden', collapseMessageHeaders);
+  setCollapsableIcon(
+      messageElement.getElementsByClassName("msg-toggle")[0],
+      collapseMessageDetails);
+  messageElement.getElementsByClassName("msg-content")[0].classList
+  .toggle('is-hidden', collapseMessageDetails);
+}
+
 function addMessageToMainView(msgHtmlData) {
   const listDiv = getAll('.msglist')[0];
-  const reqEl = htmlToElement(msgHtmlData.html);
-  let span = getAll(".msg-sequence", reqEl)[0];
+  const message = htmlToElement(msgHtmlData.html);
+  let span = getAll(".msg-sequence", message)[0];
   if (span != null) {
     span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
     span.textContent = msgHtmlData.sequenceNumber + 1;
   }
-  addQueryBtn(reqEl);
-  listDiv.appendChild(reqEl);
+  addQueryBtn(message);
+  listDiv.appendChild(message);
   if (!scrollLock) {
-    reqEl.scrollIntoView({behaviour: "smooth", alignToTop: true});
+    message.scrollIntoView({behaviour: "smooth", alignToTop: true});
   }
+  updateHidingForMessageElement(message);
 }
 
 function addMessageToMenu(msgMetaData, index) {
@@ -1130,10 +1119,17 @@ function scrollToMessage(uuid, sequenceNumber) {
   }
 }
 
-function addDropdownClickListener(el) {
+function addDropdownClickListener(el, callback) {
   el.addEventListener('click', function(e) {
+    let active = el.classList.contains('is-active');
+    closeAllDropdowns();
     e.stopPropagation();
-    el.classList.toggle('is-active');
+    if (!active) {
+      el.classList.add('is-active');
+    }
+    if (callback !== undefined) {
+      callback();
+    }
   });
 }
 
@@ -1147,5 +1143,3 @@ document.addEventListener('keydown', function (event) {
 document.addEventListener('click', function(e) {
   closeAllDropdowns();
 });
-
-document.onr

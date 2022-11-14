@@ -92,7 +92,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         List<DomContent> messageTitleElements = new ArrayList<>();
         messageTitleElements.add(a().attr("name", element.getUuid()));
         messageTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3",
+            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3 msg-toggle",
                 httpRequestFacet.map(f -> "has-text-link").orElse("has-text-success")));
         messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
         messageTitleElements.add(
@@ -131,7 +131,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                 .with(messageTitleElements)
                 .withClass("full-width"),
             ancestorTitle().with(messageBodyElements), "msg-card",
-            "mx-3 " + isRequest.map(r -> Boolean.TRUE.equals(r) ? "mt-5" : "mt-2").orElse("mt-3"));
+            "mx-3 " + isRequest.map(r -> Boolean.TRUE.equals(r) ? "mt-5" : "mt-2").orElse("mt-3"),
+            "msg-content");
     }
 
     private List<DomContent> performRenderingForBody(RbelHtmlRenderingToolkit renderingToolkit,
@@ -140,7 +141,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
         List<DomContent> headerTitleElements = new ArrayList<>();
         headerTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3 has-text-primary"));
+            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3 has-text-primary header-toggle"));
         httpMessageFacet.map(
             a -> headerTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getHeader(), renderingToolkit)));
         headerTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Headers")).orElseGet(() -> t2("RES Headers")))
@@ -148,7 +149,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
         List<DomContent> bodyTitleElements = new ArrayList<>();
         bodyTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3 has-text-info"));
+            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right mr-3 is-size-3 has-text-info body-toggle"));
         httpMessageFacet.map(
             a -> bodyTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getBody(), renderingToolkit)));
         bodyTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Body")).orElseGet(() -> t2("RES Body")))
@@ -163,7 +164,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                             .with(headerTitleElements),
                         httpMessageFacet.map(facet -> renderingToolkit.convert(facet.getHeader(), Optional.empty()))
                             .orElse(div()),
-                        CLS_HEADER + " notification", "my-3")),
+                        CLS_HEADER + " notification", "my-3","msg-header-content")),
                     httpMessageFacet.map(RbelHttpMessageFacet::getBody)
                         .map(RbelElement::getRawStringContent)
                         .map(s -> StringUtils.isBlank(s) ?
@@ -171,7 +172,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                             div().with(collapsibleCard(
                                 div().withClass("tile is-child pr-3").with(bodyTitleElements),
                                 renderingToolkit.convert(httpMessageFacet.get().getBody(), Optional.empty()),
-                                CLS_BODY + " notification", "my-3")))
+                                CLS_BODY + " notification", "my-3", "msg-body-content")))
                         .orElse(div())
                 )));
 

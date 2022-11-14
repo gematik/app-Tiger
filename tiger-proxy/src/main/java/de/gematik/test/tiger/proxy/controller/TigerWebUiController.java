@@ -313,11 +313,11 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         .with(
                                             span().withText("Page 1").withId("pageNumberDisplay"),
                                             span().withClass("icon is-small").with(
-                                                i().withClass("fas fa-angle-down").attr("aria-hidden", "true")
+                                                i().withClass("fas fa-angle-up").attr("aria-hidden", "true")
                                             )
                                         )
                                 ),
-                                div().withClass("dropdown-menu").withId("dropdown-menu").attr("role", "menu").with(
+                                div().withClass("dropdown-menu").attr("role", "menu").with(
                                     div().withClass("dropdown-content").withId("pageSelector").with(
                                         a().withClass("dropdown-item")
                                             .attr("onClick", "setPageNumber(0)").withText("1")
@@ -334,20 +334,20 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         .with(
                                             span().withId("pageSizeDisplay").withText("Size"),
                                             span().withClass("icon is-small").with(
-                                                i().withClass("fas fa-angle-down").attr("aria-hidden", "true")
+                                                i().withClass("fas fa-angle-up").attr("aria-hidden", "true")
                                             )
                                         )
                                 ),
-                                div().withClass("dropdown-menu").withId("dropdown-menu").attr("role", "menu").with(
+                                div().withClass("dropdown-menu").attr("role", "menu").with(
                                     div().withClass("dropdown-content").with(
                                         a().withClass("dropdown-item")
-                                            .attr("onClick", "setPageSize(10)").withText("10"),
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(10)").withText("10"),
                                         a().withClass("dropdown-item")
-                                            .attr("onClick", "setPageSize(20)").withText("20"),
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(20)").withText("20"),
                                         a().withClass("dropdown-item")
-                                            .attr("onClick", "setPageSize(50)").withText("50"),
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(50)").withText("50"),
                                         a().withClass("dropdown-item")
-                                            .attr("onClick", "setPageSize(100)").withText("100")
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(100)").withText("100")
                                     )
                                 )
                             )
