@@ -75,6 +75,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     public final SimpMessagingTemplate template;
 
+    private static final String COLOR_INHERIT = "color:inherit;";
     private static final String WS_NEWMESSAGES = "/topic/ws";
 
     @PostConstruct
@@ -165,6 +166,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("${UploadUrl}", applicationConfiguration.getUploadUrl());
         return html.replace("<div id=\"navbardiv\"></div>", navbar +
                 loadResourceToString("/routeModal.html") +
+                loadResourceToString("/filterModal.html") +
                 loadResourceToString("/jexlModal.html") +
                 loadResourceToString("/saveModal.html"))
             .replace("</body>", configJSSnippetStr + "</body>");
@@ -196,7 +198,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                             button().withId("routeModalBtn").withClass(successOutlineButton())
                                 .attr("data-target", "routeModalDialog").with(
                                     i().withClass("fas fa-exchange-alt"),
-                                    span("Routes").withClass("ml-2").withStyle("color:inherit;")
+                                    span("Routes").withClass("ml-2").withStyle(COLOR_INHERIT)
                                 )
                         ),
                         div().withClass(getNavbarItemNot4embedded()).with(
@@ -233,81 +235,30 @@ public class TigerWebUiController implements ApplicationContextAware {
                                     )
                                 )
                         ),
-                        form().withStyle("display:inline;").attr("onSubmit", "return false;")
-                            .with(
-                                div().withClass(navbarItem()).with(
-                                    div().withClass("field").with(
-                                        p().withClass("control has-icons-left").with(
-                                            input().withClass("input is-rounded has-text-dark")
-                                                .withStyle("display:inherit;")
-                                                .withType("text")
-                                                .withPlaceholder("RbelPath filter criterion")
-                                                .withId("setFilterCriterionInput")
-                                                .attr("autocomplete", "on")
-                                        )
-                                    )
-                                ),
-                                div().withClass("navbar-item dropdown is-up").with(
-                                    div().withId("dropdown-filter-button").withClass("dropdown-trigger").with(
-                                        button().withClass("button").with(
-                                            span().withClass("icon is-small").with(
-                                                i().withClass("fas fa-angle-up")
-                                            )
-                                        )
-                                    ),
-                                    div().withClass("dropdown-menu")
-                                        .attr("role", "menu")
-                                        .with(
-                                            div().withClass("dropdown-content").with(
-                                                div().withClass("dropdown-item nested dropdown").with(
-                                                    div().withClass("dropdown-trigger").with(
-                                                        button("Request from  ").withClass("button")
-                                                    ),
-                                                    div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
-                                                        .attr("role", "menu")
-                                                        .with(
-                                                            div().withId("requestFromContent")
-                                                                .withClass("dropdown-content")
-                                                        )
-                                                ),
-                                                div().withClass("dropdown-item nested dropdown").with(
-                                                    div().withClass("dropdown-trigger").with(
-                                                        button("Request to  ").withClass("button")
-                                                    ),
-                                                    div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
-                                                        .attr("role", "menu")
-                                                        .with(
-                                                            div().withId("requestToContent")
-                                                                .withClass("dropdown-content")
-                                                        )
-                                                )
-                                            )
-                                        )
-                                ),
-                                div().withClass(navbarItem()).with(
-                                    button().withId("setFilterCriterionBtn").withClass(successOutlineButton())
-                                        .with(
-                                            i().withClass("fas fa-filter"),
-                                            span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
-                                        )
+                        div().withClass(navbarItem()).with(
+                            button().withId("filterModalBtn").withClass(successOutlineButton())
+                                .attr("data-target", "filterModalDialog").with(
+                                    i().withClass("fas fa-filter"),
+                                    span("Filter").withClass("ml-2").withStyle(COLOR_INHERIT)
                                 )
-                            ),
-                        div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
+                        ),
+
+                       div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
                             button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
                                 i().withClass("far fa-trash-alt"),
-                                span("Reset").withClass("ml-2").withStyle("color:inherit;")
+                                span("Reset").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
                         div().withClass("navbar-item").with(
                             button().withId("saveMsgs").withClass(successOutlineButton()).with(
                                 i().withClass("far fa-save"),
-                                span("Save").withClass("ml-2").withStyle("color:inherit;")
+                                span("Save").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
                         div().withClass("navbar-item").with(
                             div().withId("dropdown-page-selection").withClass("dropdown is-up").with(
                                 div().withClass("dropdown-trigger").with(
-                                    button().withClass("button")
+                                    button().withClass(darkButton())
                                         .attr("aria-haspopup", "true")
                                         .attr("aria-controls", "dropdown-menu")
                                         .with(
@@ -328,7 +279,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass("navbar-item").with(
                             div().withId("dropdown-page-size").withClass("dropdown is-up").with(
                                 div().withClass("dropdown-trigger").with(
-                                    button().withClass("button")
+                                    button().withClass(darkButton())
                                         .attr("aria-haspopup", "true")
                                         .attr("aria-controls", "dropdown-menu")
                                         .with(
@@ -355,13 +306,13 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("importMsgs").withClass(successOutlineButton()).with(
                                 i().withClass("far fa-folder-open"),
-                                span("Import").withClass("ml-2").withStyle("color:inherit;")
+                                span("Import").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
                                 i().withClass("far fa-upload"),
-                                span("Upload").withClass("ml-2").withStyle("color:inherit;")
+                                span("Upload").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
                         div().withClass(navbarItem()).with(
@@ -371,7 +322,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("quitProxy").withClass("button is-outlined is-danger").with(
                                 i().withClass("fas fa-power-off"),
-                                span("Quit").withClass("ml-2").withStyle("color:inherit;")
+                                span("Quit").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         )
                     )

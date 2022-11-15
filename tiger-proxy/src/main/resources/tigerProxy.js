@@ -10,6 +10,7 @@ let rootEl;
 let jexlQueryElementUuid = "";
 let pageSize = 20;
 let pageNumber = 0;
+let empty="empty";
 
 let resetBtn;
 let saveBtn;
@@ -30,6 +31,8 @@ let btnOpenRouteModal;
 let fieldRouteTo;
 let fieldRouteFrom;
 let btnAddRoute;
+
+let btnOpenFilterModal;
 
 let btnScrollLock;
 let ledScrollLock;
@@ -99,10 +102,6 @@ document.addEventListener('DOMContentLoaded', function () {
   jexlInspectionContextParentDiv = document.getElementById("contextParent");
   jexlInspectionNoContextDiv = document.getElementById("jexlNoContext");
 
-  addDropdownClickListener(document.getElementById("dropdown-filter-button").parentNode, () => {
-    updateDropdownContent(requestFrom, senders);
-    updateDropdownContent(requestTo, receivers);
-  });
   addDropdownClickListener(document.getElementById("dropdown-hide-button").parentNode);
   addDropdownClickListener(document.getElementById("dropdown-page-selection"));
   addDropdownClickListener(document.getElementById("dropdown-page-size"));
@@ -123,6 +122,9 @@ document.addEventListener('DOMContentLoaded', function () {
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
   ledScrollLock = document.getElementById("scrollLockLed");
+
+  btnOpenFilterModal = document.getElementById("filterModalBtn");
+
   collapsibleRbelBtn = document.getElementById("rbel-help-icon");
   collapsibleJexlBtn = document.getElementById("jexl-help-icon");
   collapsibleRbelBtn.addEventListener('click', () => {
@@ -132,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleHelp(collapsibleJexlBtn, "jexl-help")
   });
   btnOpenRouteModal.addEventListener('click', showModalsCB);
+  btnOpenFilterModal.addEventListener('click', showModalsCB);
   saveBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
 
@@ -206,6 +209,11 @@ document.addEventListener('DOMContentLoaded', function () {
         updateAddRouteBtnState();
       });
 
+  btnOpenFilterModal.addEventListener('click',
+      () => {
+        btnOpenFilterModal.disabled = true;
+      });
+
   btnScrollLock.addEventListener('click',
       () => {
         scrollLock = !scrollLock;
@@ -252,8 +260,26 @@ document.addEventListener('DOMContentLoaded', function () {
         closeAllDropdowns();
       });
 
-  initDropdownContent(requestFrom, senders);
-  initDropdownContent(requestTo, receivers);
+  let selectRequestFromBtn = document.getElementById("requestFromContent");
+
+  let selectRequestToBtn = document.getElementById("requestToContent");
+  selectRequestToBtn.addEventListener("click", updateSelectContents);
+  selectRequestToBtn.addEventListener('change', function (event) {
+    if (event.target.value !== "no request") {
+      let filterField = document.getElementById("setFilterCriterionInput");
+      filterField.value = "@.receiver == \"" + event.target.value + "\"";
+      selectRequestFromBtn.selectedIndex = 0;
+    }
+  });
+
+  selectRequestFromBtn.addEventListener("click", updateSelectContents);
+  selectRequestFromBtn.addEventListener('change', function (event) {
+    if (event.target.value !== "no request") {
+      let filterField = document.getElementById("setFilterCriterionInput");
+      filterField.value = "@.sender == \"" + event.target.value + "\"";
+      selectRequestToBtn.selectedIndex = 0;
+    }
+  });
 
   btnAddRoute.addEventListener("click", addRoute);
   fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
@@ -296,51 +322,39 @@ function removeActiveFlag(label) {
   });
 }
 
+function updateSelectContents() {
+  updateSelectContent(requestFrom, senders);
+  updateSelectContent(requestTo, receivers);
+}
+
 function getLabelId(label, id) {
   return label + "_" + id;
 }
 
-function updateDropdownContent(label, list) {
-  let divDropdownContent = document.getElementById(label);
+function updateSelectContent(label, list) {
+
+  let select = document.getElementById(label);
   let contained = false;
 
   if (list.length === 0) {
-    initDropdownContent(label, list);
+    initSelectContent(label, list);
   } else {
-    if (divDropdownContent.children[0].id === getLabelId(label, "empty")) {
-      divDropdownContent.removeChild(divDropdownContent.children[0]);
-    }
     for (let i = 0; i < list.length; i++) {
-      contained = false;
-      if (divDropdownContent !== null) {
-        Array.from(divDropdownContent.children).forEach(child => {
-          if (child.id === getLabelId(label, list[i])) {
-            contained = true;
-          }
-        });
-      }
-      if (!contained) {
-        let element = document.createElement('A');
-        element.textContent = list[i];
-        element.id = getLabelId(label, list[i]);
-        element.className = "dropdown-item";
-        element.setAttribute("href", "#");
-        element.addEventListener("click", () => {
-          removeActiveFlag(requestFrom);
-          removeActiveFlag(requestTo);
-          element.classList.add("is-active");
-          let filterField = document.getElementById(
-              "setFilterCriterionInput");
-          if (label === requestFrom) {
-            filterField.value = "@.sender == \"" + list[i] + "\"";
-          } else {
-            filterField.value = "@.receiver == \"" + list[i] + "\"";
-          }
-          let filterDropdownBtn = document.getElementById(
-              "dropdown-filter-button");
-          filterDropdownBtn.parentElement.classList.remove("is-active");
-        });
-        divDropdownContent.appendChild(element);
+      if (list[i].length > 0) {
+        contained = false;
+        if (select !== null) {
+          Array.from(select.children).forEach(child => {
+            if (child.id === getLabelId(label, list[i])) {
+              contained = true;
+            }
+          });
+        }
+        if (!contained) {
+          let element = document.createElement('option');
+          element.textContent = list[i];
+          element.id = getLabelId(label, list[i]);
+          select.appendChild(element);
+        }
       }
     }
   }
@@ -357,18 +371,17 @@ function closeAllDropdowns() {
   }
 }
 
-function initDropdownContent(label, list) {
-  let divDropdownContent = document.getElementById(label);
-  if (list.length === 0) {
-    Array.from(divDropdownContent.children).forEach(child => {
-      divDropdownContent.removeChild(child);
+function initSelectContent(label, list) {
+  let select = document.getElementById(label);
+  if (list.length === 0 && select !== null) {
+    Array.from(select.children).forEach(child => {
+      select.removeChild(child);
     });
-    let element = document.createElement('A');
+    let element = document.createElement('option');
     element.textContent = "no requests";
-    element.id = getLabelId(label, "empty");
-    element.className = "dropdown-item";
-    element.setAttribute("href", "#");
-    divDropdownContent.appendChild(element);
+    element.id = getLabelId(label, empty);
+    element.value = empty;
+    select.appendChild(element);
   }
 }
 
@@ -458,7 +471,6 @@ function showModalImport(e) {
       } else {
         alert('The file has been uploaded successfully.');
         pollMessages();
-        updateNestedDropdownContent();
         closeAllDropdowns();
       }
       return response;
@@ -495,6 +507,7 @@ function closeModals() {
     $el.classList.remove('is-active');
   });
   btnOpenRouteModal.disabled = false;
+  btnOpenFilterModal.disabled = false;
   jexlInspectionResultDiv.classList.add("is-hidden");
   jexlInspectionContextParentDiv.classList.add("is-hidden");
   jexlInspectionNoContextDiv.classList.remove("is-hidden");
@@ -657,6 +670,7 @@ function quitProxy() {
         collapsibleMessageDetailsBtn.disabled = true;
         collapsibleMessageHeaderBtn.disabled = true;
         btnOpenRouteModal.disabled = true;
+        btnOpenFilterModal.disabled = true;
         getAll("input.updates").forEach(function (el) {
           el.disabled = true;
         });
@@ -677,8 +691,6 @@ function setFilterCriterion() {
   filterCriterion = setFilterCriterionInput.value;
   resetAllReceivedMessages();
   pollMessages();
-  collapsibleDetails.classList.remove("led-error");
-  collapsibleHeaders.classList.remove("led-error");
 }
 
 function uploadReport() {

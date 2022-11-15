@@ -1,0 +1,54 @@
+<!--
+  ~ ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
+<div class="modal" id="filterModalDialog">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+      <article class="message">
+        <div class="message-header"><h2>Filter Management</h2><button class="delete" aria-label="delete"></button></div>
+        <div class="message-body">
+<!--          <div class="routeListDiv box">-->
+<!--            <p align="center" class="mt-5 mb-5"><i class="fas fa-spinner"></i> Loading...</p>-->
+<!--          </div>-->
+          <div class="filterDiv">
+            <div class="field is-horizontal">
+              <div class="field-label is-normal" style="white-space: nowrap;">
+                <label class="label">RbelPath filter:</label>
+              </div>
+              <div class="field-body">
+                <div class="control">
+                  <input class="input is-rounded has-text-dark" size="60" type="text" id="setFilterCriterionInput" placeholder="filter criterion" style="display:inherit;">
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal" style="white-space: nowrap;">
+                <label for="requestFromContent">Request from:</label>
+              </div>
+              <div class="field-body" style="padding-left: 12px;">
+                <select name="requestFrom" id="requestFromContent">
+                  <option id="requestFromContent_empty">no requests</option>
+                </select>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal" style="white-space: nowrap;">
+                <label for="requestToContent">Request to:</label>
+              </div>
+              <div class="field-body" style="padding-left: 12px;">
+                <select name="requestTo" id="requestToContent">
+                  <option id="requestToContent_empty">no requests</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="control buttons is-right">
+            <button class="button m-3 is-success" id="setFilterCriterionBtn">
+              <i class="fas fa-filter"> <span class="ml-2" style="color:inherit">Set Filter</span></i></button>
+          </div>
+        </div>
+      </article>
+    </div>
+    <button class="modal-close is-large" aria-label="close"></button>
+</div>

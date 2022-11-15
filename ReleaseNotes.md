@@ -12,6 +12,7 @@
 
 ## Features
 
+* TGR-727: WebUi: Filter in modal outsourced
 * TGR-707, TGR-691: Tiger now supports Helm charts (you need to include the tiger-helm-extensions to your project)
 * TGR-718: Added option (rewriteHostHeader) to rewrite host headers for reverse proxy routes
 * RBEL-69: Keys from JWKs structures are now added to the key store
