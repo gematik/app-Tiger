@@ -140,4 +140,14 @@ public class TigerGlue {
     public void tgrShowHtmlNotification(String message) {
         TigerDirector.pauseExecution(message, true);
     }
+
+    @When("TGR assert {string} matches {string}")
+    @Dann("TGR prüfe das {string} mit {string} überein stimmt")
+    public void tgrAssertMatches(String rawValue1, String rawValue2) {
+        String value1 = TigerGlobalConfiguration.resolvePlaceholders(rawValue1);
+        String value2 = TigerGlobalConfiguration.resolvePlaceholders(rawValue2);
+        if (!Objects.equals(value1, value2)) {
+            assertThat(value1).matches(value2);
+        }
+    }
 }

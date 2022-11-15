@@ -645,6 +645,12 @@ tigerProxy:
   # Deactivating will not impede proxy-forwarding nor
   # the traffic-endpoints.
   activateRbelParsing: true
+  # While parsing the Tiger Proxy can block the communication from completing.
+  # The end answer from the Tiger Proxy is only transmitted when parsing is completed
+  # (and the message pair can be seen in the log). When 'false' the parsing is done
+  # asynchronous.
+  # Default is true ONLY for the local Tiger Proxy, otherwise default is false!!
+  parsingShouldBlockCommunication: false
   # This will share the WebUI-Resources (various CSS-files) from the Tiger Proxy
   # locally, thus enabling usage when no internet connection exists
   localResources: true

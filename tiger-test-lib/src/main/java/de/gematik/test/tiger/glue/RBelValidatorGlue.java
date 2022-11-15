@@ -6,7 +6,6 @@ package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerLibraryException;
@@ -21,7 +20,6 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -215,22 +213,7 @@ public class RBelValidatorGlue {
     @Wenn("TGR finde die letzte Anfrage")
     @When("TGR find the last request")
     public void findLastRequest() {
-        List<RbelElement> validatableRbelMessages = LocalProxyRbelMessageListener.getValidatableRbelMessages();
-        if (validatableRbelMessages.isEmpty()) {
-            throw new TigerLibraryException("No Request found.");
-        }
-        String lastRbelRequestFacetString = validatableRbelMessages.get(validatableRbelMessages.size() - 2).getFacets()
-            .get(0).toString();
-
-        String menuInfoString = lastRbelRequestFacetString.substring(lastRbelRequestFacetString.indexOf("=") + 1,
-            lastRbelRequestFacetString.indexOf(")"));
-
-        String path = menuInfoString.substring(menuInfoString.indexOf(" ") + 1,
-            menuInfoString.indexOf("?") - 1);
-
-        rbelValidator.filterRequestsAndStoreInContext(
-            RequestParameter.builder().path(path).filterPreviousRequest(true).build()
-                .resolvePlaceholders());
+        rbelValidator.findLastRequest();
     }
 
     /**

@@ -8,6 +8,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -15,10 +16,8 @@ import com.github.tomakehurst.wiremock.matching.RequestPattern;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +93,12 @@ public abstract class AbstractTigerProxyTest {
             .proxy("localhost", tigerProxy.getProxyPort())
             .sslContext(tigerProxy.buildSslContext());
     }
+
+    public void awaitMessagesInTiger(int numberOfMessagesExpected) {
+        await()
+            .until(() -> tigerProxy.getRbelMessages().size() >= numberOfMessagesExpected);
+    }
+
 
     public LoggedRequest getLastRequest() {
         final List<LoggedRequest> loggedRequests = fakeBackendServer.findRequestsMatching(RequestPattern.everything())

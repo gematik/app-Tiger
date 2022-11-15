@@ -49,7 +49,7 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void checkMessageMetaDataDtoConversion()  {
+    void checkMessageMetaDataDtoConversion()  {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
@@ -58,6 +58,7 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
             .build());
 
         proxyRest.get("http://backend/foobar").asJson();
+        awaitMessagesInTiger(2);
 
         MessageMetaDataDto message0 = MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(0));
         assertThat(message0.getPath()).isEqualTo("/foobar");

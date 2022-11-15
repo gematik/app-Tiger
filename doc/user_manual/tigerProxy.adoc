@@ -441,6 +441,7 @@ tigerProxy:
     activateRbelParsing: true
     activateAsn1Parsing: false
     activateVauAnalysis: false
+    parsingShouldBlockCommunication: false
 ----
 
 ===== activateRbelParsing
@@ -451,6 +452,9 @@ This is off by default. ASN.1 objects are very common in crypto applications. Wh
 
 ===== activateVauAnalysis
 VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze ePA-VAU messages leave this option turned off. If you do, enabling it will give you additional information about the messages.
+
+===== parsingShouldBlockCommunication
+If blocking is enabled the Tiger Proxy will only return the response when message parsing is completed. This is inadvisable in high-speed scenarios. It, however, greatly simplifies the test suite (after the communication is concluded the parsed message appears in the log). Therefore, the blocking is deactivated by default. The only exception is the local Tiger Proxy, which WILL block communication until parsing is completed. For all Tiger Proxies this default behavior can be changed.
 
 ===== directReverseProxy
 To enable the use of the TigerProxy for non-HTTP scenarios you can use the option `directReverseProxy`:

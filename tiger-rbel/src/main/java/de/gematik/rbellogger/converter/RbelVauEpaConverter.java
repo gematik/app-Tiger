@@ -103,7 +103,8 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
                 .build());
         }
         if (parentNode.getParentNode() != null
-            && parentNode.getParentNode().hasFacet(RbelHttpMessageFacet.class)) {
+            && parentNode.getParentNode().hasFacet(RbelHttpMessageFacet.class)
+            && !parentNode.getFacets().isEmpty()) {
             parentNode.addFacet(new RbelUndecipherableVauEpaFacet(errorNotes));
         }
         return Optional.empty();

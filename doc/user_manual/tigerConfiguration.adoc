@@ -198,7 +198,9 @@ This will load the given file and replace any placeholders found in it.
 To give you direct access to the messages sent please use the rbel-namespace:
 
 * `currentResponse` returns the current response, optionally filtered by a given Rbel-path
-* `currentResponseAsString` returns the string-representation of the last response, optionally filtered by a given Rbel-path
+* `currentResponseAsString` returns the string-representation of the current response, optionally filtered by a given Rbel-path
+* `currentRequest` returns the current request, optionally filtered by a given Rbel-path
+* `currentRequestAsString` returns the string-representation of the current request, optionally filtered by a given Rbel-path
 
 This can be done like so
 

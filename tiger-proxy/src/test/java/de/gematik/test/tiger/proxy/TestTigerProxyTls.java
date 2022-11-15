@@ -248,6 +248,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
         proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(callCounter.get()).isEqualTo(2);
     }
@@ -275,6 +276,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
         final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(response.getStatus())
             .isEqualTo(666);
@@ -352,6 +354,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             unirestInstance.config().httpClient(loadSslContextForClientCert());
             unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
         }
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.clientTlsCertificateChain.0.subject")
             .get().getRawStringContent())

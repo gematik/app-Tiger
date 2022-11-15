@@ -12,9 +12,11 @@ import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -25,6 +27,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.xml.transform.Source;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -343,6 +346,17 @@ public class RbelMessageValidator {
         }
     }
 
+    public RbelElement findElementInCurrentRequest(final String rbelPath) {
+        try {
+            final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+            assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
+            assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
+            return elems.get(0);
+        } catch (final Exception e) {
+            throw new AssertionError("Unable to find element in last request for rbel path '" + rbelPath + "'");
+        }
+    }
+
     public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
         try {
             final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
@@ -364,6 +378,21 @@ public class RbelMessageValidator {
         }
     }
 
+    public void findLastRequest() {
+        final Iterator<RbelElement> descendingIterator = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()
+            .getRbelMessages()
+            .descendingIterator();
+        final RbelElement lastRequest = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(descendingIterator, Spliterator.ORDERED), false)
+            .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
+            .findFirst()
+            .orElseThrow(() -> new TigerLibraryException("No Request found."));
+        this.currentRequest = lastRequest;
+        this.currentResponse = lastRequest.getFacet(TracingMessagePairFacet.class)
+            .map(TracingMessagePairFacet::getResponse)
+            .orElse(null);
+    }
+
     public class JexlToolbox {
 
         public String currentResponseAsString(final String rbelPath) {
@@ -376,6 +405,18 @@ public class RbelMessageValidator {
 
         public RbelElement currentResponse(final String rbelPath) {
             return findElementInCurrentResponse(rbelPath);
+        }
+
+        public String currentRequestAsString(final String rbelPath) {
+            return findElementInCurrentRequest(rbelPath).getRawStringContent();
+        }
+
+        public String currentRequestAsString() {
+            return currentRequest.getRawStringContent();
+        }
+
+        public RbelElement currentRequest(final String rbelPath) {
+            return findElementInCurrentRequest(rbelPath);
         }
 
         public RbelElement lastResponse() {

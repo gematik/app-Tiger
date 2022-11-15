@@ -107,6 +107,8 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
         // no proxyRest, direct connection (assume reverseProxy behavior)
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .asString();
+        awaitMessagesInTiger(2);
+
         assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.responseCode")
             .get().getRawStringContent())
             .isEqualTo("666");

@@ -28,10 +28,16 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +59,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private Optional<String> name;
     @Getter
     protected final org.slf4j.Logger log;
+    @Getter
+    private final ExecutorService trafficParserExecutor = Executors.newSingleThreadExecutor();
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         this(configuration, null);

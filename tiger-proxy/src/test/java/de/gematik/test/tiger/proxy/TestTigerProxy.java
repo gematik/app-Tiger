@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
+import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -32,6 +33,7 @@ import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +63,7 @@ import org.springframework.util.SocketUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestTigerProxy extends AbstractTigerProxyTest {
+class TestTigerProxy extends AbstractTigerProxyTest {
 
     public MockServerClient forwardProxy;
 
@@ -96,6 +98,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar")
             .asJson();
+        awaitMessagesInTiger(2);
 
         assertThat(response.getStatus()).isEqualTo(666);
         assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
@@ -121,6 +124,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .header("foo", "bar")
             .header("x-forwarded-for", "someStuff")
             .asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.foo")
@@ -150,6 +154,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .header("x-forwarded-for", "someStuff")
             .header("Host", "RandomStuffShouldBePreserved")
             .asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.foo")
@@ -178,6 +183,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .header("Host", "RandomStuffShouldBeOverwritten")
             .asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
@@ -197,6 +203,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         proxyRest.get("http://foo.bar/foobar")
             .asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
@@ -214,6 +221,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.receiver")
@@ -279,6 +287,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         proxyRest.get("http://foo.bar/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.receiver")
@@ -304,6 +313,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         final HttpResponse<JsonNode> response = proxyRest.get(
                 "http://localhost:" + fakeBackendServer.port() + "/foobar")
             .asJson();
+        awaitMessagesInTiger(2);
 
         assertThat(response.getStatus()).isEqualTo(666);
 
@@ -344,6 +354,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
                 .withBody("Hallo".getBytes())));
 
         proxyRest.get("http://backend/binary").asBytes();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(tigerProxy.getRbelMessagesList().size() - 1)
             .findRbelPathMembers("$.body").get(0)
@@ -361,6 +372,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         proxyRest.get("http://backend/foobar").asString().getBody();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(1)
             .findRbelPathMembers("$.body.foo.content")
@@ -381,6 +393,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
         proxyRest.get("http://backend/foobar").asString().getBody();
+        awaitMessagesInTiger(2);
 
         assertThat(callCounter.get()).isEqualTo(2);
     }
@@ -400,6 +413,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/notAServer/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(callCounter.get()).isEqualTo(2);
         assertThat(tigerProxy.getRbelMessagesList().get(1)
@@ -423,6 +437,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(callCounter.get()).isEqualTo(2);
     }
@@ -543,6 +558,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(proxyRest.get("http://backend/foobar").asString()
             .getStatus())
             .isEqualTo(777);
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
@@ -562,6 +578,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(proxyRest.get("http://backend").asString()
             .getStatus())
             .isEqualTo(666);
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
@@ -591,6 +608,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
 
         proxyRest.get("http://backend?jws=" + jwsSerialized)
             .asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.path.jws.value.signature.isValid")
@@ -610,6 +628,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString()
             .getStatus())
             .isEqualTo(777);
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
@@ -672,6 +691,8 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         secondInstance.get("http://backend/foobar").asString();
 
+        awaitMessagesInTiger(4);
+
         final List<String> hostnameSenderList = new ArrayList<>();
         hostnameSenderList.addAll(
             Arrays.asList("localhost|view-localhost", "backend", "localhost|view-localhost", "backend"));
@@ -703,6 +724,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         hostnameList.addAll(
             Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost",
                 "localhost|view-localhost"));
+        awaitMessagesInTiger(4);
 
         checkClientAddresses(hostnameList, hostnameList);
 
@@ -760,6 +782,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         proxyRest.get("http://backend/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
@@ -779,6 +802,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
@@ -795,6 +819,7 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         unirestInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime())
@@ -836,9 +861,85 @@ public class TestTigerProxy extends AbstractTigerProxyTest {
         Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .body("{'foobar':'" + RandomStringUtils.randomAlphanumeric(2_000) + "'}")
             .asString();
+        awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body.foobar"))
             .isEmpty();
+    }
+
+    @Test
+    void reverseProxy_parsingShouldNotBlockCommunication() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+        AtomicBoolean messageWasReceivedInTheClient = new AtomicBoolean(false);
+        AtomicBoolean allowMessageParsingToComplete = new AtomicBoolean(false);
+
+        final RbelConverterPlugin blockConversionUntilCommunicationIsComplete = (el, conv) -> {
+            log.info("Entering wait");
+            await()
+                .atMost(2, TimeUnit.SECONDS)
+                .until(messageWasReceivedInTheClient::get);
+            allowMessageParsingToComplete.set(true);
+            log.info("Exiting wait");
+        };
+        tigerProxy.getRbelLogger().getRbelConverter()
+            .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
+
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+
+        log.info("Message was received in the client...");
+        messageWasReceivedInTheClient.set(true);
+
+        await()
+            .atMost(2, TimeUnit.SECONDS)
+            .until(allowMessageParsingToComplete::get);
+    }
+
+    @Test
+    @SuppressWarnings("java:S2925")
+    void reverseProxy_parsingShouldBlockCommunicationIfConfigured() throws InterruptedException {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .parsingShouldBlockCommunication(true)
+            .build());
+        AtomicBoolean clientHasWaitedAndNotReceivedMessageYet = new AtomicBoolean(false);
+        AtomicBoolean messageParsingHasStarted = new AtomicBoolean(false);
+
+        final RbelConverterPlugin blockConversionUntilCommunicationIsComplete = (el, conv) -> {
+            log.info("Entering wait with "+el.getRawStringContent());
+            messageParsingHasStarted.set(true);
+            await()
+                .atMost(20, TimeUnit.SECONDS)
+                .until(clientHasWaitedAndNotReceivedMessageYet::get);
+            log.info("Exiting wait");
+        };
+        tigerProxy.getRbelLogger().getRbelConverter()
+            .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
+
+        final CompletableFuture<HttpResponse<String>> asyncMessage = Unirest.get(
+            "http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asStringAsync();
+        await()
+            .atMost(20, TimeUnit.SECONDS)
+            .until(messageParsingHasStarted::get);
+
+        // guarantee that a parse would succeed by now
+        Thread.sleep(100);
+
+        assertThat(asyncMessage.isDone())
+            .isFalse();
+
+        log.info("Switching clientHasWaitedAndNotReceivedMessageYet...");
+        clientHasWaitedAndNotReceivedMessageYet.set(true);
+        await()
+            .atMost(20, TimeUnit.SECONDS)
+            .until(asyncMessage::isDone);
     }
 
     // AKR: we need the 'localhost|view-localhost' because of mockserver for all checkClientAddresses-tests.

@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import static org.mockserver.model.Header.header;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.net.URI;

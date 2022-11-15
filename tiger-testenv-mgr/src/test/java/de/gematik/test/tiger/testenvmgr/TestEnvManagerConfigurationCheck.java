@@ -288,7 +288,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
             + "  - filename: src/test/resources/externalConfiguration.yaml\n"
             + "    baseKey: foobar\n"
             + "localProxyActive: false")
-    public void readAdditionalYamlFilesWithDifferingBaseKey() {
+    void readAdditionalYamlFilesWithDifferingBaseKey() {
         assertThat(TigerGlobalConfiguration.readString("foobar.some.keys"))
             .isEqualTo("andValues");
     }
@@ -300,9 +300,30 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
             + "  - filename: src/test/resources/${foo}.yaml\n"
             + "    baseKey: baseKey\n"
             + "localProxyActive: false")
-    public void readAdditionalYamlFilesWithPlaceholdersInName() {
+    void readAdditionalYamlFilesWithPlaceholdersInName() {
         assertThat(TigerGlobalConfiguration.readString("baseKey.someKey"))
             .isEqualTo("someValue");
     }
 
+    @Test
+    @TigerTest(tigerYaml = "servers:\n" +
+        "  testTigerProxy:\n" +
+        "    type: tigerProxy\n" +
+        "    tigerProxyCfg:\n" +
+        "      adminPort: 9999", skipEnvironmentSetup = true)
+    void defaultForLocalTigerProxyShouldBeBlockingMode(TigerTestEnvMgr envMgr) {
+        CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
+        assertThat(srv.getTigerProxyCfg().isParsingShouldBlockCommunication())
+            .isFalse();
+        assertThat(envMgr.getLocalTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
+            .isTrue();
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "tigerProxy:\n"
+        + "  parsingShouldBlockCommunication: false", skipEnvironmentSetup = true)
+    void localTigerProxyConfigurationForNonBlockingModeShouldBePossible(TigerTestEnvMgr envMgr) {
+        assertThat(envMgr.getLocalTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
+            .isFalse();
+    }
 }

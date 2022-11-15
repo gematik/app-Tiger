@@ -47,14 +47,14 @@ public class RbelConverter {
         new RbelJweConverter(),
         new RbelErpVauDecrpytionConverter(),
         new RbelBearerTokenConverter(),
-        new RbelVauEpaConverter(),
         new RbelXmlConverter(),
         new RbelJsonConverter(),
         new RbelVauKeyDeriver(),
         new RbelMtomConverter(),
         new RbelX509Converter(),
         new RbelSicctEnvelopeConverter(),
-        new RbelSicctCommandConverter()
+        new RbelSicctCommandConverter(),
+        new RbelVauEpaConverter()
     ));
     @Builder.Default
     private long messageSequenceNumber = 0;

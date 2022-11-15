@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class RbelFileWriterUtilsTest {
 
     @Test
-    public void readFileTwice_shouldOnlyReadMsgsOnceBasedOnUuid() throws IOException {
+    void readFileTwice_shouldOnlyReadMsgsOnceBasedOnUuid() throws IOException {
         RbelLogger rbelLogger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false));
         var rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());

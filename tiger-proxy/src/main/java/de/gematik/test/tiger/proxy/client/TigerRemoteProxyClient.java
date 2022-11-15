@@ -57,8 +57,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     @Getter
     @Setter
     private Duration maximumPartialMessageAge;
-    @Getter
-    private final ExecutorService trafficParserExecutor = Executors.newSingleThreadExecutor();
     private final AtomicBoolean stompMessageShouldQueue = new AtomicBoolean(false);
     private final Queue<Runnable> messageTaskQueue = new ConcurrentLinkedQueue<>();
     private final AtomicReference<StompSession> stompSession = new AtomicReference<>();
@@ -338,7 +336,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             if (stompMessageShouldQueue.get()) {
                 messageTaskQueue.add(messageTask);
             } else {
-                trafficParserExecutor.submit(messageTask);
+                getTrafficParserExecutor().submit(messageTask);
             }
         }
     }
@@ -354,7 +352,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             log.trace("Switching to executor mode, currently {} messages waiting", messageTaskQueue.size());
             while (!messageTaskQueue.isEmpty()) {
                 log.trace("Submitting a new task");
-                trafficParserExecutor.submit(
+                getTrafficParserExecutor().submit(
                     messageTaskQueue.poll()
                 );
             }
@@ -364,7 +362,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     public boolean messageUuidKnown(final String messageUuid) {
-        return new ArrayList(getRbelMessages()).stream()
-            .anyMatch(msg -> ((RbelElement)msg).getUuid().equals(messageUuid));
+        return new ArrayList<>(getRbelMessages()).stream()
+            .anyMatch(msg -> msg.getUuid().equals(messageUuid));
     }
 }

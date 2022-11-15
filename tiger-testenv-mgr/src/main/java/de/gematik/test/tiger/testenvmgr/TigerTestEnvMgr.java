@@ -7,6 +7,7 @@ package de.gematik.test.tiger.testenvmgr;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
+import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -17,11 +18,14 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import de.gematik.test.tiger.testenvmgr.env.*;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
+import de.gematik.test.tiger.testenvmgr.env.DownloadManager;
+import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.awt.Desktop;
@@ -228,6 +232,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private static Configuration readConfiguration() {
         TigerGlobalConfiguration.initialize();
         readTemplates();
+        addDefaults();
         final Configuration configuration = TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class,
                 "tiger")
             .orElseGet(Configuration::new);
@@ -237,6 +242,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
             }
         }
         return configuration;
+    }
+
+    private static void addDefaults() {
+        TigerGlobalConfiguration.putValue("tiger.tigerProxy.parsingShouldBlockCommunication",
+            "true", SourceType.DEFAULTS);
     }
 
     private void assertNoCyclesInGraph() {

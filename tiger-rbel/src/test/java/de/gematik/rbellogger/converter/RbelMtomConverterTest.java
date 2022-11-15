@@ -46,7 +46,7 @@ class RbelMtomConverterTest {
 
     @Test
     @DisplayName("MTOM XML - should be parsed correctly")
-    public void mtomXml_shouldBeParsedCorrectly() {
+    void mtomXml_shouldBeParsedCorrectly() {
         assertThat(rbelLogger.getMessageList().get(34)
                 .findRbelPathMembers("$..Envelope.soap").get(0)
                 .getRawStringContent())

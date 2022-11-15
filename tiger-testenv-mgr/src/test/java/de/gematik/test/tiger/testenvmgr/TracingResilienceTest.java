@@ -44,7 +44,7 @@ import org.testcontainers.shaded.org.apache.commons.lang3.RandomUtils;
 
 @Slf4j
 @Tag("de.gematik.test.tiger.common.LongrunnerTest")
-public class TracingResilienceTest {
+class TracingResilienceTest {
 
     private static final int MASTER_ROUNDS = 1000;
     private static final int MESSAGES_PER_ROUND = 2;
@@ -72,7 +72,7 @@ public class TracingResilienceTest {
             + "      name: Receiving Proxy\n"
             + "      downloadInitialTrafficFromEndpoints: true\n"
             + "      connectionTimeoutInSeconds: 100", skipEnvironmentSetup = true)
-    public void generateTrafficAndBounceViaRemoteProxy(TigerTestEnvMgr testEnvMgr) throws IOException {
+    void generateTrafficAndBounceViaRemoteProxy(TigerTestEnvMgr testEnvMgr) throws IOException {
         int aggregatingAdminPort;
         try (ServerSocket socket = new ServerSocket(0)) {
             aggregatingAdminPort = socket.getLocalPort();

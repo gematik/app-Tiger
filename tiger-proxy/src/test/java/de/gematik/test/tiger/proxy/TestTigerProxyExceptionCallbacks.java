@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -22,10 +23,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
+class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
 
     @Test
-    public void forwardProxyRequestException_shouldPropagate() {
+    void forwardProxyRequestException_shouldPropagate() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
@@ -38,13 +39,15 @@ public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
 
         proxyRest.get("http://backend/foobar").asString();
+        await()
+            .until(() -> caughtExceptionReference.get() != null);
 
         assertThat(caughtExceptionReference.get().getMessage())
             .isEqualTo("foobar");
     }
 
     @Test
-    public void reverseProxyRequestException_shouldPropagate() {
+    void reverseProxyRequestException_shouldPropagate() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -57,13 +60,15 @@ public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
 
         Unirest.spawnInstance().get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        await()
+            .until(() -> caughtExceptionReference.get() != null);
 
         assertThat(caughtExceptionReference.get().getMessage())
             .isEqualTo("foobar");
     }
 
     @Test
-    public void forwardProxyResponseException_shouldPropagate() {
+    void forwardProxyResponseException_shouldPropagate() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
@@ -76,13 +81,15 @@ public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
 
         proxyRest.get("http://backend/foobar").asString();
+        await()
+            .until(() -> caughtExceptionReference.get() != null);
 
         assertThat(caughtExceptionReference.get().getMessage())
             .isEqualTo("foobar");
     }
 
     @Test
-    public void reverseProxyResponseException_shouldPropagate() {
+    void reverseProxyResponseException_shouldPropagate() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -95,6 +102,8 @@ public class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
 
         Unirest.spawnInstance().get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        await()
+            .until(() -> caughtExceptionReference.get() != null);
 
         assertThat(caughtExceptionReference.get().getMessage())
             .isEqualTo("foobar");

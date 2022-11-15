@@ -155,39 +155,52 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     public HttpResponse handleResponse(HttpRequest req, HttpResponse resp) {
         applyModifications(resp);
         if (shouldLogTraffic()) {
-            try {
-                final RbelElement request = getTigerProxy().getMockServerToRbelConverter()
-                    .convertRequest(req, extractProtocolAndHostForRequest(req));
-                //TODO TGR-651 null ersetzen durch echten wert
-                final RbelElement response = getTigerProxy().getMockServerToRbelConverter()
-                    .convertResponse(resp, extractProtocolAndHostForRequest(req), null);
-                Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
-                    .ifPresent(requestTime -> addTimingFacet(request, requestTime));
-                addTimingFacet(response, ZonedDateTime.now());
-                val pairFacet = TracingMessagePairFacet.builder()
-                    .response(response)
-                    .request(request)
-                    .build();
-                request.addFacet(pairFacet);
-                response.addFacet(pairFacet);
-                response.addOrReplaceFacet(
-                    response.getFacet(RbelHttpResponseFacet.class)
-                        .map(RbelHttpResponseFacet::toBuilder)
-                        .orElse(RbelHttpResponseFacet.builder())
-                        .request(request)
-                        .build());
-
-                parseCertificateChainIfPresent(req, request)
-                    .ifPresent(request::addFacet);
-
-                getTigerProxy().triggerListener(request);
-                getTigerProxy().triggerListener(response);
-            } catch (RuntimeException e) {
-                propagateExceptionMessageSafe(e);
-                log.error("Rbel-parsing failed!", e);
-            }
+            parseMessages(req, resp);
         }
         return resp.withBody(resp.getBodyAsRawBytes());
+    }
+
+    private void parseMessages(HttpRequest req, HttpResponse resp) {
+        if (getTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication()) {
+            executeHttpTrafficPairParsing(req, resp);
+        } else {
+            getTigerProxy().getTrafficParserExecutor()
+                .submit(() -> executeHttpTrafficPairParsing(req, resp));
+        }
+    }
+
+    private void executeHttpTrafficPairParsing(HttpRequest req, HttpResponse resp) {
+        try {
+            final RbelElement request = getTigerProxy().getMockServerToRbelConverter()
+                .convertRequest(req, extractProtocolAndHostForRequest(req));
+            //TODO TGR-651 null ersetzen durch echten wert
+            final RbelElement response = getTigerProxy().getMockServerToRbelConverter()
+                .convertResponse(resp, extractProtocolAndHostForRequest(req), null);
+            Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
+                .ifPresent(requestTime -> addTimingFacet(request, requestTime));
+            addTimingFacet(response, ZonedDateTime.now());
+            val pairFacet = TracingMessagePairFacet.builder()
+                .response(response)
+                .request(request)
+                .build();
+            request.addFacet(pairFacet);
+            response.addFacet(pairFacet);
+            response.addOrReplaceFacet(
+                response.getFacet(RbelHttpResponseFacet.class)
+                    .map(RbelHttpResponseFacet::toBuilder)
+                    .orElse(RbelHttpResponseFacet.builder())
+                    .request(request)
+                    .build());
+
+            parseCertificateChainIfPresent(req, request)
+                .ifPresent(request::addFacet);
+
+            getTigerProxy().triggerListener(request);
+            getTigerProxy().triggerListener(response);
+        } catch (RuntimeException e) {
+            propagateExceptionMessageSafe(e);
+            log.error("Rbel-parsing failed!", e);
+        }
     }
 
     private Optional<RbelFacet> parseCertificateChainIfPresent(HttpRequest httpRequest, RbelElement message) {
@@ -231,8 +244,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
     protected abstract String extractProtocolAndHostForRequest(HttpRequest request);
 
-    private RbelElement addTimingFacet(RbelElement message, ZonedDateTime requestTime) {
-        return message.addFacet(RbelMessageTimingFacet.builder()
+    private void addTimingFacet(RbelElement message, ZonedDateTime requestTime) {
+        message.addFacet(RbelMessageTimingFacet.builder()
             .transmissionTime(requestTime)
             .build());
     }

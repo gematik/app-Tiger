@@ -62,11 +62,12 @@ Feature: Test Tiger BDD
     Then User requests "/classes" with parameter "foobar=1"
     Then User requests "/classes" with parameter "foobar=2"
     Then User requests "/classes" with parameter "foobar=3"
-    Then User requests "/classes" with parameter "foobar=0"
+    Then User requests "/directoryWhichDoesNotExist" with parameter "other=param"
     Then TGR find the last request
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
-    Then TGR current response with attribute "$.header.Location.foobar.value" matches "0"
+    Then TGR current response with attribute "$.responseCode" matches "404"
+    Then TGR assert "!{rbel:currentRequestAsString('$.path.other.value')}" matches "param"
 
   Scenario: Test show HTML
     Given TGR show HTML Notification:

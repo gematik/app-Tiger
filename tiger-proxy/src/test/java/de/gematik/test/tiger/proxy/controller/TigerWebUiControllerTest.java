@@ -8,6 +8,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -220,6 +221,8 @@ public class TigerWebUiControllerTest {
         proxyRest.post("http://localhost:" + fakeBackendServer.port() + "/foobar")
             .body("{'randomStringForLulz':'" + longString + "'}")
             .asString();
+        await()
+            .until(() -> tigerProxy.getRbelMessages().size() >= 2);
 
         final JsonNode body = Unirest.get(getWebUiUrl() + "/getMsgAfter").asJson().getBody();
         System.out.println(body.toString());
