@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 0.24.2-SNAPSHOT - 2022-10-13</span>
+<span id="revdate">Version 1.0.0-SNAPSHOT - 2022-11-17</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -2008,9 +2008,17 @@ For more information about what the Tiger Proxy is and how it works see the chap
   <span class="comment"># Deactivating will not impede proxy-forwarding nor</span>
   <span class="comment"># the traffic-endpoints.</span>
   <span class="key">activateRbelParsing</span>: <span class="string"><span class="content">true</span></span>
+  <span class="comment"># While parsing the Tiger Proxy can block the communication from completing.</span>
+  <span class="comment"># The end answer from the Tiger Proxy is only transmitted when parsing is completed</span>
+  <span class="comment"># (and the message pair can be seen in the log). When 'false' the parsing is done</span>
+  <span class="comment"># asynchronous.</span>
+  <span class="comment"># Default is true ONLY for the local Tiger Proxy, otherwise default is false!!</span>
+  <span class="key">parsingShouldBlockCommunication</span>: <span class="string"><span class="content">false</span></span>
   <span class="comment"># This will share the WebUI-Resources (various CSS-files) from the Tiger Proxy</span>
   <span class="comment"># locally, thus enabling usage when no internet connection exists</span>
   <span class="key">localResources</span>: <span class="string"><span class="content">true</span></span>
+  <span class="comment"># When active the host-headers are rewritten even for a reverse-proxy-route</span>
+  <span class="key">rewriteHostHeader</span>: <span class="string"><span class="content">true</span></span>
 
   <span class="key">tls</span>:
     <span class="comment"># Can be used to define a CA-Identity to be used with TLS. The Tiger Proxy will</span>
@@ -2064,6 +2072,11 @@ For more information about what the Tiger Proxy is and how it works see the chap
   <span class="comment"># traffic when analyzing it. It has no effect on the proxy-functions themselves.</span>
   <span class="key">keyFolders</span>:
   - <span class="string"><span class="content">.</span></span>
+
+  <span class="comment"># Filter out any messages larger from parsing (saving performance)</span>
+  <span class="key">skipParsingWhenMessageLargerThanKb</span>: <span class="string"><span class="content">8000</span></span>
+  <span class="comment"># Filter out any messages (or message parts) from displaying</span>
+  <span class="key">skipDisplayWhenMessageLargerThanKb</span>: <span class="string"><span class="content">512</span></span>
 
   <span class="comment"># A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to</span>
   <span class="comment"># gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible</span>
@@ -2251,7 +2264,7 @@ to the reverse proxy.</p>
 </div>
 <div class="paragraph">
 <p>Both types have a proxy-port (configurable via <code>tigerProxy.proxyPort</code>),<br>
-which supports both http- and https-traffic (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>). This provides a webui to monitor the traffic,<br>
+which supports both http- and https-traffic, (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>). This provides a webui to monitor the traffic,<br>
 a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
 </div>
 </div>
@@ -2264,7 +2277,7 @@ or reverse-proxy. A route has the following properties:</p>
 <div class="sect3">
 <h4 id="_from">4.3.1. from</h4>
 <div class="paragraph">
-<p>From where should the traffic be collected? This can either be an absolute URL (eg. <a href="http://foobar" class="bare">http://foobar</a>), which defines a forward-proxy route, or relative (eg. /blub), defining a reverse-proxy-route. Please note: You can freely add parts (eg. <a href="http://foobar/extra/part" class="bare">http://foobar/extra/part</a>) to further specify the mapping.</p>
+<p>From where should the traffic be collected? This can either be an absolute URL (e.g. <a href="http://foobar" class="bare">http://foobar</a>), which defines a forward-proxy route, or relative (e.g. /blub), defining a reverse-proxy-route. Please note: You can freely add parts (e.g. <a href="http://foobar/extra/part" class="bare">http://foobar/extra/part</a>) to further specify the mapping.</p>
 </div>
 </div>
 <div class="sect3">
@@ -2818,7 +2831,8 @@ Is <code>null</code> if not present</p>
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">tigerProxy</span>:
     <span class="key">activateRbelParsing</span>: <span class="string"><span class="content">true</span></span>
     <span class="key">activateAsn1Parsing</span>: <span class="string"><span class="content">false</span></span>
-    <span class="key">activateVauAnalysis</span>: <span class="string"><span class="content">false</span></span></code></pre>
+    <span class="key">activateVauAnalysis</span>: <span class="string"><span class="content">false</span></span>
+    <span class="key">parsingShouldBlockCommunication</span>: <span class="string"><span class="content">false</span></span></code></pre>
 </div>
 </div>
 <div class="sect4">
@@ -2836,7 +2850,30 @@ Is <code>null</code> if not present</p>
 <div class="sect4">
 <h5 id="_activatevauanalysis">activateVauAnalysis</h5>
 <div class="paragraph">
-<p>VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze EPA-VAU messages leave this option turned off. If you do enabling it will give you additional information about the messages.</p>
+<p>VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze ePA-VAU messages leave this option turned off. If you do, enabling it will give you additional information about the messages.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parsingshouldblockcommunication">parsingShouldBlockCommunication</h5>
+<div class="paragraph">
+<p>If blocking is enabled the Tiger Proxy will only return the response when message parsing is completed. This is inadvisable in high-speed scenarios. It, however, greatly simplifies the test suite (after the communication is concluded the parsed message appears in the log). Therefore, the blocking is deactivated by default. The only exception is the local Tiger Proxy, which WILL block communication until parsing is completed. For all Tiger Proxies this default behavior can be changed.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_directreverseproxy">directReverseProxy</h5>
+<div class="paragraph">
+<p>To enable the use of the TigerProxy for non-HTTP scenarios you can use the option <code>directReverseProxy</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">tigerProxy</span>:
+    <span class="key">directReverseProxy</span>:
+        <span class="key">hostname</span>: <span class="string"><span class="content">127.0.0.1</span></span>
+        <span class="key">port</span>: <span class="string"><span class="content">3858</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will directly forward any request to the given host. This is a form of reverseProxy, only also applicable for non-http-traffic. HTTP traffic will still be forwarded through use of a global reverse proxy. Other traffic will be directly forwarded, rerouted directly on the TCP layer. Messages transmitted can still be parsed via RBel.</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -3378,7 +3415,7 @@ only check for regex matches if they were not equal.</p>
 * @param rbelPath     path to node/attribute
 * @param mode         one of JSON|XML
 * @param oracleDocStr value / regex that should equal or match as JSON or XML content
-* @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
+* @see JsonChecker#compareJsonStrings(String, String, boolean)
 */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {ModeType} überein mit:</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response at {string} matches as {ModeType}:</span><span class="delimiter">&quot;</span></span>)
@@ -3589,7 +3626,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p><strong>@Product:PPPPP</strong> &#8230;&#8203; Mandatory - reference to the custom field "cfProductType". As the value most likely is identical for all scenarios you may attach this annotation also to the feature.</p>
 </li>
 <li>
-<p><strong>@PRIO:N</strong> &#8230;&#8203;. Mandatory - priority number (1-3)</p>
+<p><strong>@PRIO:N</strong> &#8230;&#8203;. Mandatory - priority number (1-4)</p>
 </li>
 <li>
 <p>and the following optional annotations:</p>
@@ -3605,7 +3642,10 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>@manual &#8230;&#8203; to mark the test case as being manually executed. If not set defaults to "Automatic"</p>
 </li>
 <li>
-<p>@Afo:AAAAA &#8230;&#8203; a link to a defined requirement in Polarion, where AAAAA matches the custom field "cfAfoId"</p>
+<p>@Afo:AAAAA &#8230;&#8203; a link to a defined requirement (Anforderung) in Polarion, where AAAAA matches the custom field "cfAfoId"</p>
+</li>
+<li>
+<p>@AF-ID:AAAAA &#8230;&#8203; a link to a defined requirement (Anwendungsfall) in Polarion, where AAAAA matches the custom field "cfAfId"</p>
 </li>
 </ul>
 </div>
@@ -3616,7 +3656,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>If a scenario is identified that has no test case with a matching TCID, it will be created automatically in the sync run. Background blocks will be merged to each scenario before exporting its steps to Polarion.</p>
 </div>
 <div class="paragraph">
-<p>For more details on how to perform the synchronisation and how to also upload generated test run reports to Polarion and Aurora, please check the PolarionToolbox project on the Gematik GitLab.</p>
+<p>For more details on how to perform the synchronisation and how to also upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -3939,7 +3979,13 @@ You will find two predefined namespaces and also the ability to add your own, al
 <p><code>currentResponse</code> returns the current response, optionally filtered by a given Rbel-path</p>
 </li>
 <li>
-<p><code>currentResponseAsString</code> returns the string-representation of the last response, optionally filtered by a given Rbel-path</p>
+<p><code>currentResponseAsString</code> returns the string-representation of the current response, optionally filtered by a given Rbel-path</p>
+</li>
+<li>
+<p><code>currentRequest</code> returns the current request, optionally filtered by a given Rbel-path</p>
+</li>
+<li>
+<p><code>currentRequestAsString</code> returns the string-representation of the current request, optionally filtered by a given Rbel-path</p>
 </li>
 </ul>
 </div>
@@ -4038,16 +4084,19 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <p><strong>Toggle Button</strong>  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as reponse headers) or all the detailed information of the requests and responses.</p>
 </li>
 <li>
-<p><strong>Input field</strong>  … allows you to filter the incoming messages with a RbelPath or a JEXL expression by using the "Set filter" button. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").</p>
-</li>
-<li>
-<p><strong>DropUp</strong> … allows you to filter the incoming messages for requests from or to a certain server. The JEXL expression will then be automatically filled in the input field and the user triggers the filter by pressing the "Set filter" button.</p>
+<p><strong>Filter</strong>  … allows you to filter the incoming messages with a RbelPath or a JEXL expression. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").</p>
 </li>
 <li>
 <p><strong>Reset</strong> … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!</p>
 </li>
 <li>
 <p><strong>Save</strong> … allows you to save the current HTML page or the raw traffic as tgr file.</p>
+</li>
+<li>
+<p><strong>Page</strong> … allows pagination of the messages.</p>
+</li>
+<li>
+<p><strong>Size</strong> … changes the size of the messages.</p>
 </li>
 <li>
 <p><strong>Import</strong> … allows you to import the previously stored traffic file.</p>
@@ -4174,7 +4223,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-13 12:05:38 UTC
+Last updated 2022-11-17 14:36:23 UTC
 </div>
 </div>
 </body>
