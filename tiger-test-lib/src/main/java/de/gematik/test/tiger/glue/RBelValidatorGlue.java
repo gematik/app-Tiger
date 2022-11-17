@@ -18,7 +18,6 @@ package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerLibraryException;
@@ -33,9 +32,7 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.xmlunit.builder.DiffBuilder;
@@ -43,7 +40,7 @@ import org.xmlunit.builder.DiffBuilder;
 @Slf4j
 public class RBelValidatorGlue {
 
-    static final RbelMessageValidator rbelValidator = new RbelMessageValidator();
+    static final RbelMessageValidator rbelValidator = RbelMessageValidator.instance;
 
     public static RbelMessageValidator getRbelValidator() {
         return rbelValidator;
@@ -228,22 +225,7 @@ public class RBelValidatorGlue {
     @Wenn("TGR finde die letzte Anfrage")
     @When("TGR find the last request")
     public void findLastRequest() {
-        List<RbelElement> validatableRbelMessages = LocalProxyRbelMessageListener.getValidatableRbelMessages();
-        if (validatableRbelMessages.isEmpty()) {
-            throw new TigerLibraryException("No Request found.");
-        }
-        String lastRbelRequestFacetString = validatableRbelMessages.get(validatableRbelMessages.size() - 2).getFacets()
-            .get(0).toString();
-
-        String menuInfoString = lastRbelRequestFacetString.substring(lastRbelRequestFacetString.indexOf("=") + 1,
-            lastRbelRequestFacetString.indexOf(")"));
-
-        String path = menuInfoString.substring(menuInfoString.indexOf(" ") + 1,
-            menuInfoString.indexOf("?") - 1);
-
-        rbelValidator.filterRequestsAndStoreInContext(
-            RequestParameter.builder().path(path).filterPreviousRequest(true).build()
-                .resolvePlaceholders());
+        rbelValidator.findLastRequest();
     }
 
     /**
@@ -301,10 +283,9 @@ public class RBelValidatorGlue {
     @Dann("TGR ersetze {string} mit {string} im Inhalt der Variable {string}")
     @Then("TGR replace {string} with {string} in content of variable {string}")
     public void replaceContentOfVariable(final String regexPattern, final String replace, final String varName) {
-        Optional<String> content = TigerGlobalConfiguration.readStringOptional(varName);
-        assertThat(content).withFailMessage("No configuration property '" + varName + "' found!")
-            .isNotEmpty();
-        String newContent = content.get().replaceAll(regexPattern, replace);
+        String newContent = TigerGlobalConfiguration.readStringOptional(varName)
+            .orElseThrow(() -> new TigerLibraryException("No configuration property '" + varName + "' found!"))
+            .replaceAll(regexPattern, replace);
         TigerGlobalConfiguration.putValue(varName, newContent, SourceType.TEST_CONTEXT);
         log.info(String.format("Modified content in variable '%s' to '%s'", varName, newContent));
     }
@@ -423,7 +404,7 @@ public class RBelValidatorGlue {
      * @param rbelPath     path to node/attribute
      * @param mode         one of JSON|XML
      * @param oracleDocStr value / regex that should equal or match as JSON or XML content
-     * @see JsonChecker#assertJsonObjectShouldMatchOrContainInAnyOrder(String, String, boolean)
+     * @see JsonChecker#compareJsonStrings(String, String, boolean)
      */
     @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {ModeType} überein mit:")
     @Then("TGR current response at {string} matches as {ModeType}:")

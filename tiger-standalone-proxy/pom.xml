@@ -9,7 +9,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.24.2</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -39,6 +39,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.2</version>
                 <executions>
                     <execution>
                         <id>empty-javadoc-jar</id>

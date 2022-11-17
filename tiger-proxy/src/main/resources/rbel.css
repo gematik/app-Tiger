@@ -252,10 +252,6 @@ pre.json {
     height: 100%;
 }
 
-.navbar-item span {
-    color: #aaa;
-}
-
 #sidebar-menu, .menu + div {
     padding-bottom: 10rem;
 }
@@ -318,3 +314,11 @@ pre.json {
     background-color: #373a3c;
 }
 
+.copyToClipboard-button {
+    filter: invert(100%);
+    margin-left: 1em;
+}
+.dropdown-content {
+    max-height: 100vh;
+    overflow: auto;
+}

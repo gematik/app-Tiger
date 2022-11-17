@@ -10,13 +10,12 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.24.2</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
         <version.commons-collections4>4.4</version.commons-collections4>
-        <version.cucumber>7.2.3</version.cucumber>
         <version.jsonassert>1.5.1</version.jsonassert>
         <version.json-unit>2.36.0</version.json-unit>
         <version.xmlunit-core>2.9.0</version.xmlunit-core>

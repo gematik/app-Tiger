@@ -17,12 +17,11 @@
 package de.gematik.test.tiger.common.data.config.tigerProxy;
 
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @AllArgsConstructor

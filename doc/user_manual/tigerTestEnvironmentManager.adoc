@@ -645,9 +645,17 @@ tigerProxy:
   # Deactivating will not impede proxy-forwarding nor
   # the traffic-endpoints.
   activateRbelParsing: true
+  # While parsing the Tiger Proxy can block the communication from completing.
+  # The end answer from the Tiger Proxy is only transmitted when parsing is completed
+  # (and the message pair can be seen in the log). When 'false' the parsing is done
+  # asynchronous.
+  # Default is true ONLY for the local Tiger Proxy, otherwise default is false!!
+  parsingShouldBlockCommunication: false
   # This will share the WebUI-Resources (various CSS-files) from the Tiger Proxy
   # locally, thus enabling usage when no internet connection exists
   localResources: true
+  # When active the host-headers are rewritten even for a reverse-proxy-route
+  rewriteHostHeader: true
 
   tls:
     # Can be used to define a CA-Identity to be used with TLS. The Tiger Proxy will
@@ -701,6 +709,11 @@ tigerProxy:
   # traffic when analyzing it. It has no effect on the proxy-functions themselves.
   keyFolders:
   - .
+
+  # Filter out any messages larger from parsing (saving performance)
+  skipParsingWhenMessageLargerThanKb: 8000
+  # Filter out any messages (or message parts) from displaying
+  skipDisplayWhenMessageLargerThanKb: 512
 
   # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
   # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible

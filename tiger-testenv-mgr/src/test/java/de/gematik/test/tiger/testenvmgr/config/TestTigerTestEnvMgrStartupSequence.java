@@ -20,13 +20,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.data.config.TigerServerTypeImpl;
+import de.gematik.test.tiger.testenvmgr.servers.ExternalUrlServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,9 +49,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
-public class TestTigerTestEnvMgrStartupSequence {
+class TestTigerTestEnvMgrStartupSequence {
 
-    private static List<String> startupSequence = new ArrayList<>();
+    private static final List<String> startupSequence = new ArrayList<>();
     private static TigerTestEnvMgr envMgr;
 
     @BeforeAll
@@ -150,12 +152,12 @@ public class TestTigerTestEnvMgrStartupSequence {
     }
 
     @SneakyThrows
-    private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon) {
+    private static Map.Entry<String, AbstractTigerServer> buildServerMockDependingUpon(String name, String dependsUpon) {
         final CfgServer configuration = new CfgServer();
         configuration.setDependsUpon(dependsUpon);
-        configuration.setType(ServerType.EXTERNALURL);
+        configuration.setType(new TigerServerTypeImpl("mockserver"));
         configuration.setSource(List.of("blub"));
-        final TigerServer server = new MockTigerServer(name, configuration, envMgr);
+        final AbstractTigerServer server = new MockTigerServer(name, configuration, envMgr);
         TigerGlobalConfiguration.readFromYaml(new ObjectMapper().writeValueAsString(configuration),
             SourceType.TEST_CONTEXT,
             "tiger", "servers", name);
@@ -164,13 +166,13 @@ public class TestTigerTestEnvMgrStartupSequence {
     }
 
     @SneakyThrows
-    private static Map.Entry<String, TigerServer> buildServerMockDependingUpon(String name, String dependsUpon,
+    private static Map.Entry<String, AbstractTigerServer> buildServerMockDependingUpon(String name, String dependsUpon,
         String delayStartupUntilThisServerIsRunning) {
         final CfgServer configuration = new CfgServer();
         configuration.setDependsUpon(dependsUpon);
-        configuration.setType(ServerType.EXTERNALURL);
+        configuration.setType(ExternalUrlServer.class.getAnnotation(TigerServerType.class));
         configuration.setSource(List.of("blub"));
-        final TigerServer server = new MockTigerServer(name, configuration, envMgr,
+        final AbstractTigerServer server = new MockTigerServer(name, configuration, envMgr,
             delayStartupUntilThisServerIsRunning);
         TigerGlobalConfiguration.readFromYaml(new ObjectMapper().writeValueAsString(configuration),
             SourceType.TEST_CONTEXT,
@@ -193,7 +195,7 @@ public class TestTigerTestEnvMgrStartupSequence {
 
     @ParameterizedTest
     @MethodSource("checkSuccessfullStartupSequencesParameters")
-    public void checkSuccessfullStartupSequences(Map<String, TigerServer> serverMap,
+    void checkSuccessfullStartupSequences(Map<String, AbstractTigerServer> serverMap,
         List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
         try {
@@ -202,7 +204,7 @@ public class TestTigerTestEnvMgrStartupSequence {
             startupSequences.stream()
                 .map(potentialOrder -> {
                     try {
-                        assertThat(this.startupSequence)
+                        assertThat(startupSequence)
                             .isEqualTo(potentialOrder);
                         return Optional.empty();
                     } catch (AssertionError e) {
@@ -220,7 +222,7 @@ public class TestTigerTestEnvMgrStartupSequence {
 
     @ParameterizedTest
     @MethodSource("cyclicGraphParameters")
-    public void cyclicGraph_expectError(Map<String, TigerServer> serverMap) {
+    void cyclicGraph_expectError(Map<String, AbstractTigerServer> serverMap) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
 
         assertThatThrownBy(() -> envMgr.setUpEnvironment())
@@ -229,7 +231,7 @@ public class TestTigerTestEnvMgrStartupSequence {
     }
 
     @Test
-    public void dependsUponNonExistingServer_shouldFail() {
+    void dependsUponNonExistingServer_shouldFail() {
         ReflectionTestUtils.setField(envMgr, "servers", Map.ofEntries(
             buildServerMockDependingUpon("a", "b")));
 
@@ -238,7 +240,8 @@ public class TestTigerTestEnvMgrStartupSequence {
             .hasMessageContaining("Unknown server");
     }
 
-    public static class MockTigerServer extends TigerServer {
+    @TigerServerType("mockserver")
+    public static class MockTigerServer extends AbstractTigerServer {
 
         private final Optional<String> delayStartupUntilThisServerIsRunning;
 
@@ -259,13 +262,11 @@ public class TestTigerTestEnvMgrStartupSequence {
                 startupSequence.add(getHostname());
             }
             log.info("Starting server {}", getHostname());
-            if (delayStartupUntilThisServerIsRunning.isPresent()) {
-                await()
-                    .atMost(1, TimeUnit.SECONDS)
-                    .pollInterval(Duration.ofMillis(1))
-                    .until(() -> this.getTigerTestEnvMgr().getServers().get(delayStartupUntilThisServerIsRunning.get())
-                        .getStatus() == TigerServerStatus.RUNNING);
-            }
+            delayStartupUntilThisServerIsRunning.ifPresent(s -> await()
+                .atMost(1, TimeUnit.SECONDS)
+                .pollInterval(Duration.ofMillis(1))
+                .until(() -> this.getTigerTestEnvMgr().getServers().get(s)
+                    .getStatus() == TigerServerStatus.RUNNING));
         }
 
         @Override

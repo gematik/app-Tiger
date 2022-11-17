@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -30,23 +29,41 @@ import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.util.SocketUtils;
 
+@TigerServerType("tigerProxy")
 public class TigerProxyServer extends AbstractExternalTigerServer {
 
     private ConfigurableApplicationContext applicationContext;
 
-    TigerProxyServer(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
+    public TigerProxyServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+    }
+
+    public void assertThatConfigurationIsCorrect() {
+        super.assertThatConfigurationIsCorrect();
+
+        if (getConfiguration().getTigerProxyCfg() == null) {
+            getConfiguration().setTigerProxyCfg(new TigerProxyConfiguration());
+        }
+        if (getConfiguration().getTigerProxyCfg().getAdminPort() <= 0) {
+            getConfiguration().getTigerProxyCfg().setAdminPort(SocketUtils.findAvailableTcpPort());
+        }
+        if (getConfiguration().getTigerProxyCfg().getProxyPort() == null
+            || getConfiguration().getTigerProxyCfg().getProxyPort() <= 0) {
+            throw new TigerTestEnvException("Missing proxy-port configuration for server '" + getServerId() + "'");
+        }
     }
 
     @Override
     public void performStartup() {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type(ServerType.TIGERPROXY)
+            .type("tigerProxy")
             .statusMessage("Pre-start Tiger Proxy " + getServerId())
             .build());
 
@@ -78,11 +95,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
         TigerServerLogManager.addProxyCustomerAppender(this);
 
-        waitForService(true);
-        if (getStatus() == TigerServerStatus.STARTING) {
-            waitForService(false);
-        }
-        statusMessage("Tiger Proxy " + getServerId() + " started");
+        waitForServerUp();
     }
 
     @Override
@@ -114,8 +127,8 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     }
 
     @Override
-    String getHealthcheckUrl() {
-        return "http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getAdminPort();
+    Optional<String> getHealthcheckUrl() {
+        return Optional.of("http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getAdminPort());
     }
 
     @Override

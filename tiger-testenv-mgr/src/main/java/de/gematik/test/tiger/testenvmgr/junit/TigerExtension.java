@@ -19,9 +19,11 @@ package de.gematik.test.tiger.testenvmgr.junit;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +60,10 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
     }
 
     private TigerTest findTigerAnnotation(ExtensionContext context) {
-        return context.getTestMethod().get().getAnnotation(TigerTest.class);
+        return context.getTestMethod()
+            .map(m -> m.getAnnotation(TigerTest.class))
+            .filter(Objects::nonNull)
+            .orElseThrow(() -> new TigerEnvironmentStartupException("Could not find test method or TigerTest annotation"));
     }
 
     @Override

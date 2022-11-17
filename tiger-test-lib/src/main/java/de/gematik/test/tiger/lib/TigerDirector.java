@@ -265,7 +265,7 @@ public class TigerDirector {
                 .bannerType(BannerType.TESTRUN_ENDED)
                 .build());
             try {
-                await().pollInterval(1, TimeUnit.SECONDS)
+                await().pollInterval(200, TimeUnit.MILLISECONDS)
                     .atMost(5, TimeUnit.HOURS)
                     .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
             } finally {

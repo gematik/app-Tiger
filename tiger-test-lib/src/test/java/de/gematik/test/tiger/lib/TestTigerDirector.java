@@ -20,8 +20,8 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withTextFromSystemIn;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -143,6 +143,8 @@ class TestTigerDirector {
                 InsecureTrustAllManager.allowAllSsl(con);
 
                 con.connect();
+
+                assertThatNoException();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -261,23 +263,23 @@ class TestTigerDirector {
                     ).isEqualTo(0)));
     }
 
+    /*
+    * see doc/specification/TigerTestEnvWaitForQuit.puml
+    */
     @Test
     void testQuitTestRunViaWorkFlowUi() throws Exception {
+        TigerDirector.start();
+        EnvStatusController envStatusController = new EnvStatusController(
+            TigerDirector.getTigerTestEnvMgr());
+        TigerDirector.getLibConfig().activateWorkflowUi = true;
+
         withTextFromSystemIn("quit\n")
             .execute(() ->
                 executeWithSecureShutdown(() ->
                     assertThat(catchSystemExit(() -> {
-                        TigerDirector.start();
-                        EnvStatusController envStatusController = new EnvStatusController(
-                            TigerDirector.getTigerTestEnvMgr());
-                        TigerDirector.getLibConfig().activateWorkflowUi = true;
                         new Thread(TigerDirector::waitForQuit).start();
-
-                        await().atMost(4, TimeUnit.SECONDS)
-                            .until(() -> {
-                                envStatusController.getConfirmQuit();
-                                return false;
-                            });
+                        envStatusController.getConfirmQuit();
+                        Thread.sleep(600); // Director polls at 200ms so give it time to system exit
                     })).isEqualTo(0)));
     }
 

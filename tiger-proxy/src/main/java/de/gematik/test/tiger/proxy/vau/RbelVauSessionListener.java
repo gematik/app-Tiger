@@ -23,6 +23,7 @@ import de.gematik.rbellogger.data.facet.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -56,8 +57,11 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
             .map(RbelRootFacet::getRootFacet)
             .filter(RbelJsonFacet.class::isInstance)
             .isPresent()) {
-            final RbelJsonFacet rbelJsonFacet = rbelElement.getFacet(RbelJsonFacet.class).get();
-            if (!rbelJsonFacet.getJsonElement().getAsJsonObject()
+            final Optional<RbelJsonFacet> rbelJsonFacet = rbelElement.getFacet(RbelJsonFacet.class);
+            if (rbelJsonFacet.isEmpty()) {
+                return;
+            }
+            if (!rbelJsonFacet.get().getJsonElement().getAsJsonObject()
                 .get("MessageType").getAsString()
                 .equals("VAUClientHello")) {
                 return;

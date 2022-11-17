@@ -74,14 +74,18 @@
 import TigerServerLogDto from "@/types/TigerServerLogDto";
 import LogLevel from "@/types/LogLevel";
 import {DateTimeFormatter, LocalDateTime} from "@js-joda/core";
+import {ref} from "vue";
 
-defineProps<{
+const props = defineProps<{
   serverLogs: Array<TigerServerLogDto>;
   logServers: Array<string>;
   selectedServers: Array<string>;
   selectedLoglevel: string;
   selectedText: string;
 }>();
+
+const selectedText = ref(props.selectedText);
+const selectedLoglevel = ref(props.selectedLoglevel);
 
 const formatter: DateTimeFormatter = DateTimeFormatter.ofPattern('MM/dd/yyyy HH:mm:ss.SSS');
 

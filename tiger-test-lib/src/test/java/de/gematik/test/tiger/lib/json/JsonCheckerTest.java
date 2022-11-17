@@ -22,17 +22,40 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(Lifecycle.PER_CLASS)
 @Slf4j
-public class JsonCheckerTest {
+class JsonCheckerTest {
 
+    private static final String IDP_STRUCT = "{\n"
+        + "  iss: 'http.*',\n"
+        + "  sub: 'http.*',\n"
+        + "  iat: \"${json-unit.ignore}\",\n"
+        + "  exp: \"${json-unit.ignore}\",\n"
+        + "  jwks: {\n"
+        + "    keys: [\n"
+        + "      {\n"
+        + "        use: \"sig\",\n"
+        + "        kid: \"puk_fachdienst_sig\",\n"
+        + "        kty: \"EC\",\n"
+        + "        crv: \"P-256\",\n"
+        + "        x: \"${json-unit.ignore}\",\n"
+        + "        y: \"${json-unit.ignore}\"\n"
+        + "      }\n"
+        + "    ]\n"
+        + "  },\n"
+        + "  authority_hints: [\"todo Bezeichnung des Federation Master\"]\n"
+        + "}\n";
     final JsonChecker check = new JsonChecker();
 
-    private static Stream<Arguments> provideDataForMatchingJsonObjects() {
+    private Stream<Arguments> provideDataForMatchingJsonObjects() {
         return Stream.of(
             Arguments.of("Match json: extra field, optional field",
                 "{ attr1: 'val1' }",
@@ -90,46 +113,45 @@ public class JsonCheckerTest {
                 "{ attr1: { sub1: null }, attr2:'val2' }",
                 "{ attr1: { sub1: '$NULL' }, attr2: 'val2' }", Optional.empty(), true),
 
-            Arguments.of("Match json: nested object, incorrect regex",
+            Arguments.of("Match json: nested object, incorrect regex (1)",
                 "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
                 "{ attr1: { sub1: 'val1xxxx' }, attr2: 'val2' }", Optional.of(AssertionError.class), true),
 
-            Arguments.of("Match json: nested object, incorrect regex",
+            Arguments.of("Match json: nested object, incorrect regex (2)",
                 "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
                 "{ attr1: { sub1: 'xxx.*' }, attr2: 'val2' }", Optional.of(AssertionError.class), true),
 
-            //TODO: "TGR-337: JsonChecker unterstützt nested Structures"
-//            Arguments.of("Match json: optional field in nested object",
-//                "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
-//                "{ attr1: { ____sub1: 'val1' }, attr2:'val2' }", Optional.empty(), true),
-//
-//            Arguments.of("Match json: extra field in nested object, extra attributes not checked",
-//                "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
-//                "{ attr1: { sub1: 'val1', ____sub2: 'val2' }, attr2:'val2' }", Optional.empty(), false),
-//
-//            Arguments.of("Match json: extra field in nested object, extra attributes checked",
-//                "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
-//                "{ attr1: { sub1: 'val1', ____sub2: 'val2' }, attr2:'val2' }", Optional.of(AssertionError.class), true),
-//
-//            Arguments.of("Match json: optional field in a nested array",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                "{id:1,name:'Joe',____friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                Optional.empty(), true),
-//
-//            Arguments.of("Match json: optional nested field in a nested array",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',____pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                Optional.empty(), true),
-//
-//            Arguments.of("Match json: extra nested field in nested object, extra attributes checked",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',____surname:'Smith',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                Optional.of(AssertionError.class), true),
-//
-//            Arguments.of("Match json: extra field in nested object, extra attributes not checked",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',____surname:'Smith',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
-//                Optional.empty(), false),
+            Arguments.of("Match json: optional field in nested object",
+                "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
+                "{ attr1: { ____sub1: 'val1' }, attr2:'val2' }", Optional.empty(), true),
+
+            Arguments.of("Match json: extra field in nested object, extra attributes not checked",
+                "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
+                "{ attr1: { sub1: 'val1', ____sub2: 'val2' }, attr2:'val2' }", Optional.empty(), false),
+
+            Arguments.of("Match json: extra field in nested object, extra attributes checked",
+                "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
+                "{ attr1: { sub1: 'val1', ____sub2: 'val2' }, attr2:'val2' }", Optional.empty(), true),
+
+            Arguments.of("Match json: optional field in a nested array",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                "{id:1,name:'Joe',____friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                Optional.empty(), true),
+
+            Arguments.of("Match json: optional nested field in a nested array",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',____pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                Optional.empty(), true),
+
+            Arguments.of("Match json: extra nested field in nested object, extra attributes checked",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',____surname:'Smith',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                Optional.empty(), true),
+
+            Arguments.of("Match json: extra field in nested object, extra attributes not checked",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',____surname:'Smith',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
+                Optional.empty(), false),
 
             Arguments.of("Match json: ignore value of the key",
                 "{ attr1: 'val1', attr3: 'val3' }",
@@ -171,21 +193,38 @@ public class JsonCheckerTest {
             Arguments.of("Match json: nested array, $NULL value",
                 "{id:1,name:'Joe',friends:null,pets:[]}",
                 "{id:1,name:'Joe',friends:'$NULL',pets:[]}",
-                Optional.empty(), true)
+                Optional.empty(), true),
 
-//            Arguments.of("Match json: nested value in nested array, $NULL value",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:null},{id:3,name:null,pets:['cat','fish']}],pets:[]}",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:$NULL},{id:3,name:$NULL',pets:['cat','fish']}],pets:[]}",
-//                Optional.empty(), true),
+            Arguments.of("Match json: nested value in nested array, $NULL value",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:null},{id:3,name:null,pets:['cat','fish']}],pets:[]}",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:$NULL},{id:3,name:$NULL,pets:['cat','fish']}],pets:[]}",
+                Optional.empty(), true),
 
-//            Arguments.of("Match json: missing attributes within nested field, extra attributes not checked",
-//                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:null},{id:3,name:null,pets:['cat','fish']}],pets:[]}",
-//                "{id:1,name:'Joe',friends:[{pets:$NULL},{name:$NULL',pets:['cat','fish']}],pets:[]}",
-//                Optional.empty(), false)
+            Arguments.of("Match json: missing attributes within nested field, extra attributes not checked",
+                "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:null},{id:3,name:null,pets:['cat','fish']}],pets:[]}",
+                "{id:1,name:'Joe',friends:[{pets:$NULL},{name:$NULL,pets:['cat','fish']}],pets:[]}",
+                Optional.empty(), false)
         );
     }
 
-    private static Stream<Arguments> provideDataForMatchingJsonAttributes() {
+    @ParameterizedTest
+    @MethodSource("provideDataForMatchingJsonObjects")
+    void testMatchOContainInAnyOrderJsonObjects(String testInfo, String jsonStr, String oracleStr,
+        Optional<Class<Error>> exception, boolean checkExtraAttributes) {
+        log.info(testInfo);
+        if (exception.isEmpty()) {
+            check.assertJsonObjectShouldMatchOrContainInAnyOrder(
+                jsonStr,
+                oracleStr, checkExtraAttributes);
+        } else {
+            assertThatThrownBy(() -> check.assertJsonObjectShouldMatchOrContainInAnyOrder(
+                jsonStr,
+                oracleStr, checkExtraAttributes))
+                .isInstanceOf(exception.get());
+        }
+    }
+
+    private Stream<Arguments> provideDataForMatchingJsonAttributes() {
         return Stream.of(
             Arguments.of("Match value to key: absolute match",
                 "{ attr1: 'val1', attr3: 'val3' }",
@@ -215,11 +254,11 @@ public class JsonCheckerTest {
                 "{ attr1: 'val1', attr3: 'val3' }", "attr3",
                 "v.*", Optional.empty()),
 
-            Arguments.of("Match value to key: with incorrect regex",
+            Arguments.of("Match value to key: with incorrect regex (1)",
                 "{ attr1: 'val1', attr3: 'val3' }",
                 "attr3", "val3XXXX", Optional.of(AssertionError.class)),
 
-            Arguments.of("Match value to key: with incorrect regex",
+            Arguments.of("Match value to key: with incorrect regex (2)",
                 "{ attr1: 'val1', attr3: 'val3' }",
                 "attr3", "xxx.*", Optional.of(AssertionError.class)),
 
@@ -281,6 +320,23 @@ public class JsonCheckerTest {
         );
     }
 
+    @ParameterizedTest
+    @MethodSource("provideDataForMatchingJsonAttributes")
+    void testJsonAttributeShouldMatch(String testInfo, String jsonObject, String claimName, String regex,
+        Optional<Class<Error>> exception) {
+        log.info(testInfo);
+        if (exception.isEmpty()) {
+            check.assertJsonAttributeShouldMatch(
+                new JSONObject(jsonObject),
+                claimName, regex);
+        } else {
+            assertThatThrownBy(() -> check.assertJsonAttributeShouldMatch(
+                new JSONObject(jsonObject),
+                claimName, regex))
+                .isInstanceOf(exception.get());
+        }
+    }
+
     private static Stream<Arguments> provideDataForNotMatchingJsonAttributes() {
         return Stream.of(
             Arguments.of("Not match value to key: key matches value",
@@ -332,43 +388,8 @@ public class JsonCheckerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideDataForMatchingJsonObjects")
-    public void testMatchOContainInAnyOrderJsonObjects(String testInfo, String jsonStr, String oracleStr,
-        Optional<Class<Error>> exception, boolean checkExtraAttributes) {
-        log.info(testInfo);
-        if (exception.isEmpty()) {
-            check.assertJsonObjectShouldMatchOrContainInAnyOrder(
-                jsonStr,
-                oracleStr, checkExtraAttributes);
-        } else {
-            assertThatThrownBy(() -> check.assertJsonObjectShouldMatchOrContainInAnyOrder(
-                jsonStr,
-                oracleStr, checkExtraAttributes))
-                .isInstanceOf(exception.get());
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideDataForMatchingJsonAttributes")
-    public void testJsonAttributeShouldMatch(String testInfo, String jsonObject, String claimName, String
-        regex,
-        Optional<Class<Error>> exception) {
-        log.info(testInfo);
-        if (exception.isEmpty()) {
-            check.assertJsonAttributeShouldMatch(
-                new JSONObject(jsonObject),
-                claimName, regex);
-        } else {
-            assertThatThrownBy(() -> check.assertJsonAttributeShouldMatch(
-                new JSONObject(jsonObject),
-                claimName, regex))
-                .isInstanceOf(exception.get());
-        }
-    }
-
-    @ParameterizedTest
     @MethodSource("provideDataForNotMatchingJsonAttributes")
-    public void testJsonAttributeShouldNotMatch(String testInfo, String jsonObject, String claimName, String
+    void testJsonAttributeShouldNotMatch(String testInfo, String jsonObject, String claimName, String
         regex,
         Optional<Class<Error>> exception) {
         log.info(testInfo);
@@ -384,18 +405,129 @@ public class JsonCheckerTest {
         }
     }
 
+    private static Stream<Arguments> provideDataForCompareJsonStrings() {
+        return Stream.of(
+            Arguments.of("Compare two simple objects (success)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                false, Optional.empty()),
+
+            Arguments.of("Compare two simple objects (fail)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val2', attr3: 'val3' }",
+                false, Optional.of("Comparison failed at key 'attr1'")),
+
+            Arguments.of("Compare two simple arrays (success)",
+                "[0,1,2,3345]",
+                "[0,1,2,3345]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare two simple arrays (fail)",
+                "[0,1,2,3345]",
+                "[0,1,2,3]",
+                false, Optional.of("Unexpected: 3345")),
+
+            Arguments.of("Compare two different types (1)",
+                "{'foo':'bar'}",
+                "[0,1,2,3]",
+                false, Optional.of("Could not compare JSONObject to JSONArray: Different types!")),
+
+            Arguments.of("Compare two different types (2)",
+                "[0,1,2,3]",
+                "{'foo':'bar'}",
+                false, Optional.of("Could not compare JSONArray to JSONObject: Different types!")),
+
+            Arguments.of("Compare two different types (2)",
+                "{'foo':'bar'}",
+                "hallo du",
+                false, Optional.of("Could not compare JSONObject to String: Different types!")),
+
+            Arguments.of("Compare two objects with extra attribute (pass)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val1' }",
+                false, Optional.empty()),
+
+            Arguments.of("Compare object with extra attribute (fail)",
+                "{ attr1: 'val1', attr3: 'val3' }",
+                "{ attr1: 'val1' }",
+                true, Optional.of("EXTRA Key attr3 detected in received in JSON")),
+
+            Arguments.of("Compare object in array with extra attribute (pass)",
+                "[{ attr1: 'val1', attr3: 'val3' }]",
+                "[{ attr1: 'val1' }]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare object in array with extra attribute (fail)",
+                "[{ attr1: 'val1', attr3: 'val3' }]",
+                "[{ attr1: 'val1' }]",
+                true, Optional.of("EXTRA Key attr3 detected in received in JSON")),
+
+            Arguments.of("Compare two arrays with different containing types (1)",
+                "[{'foo':'bar'}]",
+                "['notAnObject']",
+                false, Optional.of("Unexpected: a JSON object")),
+
+            Arguments.of("Compare two objects in array with extra attribute (pass)",
+                "[{ attr1: 'val1'}, { attr2: 'val1'}]",
+                "[{ attr1: 'val1'}, { attr2: 'val1'}]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare two objects in array with extra attribute (fail)",
+                "[{ attr1: 'val1'}, { attr2: 'val1'}]",
+                "[{ attr1: 'val1'}, { attr2: 'val2'}]",
+                false, Optional.of("Could not find match for element {\"attr2\":\"val2\"}")),
+
+            Arguments.of("Compare array in array",
+                "[[1,2],[foo, bar]]",
+                "[[1,2],[foo, bar]]",
+                false, Optional.empty()),
+
+            Arguments.of("Compare object in array with extra attribute (fail)",
+                "[{ attr1: 'val1' }]",
+                "[{ attr1: 'val1', attr3: 'val3' }]",
+                false, Optional.of("Expected JSON to have key 'attr3', but only found keys '[attr1]'"))
+            );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideDataForCompareJsonStrings")
+    void compareJsonStrings(String testInfo, String jsonStr, String oracleStr, Boolean checkExtraAttributes,
+        Optional<String> exception) {
+
+        log.info(testInfo);
+        if (exception.isEmpty()) {
+            check.compareJsonStrings(jsonStr, oracleStr, checkExtraAttributes);
+        } else {
+            assertThatThrownBy(() -> check.compareJsonStrings(
+                jsonStr,
+                oracleStr, checkExtraAttributes))
+                .hasMessageContaining(exception.get());
+        }
+    }
+
     @ParameterizedTest
     @CsvSource(value = {"N_o_T a {{{ j[[son; {\"correct\":\"json\"}; N_o_T",
         "{\"correct\":\"json\"}; N_o_T a {{{ j[[son; N_o_T",
-        "{\"array\":\"json\"}; {\"array\":[1,2,3]}; Expected an 'JSONArray' at key 'array', but found 'String'",
-        "{\"array\":[1,2,3]}; {\"array\":\"json\"}; Expected an 'String' at key 'array', but found 'JSONArray'"
+        "{\"array\":\"json\"}; {\"array\":[1,2,3]}; Comparison failed at key 'array'",
+        "{\"array\":[1,2,3]}; {\"array\":\"json\"}; Comparison failed at key 'array'"
     },
         delimiter = ';')
-    public void testMatchOContainInAnyOrderJsonObjects(String jsonStr, String oracleStr,
+    void testMatchOContainInAnyOrderJsonObjects(String jsonStr, String oracleStr,
         String exceptionShouldContain) {
         assertThatThrownBy(() -> check.assertJsonObjectShouldMatchOrContainInAnyOrder(
             jsonStr,
             oracleStr, true))
             .hasMessageContaining(exceptionShouldContain);
+    }
+
+    @Test
+    void idpJson() {
+        check.compareJsonStrings(IDP_STRUCT, IDP_STRUCT, false);
+    }
+
+    @Test
+    void nestedFunctionalAttributeValues() {
+        check.compareJsonStrings("{jwks: {keys: [{y: \"some-value\"}]}}", "{jwks: {keys: [{y: \"${json-unit.ignore}\"}]}}", false);
+        check.compareJsonStrings("{'blub':[{'foo':'bar'}]}", "{'blub':[{'foo': '${json-unit.ignore}'}]}", false);
     }
 }

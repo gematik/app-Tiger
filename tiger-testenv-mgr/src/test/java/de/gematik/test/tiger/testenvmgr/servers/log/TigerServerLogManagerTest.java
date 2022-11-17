@@ -18,16 +18,12 @@ package de.gematik.test.tiger.testenvmgr.servers.log;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErrNormalized;
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -41,7 +37,7 @@ class TigerServerLogManagerTest {
         String logFile = "target/serverLogs/test.log";
         String serverID = "ExternalJar-001";
         final CfgServer configuration = new CfgServer();
-        configuration.setType(ServerType.EXTERNALJAR);
+        configuration.setType(ExternalJarServer.class.getAnnotation(TigerServerType.class));
         configuration.setLogFile(logFile);
         ExternalJarServer server = ExternalJarServer.builder().serverId(serverID).configuration(configuration).build();
         TigerServerLogManager.addAppenders(server);

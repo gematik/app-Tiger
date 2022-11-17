@@ -31,6 +31,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -68,7 +69,7 @@ public class TestTigerCucumberListener {
     }
 
     @Test
-    public void testCaseStartedSimpleScenario() throws IOException {
+    void testCaseStartedSimpleScenario() throws IOException {
         TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
         listener.getSourceRead().receive(event);
         assertThat(listener.getIdFeatureMap()).hasSize(0);
@@ -91,7 +92,7 @@ public class TestTigerCucumberListener {
     }
 
     @Test
-    public void testCaseStartedScenarioOutline() throws IOException {
+    void testCaseStartedScenarioOutline() throws IOException {
         TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
         listener.getSourceRead().receive(event);
         assertThat(listener.getIdFeatureMap()).hasSize(0);
@@ -157,7 +158,8 @@ public class TestTigerCucumberListener {
     }
 
     @Test
-    public void testCaseFinished() throws IOException {
+    void testCaseFinished() throws IOException {
+        long startms = System.currentTimeMillis();
         TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
         listener.getSourceRead().receive(event);
         TestCase testCase = new TestcaseAdapter();
@@ -176,7 +178,10 @@ public class TestTigerCucumberListener {
         assertThat(listener.getScFailed()).isEqualTo(0);
         assertThat(listener.getScPassed()).isEqualTo(1);
 
-        File logFile = new File("target/rbellogs/" + listener.getFileNameFor(scenarioName, -1));
+        File logFileFolder = new File("target/rbellogs/");
+        File logFile = Arrays.stream(logFileFolder.listFiles()).filter(file -> file.lastModified() > startms).findFirst().get();
+        assertThat(logFile.getName()).startsWith(listener.replaceSpecialCharacters(scenarioName));
+        assertThat(logFile.getName()).isEqualTo(listener.replaceSpecialCharacters(logFile.getName()));
         assertThat(logFile).exists();
         assertThat(logFile).content(StandardCharsets.UTF_8).hasSizeGreaterThan(800).contains(scenarioName);
 

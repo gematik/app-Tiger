@@ -1,5 +1,46 @@
 # Changelog Tiger Testplattform
 
+-------
+# Release 1.0.0
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Features
+
+* TGR-727: WebUi: Filter in modal outsourced
+* TGR-707, TGR-691: Tiger now supports Helm charts (you need to include the tiger-helm-extensions to your project)
+* TGR-718: Added option (rewriteHostHeader) to rewrite host headers for reverse proxy routes
+* RBEL-69: Keys from JWKs structures are now added to the key store
+* TGR-685: DirectReverseProxy added
+* TGR-510: The CipherSuites which are used by the TigerProxy as a TLS client are now configurable
+* TGR-708: Maximum parseable and displayable message size of the Tiger Proxy can now be configured
+* TGR-664: WebUi: Copies body of response via click on button
+* TGR-694: JSON-Arrays can now be used as root-objects in JsonChecker-Assertions
+* TGR-525: Rbel moved into Tiger
+* TGR-710: FileWriter now saves Pairing Information
+* TGR-526: Traffic-Parsing no longer blocks traffic-forwarding
+* TGR-710: Undecipherable VAU-Messages logged more concisely
+* TGR-688: /rbel endpoint removed from Tiger Proxy
+* TGR-687: Rbel-Namespace extended (lastRequest/lastMessage/getValueAtLocationAsString)
+* TGR-701: Paged view added to Tiger Proxy WebUI
+* TGR-694: JsonChecker can now correctly check nested structures
+
+## Breaking changes
+
+* TGR-700: RbelMessageValidator is now enforcing singleton pattern
+
+## Bugfixes
+
+* TGR-706: Traffic filter for EPA-VAU KVNR works
+* TGR-680: The Tiger-Proxy can again use MutualTls as a client
+* TigerConfigurationHelper now correctly parses multiple keys in a single YAML-line
+
+-------
 # Release 0.24.1/0.24.2
 
 * Serenity BDD 3.2.5
@@ -12,14 +53,14 @@
 
 * TGR-627: Removed unnecessary extra caching inside the mockserver, reducing the memory-footprint.
 * TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
-* TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message 
+* TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message
 * TGR-663: WebUi: All headers are now collapsable
 * TGR-577: User can ignore scenarios or whole features by adding "@Ignore" above the scenario/feature in the feature file
 * TGR-678: The log files in the target/rbellogs directory are now saved with a timestamp at the end of the file name
 * TGR-596: WebUi: Text based Regex/Search as search filter
 * TGR-683: WebUi: Button for binary content fixed
 * TGR-544: TigerProxy: Added option for TLS-version
-* TGR-463: re-/create TigerProxy ID from client certificate 
+* TGR-463: re-/create TigerProxy ID from client certificate
 * TGR-609: Tiger-Test-Library: A step to get the absolute last request (no path input)
 
 ## Breaking changes
@@ -33,6 +74,7 @@
 * TGR-679: mouse-over for long requests fixed
 * TGR-660: Admin UI fixed
 
+-------
 # Release 0.24.0
 
 ## Features
@@ -46,9 +88,10 @@
 * TGR-613: We removed the deprecated Cucumber-Steps in RBelValidatorGlue for good
 
 ## Bugfixes
- 
+
 * TGR-624, TGR-630, TGR-633: Small fixes in the WebUi
 
+-------
 # Release 0.23.4
 
 ## Dependencies
@@ -75,6 +118,7 @@
 
 * TGR-590: we removed tiger-aforeporter-plugin from Tiger
 
+-------
 # Release 0.23.3
 
 ## Dependencies
@@ -102,6 +146,7 @@
 * TGR-578: Headers im Rbel-Log in the WorkFlowUI and in the Tiger Proxy WebUI are now collapsable
 * TGR-551: Improve JEXL Debugging - each node is now linked to update filter
 
+-------
 # Release 0.23.2
 
 ## Dependencies
@@ -126,6 +171,7 @@
 * TGR-553: Fixed Race-Condition for multiple configured traffic sources
 * TGR-553: Major resilience overhaul for reconnection in TigerProxy-Mesh-Setups
 
+-------
 # Release 0.23.0
 
 ## Breaking changes
@@ -147,16 +193,18 @@
 
 * TGR-483 adding new steps to RbelValidator, allowing to check for existence of node in request / response and allowing to check for mismatching node in response
 
+-------
 # Release 0.22.2
 
 ## Bugfixes
 
 * TGR-523: Connection-lost issues for Tiger Proxy mesh-setups fixed.
 
+-------
 # Release 0.22.1
 
 ## Breaking Changes
-* Tiger maven plugin now purges the target/generated-test-sources/tigerbdd folder to avoid left over driver class files from previous runs. 
+* Tiger maven plugin now purges the target/generated-test-sources/tigerbdd folder to avoid left over driver class files from previous runs.
 * Tiger maven plugin will by default only search for feature files in src/test/resources/features folder tree from now on, to avoid duplicate feature files also found in target subfolders.
 
 ## Features
@@ -170,6 +218,7 @@
 ## Features
 * TGR-236: Logs of Tiger server instances are now also written to server specific log files
 
+-------
 # Release 0.21.0
 
 ## Breaking Changes
@@ -184,6 +233,7 @@
 ## Bugfixes
 * TGR-480: docker compose is not working, in the fix a complete rewrite of the compose code part has been done, dropping the healthchecks property.
 
+-------
 # Release 0.20.2
 
 ## Breaking Changes
@@ -205,6 +255,7 @@
 * TGR-503: The Testenv-Mgr now by default uses the own JVM to start externalJar-Servers. This can be overriden by setting `tiger.lib.javaHome`
 * TGR-508: Remote Tiger-Proxies can now also be supplied with TLS-Identities
 
+-------
 # Release 0.20.1
 
 ## Breaking Changes
@@ -214,7 +265,7 @@
   * serverPort is renamed in adminPort
   * port is renamed to proxyPort
   * proxyCfg under tigerProxyCfg is omitted
-  
+
 ## Features
 * TGR-461: Smaller improvements in TigerGlobalConfiguration:
   * `TigerGlobalConfiguration.localScope()` allows scoped value addition
@@ -222,18 +273,19 @@
   * `TigerGlobalConfiguration.putValue()` now resolves nested values from objects
   * instantiateConfigurationBean now returns an optional, allowing greater control when key was not found in configuration.
 * TGR-450,434,347: Updates im User manual (Failsafe plugin, chapter 5.4, smaller glitches)
-* TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD 
+* TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD
 * TGR-456: Useability review of admin ui
 * Tiger maven plugin has a second goal to replace the SerenityBDD maven plugin for generation of reports.
 * RBEL-54: RbelMessages now contain transmission timestamps.
 
 ## Bugfixes
 
-* TGR-485: fix IndexOutOfBoundsException when using identical names for feature scenarios 
+* TGR-485: fix IndexOutOfBoundsException when using identical names for feature scenarios
 * TGR-411: pki keys saved correctly via admin ui
 * TGR-308: order of nodes now restored on load in admin ui
 * TGR-461: Base key in `additionalYamls` is now honored
 
+-------
 # Release 0.20.0
 
 ## Breaking Changes
@@ -254,6 +306,7 @@
 * TigerProxy-WebUI no longer reloads already loaded messages
 * ExternalJar-Server now correctly configures internal system properties
 
+-------
 # Release 0.19.4
 
 ## Breaking Changes
@@ -277,6 +330,7 @@
 * TGR-414: Add an example project for the use of tiger
 * TGR-431: Tiger can now also read traffic-files on startup
 
+-------
 # Release 0.19.3
 
 ## Bugfix
@@ -296,6 +350,7 @@
 * TGR-416: Traffic-Log can now be downloaded in the Tiger-Proxy WebUI
 * TGR-420: Jexl-Debugging dialog added to Tiger-Proxy WebUI
 
+-------
 # Release 0.19.2
 
 ## Bugfix
@@ -314,12 +369,14 @@
 * TGR-388: add curl command details to REST calls in the SerenityBDD report
 * TGR-395: TIGER_ACTIVE is no longer necessary
 
+-------
 # Release 0.19.1
 
 ## Bugfix
 
 * Fixing module with incomplete -sources and -javadoc JAR files
 
+-------
 # Release 0.19.0
 
 ## Breaking Change
@@ -349,6 +406,7 @@
   process. This dramatically reduces startup time and reduces bandwidth demands.
 * TGR-341: Upgrade to Serenity BDD v3.1.16 and thus Selenium 4
 
+-------
 # Release 0.18.1
 
 ## Bugfix
@@ -360,6 +418,7 @@
 * TGR-50: Tiger test environment configuration now has an admin Web UI. Check out the tiger-admin module
 * TGR-306: Tiger admin UI now has "Duplicate node" feature
 
+-------
 # Release 0.18.0
 
 ## Breaking Change
@@ -383,6 +442,7 @@
 * TGR-42: Make Proxy Cert available at runtime
 * TGR-264: add support for reason phrases in RBEL
 
+-------
 # Release 0.17.1
 
 ## Bugfix
@@ -397,6 +457,7 @@
 
 * TGR-250: Tests überarbeiten in TestTokenSubstituteHelper
 
+-------
 # Release 0.17.0
 
 ## Breaking Changes
@@ -405,8 +466,8 @@
   separated list of servers that need to be started prior to the given server. Please review & change all testenv.ymls
   accordingly.
 * TGR-193:
-    * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
-    * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
+  * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
+  * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
 
 ## Features
 
@@ -422,18 +483,21 @@
 
 * TGR-171: Banner Helper Klasse unterstützt keine deutschen Umlaute
 
+-------
 # Release 0.16.4
 
 ## Bugfix
 
 * TGR-219 bdd driver generator plugin created invalid feature path on windows
 
+-------
 # Release 0.16.2
 
 ## Bugfix
 
 * TGR-212 Content-Length now correctly after Rbel-Modifications
 
+-------
 # Release 0.16.0
 
 ## Features
@@ -441,6 +505,7 @@
 * TGR-136 Client-addresses are now correctly set in Rbel-messages
 * TGR-120 The SSL-Suits of the servers are now configurable
 
+-------
 # Release 0.15.0
 
 ## Features
@@ -454,6 +519,7 @@
 * TGR-41 Competing routes are now correctly identified and refused when adding
 * TGR-179 TGR Step "show color text" failed with unknown color name
 
+-------
 # Release 0.14.0
 
 ## Neues
@@ -516,12 +582,14 @@ servers:
     active: false  
 ```
 
+-------
 # Release 0.13.0
 
 * Modifications added to tiger-proxy (Documentation still outstanding)
 * Fixed binary-transmission bug
 * Documentation added
 
+-------
 # Release 0.12.0
 
 * Bugfix tiger-proxy: ASN1.Encodable parsing
@@ -529,17 +597,20 @@ servers:
 * TLS-properties moved to tigerProxy.tls (will give error on startup if missused)
 * Reverse-proxy-routes give the target-server as receiver/sender
 
+-------
 # Release 0.11.0
 
 Bug fix Release Lokale Resources fix (routeModal.html)
 Messagelist index fixed im Webui WorkingDir wird automatisch angelegt
 
+-------
 # Release 0.10.0
 
 * Memory-Leak fixed
 * UI Sequence-numbers fixed
 * Manual Update-Bug fixed
 
+-------
 # Release 0.9.0
 
 * Longer chains are supported for Tiger Proxy TSL-Identities
@@ -551,26 +622,32 @@ Messagelist index fixed im Webui WorkingDir wird automatisch angelegt
 * proxy system prop detection in tiger director
 * TigerProxy as type in TestEnv
 
+-------
 # Release 0.8.1
 
 Javadoc Fix
 
+-------
 # Release 0.8.0
 
 * Bugfix TigerRoute YAML instantiation
 
+-------
 # Release 0.7.0
 
 mvn deploy fix
 
+-------
 # Release 0.5.0
 
 mvn deploy fix
 
+-------
 # Release 0.4.0
 
 mvn central deploy fix
 
+-------
 # Release 0.3.0
 
 Initial release

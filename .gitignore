@@ -11,7 +11,6 @@ tiger-testenv-mgr/WinstoneHTTPServer
 /tiger-admin/src/test/resources/webdriver
 /tiger-testenv-mgr/node_modules/
 /tiger-testenv-mgr/src/frontend/node/
-/tiger-testenv-mgr/src/frontend/package-lock.json
 /doc/user_manual/tiger_user_manual.adoc
 /doc/user_manual/RbelValidatorGlueCommentsOnly.java
 
@@ -22,3 +21,4 @@ Maven-Central-Release.Jenkinsfile
 Nightly.Jenkinsfile
 Release.Jenkinsfile
 /tiger-integration-tests/
+IntegrationTest.Jenkinsfile

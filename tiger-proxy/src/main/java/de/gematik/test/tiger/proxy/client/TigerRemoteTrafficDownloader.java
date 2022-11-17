@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.HashMap;
@@ -53,15 +52,15 @@ public class TigerRemoteTrafficDownloader {
 
         tigerRemoteProxyClient.getTrafficParserExecutor()
             .submit(() -> log.info("{}Successfully downloaded & parsed missed traffic from '{}'. Now {} message cached",
-                tigerRemoteProxyClient.proxyName(), getRemoteProxyUrl(), getRbelMessages().size()));
+                tigerRemoteProxyClient.proxyName(), getRemoteProxyUrl(), getRbelLogger().getMessageHistory().size()));
 
         tigerRemoteProxyClient.getTrafficParserExecutor()
             .submit(tigerRemoteProxyClient::switchToExecutorMode);
     }
 
     private void parseTrafficChunk(String rawTraffic) {
-        final List<RbelElement> convertedMessages = RbelFileWriterUtils.convertFromRbelFile(
-            rawTraffic, getRbelLogger().getRbelConverter());
+        final List<RbelElement> convertedMessages = tigerRemoteProxyClient.getRbelFileWriter()
+            .convertFromRbelFile(rawTraffic);
         final long count = rawTraffic.lines().count();
         convertedMessages.forEach(msg -> msg.addFacet(new TigerDownloadedMessageFacet()));
         for (int i = 0; i < convertedMessages.size(); i += 2) {
@@ -75,7 +74,7 @@ public class TigerRemoteTrafficDownloader {
             log.trace(
                 "{}Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was filtered). Now standing at {} messages overall",
                 tigerRemoteProxyClient.proxyName(), count, convertedMessages.size(), (count + 2) / 3,
-                getRbelMessages().size());
+                getRbelLogger().getMessageHistory().size());
         }
         if (!convertedMessages.isEmpty()) {
             tigerRemoteProxyClient.getLastMessageUuid().set(
@@ -118,7 +117,7 @@ public class TigerRemoteTrafficDownloader {
         final String downloadUrl = getRemoteProxyUrl() + "/webui/trafficLog.tgr";
         log.debug(
             "{}Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached {} messages)",
-            tigerRemoteProxyClient.proxyName(), currentLastUuid, downloadUrl, pageSize, getRbelMessages().size());
+            tigerRemoteProxyClient.proxyName(), currentLastUuid, downloadUrl, pageSize, getRbelLogger().getMessageHistory().size());
 
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("pageSize", pageSize);
@@ -138,10 +137,6 @@ public class TigerRemoteTrafficDownloader {
 
     private RbelLogger getRbelLogger() {
         return tigerRemoteProxyClient.getRbelLogger();
-    }
-
-    private List<RbelElement> getRbelMessages() {
-        return tigerRemoteProxyClient.getRbelMessages();
     }
 
     private String getRemoteProxyUrl() {

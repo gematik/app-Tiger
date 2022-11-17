@@ -30,10 +30,10 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
+class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
 
     @Test
-    public void competingRoutes_shouldSelectSecondRoute() {
+    void competingRoutes_shouldSelectSecondRoute() {
         final String wrongDst = "http://localhost:" + fakeBackendServer.port() + "/wrong";
         final String correctDst = "http://localhost:" + fakeBackendServer.port() + "/right";
 
@@ -48,6 +48,7 @@ public class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
 
             proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + targetPath)
                 .asString();
+            awaitMessagesInTiger(2);
 
             assertThat(tigerProxy.getRbelMessages()).last()
                 // get the last request
@@ -71,5 +72,4 @@ public class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
             .to(to)
             .build();
     }
-
 }

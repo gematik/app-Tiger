@@ -21,7 +21,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import java.util.List;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -34,10 +33,10 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestTigerProxyModifications extends AbstractTigerProxyTest {
+class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
     @Test
-    public void replaceStuffForForwardRoute() {
+    void replaceStuffForForwardRoute() {
         final String jsonBody = "{\"another\":{\"node\":{\"path\":\"correctValue\"}}}";
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -80,24 +79,26 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
         proxyRest.post("http://backend/notFoobar").asJson();
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.header.user-agent"))
+        awaitMessagesInTiger(2);
+
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.user-agent"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified user-agent");
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.path"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("/foobar");
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.header.Matched-Stub-Id"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Matched-Stub-Id"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified value");
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.header.Content-Length"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Content-Length"))
             .isEmpty(); // not present in mocked response, not added by tiger-proxy
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.another.node.path"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.another.node.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("correctValue");
     }
 
     @Test
-    public void replaceStuffForReverseRoute() {
+    void replaceStuffForReverseRoute() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -118,17 +119,18 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
+        awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.header.user-agent"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.user-agent"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified user-agent");
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.another.node.path"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.another.node.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("correctValue");
     }
 
     @Test
-    public void regexModifications() {
+    void regexModifications() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -145,14 +147,15 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
+        awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.foo"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.foo"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("boo");
     }
 
     @Test
-    public void noModificationsForwardProxy_shouldLeaveBinaryContentUntouched() {
+    void noModificationsForwardProxy_shouldLeaveBinaryContentUntouched() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
@@ -163,18 +166,19 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
         final byte[] body = proxyRest.post("http://backend/foobar")
             .body(binaryMessageContent)
             .asBytes().getBody();
+        awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
         assertThat(body).isEqualTo(binaryMessageContent);
     }
 
     @Test
-    public void noModificationsReverseProxy_shouldLeaveBinaryContentUntouched() {
+    void noModificationsReverseProxy_shouldLeaveBinaryContentUntouched() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -185,18 +189,19 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
         final byte[] body = Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .body(binaryMessageContent)
             .asBytes().getBody();
+        awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessages().get(0).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
-        assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body"))
             .get().extracting(RbelElement::getRawContent)
             .isEqualTo(binaryMessageContent);
         assertThat(body).isEqualTo(binaryMessageContent);
     }
 
     @Test
-    public void forwardProxyWithModifiedQueryParameters() {
+    void forwardProxyWithModifiedQueryParameters() {
         String specialCaseParameter = "blub" + RandomStringUtils.randomPrint(300);
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
@@ -226,7 +231,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void reverseProxyWithQueryParameters() {
+    void reverseProxyWithQueryParameters() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -254,7 +259,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void modifyStatusCode_shouldWork() {
+    void modifyStatusCode_shouldWork() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -277,7 +282,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void modifyReasonPhrase_shouldWork() {
+    void modifyReasonPhrase_shouldWork() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -300,7 +305,7 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
     }
 
     @Test
-    public void removeReasonPhrase_shouldWork() {
+    void removeReasonPhrase_shouldWork() {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -319,6 +324,6 @@ public class TestTigerProxyModifications extends AbstractTigerProxyTest {
             "http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
         assertThat(response.getStatusText())
-            .isEqualTo("");
+            .isEmpty();
     }
 }

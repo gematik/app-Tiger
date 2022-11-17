@@ -22,6 +22,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum SourceType {
+
+    DEFAULTS(110),
     YAML(100),
     TEST_YAML(90),
     ENV(80),

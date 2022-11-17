@@ -52,7 +52,6 @@ const summaryPatterns = {
     ["single", "Loglevel ", "$.tigerProxyCfg.proxyLogLevel", "<br/>"],
     ["group", "", "<br/>",
       [
-        ["Rbel Endpoint ", "$.tigerProxyCfg.activateRbelEndpoint", ""],
         ["ASN1 parsing ", "$.tigerProxyCfg.activateAsn1Parsing", ""],
         ["Log traffic even without routes ", "$.tigerProxyCfg.activateForwardAllLogging", ""],
         ["Parse Rbel ", "$.tigerProxyCfg.activateRbelParsing", ""]

@@ -22,7 +22,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import java.io.File;
 import org.slf4j.LoggerFactory;
 
@@ -32,12 +32,12 @@ public class TigerServerLogManager  {
     private static final String LOGFILE_EXTENSION = ".log";
     private static final String DEFAULT_PATTERN_LAYOUT = "%date %level [%thread] %logger{10} [%file:%line] %msg%n";
 
-    public static void addAppenders(TigerServer server) {
+    public static void addAppenders(AbstractTigerServer server) {
         ch.qos.logback.classic.Logger logbackLogger = ((ch.qos.logback.classic.Logger)server.getLog());
         createAndAddAppenders(server, logbackLogger);
     }
 
-    private static void createAndAddAppenders(TigerServer server, ch.qos.logback.classic.Logger log) {
+    private static void createAndAddAppenders(AbstractTigerServer server, ch.qos.logback.classic.Logger log) {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
         PatternLayoutEncoder patternLayoutEncoder = new PatternLayoutEncoder();
@@ -84,7 +84,7 @@ public class TigerServerLogManager  {
         return DEFAULT_LOGFILE_LOCATION + serverId + LOGFILE_EXTENSION;
     }
 
-    private static CustomerAppender createCustomerAppender(TigerServer server, LoggerContext loggerContext) {
+    private static CustomerAppender createCustomerAppender(AbstractTigerServer server, LoggerContext loggerContext) {
         CustomerAppender customerAppender = new CustomerAppender(server);
         customerAppender.setContext(loggerContext);
         customerAppender.start();

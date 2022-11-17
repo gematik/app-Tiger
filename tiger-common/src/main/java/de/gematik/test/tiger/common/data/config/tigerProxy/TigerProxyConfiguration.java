@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.rbellogger.modifier.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,13 +40,12 @@ public class TigerProxyConfiguration {
 
     private List<TigerRoute> proxyRoutes;
     private ForwardProxyInfo forwardToProxy;
+    private DirectReverseProxyInfo directReverseProxy;
     @Builder.Default
     private String proxyLogLevel = "WARN";
     @Builder.Default
     private TigerTlsConfiguration tls = TigerTlsConfiguration.builder().build();
     private List<String> keyFolders;
-    @Builder.Default
-    private boolean activateRbelEndpoint = false;
     @Builder.Default
     private boolean activateAsn1Parsing = false;
     @Builder.Default
@@ -72,9 +70,17 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
+    private int skipParsingWhenMessageLargerThanKb = 8_000;
+    @Builder.Default
+    private int skipDisplayWhenMessageLargerThanKb = 512;
+    @Builder.Default
     private boolean activateRbelParsing = true;
     @Builder.Default
     private boolean activateVauAnalysis = false;
+    @Builder.Default
+    private boolean parsingShouldBlockCommunication = false;
+    @Builder.Default
+    private boolean rewriteHostHeader = false;
     @Builder.Default
     private TrafficEndpointConfiguration trafficEndpointConfiguration = new TrafficEndpointConfiguration();
     @Builder.Default

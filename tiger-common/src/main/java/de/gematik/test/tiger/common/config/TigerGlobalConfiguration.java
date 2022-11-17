@@ -41,13 +41,13 @@ import org.apache.commons.io.FileUtils;
 @Slf4j
 public class TigerGlobalConfiguration {
 
-    private static TigerConfigurationLoader globalConfigurationLoader = new TigerConfigurationLoader();
+    private static final TigerConfigurationLoader globalConfigurationLoader = new TigerConfigurationLoader();
     @Getter
     @Setter
     private static boolean requireTigerYaml = false;
     private static boolean initialized = false;
 
-    public synchronized static void reset() {
+    public static synchronized void reset() {
         globalConfigurationLoader.reset();
         initialized = false;
     }
@@ -119,57 +119,57 @@ public class TigerGlobalConfiguration {
         });
     }
 
-    public synchronized static String readString(String key) {
+    public static synchronized String readString(String key) {
         assertGlobalConfigurationIsInitialized();
         return resolvePlaceholders(globalConfigurationLoader.readString(key));
     }
 
-    public synchronized static String readString(String key, String defaultValue) {
+    public static synchronized String readString(String key, String defaultValue) {
         assertGlobalConfigurationIsInitialized();
         return resolvePlaceholders(globalConfigurationLoader.readString(key, defaultValue));
     }
 
-    public synchronized static Optional<String> readStringOptional(String key) {
+    public static synchronized Optional<String> readStringOptional(String key) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.readStringOptional(key)
             .map(TigerGlobalConfiguration::resolvePlaceholders);
     }
 
     @SneakyThrows
-    public synchronized static <T> Optional<T> instantiateConfigurationBean(Class<T> configurationBeanClass,
+    public static synchronized <T> Optional<T> instantiateConfigurationBean(Class<T> configurationBeanClass,
         String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanClass, baseKeys);
     }
 
     @SneakyThrows
-    public synchronized static <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType,
+    public static synchronized <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType,
         String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanType, baseKeys);
     }
 
-    public synchronized static void readFromYaml(String yamlSource, String... baseKeys) {
+    public static synchronized void readFromYaml(String yamlSource, String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         globalConfigurationLoader.readFromYaml(yamlSource, baseKeys);
     }
 
-    public synchronized static void readFromYaml(String yamlSource, SourceType sourceType, String... baseKeys) {
+    public static synchronized void readFromYaml(String yamlSource, SourceType sourceType, String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         globalConfigurationLoader.readFromYaml(yamlSource, sourceType, baseKeys);
     }
 
-    public synchronized static boolean readBoolean(String key) {
+    public static synchronized boolean readBoolean(String key) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.readBoolean(key);
     }
 
-    public synchronized static boolean readBoolean(String key, boolean defaultValue) {
+    public static synchronized boolean readBoolean(String key, boolean defaultValue) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.readBoolean(key, defaultValue);
     }
 
-    public synchronized static void readTemplates(String templatesYaml, String... baseKeys) {
+    public static synchronized void readTemplates(String templatesYaml, String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         globalConfigurationLoader.readTemplates(templatesYaml, baseKeys);
     }

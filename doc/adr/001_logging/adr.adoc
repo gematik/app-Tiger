@@ -1,7 +1,7 @@
 = ADR 001: Logging
 
 == Kontext
-Geklärt werden soll die Struktur und der Fluß von Loggging-Nachrichten durch den TestEnv-Mgr und Servern hin zur Kommandozeile und der WebUI.
+Geklärt werden soll die Struktur und der Fluß von Logging-Nachrichten durch den TestEnv-Mgr und Servern hin zur Kommandozeile und der WebUI.
 
 == Status
 * Es existieren sowohl log4j2 als auch logback im classpath. Logback wird von Spring-Boot und dem Rbel-Logger eingebracht.

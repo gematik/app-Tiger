@@ -99,7 +99,7 @@
         Rbel Log Details
         <a :href="`${localProxyWebUiUrl}`" target="poxywebui"><i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i></a>
       </h2>
-      <iframe id="rbellog-details-iframe" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
+      <iframe id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
     </div>
   </div>
 </template>

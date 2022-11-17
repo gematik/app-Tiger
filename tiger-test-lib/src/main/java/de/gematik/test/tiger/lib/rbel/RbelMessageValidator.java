@@ -18,29 +18,33 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import com.google.common.collect.ImmutableList;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelPathExecutor;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import de.gematik.test.tiger.LocalProxyRbelMessageListener;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.xml.transform.Source;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.awaitility.core.ConditionTimeoutException;
@@ -55,6 +59,8 @@ import org.xmlunit.diff.Difference;
 @Slf4j
 public class RbelMessageValidator {
 
+    public final static RbelMessageValidator instance = new RbelMessageValidator();
+
     private static final Map<String, Function<DiffBuilder, DiffBuilder>> diffOptionMap = new HashMap<>();
 
     static {
@@ -64,14 +70,14 @@ public class RbelMessageValidator {
         diffOptionMap.put("txtnormalize", DiffBuilder::normalizeWhitespace);
     }
 
-    private static final List<String> emptyPath = ImmutableList.of("", "/");
+    private static final List<String> emptyPath = List.of("", "/");
 
     @Getter
     protected RbelElement currentRequest;
     @Getter
     protected RbelElement currentResponse;
 
-    public RbelMessageValidator() {
+    private RbelMessageValidator() {
         TigerJexlExecutor.registerAdditionalNamespace("rbel", new JexlToolbox());
     }
 
@@ -123,8 +129,10 @@ public class RbelMessageValidator {
                     "No request with path '" + requestParameter.getPath() + "' found in messages");
             } else {
                 throw new AssertionError(
-                    "No request with path '" + requestParameter.getPath() + "' and rbelPath '" + requestParameter.getRbelPath()
-                        + "' matching '" + StringUtils.abbreviate(requestParameter.getValue(), 300) + "' found in messages");
+                    "No request with path '" + requestParameter.getPath() + "' and rbelPath '"
+                        + requestParameter.getRbelPath()
+                        + "' matching '" + StringUtils.abbreviate(requestParameter.getValue(), 300)
+                        + "' found in messages");
             }
         }
         return candidate.get();
@@ -165,8 +173,9 @@ public class RbelMessageValidator {
                     + "Returning " + warnMsg + " message. This may not be deterministic!");
                 printAllPathsOfMessages(candidateMessages);
             }
-            return Optional.of(requestParameter.isFilterPreviousRequest() ? candidateMessages.get(candidateMessages.size() - 1)
-                : candidateMessages.get(0));
+            return Optional.of(
+                requestParameter.isFilterPreviousRequest() ? candidateMessages.get(candidateMessages.size() - 1)
+                    : candidateMessages.get(0));
         }
 
         if (requestParameter.isFilterPreviousRequest()) {
@@ -174,7 +183,8 @@ public class RbelMessageValidator {
         }
 
         for (final RbelElement candidateMessage : candidateMessages) {
-            final List<RbelElement> pathExecutionResult = new RbelPathExecutor(candidateMessage, requestParameter.getRbelPath()).execute();
+            final List<RbelElement> pathExecutionResult = new RbelPathExecutor(candidateMessage,
+                requestParameter.getRbelPath()).execute();
             if (pathExecutionResult.isEmpty()) {
                 continue;
             }
@@ -195,7 +205,8 @@ public class RbelMessageValidator {
                             + StringUtils.abbreviate(requestParameter.getValue(), 300) + "'");
                     }
                 } catch (final Exception ex) {
-                    log.error("Failure while trying to apply regular expression '" + requestParameter.getValue() + "'!", ex);
+                    log.error("Failure while trying to apply regular expression '" + requestParameter.getValue() + "'!",
+                        ex);
                 }
             }
         }
@@ -244,7 +255,8 @@ public class RbelMessageValidator {
         }
     }
 
-    public void assertAttributeOfCurrentResponseMatches(final String rbelPath, final String value, boolean shouldMatch) {
+    public void assertAttributeOfCurrentResponseMatches(final String rbelPath, final String value,
+        boolean shouldMatch) {
         final String text = findElementsInCurrentResponse(rbelPath).stream()
             .map(RbelElement::getRawStringContent)
             .filter(Objects::nonNull)
@@ -265,7 +277,7 @@ public class RbelMessageValidator {
     public void assertAttributeOfCurrentResponseMatchesAs(String rbelPath, ModeType mode, String oracle) {
         switch (mode) {
             case JSON:
-                new JsonChecker().assertJsonObjectShouldMatchOrContainInAnyOrder(
+                new JsonChecker().compareJsonStrings(
                     findElementInCurrentResponse(rbelPath).getRawStringContent(),
                     oracle,
                     false);
@@ -329,7 +341,8 @@ public class RbelMessageValidator {
         compareXMLStructure(test, oracle, diffOptions);
     }
 
-    public void compareXMLStructureOfRbelElement(final RbelElement el, final String oracle, final String diffOptionCSV) {
+    public void compareXMLStructureOfRbelElement(final RbelElement el, final String oracle,
+        final String diffOptionCSV) {
         assertThat(el.hasFacet(RbelXmlFacet.class)).withFailMessage("Node " + el.getKey() + " is not XML").isTrue();
         compareXMLStructure(el.getRawStringContent(), oracle, diffOptionCSV);
     }
@@ -345,6 +358,17 @@ public class RbelMessageValidator {
         }
     }
 
+    public RbelElement findElementInCurrentRequest(final String rbelPath) {
+        try {
+            final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+            assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
+            assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
+            return elems.get(0);
+        } catch (final Exception e) {
+            throw new AssertionError("Unable to find element in last request for rbel path '" + rbelPath + "'");
+        }
+    }
+
     public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
         try {
             final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
@@ -356,15 +380,30 @@ public class RbelMessageValidator {
     }
 
     public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
-        getRbelMessages().stream()
+        if (getRbelMessages().stream()
             .map(msg -> new RbelPathExecutor(msg, rbelPath).execute().get(0).getRawStringContent())
             .filter(Objects::nonNull)
             .filter(msg -> msg.equals(value))
-            .findAny()
-            .orElseThrow(() -> new AssertionError(
-                "No message with matching value '" + value + "' at path '" + rbelPath + "'"));
+            .findAny().isEmpty()) {
+            throw new AssertionError(
+                "No message with matching value '" + value + "' at path '" + rbelPath + "'");
+        }
     }
 
+    public void findLastRequest() {
+        final Iterator<RbelElement> descendingIterator = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()
+            .getRbelMessages()
+            .descendingIterator();
+        final RbelElement lastRequest = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(descendingIterator, Spliterator.ORDERED), false)
+            .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
+            .findFirst()
+            .orElseThrow(() -> new TigerLibraryException("No Request found."));
+        this.currentRequest = lastRequest;
+        this.currentResponse = lastRequest.getFacet(TracingMessagePairFacet.class)
+            .map(TracingMessagePairFacet::getResponse)
+            .orElse(null);
+    }
 
     public class JexlToolbox {
 
@@ -380,8 +419,58 @@ public class RbelMessageValidator {
             return findElementInCurrentResponse(rbelPath);
         }
 
+        public String currentRequestAsString(final String rbelPath) {
+            return findElementInCurrentRequest(rbelPath).getRawStringContent();
+        }
+
+        public String currentRequestAsString() {
+            return currentRequest.getRawStringContent();
+        }
+
+        public RbelElement currentRequest(final String rbelPath) {
+            return findElementInCurrentRequest(rbelPath);
+        }
+
         public RbelElement lastResponse() {
-            return currentResponse;
+            return lastMessageMatching(msg ->
+                msg.hasFacet(RbelResponseFacet.class) || msg.hasFacet(RbelHttpResponseFacet.class));
+        }
+
+        public String lastResponseAsString() {
+            return Optional.ofNullable(lastResponse())
+                .map(RbelElement::getRawStringContent)
+                .orElseThrow(NoSuchElementException::new);
+        }
+
+        public RbelElement lastRequest() {
+            return lastMessageMatching(msg ->
+                msg.hasFacet(RbelRequestFacet.class) || msg.hasFacet(RbelHttpRequestFacet.class));
+        }
+
+        private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
+            final ReverseListIterator backwardsIterator = new ReverseListIterator(
+                LocalProxyRbelMessageListener.getValidatableRbelMessages());
+            while (backwardsIterator.hasNext()) {
+                final RbelElement element = (RbelElement) backwardsIterator.next();
+                if (testMessage.test(element)) {
+                    return element;
+                }
+            }
+            throw new NoSuchElementException();
+        }
+
+        public String lastRequestAsString() {
+            return Optional.ofNullable(lastRequest())
+                .map(RbelElement::getRawStringContent)
+                .orElseThrow(NoSuchElementException::new);
+        }
+
+        public String getValueAtLocationAsString(RbelElement element, String rbelPath) {
+            return element.findElement(rbelPath)
+                .flatMap(el -> el.getFacet(RbelValueFacet.class))
+                .map(RbelValueFacet::getValue)
+                .map(Object::toString)
+                .orElseThrow(NoSuchElementException::new);
         }
     }
 }

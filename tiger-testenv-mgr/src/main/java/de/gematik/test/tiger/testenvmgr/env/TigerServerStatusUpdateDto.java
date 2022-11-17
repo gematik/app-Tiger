@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
-import de.gematik.test.tiger.common.config.ServerType;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class TigerServerStatusUpdateDto {
 
     private String statusMessage;
-    private ServerType type;
+    private String type;
     private String baseUrl;
     private TigerServerStatus status;
 

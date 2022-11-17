@@ -17,12 +17,14 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr.HTTP;
-import de.gematik.test.tiger.common.config.ServerType;
+import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.env.DockerMgr;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.MalformedURLException;
@@ -31,21 +33,28 @@ import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 
-public class DockerServer extends TigerServer {
+@TigerServerType("docker")
+public class DockerServer extends AbstractTigerServer {
+
+    public static final DockerMgr dockerManager = new DockerMgr();
 
     @Builder
-    DockerServer(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
+    public DockerServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, tigerTestEnvMgr, configuration);
     }
 
     @Override
-    public void performStartup() {
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type(ServerType.DOCKER)
-            .statusMessage("Starting docker container for " + getServerId() + " from '" + getDockerSource() + "'")
-            .build());
+    public void assertThatConfigurationIsCorrect() {
+        super.assertThatConfigurationIsCorrect();
 
-        getTigerTestEnvMgr().getDockerManager().startContainer(this);
+        assertCfgPropertySet(getConfiguration(), "version");
+        assertCfgPropertySet(getConfiguration(), "source");
+    }
+
+    @Override
+    public void performStartup() {
+        statusMessage("Starting docker container for " + getServerId() + " from '" + getDockerSource() + "'");
+        dockerManager.startContainer(this);
 
         // add routes needed for each server to local docker proxy
         // ATTENTION only one route per server!
@@ -56,7 +65,32 @@ public class DockerServer extends TigerServer {
                 .to(HTTP + "localhost:" + getConfiguration().getDockerOptions().getPorts().values().iterator().next())
                 .build());
         }
+
         statusMessage("Docker container " + getServerId() + " started");
+    }
+
+    @Override
+    protected void processExports() {
+        super.processExports();
+
+        if (getConfiguration().getDockerOptions().getPorts() != null
+            && !getConfiguration().getDockerOptions().getPorts().isEmpty()) {
+            getConfiguration().getExports().forEach(exp -> {
+                String[] kvp = exp.split("=", 2);
+                String origValue = TigerGlobalConfiguration.readString(kvp[0]);
+                kvp[1] = origValue;
+                // ports substitution are only supported for docker based instances
+                if (getConfiguration().getDockerOptions().getPorts() != null) {
+                    getConfiguration().getDockerOptions().getPorts().forEach((localPort, externPort) ->
+                        kvp[1] = kvp[1].replace("${PORT:" + localPort + "}", String.valueOf(externPort))
+                    );
+                }
+                if (!origValue.equals(kvp[1])) {
+                    log.info("Setting global property {}={}", kvp[0], kvp[1]);
+                    TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
+                }
+            });
+        }
     }
 
     public String getDockerSource() {
@@ -71,7 +105,7 @@ public class DockerServer extends TigerServer {
     public void shutdown() {
         log.info("Stopping docker container {}...", getServerId());
         removeAllRoutes();
-        getTigerTestEnvMgr().getDockerManager().stopContainer(this);
+        dockerManager.stopContainer(this);
         setStatus(TigerServerStatus.STOPPED, "Docker container " + getServerId() + " stopped");
     }
 

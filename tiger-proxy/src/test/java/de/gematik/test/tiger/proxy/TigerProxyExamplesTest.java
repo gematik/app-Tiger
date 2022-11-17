@@ -36,7 +36,10 @@ import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 
 @RequiredArgsConstructor
@@ -66,7 +69,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    public void directTest() {
+    void directTest() {
         final HttpResponse<String> response = Unirest.get("http://localhost:" + mockServerClient.getPort() + "/foo")
             .asString();
 
@@ -75,81 +78,69 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    public void simpleTigerProxyTest() throws Exception {
+    void simpleTigerProxyTest() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .build())) {
             final UnirestInstance unirestInstance = Unirest.spawnInstance();
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu").asString();
+            waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
 
-            assertThat(tigerProxy.getRbelMessages().get(1).getRawStringContent())
+            assertThat(tigerProxy.getRbelMessagesList().get(1).getRawStringContent())
                 .contains("barschmoolildu");
         }
     }
 
     @Test
-    public void rbelPath_getBody() throws Exception {
+    void rbelPath_getBody() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
             UnirestInstance unirestInstance = Unirest.spawnInstance()) {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu")
                 .asString();
+            waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body")
                 .get().getRawStringContent())
                 .isEqualTo("barschmoolildu");
         }
     }
 
     @Test
-    public void json_demoWithExtendedRbelPath() throws Exception {
+    void json_demoWithExtendedRbelPath() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
             UnirestInstance unirestInstance = Unirest.spawnInstance()) {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get(
                     "http://localhost:" + mockServerClient.getPort() + "/read?filename=src/test/resources/test.json")
                 .asString();
+            waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body.webdriver.*.driver")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.webdriver.*.driver")
                 .get().getRawStringContent())
                 .contains("targetValue");
         }
     }
 
     @Test
-    public void jsonInXml_longerRbelPathFailing() throws Exception {
+    void jsonInXml_longerRbelPathSucceeding() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
             UnirestInstance unirestInstance = Unirest.spawnInstance()) {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get(
                     "http://localhost:" + mockServerClient.getPort() + "/read?filename=src/test/resources/combined.json")
                 .asString();
+            waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
 
             RbelOptions.activateRbelPathDebugging();
-            tigerProxy.getRbelMessages().get(1)
-                .findElement("$.body.xmlContent.RegistryResponse.RegistryErrorList.*.webdriver");
-            RbelOptions.deactivateRbelPathDebugging();
-        }
-    }
-
-    @Test
-    public void jsonInXml_longerRbelPathSucceeding() throws Exception {
-        try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
-            UnirestInstance unirestInstance = Unirest.spawnInstance()) {
-            unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-            unirestInstance.get(
-                    "http://localhost:" + mockServerClient.getPort() + "/read?filename=src/test/resources/combined.json")
-                .asString();
-
-            RbelOptions.activateRbelPathDebugging();
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$..textTest.hier")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$..textTest.hier")
                 .get().getRawStringContent())
                 .isEqualTo("ist kein text");
         }
     }
 
     @Test
-    public void forwardProxyRoute_sendMessage() throws Exception {
+    void forwardProxyRoute_sendMessage() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://norealserver")
@@ -159,15 +150,16 @@ public class TigerProxyExamplesTest {
             UnirestInstance unirestInstance = Unirest.spawnInstance()) {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get("http://norealserver/foo").asString();
+            waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body")
                 .get().getRawStringContent())
                 .isEqualTo("bar");
         }
     }
 
     @Test
-    public void forwardProxyRoute_waitForMessageSent() throws Exception {
+    void forwardProxyRoute_waitForMessageSent() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://norealserver")
@@ -180,12 +172,12 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("http://norealserver/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
     @Test
-    public void reverseProxyRoute_waitForMessageSent() throws Exception {
+    void reverseProxyRoute_waitForMessageSent() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -197,12 +189,12 @@ public class TigerProxyExamplesTest {
             Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
     @Test
-    public void reverseProxyDeepRoute_waitForMessageSent() throws Exception {
+    void reverseProxyDeepRoute_waitForMessageSent() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/wuff")
@@ -214,12 +206,12 @@ public class TigerProxyExamplesTest {
             Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/wuff/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
     @Test
-    public void reverseProxyWithTls_waitForMessageSent() throws Exception {
+    void reverseProxyWithTls_waitForMessageSent() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -233,12 +225,12 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
     @Test
-    public void forwardProxyWithTls_waitForMessageSent() throws Exception {
+    void forwardProxyWithTls_waitForMessageSent() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://blub")
@@ -256,13 +248,13 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("https://blub/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
     @Test
     @Disabled("Doesnt work on some JVMs (Brainpool restrictions)")
-    public void forwardProxyWithTlsAndCustomCa_waitForMessageSent() throws Exception {
+    void forwardProxyWithTlsAndCustomCa_waitForMessageSent() throws Exception {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://blub")
@@ -280,13 +272,13 @@ public class TigerProxyExamplesTest {
             unirestInstance.get("https://blub/foo").asString();
 
             await().atMost(2, TimeUnit.SECONDS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 2);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
         }
     }
 
     @Test
     @Disabled
-    public void twoProxiesWithTrafficForwarding_shouldShowTraffic() throws Exception {
+    void twoProxiesWithTrafficForwarding_shouldShowTraffic() throws Exception {
         // standalone-application starten!
         // webui öffnen
 
@@ -296,12 +288,12 @@ public class TigerProxyExamplesTest {
             System.out.println("curl -v https://api.twitter.com/1.1/jot/client_event.json -x http://localhost:6666 -k");
 
             await().atMost(2, TimeUnit.HOURS)
-                .until(() -> tigerProxy.getRbelMessages().size() >= 4);
+                .until(() -> tigerProxy.getRbelMessagesList().size() >= 4);
         }
     }
 
     @Test
-    public void modificationForReturnValue() throws Exception {
+    void modificationForReturnValue() throws Exception {
         RbelOptions.activateJexlDebugging();
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
@@ -327,15 +319,16 @@ public class TigerProxyExamplesTest {
 
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
             unirestInstance.get("http://blub/foo").asString();
+            waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
 
-            assertThat(tigerProxy.getRbelMessages().get(1).findElement("$.body")
+            assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body")
                 .get().getRawStringContent())
                 .isEqualTo("horridoh!");
         }
     }
 
     @Test
-    public void tslSuiteEnforcement() throws Exception {
+    void tslSuiteEnforcement() throws Exception {
         final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
 
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
@@ -359,5 +352,9 @@ public class TigerProxyExamplesTest {
                 .getCipherSuite())
                 .isEqualTo(configuredSslSuite);
         }
+    }
+
+    private static void waitUntilMessagesAreParsedInTheTigerProxy(TigerProxy tigerProxy) {
+        await().until(() -> tigerProxy.getRbelMessages().size() >= 2);
     }
 }

@@ -16,78 +16,73 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
+import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addTwoRequestsToTigerTestHooks;
+import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.buildRequestFromCurlFile;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.LocalProxyRbelMessageListener;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-public class RbelMessageValidatorTest {
+class RbelMessageValidatorTest {
 
     @Test
-    public void testPathEqualsWithRelativePath_OK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathEqualsWithRelativePath_OK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("/foo/bar?sch=mar"), "/foo/bar"))
             .isTrue();
     }
 
     @Test
-    public void testPathEqualsWithUrl_OK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathEqualsWithUrl_OK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("http://bl.ub/foo/bar?sch=mar"), "/foo/bar"))
             .isTrue();
     }
 
     @Test
-    public void testPathMatchingWithUrlLeading_OK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathMatchingWithUrlLeading_OK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("http://bl.ub/foo/bar?sch=mar"), "\\/.*\\/bar"))
             .isTrue();
     }
 
     @Test
-    public void testPathMatchingWithUrlTrailing_OK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathMatchingWithUrlTrailing_OK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("http://bl.ub/foo/bar?sch=mar"), "\\/foo\\/.*"))
             .isTrue();
     }
 
     @Test
-    public void testPathMatchingWithUrlInMid_OK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathMatchingWithUrlInMid_OK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("http://bl.ub/foo/bar/test?sch=mar"), "\\/foo\\/.*/test"))
             .isTrue();
     }
 
     @Test
-    public void testPathMatchingWithNotMatchRegex_NOK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathMatchingWithNotMatchRegex_NOK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("http://bl.ub/foo/bar/test?sch=mar"), "/foo/.*/[test]"))
             .isFalse();
     }
 
     @Test
-    public void testPathMatchingWithInvalidRegex_NOK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathMatchingWithInvalidRegex_NOK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("http://bl.ub/foo/bar/test?sch=mar"), "["))
             .isFalse();
     }
 
     @Test
-    public void testInvalidPathMatching_NOK() {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testInvalidPathMatching_NOK() {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath("file$:."), "/foo/.*"))
             .isFalse();
     }
@@ -101,244 +96,231 @@ public class RbelMessageValidatorTest {
     }
 
     @Test
-    public void testHostMatching_OK() {
-        assertThat(new RbelMessageValidator().doesHostMatch(
+    void testHostMatching_OK() {
+        assertThat(RbelMessageValidator.instance.doesHostMatch(
             buildRequestFromCurlFile("getRequestLocalhost.curl"), "localhost:8080"))
             .isTrue();
     }
+
     @Test
-    public void testHostMatchingRegex_OK() {
-        assertThat(new RbelMessageValidator().doesHostMatch(
+    void testHostMatchingRegex_OK() {
+        assertThat(RbelMessageValidator.instance.doesHostMatch(
             buildRequestFromCurlFile("getRequestLocalhost.curl"), "local.*:8080"))
             .isTrue();
     }
 
     @Test
-    public void testHostMatchingRegexNotMatching_OK() {
-        assertThat(new RbelMessageValidator().doesHostMatch(
+    void testHostMatchingRegexNotMatching_OK() {
+        assertThat(RbelMessageValidator.instance.doesHostMatch(
             buildRequestFromCurlFile("getRequestLocalhost.curl"), "eitzen.*"))
             .isFalse();
     }
+
     @Test
-    public void testHostMatchingInvalidRegex_NOK() {
-        assertThat(new RbelMessageValidator().doesHostMatch(
+    void testHostMatchingInvalidRegex_NOK() {
+        assertThat(RbelMessageValidator.instance.doesHostMatch(
             buildRequestFromCurlFile("getRequestLocalhost.curl"), "["))
             .isFalse();
     }
 
     @Test
-    public void testMethodMatching_OK() {
-        assertThat(new RbelMessageValidator().doesMethodMatch(
+    void testMethodMatching_OK() {
+        assertThat(RbelMessageValidator.instance.doesMethodMatch(
             buildRequestFromCurlFile("getRequestLocalhost.curl"), "GET"))
             .isTrue();
     }
 
     @Test
-    public void testMethodMatchingNotMatching_OK() {
-        assertThat(new RbelMessageValidator().doesMethodMatch(
+    void testMethodMatchingNotMatching_OK() {
+        assertThat(RbelMessageValidator.instance.doesMethodMatch(
             buildRequestFromCurlFile("getRequestLocalhost.curl"), "POST"))
             .isFalse();
     }
 
-    private RbelElement buildRequestFromCurlFile(String curlFileName) {
-        String curlMessage = readCurlFromFileWithCorrectedLineBreaks(curlFileName, StandardCharsets.UTF_8);
-        return RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
-    }
-
-    private RbelElement buildResponseFromCurlFile(String curlFileName, RbelElement request) {
-        String curlMessage = readCurlFromFileWithCorrectedLineBreaks(curlFileName, StandardCharsets.UTF_8);
-        RbelElement message = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
-        message.addOrReplaceFacet(message.getFacet(RbelHttpResponseFacet.class).get().toBuilder().request(request).build());
-        return message;
-    }
-
-    private String readCurlFromFileWithCorrectedLineBreaks(String fileName, Charset charset) {
-        try {
-            return FileUtils.readFileToString(new File("src/test/resources/testdata/sampleCurlMessages/" + fileName), charset)
-                .replaceAll("(?<!\\r)\\n", "\r\n");
-        } catch (IOException ioe) {
-            throw new RuntimeException("Unable to read curl file", ioe);
-        }
-    }
-
     @Test
-    public void testSourceTestInvalid_NOK() {
-        assertThatThrownBy(() -> new RbelMessageValidator().compareXMLStructure(
+    void testSourceTestInvalid_NOK() {
+        assertThatThrownBy(() -> RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body><!-- test comment-- --></body>",
             "<root><header></header><body></body></root>"))
             .isInstanceOf(org.xmlunit.XMLUnitException.class);
     }
 
     @Test
-    public void testSourceOracleInvalid_NOK() {
-        assertThatThrownBy(() -> new RbelMessageValidator().compareXMLStructure(
+    void testSourceOracleInvalid_NOK() {
+        assertThatThrownBy(() -> RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body><!-- test comment --></body></root>",
             "<root><header></header><body></body>"))
             .isInstanceOf(org.xmlunit.XMLUnitException.class);
     }
 
     @Test
-    public void testSourceNoComment_OK() {
-        new RbelMessageValidator().compareXMLStructure(
+    void testSourceNoComment_OK() {
+        RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body><!-- test comment --></body></root>",
             "<root><header></header><body></body></root>", "nocomment");
+        assertThatNoException();
     }
 
     @Test
-    public void testSourceNoCommetTxtTrim_OK() {
-        new RbelMessageValidator().compareXMLStructure(
+    void testSourceNoCommetTxtTrim_OK() {
+        RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body>test     <!-- test comment --></body></root>",
             "<root><header></header><body>test</body></root>", "nocomment,txttrim");
+        assertThatNoException();
     }
 
     @Test
-    public void testSourceNoCommetTxtTrim2_OK() {
-        new RbelMessageValidator().compareXMLStructure(
+    void testSourceNoCommetTxtTrim2_OK() {
+        RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body>    test     <!-- test comment --></body></root>",
             "<root><header></header><body>test</body></root>", "nocomment,txttrim");
+        assertThatNoException();
     }
 
     @Test
-    public void testSourceNoCommetTxtTrim3_OK() {
-        new RbelMessageValidator().compareXMLStructure(
+    void testSourceNoCommetTxtTrim3_OK() {
+        RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body>    test xxx    <!-- test comment --></body></root>",
             "<root><header></header><body>test xxx</body></root>", "nocomment,txttrim");
+        assertThatNoException();
     }
 
     @Test
-    public void testSourceNoCommetTxtTrim4_OK() {
-        assertThatThrownBy(() -> new RbelMessageValidator().compareXMLStructure(
+    void testSourceNoCommetTxtTrim4_OK() {
+        assertThatThrownBy(() -> RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body>    test   xxx    <!-- test comment --></body></root>",
             "<root><header></header><body>test xxx</body></root>", "nocomment,txttrim"))
             .isInstanceOf(AssertionError.class);
     }
 
     @Test
-    public void testSourceNoCommetTxtNormalize_OK() {
-        new RbelMessageValidator().compareXMLStructure(
+    void testSourceNoCommetTxtNormalize_OK() {
+        RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body>  test    xxxx   </body>  <!-- test comment --></root>",
             "<root><header></header><body>test xxxx </body></root>", "nocomment,txtnormalize");
+        assertThatNoException();
     }
 
     @Test
-    public void testSourceAttrOrder_OK() {
-        new RbelMessageValidator().compareXMLStructure(
+    void testSourceAttrOrder_OK() {
+        RbelMessageValidator.instance.compareXMLStructure(
             "<root><header></header><body attr1='1'   attr2='2'></body></root>",
             "<root><header></header><body attr2='2' attr1='1'></body></root>");
+        assertThatNoException();
     }
 
     @ParameterizedTest
     @CsvSource({"http://server, ''", "http://server/, /", "http://server, /", "http://server/, ''"})
-    public void testEmptyPathMatching(final String url, final String path) {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testEmptyPathMatching(final String url, final String path) {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath(url), path))
             .isTrue();
     }
 
     @ParameterizedTest
     @CsvSource({"http://server/blu/, /", "http://server/, /bla", "http://server/bla, ''"})
-    public void testPathOfMessageMatch_NOK(final String url, final String path) {
-        assertThat(new RbelMessageValidator().doesPathOfMessageMatch(
+    void testPathOfMessageMatch_NOK(final String url, final String path) {
+        assertThat(RbelMessageValidator.instance.doesPathOfMessageMatch(
             buildRequestWithPath(url), path))
             .isFalse();
     }
 
     @Test
-    public void testFilterRequests_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
+    void testFilterRequests_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
         validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
         RbelElement request = validator.currentRequest;
         assertTrue(validator.doesHostMatch(request, "localhost:8080"));
     }
 
     @Test
-    public void testFilterRequestsWrongPath_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
-        assertThatThrownBy(() -> {
-            validator.filterRequestsAndStoreInContext(RequestParameter.builder().path("/NOWAY.*").build());
-        }).isInstanceOf(AssertionError.class);
+    void testFilterRequestsWrongPath_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        final RequestParameter requestParameter = RequestParameter.builder().path("/NOWAY.*").build();
+        assertThatThrownBy(() -> validator.filterRequestsAndStoreInContext(requestParameter))
+            .isInstanceOf(AssertionError.class);
 
     }
 
     @Test
-    public void testFilterRequestsNextRequest_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
+    void testFilterRequestsNextRequest_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
         validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
-        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").startFromLastRequest(true).build());
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").startFromLastRequest(true).build());
         RbelElement request = validator.currentRequest;
         assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
     }
 
     @Test
-    public void testFilterRequestsRbelPath_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
-        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonalagent").build());
+    void testFilterRequestsRbelPath_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonalagent").build());
         assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
     }
 
     @Test
-    public void testFilterRequestsRbelPathNotMatching_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
+    void testFilterRequestsRbelPathNotMatching_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
         assertThatThrownBy(() -> {
-            validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonalagentXXXX").build());
+            validator.filterRequestsAndStoreInContext(
+                RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonalagentXXXX")
+                    .build());
         }).isInstanceOf(AssertionError.class);
     }
+
     @Test
-    public void testFilterRequestsRbelPathRegex_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
-        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonal.*").build());
+    void testFilterRequestsRbelPathRegex_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonal.*").build());
         assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
     }
 
     @Test
-    public void testFilterRequestsRbelPathExists_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
-        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").build());
+    void testFilterRequestsRbelPathExists_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").build());
         assertTrue(validator.doesHostMatch(validator.currentRequest, "localhost:8080"));
     }
 
     @Test
-    public void testFilterRequestsRbelPathExists2_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
-        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
+    void testFilterRequestsRbelPathExists2_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
         assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
     }
 
     @Test
-    public void testFilterRequestsRbelPathExists_NOK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
+    void testFilterRequestsRbelPathExists_NOK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
         assertThatThrownBy(() -> {
-            validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build());
+            validator.filterRequestsAndStoreInContext(
+                RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build());
         }).isInstanceOf(AssertionError.class);
     }
 
 
     @Test
-    public void testFilterRequestsAttachResponseCorrectly_OK() {
-        addSomeMessagesToTigerTestHooks();
-        RbelMessageValidator validator = new RbelMessageValidator();
-        validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonal.*").build());
+    void testFilterRequestsAttachResponseCorrectly_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").value("mypersonal.*").build());
         assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
-        assertThat(validator.currentResponse.getFacet(RbelHttpResponseFacet.class).get().getResponseCode().getRawStringContent()).isEqualTo("500");
-    }
-
-    private void addSomeMessagesToTigerTestHooks() {
-        TigerGlobalConfiguration.putValue("tiger.rbel.request.timeout", 1);
-        LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
-        RbelElement request = buildRequestFromCurlFile("getRequestLocalhost.curl");
-        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
-        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessage.curl", request));
-        request = buildRequestFromCurlFile("getRequestEitzenAt.curl");
-        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
-        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
+        assertThat(validator.currentResponse.getFacet(RbelHttpResponseFacet.class).get().getResponseCode()
+            .getRawStringContent()).isEqualTo("500");
     }
 }

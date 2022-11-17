@@ -18,22 +18,23 @@ package de.gematik.test.tiger.testenvmgr.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import de.gematik.test.tiger.common.config.ServerType;
+import de.gematik.test.tiger.testenvmgr.AbstractTestTigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.DockerMgr;
 import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TestDockerMgr {
+class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
 
     private static final String TEST_IMAGE_NO_HEALTHCHECK = "gematik1/tiger-test-image:1.1.0";
     private static final String TEST_IMAGE = "gematik1/tiger-test-image:1.0.0";
@@ -58,66 +59,76 @@ public class TestDockerMgr {
     }
 
     @Test
-    public void testDockerMgrStartUpOK() {
+    void testDockerMgrStartUpOK() {
         final CfgServer srv = new CfgServer();
-        srv.setType(ServerType.DOCKER);
+        srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE));
         srv.setHostname("testcontainer");
         srv.setStartupTimeoutSec(15);
-        buildDockerServerFromConfiguration("blub1", srv);
-        dmgr.startContainer(server);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            buildDockerServerFromConfiguration(envMgr,"blub1", srv);
+            dmgr.startContainer(server);
 
-        assertThat(dmgr.getContainers())
-            .hasSize(1);
+            assertThat(dmgr.getContainers())
+                .hasSize(1);
+        });
     }
 
     @Test
-    public void testDockerMgrStartUpTooShort() {
+    void testDockerMgrStartUpTooShort() {
         final CfgServer srv = new CfgServer();
-        srv.setType(ServerType.DOCKER);
+        srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE));
         srv.setHostname("testcontainer");
         srv.setStartupTimeoutSec(2);
-        buildDockerServerFromConfiguration("blub2", srv);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            buildDockerServerFromConfiguration(envMgr,"blub2", srv);
 
-        assertThatThrownBy(() -> dmgr.startContainer(server))
-            .isInstanceOf(TigerTestEnvException.class)
-            .hasMessage("Startup of server blub2 timed out after 2 seconds!");
+            assertThatThrownBy(() -> dmgr.startContainer(server))
+                .isInstanceOf(TigerTestEnvException.class)
+                .hasMessage("Startup of server blub2 timed out after 2 seconds!");
+        });
     }
 
     @Test
-    public void testDockerMgrStartupTimeoutFallback() {
+    void testDockerMgrStartupTimeoutFallback() {
         final CfgServer srv = new CfgServer();
-        srv.setType(ServerType.DOCKER);
+        srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE_NO_HEALTHCHECK)); // has no healtchcheck
         srv.setHostname("idp5");
         srv.setStartupTimeoutSec(5); // to few seconds for startup
-        buildDockerServerFromConfiguration("blub3", srv);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            buildDockerServerFromConfiguration(envMgr,"blub3", srv);
 
-        long startms = System.currentTimeMillis();
-        dmgr.startContainer(server);
-        assertThat(System.currentTimeMillis() - startms).isLessThan(20000);
+            long startms = System.currentTimeMillis();
+            dmgr.startContainer(server);
+            assertThat(System.currentTimeMillis() - startms).isLessThan(20000);
+        });
     }
 
     @Test
-    public void testDockerMgrPauseUnpause() {
+    void testDockerMgrPauseUnpause() {
         final CfgServer srv = new CfgServer();
-        srv.setType(ServerType.DOCKER);
+        srv.setType(getTigerServerTypeDocker());
         srv.setSource(List.of(TEST_IMAGE)); // has no healtchcheck
         srv.setHostname("idp4");
-        buildDockerServerFromConfiguration("blub4", srv);
+        createTestEnvMgrSafelyAndExecute(envMgr -> {
+            buildDockerServerFromConfiguration(envMgr, "blub4", srv);
 
-        dmgr.startContainer(server);
-        dmgr.pauseContainer(server);
-        dmgr.unpauseContainer(server);
+            dmgr.startContainer(server);
+            dmgr.pauseContainer(server);
+            dmgr.unpauseContainer(server);
+
+            assertThatNoException();
+        });
     }
 
-    private void buildDockerServerFromConfiguration(String serverId, CfgServer srv) {
-        final TigerTestEnvMgr testEnvMgr = mock(TigerTestEnvMgr.class);
-        doReturn(Configuration.builder().build())
-            .when(testEnvMgr).getConfiguration();
-        doAnswer(invocation -> invocation.getArguments()[0])
-            .when(testEnvMgr).replaceSysPropsInString(any());
-        server = (DockerServer) TigerServer.create(serverId, srv, testEnvMgr);
+    private static TigerServerType getTigerServerTypeDocker() {
+        return DockerServer.class.getAnnotation(TigerServerType.class);
+    }
+
+    private void buildDockerServerFromConfiguration(TigerTestEnvMgr testEnvMgr, String serverId, CfgServer srv) {
+        server = (DockerServer) testEnvMgr.createServer(serverId, srv);
     }
 }
+

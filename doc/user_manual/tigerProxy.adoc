@@ -38,7 +38,7 @@ to the reverse proxy.
 The Tiger Proxy is a proxy-server. It comes in two flavours: Tiger Proxy and Tiger Standalone Proxy. The standalone tiger proxy is started from a JAR-file. The test environment manager boots the main tiger proxy (local tiger proxy) and also any additional ones (normal tiger proxy, not standalone).
 
 Both types have a proxy-port (configurable via `tigerProxy.proxyPort`),
-which supports both http- and https-traffic (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via `tigerProxy.adminPort`). This provides a webui to monitor the traffic,
+which supports both http- and https-traffic, (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via `tigerProxy.adminPort`). This provides a webui to monitor the traffic,
 a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.
 
 === Understanding routes
@@ -47,7 +47,7 @@ Routes are the fundamental mechanic of how the Tiger Proxy handles traffic. They
 or reverse-proxy. A route has the following properties:
 
 ==== from
-From where should the traffic be collected? This can either be an absolute URL (eg. http://foobar), which defines a forward-proxy route, or relative (eg. /blub), defining a reverse-proxy-route. Please note: You can freely add parts (eg. http://foobar/extra/part) to further specify the mapping.
+From where should the traffic be collected? This can either be an absolute URL (e.g. http://foobar), which defines a forward-proxy route, or relative (e.g. /blub), defining a reverse-proxy-route. Please note: You can freely add parts (e.g. http://foobar/extra/part) to further specify the mapping.
 
 ==== to
 
@@ -441,6 +441,7 @@ tigerProxy:
     activateRbelParsing: true
     activateAsn1Parsing: false
     activateVauAnalysis: false
+    parsingShouldBlockCommunication: false
 ----
 
 ===== activateRbelParsing
@@ -450,4 +451,20 @@ Deactivating this flag turns off all Rbel-Analysis of the incoming traffic. This
 This is off by default. ASN.1 objects are very common in crypto applications. While parsing them will enable you to directly have a look inside certificates it comes with a penalty in performance and also clutters the object-tree. Often it's enough to know that there is a certificate, only in some scenarios is the content of interest. If the latter is of interest to you activate ASN.1 parsing.
 
 ===== activateVauAnalysis
-VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze EPA-VAU messages leave this option turned off. If you do enabling it will give you additional information about the messages.
+VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze ePA-VAU messages leave this option turned off. If you do, enabling it will give you additional information about the messages.
+
+===== parsingShouldBlockCommunication
+If blocking is enabled the Tiger Proxy will only return the response when message parsing is completed. This is inadvisable in high-speed scenarios. It, however, greatly simplifies the test suite (after the communication is concluded the parsed message appears in the log). Therefore, the blocking is deactivated by default. The only exception is the local Tiger Proxy, which WILL block communication until parsing is completed. For all Tiger Proxies this default behavior can be changed.
+
+===== directReverseProxy
+To enable the use of the TigerProxy for non-HTTP scenarios you can use the option `directReverseProxy`:
+
+[source,yaml]
+----
+tigerProxy:
+    directReverseProxy:
+        hostname: 127.0.0.1
+        port: 3858
+----
+
+This will directly forward any request to the given host. This is a form of reverseProxy, only also applicable for non-http-traffic. HTTP traffic will still be forwarded through use of a global reverse proxy. Other traffic will be directly forwarded, rerouted directly on the TCP layer. Messages transmitted can still be parsed via RBel.

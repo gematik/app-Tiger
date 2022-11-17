@@ -20,6 +20,9 @@ let lastUuid = "";
 let filterCriterion = "";
 let rootEl;
 let jexlQueryElementUuid = "";
+let pageSize = 20;
+let pageNumber = 0;
+let empty="empty";
 
 let resetBtn;
 let saveBtn;
@@ -41,6 +44,8 @@ let fieldRouteTo;
 let fieldRouteFrom;
 let btnAddRoute;
 
+let btnOpenFilterModal;
+
 let btnScrollLock;
 let ledScrollLock;
 let scrollLock = false;
@@ -60,15 +65,14 @@ let collapsibleMessageHeaderBtn;
 let jexlResponseLink;
 let receivers = [];
 let senders = [];
-let filterBtn;
 
 let requestFrom = "requestFromContent";
-let requestTo  = "requestToContent";
+let requestTo = "requestToContent";
 
 let socket;
 let stompClient;
 
-const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
+const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"is-size-6 mb-1 has-text-link\"><span\n"
     + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
@@ -82,7 +86,7 @@ const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
     + "             title=\"${menuInfoString}\">${menuInfoString}"
     + "        </span>\n"
     + "      </a></div>";
-const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a href=\"#${uuid}\"\n"
+const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\"\n"
     + "                               class=\"mt-3 is-block\">\n"
     + "        <div class=\"is-size-6 mb-1 has-text-success\"><span\n"
     + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
@@ -110,11 +114,9 @@ document.addEventListener('DOMContentLoaded', function () {
   jexlInspectionContextParentDiv = document.getElementById("contextParent");
   jexlInspectionNoContextDiv = document.getElementById("jexlNoContext");
 
-  filterBtn = document.getElementById("dropdown-filter-button");
-  filterBtn.addEventListener("click", updateNestedDropdownContent);
-
-  hideBtn = document.getElementById("dropdown-hide-button");
-  hideBtn.addEventListener("click", hideDropdownContent);
+  addDropdownClickListener(document.getElementById("dropdown-hide-button").parentNode);
+  addDropdownClickListener(document.getElementById("dropdown-page-selection"));
+  addDropdownClickListener(document.getElementById("dropdown-page-size"));
 
   setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
   setFilterCriterionInput = document.getElementById("setFilterCriterionInput");
@@ -132,6 +134,9 @@ document.addEventListener('DOMContentLoaded', function () {
   btnAddRoute = document.getElementById("addNewRouteBtn");
   btnScrollLock = document.getElementById("scrollLockBtn");
   ledScrollLock = document.getElementById("scrollLockLed");
+
+  btnOpenFilterModal = document.getElementById("filterModalBtn");
+
   collapsibleRbelBtn = document.getElementById("rbel-help-icon");
   collapsibleJexlBtn = document.getElementById("jexl-help-icon");
   collapsibleRbelBtn.addEventListener('click', () => {
@@ -141,6 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleHelp(collapsibleJexlBtn, "jexl-help")
   });
   btnOpenRouteModal.addEventListener('click', showModalsCB);
+  btnOpenFilterModal.addEventListener('click', showModalsCB);
   saveBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
 
@@ -215,6 +221,11 @@ document.addEventListener('DOMContentLoaded', function () {
         updateAddRouteBtnState();
       });
 
+  btnOpenFilterModal.addEventListener('click',
+      () => {
+        btnOpenFilterModal.disabled = true;
+      });
+
   btnScrollLock.addEventListener('click',
       () => {
         scrollLock = !scrollLock;
@@ -225,54 +236,62 @@ document.addEventListener('DOMContentLoaded', function () {
       () => {
         const firstElementOfView = getFirstElementOfViewport();
         collapseMessageDetails = !collapseMessageDetails;
-        collapsibleDetails.classList.toggle("led-error", collapseMessageDetails);
+        collapsibleDetails.classList.toggle("led-error",
+            collapseMessageDetails);
 
-        let msgCards = document.getElementsByClassName('msg-card');
-        Array.from(msgCards).forEach(card => {
-          const cardToggle = card.children[0].children[0];
-          card.childNodes[1].classList.toggle('is-hidden',
-              collapseMessageDetails);
-          setCollapsableIcon(cardToggle.children[0].children[1],
-              collapseMessageDetails);
-        });
+        document.getElementsByClassName('msglist')[0]
+            .childNodes.forEach(message => {
+              updateHidingForMessageElement(message)
+            });
         if (firstElementOfView) {
           window.setTimeout(() => {
             firstElementOfView.scrollIntoView();
             window.scrollBy(0, -15);
           }, 50);
         }
-        let hideDropdownBtn = document.getElementById("dropdown-hide-button");
-        hideDropdownBtn.parentElement.classList.remove("is-active");
+        closeAllDropdowns();
       });
 
   collapsibleMessageHeaderBtn.addEventListener('click',
       () => {
         const firstElementOfView = getFirstElementOfViewport();
         collapseMessageHeaders = !collapseMessageHeaders;
-        collapsibleHeaders.classList.toggle("led-error", collapseMessageHeaders);
+        collapsibleHeaders.classList.toggle("led-error",
+            collapseMessageHeaders);
 
-        let msgCards = document.getElementsByClassName('card full-width is-primary notification');
-        Array.from(msgCards).forEach(card => {
-          const cardToggle = card.children[0].children[0];
-          card.childNodes[1].classList.toggle('is-hidden',
-              collapseMessageHeaders);
-          setCollapsableIcon(cardToggle.children[0].children[0],
-              collapseMessageHeaders);
-        });
+        document.getElementsByClassName('msglist')[0]
+            .childNodes.forEach(message => {
+              updateHidingForMessageElement(message)
+            });
         if (firstElementOfView) {
           window.setTimeout(() => {
             firstElementOfView.scrollIntoView();
             window.scrollBy(0, -15);
           }, 50);
         }
-        let hideDropdownBtn = document.getElementById("dropdown-hide-button");
-        hideDropdownBtn.parentElement.classList.remove("is-active");
+        closeAllDropdowns();
+      });
+
+  let selectRequestFromBtn = document.getElementById("requestFromContent");
+
+  let selectRequestToBtn = document.getElementById("requestToContent");
+  selectRequestToBtn.addEventListener("click", updateSelectContents);
+  selectRequestToBtn.addEventListener('change', function (event) {
+    if (event.target.value !== "no request") {
+      let filterField = document.getElementById("setFilterCriterionInput");
+      filterField.value = "@.receiver == \"" + event.target.value + "\"";
+      selectRequestFromBtn.selectedIndex = 0;
+    }
   });
 
-  initDropdownContent(requestFrom, senders);
-  initDropdownContent(requestTo, receivers);
-
-  pollMessages();
+  selectRequestFromBtn.addEventListener("click", updateSelectContents);
+  selectRequestFromBtn.addEventListener('change', function (event) {
+    if (event.target.value !== "no request") {
+      let filterField = document.getElementById("setFilterCriterionInput");
+      filterField.value = "@.sender == \"" + event.target.value + "\"";
+      selectRequestToBtn.selectedIndex = 0;
+    }
+  });
 
   btnAddRoute.addEventListener("click", addRoute);
   fieldRouteFrom.addEventListener("keydown", updateAddRouteBtnState);
@@ -303,6 +322,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   connectToWebSocket();
+
+  setPageSize(pageSize);
 });
 
 // Functions
@@ -313,50 +334,39 @@ function removeActiveFlag(label) {
   });
 }
 
+function updateSelectContents() {
+  updateSelectContent(requestFrom, senders);
+  updateSelectContent(requestTo, receivers);
+}
+
 function getLabelId(label, id) {
   return label + "_" + id;
 }
 
-function updateDropdownContent(label, list) {
-  let divDropdownContent = document.getElementById(label);
+function updateSelectContent(label, list) {
+
+  let select = document.getElementById(label);
   let contained = false;
 
   if (list.length === 0) {
-    initDropdownContent(label, list);
+    initSelectContent(label, list);
   } else {
-    if (divDropdownContent.children[0].id === getLabelId(label, "empty")) {
-      divDropdownContent.removeChild(divDropdownContent.children[0]);
-    }
     for (let i = 0; i < list.length; i++) {
-      contained = false;
-      if (divDropdownContent !== null) {
-        Array.from(divDropdownContent.children).forEach(child => {
-          if (child.id === getLabelId(label, list[i])) {
-            contained = true;
-          }
-        });
-      }
-      if (!contained) {
-        let element = document.createElement('A');
-        element.textContent = list[i];
-        element.id = getLabelId(label, list[i]);
-        element.className = "dropdown-item";
-        element.setAttribute("href", "#");
-        element.addEventListener("click", () => {
-          removeActiveFlag(requestFrom);
-          removeActiveFlag(requestTo);
-          element.classList.add("is-active");
-          let filterField = document.getElementById(
-              "setFilterCriterionInput");
-          if (label === requestFrom) {
-            filterField.value = "@.sender == \"" + list[i] + "\"";
-          } else {
-            filterField.value = "@.receiver == \"" + list[i] + "\"";
-          }
-          let filterDropdownBtn = document.getElementById("dropdown-filter-button");
-          filterDropdownBtn.parentElement.classList.remove("is-active");
-        });
-        divDropdownContent.appendChild(element);
+      if (list[i].length > 0) {
+        contained = false;
+        if (select !== null) {
+          Array.from(select.children).forEach(child => {
+            if (child.id === getLabelId(label, list[i])) {
+              contained = true;
+            }
+          });
+        }
+        if (!contained) {
+          let element = document.createElement('option');
+          element.textContent = list[i];
+          element.id = getLabelId(label, list[i]);
+          select.appendChild(element);
+        }
       }
     }
   }
@@ -367,28 +377,23 @@ function deleteRequestsLists() {
   receivers = [];
 }
 
-function updateNestedDropdownContent() {
-  filterBtn.parentElement.classList.toggle("is-active");
-  updateDropdownContent(requestFrom, senders);
-  updateDropdownContent(requestTo, receivers);
+function closeAllDropdowns() {
+  for (let item of document.getElementsByClassName("is-active dropdown")) {
+    item.classList.remove("is-active");
+  }
 }
 
-function hideDropdownContent() {
-  hideBtn.parentElement.classList.toggle("is-active");
-}
-
-function initDropdownContent(label, list) {
-  let divDropdownContent = document.getElementById(label);
-  if (list.length === 0) {
-    Array.from(divDropdownContent.children).forEach(child => {
-      divDropdownContent.removeChild(child);
+function initSelectContent(label, list) {
+  let select = document.getElementById(label);
+  if (list.length === 0 && select !== null) {
+    Array.from(select.children).forEach(child => {
+      select.removeChild(child);
     });
-    let element = document.createElement('A');
+    let element = document.createElement('option');
     element.textContent = "no requests";
-    element.id = getLabelId(label, "empty");
-    element.className = "dropdown-item";
-    element.setAttribute("href", "#");
-    divDropdownContent.appendChild(element);
+    element.id = getLabelId(label, empty);
+    element.value = empty;
+    select.appendChild(element);
   }
 }
 
@@ -421,15 +426,28 @@ function enableModals() {
   let $modalCloses = getAll(
       '.modal-background, .modal-close, .message-header .delete, .modal-card-foot .button');
   let $modalButtons = getAll('.modal-button');
+  let $copyButtons = getAll('.copyToClipboard-button');
 
   if ($modalButtons.length > 0) {
-     $modalButtons.forEach(function ($el) {
+    $modalButtons.forEach(function ($el) {
       $el.addEventListener('click', function (e) {
         let target = $el.dataset.target;
         let $target = document.getElementById(target);
         rootEl.classList.add('is-clipped');
         $target.classList.add('is-active');
         e.preventDefault();
+        return false;
+      });
+    });
+  }
+
+  if ($copyButtons.length > 0) {
+    $copyButtons.forEach(function ($el) {
+      $el.addEventListener('click', function (e) {
+        e.preventDefault();
+        let target = $el.dataset.target;
+        let $target = document.getElementById(target);
+        navigator.clipboard.writeText($target.textContent);
         return false;
       });
     });
@@ -450,7 +468,6 @@ function showModalSave(e) {
   return false;
 }
 
-
 function showModalImport(e) {
   var input = document.createElement("input");
   input.setAttribute("type", "file");
@@ -466,9 +483,7 @@ function showModalImport(e) {
       } else {
         alert('The file has been uploaded successfully.');
         pollMessages();
-        updateNestedDropdownContent();
-        filterBtn.parentElement.classList.remove("is-active");
-        hideBtn.parentElement.classList.remove("is-active");
+        closeAllDropdowns();
       }
       return response;
     }).then(function (_response) {
@@ -490,7 +505,8 @@ function showModalsCB(e) {
 function toggleHelp(collapsibleBtn, collapsibleHelpId, isDisabledSet = false) {
   const collapsibleHelp = document.getElementById(collapsibleHelpId);
   const classList = collapsibleBtn.classList;
-  const flag = classList.contains("fa-toggle-on") || ((isDisabledSet) && isDisabledSet == true);
+  const flag = classList.contains("fa-toggle-on") || ((isDisabledSet)
+      && isDisabledSet == true);
   classList.toggle("fa-toggle-on", !flag);
   classList.toggle("fa-toggle-off", flag);
   collapsibleHelp.style.display = flag ? "none" : "block";
@@ -503,6 +519,7 @@ function closeModals() {
     $el.classList.remove('is-active');
   });
   btnOpenRouteModal.disabled = false;
+  btnOpenFilterModal.disabled = false;
   jexlInspectionResultDiv.classList.add("is-hidden");
   jexlInspectionContextParentDiv.classList.add("is-hidden");
   jexlInspectionNoContextDiv.classList.remove("is-hidden");
@@ -512,7 +529,8 @@ function enableCardToggles() {
   let cardToggles = document.getElementsByClassName('toggle-icon');
   for (let i = 0; i < cardToggles.length; i++) {
     if (!cardToggles[i].id ||
-        (cardToggles[i].id !== "rbel-help-icon" && cardToggles[i].id !== "jexl-help-icon")) {
+        (cardToggles[i].id !== "rbel-help-icon" && cardToggles[i].id
+            !== "jexl-help-icon")) {
       cardToggles[i].addEventListener('click', toggleCardCB);
     }
   }
@@ -575,6 +593,8 @@ function setCollapsableIcon(target, collapsed) {
   classList.toggle("fa-toggle-off", collapsed);
 }
 
+let currentlyPolling = false;
+
 function connectToWebSocket() {
   socket = new SockJS("/newMessages");
   stompClient = Stomp.over(socket, {debug: false});
@@ -582,20 +602,25 @@ function connectToWebSocket() {
       {},
       () => {
         stompClient.subscribe('/topic/ws', () => {
-          pollMessages();
+          if (!currentlyPolling) {
+            currentlyPolling = true;
+            pollMessages(() => {currentlyPolling = false;});
+          }
         });
       },
       (error) => {
         console.error("Websocket error: " + JSON.stringify(error));
       }
-  );
+  )
 }
 
-function pollMessages() {
+function pollMessages(callback) {
   const xhttp = new XMLHttpRequest();
   xhttp.open("GET", "/webui/getMsgAfter"
       + "?lastMsgUuid=" + lastUuid
-      + "&filterCriterion=" + filterCriterion, true);
+      + "&filterCriterion=" + encodeURIComponent(filterCriterion)
+      + "&pageSize=" + pageSize
+      + "&pageNumber=" + pageNumber, true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
@@ -603,6 +628,9 @@ function pollMessages() {
         updateMessageList(response);
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
+      }
+      if (callback !== undefined) {
+        callback();
       }
     }
   }
@@ -654,6 +682,7 @@ function quitProxy() {
         collapsibleMessageDetailsBtn.disabled = true;
         collapsibleMessageHeaderBtn.disabled = true;
         btnOpenRouteModal.disabled = true;
+        btnOpenFilterModal.disabled = true;
         getAll("input.updates").forEach(function (el) {
           el.disabled = true;
         });
@@ -674,8 +703,6 @@ function setFilterCriterion() {
   filterCriterion = setFilterCriterionInput.value;
   resetAllReceivedMessages();
   pollMessages();
-  collapsibleDetails.classList.remove("led-error");
-  collapsibleHeaders.classList.remove("led-error");
 }
 
 function uploadReport() {
@@ -886,90 +913,102 @@ function shortenStrings(obj) {
   }
 }
 
-function addSingleMessage(msgMetaData, msgHtmlData) {
+function updateHidingForMessageElement(messageElement) {
+  setCollapsableIcon(
+      messageElement.getElementsByClassName("header-toggle")[0],
+      collapseMessageHeaders);
+  messageElement.getElementsByClassName("msg-header-content")[0].classList
+  .toggle('is-hidden', collapseMessageHeaders);
+  setCollapsableIcon(
+      messageElement.getElementsByClassName("msg-toggle")[0],
+      collapseMessageDetails);
+  messageElement.getElementsByClassName("msg-content")[0].classList
+  .toggle('is-hidden', collapseMessageDetails);
+}
+
+function addMessageToMainView(msgHtmlData) {
   const listDiv = getAll('.msglist')[0];
+  const message = htmlToElement(msgHtmlData.html);
+  let span = getAll(".msg-sequence", message)[0];
+  if (span != null) {
+    span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
+    span.textContent = msgHtmlData.sequenceNumber + 1;
+  }
+  addQueryBtn(message);
+  listDiv.appendChild(message);
+  if (!scrollLock) {
+    message.scrollIntoView({behaviour: "smooth", alignToTop: true});
+  }
+  updateHidingForMessageElement(message);
+}
 
-  let isRequest = msgMetaData.path;
-  const reqEl = htmlToElement(msgHtmlData);
-  let span = getAll(".msg-sequence", reqEl)[0];
-  span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
-  span.textContent = msgMetaData.sequenceNumber + 1;
-  addQueryBtn(reqEl);
-  listDiv.appendChild(reqEl);
+function addMessageToMenu(msgMetaData, index) {
+  let isRequest = msgMetaData.request;
 
-    var menuItem;
-    if (isRequest) {
-      menuItem = menuHtmlTemplateRequest;
-    } else {
-      menuItem = menuHtmlTemplateResponse;
-    }
+  var menuItem;
+  if (isRequest) {
+    menuItem = menuHtmlTemplateRequest;
+  } else {
+    menuItem = menuHtmlTemplateResponse;
+  }
+  menuItem = menuItem
+  .replace("${uuid}", msgMetaData.uuid)
+  .replace("${sequence}", msgMetaData.sequenceNumber + 1)
+  .replace("${sequenceNumber}", index);
+  if (msgMetaData.menuInfoString != null) {
     menuItem = menuItem
-    .replace("${uuid}", msgMetaData.uuid)
-    .replace("${sequence}", msgMetaData.sequenceNumber + 1);
-    if (msgMetaData.menuInfoString != null) {
-      menuItem = menuItem
-      .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
-    } else {
-      menuItem = menuItem
-      .replaceAll("${menuInfoString}", " ");
-    }
-    if (msgMetaData.timestamp != null) {
-      menuItem = menuItem
-      .replace("${timestamp}",
-          msgMetaData.timestamp.split("T")[1].split("+")[0]);
-    } else {
-      menuItem = menuItem
-      .replace("${timestamp}", " ");
-    }
-    document.getElementById("sidebar-menu")
-    .appendChild(htmlToElement(menuItem));
+    .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
+  } else {
+    menuItem = menuItem
+    .replaceAll("${menuInfoString}", " ");
+  }
+  if (msgMetaData.timestamp != null) {
+    menuItem = menuItem
+    .replace("${timestamp}",
+        msgMetaData.timestamp.split("T")[1].split("+")[0]);
+  } else {
+    menuItem = menuItem
+    .replace("${timestamp}", " ");
+  }
+  document.getElementById("sidebar-menu")
+  .appendChild(htmlToElement(menuItem));
 
-    if (msgMetaData.sender != null) {
-      const foundSender = Array.from(senders).find(msg => {
-        return msg === msgMetaData.sender;
-      });
-      if (foundSender == null) {
-        senders.push(msgMetaData.sender);
-      }
+  if (msgMetaData.sender != null) {
+    const foundSender = Array.from(senders).find(msg => {
+      return msg === msgMetaData.sender;
+    });
+    if (foundSender == null) {
+      senders.push(msgMetaData.sender);
     }
-    if (msgMetaData.recipient != null) {
-      const foundReceiver = Array.from(receivers).find(msg => {
-        return msg === msgMetaData.recipient;
-      });
-      if (foundReceiver == null) {
-        receivers.push(msgMetaData.recipient);
-      }
+  }
+  if (msgMetaData.recipient != null) {
+    const foundReceiver = Array.from(receivers).find(msg => {
+      return msg === msgMetaData.recipient;
+    });
+    if (foundReceiver == null) {
+      receivers.push(msgMetaData.recipient);
     }
+  }
 }
 
 function updateMessageList(json) {
-  if (json.metaMsgList.length === 0) {
-    return;
+  updatePageSelector(json.pagesAvailable);
+  for (htmlMsg of json.htmlMsgList) {
+    addMessageToMainView(htmlMsg);
   }
-  let i = 0;
-  while (i < json.htmlMsgList.length) {
-    addSingleMessage(json.metaMsgList[i], json.htmlMsgList[i]);
-    i = i + 1;
+  let index = 0;
+  for (metaMsg of json.metaMsgList) {
+    addMessageToMenu(metaMsg, index++);
   }
-  lastUuid = json.metaMsgList[json.metaMsgList.length - 1].uuid;
+  if (json.metaMsgList.length > 0) {
+    lastUuid = json.metaMsgList[json.metaMsgList.length - 1].uuid;
+  }
 
   enableCardToggles();
   enableModals();
-  if (!scrollLock) {
-    const sidebar = getAll('.menu')[0];
-    const msgListDiv = sidebar.nextElementSibling;
-    sidebar.children[sidebar.children.length - 1].scrollIntoView(
-        {behaviour: "smooth", block: "end"});
-    if (msgListDiv.children[msgListDiv.children.length - 1] !== undefined) {
-      msgListDiv.children[msgListDiv.children.length - 1].scrollIntoView(
-          {behaviour: "smooth", block: "end"});
-    }
-  }
 }
 
 function getRoutes() {
-  document.getElementById("routeModalLed").classList.add("led-active");
-  document.getElementById("routeModalLed").classList.remove("led-error");
   getAll(
       ".routeListDiv")[0].innerHTML = "<p align=\"center\" class=\"mt-5 mb-5\"><i class=\"fas fa-spinner\"></i> Loading...</p>";
   const xhttp = new XMLHttpRequest();
@@ -983,8 +1022,6 @@ function getRoutes() {
         console.log("ERROR " + this.status + " " + this.responseText);
         getAll(".routeListDiv")[0].innerHTML = "ERROR " + this.status + " "
             + this.responseText;
-        document.getElementById("routeModalLed").classList.remove("led-active");
-        document.getElementById("routeModalLed").classList.add("led-error");
       }
     }
   }
@@ -1061,3 +1098,72 @@ function addRoute() {
 function testActivateNoSystemExitOnQuit() {
   testQuitParam = '?noSystemExit=true';
 }
+
+function setPageSize(newSize) {
+  pageSize = newSize;
+  pageNumber = 0;
+  document.getElementById("pageSizeDisplay").textContent =
+      "Size " + newSize;
+  closeAllDropdowns();
+  resetAllReceivedMessages();
+  pollMessages();
+}
+
+function setPageNumber(newPageNumber) {
+  pageNumber = newPageNumber;
+  document.getElementById("pageNumberDisplay").textContent =
+      "Page " + (newPageNumber + 1);
+  closeAllDropdowns();
+  resetAllReceivedMessages();
+  pollMessages();
+}
+
+function updatePageSelector(pagesAvailable) {
+  let selector = document.getElementById("pageSelector");
+  let selectorInnerHtml = '';
+  for (let i = 0; i < pagesAvailable; i++) {
+    selectorInnerHtml +=
+        '<a class="dropdown-item" onclick="event.stopPropagation(); setPageNumber(' + i + ');">'
+        + (i + 1)
+        + '</a>';
+  }
+  selector.innerHTML = selectorInnerHtml;
+}
+
+function scrollToMessage(uuid, sequenceNumber) {
+//    const sidebar = getAll('.menu')[0];
+  if ((sequenceNumber < pageNumber * pageSize)
+      || (sequenceNumber > (pageNumber + 1) * pageSize)) {
+    setPageNumber(Math.ceil(sequenceNumber / pageSize) - 1)
+  }
+
+  let elements = document.getElementsByName(uuid);
+  if (elements.length > 0) {
+    elements[0].scrollIntoView({behaviour: "smooth", alignToTop: true});
+  }
+}
+
+function addDropdownClickListener(el, callback) {
+  el.addEventListener('click', function(e) {
+    let active = el.classList.contains('is-active');
+    closeAllDropdowns();
+    e.stopPropagation();
+    if (!active) {
+      el.classList.add('is-active');
+    }
+    if (callback !== undefined) {
+      callback();
+    }
+  });
+}
+
+document.addEventListener('keydown', function (event) {
+  let e = event || window.event;
+  if (e.key === 'Esc' || e.key === 'Escape') {
+    closeAllDropdowns();
+  }
+});
+
+document.addEventListener('click', function(e) {
+  closeAllDropdowns();
+});

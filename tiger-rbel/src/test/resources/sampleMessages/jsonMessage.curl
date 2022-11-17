@@ -1,0 +1,34 @@
+HTTP/1.1 200
+Version: 9.0.0
+Content-Type: application/json; charset=latin1
+Date: Fri, 26 Feb 2021 11:34:34 GMT
+
+{
+  "keys": [
+    {
+      "x5c": [
+        "f"
+      ],
+      "kid": "idpSig",
+      "kty": "EC",
+      "y": "ZDFZ5XjwWmtgfomv3VOV7qzI5ycUSJysMWDEu3mqRcY="
+    },
+    {
+      "x5c": [
+        "fd1"
+      ],
+      "kid": "discSig",
+      "kty": "EC",
+      "crv": "BP-256"
+    },
+    {
+      "x5c": [
+        "gdfs0"
+      ],
+      "kid": "idpEnc",
+      "kty": "EC",
+      "crv": "BP-256"
+    }
+  ],
+  "string": "אבגדהוזחטיךכלםמן"
+}

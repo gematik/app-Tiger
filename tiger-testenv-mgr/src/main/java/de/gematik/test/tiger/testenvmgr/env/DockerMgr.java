@@ -30,7 +30,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.servers.DockerComposeServer;
 import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
@@ -137,8 +137,6 @@ public class DockerMgr {
                 .withName("tiger." + server.getServerId()).exec();
             containers.put(server.getServerId(), container);
             final Map<Integer, Integer> ports = new HashMap<>();
-            // TODO TGR-282 LO PRIO for now we assume ports are bound only to one other port on the docker container
-            // maybe just make clear we support only single exported port
             container.getContainerInfo().getNetworkSettings().getPorts().getBindings().entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
                 .forEach(entry -> ports.put(entry.getKey().getPort(),
@@ -328,7 +326,7 @@ public class DockerMgr {
         log.info("Docker image {} is available locally!", imageName);
     }
 
-    private String createContainerStartupScript(TigerServer server, InspectImageResponse iiResponse, String[] startCmd,
+    private String createContainerStartupScript(AbstractTigerServer server, InspectImageResponse iiResponse, String[] startCmd,
         String[] entryPointCmd) {
         final ContainerConfig containerConfig = iiResponse.getConfig();
         if (containerConfig == null) {
@@ -383,14 +381,15 @@ public class DockerMgr {
     }
 
     private String getContainerWorkingDirectory(ContainerConfig containerConfig) {
-        if (containerConfig.getWorkingDir() == null || containerConfig.getWorkingDir().isBlank()) {
+        final String workingDir = containerConfig.getWorkingDir();
+        if (StringUtils.isBlank(workingDir)) {
             return "";
         } else {
-            return "cd " + containerConfig.getWorkingDir() + "\n";
+            return "cd " + workingDir + "\n";
         }
     }
 
-    private void waitForHealthyStartup(TigerServer server, GenericContainer<?> container) {
+    private void waitForHealthyStartup(AbstractTigerServer server, GenericContainer<?> container) {
         final long startms = System.currentTimeMillis();
         long endhalfms = server.getStartupTimeoutSec()
             .map(seconds -> seconds * 500L)
@@ -417,7 +416,7 @@ public class DockerMgr {
         } catch (TigerTestEnvException ttee) {
             throw ttee;
         } catch (final RuntimeException rte) {
-            int timeout = server.getStartupTimeoutSec().orElse(TigerServer.DEFAULT_STARTUP_TIMEOUT_IN_SECONDS);
+            int timeout = server.getStartupTimeoutSec().orElse(AbstractTigerServer.DEFAULT_STARTUP_TIMEOUT_IN_SECONDS);
             log.warn("probably no health check configured - defaulting to {}s startup time", timeout);
             try {
                 Thread.sleep(timeout * 1000L);
@@ -430,13 +429,19 @@ public class DockerMgr {
         }
     }
 
-    public void stopContainer(final TigerServer server) {
+    public void stopContainer(final AbstractTigerServer server) {
         final GenericContainer<?> container = containers.get(server.getServerId());
         if (container != null && container.getDockerClient() != null) {
             try {
                 container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
-            } catch (NotModifiedException nmex) {
-                log.warn("Failed to issue stop container cmd from docker client, trying test container's stop...");
+            } catch (RuntimeException rtex) {
+                if (log.isDebugEnabled()) {
+                    log.warn("Failed to issue stop container cmd from docker client, "
+                        + "trying test container's stop...", rtex);
+                } else {
+                    log.warn("Failed to issue stop container cmd from docker client, "
+                        + "trying test container's stop...");
+                }
             }
             container.stop();
         }

@@ -23,7 +23,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.Map;
 import kong.unirest.UnirestInstance;
@@ -57,13 +57,14 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "testExternalJar,source",
         "testExternalUrl,type",
         "testExternalUrl,source"})
+    // TODO add tests for helm charts
     public void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop) {
         createTestEnvMgrSafelyAndExecute(
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml",
             envMgr -> {
                 CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
                 ReflectionTestUtils.setField(srv, prop, null);
-                assertThatThrownBy(() -> TigerServer.create("blub", srv, mockTestEnvMgr())
+                assertThatThrownBy(() -> envMgr.createServer("blub", srv)
                     .assertThatConfigurationIsCorrect())
                     .isInstanceOf(TigerTestEnvException.class);
             });
@@ -77,7 +78,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "      adminPort: 9999", skipEnvironmentSetup = true)
     public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-        assertThatThrownBy(() -> TigerServer.create("testTigerProxy", srv, mockTestEnvMgr())
+        assertThatThrownBy(() -> envMgr.createServer("testTigerProxy", srv)
             .assertThatConfigurationIsCorrect())
             .isInstanceOf(TigerTestEnvException.class);
     }
@@ -165,7 +166,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         + "localProxyActive: false",
         additionalProperties = {"custom.value = ftp"})
     public void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
-        final TigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
+        final AbstractTigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
         assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getAdminPort())
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
         assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyPort())
@@ -192,7 +193,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         assertThatThrownBy(() -> {
             final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
             envMgr.setUpEnvironment();
-        }).isInstanceOf(TigerConfigurationException.class);
+        }).isInstanceOf(TigerTestEnvException.class);
     }
 
     @Test
@@ -299,7 +300,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
             + "  - filename: src/test/resources/externalConfiguration.yaml\n"
             + "    baseKey: foobar\n"
             + "localProxyActive: false")
-    public void readAdditionalYamlFilesWithDifferingBaseKey() {
+    void readAdditionalYamlFilesWithDifferingBaseKey() {
         assertThat(TigerGlobalConfiguration.readString("foobar.some.keys"))
             .isEqualTo("andValues");
     }
@@ -311,9 +312,30 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
             + "  - filename: src/test/resources/${foo}.yaml\n"
             + "    baseKey: baseKey\n"
             + "localProxyActive: false")
-    public void readAdditionalYamlFilesWithPlaceholdersInName() {
+    void readAdditionalYamlFilesWithPlaceholdersInName() {
         assertThat(TigerGlobalConfiguration.readString("baseKey.someKey"))
             .isEqualTo("someValue");
     }
 
+    @Test
+    @TigerTest(tigerYaml = "servers:\n" +
+        "  testTigerProxy:\n" +
+        "    type: tigerProxy\n" +
+        "    tigerProxyCfg:\n" +
+        "      adminPort: 9999", skipEnvironmentSetup = true)
+    void defaultForLocalTigerProxyShouldBeBlockingMode(TigerTestEnvMgr envMgr) {
+        CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
+        assertThat(srv.getTigerProxyCfg().isParsingShouldBlockCommunication())
+            .isFalse();
+        assertThat(envMgr.getLocalTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
+            .isTrue();
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "tigerProxy:\n"
+        + "  parsingShouldBlockCommunication: false", skipEnvironmentSetup = true)
+    void localTigerProxyConfigurationForNonBlockingModeShouldBePossible(TigerTestEnvMgr envMgr) {
+        assertThat(envMgr.getLocalTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
+            .isFalse();
+    }
 }

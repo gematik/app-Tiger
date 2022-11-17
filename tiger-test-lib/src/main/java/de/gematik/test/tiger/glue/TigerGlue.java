@@ -21,6 +21,7 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.TigerLibraryException;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
@@ -35,8 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TigerGlue {
 
     /**
-     * Sets the given key to the given value in the global configuration store. Variable substitution is
-     * performed.
+     * Sets the given key to the given value in the global configuration store. Variable substitution is performed.
      *
      * @param key   key of the context
      * @param value value for the context entry with given key
@@ -50,9 +50,8 @@ public class TigerGlue {
     }
 
     /**
-     * Sets the given key to the given value in the global configuration store. Variable substitution is
-     * performed.
-     * This value will only be accessible from this exact thread.
+     * Sets the given key to the given value in the global configuration store. Variable substitution is performed. This
+     * value will only be accessible from this exact thread.
      *
      * @param key   key of the context
      * @param value value for the context entry with given key
@@ -78,13 +77,11 @@ public class TigerGlue {
     @Then("TGR assert variable {string} matches {string}")
     public void ctxtAssertVariableMatches(final String key, final String regex) {
         final String resolvedKey = TigerGlobalConfiguration.resolvePlaceholders(key);
-        final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(resolvedKey);
-        assertThat(optionalValue)
-            .withFailMessage("Wanted to assert value of key {} (resolved to {}) but couldn't find it!",
-                key, resolvedKey)
-            .isPresent();
-        if (!Objects.equals(optionalValue.get(), regex)) {
-            assertThat(optionalValue.get()).matches(regex);
+        String value = TigerGlobalConfiguration.readStringOptional(resolvedKey)
+            .orElseThrow(() -> new TigerLibraryException(
+                "Wanted to assert value of key " + key + " (resolved to " + resolvedKey + ") but couldn't find it!"));
+        if (!Objects.equals(value, regex)) {
+            assertThat(value).matches(regex);
         }
     }
 
@@ -154,5 +151,15 @@ public class TigerGlue {
     @Wenn("TGR zeige HTML Notification:")
     public void tgrShowHtmlNotification(String message) {
         TigerDirector.pauseExecution(message, true);
+    }
+
+    @When("TGR assert {string} matches {string}")
+    @Dann("TGR prüfe das {string} mit {string} überein stimmt")
+    public void tgrAssertMatches(String rawValue1, String rawValue2) {
+        String value1 = TigerGlobalConfiguration.resolvePlaceholders(rawValue1);
+        String value2 = TigerGlobalConfiguration.resolvePlaceholders(rawValue2);
+        if (!Objects.equals(value1, value2)) {
+            assertThat(value1).matches(value2);
+        }
     }
 }

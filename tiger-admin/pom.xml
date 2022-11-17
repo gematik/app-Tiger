@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>0.24.2</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,10 +31,10 @@
         <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
         <version.bootstrap>5.1.1</version.bootstrap>
         <version.font-awesome>6.2.0</version.font-awesome>
-        <version.selenium>4.1.4</version.selenium>
+        <version.selenium>4.4.0</version.selenium>
         <version.jquery>3.6.1</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>
-        <version.jsonschema>4.27.0</version.jsonschema>
+        <version.jsonschema>4.28.0</version.jsonschema>
         <version.junit-platform>1.9.1</version.junit-platform>
     </properties>
 

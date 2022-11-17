@@ -24,7 +24,6 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.rbellogger.util.RbelFileWriterUtils;
 import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
@@ -38,8 +37,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -75,7 +78,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class TigerWebUiController implements ApplicationContextAware {
 
     private final TigerProxy tigerProxy;
-    private final RbelHtmlRenderer renderer = new RbelHtmlRenderer();
+    private final RbelHtmlRenderer renderer;
 
     private final ApplicationConfiguration applicationConfiguration;
     private ApplicationContext applicationContext;
@@ -84,15 +87,17 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     public final SimpMessagingTemplate template;
 
+    private static final String COLOR_INHERIT = "color:inherit;";
     private static final String WS_NEWMESSAGES = "/topic/ws";
+
     @PostConstruct
     public void addWebSocketListener() {
         tigerProxy.addRbelMessageListener(this::informClientOfNewMessageArrival);
     }
 
     private void informClientOfNewMessageArrival(RbelElement element) {
-        log.trace("{} Propagating new message (uUID: {})",
-            tigerProxy.proxyName(), element.getUuid());
+        log.trace("Propagating new message (uUID: {}) from proxy {}",
+            element.getUuid(), tigerProxy.proxyName());
         template.convertAndSend(WS_NEWMESSAGES, element.getUuid());
     }
 
@@ -108,14 +113,8 @@ public class TigerWebUiController implements ApplicationContextAware {
         HttpServletResponse response) {
         int actualPageSize = pageSize
             .orElse(getApplicationConfiguration().getMaximumTrafficDownloadPageSize());
-        final ArrayList<RbelElement> filteredMessages = new ArrayList<>(messsages()).stream()
-            .dropWhile(msg -> {
-                if (StringUtils.isEmpty(lastMsgUuid)) {
-                    return false;
-                } else {
-                    return !msg.getUuid().equals(lastMsgUuid);
-                }
-            })
+        final ArrayList<RbelElement> filteredMessages = getTigerProxy().getRbelMessages().stream()
+            .dropWhile(messageIsBefore(lastMsgUuid))
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .collect(Collectors.toCollection(ArrayList::new));
         final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
@@ -124,7 +123,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         final String result = filteredMessages.stream()
             .limit(actualPageSize)
-            .map(RbelFileWriterUtils::convertToRbelFileString)
+            .map(tigerProxy.getRbelFileWriter()::convertToRbelFileString)
             .collect(Collectors.joining("\n\n"));
 
         if (!result.isEmpty()) {
@@ -179,6 +178,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .replace("${UploadUrl}", applicationConfiguration.getUploadUrl());
         return html.replace("<div id=\"navbardiv\"></div>", navbar +
                 loadResourceToString("/routeModal.html") +
+                loadResourceToString("/filterModal.html") +
                 loadResourceToString("/jexlModal.html") +
                 loadResourceToString("/saveModal.html"))
             .replace("</body>", configJSSnippetStr + "</body>");
@@ -210,7 +210,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                             button().withId("routeModalBtn").withClass(successOutlineButton())
                                 .attr("data-target", "routeModalDialog").with(
                                     i().withClass("fas fa-exchange-alt"),
-                                    span("Routes").withClass("ml-2").withStyle("color:inherit;")
+                                    span("Routes").withClass("ml-2").withStyle(COLOR_INHERIT)
                                 )
                         ),
                         div().withClass(getNavbarItemNot4embedded()).with(
@@ -238,93 +238,93 @@ public class TigerWebUiController implements ApplicationContextAware {
                                             )
                                         ),
                                         div().withClass("dropdown-item dropdown").with(
-                                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton()).with(
-                                                div().withId("collapsibleMessageDetails").withClass("led"),
-                                                span("Hide Details")
-                                            )
+                                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton())
+                                                .with(
+                                                    div().withId("collapsibleMessageDetails").withClass("led"),
+                                                    span("Hide Details")
+                                                )
                                         )
                                     )
                                 )
                         ),
-                        form().withStyle("display:inline;").attr("onSubmit", "return false;")
-                            .with(
-                                div().withClass(navbarItem()).with(
-                                    div().withClass("field").with(
-                                        p().withClass("control has-icons-left").with(
-                                            input().withClass("input is-rounded has-text-dark")
-                                                .withStyle("display:inherit;")
-                                                .withType("text")
-                                                .withPlaceholder("RbelPath filter criterion")
-                                                .withId("setFilterCriterionInput")
-                                                .attr("autocomplete", "on")
-                                        )
-                                    )
-                                ),
-                                div().withClass("navbar-item dropdown is-up").with(
-                                    div().withId("dropdown-filter-button").withClass("dropdown-trigger").with(
-                                        button().withClass("button").with(
-                                            span().withClass("icon is-small").with(
-                                                i().withClass("fas fa-angle-up")
-                                            )
-                                        )
-                                    ),
-                                    div().withClass("dropdown-menu")
-                                        .attr("role", "menu")
-                                        .with(
-                                        div().withClass("dropdown-content").with(
-                                            div().withClass("dropdown-item nested dropdown").with(
-                                                div().withClass("dropdown-trigger").with(
-                                                    button("Request from  ").withClass("button")
-                                                ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
-                                                    .attr("role", "menu")
-                                                    .with(
-                                                        div().withId("requestFromContent").withClass("dropdown-content")
-                                                    )
-                                            ),
-                                            div().withClass("dropdown-item nested dropdown").with(
-                                                div().withClass("dropdown-trigger").with(
-                                                    button("Request to  ").withClass("button")
-                                                ),
-                                                div().withClass("dropdown-menu").withStyle("top: auto;bottom:0px;")
-                                                    .attr("role", "menu")
-                                                    .with(
-                                                        div().withId("requestToContent").withClass("dropdown-content")
-                                                    )
-                                            )
-                                        )
-                                    )
-                                ),
-                                div().withClass(navbarItem()).with(
-                                    button().withId("setFilterCriterionBtn").withClass(successOutlineButton())
-                                        .with(
-                                            i().withClass("fas fa-filter"),
-                                            span("Set Filter").withClass("ml-2").withStyle("color:inherit;")
-                                        )
+                        div().withClass(navbarItem()).with(
+                            button().withId("filterModalBtn").withClass(successOutlineButton())
+                                .attr("data-target", "filterModalDialog").with(
+                                    i().withClass("fas fa-filter"),
+                                    span("Filter").withClass("ml-2").withStyle(COLOR_INHERIT)
                                 )
-                            ),
-                        div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
+                        ),
+
+                       div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
                             button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
                                 i().withClass("far fa-trash-alt"),
-                                span("Reset").withClass("ml-2").withStyle("color:inherit;")
+                                span("Reset").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
                         div().withClass("navbar-item").with(
                             button().withId("saveMsgs").withClass(successOutlineButton()).with(
                                 i().withClass("far fa-save"),
-                                span("Save").withClass("ml-2").withStyle("color:inherit;")
+                                span("Save").withClass("ml-2").withStyle(COLOR_INHERIT)
+                            )
+                        ),
+                        div().withClass("navbar-item").with(
+                            div().withId("dropdown-page-selection").withClass("dropdown is-up").with(
+                                div().withClass("dropdown-trigger").with(
+                                    button().withClass(darkButton())
+                                        .attr("aria-haspopup", "true")
+                                        .attr("aria-controls", "dropdown-menu")
+                                        .with(
+                                            span().withText("Page 1").withId("pageNumberDisplay"),
+                                            span().withClass("icon is-small").with(
+                                                i().withClass("fas fa-angle-up").attr("aria-hidden", "true")
+                                            )
+                                        )
+                                ),
+                                div().withClass("dropdown-menu").attr("role", "menu").with(
+                                    div().withClass("dropdown-content").withId("pageSelector").with(
+                                        a().withClass("dropdown-item")
+                                            .attr("onClick", "setPageNumber(0)").withText("1")
+                                    )
+                                )
+                            )
+                        ),
+                        div().withClass("navbar-item").with(
+                            div().withId("dropdown-page-size").withClass("dropdown is-up").with(
+                                div().withClass("dropdown-trigger").with(
+                                    button().withClass(darkButton())
+                                        .attr("aria-haspopup", "true")
+                                        .attr("aria-controls", "dropdown-menu")
+                                        .with(
+                                            span().withId("pageSizeDisplay").withText("Size"),
+                                            span().withClass("icon is-small").with(
+                                                i().withClass("fas fa-angle-up").attr("aria-hidden", "true")
+                                            )
+                                        )
+                                ),
+                                div().withClass("dropdown-menu").attr("role", "menu").with(
+                                    div().withClass("dropdown-content").with(
+                                        a().withClass("dropdown-item")
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(10)").withText("10"),
+                                        a().withClass("dropdown-item")
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(20)").withText("20"),
+                                        a().withClass("dropdown-item")
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(50)").withText("50"),
+                                        a().withClass("dropdown-item")
+                                            .attr("onClick", "event.stopPropagation(); setPageSize(100)").withText("100")
+                                    )
+                                )
                             )
                         ),
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("importMsgs").withClass(successOutlineButton()).with(
                                 i().withClass("far fa-folder-open"),
-                                span("Import").withClass("ml-2").withStyle("color:inherit;")
+                                span("Import").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
                                 i().withClass("far fa-upload"),
-                                span("Upload").withClass("ml-2").withStyle("color:inherit;")
+                                span("Upload").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
                         div().withClass(navbarItem()).with(
@@ -334,7 +334,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(getNavbarItemNot4embedded()).with(
                             button().withId("quitProxy").withClass("button is-outlined is-danger").with(
                                 i().withClass("fas fa-power-off"),
-                                span("Quit").withClass("ml-2").withStyle("color:inherit;")
+                                span("Quit").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         )
                     )
@@ -379,7 +379,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         @RequestParam(name = "msgUuid") final String msgUuid,
         @RequestParam(name = "query") final String query) {
         RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
-        final RbelElement targetMessage = messsages().stream()
+        final RbelElement targetMessage = getTigerProxy().getRbelMessages().stream()
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .findFirst().orElseThrow();
         final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
@@ -422,7 +422,8 @@ public class TigerWebUiController implements ApplicationContextAware {
         return JexlQueryResponseDto.builder()
             .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
                 .replace(RbelAnsiColors.RESET.toString(), "</span>")
-                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger jexlResponseLink' style='cursor: pointer;'>")
+                .replace(RbelAnsiColors.RED_BOLD.toString(),
+                    "<span class='has-text-danger jexlResponseLink' style='cursor: pointer;'>")
                 .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
                 .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
                     "<span class='has-text-primary has-text-weight-bold'>")
@@ -451,26 +452,20 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/getMsgAfter", produces = MediaType.APPLICATION_JSON_VALUE)
     public GetMessagesAfterDto getMessagesAfter(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
-        @RequestParam(name = "filterCriterion", required = false) final String filterCriterion) {
+        @RequestParam(name = "filterCriterion", required = false) final String filterCriterion,
+        @RequestParam(defaultValue = "1000000") final int pageSize,
+        @RequestParam(defaultValue = "0") final int pageNumber) {
         log.debug("requesting messages since " + lastMsgUuid + " (filtered by . " + filterCriterion + ")");
 
         var jexlExecutor = new RbelJexlExecutor();
 
-        List<RbelElement> msgs = messsages().stream()
-            .dropWhile(msg -> {
-                if (StringUtils.isEmpty(lastMsgUuid)) {
-                    return false;
-                } else {
-                    return !msg.getUuid().equals(lastMsgUuid);
-                }
-            })
-            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
+        List<RbelElement> msgs = getTigerProxy().getRbelMessages().stream()
             .filter(msg -> {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
                 }
-                if (filterCriterion.startsWith("\"") &&  filterCriterion.endsWith("\"")) {
-                    final String textFilter = filterCriterion.substring(1, filterCriterion.length()-1);
+                if (filterCriterion.startsWith("\"") && filterCriterion.endsWith("\"")) {
+                    final String textFilter = filterCriterion.substring(1, filterCriterion.length() - 1);
                     return jexlExecutor.matchAsTextExpression(msg, textFilter)
                         || jexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
                 } else {
@@ -482,14 +477,36 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);
-        log.debug("Returning {} messages of total {}", msgs.size(), tigerProxy.getRbelMessages().size());
         result.setHtmlMsgList(msgs.stream()
-            .map(msg -> new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
+            .skip((long) pageNumber * pageSize)
+            .limit(pageSize)
+            .dropWhile(messageIsBefore(lastMsgUuid))
+            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
+            .map(msg -> HtmlMessage.builder()
+                .html(new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
+                .uuid(msg.getUuid())
+                .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
+                .build())
             .collect(Collectors.toList()));
         result.setMetaMsgList(msgs.stream()
+            .dropWhile(messageIsBefore(lastMsgUuid))
+            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList()));
+        result.setPagesAvailable((msgs.size() / pageSize) + 1);
+        log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
+            result.getHtmlMsgList().size(), result.getMetaMsgList().size()  , msgs.size(), tigerProxy.getRbelMessages().size());
         return result;
+    }
+
+    private static Predicate<RbelElement> messageIsBefore(String lastMsgUuid) {
+        return msg -> {
+            if (StringUtils.isEmpty(lastMsgUuid)) {
+                return false;
+            } else {
+                return !msg.getUuid().equals(lastMsgUuid);
+            }
+        };
     }
 
     private RbelElement findPartner(RbelElement msg) {
@@ -507,10 +524,10 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/resetMsgs", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResetMessagesDto resetMessages() {
         log.info("Resetting currently recorded messages on rbel logger..");
-        List<RbelElement> msgs = tigerProxy.getRbelLogger().getMessageHistory();
+        int size = getTigerProxy().getRbelMessages().size();
         ResetMessagesDto result = new ResetMessagesDto();
-        result.setNumMsgs(msgs.size());
-        msgs.clear();
+        result.setNumMsgs(size);
+        getTigerProxy().getRbelMessages().clear();
         return result;
     }
 
@@ -599,11 +616,6 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @PostMapping(value = "/traffic")
     public void importTrafficFromFile(@RequestBody String rawTraffic) {
-        RbelFileWriterUtils.convertFromRbelFile(
-            rawTraffic, tigerProxy.getRbelLogger().getRbelConverter());
-    }
-
-    private List<RbelElement> messsages() {
-        return Collections.unmodifiableList(tigerProxy.getRbelMessages());
+        tigerProxy.getRbelFileWriter().convertFromRbelFile(rawTraffic);
     }
 }
