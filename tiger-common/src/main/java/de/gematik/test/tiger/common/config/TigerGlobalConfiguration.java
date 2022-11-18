@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.common.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
 import java.io.File;
@@ -336,5 +337,9 @@ public class TigerGlobalConfiguration {
 
     static boolean removeConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
         return globalConfigurationLoader.removeConfigurationSource(configurationSource);
+    }
+
+    public static ObjectMapper getObjectMapper() {
+        return globalConfigurationLoader.getObjectMapper();
     }
 }

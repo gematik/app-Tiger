@@ -7,7 +7,12 @@ package de.gematik.test.tiger.common.config;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
 import java.io.File;
@@ -29,14 +34,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class TigerConfigurationTest {
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         System.clearProperty("NESTEDBEAN_BAR");
         System.clearProperty("NESTEDBEAN_FOO");
         TigerGlobalConfiguration.reset();
     }
 
     @Test
-    public void fillObjectShouldWork() throws Exception {
+    void fillObjectShouldWork() throws Exception {
         withEnvironmentVariable("string", "stringValue")
             .and("integer", "1234")
             .execute(() -> {
@@ -50,7 +55,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void fillNestedObjectShouldWork() throws Exception {
+    void fillNestedObjectShouldWork() throws Exception {
         withEnvironmentVariable("string", "stringValue")
             .and("integer", "1234")
             .and("nestedBean.foo", "schmar")
@@ -69,7 +74,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void fillNestedObjectSnakeCaseShouldWork() throws Exception {
+    void fillNestedObjectSnakeCaseShouldWork() throws Exception {
         withEnvironmentVariable("string", "stringValue")
             .and("integer", "1234")
             .and("NESTEDBEAN_FOO", "schmar")
@@ -88,7 +93,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void systemEnvAndSystemPropertiesMixed() throws Exception {
+    void systemEnvAndSystemPropertiesMixed() throws Exception {
         System.setProperty("string", "stringValue");
         System.setProperty("NESTEDBEAN_BAR", "420");
         withEnvironmentVariable("string", "wrongValue")
@@ -108,7 +113,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void injectIntoRecursiveStructure() throws Exception {
+    void injectIntoRecursiveStructure() throws Exception {
         withEnvironmentVariable("NESTEDBEAN_BAR", "4")
             .and("nestedbean.inner.bar", "42")
             .and("nestedbean.inner.inner.bar", "420")
@@ -129,7 +134,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void injectIntoRecursiveWithMixedSourcesStructure() throws Exception {
+    void injectIntoRecursiveWithMixedSourcesStructure() throws Exception {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
         withEnvironmentVariable("string", "wrongValue")
@@ -146,7 +151,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void injectIntoRecursiveWithMixedSourcesStructureExtended() throws Exception {
+    void injectIntoRecursiveWithMixedSourcesStructureExtended() throws Exception {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
         System.setProperty("nestedbean.inner.inner.bar", "420");
@@ -168,7 +173,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void propertiesAndEnvAndYamlCombined() throws Exception {
+    void propertiesAndEnvAndYamlCombined() throws Exception {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
         System.setProperty("nestedbean.inner.inner.bar", "420");
@@ -195,7 +200,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void combinedReadIn_readAsStringValues() throws Exception {
+    void combinedReadIn_readAsStringValues() throws Exception {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
         System.setProperty("nestedbean.inner.inner.bar", "420");
@@ -230,7 +235,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void arrayMixedFromSources() throws Exception {
+    void arrayMixedFromSources() throws Exception {
         withEnvironmentVariable("string", "wrongValue")
             .and("nestedBean.array.1.foo", "foo1")
             .execute(() -> {
@@ -249,7 +254,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void map_keyShouldBeKeptWithCorrectCase() throws Exception {
+    void map_keyShouldBeKeptWithCorrectCase() throws Exception {
         withEnvironmentVariable("MAP_SNAKECASE", "snakeFoo")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -266,7 +271,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void overwriteWithEmptyValue_shouldWork() throws Exception {
+    void overwriteWithEmptyValue_shouldWork() throws Exception {
         System.setProperty("NESTEDBEAN_FOO", "");
         withEnvironmentVariable("NESTEDBEAN_FOO", "nonEmptyValue")
             .execute(() -> {
@@ -280,7 +285,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void yamlWithTemplates_shouldLoad() {
+    void yamlWithTemplates_shouldLoad() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.readFromYaml(
             "array:\n" +
@@ -304,7 +309,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void overwriteTemplateList_shouldReplaceNotMerge() {
+    void overwriteTemplateList_shouldReplaceNotMerge() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.readFromYaml(
             "array:\n" +
@@ -327,7 +332,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void overwriteTemplateListFromYamlAndEnv_shouldReplaceNotMerge() {
+    void overwriteTemplateListFromYamlAndEnv_shouldReplaceNotMerge() {
         withEnvironmentVariable("nestedBean.array.0.inner.array.0.foo", "envEntry0")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -354,7 +359,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void addTemplateInEnv_shouldNotReplaceYamlEntries() {
+    void addTemplateInEnv_shouldNotReplaceYamlEntries() {
         withEnvironmentVariable("nestedBean.array.0.inner.array.0.foo", "envEntry0")
             .and("nestedBean.array.0.template", "templateWithList")
             .execute(() -> {
@@ -381,7 +386,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void applyTemplateInEnv_shouldSuccesfullyReplaceTemplateList() {
+    void applyTemplateInEnv_shouldSuccesfullyReplaceTemplateList() {
         withEnvironmentVariable("nestedBean.array.0.inner.array.0.foo", "envEntry0")
             .and("nestedBean.array.0.template", "templateWithList")
             .execute(() -> {
@@ -402,7 +407,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void fillGenericObjectShouldWork() {
+    void fillGenericObjectShouldWork() {
                 TigerGlobalConfiguration.reset();
                 TigerGlobalConfiguration.readFromYaml(
                     "users:\n" +
@@ -437,7 +442,7 @@ public class TigerConfigurationTest {
      */
     @SneakyThrows
     @Test
-    public void replacePlaceholdersInValuesDuringReadIn() {
+    void replacePlaceholdersInValuesDuringReadIn() {
         withEnvironmentVariable("myEnvVar", "valueToBeAsserted")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -452,7 +457,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void placeNewValue_shouldFindValueAgain() {
+    void placeNewValue_shouldFindValueAgain() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("foo.value", "bar");
         assertThat(TigerGlobalConfiguration.readString("foo.value"))
@@ -461,7 +466,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void placeIntegerValue_shouldFindValueAgain() {
+    void placeIntegerValue_shouldFindValueAgain() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("foo.value", 42);
         assertThat(TigerGlobalConfiguration.readString("foo.value"))
@@ -470,7 +475,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void placeLongValue_shouldFindValueAgain() {
+    void placeLongValue_shouldFindValueAgain() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("foo.value", Double.MAX_VALUE);
         assertThat(TigerGlobalConfiguration.readString("foo.value"))
@@ -479,7 +484,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void placeBooleanValue_shouldFindValueAgain() {
+    void placeBooleanValue_shouldFindValueAgain() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("foo.value", true);
         assertThat(TigerGlobalConfiguration.readString("foo.value"))
@@ -488,7 +493,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void placeDoubleValue_shouldFindValueAgain() {
+    void placeDoubleValue_shouldFindValueAgain() {
         TigerGlobalConfiguration.reset();
         final double value = 0.0432893401304;
         TigerGlobalConfiguration.putValue("foo.value", value);
@@ -498,7 +503,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void placeNewStructuredValue_shouldFindNestedValueAgain() {
+    void placeNewStructuredValue_shouldFindNestedValueAgain() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("foo.value", TigerConfigurationTest.NestedBean.builder()
                 .bar(42)
@@ -510,7 +515,7 @@ public class TigerConfigurationTest {
     @SneakyThrows
     @Test
     @DisplayName("I place a new value in the thread local store. A different thread should NOT see the value")
-    public void placeNewValueThreadLocal_differentThreadShouldNotFindValueAgain() {
+    void placeNewValueThreadLocal_differentThreadShouldNotFindValueAgain() {
         TigerGlobalConfiguration.reset();
         final Thread thread =
             new Thread(() -> {
@@ -528,7 +533,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void readWithTigerConfiguration() {
+    void readWithTigerConfiguration() {
         TigerGlobalConfiguration.readFromYaml(
             FileUtils.readFileToString(
                 new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
@@ -543,7 +548,7 @@ public class TigerConfigurationTest {
 
     @SneakyThrows
     @Test
-    public void readNullObject() {
+    void readNullObject() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("no.real.other", "foo");
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(
@@ -552,7 +557,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void testFreeSockets() throws IOException {
+    void testFreeSockets() throws IOException {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration
             .readFromYaml(
@@ -565,7 +570,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void readValueWithPlaceholder() throws Exception {
+    void readValueWithPlaceholder() throws Exception {
         withEnvironmentVariable("give.me.foo", "foo")
             .and("foo.int", "1234")
             .execute(() -> {
@@ -576,7 +581,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void localScopedValues() {
+    void localScopedValues() {
         TigerGlobalConfiguration.reset();
         assertThat(TigerGlobalConfiguration.readStringOptional("secret.key"))
             .isEmpty();
@@ -591,7 +596,7 @@ public class TigerConfigurationTest {
     }
 
     @Test
-    public void placeholdersShouldBeImplicitlyResolved() {
+    void placeholdersShouldBeImplicitlyResolved() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("my.key", "1234");
         TigerGlobalConfiguration.putValue("an.integer", "${my.key}");
@@ -612,17 +617,17 @@ public class TigerConfigurationTest {
 
     // Tests from removed OSEnvironment class, expects env with at least one entry
     @Test
-    public void testGetEnvAsStringPathOk() {
+    void testGetEnvAsStringPathOk() {
         assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next())).isNotBlank();
     }
 
     @Test
-    public void testGetEnvAsStringNotExistingWithDefaultOk() {
+    void testGetEnvAsStringNotExistingWithDefaultOk() {
         assertThat(TigerGlobalConfiguration.readString("_______NOT____EXISTS", "DEFAULT")).isEqualTo("DEFAULT");
     }
 
     @Test
-    public void testGetEnvAsStringExistingNotDefaultOk() {
+    void testGetEnvAsStringExistingNotDefaultOk() {
         assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next(), "_________DEFAULT")).isNotEqualTo("_________DEFAULT");
     }
 
@@ -630,12 +635,38 @@ public class TigerConfigurationTest {
     @ValueSource(strings = {
         "HTTP", "http", "hTtP"
     })
-    public void tigerProxyTypeShouldBeParseableWithUpperAndLowerCase(String proxyTypeValue) {
+    void tigerProxyTypeShouldBeParseableWithUpperAndLowerCase(String proxyTypeValue) {
         final String key = "random.proxy.type.key";
         TigerGlobalConfiguration.putValue(key, proxyTypeValue);
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TigerProxyType.class, key))
             .get()
             .isEqualTo(TigerProxyType.HTTP);
+    }
+
+    @Test
+    void registerCustomObjectMapper_shouldBeUsed() {
+        try {
+            TigerGlobalConfiguration.getObjectMapper()
+                .registerModule(new SimpleModule()
+                    .addDeserializer(DummyBean.class, new StdDeserializer<>(DummyBean.class) {
+                        @Override
+                        public DummyBean deserialize(JsonParser p, DeserializationContext ctxt)
+                            throws IOException {
+                            final TextNode node = (TextNode) p.readValueAsTree().get("frick");
+                            return DummyBean.builder()
+                                .string(node.asText())
+                                .build();
+                        }
+                    }));
+
+            TigerGlobalConfiguration.readFromYaml("frick: 'on a stick'");
+            var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+                .get();
+            assertThat(dummyBean.getString())
+                .isEqualTo("on a stick");
+        } finally {
+            TigerGlobalConfiguration.reset();
+        }
     }
 
     @Test

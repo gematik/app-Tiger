@@ -1,6 +1,19 @@
 # Changelog Tiger Testplattform
 
 -------
+# Release 1.0.1
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Features
+* TGR-412: ObjectMapper of TigerGlobalConfiguration can now be accessed (and customized)
+
+-------
 # Release 1.0.0
 
 * Serenity BDD 3.3.10
