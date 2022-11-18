@@ -11,6 +11,7 @@ import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;

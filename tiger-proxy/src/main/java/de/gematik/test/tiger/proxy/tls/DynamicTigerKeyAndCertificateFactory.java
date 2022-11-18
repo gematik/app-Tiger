@@ -7,6 +7,7 @@ package de.gematik.test.tiger.proxy.tls;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -59,7 +60,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
     public DynamicTigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
         TigerProxyConfiguration tigerProxyConfiguration,
         TigerPkiIdentity caIdentity) {
-        super(tigerProxyConfiguration.convertToMockServerConfiguration(), mockServerLogger);
+        super(ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration), mockServerLogger);
         this.certificateChain = new ArrayList<>();
         this.mockServerLogger = mockServerLogger;
         this.caIdentity = caIdentity;

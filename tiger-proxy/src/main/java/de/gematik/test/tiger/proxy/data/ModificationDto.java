@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import de.gematik.rbellogger.modifier.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @AllArgsConstructor
 @Data
 public class ModificationDto {
-    
+
     private String name;
     private String condition;
     private String targetElement;

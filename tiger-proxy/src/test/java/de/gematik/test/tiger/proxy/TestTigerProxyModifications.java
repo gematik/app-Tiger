@@ -6,7 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.modifier.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import java.util.List;

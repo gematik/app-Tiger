@@ -7,7 +7,6 @@ package de.gematik.test.tiger.common.config;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import javax.validation.constraints.NotNull;
 import lombok.NoArgsConstructor;
 
 /**
@@ -48,8 +47,11 @@ public final class DeprecatedKeysForbiddenUsageChecker {
             .newKey("tiger.servers.*.healthcheckUrl")
             .build());
 
-    public static void checkForDeprecatedKeys(@NotNull Map<TigerConfigurationKey, String> valueMap)
+    public static void checkForDeprecatedKeys(Map<TigerConfigurationKey, String> valueMap)
         throws TigerConfigurationException {
+        if (valueMap == null) {
+            throw new TigerConfigurationException("Tiger configuration map is null!");
+        }
         StringJoiner joiner = new StringJoiner("\n");
         for (DeprecatedKeyDescriptor deprecatedKey : deprecatedKeysMap) {
             valueMap.keySet()

@@ -8,7 +8,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.modifier.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

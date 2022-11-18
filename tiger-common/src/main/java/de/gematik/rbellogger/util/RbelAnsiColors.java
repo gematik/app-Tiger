@@ -11,8 +11,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.gematik.rbellogger.RbelOptions.ENABLE_ANSI_COLORS;
-
 public enum RbelAnsiColors {
 
     RESET("\033[0m", "reset"),
@@ -73,6 +71,7 @@ public enum RbelAnsiColors {
     CYAN_BACKGROUND_BRIGHT("\033[0;106m"),
     WHITE_BACKGROUND_BRIGHT("\033[0;107m");
 
+    private static boolean enableAnsiColors = true;
     private final String value;
     private final List<String> otherNames;
 
@@ -83,9 +82,17 @@ public enum RbelAnsiColors {
             .collect(Collectors.toList());
     }
 
+    public static void activateAnsiColors() {
+        enableAnsiColors = true;
+    }
+
+    public static void deactivateAnsiColors() {
+        enableAnsiColors = false;
+    }
+
     @Override
     public String toString() {
-        if (ENABLE_ANSI_COLORS) {
+        if (enableAnsiColors) {
             return value;
         } else {
             return "";

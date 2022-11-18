@@ -157,9 +157,9 @@ public class TigerDirector {
             RbelOptions.deactivateRbelPathDebugging();
         }
         if (libConfig.isRbelAnsiColors()) {
-            RbelOptions.activateAnsiColors();
+            RbelAnsiColors.activateAnsiColors();
         } else {
-            RbelOptions.deactivateAnsiColors();
+            RbelAnsiColors.deactivateAnsiColors();
         }
     }
 

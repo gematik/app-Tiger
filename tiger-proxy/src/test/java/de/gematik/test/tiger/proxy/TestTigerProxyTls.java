@@ -188,7 +188,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     // TODO TGR-263 really fix this and reactivate @Test, Julian knows more
     public void customEccCaFileInTruststore_shouldVerifyConnection() throws UnirestException, IOException {
-        final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
+        final TigerPkiIdentity ca = CryptoLoader.getIdentityFromP12(
             FileUtils.readFileToByteArray(new File("src/test/resources/customCa.p12")), "00");
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()

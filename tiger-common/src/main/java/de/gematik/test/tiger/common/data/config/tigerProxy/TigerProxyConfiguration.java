@@ -7,17 +7,13 @@ package de.gematik.test.tiger.common.data.config.tigerProxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import de.gematik.rbellogger.modifier.RbelModificationDescription;
-import de.gematik.test.tiger.common.config.TigerConfigurationException;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.mockserver.configuration.Configuration;
-import org.mockserver.proxyconfiguration.ProxyConfiguration;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
@@ -114,26 +110,4 @@ public class TigerProxyConfiguration {
         }
     }
 
-    public Optional<ProxyConfiguration> convertForwardProxyConfigurationToMockServerConfiguration() {
-        return Optional.ofNullable(getForwardToProxy())
-            .flatMap(ForwardProxyInfo::createMockServerProxyConfiguration);
-    }
-
-    public Configuration convertToMockServerConfiguration() {
-        Configuration config = Configuration.configuration();
-        convertForwardProxyConfigurationToMockServerConfiguration().ifPresent(proxyCfg -> {
-            switch(proxyCfg.getType()) {
-                case HTTP:
-                    config.forwardHttpProxy(proxyCfg.getProxyAddress());
-                    break;
-                case HTTPS:
-                    config.forwardHttpsProxy(proxyCfg.getProxyAddress());
-                    break;
-                case SOCKS5:
-                    throw new TigerConfigurationException("Socks Proxies are not currently supported!");
-            }
-
-        });
-        return config;
-    }
 }

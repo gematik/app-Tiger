@@ -10,6 +10,7 @@ import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelFileWriter;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,10 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 public class RbelFileAppenderPlugin implements RbelConverterPlugin {
 
-    private final RbelFileSaveInfo fileSaveInfo;
+    private final TigerFileSaveInfo fileSaveInfo;
     private final RbelFileWriter rbelFileWriter;
 
-    public RbelFileAppenderPlugin(RbelFileSaveInfo fileSaveInfo, RbelConverter rbelConverter) {
+    public RbelFileAppenderPlugin(TigerFileSaveInfo fileSaveInfo, RbelConverter rbelConverter) {
         this.fileSaveInfo = fileSaveInfo;
         this.rbelFileWriter = new RbelFileWriter(rbelConverter);
         if (fileSaveInfo.isWriteToFile()

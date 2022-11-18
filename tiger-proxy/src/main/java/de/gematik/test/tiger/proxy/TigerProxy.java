@@ -5,12 +5,13 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.mockserver.model.HttpRequest.request;
-import de.gematik.rbellogger.modifier.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
@@ -94,7 +95,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
         customizeSslSuitesIfApplicable();
 
-        final Optional<ProxyConfiguration> forwardProxyConfig = configuration.convertForwardProxyConfigurationToMockServerConfiguration();
+        final Optional<ProxyConfiguration> forwardProxyConfig = ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(configuration);
         outputForwardProxyConfigLogs(forwardProxyConfig);
 
         if (configuration.getDirectReverseProxy() == null) {

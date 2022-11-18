@@ -12,6 +12,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,8 +56,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                         .hostname("$SYSTEM")
                         .build())
                     .build());
-                ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-                    .createMockServerProxyConfiguration().get();
+                ForwardProxyInfo fwInfo = tigerProxy.getTigerProxyConfiguration().getForwardToProxy();
+                ProxyConfiguration proxyConfiguration = ProxyConfigurationConverter.createMockServerProxyConfiguration(fwInfo).get();
                 assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
                 assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
 
@@ -76,8 +77,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                         .hostname("$SYSTEM")
                         .build())
                     .build());
-                ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-                    .createMockServerProxyConfiguration().get();
+                ProxyConfiguration proxyConfiguration =
+                    ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
                 assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
                 assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
                 assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -95,11 +96,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         withEnvironmentVariable("http_proxy", httpProxyEnvWithoutType)
             .and("https_proxy", null)
             .execute(() -> {
-                assertThatThrownBy(() -> TigerProxyConfiguration.builder()
-                    .forwardToProxy(ForwardProxyInfo.builder()
-                        .hostname("$SYSTEM")
-                        .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration().get())
+                assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
+                        .forwardToProxy(ForwardProxyInfo.builder()
+                            .hostname("$SYSTEM")
+                            .build())
+                        .build().getForwardToProxy()).get())
                     .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
     }
@@ -119,8 +120,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .build())
             .build());
 
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo(proxyHost);
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
 
@@ -145,8 +146,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .hostname("$SYSTEM")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo(proxyHost);
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
         assertThat(proxyConfiguration.getUsername()).isEqualTo(proxyUser);
@@ -173,11 +174,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 setOrClearProperty("http.proxyUser", proxyUser);
                 setOrClearProperty("http.proxyPassword", proxyPassword);
 
-                assertThatThrownBy(() -> TigerProxyConfiguration.builder()
-                    .forwardToProxy(ForwardProxyInfo.builder()
-                        .hostname("$SYSTEM")
-                        .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration().get())
+                assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
+                        .forwardToProxy(ForwardProxyInfo.builder()
+                            .hostname("$SYSTEM")
+                            .build())
+                        .build().getForwardToProxy()).get())
                     .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
     }
@@ -199,11 +200,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 setOrClearProperty("http.proxyUser", proxyUser);
                 setOrClearProperty("http.proxyPassword", proxyPassword);
 
-                assertThat(TigerProxyConfiguration.builder()
-                    .forwardToProxy(ForwardProxyInfo.builder()
-                        .hostname("$SYSTEM")
-                        .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration()).isEmpty();
+                assertThat(ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
+                        .forwardToProxy(ForwardProxyInfo.builder()
+                            .hostname("$SYSTEM")
+                            .build())
+                        .build().getForwardToProxy())).isEmpty();
             });
     }
 
@@ -220,8 +221,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                         .hostname("$SYSTEM")
                         .build())
                     .build());
-                ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-                    .createMockServerProxyConfiguration().get();
+                ProxyConfiguration proxyConfiguration =
+                    ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
                 assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
                 assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
 
@@ -241,8 +242,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                         .hostname("$SYSTEM")
                         .build())
                     .build());
-                ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-                    .createMockServerProxyConfiguration().get();
+                ProxyConfiguration proxyConfiguration =
+                    ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
                 assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
                 assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
                 assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -260,11 +261,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         withEnvironmentVariable("https_proxy", httpsProxyEnvWithoutType)
             .and("http_proxy", null)
             .execute(() -> {
-                assertThatThrownBy(() -> TigerProxyConfiguration.builder()
+                assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
                     .forwardToProxy(ForwardProxyInfo.builder()
                         .hostname("$SYSTEM")
                         .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration().get())
+                    .build().getForwardToProxy()).get())
                     .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
     }
@@ -284,8 +285,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .build())
             .build());
 
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo(proxyHost);
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
 
@@ -308,8 +309,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .hostname("$SYSTEM")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo(proxyHost);
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
         assertThat(proxyConfiguration.getUsername()).isEqualTo(proxyUser);
@@ -336,11 +337,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 setOrClearProperty("https.proxyUser", proxyUser);
                 setOrClearProperty("https.proxyPassword", proxyPassword);
 
-                assertThatThrownBy(() -> TigerProxyConfiguration.builder()
-                    .forwardToProxy(ForwardProxyInfo.builder()
-                        .hostname("$SYSTEM")
-                        .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration().get())
+                assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
+                        .forwardToProxy(ForwardProxyInfo.builder()
+                            .hostname("$SYSTEM")
+                            .build())
+                        .build().getForwardToProxy()).get())
                     .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
     }
@@ -362,11 +363,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 setOrClearProperty("https.proxyUser", proxyUser);
                 setOrClearProperty("https.proxyPassword", proxyPassword);
 
-                assertThat(TigerProxyConfiguration.builder()
-                    .forwardToProxy(ForwardProxyInfo.builder()
-                        .hostname("$SYSTEM")
-                        .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration()).isEmpty();
+                assertThat(ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
+                        .forwardToProxy(ForwardProxyInfo.builder()
+                            .hostname("$SYSTEM")
+                            .build())
+                        .build().getForwardToProxy())).isEmpty();
             });
     }
 
@@ -382,8 +383,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .password("password")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
         assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -404,8 +405,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .password("password")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
         assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -425,8 +426,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .password("password")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
         assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -446,8 +447,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .password("password")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
         assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -465,8 +466,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .hostname("localhost")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
 
@@ -482,8 +483,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                 .hostname("localhost")
                 .build())
             .build());
-        ProxyConfiguration proxyConfiguration = tigerProxy.getTigerProxyConfiguration().getForwardToProxy()
-            .createMockServerProxyConfiguration().get();
+        ProxyConfiguration proxyConfiguration =
+            ProxyConfigurationConverter.createMockServerProxyConfiguration(tigerProxy.getTigerProxyConfiguration().getForwardToProxy()).get();
         assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
         assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
 
@@ -496,11 +497,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         withEnvironmentVariable("https_proxy", null)
             .and("http_proxy", null)
             .execute(() -> {
-                assertThat(TigerProxyConfiguration.builder()
-                    .forwardToProxy(ForwardProxyInfo.builder()
-                        .hostname("$SYSTEM")
-                        .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration()).isEmpty();
+                assertThat(ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
+                        .forwardToProxy(ForwardProxyInfo.builder()
+                            .hostname("$SYSTEM")
+                            .build())
+                        .build().getForwardToProxy())).isEmpty();
             });
     }
 
@@ -511,11 +512,11 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         withEnvironmentVariable("https_proxy", httpsProxyEnvWithoutType)
             .and("http_proxy", null)
             .execute(() -> {
-                assertThatThrownBy(() -> TigerProxyConfiguration.builder()
-                    .forwardToProxy(ForwardProxyInfo.builder()
-                        .hostname("$SYSTEM")
-                        .build())
-                    .build().getForwardToProxy().createMockServerProxyConfiguration().get())
+                assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
+                        .forwardToProxy(ForwardProxyInfo.builder()
+                            .hostname("$SYSTEM")
+                            .build())
+                        .build().getForwardToProxy()).get())
                     .isInstanceOf(TigerUnknownProtocolException.class);
             });
     }

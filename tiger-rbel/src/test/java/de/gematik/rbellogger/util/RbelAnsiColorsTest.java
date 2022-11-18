@@ -4,7 +4,6 @@
 
 package de.gematik.rbellogger.util;
 
-import de.gematik.rbellogger.RbelOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,11 +25,11 @@ public class RbelAnsiColorsTest {
     @Test
     @DisplayName("Should only give ANSI-values if global constant mandates it")
     public void ansiOutputShouldHingeOnGlobalConstant() {
-        RbelOptions.deactivateAnsiColors();
+        RbelAnsiColors.deactivateAnsiColors();
 
         assertThat(WHITE.toString()).isEmpty();
 
-        RbelOptions.activateAnsiColors();
+        RbelAnsiColors.activateAnsiColors();
 
         assertThat(WHITE.toString()).isNotEmpty();
     }

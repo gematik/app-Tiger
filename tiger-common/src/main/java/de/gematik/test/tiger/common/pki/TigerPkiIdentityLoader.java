@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.common.pki;
 
 import de.gematik.rbellogger.util.CryptoLoader;
-import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.exceptions.TigerFileSeparatorException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -74,7 +73,7 @@ public class TigerPkiIdentityLoader {
         if (storeType.isKeystore()) {
             return loadKeystore(fileNamesAndContent.get(0).getRight(), guessPasswordField(informationSplits, fileNames, storeType), storeType.name());
         } else {
-            final RbelPkiIdentity rbelPkiIdentity = loadCertKeyPair(storeType, fileNamesAndContent);
+            final TigerPkiIdentity rbelPkiIdentity = loadCertKeyPair(storeType, fileNamesAndContent);
             final TigerPkiIdentity tigerPkiIdentity = new TigerPkiIdentity();
             tigerPkiIdentity.setCertificate(rbelPkiIdentity.getCertificate());
             tigerPkiIdentity.setPrivateKey(rbelPkiIdentity.getPrivateKey());
@@ -90,7 +89,7 @@ public class TigerPkiIdentityLoader {
             .orElseThrow(() -> new TigerPkiIdentityLoaderException("Unable to guess password from parts " + informationSplits));
     }
 
-    private static RbelPkiIdentity loadCertKeyPair(StoreType storeType, List<Pair<String, byte[]>> fileNamesAndContent) {
+    private static TigerPkiIdentity loadCertKeyPair(StoreType storeType, List<Pair<String, byte[]>> fileNamesAndContent) {
         final byte[] data0 = fileNamesAndContent.get(0).getRight();
         final byte[] data1 = fileNamesAndContent.get(1).getRight();
 
