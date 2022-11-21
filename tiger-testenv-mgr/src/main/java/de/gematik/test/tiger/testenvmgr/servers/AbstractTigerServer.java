@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import org.junit.platform.commons.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
@@ -223,13 +223,11 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
 
     private void assertListCfgPropertySet(List<?> target, String propertyName) {
-        List<?> l = target;
-        if (l.isEmpty() ||
-            l.get(0) == null) {
+        if (target.isEmpty() || target.get(0) == null) {
             throw new TigerTestEnvException(
                 "Server %s must have property %s be set and must contain at least one non empty entry", getServerId(), propertyName);
         }
-        if (l.get(0) instanceof String && ((String) l.get(0)).isBlank()) {
+        if (target.get(0) instanceof String && ((String) target.get(0)).isBlank()) {
             throw new TigerTestEnvException(
                 "Server %s must have property %s be set and contain at least one non empty entry!", getServerId(), propertyName);
         }

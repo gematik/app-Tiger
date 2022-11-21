@@ -27,11 +27,7 @@
             <artifactId>tiger-testenv-mgr</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-rbel</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+        <!-- serenity & cucumber -->
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-core</artifactId>
@@ -46,7 +42,16 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-cucumber</artifactId>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-plugin</artifactId>
+            <version>${version.cucumber}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-core</artifactId>
+            <version>${version.cucumber}</version>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
@@ -56,14 +61,12 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-rest-assured</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-screenplay</artifactId>
         </dependency>
-
-        <!-- needed for java test code parsing -->
+        <!-- needed for java junit / testng test code parsing -->
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
@@ -81,19 +84,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- TestNG driver is currently not supported with Serenity -->
-        <!-- Junit 5 driver is currently not supported with Tiger -->
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- JSON Checker -->
         <dependency>
             <groupId>org.skyscreamer</groupId>
@@ -120,6 +110,19 @@
             <artifactId>xmlunit-core</artifactId>
             <version>${version.xmlunit-core}</version>
         </dependency>
+        <!-- test -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- TestNG driver is currently not supported with Serenity -->
+        <!-- Junit 5 driver is currently not supported with Tiger -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
             <artifactId>system-lambda</artifactId>
@@ -135,16 +138,6 @@
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-plugin</artifactId>
-            <version>${version.cucumber}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-core</artifactId>
-            <version>${version.cucumber}</version>
         </dependency>
     </dependencies>
 

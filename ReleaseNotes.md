@@ -13,6 +13,7 @@
 ## Features
 
 * TGR-741: tiger-commons now has minimal dependencies (no more mock server et al.)
+* TGR-584: removing obsolete dependencies from all tiger modules
 * TGR-412: ObjectMapper of TigerGlobalConfiguration can now be accessed (and customized)
 
 -------

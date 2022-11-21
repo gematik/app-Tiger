@@ -17,9 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.testcontainers.shaded.com.github.dockerjava.core.MediaType;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,7 +40,7 @@ public class TigerAdminUiControllerTest {
         this.mockMvc.perform(get("/openYamlFile")
                 .param("cfgfile", relPath + File.separator + "testAdminUI.yaml"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON.getMediaType()))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.tigerProxy.forwardToProxy.hostname").value(is("$SYSTEM")))
             .andExpect(jsonPath("$.servers.reverseproxy2.type").value(is("tigerProxy")))
             .andExpect(jsonPath("$.servers.testWinstone3.type").value(is("externalJar")));
