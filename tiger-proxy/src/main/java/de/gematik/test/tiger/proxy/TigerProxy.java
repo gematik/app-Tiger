@@ -358,6 +358,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     public void addAlternativeName(final String host) {
+        if (StringUtils.isBlank(host)) {
+            return;
+        }
         final List<String> newAlternativeNames = new ArrayList<>();
         if (getTigerProxyConfiguration().getTls() != null
             && getTigerProxyConfiguration().getTls().getAlternativeNames() != null) {

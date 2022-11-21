@@ -15,10 +15,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Stream;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -153,6 +150,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
             DERSequence subjectAlternativeNamesExtension = new DERSequence(
                 Stream.concat(serverAlternativeNames.stream(), Stream.of(serverName))
                     .distinct()
+                    .filter(Objects::nonNull)
                     .map(this::mapAlternativeNameToAsn1Encodable)
                     .toArray(ASN1Encodable[]::new));
             builder.addExtension(Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);

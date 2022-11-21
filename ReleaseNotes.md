@@ -16,6 +16,10 @@
 * TGR-584: removing obsolete dependencies from all tiger modules
 * TGR-412: ObjectMapper of TigerGlobalConfiguration can now be accessed (and customized)
 
+## Bugfixes
+
+* TGR-742: Fixed NPE for some ForwardProxy routes
+
 -------
 # Release 1.0.0
 
