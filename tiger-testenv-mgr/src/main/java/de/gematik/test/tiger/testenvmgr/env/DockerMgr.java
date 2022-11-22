@@ -4,21 +4,22 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import static de.gematik.test.tiger.proxy.TigerProxy.CA_CERT_ALIAS;
 import static org.awaitility.Awaitility.await;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.ListContainersCmd;
 import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.ResponseItem;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.DockerComposeServer;
 import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
-import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
+import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +54,9 @@ import org.testcontainers.utility.MountableFile;
 @Getter
 public class DockerMgr {
 
+    private static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+    private static final String END_CERT = "-----END CERTIFICATE-----";
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
     @SuppressWarnings("OctalInteger")
     private static final int MOD_ALL_EXEC = 0777;
 
@@ -148,7 +154,8 @@ public class DockerMgr {
 
     public void startComposition(final DockerComposeServer server) {
         List<String> composeFileContents = new ArrayList<>();
-        File[] composeFiles = collectAndProcessComposeYamlFiles(server.getServerId(), server.getSource(), composeFileContents);
+        File[] composeFiles = collectAndProcessComposeYamlFiles(server.getServerId(), server.getSource(),
+            composeFileContents);
         String identity = "tiger_" + Base58.randomString(6).toLowerCase();
         DockerComposeContainer composition = new DockerComposeContainer(identity, composeFiles); //NOSONAR
 
@@ -208,7 +215,8 @@ public class DockerMgr {
 
     }
 
-    private File[] collectAndProcessComposeYamlFiles(String serverId, List<String> composeFilePaths, List<String> composeFileContents) {
+    private File[] collectAndProcessComposeYamlFiles(String serverId, List<String> composeFilePaths,
+        List<String> composeFileContents) {
         var folder = Paths.get("target", "tiger-testenv-mgr", serverId).toFile();
         return composeFilePaths.stream()
             .map(filePath -> {
@@ -242,7 +250,8 @@ public class DockerMgr {
             }
             content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         } catch (IOException exception) {
-            throw new TigerTestEnvException("Unable to read docker compose file from classpath (" + filePath + ")", exception);
+            throw new TigerTestEnvException("Unable to read docker compose file from classpath (" + filePath + ")",
+                exception);
         }
         return content;
     }
@@ -314,7 +323,8 @@ public class DockerMgr {
         log.info("Docker image {} is available locally!", imageName);
     }
 
-    private String createContainerStartupScript(AbstractTigerServer server, InspectImageResponse iiResponse, String[] startCmd,
+    private String createContainerStartupScript(AbstractTigerServer server, InspectImageResponse iiResponse,
+        String[] startCmd,
         String[] entryPointCmd) {
         final ContainerConfig containerConfig = iiResponse.getConfig();
         if (containerConfig == null) {
@@ -324,9 +334,7 @@ public class DockerMgr {
         startCmd = startCmd == null ? new String[0] : startCmd;
         entryPointCmd = entryPointCmd == null ? new String[0] : entryPointCmd;
         try {
-            final var proxycert = IOUtils.toString(
-                Objects.requireNonNull(getClass().getResourceAsStream("/CertificateAuthorityCertificate.pem")),
-                StandardCharsets.UTF_8);
+            final var proxycert = getTigerProxyRootCaCertificate(server);
             final var lecert = IOUtils.toString(
                 Objects.requireNonNull(getClass().getResourceAsStream("/letsencrypt.crt")),
                 StandardCharsets.UTF_8);
@@ -366,6 +374,20 @@ public class DockerMgr {
                 "Failed to configure start script on container for server " + server.getServerId(), ioe);
         }
 
+    }
+
+    private static String getTigerProxyRootCaCertificate(AbstractTigerServer server) {
+        try {
+            final Certificate certificate = server.getTigerTestEnvMgr().getLocalTigerProxy()
+                .buildTruststore().getCertificate(CA_CERT_ALIAS);
+            final Base64.Encoder encoder = Base64.getMimeEncoder(64, "\r\n".getBytes());
+
+            final byte[] rawCrtText = certificate.getEncoded();
+            final String encodedCertText = new String(encoder.encode(rawCrtText));
+            return BEGIN_CERT + LINE_SEPARATOR + encodedCertText + LINE_SEPARATOR + END_CERT;
+        } catch (GeneralSecurityException e) {
+            throw new TigerEnvironmentStartupException("Error while retrieving TigerProxy RootCa", e);
+        }
     }
 
     private String getContainerWorkingDirectory(ContainerConfig containerConfig) {
@@ -412,7 +434,8 @@ public class DockerMgr {
                 log.warn("Interruption signaled");
                 Thread.currentThread().interrupt();
             }
-            log.warn("HealthCheck UNCLEAR for {} as no healthcheck is configured, we assume it works and continue setup!",
+            log.warn(
+                "HealthCheck UNCLEAR for {} as no healthcheck is configured, we assume it works and continue setup!",
                 server.getServerId());
         }
     }

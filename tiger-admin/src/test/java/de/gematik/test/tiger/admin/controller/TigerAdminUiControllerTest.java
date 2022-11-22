@@ -23,18 +23,18 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class TigerAdminUiControllerTest {
+class TigerAdminUiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    public void testGetStartPage() throws Exception {
+    void testGetStartPage() throws Exception {
         this.mockMvc.perform(get("/")).andExpect(status().isOk());
     }
 
     @Test
-    public void testOpenYamlFile() throws Exception {
+    void testOpenYamlFile() throws Exception {
         String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test",
             "tiger", "testenvmgr").toFile().toString();
         this.mockMvc.perform(get("/openYamlFile")
@@ -47,7 +47,7 @@ public class TigerAdminUiControllerTest {
     }
 
     @Test
-    public void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
+    void testSeeErrorMessageWhenOpenInvalidFile() throws Exception {
 
         String relPath = Path.of("..", "tiger-testenv-mgr", "src", "test", "resources", "de", "gematik", "test",
             "tiger", "testenvmgr").toFile().toString();
@@ -62,7 +62,7 @@ public class TigerAdminUiControllerTest {
     }
 
     @Test
-    public void testGetServerTemplates() throws Exception {
+    void testGetServerTemplates() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/getTemplates"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.templates").value(hasSize(9)))

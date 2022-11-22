@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -66,10 +67,7 @@ import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 @EqualsAndHashCode(callSuper = true)
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
-    public static final TigerPkiIdentity DEFAULT_CA_IDENTITY = new TigerPkiIdentity(
-        "CertificateAuthorityCertificate.pem;" +
-            "PKCS8CertificateAuthorityPrivateKey.pem;" +
-            "PKCS8");
+    public static final String CA_CERT_ALIAS = "caCert";
     private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
     private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
     private final MockServer mockServer;
@@ -78,6 +76,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     private final MockServerToRbelConverter mockServerToRbelConverter;
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
     private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
+    private TigerPkiIdentity generatedRootCa;
 
     public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
@@ -234,11 +233,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         if (getTigerProxyConfiguration().getTls().getServerRootCa() != null) {
             return Optional.ofNullable(getTigerProxyConfiguration().getTls().getServerRootCa());
         } else {
-            if (getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
-                return Optional.empty();
-            } else {
-                return Optional.of(DEFAULT_CA_IDENTITY);
+            if (generatedRootCa == null) {
+                generatedRootCa = generateNewCaCertificate();
             }
+            return Optional.of(generatedRootCa);
         }
     }
 
@@ -457,7 +455,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .orElseThrow(() -> new TigerProxyTrustManagerBuildingException(
                     "Unrecoverable state: Server-Identity null and Server-CA empty"));
 
-            ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
+            ks.setCertificateEntry(CA_CERT_ALIAS, serverIdentity.getCertificate());
             int chainCertCtr = 0;
             for (final X509Certificate chainCert : serverIdentity.getCertificateChain()) {
                 ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
