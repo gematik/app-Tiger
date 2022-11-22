@@ -33,8 +33,8 @@ class EpaVauParsingTest {
                 .atMost(20, TimeUnit.SECONDS)
                 .until(() -> tigerProxy.getRbelMessagesList().size() >= 36);
 
-            FileUtils.writeStringToFile(new File("target/vauFlow.html"),
-                RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory()), StandardCharsets.UTF_8);
+            final String htmlData = RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory());
+            FileUtils.writeStringToFile(new File("target/vauFlow.html"), htmlData, StandardCharsets.UTF_8);
 
             assertThat(tigerProxy.getRbelMessagesList().get(24).findElement("$.body.recordId"))
                 .get()
@@ -62,6 +62,10 @@ class EpaVauParsingTest {
                 .get()
                 .extracting(RbelElement::getRawStringContent)
                 .isEqualTo("X114428539");
+
+            assertThat(htmlData)
+                .contains("P Header (raw):")
+                .contains("01 00 00 00 00 00 00 00 07 00 00 01 07");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

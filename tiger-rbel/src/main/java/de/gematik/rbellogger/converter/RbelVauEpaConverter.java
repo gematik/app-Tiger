@@ -104,7 +104,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
         }
         if (parentNode.getParentNode() != null
             && parentNode.getParentNode().hasFacet(RbelHttpMessageFacet.class)
-            && !parentNode.getFacets().isEmpty()) {
+            && parentNode.getFacets().isEmpty()) {
             parentNode.addFacet(new RbelUndecipherableVauEpaFacet(errorNotes));
         }
         return Optional.empty();
@@ -138,6 +138,9 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
         System.arraycopy(decryptedBytes, 5, sequenceNumberBytes, 0, 4);
         int sequenceNumber = java.nio.ByteBuffer.wrap(sequenceNumberBytes).getInt();
 
+        byte[] pHeaderInformation = new byte[1 + 8 + 4];
+        System.arraycopy(decryptedBytes, 0, pHeaderInformation, 0, pHeaderInformation.length);
+
         byte[] numberOfBytes_inBytes = new byte[4];
         System.arraycopy(raw, 0, numberOfBytes_inBytes, 0, 4);
         int numberOfBytes = java.nio.ByteBuffer.wrap(numberOfBytes_inBytes).getInt();
@@ -156,6 +159,9 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
         byte[] body = new byte[raw.length - 4 - numberOfBytes];
         System.arraycopy(raw, 4 + numberOfBytes, body, 0, body.length);
 
+        final String pHeaderHexString = String.join(" ",
+            Hex.toHexString(pHeaderInformation)
+                .split("(?<=\\G.{2})"));
         return RbelVauEpaFacet.builder()
             .message(converter.filterInputThroughPreConversionMappers(new RbelElement(body, parentNode)))
             .additionalHeaders(headerElement)
@@ -164,6 +170,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
             .pVersionNumber(RbelElement.wrap(parentNode, (int) decryptedBytes[0]))
             .sequenceNumber(RbelElement.wrap(parentNode, (long) sequenceNumber))
             .keyUsed(Optional.ofNullable(rbelKey))
+            .pHeaderInformation(RbelElement.wrap(parentNode, pHeaderHexString))
             .build();
     }
 
