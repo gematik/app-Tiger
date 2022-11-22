@@ -5,19 +5,15 @@
 package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import java.io.File;
-import java.io.IOException;
-import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.commons.io.FileUtils;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,15 +23,23 @@ class RbelMtomConverterTest {
     private RbelLogger rbelLogger;
 
     @BeforeEach
-    public void init() throws IOException {
-        rbelLogger = RbelLogger.build(new RbelConfiguration()
-                .setActivateAsn1Parsing(false)
-                .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
+    @SneakyThrows
+    public void init() {
+        try (final RbelFileReaderCapturer rbelFileReaderCapturer = getRbelFileReaderCapturer(
+        )) {
 
-        String rawSavedVauMessages = FileUtils.readFileToString(new File("src/test/resources/vauEpa2Flow.rawHttpDump"));
-        Stream.of(rawSavedVauMessages.split("\n\n"))
-                .map(Base64.getDecoder()::decode)
-                .forEach(msgBytes -> rbelLogger.getRbelConverter().parseMessage(msgBytes, null, null, Optional.of(ZonedDateTime.now())));
+            rbelLogger = RbelLogger.build(new RbelConfiguration()
+                .setActivateAsn1Parsing(false)
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .addCapturer(rbelFileReaderCapturer));
+            rbelFileReaderCapturer.initialize();
+        }
+    }
+
+    private static RbelFileReaderCapturer getRbelFileReaderCapturer() {
+        return RbelFileReaderCapturer.builder()
+            .rbelFile("src/test/resources/vauEp2FlowUnixLineEnding.tgr")
+            .build();
     }
 
     @Test
@@ -48,9 +52,9 @@ class RbelMtomConverterTest {
     @DisplayName("MTOM XML - should be parsed correctly")
     void mtomXml_shouldBeParsedCorrectly() {
         assertThat(rbelLogger.getMessageList().get(34)
-                .findRbelPathMembers("$..Envelope.soap").get(0)
-                .getRawStringContent())
-                .isEqualTo("http://www.w3.org/2003/05/soap-envelope");
+            .findRbelPathMembers("$..Envelope.soap").get(0)
+            .getRawStringContent())
+            .isEqualTo("http://www.w3.org/2003/05/soap-envelope");
 
         assertThat(rbelLogger.getMessageList().get(34)
             .findRbelPathMembers("$..EncryptionMethod.Algorithm")
