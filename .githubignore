@@ -4,5 +4,6 @@ Jenkinsfile
 Maven-Central-Release.Jenkinsfile
 Nightly.Jenkinsfile
 Release.Jenkinsfile
+Dependabot.Jenkinsfile
 /tiger-integration-tests/
 IntegrationTest.Jenkinsfile
