@@ -23,6 +23,10 @@
 
 * TGR-742: Fixed NPE for some ForwardProxy routes
 
+## Breaking changes
+
+* if you update to 1.0.1 and your tests aren't executed anymore please add the 'junit-vintage-engine'-dependency to your project
+
 -------
 # Release 1.0.0
 
