@@ -933,7 +933,7 @@ function addMessageToMainView(msgHtmlData) {
 function addMessageToMenu(msgMetaData, index) {
   let isRequest = msgMetaData.request;
 
-  var menuItem;
+  let menuItem;
   if (isRequest) {
     menuItem = menuHtmlTemplateRequest;
   } else {
@@ -966,7 +966,13 @@ function addMessageToMenu(msgMetaData, index) {
       return msg === msgMetaData.sender;
     });
     if (foundSender == null) {
-      senders.push(msgMetaData.sender);
+      let index = msgMetaData.sender.indexOf(":");
+      if(index >= 0) {
+        let port = msgMetaData.sender.substring(index + 1);
+        if (port < 32768) {
+          senders.push(msgMetaData.sender);
+        }
+      }
     }
   }
   if (msgMetaData.recipient != null) {
@@ -974,7 +980,13 @@ function addMessageToMenu(msgMetaData, index) {
       return msg === msgMetaData.recipient;
     });
     if (foundReceiver == null) {
-      receivers.push(msgMetaData.recipient);
+      let index = msgMetaData.recipient.indexOf(":");
+      if(index >= 0){
+        let port = msgMetaData.recipient.substring(index + 1);
+        if (port < 32768) {
+          receivers.push(msgMetaData.recipient);
+        }
+      }
     }
   }
 }

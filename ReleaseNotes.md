@@ -17,6 +17,7 @@
 * TGR-704: TigerProxy WebUI now displays complete P-Header for EPA-VAU-messages
 * TGR-584: removing obsolete dependencies from all tiger modules
 * TGR-412: ObjectMapper of TigerGlobalConfiguration can now be accessed (and customized)
+* TGR-634: WebUi: Remove all filters with port > 32768 for better clarity
 
 ## Bugfixes
 
