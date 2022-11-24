@@ -1,7 +1,7 @@
 # Changelog Tiger Testplattform
 
 -------
-# Release 1.0.1
+# Release 1.1.0
 
 * Serenity BDD 3.3.10
 * Cucumber 7.4.1
@@ -26,7 +26,7 @@
 
 ## Breaking changes
 
-* if you update to 1.0.1 and your tests aren't executed anymore please add the 'junit-vintage-engine'-dependency to your project
+* if you update to 1.1.0 and your tests aren't executed anymore please add the 'junit-vintage-engine'-dependency to your project
 
 -------
 # Release 1.0.0
