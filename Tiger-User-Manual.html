@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 1.0.0-SNAPSHOT - 2022-11-17</span>
+<span id="revdate">Version 1.1.0-SNAPSHOT - 2022-11-24</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -2398,7 +2398,7 @@ If you encounter any problems, please contact us.</p>
 <p>For a forward-proxy this is easy: The client sends not only the path, but the complete URL to the proxy, letting him handle DNS-resolution.<br>
 So when the Tiger Proxy receives a new request the necessary domain-name is given by the client. A new, matching, certificate is generated (these are cached) and presented.<br>
 To complete the setup the client-truststore needs to be patched.<br>
-The default CA used by the Tiger Proxy can be found here: <a href="https://github.com/gematik/app-Tiger/blob/master/tiger-proxy/src/main/resources/CertificateAuthorityCertificate.pem" class="bare">https://github.com/gematik/app-Tiger/blob/master/tiger-proxy/src/main/resources/CertificateAuthorityCertificate.pem</a></p>
+The CA used by the Tiger Proxy is dynamically generated on each startup.</p>
 </div>
 <div class="paragraph">
 <p>For a reverse-proxy the domain name, which should be used, is unknown to the Tiger Proxy (DNS-resolution is done on the client-side). Thus, a  domain-name needs to be provided, which should be used for certificate-generation:</p>
@@ -4223,7 +4223,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-11-17 14:36:23 UTC
+Last updated 2022-11-24 13:24:23 UTC
 </div>
 </div>
 </body>
