@@ -16,13 +16,15 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
 import static org.mockserver.model.HttpRequest.request;
-import de.gematik.rbellogger.modifier.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
@@ -77,10 +79,7 @@ import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 @EqualsAndHashCode(callSuper = true)
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
-    public static final TigerPkiIdentity DEFAULT_CA_IDENTITY = new TigerPkiIdentity(
-        "CertificateAuthorityCertificate.pem;" +
-            "PKCS8CertificateAuthorityPrivateKey.pem;" +
-            "PKCS8");
+    public static final String CA_CERT_ALIAS = "caCert";
     private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
     private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
     private final MockServer mockServer;
@@ -89,6 +88,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     private final MockServerToRbelConverter mockServerToRbelConverter;
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
     private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
+    private TigerPkiIdentity generatedRootCa;
 
     public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
@@ -106,7 +106,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
         customizeSslSuitesIfApplicable();
 
-        final Optional<ProxyConfiguration> forwardProxyConfig = configuration.convertForwardProxyConfigurationToMockServerConfiguration();
+        final Optional<ProxyConfiguration> forwardProxyConfig = ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(configuration);
         outputForwardProxyConfigLogs(forwardProxyConfig);
 
         if (configuration.getDirectReverseProxy() == null) {
@@ -245,11 +245,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         if (getTigerProxyConfiguration().getTls().getServerRootCa() != null) {
             return Optional.ofNullable(getTigerProxyConfiguration().getTls().getServerRootCa());
         } else {
-            if (getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
-                return Optional.empty();
-            } else {
-                return Optional.of(DEFAULT_CA_IDENTITY);
+            if (generatedRootCa == null) {
+                generatedRootCa = generateNewCaCertificate();
             }
+            return Optional.of(generatedRootCa);
         }
     }
 
@@ -369,6 +368,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     public void addAlternativeName(final String host) {
+        if (StringUtils.isBlank(host)) {
+            return;
+        }
         final List<String> newAlternativeNames = new ArrayList<>();
         if (getTigerProxyConfiguration().getTls() != null
             && getTigerProxyConfiguration().getTls().getAlternativeNames() != null) {
@@ -465,7 +467,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .orElseThrow(() -> new TigerProxyTrustManagerBuildingException(
                     "Unrecoverable state: Server-Identity null and Server-CA empty"));
 
-            ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
+            ks.setCertificateEntry(CA_CERT_ALIAS, serverIdentity.getCertificate());
             int chainCertCtr = 0;
             for (final X509Certificate chainCert : serverIdentity.getCertificateChain()) {
                 ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);

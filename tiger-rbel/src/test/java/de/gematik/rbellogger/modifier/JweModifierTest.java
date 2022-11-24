@@ -20,16 +20,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.elements.RbelJweEncryptionInfo;
 import de.gematik.rbellogger.data.facet.RbelJweFacet;
 import de.gematik.rbellogger.modifier.RbelJweWriter.InvalidEncryptionInfo;
 import de.gematik.rbellogger.modifier.RbelJweWriter.JweUpdateException;
 import de.gematik.rbellogger.modifier.RbelModifier.RbelModificationException;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.IOException;
-import java.security.PublicKey;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 public class JweModifierTest extends AbstractModifierTest {

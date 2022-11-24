@@ -20,6 +20,7 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;

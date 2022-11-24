@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -89,6 +89,9 @@
         <version.bouncycastle>1.71</version.bouncycastle>
         <version.commons-io>2.11.0</version.commons-io>
         <version.commons-lang3>3.12.0</version.commons-lang3>
+        <version.commons-codec>1.15</version.commons-codec>
+        <version.commons-jexl3>3.2.1</version.commons-jexl3>
+        <version.commons-collections>3.2.2</version.commons-collections>
         <version.cucumber>7.8.1</version.cucumber>
         <version.datatable>7.8.1</version.datatable>
         <version.gson>2.10</version.gson>
@@ -106,7 +109,7 @@
         <version.mockserver>5.14.1</version.mockserver>
         <version.serenity.core>3.3.10</version.serenity.core>
         <version.serenity.maven.plugin>3.3.10</version.serenity.maven.plugin>
-        <version.slf4j>1.7.32</version.slf4j>
+        <version.slf4j>1.7.36</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spring>5.3.23</version.spring>
         <version.spring-boot>2.7.5</version.spring-boot>
@@ -242,13 +245,11 @@
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-cucumber</artifactId>
                 <version>${version.serenity.core}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-rest-assured</artifactId>
                 <version>${version.serenity.core}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
@@ -380,6 +381,21 @@
                 <version>${version.commons-lang3}</version>
             </dependency>
             <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${version.commons-collections}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${version.commons-codec}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-jexl3</artifactId>
+                <version>${version.commons-jexl3}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.javaparser</groupId>
                 <artifactId>javaparser-core</artifactId>
                 <version>${version.javaparser}</version>
@@ -394,17 +410,23 @@
                 <artifactId>awaitility</artifactId>
                 <version>${version.awaitility}</version>
             </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${version.lombok}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.2.11</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>1.2.11</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-            <version>${version.lombok}</version>
-        </dependency>
-    </dependencies>
 
     <build>
         <pluginManagement>

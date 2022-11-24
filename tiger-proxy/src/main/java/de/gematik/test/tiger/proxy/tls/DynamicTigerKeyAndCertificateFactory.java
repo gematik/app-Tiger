@@ -18,7 +18,8 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -26,10 +27,9 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.*;
 import java.util.stream.Stream;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -56,6 +56,8 @@ import org.slf4j.event.Level;
 
 public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
+    private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
+
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
@@ -71,7 +73,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
     public DynamicTigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
         TigerProxyConfiguration tigerProxyConfiguration,
         TigerPkiIdentity caIdentity) {
-        super(tigerProxyConfiguration.convertToMockServerConfiguration(), mockServerLogger);
+        super(ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration), mockServerLogger);
         this.certificateChain = new ArrayList<>();
         this.mockServerLogger = mockServerLogger;
         this.caIdentity = caIdentity;
@@ -98,7 +100,8 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
             && eeIdentity.getCertificateChain().size() > 0) {
             return eeIdentity.getCertificateChain().get(0);
         }
-        return TigerProxy.DEFAULT_CA_IDENTITY.getCertificate();
+        throw new TigerProxyConfigurationException("Discovered illegal configuration in TLS-setup: "
+            + "Dynamic certificate generation, but no CA certificate present!");
     }
 
     @Override
@@ -149,13 +152,17 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
     }
 
     private X509Certificate createCertificateSignedByCa(PublicKey publicKey, X509Certificate certificateAuthorityCert,
-                                                        PrivateKey certificateAuthorityPrivateKey) throws Exception {
+                                                        PrivateKey certificateAuthorityPrivateKey)
+        throws GeneralSecurityException, IOException, OperatorCreationException {
         X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
         X500Name subject = new X500Name("CN=" + serverName + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
 
         BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE)); //NOSONAR
 
-        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial, NOT_BEFORE, NOT_AFTER,
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial,
+            Date.from(ZonedDateTime.now().minusDays(10).toInstant()),
+            Date.from(ZonedDateTime.now().plus(MAXIMUM_VALIDITY)
+                .minusDays(10).toInstant()),
             subject, publicKey);
         builder.addExtension(Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
         builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
@@ -164,6 +171,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
             DERSequence subjectAlternativeNamesExtension = new DERSequence(
                 Stream.concat(serverAlternativeNames.stream(), Stream.of(serverName))
                     .distinct()
+                    .filter(Objects::nonNull)
                     .map(this::mapAlternativeNameToAsn1Encodable)
                     .toArray(ASN1Encodable[]::new));
             builder.addExtension(Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);
@@ -196,7 +204,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
         return (new JcaX509CertificateConverter()).setProvider("BC").getCertificate(certificateBuilder.build(signer));
     }
 
-    private KeyPair generateRsaKeyPair(int keySize) throws Exception {
+    private KeyPair generateRsaKeyPair(int keySize) throws GeneralSecurityException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
         generator.initialize(keySize, new SecureRandom());
         return generator.generateKeyPair();

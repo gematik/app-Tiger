@@ -51,16 +51,12 @@ public class TigerConfigurationLoader {
     public void reset() {
         loadedSources.clear();
         loadedTemplates.clear();
+        initializeObjectMapper();
     }
 
     public void initialize() {
         if (objectMapper == null) {
-            objectMapper = JsonMapper.builder()
-                .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
-                .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-                .build();
+            initializeObjectMapper();
         }
 
         if (loadedSources == null) {
@@ -69,6 +65,15 @@ public class TigerConfigurationLoader {
         if (loadedTemplates == null) {
             loadedTemplates = new ArrayList<>();
         }
+    }
+
+    private void initializeObjectMapper() {
+        objectMapper = JsonMapper.builder()
+            .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
+            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+            .build();
     }
 
     public String readString(String key) {
@@ -424,5 +429,9 @@ public class TigerConfigurationLoader {
 
     public boolean removeConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
         return loadedSources.remove(configurationSource);
+    }
+
+    public ObjectMapper getObjectMapper() {
+        return objectMapper;
     }
 }

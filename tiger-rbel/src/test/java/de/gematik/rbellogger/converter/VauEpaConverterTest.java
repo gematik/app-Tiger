@@ -16,9 +16,14 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.CLS_BODY;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTitle;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.childBoxNotifTitle;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.t2;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
 import static j2html.TagCreator.div;
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -33,14 +38,8 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import java.io.File;
-import java.io.IOException;
-import java.time.ZonedDateTime;
-import java.util.Base64;
 import java.util.Optional;
-import java.util.stream.Stream;
 import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,16 +47,19 @@ import org.junit.jupiter.api.Test;
 public class VauEpaConverterTest {
     private static RbelLogger rbelLogger;
 
-    {
+    @BeforeAll
+    @SneakyThrows
+    public static void setUp() {
         RbelHtmlRenderer.registerFacetRenderer(
             new RbelHtmlFacetRenderer() {
                 @Override
-                public boolean checkForRendering(RbelElement element) {
+                public boolean checkForRendering(final RbelElement element) {
                     return element.hasFacet(TestFacet.class);
                 }
 
                 @Override
-                public ContainerTag performRendering(RbelElement element, Optional<String> key, RbelHtmlRenderingToolkit renderingToolkit) {
+                public ContainerTag performRendering(final RbelElement element,
+                    final Optional<String> key, final RbelHtmlRenderingToolkit renderingToolkit) {
                     return ancestorTitle().with(
                         vertParentTitle().with(
                             childBoxNotifTitle(CLS_BODY).with(t2("Test Facet"))
@@ -72,10 +74,7 @@ public class VauEpaConverterTest {
                 }
             }
         );
-    }
 
-    @BeforeAll
-    public static void setUp() {
         rbelLogger = RbelLogger.build(new RbelConfiguration()
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
             .addPostConversionListener((rbelElement, converter) -> {
@@ -87,7 +86,9 @@ public class VauEpaConverterTest {
                 .rbelFile("src/test/resources/vauFlow.tgr")
                 .build())
         );
-        rbelLogger.getRbelCapturer().initialize();
+        try (final var capturer = rbelLogger.getRbelCapturer()) {
+            capturer.initialize();
+        }
     }
 
     @SneakyThrows
@@ -98,32 +99,44 @@ public class VauEpaConverterTest {
     }
 
     @Test
-    void shouldParseHandshakeNestedMessage() throws IOException {
-        RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
-            .setActivateAsn1Parsing(false)
-            .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
+    @SneakyThrows
+    void shouldParseHandshakeNestedMessage() {
+        try (final RbelFileReaderCapturer rbelFileReaderCapturer = getRbelFileReaderCapturer(
+        )) {
+            final RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
+                .setActivateAsn1Parsing(false)
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .addCapturer(rbelFileReaderCapturer));
 
-        String rawSavedVauMessages = FileUtils.readFileToString(new File("src/test/resources/vauEpa2Flow.rawHttpDump"));
-        Stream.of(rawSavedVauMessages.split("\n\n"))
-            .map(Base64.getDecoder()::decode)
-            .forEach(msgBytes -> epa2Logger.getRbelConverter().parseMessage(msgBytes, null, null, Optional.of(ZonedDateTime.now())));
+            rbelFileReaderCapturer.initialize();
 
-        assertThat(epa2Logger.getMessageList().get(24)
-            .findRbelPathMembers("$.body.Data.content.decoded.AuthorizationAssertion.content.decoded.Assertion.Issuer.text")
-            .get(0).getRawStringContent())
-            .isEqualTo("https://aktor-gateway.gematik.de/authz");
+            assertThat(epa2Logger.getMessageList().get(24)
+                .findRbelPathMembers(
+                    "$.body.Data.content.decoded.AuthorizationAssertion.content.decoded.Assertion.Issuer.text")
+                .get(0).getRawStringContent())
+                .isEqualTo("https://aktor-gateway.gematik.de/authz");
+        }
+    }
+
+    private static RbelFileReaderCapturer getRbelFileReaderCapturer() {
+        return RbelFileReaderCapturer.builder()
+            .rbelFile("src/test/resources/vauEp2FlowUnixLineEnding.tgr")
+            .build();
     }
 
     @Test
     @DisplayName("VAU-Flow mit einem \\n Zeilenumbruch. \\r fehlt, trotzdem soll der Parser das MTOM parsen können")
-    void parseAnotherLogFile() throws IOException {
-        RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
+    @SneakyThrows
+    void parseAnotherLogFile() {
+        final RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false)
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
             .addCapturer(RbelFileReaderCapturer.builder()
                 .rbelFile("src/test/resources/trafficLog.tgr")
                 .build()));
-        epa2Logger.getRbelCapturer().initialize();
+        try (final var capturer = epa2Logger.getRbelCapturer()) {
+            capturer.initialize();
+        }
 
         assertThat(epa2Logger.getMessageList().get(9)
             .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()
@@ -133,14 +146,17 @@ public class VauEpaConverterTest {
 
     @Test
     @DisplayName("Parse MTOMs with Regex-relevant characters in MTOM-barrier")
-    void parseIbmLogFile() throws IOException {
-        RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
+    @SneakyThrows
+    void parseIbmLogFile() {
+        final RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false)
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
             .addCapturer(RbelFileReaderCapturer.builder()
                 .rbelFile("src/test/resources/mtomVauTraffic.tgr")
                 .build()));
-        epa2Logger.getRbelCapturer().initialize();
+        try (final var capturer = epa2Logger.getRbelCapturer()) {
+            capturer.initialize();
+        }
 
         assertThat(epa2Logger.getMessageList().get(5)
             .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()

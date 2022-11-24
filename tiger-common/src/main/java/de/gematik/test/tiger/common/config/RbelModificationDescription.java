@@ -14,33 +14,26 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.data;
+package de.gematik.test.tiger.common.config;
 
-import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
-@RequiredArgsConstructor
-@Builder
-@AllArgsConstructor
 @Data
-public class ModificationDto {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class RbelModificationDescription {
 
+    @With
     private String name;
+    @With
     private String condition;
+    @With
     private String targetElement;
+    @With
     private String replaceWith;
+    @With
     private String regexFilter;
-
-    public static ModificationDto from(RbelModificationDescription modification) {
-        return ModificationDto.builder()
-            .name(modification.getName())
-            .condition(modification.getCondition())
-            .targetElement(modification.getTargetElement())
-            .replaceWith(modification.getReplaceWith())
-            .regexFilter(modification.getRegexFilter())
-            .build();
-    }
+    @With
+    private Integer deleteAfterNExecutions;
 }

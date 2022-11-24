@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.CryptoLoader;
-import de.gematik.rbellogger.util.RbelPkiIdentity;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
@@ -36,7 +35,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.*;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -200,7 +204,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     // TODO TGR-263 really fix this and reactivate @Test, Julian knows more
     public void customEccCaFileInTruststore_shouldVerifyConnection() throws UnirestException, IOException {
-        final RbelPkiIdentity ca = CryptoLoader.getIdentityFromP12(
+        final TigerPkiIdentity ca = CryptoLoader.getIdentityFromP12(
             FileUtils.readFileToByteArray(new File("src/test/resources/customCa.p12")), "00");
 
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
@@ -591,5 +595,49 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
         }).hasMessageContaining(
             "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
+    }
+
+    @Test
+    void dynamicallyCreateCaAndEeCertificate_shouldBeValidForOneYear() throws Exception {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServer.port())
+                .build()))
+            .build());
+
+        AtomicInteger checkCounter = new AtomicInteger(0);
+        final UnirestInstance unirestInstance = Unirest.spawnInstance();
+        unirestInstance.config().verifySsl(true);
+        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
+        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+        ctx.init(null, new TrustManager[]{
+                new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                        Arrays.stream(chain)
+                            .forEach(cert -> {
+                                try {
+                                    cert.checkValidity(Date.from(ZonedDateTime.now().plusYears(1).toInstant()));
+                                    checkCounter.incrementAndGet();
+                                } catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+                    }
+
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }
+            }, new SecureRandom());
+        unirestInstance.config().sslContext(ctx);
+        unirestInstance
+            .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+
+        assertThat(checkCounter)
+            .hasValueGreaterThanOrEqualTo(1);
     }
 }

@@ -22,7 +22,6 @@ import static j2html.TagCreator.b;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.p;
 import static j2html.TagCreator.span;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.key.RbelKey;
@@ -31,13 +30,8 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import j2html.tags.DomContent;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -75,6 +69,10 @@ public class RbelVauEpaFacet implements RbelFacet {
                                     Optional.ofNullable(element.getFacetOrFail(RbelVauEpaFacet.class).getSequenceNumber())
                                         .map(v -> p(b("Sequence Number: ")).withText(v.seekValue().get().toString()))
                                         .map(DomContent.class::cast)
+                                        .orElse(span()),
+                                    Optional.ofNullable(element.getFacetOrFail(RbelVauEpaFacet.class).getPHeaderInformation())
+                                        .map(v -> p(b("P Header (raw): ")).withText(v.seekValue().get().toString()))
+                                        .map(DomContent.class::cast)
                                         .orElse(span())
                                 ),
                                 childBoxNotifTitle(CLS_BODY).with(t2("Body"))
@@ -108,6 +106,8 @@ public class RbelVauEpaFacet implements RbelFacet {
     private final RbelElement additionalHeaders;
     private final RbelElement pVersionNumber;
     private final RbelElement keyIdUsed;
+    private final RbelElement pHeaderInformation;
+    private final RbelElement decryptedHeader;
     @Builder.Default
     private final Optional<RbelKey> keyUsed = Optional.empty();
 
@@ -119,6 +119,8 @@ public class RbelVauEpaFacet implements RbelFacet {
             .withSkipIfNull("additionalHeaders", additionalHeaders)
             .withSkipIfNull("sequenceNumber", sequenceNumber)
             .withSkipIfNull("pVersionNumber", pVersionNumber)
-            .withSkipIfNull("keyId", keyIdUsed);
+            .withSkipIfNull("pHeaderInformation", pHeaderInformation)
+            .withSkipIfNull("keyId", keyIdUsed)
+            .withSkipIfNull("decryptedHeader", decryptedHeader);
     }
 }

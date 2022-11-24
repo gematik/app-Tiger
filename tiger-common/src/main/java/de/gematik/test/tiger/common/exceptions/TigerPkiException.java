@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-package de.gematik.rbellogger.modifier;
+package de.gematik.test.tiger.common.exceptions;
 
-import lombok.*;
+public class TigerPkiException extends RuntimeException {
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class RbelModificationDescription {
+    public TigerPkiException(String s) {
+        super(s);
+    }
 
-    @With
-    private String name;
-    @With
-    private String condition;
-    @With
-    private String targetElement;
-    @With
-    private String replaceWith;
-    @With
-    private String regexFilter;
-    @With
-    private Integer deleteAfterNExecutions;
+    public TigerPkiException(String s, Exception e) {
+        super(s, e);
+    }
+
+    public TigerPkiException(final String pattern, Object... args) {
+        super(String.format(pattern, args));
+    }
+
+    public TigerPkiException(final Throwable t, final String pattern, Object... args) {
+        super(String.format(pattern, args), t);
+    }
 }

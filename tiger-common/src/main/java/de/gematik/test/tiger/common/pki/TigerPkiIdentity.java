@@ -16,23 +16,32 @@
 
 package de.gematik.test.tiger.common.pki;
 
-import de.gematik.rbellogger.util.RbelPkiIdentity;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class TigerPkiIdentity extends RbelPkiIdentity {
+@Builder
+@AllArgsConstructor
+public class TigerPkiIdentity {
+
+    private X509Certificate certificate;
+    private PrivateKey privateKey;
+    private Optional<String> keyId;
 
     private final List<X509Certificate> certificateChain = new ArrayList<>();
 
     public TigerPkiIdentity(X509Certificate certificate, PrivateKey privateKey) {
-        super(certificate, privateKey, Optional.empty());
+        this.certificate = certificate;
+        this.privateKey = privateKey;
+        this.keyId = Optional.empty();
     }
 
     public TigerPkiIdentity(String fileLoadingInformation) {

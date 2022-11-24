@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -40,7 +41,7 @@ public class StaticTigerKeyAndCertificateFactory extends BCKeyAndCertificateFact
     public StaticTigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
         TigerProxyConfiguration tigerProxyConfiguration,
         TigerPkiIdentity eeIdentity) {
-        super(tigerProxyConfiguration.convertToMockServerConfiguration(), mockServerLogger);
+        super(ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration), mockServerLogger);
         this.identity = eeIdentity;
     }
 

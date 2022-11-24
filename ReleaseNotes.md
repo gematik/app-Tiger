@@ -1,6 +1,34 @@
 # Changelog Tiger Testplattform
 
 -------
+# Release 1.1.0
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Features
+
+* TGR-741: tiger-commons now has minimal dependencies (no more mock server et al.)
+* TGR-697: TigerProxy dynamically creates CA certificate, EE-certs now have 13 month validity
+* TGR-704: TigerProxy WebUI now displays complete P-Header for EPA-VAU-messages
+* TGR-584: removing obsolete dependencies from all tiger modules
+* TGR-412: ObjectMapper of TigerGlobalConfiguration can now be accessed (and customized)
+* TGR-634: WebUi: Remove all filters with port > 32768 for better clarity
+
+## Bugfixes
+
+* TGR-742: Fixed NPE for some ForwardProxy routes
+* TGR-750: Fixed rare race condition when multiple TestEnvMgrs where created with faulty configuration in a single JVM
+
+## Breaking changes
+
+* if you update to 1.1.0 and your tests aren't executed anymore please add the 'junit-vintage-engine'-dependency to your project
+
+-------
 # Release 1.0.0
 
 * Serenity BDD 3.3.10

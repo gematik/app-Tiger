@@ -17,23 +17,20 @@
 package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.elements.RbelJwtSignature;
 import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.modifier.RbelJwtWriter.InvalidJwtSignatureException;
 import de.gematik.rbellogger.modifier.RbelJwtWriter.JwtUpdateException;
+import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.PublicKey;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
