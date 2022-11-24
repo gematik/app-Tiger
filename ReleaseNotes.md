@@ -22,6 +22,7 @@
 ## Bugfixes
 
 * TGR-742: Fixed NPE for some ForwardProxy routes
+* TGR-750: Fixed rare race condition when multiple TestEnvMgrs where created with faulty configuration in a single JVM
 
 ## Breaking changes
 

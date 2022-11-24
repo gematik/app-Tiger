@@ -61,7 +61,8 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 @Slf4j
 @Getter
-public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener, DisposableBean {
+public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener, DisposableBean,
+    AutoCloseable {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
@@ -89,29 +90,31 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
 
     public TigerTestEnvMgr() {
-        Configuration configuration = readConfiguration();
+        this.configuration = readConfiguration();
+        this.environmentVariables = new HashMap<>();
 
         lookupServerPluginsInClasspath();
 
         localTigerProxy = startLocalTigerProxy(configuration);
+        try {
+            if (configuration.isLocalProxyActive()) {
+                log.info(Ansi.colorize("Local Tiger Proxy URL http://localhost:{}",
+                    RbelAnsiColors.BLUE_BOLD), localTigerProxy.getProxyPort());
+                log.info(Ansi.colorize("Local Tiger Proxy UI http://localhost:{}/webui",
+                    RbelAnsiColors.BLUE_BOLD), localTigerProxyApplicationContext.getWebServer().getPort());
+                environmentVariables.put("PROXYHOST", "host.docker.internal");
+                environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
+            } else {
+                log.info("Local Tiger Proxy deactivated");
+            }
 
-        if (configuration.isLocalProxyActive()) {
-            log.info(Ansi.colorize("Local Tiger Proxy URL http://localhost:{}",
-                RbelAnsiColors.BLUE_BOLD), localTigerProxy.getProxyPort());
-            log.info(Ansi.colorize("Local Tiger Proxy UI http://localhost:{}/webui",
-                RbelAnsiColors.BLUE_BOLD), localTigerProxyApplicationContext.getWebServer().getPort());
-            environmentVariables = new HashMap<>(
-                Map.of("PROXYHOST", "host.docker.internal",
-                    "PROXYPORT", localTigerProxy.getProxyPort()));
-        } else {
-            log.info("Local Tiger Proxy deactivated");
-            environmentVariables = new HashMap<>();
+            createServerObjects();
+
+            log.info("Tiger Testenv mgr created OK");
+        } catch (RuntimeException e) {
+            shutDown();
+            throw e;
         }
-        this.configuration = configuration;
-
-        createServerObjects();
-
-        log.info("Tiger Testenv mgr created OK");
     }
 
     private void lookupServerPluginsInClasspath() {
@@ -148,7 +151,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         Map<String, Object> properties = new HashMap<>(TigerSerializationUtil.toMap(proxyConfig, "tigerProxy"));
         if (configuration.getTigerProxy().getAdminPort() == 0) {
             int port = TigerGlobalConfiguration.readIntegerOptional("tiger.internal.localproxy.admin.port")
-                .orElseThrow(() -> new TigerEnvironmentStartupException("No free port reserved for local Tiger Proxy admin"));
+                .orElseThrow(
+                    () -> new TigerEnvironmentStartupException("No free port reserved for local Tiger Proxy admin"));
             properties.put("server.port", Integer.toString(port));
         } else {
             properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
@@ -175,8 +179,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public static void waitForConsoleInput(String textToEnter) {
         Console c = System.console();
-        String message = "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.",
-            RbelAnsiColors.RED_BOLD.toString());
+        String message =
+            "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.",
+                RbelAnsiColors.RED_BOLD.toString());
         if (c != null) {
             readCommandFromInput(textToEnter, message, v -> c.readLine());
         } else {
@@ -252,8 +257,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         if (visitedServer.contains(currentPosition)) {
             throw new TigerEnvironmentStartupException(
                 "Cyclic graph detected in startup sequence: %s", visitedServer.stream()
-                    .map(AbstractTigerServer::getServerId)
-                    .collect(Collectors.toList()));
+                .map(AbstractTigerServer::getServerId)
+                .collect(Collectors.toList()));
         }
         if (currentPosition.getDependUponList().isEmpty()) {
             return;
@@ -282,12 +287,14 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         try {
             String serverType = config.getType().value();
             if (!serverClasses.containsKey(serverType)) {
-                throw new TigerTestEnvException("No server class registered for type " + serverType + " used in server " + serverId);
+                throw new TigerTestEnvException(
+                    "No server class registered for type " + serverType + " used in server " + serverId);
             }
             return serverClasses.get(serverType)
                 .getDeclaredConstructor(TigerTestEnvMgr.class, String.class, CfgServer.class)
                 .newInstance(this, serverId, config);
-        } catch (RuntimeException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        } catch (RuntimeException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
             if (e.getCause() != null) {
                 if (e.getCause() instanceof TigerConfigurationException) {
                     throw (TigerConfigurationException) e.getCause();
@@ -295,7 +302,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                     throw (TigerTestEnvException) e.getCause();
                 }
             }
-            throw new TigerTestEnvException(e, "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr, String, CfgServer)?", config.getType().value());
+            throw new TigerTestEnvException(e,
+                "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr, String, CfgServer)?",
+                config.getType().value());
         }
     }
 
@@ -352,13 +361,23 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     }
 
     @Override
-    public void shutDown() {
+    public synchronized void shutDown() {
         log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
-        servers.values().forEach(AbstractTigerServer::shutdown);
+        for (AbstractTigerServer server : servers.values()) {
+            try {
+                server.shutdown();
+            } catch (RuntimeException e) {
+                log.warn("Exception while shutting down server " + server.getServerId(), e);
+            }
+        }
 
         log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));
-        localTigerProxy.shutdown();
-        localTigerProxyApplicationContext.close();
+        if (localTigerProxy != null) {
+            localTigerProxy.shutdown();
+        }
+        if (localTigerProxyApplicationContext != null) {
+            localTigerProxyApplicationContext.close();
+        }
 
         log.info(Ansi.colorize("Finished shutdown test environment OK", RbelAnsiColors.RED_BOLD));
     }
@@ -448,6 +467,11 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     @Override
     public void destroy() throws Exception {
+        shutDown();
+    }
+
+    @Override
+    public void close() throws Exception {
         shutDown();
     }
 }
