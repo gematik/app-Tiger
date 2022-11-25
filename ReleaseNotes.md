@@ -1,6 +1,20 @@
 # Changelog Tiger Testplattform
 
 -------
+# Release 1.1.1
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Breaking changes
+
+* TGR-745: VAU traffic is no longer decrypted by default. Please set the appropriate flags to do so (activateErpVauAnalysis and activateEpaVauAnalysis)
+
+-------
 # Release 1.1.0
 
 * Serenity BDD 3.3.10

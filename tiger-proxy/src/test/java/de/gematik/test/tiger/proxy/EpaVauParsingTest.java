@@ -26,7 +26,7 @@ class EpaVauParsingTest {
                 .sourceFile("src/test/resources/vauEpa2Flow.tgr")
                 .build())
             .keyFolders(List.of("src/test/resources"))
-            .activateVauAnalysis(true)
+            .activateEpaVauAnalysis(true)
             .build())) {
 
             await()
@@ -77,7 +77,7 @@ class EpaVauParsingTest {
             .fileSaveInfo(TigerFileSaveInfo.builder()
                 .sourceFile("src/test/resources/rise-vau-log.tgr")
                 .build())
-            .activateVauAnalysis(true)
+            .activateEpaVauAnalysis(true)
             .build())) {
 
             await()

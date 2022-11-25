@@ -96,7 +96,7 @@ public abstract class AbstractTigerProxyTest {
 
     public void awaitMessagesInTiger(int numberOfMessagesExpected) {
         await()
-            .until(() -> tigerProxy.getRbelMessages().size() >= numberOfMessagesExpected);
+            .until(() -> tigerProxy.getRbelLogger().getMessageHistory().size() >= numberOfMessagesExpected);
     }
 
 

@@ -29,7 +29,7 @@ class JweConverterTest {
                 .build()));
         rbelConverter.getRbelCapturer().initialize();
 
-        final RbelElement postChallengeResponse = rbelConverter.getMessageHistory().stream()
+        final RbelElement postChallengeResponse = rbelConverter.getMessageList().stream()
             .filter(e -> e.hasFacet(RbelHttpRequestFacet.class))
             .filter(request -> request.getFacet(RbelHttpRequestFacet.class).get()
                 .getPath().getRawStringContent().contains("/sign_response")

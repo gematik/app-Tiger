@@ -5,7 +5,6 @@
 package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -31,6 +30,7 @@ class RbelMtomConverterTest {
             rbelLogger = RbelLogger.build(new RbelConfiguration()
                 .setActivateAsn1Parsing(false)
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .addAdditionalConverter(new RbelVauEpaConverter())
                 .addCapturer(rbelFileReaderCapturer));
             rbelFileReaderCapturer.initialize();
         }

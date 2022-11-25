@@ -31,6 +31,8 @@ public class RbelConfiguration {
     @Builder.Default
     private List<RbelConverterPlugin> postConversionListener = new ArrayList<>();
     @Builder.Default
+    private List<RbelConverterPlugin> additionalConverters = new ArrayList<>();
+    @Builder.Default
     private Map<Class<? extends RbelElement>, List<BiFunction<RbelElement, RbelConverter, RbelElement>>> preConversionMappers
         = new HashMap<>();
     @Builder.Default
@@ -82,6 +84,11 @@ public class RbelConfiguration {
 
     public RbelConfiguration setActivateAsn1Parsing(boolean activateAsn1Parsing) {
         this.activateAsn1Parsing = activateAsn1Parsing;
+        return this;
+    }
+
+    public RbelConfiguration addAdditionalConverter(RbelConverterPlugin converter) {
+        additionalConverters.add(converter);
         return this;
     }
 

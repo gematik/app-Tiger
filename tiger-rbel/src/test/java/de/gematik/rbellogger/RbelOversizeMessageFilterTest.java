@@ -20,7 +20,6 @@ class RbelOversizeMessageFilterTest {
 
     private static RbelLogger rbelLogger;
 
-
     @BeforeAll
     static void initializeRbelLogger() throws IOException {
         final String oversizedRequest = readCurlFromFileWithCorrectedLineBreaks
@@ -33,13 +32,13 @@ class RbelOversizeMessageFilterTest {
 
     @Test
     void oversizedMessageShouldNotBeParsed() {
-        assertThat(rbelLogger.getMessageHistory().getFirst().getFirst("body").get().getFacets())
+        assertThat(rbelLogger.getMessageList().get(0).getFirst("body").get().getFacets())
             .isEmpty();
     }
 
     @Test
     void oversizedMessageShouldNotBeRendered() throws Exception {
-        final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+        final String html = RbelHtmlRenderer.render(rbelLogger.getMessageList());
 
         FileUtils.writeStringToFile(new File("target/large.html"), html, StandardCharsets.UTF_8);
 

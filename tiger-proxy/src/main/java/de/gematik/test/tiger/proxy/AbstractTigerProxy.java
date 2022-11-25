@@ -7,6 +7,8 @@ package de.gematik.test.tiger.proxy;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
+import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
@@ -25,7 +27,6 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -34,10 +35,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -108,17 +105,16 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
                 rbelFileWriter.postConversionListener.add((el, conv, json) -> {
                     if (json.has(PAIRED_MESSAGE_UUID)) {
                         final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
-                        for (var it = conv.getMessageHistory().descendingIterator(); it.hasNext(); ) {
-                            final RbelElement element = it.next();
-                            if (element.getUuid().equals(partnerUuid)) {
-                                final TracingMessagePairFacet pairFacet = TracingMessagePairFacet.builder()
-                                    .response(el)
-                                    .request(element)
-                                    .build();
-                                el.addFacet(pairFacet);
-                                element.addFacet(pairFacet);
-                                break;
-                            }
+                        final Optional<RbelElement> partner = conv.messagesStreamLatestFirst()
+                            .filter(element -> element.getUuid().equals(partnerUuid))
+                            .findFirst();
+                        if (partner.isPresent()) {
+                            final TracingMessagePairFacet pairFacet = TracingMessagePairFacet.builder()
+                                .response(el)
+                                .request(partner.get())
+                                .build();
+                            el.addFacet(pairFacet);
+                            partner.get().addFacet(pairFacet);
                         }
                     }
                 });
@@ -154,8 +150,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
             configuration.getKeyFolders()
                 .forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
         }
-        if (configuration.isActivateVauAnalysis()) {
+        if (configuration.isActivateEpaVauAnalysis()) {
             rbelConfiguration.addPostConversionListener(new RbelVauSessionListener());
+            rbelConfiguration.addAdditionalConverter(new RbelVauEpaConverter());
+        }
+        if (configuration.isActivateErpVauAnalysis()) {
+            rbelConfiguration.addAdditionalConverter(new RbelErpVauDecrpytionConverter());
         }
         initializeFileSaver(configuration);
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
@@ -191,13 +191,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         }
     }
 
-    @Override
-    public Deque<RbelElement> getRbelMessages() {
-        return rbelLogger.getMessageHistory();
-    }
 
     public List<RbelElement> getRbelMessagesList() {
-        return new ArrayList<>(rbelLogger.getMessageHistory());
+        return rbelLogger.getMessageList();
     }
 
     @Override
@@ -249,5 +245,13 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         return name
             .map(s -> s + ": ")
             .orElse("");
+    }
+
+    public void clearAllMessages() {
+        getRbelLogger().getRbelConverter().clearAllMessages();
+    }
+
+    public List<RbelElement> getRbelMessages() {
+        return getRbelLogger().getRbelConverter().getMessageList();
     }
 }

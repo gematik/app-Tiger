@@ -201,7 +201,7 @@ class TracingResilienceTest {
             .map(TigerProxyServer.class::cast)
             .map(TigerProxyServer::getTigerProxy)
             .get()
-            .getRbelMessages();
+            .getRbelLogger().getMessageHistory();
     }
 
     private void bootTigerProxy(int aggregatingAdminPort) {

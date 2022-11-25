@@ -189,7 +189,7 @@ public class TigerWebUiControllerTest {
 
             assertThat(tigerProxy.getRbelMessages()).hasSize(2);
         } finally {
-            tigerProxy.getRbelMessages().clear();
+            tigerProxy.clearAllMessages();
         }
     }
 
@@ -213,7 +213,7 @@ public class TigerWebUiControllerTest {
 
     @Test
     void largeMessage_shouldNotBeRenderedCompletelyButStillAppear() {
-        tigerProxy.getRbelMessages().clear();
+        tigerProxy.clearAllMessages();
 
         val proxyRest = Unirest.spawnInstance();
         proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());

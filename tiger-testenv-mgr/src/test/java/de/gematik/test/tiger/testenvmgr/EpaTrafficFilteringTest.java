@@ -23,7 +23,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
     @Test
     @TigerTest(tigerYaml = "tigerProxy:\n"
         + "  skipTrafficEndpointsSubscription: true\n"
-        + "  activateVauAnalysis: true\n"
+        + "  activateEpaVauAnalysis: true\n"
         + "  trafficEndpointFilterString: \"$.body.recordId == 'X114428539'\"\n"
         + "  keyFolders:\n"
         + "    - '../tiger-proxy/src/test/resources'\n"
@@ -48,7 +48,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
 
         await()
             .atMost(5, TimeUnit.SECONDS)
-            .until(() -> envMgr.getLocalTigerProxy().getRbelMessages().getFirst().findElement("$.body.recordId")
+            .until(() -> envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().getFirst().findElement("$.body.recordId")
                 .get()
                 .getFacetOrFail(RbelValueFacet.class)
                 .getValue().equals("X114428539"));

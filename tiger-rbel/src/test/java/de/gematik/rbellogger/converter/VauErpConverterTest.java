@@ -31,6 +31,7 @@ public class VauErpConverterTest {
             .rbelFile("src/test/resources/rezepsFiltered.tgr")
             .build();
         rbelLogger = RbelLogger.build(new RbelConfiguration()
+            .addAdditionalConverter(new RbelErpVauDecrpytionConverter())
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
             .addCapturer(fileReaderCapturer)
         );
@@ -58,6 +59,7 @@ public class VauErpConverterTest {
     void fixedSecretKeyOnly() throws Exception {
         byte[] decodedKey = Base64.getDecoder().decode("krTNhsSUEfXvy6BZFp5G4g==");
         RbelLogger rbelLogger = RbelLogger.build();
+        rbelLogger.getRbelConverter().addConverter(new RbelErpVauDecrpytionConverter());
         final RbelFileReaderCapturer fileReaderCapturer = new RbelFileReaderCapturer(rbelLogger.getRbelConverter(),
             "src/test/resources/rezeps_traffic_krTNhsSUEfXvy6BZFp5G4g==.tgr");
         rbelLogger.getRbelKeyManager().addKey("VAU Secret Key krTNhsSUEfXvy6BZFp5G4g",

@@ -4,14 +4,9 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.CLS_BODY;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTitle;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.childBoxNotifTitle;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.t2;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static j2html.TagCreator.div;
 import static org.assertj.core.api.Assertions.assertThat;
-
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -70,6 +65,7 @@ public class VauEpaConverterTest {
                     rbelElement.addFacet(new TestFacet());
                 }
             })
+            .addAdditionalConverter(new RbelVauEpaConverter())
             .addCapturer(RbelFileReaderCapturer.builder()
                 .rbelFile("src/test/resources/vauFlow.tgr")
                 .build())
@@ -119,6 +115,7 @@ public class VauEpaConverterTest {
         final RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false)
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+            .addAdditionalConverter(new RbelVauEpaConverter())
             .addCapturer(RbelFileReaderCapturer.builder()
                 .rbelFile("src/test/resources/trafficLog.tgr")
                 .build()));
@@ -139,6 +136,7 @@ public class VauEpaConverterTest {
         final RbelLogger epa2Logger = RbelLogger.build(new RbelConfiguration()
             .setActivateAsn1Parsing(false)
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+            .addAdditionalConverter(new RbelVauEpaConverter())
             .addCapturer(RbelFileReaderCapturer.builder()
                 .rbelFile("src/test/resources/mtomVauTraffic.tgr")
                 .build()));

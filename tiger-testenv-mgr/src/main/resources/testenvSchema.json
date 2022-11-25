@@ -439,7 +439,11 @@
                 "type":"boolean",
                 "description":""
               },
-              "activateVauAnalysis":{
+              "activateEpaVauAnalysis":{
+                "type":"boolean",
+                "description":""
+              },
+              "activateErpVauAnalysis":{
                 "type":"boolean",
                 "description":""
               },
@@ -581,7 +585,10 @@
         "activateRbelParsing":{
           "type":"boolean"
         },
-        "activateVauAnalysis":{
+        "activateEpaVauAnalysis":{
+          "type":"boolean"
+        },
+        "activateErpVauAnalysis":{
           "type":"boolean"
         },
         "connectionTimeoutInSeconds":{

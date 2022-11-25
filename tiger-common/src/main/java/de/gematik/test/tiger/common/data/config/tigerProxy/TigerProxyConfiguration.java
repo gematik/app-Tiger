@@ -60,7 +60,9 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private boolean activateRbelParsing = true;
     @Builder.Default
-    private boolean activateVauAnalysis = false;
+    private boolean activateEpaVauAnalysis = false;
+    @Builder.Default
+    private boolean activateErpVauAnalysis = false;
     @Builder.Default
     private boolean parsingShouldBlockCommunication = false;
     @Builder.Default

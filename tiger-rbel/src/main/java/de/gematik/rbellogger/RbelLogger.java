@@ -16,7 +16,6 @@ import de.gematik.rbellogger.converter.listener.RbelX5cKeyReader;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.modifier.RbelModifier;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
@@ -51,6 +50,8 @@ public class RbelLogger {
             .skipParsingWhenMessageLargerThanKb(configuration.getSkipParsingWhenMessageLargerThanKb())
             .build();
 
+        configuration.getAdditionalConverters()
+            .forEach(rbelConverter::addConverter);
         rbelConverter.registerListener(new RbelX5cKeyReader());
         rbelConverter.registerListener(new RbelJwkReader());
         rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
@@ -87,15 +88,19 @@ public class RbelLogger {
             .build();
     }
 
-    public Deque<RbelElement> getMessageHistory() {
-        return rbelConverter.getMessageHistory();
-    }
-
     public void addBundleCriterion(RbelBundleCriterion rbelBundleCriterion) {
         rbelConverter.getBundleCriterionList().add(rbelBundleCriterion);
     }
 
     public List<RbelElement> getMessageList() {
-        return new ArrayList<>(getMessageHistory());
+        return getRbelConverter().getMessageList();
+    }
+
+    public Deque<RbelElement> getMessageHistory() {
+        return rbelConverter.getMessageHistory();
+    }
+
+    public void clearAllMessages() {
+        rbelConverter.clearAllMessages();
     }
 }

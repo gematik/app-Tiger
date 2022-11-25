@@ -8,14 +8,18 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.test.tiger.common.util.ImmutableDequeFacade;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -30,7 +34,9 @@ public class RbelConverter {
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
     private boolean manageBuffer = false;
+    private long currentBufferSize = 0;
     private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
+    private final Set<String> knownMessageUuids = ConcurrentHashMap.newKeySet();
     private final List<RbelBundleCriterion> bundleCriterionList = new ArrayList<>();
     private final RbelKeyManager rbelKeyManager;
     private final RbelValueShader rbelValueShader = new RbelValueShader();
@@ -45,7 +51,6 @@ public class RbelConverter {
         new RbelJwtConverter(),
         new RbelHttpFormDataConverter(),
         new RbelJweConverter(),
-        new RbelErpVauDecrpytionConverter(),
         new RbelBearerTokenConverter(),
         new RbelXmlConverter(),
         new RbelJsonConverter(),
@@ -53,8 +58,7 @@ public class RbelConverter {
         new RbelMtomConverter(),
         new RbelX509Converter(),
         new RbelSicctEnvelopeConverter(),
-        new RbelSicctCommandConverter(),
-        new RbelVauEpaConverter()
+        new RbelSicctCommandConverter()
     ));
     @Builder.Default
     private long messageSequenceNumber = 0;
@@ -88,7 +92,7 @@ public class RbelConverter {
             && (convertedInput.getRawContent().length > skipParsingWhenMessageLargerThanKb * 1024);
         for (RbelConverterPlugin plugin : converterPlugins) {
             if (!plugin.ignoreOversize() && elementIsOversized) {
-             continue;
+                continue;
             }
             try {
                 plugin.consumeElement(convertedInput, this);
@@ -97,9 +101,11 @@ public class RbelConverter {
                     + "' (" + e.getMessage() + ")";
                 log.info(msg, e);
                 if (log.isDebugEnabled()) {
-                    log.debug("Content in failed conversion-attempt was (B64-encoded) {}", Base64.getEncoder().encodeToString(rawInput.getRawContent()));
+                    log.debug("Content in failed conversion-attempt was (B64-encoded) {}",
+                        Base64.getEncoder().encodeToString(rawInput.getRawContent()));
                     if (rawInput.getParentNode() != null) {
-                        log.debug("Parent-Content in failed conversion-attempt was (B64-encoded) {}", Base64.getEncoder().encodeToString(rawInput.getParentNode().getRawContent()));
+                        log.debug("Parent-Content in failed conversion-attempt was (B64-encoded) {}",
+                            Base64.getEncoder().encodeToString(rawInput.getParentNode().getRawContent()));
                     }
                 }
                 rawInput.addFacet(new RbelNoteFacet(msg, RbelNoteFacet.NoteStyling.ERROR));
@@ -144,7 +150,7 @@ public class RbelConverter {
     }
 
     public void registerMapper(Class<? extends RbelElement> clazz,
-                               BiFunction<RbelElement, RbelConverter, RbelElement> mapper) {
+        BiFunction<RbelElement, RbelConverter, RbelElement> mapper) {
         preConversionMappers
             .computeIfAbsent(clazz, key -> new ArrayList<>())
             .add(mapper);
@@ -154,17 +160,20 @@ public class RbelConverter {
         converterPlugins.add(converter);
     }
 
-    public RbelElement parseMessage(@NonNull byte[] content, RbelHostname sender, RbelHostname receiver, Optional<ZonedDateTime> transmissionTime) {
+    public RbelElement parseMessage(@NonNull byte[] content, RbelHostname sender, RbelHostname receiver,
+        Optional<ZonedDateTime> transmissionTime) {
         final RbelElement rbelMessage = convertElement(content, null);
         return doMessagePostConversion(rbelMessage, sender, receiver, transmissionTime);
     }
 
-    public RbelElement parseMessage(@NonNull final RbelElement rbelElement, RbelHostname sender, RbelHostname receiver, Optional<ZonedDateTime> transmissionTime) {
+    public RbelElement parseMessage(@NonNull final RbelElement rbelElement, RbelHostname sender, RbelHostname receiver,
+        Optional<ZonedDateTime> transmissionTime) {
         final RbelElement rbelMessage = convertElement(rbelElement);
         return doMessagePostConversion(rbelMessage, sender, receiver, transmissionTime);
     }
 
-    public RbelElement doMessagePostConversion(@NonNull final RbelElement rbelElement, RbelHostname sender, RbelHostname receiver, Optional<ZonedDateTime> transmissionTime) {
+    public RbelElement doMessagePostConversion(@NonNull final RbelElement rbelElement, RbelHostname sender,
+        RbelHostname receiver, Optional<ZonedDateTime> transmissionTime) {
         if (rbelElement.getFacet(RbelHttpResponseFacet.class)
             .map(resp -> resp.getRequest() == null)
             .orElse(false)) {
@@ -188,10 +197,13 @@ public class RbelConverter {
             .sequenceNumber(messageSequenceNumber++)
             .build());
 
-        transmissionTime.ifPresent(tt -> rbelElement.addFacet(RbelMessageTimingFacet.builder().transmissionTime(tt).build()));
+        transmissionTime.ifPresent(
+            tt -> rbelElement.addFacet(RbelMessageTimingFacet.builder().transmissionTime(tt).build()));
 
         rbelElement.triggerPostConversionListener(this);
         synchronized (messageHistory) {
+            currentBufferSize += rbelElement.getSize();
+            knownMessageUuids.add(rbelElement.getUuid());
             messageHistory.add(rbelElement);
         }
         manageRbelBufferSize();
@@ -211,18 +223,22 @@ public class RbelConverter {
         if (manageBuffer) {
             synchronized (messageHistory) {
                 if (getRbelBufferSizeInMb() <= 0 && !getMessageHistory().isEmpty()) {
-                    getMessageHistory().clear();
+                    currentBufferSize = 0;
+                    messageHistory.clear();
+                    knownMessageUuids.clear();
                 }
-                if (getRbelBufferSizeInMb() > 0 ) {
-                    long size = getMessageHistorySize();
-                    long exceedingLimit = getExceedingLimit(size);
+                if (getRbelBufferSizeInMb() > 0) {
+                    long exceedingLimit = getExceedingLimit(currentBufferSize);
                     if (exceedingLimit > 0) {
                         log.trace("Buffer is currently at {} Mb which exceeds the limit of {} Mb",
-                            size / (1024 ^ 2), getRbelBufferSizeInMb());
+                            currentBufferSize / (1024 ^ 2), getRbelBufferSizeInMb());
                     }
                     while (exceedingLimit > 0 && !getMessageHistory().isEmpty()) {
                         log.trace("Exceeded buffer size, dropping oldest message in history");
-                        exceedingLimit -= getMessageHistory().getFirst().getSize();
+                        final RbelElement messageToDrop = getMessageHistory().getFirst();
+                        exceedingLimit -= messageToDrop.getSize();
+                        currentBufferSize -= messageToDrop.getSize();
+                        knownMessageUuids.remove(messageToDrop.getUuid());
                         getMessageHistory().remove(0);
                     }
                 }
@@ -230,13 +246,46 @@ public class RbelConverter {
         }
     }
 
-    private long getMessageHistorySize() {
-        return getMessageHistory().stream()
-            .mapToLong(RbelElement::getSize)
-            .sum();
+    private long getExceedingLimit(long messageHistorySize) {
+        return messageHistorySize - ((long) getRbelBufferSizeInMb() * 1024 * 1024);
     }
 
-    private long getExceedingLimit(long messageHistorySize) {
-        return messageHistorySize-((long) getRbelBufferSizeInMb() * 1024 * 1024);
+    public boolean isMessageUuidAlreadyKnown(String msgUuid) {
+        return knownMessageUuids.contains(msgUuid);
+    }
+
+    public Stream<RbelElement> messagesStreamLatestFirst() {
+        return StreamSupport.stream(
+            Spliterators.spliteratorUnknownSize(messageHistory.descendingIterator(), Spliterator.ORDERED),
+            false);
+    }
+
+    public List<RbelElement> getMessageList() {
+        return new ArrayList<>(getMessageHistory());
+    }
+
+    public ImmutableDequeFacade<RbelElement> getMessageHistory() {
+        return new ImmutableDequeFacade<>(messageHistory);
+    }
+
+    public void clearAllMessages() {
+        synchronized (messageHistory) {
+            currentBufferSize = 0;
+            messageHistory.clear();
+            knownMessageUuids.clear();
+        }
+    }
+
+    public void removeMessage(RbelElement rbelMessage) {
+        synchronized (messageHistory) {
+            final Iterator<RbelElement> iterator = messageHistory.descendingIterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().equals(rbelMessage)) {
+                    iterator.remove();
+                    currentBufferSize -= rbelMessage.getSize();
+                    knownMessageUuids.remove(rbelMessage.getUuid());
+                }
+            }
+        }
     }
 }

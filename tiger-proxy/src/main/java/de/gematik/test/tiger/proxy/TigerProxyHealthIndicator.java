@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.rbellogger.data.RbelElement;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -17,11 +16,9 @@ public class TigerProxyHealthIndicator implements HealthIndicator {
 
     @Override
     public Health health() {
-
-        long bufferSize = tigerProxy.getRbelLogger().getMessageHistory().stream()
-            .map(RbelElement::getRawContent).mapToLong((rawContent) -> (long) rawContent.length).sum();
+        long bufferSize = tigerProxy.getRbelLogger().getRbelConverter().getCurrentBufferSize();
         return Health.up()
-            .withDetail("rbelMessages", tigerProxy.getRbelMessages().size())
+            .withDetail("rbelMessages", tigerProxy.getRbelLogger().getMessageHistory().size())
             .withDetail("rbelMessageBuffer", bufferSize)
             .build();
     }

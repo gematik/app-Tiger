@@ -4,20 +4,14 @@
 
 package de.gematik.rbellogger.converter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelVauErpFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.util.encoders.DecoderException;
-import org.bouncycastle.util.encoders.Hex;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -27,23 +21,54 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.Hex;
 
 @Slf4j
 public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
 
     @Override
     public void consumeElement(RbelElement element, RbelConverter context) {
-        log.trace("Trying to decipher '{}'...", element.getRawStringContent());
         decipherVauMessage(element, context)
             .ifPresent(vauMsg -> {
                 element.addFacet(vauMsg);
                 element.addFacet(new RbelRootFacet<>(vauMsg));
             });
+    }
+
+    private Optional<RbelVauErpFacet> decipherVauMessage(RbelElement element, RbelConverter converter) {
+        return converter.getRbelKeyManager().getAllKeys()
+            .filter(key -> key.getKey() instanceof ECPrivateKey
+                || key.getKey() instanceof SecretKey)
+            .map(key -> tryToDecipherWithKey(element, converter, key))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .findFirst();
+    }
+
+    private Optional<RbelVauErpFacet> tryToDecipherWithKey(RbelElement element, RbelConverter converter,
+        RbelKey rbelKey) {
+        final Optional<byte[]> decryptedBytes = decrypt(element.getRawContent(), rbelKey.getKey());
+        if (decryptedBytes.isPresent()) {
+            try {
+                log.trace("Succesfully deciphered VAU message! ({})", new String(decryptedBytes.get(), UTF_8));
+                if (isVauResponse(decryptedBytes)) {
+                    return buildVauMessageFromCleartextResponse(converter, decryptedBytes.get(),
+                        element.getRawContent(), rbelKey, element);
+                } else {
+                    return buildVauMessageFromCleartextRequest(converter, decryptedBytes.get(),
+                        element.getRawContent(), rbelKey, element);
+                }
+            } catch (RuntimeException e) {
+                log.error("Exception while deciphering VAU message:", e);
+                throw e;
+            }
+        }
+        return Optional.empty();
     }
 
     private Optional<byte[]> decrypt(byte[] encMessage, ECPrivateKey secretKey) {
@@ -75,32 +100,6 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
             new BigInteger(1, Arrays.copyOfRange(encMessage, 1 + 32, 1 + 32 + 32)));
         final ECPublicKeySpec keySpec = new ECPublicKeySpec(ecPoint, BrainpoolCurves.BP256);
         return (ECPublicKey) KeyFactory.getInstance("EC").generatePublic(keySpec);
-    }
-
-    private Optional<RbelVauErpFacet> decipherVauMessage(RbelElement element, RbelConverter converter) {
-        final List<RbelKey> potentialVauKeys = converter.getRbelKeyManager().getAllKeys()
-            .filter(key -> key.getKey() instanceof ECPrivateKey
-                || key.getKey() instanceof SecretKey)
-            .collect(Collectors.toList());
-        for (RbelKey rbelKey : potentialVauKeys) {
-            final Optional<byte[]> decryptedBytes = decrypt(element.getRawContent(), rbelKey.getKey());
-            if (decryptedBytes.isPresent()) {
-                try {
-                    log.trace("Succesfully deciphered VAU message! ({})", new String(decryptedBytes.get(), UTF_8));
-                    if (isVauResponse(decryptedBytes)) {
-                        return buildVauMessageFromCleartextResponse(converter, decryptedBytes.get(),
-                            element.getRawContent(), rbelKey, element);
-                    } else {
-                        return buildVauMessageFromCleartextRequest(converter, decryptedBytes.get(),
-                            element.getRawContent(), rbelKey, element);
-                    }
-                } catch (RuntimeException e) {
-                    log.error("Exception while deciphering VAU message:", e);
-                    throw e;
-                }
-            }
-        }
-        return Optional.empty();
     }
 
     private boolean isVauResponse(Optional<byte[]> decryptedBytes) {

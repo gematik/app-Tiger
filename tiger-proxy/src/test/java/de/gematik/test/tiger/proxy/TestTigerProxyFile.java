@@ -52,7 +52,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
             .build())) {
             await().atMost(2, TimeUnit.SECONDS)
                     .until(() -> otherProxy.getRbelMessages().size() >= 4);
-            assertThat(otherProxy.getRbelMessages().getLast().getFacetOrFail(TracingMessagePairFacet.class)
+            assertThat(otherProxy.getRbelLogger().getMessageHistory().getLast().getFacetOrFail(TracingMessagePairFacet.class)
                 .getRequest().findElement("$.path").get().getRawStringContent())
                 .isEqualTo("/faabor");
         } catch (Exception e) {

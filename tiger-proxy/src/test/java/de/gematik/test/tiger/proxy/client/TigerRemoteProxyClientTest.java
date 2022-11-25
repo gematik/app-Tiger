@@ -130,10 +130,10 @@ class TigerRemoteProxyClientTest {
             .willReturn(aResponse()
                 .withBody("emptyPath!!!")));
         log.info("Configuring routes...");
-        tigerRemoteProxyClient.getRbelMessages().clear();
+        tigerRemoteProxyClient.clearAllMessages();
         tigerRemoteProxyClient.clearAllRoutes();
         tigerProxy.clearAllRoutes();
-        tigerProxy.getRbelMessages().clear();
+        tigerProxy.clearAllMessages();
         tigerProxy.addRoute(TigerRoute.builder()
             .from("http://myserv.er")
             .to("http://localhost:" + remoteServer.getHttpPort())

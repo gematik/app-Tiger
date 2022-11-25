@@ -5,11 +5,9 @@
 package de.gematik.test.tiger.proxy;
 
 
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import java.security.Key;
-import java.util.Deque;
 import java.util.List;
 
 public interface ITigerProxy {
@@ -25,8 +23,6 @@ public interface ITigerProxy {
     String getBaseUrl();
 
     int getProxyPort();
-
-    Deque<RbelElement> getRbelMessages();
 
     void addKey(String keyid, Key key);
 

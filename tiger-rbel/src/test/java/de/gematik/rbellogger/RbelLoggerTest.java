@@ -111,7 +111,7 @@ public class RbelLoggerTest {
 
         FileUtils.writeStringToFile(new File("target/pairingList.html"),
                 new RbelHtmlRenderer()
-                        .doRender(rbelLogger.getMessageHistory()), Charset.defaultCharset());
+                        .doRender(rbelLogger.getMessageList()), Charset.defaultCharset());
 
         assertThat(rbelLogger.getMessageList().get(9)
                 .findRbelPathMembers("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")

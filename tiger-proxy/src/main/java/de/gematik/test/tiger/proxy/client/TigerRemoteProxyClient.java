@@ -16,7 +16,10 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
@@ -136,13 +139,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         }
     }
 
-    private Optional<String> calculateLastMessageUuid() {
-        return Optional.ofNullable(getRbelLogger().getMessageHistory())
-            .filter(dq -> !dq.isEmpty())
-            .map(Deque::getLast)
-            .map(RbelElement::getUuid);
-    }
-
     @Override
     public TigerRoute addRoute(TigerRoute tigerRoute) {
         return Unirest.put(remoteProxyUrl + "/route")
@@ -254,7 +250,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         if (messageMatchesFilterCriterion(rbelMessage)) {
             super.triggerListener(rbelMessage);
         } else {
-            getRbelLogger().getMessageHistory().remove(rbelMessage);
+            getRbelLogger().getRbelConverter().removeMessage(rbelMessage);
         }
     }
 
@@ -362,7 +358,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     public boolean messageUuidKnown(final String messageUuid) {
-        return new ArrayList<>(getRbelMessages()).stream()
-            .anyMatch(msg -> msg.getUuid().equals(messageUuid));
+        return getRbelLogger().getRbelConverter().isMessageUuidAlreadyKnown(messageUuid);
     }
 }

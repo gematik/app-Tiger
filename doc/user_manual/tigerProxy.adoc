@@ -440,7 +440,7 @@ Below some properties along with their respective default values:
 tigerProxy:
     activateRbelParsing: true
     activateAsn1Parsing: false
-    activateVauAnalysis: false
+    activateEpaVauAnalysis: false
     parsingShouldBlockCommunication: false
 ----
 
@@ -450,7 +450,7 @@ Deactivating this flag turns off all Rbel-Analysis of the incoming traffic. This
 ===== activateAsn1Parsing
 This is off by default. ASN.1 objects are very common in crypto applications. While parsing them will enable you to directly have a look inside certificates it comes with a penalty in performance and also clutters the object-tree. Often it's enough to know that there is a certificate, only in some scenarios is the content of interest. If the latter is of interest to you activate ASN.1 parsing.
 
-===== activateVauAnalysis
+===== activateEpaVauAnalysis/activateErpVauAnalysis
 VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze ePA-VAU messages leave this option turned off. If you do, enabling it will give you additional information about the messages.
 
 ===== parsingShouldBlockCommunication

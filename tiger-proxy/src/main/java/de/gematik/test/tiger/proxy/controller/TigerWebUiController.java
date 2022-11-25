@@ -101,7 +101,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         HttpServletResponse response) {
         int actualPageSize = pageSize
             .orElse(getApplicationConfiguration().getMaximumTrafficDownloadPageSize());
-        final ArrayList<RbelElement> filteredMessages = getTigerProxy().getRbelMessages().stream()
+        final ArrayList<RbelElement> filteredMessages = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .dropWhile(messageIsBefore(lastMsgUuid))
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .collect(Collectors.toCollection(ArrayList::new));
@@ -367,7 +367,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         @RequestParam(name = "msgUuid") final String msgUuid,
         @RequestParam(name = "query") final String query) {
         RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
-        final RbelElement targetMessage = getTigerProxy().getRbelMessages().stream()
+        final RbelElement targetMessage = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .findFirst().orElseThrow();
         final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
@@ -394,7 +394,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     public JexlQueryResponseDto testRbelExpression(
         @RequestParam(name = "msgUuid") final String msgUuid,
         @RequestParam(name = "rbelPath") final String rbelPath) {
-        final List<RbelElement> targetElements = getTigerProxy().getRbelMessages().stream()
+        final List<RbelElement> targetElements = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .map(msg -> msg.findRbelPathMembers(rbelPath))
             .flatMap(List::stream)
@@ -447,7 +447,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         var jexlExecutor = new RbelJexlExecutor();
 
-        List<RbelElement> msgs = getTigerProxy().getRbelMessages().stream()
+        List<RbelElement> msgs = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .filter(msg -> {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
@@ -483,7 +483,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .collect(Collectors.toList()));
         result.setPagesAvailable((msgs.size() / pageSize) + 1);
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
-            result.getHtmlMsgList().size(), result.getMetaMsgList().size()  , msgs.size(), tigerProxy.getRbelMessages().size());
+            result.getHtmlMsgList().size(), result.getMetaMsgList().size()  , msgs.size(), tigerProxy.getRbelLogger().getMessageHistory().size());
         return result;
     }
 
@@ -512,10 +512,10 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/resetMsgs", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResetMessagesDto resetMessages() {
         log.info("Resetting currently recorded messages on rbel logger..");
-        int size = getTigerProxy().getRbelMessages().size();
+        int size = getTigerProxy().getRbelLogger().getMessageHistory().size();
         ResetMessagesDto result = new ResetMessagesDto();
         result.setNumMsgs(size);
-        getTigerProxy().getRbelMessages().clear();
+        getTigerProxy().getRbelLogger().clearAllMessages();
         return result;
     }
 
