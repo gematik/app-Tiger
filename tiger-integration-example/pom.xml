@@ -31,6 +31,11 @@
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-cucumber</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${version.junit5}</version>
+        </dependency>
     </dependencies>
 
     <build>
