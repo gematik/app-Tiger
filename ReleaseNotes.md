@@ -10,6 +10,10 @@
 * Appium 8.1.1
 * Spring Boot 2.7.5
 
+## Features
+
+* TGR-766: Added support for Java 8 Date/Time Types to TigerGlobalConfiguration
+
 ## Breaking changes
 
 * TGR-745: VAU traffic is no longer decrypted by default. Please set the appropriate flags to do so (activateErpVauAnalysis and activateEpaVauAnalysis)

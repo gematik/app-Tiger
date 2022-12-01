@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -61,6 +62,7 @@ public class TigerConfigurationLoader {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+            .addModule(new JavaTimeModule())
             .build();
     }
 
