@@ -81,11 +81,30 @@ h2.title {
     margin-bottom: .5rem;
 }
 
+div.message-header {
+    padding: .4rem;
+}
+article.message{
+    margin: .5rem !important;
+}
+.notification .tile .message-body{
+    padding: .25rem;
+}
+.is-size-4 {
+    font-size: 1.3rem !important;
+}
+td {
+    padding: .3rem !important;
+}
+.card-content{
+    padding: .75rem;
+}
 pre {
     color: #fa4 !important;
     background-color: #444 !important;
     white-space: pre-wrap;
     word-wrap: break-word;
+    padding: .7rem;
 }
 
 pre.json {

@@ -13,6 +13,7 @@ import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.RbelFileWriter;
+import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
@@ -43,12 +44,28 @@ import org.slf4j.LoggerFactory;
 @Data
 public abstract class AbstractTigerProxy implements ITigerProxy {
 
+    private static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
+    private static final RbelMessagePostProcessor pairingPostProcessor = (el, conv, json) -> {
+        if (json.has(PAIRED_MESSAGE_UUID)) {
+            final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
+            final Optional<RbelElement> partner = conv.messagesStreamLatestFirst()
+                .filter(element -> element.getUuid().equals(partnerUuid))
+                .findFirst();
+            if (partner.isPresent()) {
+                final TracingMessagePairFacet pairFacet = TracingMessagePairFacet.builder()
+                    .response(el)
+                    .request(partner.get())
+                    .build();
+                el.addFacet(pairFacet);
+                partner.get().addFacet(pairFacet);
+            }
+        }
+    };
     private static final String FIX_VAU_KEY = "-----BEGIN PRIVATE KEY-----\n" +
         "MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIAeOzpSQT8a/mQDM\n" +
         "7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx\n" +
         "9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==\n" +
         "-----END PRIVATE KEY-----\n";
-    private static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
     private final TigerProxyConfiguration tigerProxyConfiguration;
     private RbelLogger rbelLogger;
@@ -102,28 +119,15 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         new Thread(() -> {
             log.info("Trying to read traffic from file '{}'...", sourceFile);
             try {
-                rbelFileWriter.postConversionListener.add((el, conv, json) -> {
-                    if (json.has(PAIRED_MESSAGE_UUID)) {
-                        final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
-                        final Optional<RbelElement> partner = conv.messagesStreamLatestFirst()
-                            .filter(element -> element.getUuid().equals(partnerUuid))
-                            .findFirst();
-                        if (partner.isPresent()) {
-                            final TracingMessagePairFacet pairFacet = TracingMessagePairFacet.builder()
-                                .response(el)
-                                .request(partner.get())
-                                .build();
-                            el.addFacet(pairFacet);
-                            partner.get().addFacet(pairFacet);
-                        }
-                    }
-                });
+                rbelFileWriter.postConversionListener.add(pairingPostProcessor);
                 rbelFileWriter.convertFromRbelFile(
                     Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
+                log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            } finally {
+                rbelFileWriter.postConversionListener.remove(pairingPostProcessor);
             }
-            log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
         }, "readTrafficFromSourceFile").start();
     }
 
