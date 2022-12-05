@@ -24,4 +24,7 @@ public class CfgHelmChartOptions {
      * "podNameRegex:xxxx:yyyy" where xxxx is the local port and yyyy is the port in the pod
      */
     private List<String> exposedPorts;
+
+    /** list of regex names for pods to be logged **/
+    private List<String> logPods;
 }
