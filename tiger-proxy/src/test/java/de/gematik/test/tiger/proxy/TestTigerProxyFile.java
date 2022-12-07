@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo.TigerFileSaveInfoBuilder;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -53,9 +55,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
             otherProxy -> {
                 await()
                     .atMost(2, TimeUnit.SECONDS)
-                        .until(otherProxy::isFileParsed);
+                    .until(otherProxy::isFileParsed);
                 assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst().findElement("$.path")
-                        .get().getRawStringContent()).isEqualTo("/faabor");
+                    .get().getRawStringContent()).isEqualTo("/faabor");
                 assertThat(otherProxy.getRbelLogger().getMessageHistory())
                     .hasSize(2);
             },
@@ -87,6 +89,22 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
                 proxyRest.get("http://backend/faabor").asJson();
                 fileHasNLines(TGR_FILENAME, 4);
             });
+    }
+
+    @Test
+    void errorWhileReadingTgrFile_expectStartupError() {
+        final TigerProxyConfiguration configuration = TigerProxyConfiguration.builder()
+            .fileSaveInfo(TigerFileSaveInfo.builder()
+                .sourceFile("pom.xml")
+                .build())
+            .build();
+        assertThatThrownBy(() -> {
+            final TigerProxy proxy = new TigerProxy(configuration);
+            await()
+                .atMost(200, TimeUnit.SECONDS)
+                .until(proxy::isFileParsed);
+        })
+            .isNotInstanceOf(ConditionTimeoutException.class);
     }
 
     private void executeFileWritingAndReadingTest(Consumer<TigerProxy> executeFileWritingAndReadingTest,

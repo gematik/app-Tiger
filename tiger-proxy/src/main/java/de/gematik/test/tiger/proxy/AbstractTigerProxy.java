@@ -31,11 +31,11 @@ import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
@@ -79,6 +79,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     @Getter
     private final ExecutorService trafficParserExecutor = Executors.newSingleThreadExecutor();
     private AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
+    private AtomicReference<RuntimeException> fileParsingException = new AtomicReference<>();
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         this(configuration, null);
@@ -122,7 +123,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     }
 
     protected void readTrafficFromSourceFile(String sourceFile) {
-        CompletableFuture.supplyAsync(() -> {
+        new Thread(() -> {
             log.info("Trying to read traffic from file '{}'...", sourceFile);
             try {
                 rbelFileWriter.postConversionListener.add(pairingPostProcessor);
@@ -132,15 +133,16 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
                 }
                 rbelFileWriter.convertFromRbelFile(
                     Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
+                fileParsedCompletely.set(true);
                 log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
-                return true;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                log.error("Exception while parsing traffic file", e);
+                fileParsingException.set(
+                    new TigerProxyStartupException("Error while parsing traffic file '" + sourceFile + "'", e));
             } finally {
                 rbelFileWriter.postConversionListener.remove(pairingPostProcessor);
             }
-        })
-            .thenRunAsync(() -> fileParsedCompletely.set(true));
+        }, "readTrafficFromSourceFile").start();
     }
 
     private void addFixVauKey() {
@@ -272,6 +274,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     }
 
     public Boolean isFileParsed() {
+        if (fileParsingException.get() != null) {
+            throw fileParsingException.get();
+        }
         return fileParsedCompletely.get();
     }
 }

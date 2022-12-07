@@ -14,6 +14,7 @@
 
 * TGR-745: Small performance boost for JEXL-execution
 * TGR-745: More compact Rbel-messages in WebUI
+* TGR-745: Ability added to filter TGR-files
 * TGR-766: Added support for Java 8 Date/Time Types to TigerGlobalConfiguration
 
 ## Breaking changes

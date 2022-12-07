@@ -588,6 +588,8 @@ tigerProxy:
     filename: "foobar.tgr"
     # default false
     clearFileOnBoot: true
+    # filter messages read from file (JEXL expression)
+    readFilter: "message.statusCode == '200'"
   # a list of routing entries the proxy should apply to traffic
   proxyRoutes:
       # defines a forward-proxy-route from this server...
