@@ -16,6 +16,7 @@
 * TGR-745: More compact Rbel-messages in WebUI
 * TGR-745: Ability added to filter TGR-files
 * TGR-766: Added support for Java 8 Date/Time Types to TigerGlobalConfiguration
+* TGR-575: Added support for CETP messages in tiger-rbel
 
 ## Breaking changes
 

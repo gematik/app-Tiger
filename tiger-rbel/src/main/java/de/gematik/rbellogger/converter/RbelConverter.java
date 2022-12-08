@@ -58,7 +58,8 @@ public class RbelConverter {
         new RbelMtomConverter(),
         new RbelX509Converter(),
         new RbelSicctEnvelopeConverter(),
-        new RbelSicctCommandConverter()
+        new RbelSicctCommandConverter(),
+        new RbelCetpConverter()
     ));
     @Builder.Default
     private long messageSequenceNumber = 0;
