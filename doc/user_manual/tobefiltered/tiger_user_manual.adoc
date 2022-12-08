@@ -59,62 +59,9 @@ include::tigerConfiguration.adoc[]
 
 <<<
 
-== Tiger User interfaces
+include::tigerUserInterfaces.adoc[]
 
-[#_admin_ui]
-=== Admin UI
-
-The Tiger Admin UI is a separate module that can be downloaded from maven
-
-https://repo1.maven.org/maven2/de/gematik/test/tiger-admin
-
-Choose a current version and download the `tiger-admin-x.y.z.jar` to a local folder on your computer.
-
-Run the following command to get the Tiger Admin UI up and running:
-
-[source,shell script]
-----
-java -jar tiger-admin-x.y.z.jar --server.port=8080
-----
-
-Now open your firefox browser and go to http://127.0.0.1:8080.
-
-Voila you are ready to start working with the Tiger Admin UI
-
-
-=== Workflow UI
-
-The Workflow UI is a new feature for a better user experience during the test run of feature file(s).
-The Workflow UI is displayed in the browser window and shows the status and logs of the servers as well as the results and request calls of the scenarios and feature files during the test run.
-For more information please refer to the xref:tigerTestLibrary.adoc#_workflow_ui[Workflow UI] section in the Tiger Test library.
-
-=== Standalone Tiger Proxy UI
-
-To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:
-
-[source,http request]
-----
-http://127.0.0.1:${SERVERPORT}/webui
-----
-
-With `SERVERPORT` being the configured server port of the Tiger Proxy.
-
-==== Bottom menu bar
-
-image::media/TigerProxyBottomNavBar.png[title="Tiger Proxy bottom menu bar "]
-
-The displayed buttons can trigger the following actions:
-
-* *Routes* … allows you to modify the routes configured on this Tiger Proxy
-* *Scroll Lock* … allows you to lock the scroll position. Incoming messages wills till be added to the list at the bottom of the page.
-* *Toggle Button*  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as reponse headers) or all the detailed information of the requests and responses.
-* *Filter*  … allows you to filter the incoming messages with a RbelPath or a JEXL expression. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").
-* *Reset* … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!
-* *Save* … allows you to save the current HTML page or the raw traffic as tgr file.
-* *Page* … allows pagination of the messages.
-* *Size* … changes the size of the messages.
-* *Import* … allows you to import the previously stored traffic file.
-* *Quit* … allows you to quit the Tiger Proxy instance
+<<<
 
 == Links to test relevant topics
 

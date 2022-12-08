@@ -282,7 +282,7 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public AbstractTigerServer createServer(String serverId, CfgServer config) {
         if (config.getType() == null) {
-            throw new TigerTestEnvException("Unable to instantiate server of null type! PLease check your config");
+            throw new TigerTestEnvException("Unable to instantiate server of null type! Please check your config");
         }
         try {
             String serverType = config.getType().value();
