@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -269,14 +270,15 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         getRbelLogger().getRbelConverter().clearAllMessages();
     }
 
-    public List<RbelElement> getRbelMessages() {
-        return getRbelLogger().getRbelConverter().getMessageList();
-    }
 
     public Boolean isFileParsed() {
         if (fileParsingException.get() != null) {
             throw fileParsingException.get();
         }
         return fileParsedCompletely.get();
+    }
+
+    public Deque<RbelElement> getRbelMessages() {
+        return getRbelLogger().getMessageHistory();
     }
 }

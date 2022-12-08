@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Data;
 import lombok.ToString;
-import lombok.ToString.Exclude;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -65,7 +64,13 @@ public class TracingMessagePair {
         }
         remoteProxyClient.getLastMessageUuid().set(responseParsed.get().getUuid());
 
-        remoteProxyClient.propagateMessage(requestParsed.get());
-        remoteProxyClient.propagateMessage(responseParsed.get());
+        if (remoteProxyClient.messageMatchesFilterCriterion(requestParsed.get())
+            || remoteProxyClient.messageMatchesFilterCriterion(responseParsed.get())) {
+            remoteProxyClient.propagateMessage(requestParsed.get());
+            remoteProxyClient.propagateMessage(responseParsed.get());
+        } else {
+            remoteProxyClient.removeMessage(requestParsed.get());
+            remoteProxyClient.removeMessage(responseParsed.get());
+        }
     }
 }

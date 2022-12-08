@@ -11,46 +11,55 @@ import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
+@SuppressWarnings({"java:S6355", "java:S1133"})
 public class ImmutableDequeFacade<T> implements Deque<T> {
 
     private final Deque<T> remoteDeque;
 
     @Override
+    @Deprecated
     public void addFirst(T o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public void addLast(T o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean offerFirst(T o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean offerLast(T o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public T removeFirst() {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public T removeLast() {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public T pollFirst() {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public T pollLast() {
         throw new UnsupportedOperationException();
     }
@@ -76,41 +85,49 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
     }
 
     @Override
+    @Deprecated
     public boolean retainAll(Collection c) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean removeAll(Collection c) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean removeFirstOccurrence(Object o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean removeLastOccurrence(Object o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean add(T o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean offer(T o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public T remove() {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public T poll() {
         throw new UnsupportedOperationException();
     }
@@ -126,26 +143,31 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
     }
 
     @Override
+    @Deprecated
     public boolean addAll(Collection<? extends T> c) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public void clear() {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public void push(Object o) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public T pop() {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean remove(Object o) {
         throw new UnsupportedOperationException();
     }
@@ -173,7 +195,7 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
     @Override
     public Iterator<T> iterator() {
         return new ImmutableIteratorFacade<>(remoteDeque.iterator());
-   }
+    }
 
     @Override
     public Object[] toArray() {
@@ -206,6 +228,7 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
         }
 
         @Override
+        @Deprecated
         public void remove() {
             throw new UnsupportedOperationException();
         }

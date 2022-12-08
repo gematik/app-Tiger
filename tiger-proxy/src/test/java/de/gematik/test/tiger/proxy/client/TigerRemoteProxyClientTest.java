@@ -318,12 +318,17 @@ class TigerRemoteProxyClientTest {
             .isEqualTo("/");
     }
 
-    @Test
-    void downstreamTigerProxyWithFilterCriterion_shouldOnlyShowMatchingMessages() {
+    @ParameterizedTest
+    @CsvSource({
+        "message.url =$ 'faa'",
+        "request.url =$ 'faa'",
+        "response.statusCode == '404'"
+    })
+    void downstreamTigerProxyWithFilterCriterion_shouldOnlyShowMatchingMessages(String filterCriterion) {
         var filteredTigerProxy = new TigerProxy(
             TigerProxyConfiguration.builder()
                 .trafficEndpoints(List.of("http://localhost:" + springServerPort))
-                .trafficEndpointFilterString("request.url =$ 'faa'")
+                .trafficEndpointFilterString(filterCriterion)
                 .proxyLogLevel("WARN")
                 .build()
         );
@@ -345,8 +350,14 @@ class TigerRemoteProxyClientTest {
             .atMost(2, TimeUnit.SECONDS)
             .until(() -> listenerCallCounter.get() > 0);
 
-        assertThat(filteredTigerProxy.getRbelMessagesList())
+        assertThat(filteredTigerProxy.getRbelMessages())
             .hasSize(2);
+        assertThat(filteredTigerProxy.getRbelMessages().getFirst()
+            .findElement("$.path").get().getRawStringContent())
+            .isEqualTo("/faa");
+        assertThat(filteredTigerProxy.getRbelMessages().getLast()
+            .findElement("$.responseCode").get().getRawStringContent())
+            .isEqualTo("404");
     }
 
     @Test

@@ -247,14 +247,14 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     void propagateMessage(RbelElement rbelMessage) {
-        if (messageMatchesFilterCriterion(rbelMessage)) {
-            super.triggerListener(rbelMessage);
-        } else {
-            getRbelLogger().getRbelConverter().removeMessage(rbelMessage);
-        }
+        super.triggerListener(rbelMessage);
     }
 
-    private boolean messageMatchesFilterCriterion(RbelElement rbelMessage) {
+    void removeMessage(RbelElement rbelMessage) {
+        getRbelLogger().getRbelConverter().removeMessage(rbelMessage);
+    }
+
+    public boolean messageMatchesFilterCriterion(RbelElement rbelMessage) {
         if (StringUtils.isEmpty(getTigerProxyConfiguration().getTrafficEndpointFilterString())) {
             return true;
         }
