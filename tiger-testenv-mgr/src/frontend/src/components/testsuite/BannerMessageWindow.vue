@@ -20,7 +20,7 @@
     </div>
     <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.TESTRUN_ENDED"
          v-on:click="sendQuit"
-         class="btn btn-danger w-100 mt-3 mb-1">
+         class="btn btn-primary w-100 mt-3 mb-1">
       Quit
     </div>
     <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.STEP_WAIT"
