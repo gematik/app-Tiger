@@ -482,6 +482,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList()));
         result.setPagesAvailable((msgs.size() / pageSize) + 1);
+        result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
             result.getHtmlMsgList().size(), result.getMetaMsgList().size()  , msgs.size(), tigerProxy.getRbelLogger().getMessageHistory().size());
         return result;
@@ -542,6 +543,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         log.info("Uploading report to {}...", applicationConfiguration.getUploadUrl());
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
+
 
     private void performUploadReport(String htmlReport) {
         // Connect to the web server endpoint

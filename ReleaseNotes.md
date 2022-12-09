@@ -17,6 +17,7 @@
 * TGR-745: Ability added to filter TGR-files
 * TGR-758: Pairs are no longer discarded when filtering remote Traffic
 * TGR-766: Added support for Java 8 Date/Time Types to TigerGlobalConfiguration
+* TGR-757: WebUI: Return feedback on filtered messages to the user
 * TGR-575: Added support for CETP messages in tiger-rbel
 
 ## Breaking changes

@@ -12,6 +12,8 @@ let pageSize = 20;
 let pageNumber = 0;
 let empty="empty";
 
+const NO_REQUEST = "no requests";
+
 let resetBtn;
 let saveBtn;
 let uploadBtn;
@@ -26,6 +28,7 @@ let jexlInspectionNoContextDiv;
 
 let setFilterCriterionBtn;
 let setFilterCriterionInput;
+let resetFilterCriterionBtn;
 
 let btnOpenRouteModal;
 let fieldRouteTo;
@@ -59,6 +62,9 @@ let requestTo = "requestToContent";
 
 let socket;
 let stompClient;
+
+let allMessagesAmount;
+let filteredMessagesAmount;
 
 const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\"\n"
     + "                               class=\"mt-3 is-block\">\n"
@@ -107,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
   addDropdownClickListener(document.getElementById("dropdown-page-size"));
 
   setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
+  resetFilterCriterionBtn = document.getElementById("resetFilterCriterionBtn");
   setFilterCriterionInput = document.getElementById("setFilterCriterionInput");
   setFilterCriterionInput.addEventListener("keypress", (event) => {
     if (event.keyCode === 13) {
@@ -158,6 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
   enableCollapseExpandAll();
 
   setFilterCriterionBtn.addEventListener('click', setFilterCriterion);
+  resetFilterCriterionBtn.addEventListener('click', resetFilterCriterion);
   quitBtn.addEventListener('click', quitProxy);
   resetBtn.addEventListener('click', resetMessages);
   document.getElementById("executeJexlQuery")
@@ -265,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let selectRequestToBtn = document.getElementById("requestToContent");
   selectRequestToBtn.addEventListener("click", updateSelectContents);
   selectRequestToBtn.addEventListener('change', function (event) {
-    if (event.target.value !== "no request") {
+    if (event.target.value !== NO_REQUEST) {
       let filterField = document.getElementById("setFilterCriterionInput");
       filterField.value = "@.receiver == \"" + event.target.value + "\"";
       selectRequestFromBtn.selectedIndex = 0;
@@ -274,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   selectRequestFromBtn.addEventListener("click", updateSelectContents);
   selectRequestFromBtn.addEventListener('change', function (event) {
-    if (event.target.value !== "no request") {
+    if (event.target.value !== NO_REQUEST) {
       let filterField = document.getElementById("setFilterCriterionInput");
       filterField.value = "@.sender == \"" + event.target.value + "\"";
       selectRequestToBtn.selectedIndex = 0;
@@ -378,7 +386,7 @@ function initSelectContent(label, list) {
       select.removeChild(child);
     });
     let element = document.createElement('option');
-    element.textContent = "no requests";
+    element.textContent = NO_REQUEST;
     element.id = getLabelId(label, empty);
     element.value = empty;
     select.appendChild(element);
@@ -613,6 +621,8 @@ function pollMessages(callback) {
     if (this.readyState === 4) {
       if (this.status === 200) {
         const response = JSON.parse(this.responseText);
+        filteredMessagesAmount = response.metaMsgList.length;
+        allMessagesAmount = response.totalMsgCount;
         updateMessageList(response);
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
@@ -688,9 +698,22 @@ function quitProxy() {
 }
 
 function setFilterCriterion() {
+  setFilterCriterionBtn.classList.add("is-loading");
   filterCriterion = setFilterCriterionInput.value;
   resetAllReceivedMessages();
   pollMessages();
+  setFilterCriterionBtn.classList.remove("is-loading");
+}
+
+function resetFilterCriterion(){
+  resetFilterCriterionBtn.classList.add("is-loading");
+  filterCriterion = "";
+  setFilterCriterionInput.value = '';
+  document.getElementById("requestToContent").selectedIndex = 0;
+  document.getElementById("requestFromContent").selectedIndex = 0;
+  resetAllReceivedMessages();
+  pollMessages();
+  resetFilterCriterionBtn.classList.remove("is-loading");
 }
 
 function uploadReport() {
@@ -991,6 +1014,15 @@ function addMessageToMenu(msgMetaData, index) {
   }
 }
 
+function setFilterMessage() {
+  const element = document.getElementById("filteredMessage");
+  if (allMessagesAmount === filteredMessagesAmount) {
+    element.textContent = "Keine der " + allMessagesAmount + " Nachrichten wurde herausgefiltert.";
+  } else {
+    element.textContent = filteredMessagesAmount + " von "+ allMessagesAmount + " Nachrichten entsprechen den Filterkriterien.";
+  }
+}
+
 function updateMessageList(json) {
   updatePageSelector(json.pagesAvailable);
   for (htmlMsg of json.htmlMsgList) {
@@ -1003,7 +1035,7 @@ function updateMessageList(json) {
   if (json.metaMsgList.length > 0) {
     lastUuid = json.metaMsgList[json.metaMsgList.length - 1].uuid;
   }
-
+  setFilterMessage();
   enableCardToggles();
   enableModals();
 }
