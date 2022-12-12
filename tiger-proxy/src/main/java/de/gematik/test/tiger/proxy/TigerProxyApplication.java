@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import java.io.IOException;
 import java.util.Objects;
 import javax.servlet.ServletContextEvent;
@@ -25,10 +25,8 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackageClasses = {TigerBuildPropertiesService.class, TigerProxyApplication.class})
 @RequiredArgsConstructor
 @Slf4j
 public class TigerProxyApplication implements ServletContextListener {
@@ -42,13 +40,6 @@ public class TigerProxyApplication implements ServletContextListener {
         // with spring boot!
         System.setProperty("java.util.logging.config.file", "SKIP_MOCKSERVER_LOG_INIT!");
 
-        Resource resource = new ClassPathResource("/build.properties", TigerProxyApplication.class);
-        try {
-            TigerProperties tigerProperties = new TigerProperties(resource.getURL());
-            log.info("Starting Tiger Proxy " + tigerProperties.getFullBuildVersion());
-        } catch (IOException exception) {
-            log.warn("Unable to detect build version!", exception);
-        }
         new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .sources(TigerProxyApplication.class)

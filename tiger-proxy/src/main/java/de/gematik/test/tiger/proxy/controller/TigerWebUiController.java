@@ -12,13 +12,13 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -70,10 +69,9 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private final ApplicationConfiguration applicationConfiguration;
     private ApplicationContext applicationContext;
-    private final AtomicBoolean versionToBeAdded = new AtomicBoolean(false);
-    private boolean versionAdded = false;
 
     public final SimpMessagingTemplate template;
+    private final TigerBuildPropertiesService buildProperties;
 
     private static final String COLOR_INHERIT = "color:inherit;";
     private static final String WS_NEWMESSAGES = "/topic/ws";
@@ -81,6 +79,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     @PostConstruct
     public void addWebSocketListener() {
         tigerProxy.addRbelMessageListener(this::informClientOfNewMessageArrival);
+        renderer.setSubTitle(getVersionStringAsRawHtml() + renderer.getSubTitle());
     }
 
     private void informClientOfNewMessageArrival(RbelElement element) {
@@ -122,16 +121,6 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
-        TigerProperties tigerProperties = new TigerProperties();
-        synchronized (versionToBeAdded) {
-            if (!versionAdded) {
-                String versionHtml =
-                    "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">"
-                        + tigerProperties.getFullBuildVersion() + "</div>";
-                renderer.setSubTitle(versionHtml + renderer.getSubTitle());
-                versionAdded = true;
-            }
-        }
         String html = renderer.getEmptyPage();
         // hide sidebar
         String targetDiv;
@@ -170,6 +159,15 @@ public class TigerWebUiController implements ApplicationContextAware {
                 loadResourceToString("/jexlModal.html") +
                 loadResourceToString("/saveModal.html"))
             .replace("</body>", configJSSnippetStr + "</body>");
+    }
+
+    private String getVersionStringAsRawHtml() {
+        return
+            "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">"
+                + buildProperties.tigerVersionAsString()
+                + " - "
+                + buildProperties.tigerBuildDateAsString()
+                + "</div>";
     }
 
     private String getNavbarItemNot4embedded() {

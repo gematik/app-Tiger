@@ -6,6 +6,7 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import javax.servlet.ServletContextListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.Banner.Mode;
@@ -13,7 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackageClasses = {TigerBuildPropertiesService.class, TigerTestEnvMgrApplication.class})
 @Slf4j
 public class TigerTestEnvMgrApplication implements ServletContextListener {
 

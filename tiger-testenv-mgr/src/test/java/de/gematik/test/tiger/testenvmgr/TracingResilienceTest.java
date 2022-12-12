@@ -134,7 +134,7 @@ class TracingResilienceTest {
             } catch (ConditionTimeoutException e) {
                 log.error("We sent {} message, intercepted {}, aggregating {}, receiving {}",
                     round * MESSAGES_PER_ROUND * 2,
-                    testEnvMgr.getLocalTigerProxy().getRbelMessages().size(),
+                    testEnvMgr.getLocalTigerProxy().getRbelMessagesList().size(),
                     aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
                     getReceivingTigerProxyMessages(testEnvMgr).size());
                 final List<RbelElement> sendingMsgs

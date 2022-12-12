@@ -38,7 +38,7 @@ class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
                 .asString();
             awaitMessagesInTiger(2);
 
-            assertThat(tigerProxy.getRbelMessages()).last()
+            assertThat(tigerProxy.getRbelMessagesList()).last()
                 // get the last request
                 .extracting(response -> response.getFacetOrFail(RbelHttpResponseFacet.class).getRequest())
                 // get the request url

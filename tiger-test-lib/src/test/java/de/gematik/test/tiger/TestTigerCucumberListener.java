@@ -5,8 +5,10 @@
 package de.gematik.test.tiger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
@@ -46,7 +48,8 @@ public class TestTigerCucumberListener {
     @BeforeAll
     public static void startTiger() {
         TigerDirector.start();
-        envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr());
+        envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
+            TigerBuildPropertiesService.class));
     }
 
     @BeforeEach

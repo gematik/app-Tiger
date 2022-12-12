@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -29,7 +30,7 @@ class EnvStatusControllerTest {
     @Test
     @TigerTest(tigerYaml = "")
     void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
-        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
@@ -58,7 +59,7 @@ class EnvStatusControllerTest {
     @Test
     @TigerTest(tigerYaml = "")
     void mergeStepsOfScenario(final TigerTestEnvMgr envMgr) {
-        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
@@ -106,7 +107,7 @@ class EnvStatusControllerTest {
     @Test
     @TigerTest(tigerYaml = "")
     void checkBannerMessages(final TigerTestEnvMgr envMgr) {
-        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 

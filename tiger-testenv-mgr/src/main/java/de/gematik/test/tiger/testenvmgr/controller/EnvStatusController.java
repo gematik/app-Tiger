@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.TigerProperties;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
@@ -27,13 +27,13 @@ public class EnvStatusController implements TigerUpdateListener {
 
     private final TigerEnvStatusDto tigerEnvStatus = new TigerEnvStatusDto();
 
-    TigerTestEnvMgr tigerTestEnvMgr;
+    private final TigerTestEnvMgr tigerTestEnvMgr;
+    private final TigerBuildPropertiesService buildProperties;
 
-    private TigerProperties tigerProperties = new TigerProperties();
-
-    public EnvStatusController(final TigerTestEnvMgr tigerTestEnvMgr) {
+    public EnvStatusController(final TigerTestEnvMgr tigerTestEnvMgr, TigerBuildPropertiesService buildProperties) {
         this.tigerTestEnvMgr = tigerTestEnvMgr;
         this.tigerTestEnvMgr.registerNewListener(this);
+        this.buildProperties = buildProperties;
     }
 
     @Override
@@ -171,12 +171,12 @@ public class EnvStatusController implements TigerUpdateListener {
     @GetMapping(path = "/version")
     public String getTigerVersion() {
         log.trace("Fetch requests the tiger version");
-        return tigerProperties.getBuildVersion();
+        return buildProperties.tigerVersionAsString();
     }
 
     @GetMapping(path = "/build")
     public String getBuildDate() {
         log.trace("Fetch requests the build date");
-        return tigerProperties.getBuildDate();
+        return buildProperties.tigerBuildDateAsString();
     }
 }

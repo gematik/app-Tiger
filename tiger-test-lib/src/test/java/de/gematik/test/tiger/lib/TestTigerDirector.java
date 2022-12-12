@@ -11,10 +11,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.mock;
 import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
@@ -206,7 +208,8 @@ class TestTigerDirector {
     void testPauseExecutionViaWorkflowUI() {
         executeWithSecureShutdown(() -> {
             TigerDirector.start();
-            EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr());
+            EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
+                TigerBuildPropertiesService.class));
             TigerDirector.getLibConfig().activateWorkflowUi = true;
             new Thread(() -> {
                 TigerDirector.pauseExecution();
@@ -258,7 +261,7 @@ class TestTigerDirector {
     void testQuitTestRunViaWorkFlowUi() throws Exception {
         TigerDirector.start();
         EnvStatusController envStatusController = new EnvStatusController(
-            TigerDirector.getTigerTestEnvMgr());
+            TigerDirector.getTigerTestEnvMgr(), mock(TigerBuildPropertiesService.class));
         TigerDirector.getLibConfig().activateWorkflowUi = true;
 
         withTextFromSystemIn("quit\n")

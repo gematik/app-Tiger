@@ -10,8 +10,8 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
-import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import java.io.File;
@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -37,14 +38,15 @@ import org.yaml.snakeyaml.Yaml;
 
 @Controller
 @Slf4j
+@RequiredArgsConstructor
 public class TigerAdminUiController {
 
-    private TigerProperties tigerProperties = new TigerProperties();
+    private final TigerBuildPropertiesService buildProperties;
     static String templatesYaml;
 
     @GetMapping( "/")
     public String getStartPage( Model model) {
-        model.addAttribute("tigerVersion", tigerProperties.getFullBuildVersion());
+        model.addAttribute("tigerVersion", buildProperties.tigerVersionAsString());
         return "adminui";
     }
 
