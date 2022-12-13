@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -45,35 +46,53 @@ public class Scenario extends GherkinStruct {
         if (hasTag("@TCID")) {
             json.put(JSON.INTERNE_ID, getTag("@TCID").getParameter());
         }
-        if (hasTag("@Ready")) {
-            json.put(JSON.STATUS, "Implementiert");
-        } else {
-            json.put(JSON.STATUS, "In Bearbeitung");
-        }
-        json.put(JSON.NEGATIVE_TF, hasTag("@Negative"));
+
         if (hasTag("@PRIO")) {
             json.put(JSON.PRIO, Integer.parseInt(getTag("@PRIO").getParameter()));
+        } else {
+            json.put(JSON.PRIO, Integer.parseInt("1"));
         }
-        if (hasTag("@Product")) {
-            json.put(JSON.PRODUKT_TYP, feature.getTag("@Product").getParameter());
-        }
-        if (hasTag("@manual")) {
-            json.put(JSON.MODUS, "Manuell");
+
+        if (hasTag("@MODUS")) {
+            json.put(JSON.MODUS, getTag("@MODUS").getParameter());
         } else {
             json.put(JSON.MODUS, "Automatisch");
         }
-        json.put(JSON.TESTSTUFE, "Produkttest");
-        json.put(JSON.TESTART, "Funktionstest");
-        final JSONArray afos = new JSONArray(getTags().stream()
-            .filter(tag -> tag.getName().equals("@Afo"))
+
+        if (hasTag("@STATUS")) {
+            json.put(JSON.STATUS, getTag("@STATUS").getParameter());
+        } else {
+            json.put(JSON.STATUS, "Implementiert");
+        }
+
+        json.put(JSON.NEGATIVE_TF,
+            hasTag("@TESTFALL") && StringUtils.equals(getTag("@TESTFALL").getParameter(), "Negativ"));
+
+        if (hasTag("@TESTSTUFE")) {
+            json.put(JSON.TESTSTUFE, Integer.parseInt(getTag("@TESTSTUFE").getParameter()));
+        } else {
+            json.put(JSON.TESTSTUFE, Integer.parseInt("3"));
+        }
+
+        final JSONArray anforderungen = new JSONArray(getTags().stream()
+            .filter(tag -> tag.getName().equals("@AFO-ID"))
             .map(Tag::getParameter)
             .collect(Collectors.toList()));
-        json.put(JSON.AFOLINKS, afos);
+        json.put(JSON.AFOLINKS, anforderungen);
+
         final JSONArray anwendungsfaelle = new JSONArray(getTags().stream()
             .filter(tag -> tag.getName().equals("@AF-ID"))
             .map(Tag::getParameter)
             .collect(Collectors.toList()));
         json.put(JSON.AF_ID, anwendungsfaelle);
+
+        final JSONArray produkte = new JSONArray(feature.getTags().stream()
+            .filter(tag -> tag.getName().equals("@PRODUKT"))
+            .map(Tag::getParameter)
+            .collect(Collectors.toList()));
+        json.put(JSON.PRODUKT_TYP, produkte);
+
+        json.put(JSON.TESTART, "Funktionstest");
         json.put(JSON.TITEL, getName());
         json.put(JSON.DESCRIPTION, getDescription().replace("\n", "</br>"));
         json.put(JSON.VORBEDINGUNG, "");
