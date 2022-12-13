@@ -197,7 +197,7 @@ class TestTigerDirector {
                         System.out.println("Execution resumes!");
                     }).start();
 
-                    await().atMost(400, TimeUnit.MILLISECONDS)
+                    await().atMost(2000, TimeUnit.MILLISECONDS)
                         .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
                     TigerDirector.getTigerTestEnvMgr().resetUserInput();
                     assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
@@ -217,7 +217,7 @@ class TestTigerDirector {
             }).start();
 
             envStatusController.getConfirmContinueExecution();
-            await().atMost(400, TimeUnit.MILLISECONDS)
+            await().atMost(2000, TimeUnit.MILLISECONDS)
                 .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
         });
     }
@@ -270,7 +270,7 @@ class TestTigerDirector {
                     assertThat(catchSystemExit(() -> {
                         new Thread(TigerDirector::waitForQuit).start();
                         envStatusController.getConfirmQuit();
-                        Thread.sleep(600); // Director polls at 200ms so give it time to system exit
+                        Thread.sleep(1500); // Director polls at 1s so give it time to system exit
                     })).isEqualTo(0)));
     }
 

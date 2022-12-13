@@ -89,39 +89,54 @@ public class TigerDirector {
         shutdownHookRegistered = true;
 
         log.info("Registering shutdown hook...");
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                if (getLibConfig().isActivateWorkflowUi() && !tigerTestEnvMgr.isUserAcknowledgedShutdown()) {
-                    System.out.println(
-                        Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...",
-                            RbelAnsiColors.GREEN_BOLD));
-                    if (tigerTestEnvMgr != null) {
-                        tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                            .bannerMessage("Test run finished, press QUIT")
-                            .bannerColor("green")
-                            .bannerType(BannerType.TESTRUN_ENDED)
-                            .build());
-                        try {
-                            await().pollInterval(1, TimeUnit.SECONDS)
-                                .atMost(5, TimeUnit.HOURS)
-                                .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
-                        } finally {
-                            tigerTestEnvMgr.shutDown();
+        Runtime.getRuntime().addShutdownHook(new Thread(() ->  quit(false, tigerTestEnvMgr.isUserAcknowledgedShutdown())));
+    }
+
+    public static void waitForQuit() {
+        quit(true, false);
+    }
+
+    private static void quit(boolean withWaitForQuit, boolean isUserAcknowledgedShutdown) {
+        try {
+            if (getLibConfig().isActivateWorkflowUi() && !isUserAcknowledgedShutdown) {
+                System.out.println(
+                    Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...",
+                        RbelAnsiColors.GREEN_BOLD));
+                if (tigerTestEnvMgr != null) {
+                    tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                        .bannerMessage("Test run finished, press QUIT")
+                        .bannerColor("green")
+                        .bannerType(BannerType.TESTRUN_ENDED)
+                        .build());
+                    try {
+                        await().pollInterval(1, TimeUnit.SECONDS)
+                            .atMost(5, TimeUnit.HOURS)
+                            .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
+                    } finally {
+                        tigerTestEnvMgr.shutDown();
+                        if (withWaitForQuit) {
+                            System.exit(0);
                         }
                     }
-                } else if (tigerTestEnvMgr != null) {
-                    System.out.println("TGR Shutting down test env...");
-                    tigerTestEnvMgr.shutDown();
                 }
-                unregisterRestAssuredFilter();
-            } finally {
-                System.out.println("TGR Destroying spring boot context after testrun...");
-                if (envMgrApplicationContext != null) {
-                    envMgrApplicationContext.close();
+            } else if (tigerTestEnvMgr != null) {
+                System.out.println("TGR Shutting down test env...");
+                if (withWaitForQuit) {
+                    TigerTestEnvMgr.waitForConsoleInput("quit");
                 }
-                System.out.println("TGR Tiger shut down orderly");
+                tigerTestEnvMgr.shutDown();
+                if (withWaitForQuit) {
+                    System.exit(0);
+                }
             }
-        }));
+            unregisterRestAssuredFilter();
+        } finally {
+            System.out.println("TGR Destroying spring boot context after testrun...");
+            if (envMgrApplicationContext != null) {
+                envMgrApplicationContext.close();
+            }
+            System.out.println("TGR Tiger shut down orderly");
+        }
     }
 
     private static void setupTestEnvironent() {
@@ -242,26 +257,6 @@ public class TigerDirector {
             return null;
         } else {
             return tigerTestEnvMgr.getLocalTigerProxy().getBaseUrl();
-        }
-    }
-
-    public static void waitForQuit() {
-        if (getLibConfig().isActivateWorkflowUi()) {
-            tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                .bannerMessage("Press QUIT to abort test run")
-                .bannerColor("green")
-                .bannerType(BannerType.TESTRUN_ENDED)
-                .build());
-            try {
-                await().pollInterval(200, TimeUnit.MILLISECONDS)
-                    .atMost(5, TimeUnit.HOURS)
-                    .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
-            } finally {
-                System.exit(0);
-            }
-        } else {
-            tigerTestEnvMgr.waitForConsoleInput("quit");
-            System.exit(0);
         }
     }
 
