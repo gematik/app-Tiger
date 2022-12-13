@@ -20,7 +20,7 @@ pipeline {
     }
 
     stages {
-	
+
         stage('Checkout') {
             steps {
                 git branch: BRANCH,
@@ -67,7 +67,7 @@ pipeline {
     post {
         always {
             sendEMailNotification(getTigerEMailList())
-            showJUnitAsXUnitResult("**/target/*-reports/TEST-*.xml")
+            showJUnitAsXUnitResult("**/target/*-reports-*/TEST-*.xml")
             archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-admin/target/site/serenity/**/*', fingerprint: false
             publishHTML (target: [
                 allowMissing: false,
