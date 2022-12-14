@@ -51,13 +51,13 @@ pipeline {
 
           stage('Build') {
               steps {
-                  mavenBuild(POM_PATH)
+                  mavenBuild(POM_PATH,"-P disable-prepare-items")
               }
           }
 
           stage('Tests') {
               steps {
-                  mavenVerify(POM_PATH, "-P ci-pipeline")
+                  mavenVerify(POM_PATH, "-P ci-pipeline,disable-prepare-items")
               }
           }
 
