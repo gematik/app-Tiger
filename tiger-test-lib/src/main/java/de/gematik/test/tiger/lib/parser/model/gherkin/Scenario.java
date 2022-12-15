@@ -69,9 +69,9 @@ public class Scenario extends GherkinStruct {
             hasTag("@TESTFALL") && StringUtils.equals(getTag("@TESTFALL").getParameter(), "Negativ"));
 
         if (hasTag("@TESTSTUFE")) {
-            json.put(JSON.TESTSTUFE, Integer.parseInt(getTag("@TESTSTUFE").getParameter()));
+            json.put(JSON.TESTSTUFE, getTag("@TESTSTUFE").getParameter());
         } else {
-            json.put(JSON.TESTSTUFE, Integer.parseInt("3"));
+            json.put(JSON.TESTSTUFE, "3");
         }
 
         final JSONArray anforderungen = new JSONArray(getTags().stream()
