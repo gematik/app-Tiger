@@ -289,12 +289,4 @@ public class RbelConverter {
             }
         }
     }
-
-    public void addMessage(RbelElement newMessage) {
-        synchronized (messageHistory) {
-            messageHistory.addLast(newMessage);
-            currentBufferSize += newMessage.getSize();
-            knownMessageUuids.add(newMessage.getUuid());
-        }
-    }
 }

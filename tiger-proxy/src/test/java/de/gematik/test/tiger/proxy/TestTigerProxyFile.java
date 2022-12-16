@@ -92,6 +92,27 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
     }
 
     @Test
+    void filterFileForRequestWithRequestFilter_pairShouldBeIntact() {
+        executeFileWritingAndReadingTest(
+            otherProxy -> {
+                await()
+                    .atMost(2, TimeUnit.SECONDS)
+                        .until(otherProxy::isFileParsed);
+                assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst().findElement("$.path")
+                        .get().getRawStringContent()).isEqualTo("/foobar");
+                assertThat(otherProxy.getRbelLogger().getMessageHistory())
+                    .hasSize(2);
+            },
+            TigerFileSaveInfo.builder()
+                .readFilter("request.url !$ 'faabor'"),
+            () -> {
+                proxyRest.get("http://backend/foobar").asJson();
+                proxyRest.get("http://backend/faabor").asJson();
+                fileHasNLines(TGR_FILENAME, 4);
+            });
+    }
+
+    @Test
     void errorWhileReadingTgrFile_expectStartupError() {
         final TigerProxyConfiguration configuration = TigerProxyConfiguration.builder()
             .fileSaveInfo(TigerFileSaveInfo.builder()

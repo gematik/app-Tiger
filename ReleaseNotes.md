@@ -19,6 +19,7 @@
 * TGR-745: Small performance boost for JEXL-execution
 * TGR-745: More compact Rbel-messages in WebUI
 * TGR-745: Ability added to filter TGR-files
+* TGR-788: Negated JEXL filters are now correctly applied when reading TGR files in the Tiger Proxy
 * TGR-758: Pairs are no longer discarded when filtering remote Traffic
 * TGR-782: Version is now displayed correctly for Standalone-Proxies
 * TGR-766: Added support for Java 8 Date/Time Types to TigerGlobalConfiguration

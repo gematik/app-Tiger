@@ -129,8 +129,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
             try {
                 rbelFileWriter.postConversionListener.add(pairingPostProcessor);
                 if (StringUtils.isNotEmpty(getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
-                    rbelFileWriter.postConversionListener.add(
-                        new ProxyFileReadingFilter(getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
+                    rbelFileWriter.postConversionListener.add(new ProxyFileReadingFilter(
+                        getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
                 }
                 rbelFileWriter.convertFromRbelFile(
                     Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
