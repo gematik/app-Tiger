@@ -140,4 +140,10 @@ class RbelJexlTest {
         assertThat(jexlExecutor.matchesAsJexlExpression(response, "$..signature.isValid == 'true'"))
             .isTrue();
     }
+
+    @Test
+    void testRbelEscaping() {
+        assertThat(jexlExecutor.matchesAsJexlExpression(response, "$.body.header =~ '.*discSig.*'"))
+            .isTrue();
+    }
 }

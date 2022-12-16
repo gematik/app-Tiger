@@ -31,8 +31,8 @@ public class RbelJexlExecutor {
 
     public boolean matchesAsJexlExpression(Object element, String jexlExpression, Optional<String> key) {
         try {
-            final JexlExpression expression = buildExpression(evaluateRbelPathExpressions(jexlExpression, element));
             final MapContext mapContext = new MapContext(buildJexlMapContext(element, key));
+            final JexlExpression expression = buildExpression(evaluateRbelPathExpressions(jexlExpression, element, mapContext));
 
             final boolean result = Optional.of(expression.evaluate(mapContext))
                 .filter(Boolean.class::isInstance)
@@ -71,7 +71,7 @@ public class RbelJexlExecutor {
         }
     }
 
-    private String evaluateRbelPathExpressions(String jexlExpression, Object element) {
+    private String evaluateRbelPathExpressions(String jexlExpression, Object element, MapContext mapContext) {
         if (!(element instanceof RbelElement)
             || !jexlExpression.contains("$.")) {
             return jexlExpression;
@@ -80,7 +80,9 @@ public class RbelJexlExecutor {
             .filter(str -> str.startsWith("$.")
                 && str.length() > 2)
             .findAny().orElseThrow();
-        return jexlExpression.replace(rbelPath, "\"" + extractPathAndConvertToString((RbelElement) element, rbelPath) + "\"");
+        final String rbelEvaluationResult = extractPathAndConvertToString((RbelElement) element, rbelPath);
+        mapContext.set("rbelEvaluationResult", rbelEvaluationResult);
+        return jexlExpression.replace(rbelPath, "rbelEvaluationResult");
     }
 
     private static String extractPathAndConvertToString(RbelElement source, String rbelPath) {

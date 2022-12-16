@@ -10,6 +10,10 @@
 * Appium 8.1.1
 * Spring Boot 2.7.5
 
+## Bugfixes
+
+* TGR-789: Fixed escaping-problems for Rbel-Path expressions embedded in JEXL
+
 ## Features
 
 * TGR-745: Small performance boost for JEXL-execution
