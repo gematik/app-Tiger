@@ -50,7 +50,9 @@
       <div class="col-2 logDate">{{ getReadableTime(serverLog.localDateTime) }}</div>
       <div :class="`col-9 type-${serverLog.logLevel.toLowerCase()}`">
         [{{serverLog.logLevel.toUpperCase()}}]
-        <span v-html="serverLog.logMessage.replaceAll('\n', '<br/>')"></span>
+        <div v-if="serverLog.logMessage">
+          <span v-html="serverLog.logMessage.replaceAll('\n', '<br/>')"></span>
+        </div>
       </div>
     </div>
   </div>
