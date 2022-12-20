@@ -67,7 +67,11 @@ pipeline {
     post {
         always {
             sendEMailNotification(getTigerEMailList())
-            showJUnitAsXUnitResult("**/target/*-reports-*/TEST-*.xml")
+            sh """
+                echo "removing obsolete junit xml results from admin ui tests that cause xunit plugin to fail"
+                rm -rf target/junit-reports-nightly
+            """
+            showJUnitAsXUnitResult("**/target/*-reports*/TEST-*.xml")
             archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-admin/target/site/serenity/**/*', fingerprint: false
             publishHTML (target: [
                 allowMissing: false,

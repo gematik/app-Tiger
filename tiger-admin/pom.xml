@@ -345,7 +345,7 @@
                         <webdriver.base.url>${webdriver.base.url}</webdriver.base.url>
                         <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>
-                    <parallel>classes</parallel>
+                    <parallel>methods</parallel>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
                     <forkCount>2</forkCount>
                     <testFailureIgnore>true</testFailureIgnore>

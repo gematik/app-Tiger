@@ -93,7 +93,7 @@
         <version.commons-jexl3>3.2.1</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.cucumber>7.8.1</version.cucumber>
-        <version.datatable>7.10.0</version.datatable>
+        <version.datatable>7.8.1</version.datatable>
         <version.gson>2.10</version.gson>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jackson>2.14.1</version.jackson>
@@ -517,11 +517,6 @@
                     </properties>
                     <excludedGroups>${excludedTestGroups}</excludedGroups>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
-                <version>3.12.1</version>
             </plugin>
         </plugins>
     </build>
