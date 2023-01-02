@@ -379,7 +379,7 @@ public class RbelMessageValidator {
     }
 
     public void findLastRequest() {
-        final Iterator<RbelElement> descendingIterator = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()
+        final Iterator<RbelElement> descendingIterator = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
             .getRbelLogger().getMessageHistory()
             .descendingIterator();
         final RbelElement lastRequest = StreamSupport.stream(

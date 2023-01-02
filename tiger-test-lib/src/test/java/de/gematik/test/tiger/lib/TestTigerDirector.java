@@ -20,6 +20,7 @@ import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -67,10 +68,10 @@ class TestTigerDirector {
 
             assertThat(TigerDirector.isInitialized()).isTrue();
             assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
-            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getBaseUrl()).startsWith(
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isNotNull();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getBaseUrl()).startsWith(
                 "http://localhost");
-            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getRbelLogger()).isNotNull();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getRbelLogger()).isNotNull();
             assertThat(
                 TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
                     .getPorts()).hasSize(1);
@@ -95,7 +96,7 @@ class TestTigerDirector {
 
                 assertThat(TigerDirector.isInitialized()).isTrue();
                 assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-                assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
+                assertThatThrownBy(() -> TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isInstanceOf(TigerTestEnvException.class);
 
                 final var url = new URL("http://idp-rise-tu-noproxy");
 

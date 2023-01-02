@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static java.time.LocalDateTime.now;
-import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;

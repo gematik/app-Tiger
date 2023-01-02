@@ -103,7 +103,7 @@ class TracingResilienceTest {
             giveAggregatingProxyTimeToCatchUpIfRunning(testEnvMgr, i + 1);
             log.info("Sent {} msgs, sending-proxy has {} msgs, receiving-proxy has {} msgs",
                 (i + 1) * MESSAGES_PER_ROUND * 2,
-                testEnvMgr.getLocalTigerProxy().getRbelMessages().size(),
+                testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
                 getReceivingTigerProxyMessages(testEnvMgr).size());
         }
 
@@ -117,7 +117,7 @@ class TracingResilienceTest {
             .until(() -> {
                 log.info("We sent {} message, intercepted {}, aggregating {}, receiving {}",
                     MASTER_ROUNDS * MESSAGES_PER_ROUND * 2,
-                    testEnvMgr.getLocalTigerProxy().getRbelMessages().size(),
+                    testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
                     aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
                     getReceivingTigerProxyMessages(testEnvMgr).size());
                 return MASTER_ROUNDS * MESSAGES_PER_ROUND * 2 == getReceivingTigerProxyMessages(testEnvMgr).size();
@@ -128,17 +128,17 @@ class TracingResilienceTest {
         if (aggregatingProxyContext != null) {
             try {
                 waitAtMost(10, TimeUnit.SECONDS)
-                    .until(() -> testEnvMgr.getLocalTigerProxy().getRbelMessages().size()
+                    .until(() -> testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size()
                         ==
                         getReceivingTigerProxyMessages(testEnvMgr).size());
             } catch (ConditionTimeoutException e) {
                 log.error("We sent {} message, intercepted {}, aggregating {}, receiving {}",
                     round * MESSAGES_PER_ROUND * 2,
-                    testEnvMgr.getLocalTigerProxy().getRbelMessagesList().size(),
+                    testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().size(),
                     aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
                     getReceivingTigerProxyMessages(testEnvMgr).size());
                 final List<RbelElement> sendingMsgs
-                    = getLastRequestPaths(testEnvMgr.getLocalTigerProxy().getRbelMessagesList());
+                    = getLastRequestPaths(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList());
                 final List<RbelElement> aggregatingMsgs = getLastRequestPaths(
                     aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessagesList());
                 final List<RbelElement> receivingMsgs = getLastRequestPaths(

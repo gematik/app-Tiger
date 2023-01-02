@@ -20,7 +20,7 @@ public class TestTigerIntegrationExample {
     @When("User requests the startpage")
     public void userRequestsStartpage() {
         var rest = Unirest.spawnInstance();
-        rest.config().proxy("127.0.0.1", TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getProxyPort());
+        rest.config().proxy("127.0.0.1", TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getProxyPort());
 
         final HttpResponse<String> httpResponse = rest.get("http://winstone").asString();
 

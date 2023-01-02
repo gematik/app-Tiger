@@ -378,7 +378,7 @@ public class DockerMgr {
 
     private static String getTigerProxyRootCaCertificate(AbstractTigerServer server) {
         try {
-            final Certificate certificate = server.getTigerTestEnvMgr().getLocalTigerProxy()
+            final Certificate certificate = server.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
                 .buildTruststore().getCertificate(CA_CERT_ALIAS);
             final Base64.Encoder encoder = Base64.getMimeEncoder(64, "\r\n".getBytes());
 

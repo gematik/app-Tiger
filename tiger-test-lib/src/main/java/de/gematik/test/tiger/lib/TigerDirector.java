@@ -15,6 +15,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
@@ -27,6 +28,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -72,7 +74,8 @@ public class TigerDirector {
         applyTestLibConfig();
         // get free port
         startTestEnvMgr();
-        tigerTestEnvMgr.getLocalTigerProxy().addRbelMessageListener(LocalProxyRbelMessageListener.rbelMessageListener);
+        tigerTestEnvMgr.getLocalTigerProxyOptional()
+            .ifPresent(proxy -> proxy.addRbelMessageListener(LocalProxyRbelMessageListener.rbelMessageListener));
         startWorkflowUi();
         setupTestEnvironent();
         setDefaultProxyToLocalTigerProxy();
@@ -89,7 +92,7 @@ public class TigerDirector {
         shutdownHookRegistered = true;
 
         log.info("Registering shutdown hook...");
-        Runtime.getRuntime().addShutdownHook(new Thread(() ->  quit(false, tigerTestEnvMgr.isUserAcknowledgedShutdown())));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> quit(false, tigerTestEnvMgr.isUserAcknowledgedShutdown())));
     }
 
     public static void waitForQuit() {
@@ -225,21 +228,24 @@ public class TigerDirector {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     RbelAnsiColors.RED_BOLD));
             } else {
-                log.info(Ansi.colorize(
-                    "SETTING TIGER PROXY http://localhost:" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort()
-                        + "...", RbelAnsiColors.BLUE_BOLD));
-                System.setProperty("http.proxyHost", "localhost");
-                System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
-                System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
-                System.setProperty("https.proxyHost", "localhost");
-                System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
-                System.setProperty("java.net.useSystemProxies", "true");
-                SerenityRestUtils.setupSerenityRest(tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
+                tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy -> {
+                    log.info(Ansi.colorize(
+                        "SETTING TIGER PROXY http://localhost:" + proxy.getProxyPort()
+                            + "...", RbelAnsiColors.BLUE_BOLD));
+                    System.setProperty("http.proxyHost", "localhost");
+                    System.setProperty("http.proxyPort", "" + proxy.getProxyPort());
+                    System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
+                    System.setProperty("https.proxyHost", "localhost");
+                    System.setProperty("https.proxyPort", "" + proxy.getProxyPort());
+                    System.setProperty("java.net.useSystemProxies", "true");
+                    SerenityRestUtils.setupSerenityRest(proxy.getProxyPort());
+                });
             }
         } else {
             log.info(
                 Ansi.colorize("SKIPPING TIGER PROXY settings as localProxyActive==false...", RbelAnsiColors.RED_BOLD));
         }
+
     }
 
     public static synchronized boolean isInitialized() {
@@ -253,10 +259,10 @@ public class TigerDirector {
 
     public static String getLocalTigerProxyUrl() {
         assertThatTigerIsInitialized();
-        if (tigerTestEnvMgr.getLocalTigerProxy() == null || !tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
+        if (tigerTestEnvMgr.getLocalTigerProxyOptional().isEmpty() || !tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
             return null;
         } else {
-            return tigerTestEnvMgr.getLocalTigerProxy().getBaseUrl();
+            return tigerTestEnvMgr.getLocalTigerProxyOrFail().getBaseUrl();
         }
     }
 
@@ -338,7 +344,9 @@ public class TigerDirector {
             tigerTestEnvMgr.resetUserInput();
         } else {
             // TGR-585
-            log.warn(String.format("The step 'TGR pause test run execution with message \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.", message));
+            log.warn(String.format(
+                "The step 'TGR pause test run execution with message \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.",
+                message));
         }
     }
 
@@ -366,7 +374,8 @@ public class TigerDirector {
         } else {
             // TGR-585
             log.warn(String.format(
-                "The step 'TGR pause test run execution with message \"%s\" and message in case of error \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.", message, errorMessage));
+                "The step 'TGR pause test run execution with message \"%s\" and message in case of error \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.",
+                message, errorMessage));
         }
     }
 }

@@ -26,10 +26,12 @@
 * TGR-757: WebUI: Return feedback on filtered messages to the user
 * TGR-575: Added support for CETP messages in tiger-rbel
 * TGR-559: Code optimized in TigerDirector
+* TGR-640: Logs out tiger configuration and environment variables when debug log level is set
 
 ## Breaking changes
 
 * TGR-745: VAU traffic is no longer decrypted by default. Please set the appropriate flags to do so (activateErpVauAnalysis and activateEpaVauAnalysis)
+* TGR-640: when using the tiger yaml property ```localProxyActive: false``` the field localTigerProxy in the TigerTestEnvMgr is now returned as null to save test execution time as we don't start it up any longer if no local proxy is desired.
 
 -------
 # Release 1.1.0

@@ -59,8 +59,8 @@ public class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
         await().atMost(10, TimeUnit.SECONDS)
             .until(() ->
-                envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().size() >= 2
-                    && envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().getFirst()
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size() >= 2
+                    && envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst()
                     .findElement("$.path").map(RbelElement::getRawStringContent)
                     .map(p -> p.endsWith(path))
                     .orElse(false));
@@ -105,7 +105,7 @@ public class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "      proxiedServer: winstone\n"
         + "      proxyPort: ${free.port.7}\n")
     public void testWithMultipleUpstreamProxies(TigerTestEnvMgr envMgr) {
-        assertThat(envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory())
+        assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory())
             .isEmpty();
 
         assertThat(Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5"))
@@ -119,6 +119,6 @@ public class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
         await().atMost(10, TimeUnit.SECONDS)
             .until(() ->
-                envMgr.getLocalTigerProxy().getRbelLogger().getMessageHistory().size() >= 4);
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size() >= 4);
     }
 }

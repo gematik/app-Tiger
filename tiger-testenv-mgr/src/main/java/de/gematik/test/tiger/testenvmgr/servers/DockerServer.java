@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr.HTTP;
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;

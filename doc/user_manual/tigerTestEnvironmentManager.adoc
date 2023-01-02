@@ -561,7 +561,7 @@ For more information about what the Tiger Proxy is and how it works see the chap
 
 [source,yaml]
 ----
-# Flag whether to activate the local Tiger Proxy
+# Flag whether to activate the local Tiger Proxy. The local tiger proxy field will be null if this property is set to false
 # Default value is true
 localProxyActive: true
 
@@ -577,7 +577,7 @@ additionalYamls:
 tigerProxy:
   # the port under which the server will be booted
   adminPort: 7777
-  # logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!
+  # logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
   # section to configure whether and where the proxy should dump
   # a traffic HTML report on shutdown

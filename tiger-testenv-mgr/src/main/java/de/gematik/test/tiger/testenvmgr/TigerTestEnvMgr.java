@@ -4,6 +4,9 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -93,11 +96,13 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         this.configuration = readConfiguration();
         this.environmentVariables = new HashMap<>();
 
+        logConfiguration();
+
         lookupServerPluginsInClasspath();
 
-        localTigerProxy = startLocalTigerProxy(configuration);
         try {
             if (configuration.isLocalProxyActive()) {
+                localTigerProxy = startLocalTigerProxy(configuration);
                 log.info(Ansi.colorize("Local Tiger Proxy URL http://localhost:{}",
                     RbelAnsiColors.BLUE_BOLD), localTigerProxy.getProxyPort());
                 log.info(Ansi.colorize("Local Tiger Proxy UI http://localhost:{}/webui",
@@ -105,7 +110,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
                 environmentVariables.put("PROXYHOST", "host.docker.internal");
                 environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
             } else {
-                log.info("Local Tiger Proxy deactivated");
+                log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));
+                localTigerProxy = null;
             }
 
             createServerObjects();
@@ -114,6 +120,27 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         } catch (RuntimeException e) {
             shutDown();
             throw e;
+        }
+    }
+
+    private void logConfiguration() {
+        if (log.isDebugEnabled()) {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(Include.NON_NULL);
+            mapper.setSerializationInclusion(Include.NON_EMPTY);
+            mapper.setSerializationInclusion(Include.NON_DEFAULT);
+            try {
+                log.debug(
+                    "Tiger configuration: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(configuration));
+            } catch (JsonProcessingException e) {
+                log.error("Unable to dump tiger configuration in " + getClass().getSimpleName(), e);
+            }
+            try {
+                log.debug("Environment variables: " + mapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(System.getenv()));
+            } catch (JsonProcessingException e) {
+                log.error("Unable to dump os env variables in " + getClass().getSimpleName(), e);
+            }
         }
     }
 
@@ -326,7 +353,9 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         initialServersToBoot.parallelStream()
             .forEach(this::startServer);
 
-        localTigerProxy.subscribeToTrafficEndpoints(configuration.getTigerProxy());
+        if (isLocalTigerProxyActive()) {
+            localTigerProxy.subscribeToTrafficEndpoints(configuration.getTigerProxy());
+        }
 
         log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
     }
@@ -395,6 +424,33 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     public Optional<AbstractTigerServer> findServer(String serverName) {
         return Optional.ofNullable(servers.get(serverName));
+    }
+
+    /**
+     * @return local Tiger Proxy instance
+     * @deprecated to avoid the null pointer hassle, the API has been changed to return Optional, see {@link #getLocalTigerProxyOrFail()} and {@link #getLocalTigerProxyOptional()}.
+     */
+    @Deprecated(since = "1.1.1", forRemoval = true)
+    public TigerProxy getLocalTigerProxy() {
+        return localTigerProxy;
+    }
+
+    public TigerProxy getLocalTigerProxyOrFail() {
+        if (localTigerProxy == null) {
+            if (isLocalTigerProxyActive()) {
+                throw new TigerTestEnvException("Local Tiger Proxy is not activated!");
+            } else {
+                throw new TigerTestEnvException("Local Tiger Proxy is null!");
+            }
+        }
+        return localTigerProxy;
+    }
+
+    public Optional<TigerProxy> getLocalTigerProxyOptional() {
+        if (localTigerProxy == null) {
+            return Optional.empty();
+        }
+        return Optional.of(localTigerProxy);
     }
 
     public boolean isLocalTigerProxyActive() {
