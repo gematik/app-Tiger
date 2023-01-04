@@ -21,7 +21,7 @@
         <maven.compiler.target>11</maven.compiler.target>
 
         <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
-        <version.mockito>4.10.0</version.mockito>
+        <version.mockito>4.11.0</version.mockito>
     </properties>
 
     <dependencies>
