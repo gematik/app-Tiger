@@ -18,7 +18,7 @@ java -jar tiger-admin-x.y.z.jar --server.port=8080
 
 Now open your firefox browser and go to http://127.0.0.1:8080.
 
-Voila you are ready to start working with the Tiger Admin UI
+Voila you are ready to start working with the Tiger Admin UI.
 
 
 === Workflow UI

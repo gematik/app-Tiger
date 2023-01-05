@@ -10,7 +10,7 @@
 
     <groupId>de.gematik.test.tiger.examples</groupId>
     <artifactId>TigerTestBDD</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.1-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -20,10 +20,10 @@
         <!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
           or from gematik internal Nexus
-          https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
+          https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
-        <version.tiger>0.23.2</version.tiger>
-        <version.serenity.core>3.2.5</version.serenity.core>
+        <version.tiger>1.1.1</version.tiger>
+        <version.serenity.core>3.3.10</version.serenity.core>
     </properties>
 
     <!-- tag::dependencies[] -->

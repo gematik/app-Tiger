@@ -94,8 +94,8 @@ include::validation-example.feature[]
 
 ===== XMLUnit Diff Builder
 
-Using the validation steps `TGR current response at \{string} matches as XML` or
-`TGR current response at \{string} matches as XML and diff options \{string}` you are able to compare
+Using the validation steps `TGR current response at \{string} matches as XML:` or
+`TGR current response at \{string} matches as XML and diff options \{string}:` you are able to compare
 the content of any RbelPath node in the response.
 The latter method even allows passing in the following options to the XMLUnit's DiffBuilder:
 
@@ -110,7 +110,7 @@ For more detailed explanation about the XMLUnit difference evaluator we refer to
 
 ===== JSONChecker
 
-Using the validation step `TGR current response at \{string} matches as JSON` you are able to compare the content of any RbelPath node
+Using the validation step `TGR current response at \{string} matches as JSON:` you are able to compare the content of any RbelPath node
 in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.
 
 The purpose of JSONChecker class is to compare JSON structures, including checking for the integrity of the whole RbelPath node, as well as matching values for particular keys.

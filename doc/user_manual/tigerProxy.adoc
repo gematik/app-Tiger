@@ -263,8 +263,11 @@ tigerProxy:
     trafficEndpoints:
       - http://another.tiger.proxy:<adminPort>
     # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
-    # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the
+    # gather traffic via the STOMP-protocol.
+    skipTrafficEndpointsSubscription: false
+    # If false then the subscription is tested at the beginning and if any of the given endpoints are not accessible the
     # server will not boot. (fail fast, fail early)
+    # default of skipTrafficEndpointsSubscription is false
     downloadInitialTrafficFromEndpoints: true
     # Should the traffic currently available (cached) in the remote be download upon initial connection?
 ----
