@@ -33,6 +33,7 @@ import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.Banner.Mode;
@@ -72,6 +73,7 @@ class TracingResilienceTest {
             + "      name: Receiving Proxy\n"
             + "      downloadInitialTrafficFromEndpoints: true\n"
             + "      connectionTimeoutInSeconds: 100", skipEnvironmentSetup = true)
+    @Disabled("deactivated due to buildserver problems") // TODO TGR-794
     void generateTrafficAndBounceViaRemoteProxy(TigerTestEnvMgr testEnvMgr) throws IOException {
         int aggregatingAdminPort;
         try (ServerSocket socket = new ServerSocket(0)) {

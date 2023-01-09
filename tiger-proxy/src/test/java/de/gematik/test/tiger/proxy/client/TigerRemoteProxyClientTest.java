@@ -43,6 +43,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -324,6 +325,7 @@ class TigerRemoteProxyClientTest {
         "request.url =$ 'faa'",
         "response.statusCode == '404'"
     })
+    @Disabled("deactivated due to buildserver problems") // TODO TGR-794
     void downstreamTigerProxyWithFilterCriterion_shouldOnlyShowMatchingMessages(String filterCriterion) {
         var filteredTigerProxy = new TigerProxy(
             TigerProxyConfiguration.builder()

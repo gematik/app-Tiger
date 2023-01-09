@@ -23,6 +23,7 @@ public class TestTokenSubstituteHelper {
         TigerGlobalConfiguration.putValue("key2", "KEY2VALUE");
         TigerGlobalConfiguration.putValue("foo.bar", "FOOBARVALUE");
         TigerGlobalConfiguration.putValue("give.me.a.foo", "foo");
+        TigerGlobalConfiguration.putValue("some.boolean.value", "true");
     }
 
     @ParameterizedTest
@@ -53,7 +54,8 @@ public class TestTokenSubstituteHelper {
     @ParameterizedTest
     @CsvSource(value = {
         "is it !{10 == 0} or not? , is it false or not?",
-        "!{file('src/test/resources/helloworld.txt')},  Hello World!"
+        "!{file('src/test/resources/helloworld.txt')},  Hello World!",
+        "!{not ${some.boolean.value}},  false"
     })
     public void testFunctionExecution(String stringToSubstitute, String expectedString) {
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
