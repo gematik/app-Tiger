@@ -92,9 +92,14 @@ public class Scenario extends GherkinStruct {
             .collect(Collectors.toList()));
         json.put(JSON.PRODUKT_TYP, produkte);
 
+        if (hasTag("@DESCRIPTION")) {
+            json.put(JSON.DESCRIPTION, getDescription().replace("\n", "</br>"));
+        } else {
+            json.put(JSON.DESCRIPTION, "");
+        }
+
         json.put(JSON.TESTART, "Funktionstest");
         json.put(JSON.TITEL, getName());
-        json.put(JSON.DESCRIPTION, getDescription().replace("\n", "</br>"));
         json.put(JSON.VORBEDINGUNG, "");
         final StringBuilder sb = new StringBuilder();
         int stepIdx = 0;

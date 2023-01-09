@@ -298,6 +298,7 @@ And following optional annotations exist:
 * @STATUS:xxx - describes the status of the test, default is 'implementiert'
 * @TESTFALL:n - describes if the test case is a negative testcase or positive one, default is 'positiv'
 * @TESTSTUFE:n - describes the test type, default is '3' (which is E2E-Test)
+* @DESCRIPTION - if your test case has a description, and you use this annotation, the description will be parsed. If not, the description stays empty and won't overwrite the one already existing in Polarion
 
 If a scenario is identified that has no test case with a matching TCID, it will be created automatically in the sync run. Background blocks will be merged to each scenario before exporting its steps to Polarion.
 
