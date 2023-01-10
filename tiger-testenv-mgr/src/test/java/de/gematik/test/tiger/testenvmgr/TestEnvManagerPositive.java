@@ -16,14 +16,12 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -300,6 +298,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
     void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
+        envMgr.startLocalTigerProxyIfActivated();
         assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).get())
             .isBetween(0, 655536);
         assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get())

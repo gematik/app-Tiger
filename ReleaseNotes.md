@@ -28,6 +28,7 @@
 * TGR-559: Code optimized in TigerDirector
 * TGR-696: Added helm chart to User Manual 
 * TGR-640: Logs out tiger configuration and environment variables when debug log level is set
+* TGR-732: WorkflowUi: LokalTigerProxy is shown in server list on the left and also appears in the logs
 
 ## Breaking changes
 

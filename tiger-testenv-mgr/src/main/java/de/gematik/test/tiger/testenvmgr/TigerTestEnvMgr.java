@@ -16,18 +16,17 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import de.gematik.test.tiger.testenvmgr.env.DownloadManager;
-import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
-import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
-import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
+import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
+import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.awt.Desktop;
@@ -64,21 +63,25 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 @Slf4j
 @Getter
-public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, TigerUpdateListener, DisposableBean,
+public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean,
     AutoCloseable {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
     public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
     public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
+    public static final String LOCAL_TIGER_PROXY_TYPE = "local_tiger_proxy";
     private final Configuration configuration;
     private final Map<String, Object> environmentVariables;
-    private final TigerProxy localTigerProxy;
+    private TigerProxy localTigerProxy;
     private final List<TigerRoute> routesList = new ArrayList<>();
     private final Map<String, AbstractTigerServer> servers = new HashMap<>();
     private final ExecutorService executor = Executors
         .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
     private final List<TigerUpdateListener> listeners = new ArrayList<>();
+
+    private final List<TigerServerLogListener> logListeners = new ArrayList<>();
+
     private final DownloadManager downloadManager = new DownloadManager();
     private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
@@ -89,37 +92,53 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
     @Setter
     @Getter
     private boolean workflowUiSentFetch = false;
-
     private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
+
+    private final org.slf4j.Logger localProxyLog;
 
     public TigerTestEnvMgr() {
         this.configuration = readConfiguration();
         this.environmentVariables = new HashMap<>();
+        localProxyLog = org.slf4j.LoggerFactory.getLogger("localTigerProxy");
 
         logConfiguration();
 
         lookupServerPluginsInClasspath();
 
         try {
-            if (configuration.isLocalProxyActive()) {
-                localTigerProxy = startLocalTigerProxy(configuration);
-                log.info(Ansi.colorize("Local Tiger Proxy URL http://localhost:{}",
-                    RbelAnsiColors.BLUE_BOLD), localTigerProxy.getProxyPort());
-                log.info(Ansi.colorize("Local Tiger Proxy UI http://localhost:{}/webui",
-                    RbelAnsiColors.BLUE_BOLD), localTigerProxyApplicationContext.getWebServer().getPort());
-                environmentVariables.put("PROXYHOST", "host.docker.internal");
-                environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
-            } else {
-                log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));
-                localTigerProxy = null;
-            }
-
             createServerObjects();
 
             log.info("Tiger Testenv mgr created OK");
         } catch (RuntimeException e) {
             shutDown();
             throw e;
+        }
+    }
+
+    public void startLocalTigerProxyIfActivated() {
+        if (configuration.isLocalProxyActive()) {
+            TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
+            localTigerProxy = startLocalTigerProxy(configuration);
+            proxyStatusMessage("LocalTigerProxy started", RbelAnsiColors.GREEN_BOLD);
+            proxyStatusMessage("Local Tiger Proxy URL http://localhost:" + localTigerProxy.getProxyPort(), RbelAnsiColors.BLUE_BOLD);
+            proxyStatusMessage("Local Tiger Proxy UI http://localhost:" + localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui", RbelAnsiColors.BLUE_BOLD);
+            environmentVariables.put("PROXYHOST", "host.docker.internal");
+            environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
+            TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
+         } else {
+            log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));
+            localTigerProxy = null;
+        }
+    }
+    private void proxyStatusMessage(String statusMessage, RbelAnsiColors color) {
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .type(LOCAL_TIGER_PROXY_TYPE)
+            .status(TigerServerStatus.RUNNING)
+            .statusMessage(statusMessage)
+            .baseUrl("http://localhost:" + getLocalTigerProxyOrFail().getProxyPort())
+            .build());
+        if (localProxyLog.isInfoEnabled()) {
+            localProxyLog.info(Ansi.colorize(statusMessage, color));
         }
     }
 
@@ -196,12 +215,26 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
             .run();
 
         localTigerProxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
+        if (localTigerProxy.getName().isEmpty()) {
+            localTigerProxy.setName(Optional.of("localTigerProxy"));
+        }
 
         TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT, localTigerProxy.getProxyPort());
         TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT,
             String.valueOf(localTigerProxyApplicationContext.getWebServer().getPort()));
 
         return localTigerProxy;
+    }
+
+    private void publishNewStatusUpdate(TigerServerStatusUpdate update) {
+        if (getExecutor() != null) {
+            getExecutor().submit(
+                () -> listeners.parallelStream()
+                    .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                        .serverUpdate(new LinkedHashMap<>(Map.of(getLocalTigerProxy().getName().orElse(getLocalTigerProxy().proxyName()), update)))
+                        .build()))
+            );
+        }
     }
 
     public static void waitForConsoleInput(String textToEnter) {
@@ -335,11 +368,16 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         }
     }
 
-
-    @Override
     public void setUpEnvironment() {
+        setUpEnvironment(Optional.empty());
+    }
+    public void setUpEnvironment(Optional<IRbelMessageListener> localTigerProxyMessageListener) {
         assertNoCyclesInGraph();
         assertNoUnknownServersInDependencies();
+
+        startLocalTigerProxyIfActivated();
+        localTigerProxyMessageListener.ifPresent(provider -> getLocalTigerProxyOptional()
+            .ifPresent(proxy -> proxy.addRbelMessageListener(provider)));
 
         final List<AbstractTigerServer> initialServersToBoot = servers.values().parallelStream()
             .filter(server -> server.getDependUponList().isEmpty())
@@ -389,7 +427,6 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
         return str;
     }
 
-    @Override
     public synchronized void shutDown() {
         log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
         for (AbstractTigerServer server : servers.values()) {
@@ -400,12 +437,18 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
             }
         }
 
-        log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));
         if (localTigerProxy != null) {
+            log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));
             localTigerProxy.shutdown();
         }
         if (localTigerProxyApplicationContext != null) {
             localTigerProxyApplicationContext.close();
+            publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+                .type(LOCAL_TIGER_PROXY_TYPE)
+                .status(TigerServerStatus.STOPPED)
+                .statusMessage("Local Tiger Proxy stopped")
+                .build());
+            log.info(Ansi.colorize("Local tiger proxy SHUTDOWN...", RbelAnsiColors.RED_BOLD));
         }
 
         log.info(Ansi.colorize("Finished shutdown test environment OK", RbelAnsiColors.RED_BOLD));
@@ -467,10 +510,8 @@ public class TigerTestEnvMgr implements ITigerTestEnvMgr, TigerEnvUpdateSender, 
 
     @Override
     public void registerLogListener(TigerServerLogListener listener) {
-        // do nothing here
+        logListeners.add(listener);
     }
-
-
     public static void openWorkflowUiInBrowser(String adminPort) {
         try {
             String url = "http://localhost:" + adminPort;

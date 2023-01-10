@@ -8,7 +8,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import kong.unirest.Unirest;
-import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -103,8 +102,8 @@ public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
         + "      proxyPort: ${free.port.2}\n"
         + "      tls:\n"
         + "        serverIdentity: \"src/test/resources/c.ak.aut-konsim.p12;00\"")
-    void remoteProxyWithConfiguredTlsIdentity(UnirestInstance proxyRest) {
-        var response = proxyRest.get(
+    void remoteProxyWithConfiguredTlsIdentity() {
+        var response  = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.0").get()).asString();
         assertThat(response.isSuccess())
             .isTrue();

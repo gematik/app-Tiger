@@ -1,0 +1,24 @@
+@startuml
+title Wer startet was im Tiger
+
+TigerCucumberRunner -> TigerDirector: start()
+TigerDirector -> TigerTestEnvMgr: startTestEnvMgr()
+TigerTestEnvMgr --> TigerDirector: TigerTestEnvMgr started
+
+TigerDirector -> TigerTestEnvMgr: startWorkflowUi
+TigerTestEnvMgr -> WorkflowUi: openWorkflowUiInBrowser
+WorkflowUi -> TigerTestEnvMgr: getStatus
+TigerTestEnvMgr -> TigerTestEnvMgr: setWorkflowUiSentFetch
+TigerTestEnvMgr --> WorkflowUi: getStatus
+
+WorkflowUi --> TigerTestEnvMgr: WorkflowUi in Browser opened
+TigerTestEnvMgr --> TigerDirector: WorkflowUi started
+TigerDirector -> TigerTestEnvMgr: setupTestEnvironent()
+TigerTestEnvMgr -> TigerProxy: startLocalTigerProxy()
+TigerProxy --> TigerTestEnvMgr: local TigerProxy started
+TigerTestEnvMgr -> ServerXY: startServerXY()
+ServerXY --> TigerTestEnvMgr: ServerXY started
+TigerTestEnvMgr --> TigerDirector: setupTestEnvironent()
+TigerDirector --> TigerCucumberRunner: start()
+
+@enduml

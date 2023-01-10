@@ -313,7 +313,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 span("Upload").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
-                        div().withClass(navbarItem()).with(
+                        div().withClass(getNavbarItemNot4embedded()).with(
                             span("Proxy port "),
                             b("" + tigerProxy.getProxyPort()).withClass("ml-3")
                         ),

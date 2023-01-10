@@ -48,6 +48,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     private CfgServer configuration;
     private TigerServerStatus status = TigerServerStatus.NEW;
 
+    // protected because implementing servers use this var
     protected final org.slf4j.Logger log;
 
     protected AbstractTigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {

@@ -15,7 +15,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
-import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
@@ -74,10 +74,8 @@ public class TigerDirector {
         applyTestLibConfig();
         // get free port
         startTestEnvMgr();
-        tigerTestEnvMgr.getLocalTigerProxyOptional()
-            .ifPresent(proxy -> proxy.addRbelMessageListener(LocalProxyRbelMessageListener.rbelMessageListener));
         startWorkflowUi();
-        setupTestEnvironent();
+        setupTestEnvironent(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
         setDefaultProxyToLocalTigerProxy();
 
         initialized = true;
@@ -142,10 +140,10 @@ public class TigerDirector {
         }
     }
 
-    private static void setupTestEnvironent() {
+    private static void setupTestEnvironent(Optional<IRbelMessageListener> tigerProxyMessageListener) {
         if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
             log.info("\n" + Banner.toBannerStr("SETTING UP TESTENV...", RbelAnsiColors.BLUE_BOLD.toString()));
-            tigerTestEnvMgr.setUpEnvironment();
+            tigerTestEnvMgr.setUpEnvironment(tigerProxyMessageListener);
             log.info("\n" + Banner.toBannerStr("TESTENV SET UP OK", RbelAnsiColors.BLUE_BOLD.toString()));
         }
     }

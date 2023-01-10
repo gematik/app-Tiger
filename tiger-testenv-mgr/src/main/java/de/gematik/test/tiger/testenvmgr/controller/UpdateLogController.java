@@ -25,11 +25,12 @@ public class UpdateLogController implements TigerServerLogListener {
     @PostConstruct
     public void addWebSocketListener() {
         tigerTestEnvMgr.getServers().values().forEach(server -> server.registerLogListener(this));
+        tigerTestEnvMgr.registerLogListener(this);
     }
 
     @Override
     public void receiveServerLogUpdate(TigerServerLogUpdate update) {
-        log.trace("Propagating tiger server log udpate {}", update);
+        log.trace("Propagating tiger server log update {}", update);
         template.convertAndSend("/topic/serverLog", TigerServerLogDto.createFrom(update));
     }
 }

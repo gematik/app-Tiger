@@ -77,7 +77,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
     private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
     private TigerPkiIdentity generatedRootCa;
-
     public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
 

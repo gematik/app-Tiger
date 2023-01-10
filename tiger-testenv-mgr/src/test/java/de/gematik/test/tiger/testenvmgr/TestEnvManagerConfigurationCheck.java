@@ -312,6 +312,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "    tigerProxyCfg:\n" +
         "      adminPort: 9999", skipEnvironmentSetup = true)
     void defaultForLocalTigerProxyShouldBeBlockingMode(TigerTestEnvMgr envMgr) {
+        envMgr.startLocalTigerProxyIfActivated();
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
         assertThat(srv.getTigerProxyCfg().isParsingShouldBlockCommunication())
             .isFalse();
@@ -323,6 +324,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     @TigerTest(tigerYaml = "tigerProxy:\n"
         + "  parsingShouldBlockCommunication: false", skipEnvironmentSetup = true)
     void localTigerProxyConfigurationForNonBlockingModeShouldBePossible(TigerTestEnvMgr envMgr) {
+        envMgr.startLocalTigerProxyIfActivated();
         assertThat(envMgr.getLocalTigerProxyOrFail().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
             .isFalse();
     }

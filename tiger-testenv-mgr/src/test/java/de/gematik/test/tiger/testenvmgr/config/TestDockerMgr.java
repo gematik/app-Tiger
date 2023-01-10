@@ -7,10 +7,6 @@ package de.gematik.test.tiger.testenvmgr.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import de.gematik.test.tiger.testenvmgr.AbstractTestTigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.DockerMgr;
@@ -116,6 +112,7 @@ class TestDockerMgr extends AbstractTestTigerTestEnvMgr {
     }
 
     private void buildDockerServerFromConfiguration(TigerTestEnvMgr testEnvMgr, String serverId, CfgServer srv) {
+        testEnvMgr.setUpEnvironment();
         server = (DockerServer) testEnvMgr.createServer(serverId, srv);
     }
 }

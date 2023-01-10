@@ -40,6 +40,8 @@ public class EnvStatusController implements TigerUpdateListener {
     public synchronized void receiveTestEnvUpdate(final TigerStatusUpdate update) {
         log.trace("receiving update {}", update);
         try {
+            initializeLocalProxyUrl();
+
             receiveTestSuiteUpdate(update.getFeatureMap());
 
             update.getServerUpdate().forEach(this::receiveServerStatusUpdate);
@@ -57,6 +59,15 @@ public class EnvStatusController implements TigerUpdateListener {
             }
         } catch (Exception e) {
             log.error("Unable to parse update", e);
+        }
+    }
+
+    private void initializeLocalProxyUrl() {
+        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl()) && TigerGlobalConfiguration.readStringOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).isPresent()) {
+            tigerEnvStatus.setLocalProxyWebUiUrl(
+                "http://localhost:"
+                    + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
+                    + "/webui");
         }
     }
 
@@ -135,12 +146,6 @@ public class EnvStatusController implements TigerUpdateListener {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public TigerEnvStatusDto getStatus() {
         log.trace("Fetch request to getStatus() received");
-        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
-            tigerEnvStatus.setLocalProxyWebUiUrl(
-                "http://localhost:"
-                    + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
-                    + "/webui");
-        }
         tigerTestEnvMgr.setWorkflowUiSentFetch(true);
         log.trace("Sending test env status {}", tigerEnvStatus);
         return tigerEnvStatus;

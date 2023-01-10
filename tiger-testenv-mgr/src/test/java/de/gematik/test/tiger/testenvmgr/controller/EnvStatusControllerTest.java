@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -182,5 +183,18 @@ class EnvStatusControllerTest {
         } finally {
             envMgr.shutDown();
         }
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "", skipEnvironmentSetup = true)
+    void test_webUiUrlShouldBeSet(final TigerTestEnvMgr envMgr) {
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr,
+            mock(TigerBuildPropertiesService.class));
+
+        assertThat(envMgr.getLocalTigerProxyOptional()).isEmpty();
+        assertThat(StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl())).isTrue();
+        envMgr.setUpEnvironment();
+        assertThat(envMgr.getLocalTigerProxyOptional()).isNotEmpty();
+        assertThat(StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl())).isFalse();
     }
 }
