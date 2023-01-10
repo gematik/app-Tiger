@@ -1,0 +1,36 @@
+= ADR 006: eHealthCA integration into Tiger
+
+== Context
+
+Multiple test suites work with certificates and similar things, so we wanted to check if we can simplify steps for the relevant teams or help them in any way.
+
+== Status
+
+We asked one representative of each product team*, which has a test suite working with Tiger, whether they have any ideas immediately or wishes for the next test suites.
+
+The majority had neither ideas for now nor for the future regarding the use of the eHealthCA with Tiger.
+Most of them don't want to mix two different topics - the test preparation and the test execution and have no demand to instantly create certificates.
+Some do ocsp verification in their tests, but this is always done by the connector, so they don't need a step or something else to do it by themselves.
+
+Everyone promised to bring word if they see an opportunity to simplify their test suites with an eHealthCA integration.
+There was one suggestion to distribute certificates directly to the manufacturer but that doesn't really have anything to do with Tiger and it requieres the eHealthCA to be accessible from outside (which it isn't).
+
+The last point is one of two which we should consider since they may make our life difficult:
+
+* The eHealthCA is not published on GitHub (and can't be), so these features could only be used internal, and we need to make another extension-repository (which may add more maintenance since it is yet another project)
+* Speaking with one of the technical experts of the eHealthCA we concluded that the key problem is not "how" but "what".
+There are nearly endless possibilities how you can, for example, create an HBA (Heilberufsausweis) and most colleagues may not know what they really need in their scenario.
+So we might add steps to create certificates, but they will either be very specific and therefore only useful for one product team (or worst case one test) or there will be a lot of choices for each step.
+
+At the moment the documentation what you can do with the eHealthCA is rather sad, but for PI 23-1 it is planned to update the documentation together with the UI.
+The eHealthCA team wants to tackle "how" just like "what" in this new documentation together with technical experts, so (new) colleagues know what to do and how to do it if they need to work with the eHealthCA.
+
+*we asked the following product teams: Authenticator, Neo, Eurovision, Edge, Patient
+
+== Decisions
+
+Since there is no current need for an eHealthCA-extension with tiger, the most sensible way is that we await the work of the eHealthCA team, especially regarding the documentation.
+
+== Verifications
+
+We may check at the planning for PI 23-2 if there are any new requirements and if the new documentation is working (whether we ask affected product teams or the technical experts wo did most of the work for them how they feel about the situation).

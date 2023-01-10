@@ -7,3 +7,4 @@ Release.Jenkinsfile
 Dependabot.Jenkinsfile
 /tiger-integration-tests/
 IntegrationTest.Jenkinsfile
+/doc/adr/006_eHealthCAIntegration/
