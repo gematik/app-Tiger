@@ -11,12 +11,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import java.io.IOException;
-import java.util.Objects;
-import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +30,6 @@ public class TigerProxyApplication implements ServletContextListener {
 
     @Getter
     private final ApplicationConfiguration applicationConfiguration;
-    private TigerProxy tigerProxy;
 
     public static void main(String[] args) { //NOSONAR
         // Necessary hack to avoid mockserver activating java.util.logging - which would not work in combination
@@ -45,14 +41,6 @@ public class TigerProxyApplication implements ServletContextListener {
             .sources(TigerProxyApplication.class)
             .initializers()
             .run(args);
-    }
-
-    @Bean
-    public TigerProxy tigerProxy() {
-        tigerProxy = new TigerProxy(
-            Objects.requireNonNullElseGet(applicationConfiguration,
-                TigerProxyConfiguration::new));
-        return tigerProxy;
     }
 
     @Bean
@@ -73,13 +61,6 @@ public class TigerProxyApplication implements ServletContextListener {
             }
         });
         return module;
-    }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        if (tigerProxy != null) {
-            tigerProxy.shutdown();
-        }
     }
 
     @Bean

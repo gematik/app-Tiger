@@ -55,6 +55,7 @@ import org.mockserver.matchers.TimeToLive;
 import org.mockserver.matchers.Times;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.ExpectationId;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.netty.MockServer;
 import org.mockserver.netty.proxy.BinaryRequestProxyingHandler;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -63,7 +64,9 @@ import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
 import org.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import org.mockserver.socket.tls.NettySslContextFactory;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 @EqualsAndHashCode(callSuper = true)
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
@@ -77,6 +80,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
     private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
     private TigerPkiIdentity generatedRootCa;
+    /**
+     * Tiger Proxy health endpoint performs http get requests towards the local server port of the Tiger Proxy.
+     * To filter them out from Rbel logs we add a specific query param (healthEndPointUuid) with this uuid as
+     * value. The Filtering takes place in {@link de.gematik.test.tiger.proxy.handler.AbstractTigerRouteCallback#isHealthEndpointRequest(HttpRequest)}.
+     */
+    @Getter
+    private final UUID healthEndpointRequestUuid = UUID.randomUUID();
+
     public TigerProxy(final TigerProxyConfiguration configuration) {
         super(configuration);
 
@@ -270,6 +281,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     @Override
     public int getProxyPort() {
         return mockServer.getLocalPort();
+    }
+
+    public int getAdminPort() {
+        return getTigerProxyConfiguration().getAdminPort();
     }
 
     @Override

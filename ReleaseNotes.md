@@ -29,6 +29,7 @@
 * TGR-696: Added helm chart to User Manual 
 * TGR-640: Logs out tiger configuration and environment variables when debug log level is set
 * TGR-732: WorkflowUi: LokalTigerProxy is shown in server list on the left and also appears in the logs
+* TGR-705: Tiger Proxy health endpoint now also checks responsiveness of internal mock server and adds more details to the health status
 
 ## Breaking changes
 

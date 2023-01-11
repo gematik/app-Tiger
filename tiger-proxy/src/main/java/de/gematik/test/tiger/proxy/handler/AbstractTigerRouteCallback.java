@@ -171,6 +171,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
     private void executeHttpTrafficPairParsing(HttpRequest req, HttpResponse resp) {
         try {
+            if (isHealthEndpointRequest(req)) {
+                return;
+            }
+
             final RbelElement request = getTigerProxy().getMockServerToRbelConverter()
                 .convertRequest(req, extractProtocolAndHostForRequest(req));
             //TODO TGR-651 null ersetzen durch echten wert
@@ -201,6 +205,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             propagateExceptionMessageSafe(e);
             log.error("Rbel-parsing failed!", e);
         }
+    }
+
+    private boolean isHealthEndpointRequest(HttpRequest request) {
+        return request.getQueryStringParameters() != null &&
+            request.getQueryStringParameters().
+                containsEntry("healthEndPointUuid", getTigerProxy().getHealthEndpointRequestUuid().toString());
     }
 
     private Optional<RbelFacet> parseCertificateChainIfPresent(HttpRequest httpRequest, RbelElement message) {
