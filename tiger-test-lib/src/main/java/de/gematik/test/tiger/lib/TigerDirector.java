@@ -149,7 +149,7 @@ public class TigerDirector {
     }
 
     private static synchronized void readConfiguration() {
-        libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB")
+        libConfig = TigerGlobalConfiguration.instantiateConfigurationBeanStrict(TigerLibConfig.class, "TIGER_LIB")
             .orElseGet(TigerLibConfig::new);
     }
 

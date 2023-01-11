@@ -17,8 +17,7 @@ public final class TokenSubstituteHelper {
     public static String substitute(String value, TigerConfigurationLoader source) {
         String result = value;
         result = replacePlaceholderWithGivenIntro(result, '$', source::readStringOptional);
-        result = replacePlaceholderWithGivenIntro(result, '!',
-            value1 -> Optional.of(TigerJexlExecutor.execute(value1)));
+        result = replacePlaceholderWithGivenIntro(result, '!', TigerJexlExecutor::executeOptional);
         result = replacePlaceholderWithGivenIntro(result, '$', source::readStringOptional);
         return result;
     }

@@ -1,11 +1,12 @@
 tigerProxy:
-  skipTrafficEndpointsSubscription: true
+  skipTrafficEndpointsSubscription: false
   # adminPort: 8080
   trafficEndpoints:
     - http://localhost:${free.port.2}
 
 servers:
   winstone:
+    active: "!{not ${external.falseBooleanValue}}"
     hostname: winstone
     source:
       - local:target/winstone.jar
@@ -31,3 +32,8 @@ servers:
 lib:
   rbelPathDebugging: false
   activateWorkflowUi: false
+
+additionalYamls:
+  -
+    filename: specialEnvironment.yaml
+    baseKey: external

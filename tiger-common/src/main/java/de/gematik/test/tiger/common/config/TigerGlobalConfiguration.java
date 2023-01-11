@@ -126,6 +126,13 @@ public class TigerGlobalConfiguration {
     }
 
     @SneakyThrows
+    public static synchronized <T> Optional<T> instantiateConfigurationBeanStrict(Class<T> configurationBeanClass,
+        String... baseKeys) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.instantiateConfigurationBeanStrict(configurationBeanClass, baseKeys);
+    }
+
+    @SneakyThrows
     public static synchronized <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType,
         String... baseKeys) {
         assertGlobalConfigurationIsInitialized();

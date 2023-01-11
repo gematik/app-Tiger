@@ -328,4 +328,25 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         assertThat(envMgr.getLocalTigerProxyOrFail().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
             .isFalse();
     }
+
+    @Test
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  tigerServer1:\n"
+        + "    type: tigerProxy\n"
+        + "    exports: \n"
+        + "      - OTHER_PORT=${FREE_PORT_3}\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${FREE_PORT_1}\n"
+        + "      proxyPort: ${FREE_PORT_2}\n"
+        + "  tigerServer2:\n"
+        + "    type: tigerProxy\n"
+        + "    dependsUpon: tigerServer1\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${OTHER_PORT}\n"
+        + "      proxyPort: ${free.port.4}\n"
+        + "localProxyActive: false\n")
+    void testDelayedEvaluation(TigerTestEnvMgr envMgr) {
+        assertThat(envMgr.getServers().get("tigerServer2").getConfiguration().getTigerProxyCfg().getAdminPort())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
+    }
 }
