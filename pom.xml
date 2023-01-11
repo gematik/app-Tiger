@@ -84,7 +84,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <encoding>UTF-8</encoding>
 
-        <version.assertj>3.23.1</version.assertj>
+        <version.assertj>3.24.1</version.assertj>
         <version.awaitility>4.2.0</version.awaitility>
         <version.bouncycastle>1.72</version.bouncycastle>
         <version.commons-io>2.11.0</version.commons-io>
