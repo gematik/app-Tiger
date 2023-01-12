@@ -29,15 +29,11 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.awt.Desktop;
-import java.awt.Desktop.Action;
-import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -511,38 +507,6 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     @Override
     public void registerLogListener(TigerServerLogListener listener) {
         logListeners.add(listener);
-    }
-    public static void openWorkflowUiInBrowser(String adminPort) {
-        try {
-            String url = "http://localhost:" + adminPort;
-
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Action.BROWSE)) {
-                Desktop desktop = Desktop.getDesktop();
-                log.info("Starting Workflow UI via Java Desktop API");
-                desktop.browse(new URI(url));
-                log.info(Ansi.colorize("Workflow UI {}", RbelAnsiColors.BLUE_BOLD), url);
-            } else {
-                String command;
-                String operatingSystemName = System.getProperty("os.name").toLowerCase();
-                if (operatingSystemName.contains("nix") || operatingSystemName.contains("nux")) {
-                    command = "xdg-open " + url;
-                } else if (operatingSystemName.contains("win")) {
-                    command = "rundll32 url.dll,FileProtocolHandler " + url;
-                } else if (operatingSystemName.contains("mac")) {
-                    command = "open " + url;
-                } else {
-                    log.error("Unknown operation system '{}'", operatingSystemName);
-                    return;
-                }
-                log.info("Starting Workflow UI via '{}'", command);
-                Runtime.getRuntime().exec(command);
-                log.info(Ansi.colorize("Workflow UI " + url, RbelAnsiColors.BLUE_BOLD));
-            }
-        } catch (HeadlessException hex) {
-            log.error("Unable to start Workflow UI on a headless server!", hex);
-        } catch (RuntimeException | URISyntaxException | IOException e) {
-            log.error("Exception while trying to start browser for Workflow UI, still continuing with test run", e);
-        }
     }
 
     public void receivedUserAcknowledgementForShutdown() {

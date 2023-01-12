@@ -12,6 +12,7 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
@@ -197,10 +198,10 @@ public class TigerDirector {
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
-            TigerTestEnvMgr.openWorkflowUiInBrowser(
+            TigerBrowserUtil.openUrlInBrowser( "http://localhost:" +
                 TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElseThrow(
                         () -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!"))
-                    .toString());
+                    .toString(), "Workflow UI");
             log.info("Waiting for workflow Ui to fetch status...");
             try {
                 await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofSeconds(1))
