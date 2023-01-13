@@ -25,6 +25,7 @@
 * TGR-782: Version is now displayed correctly for Standalone-Proxies
 * TGR-766: Added support for Java 8 Date/Time Types to TigerGlobalConfiguration
 * TGR-757: WebUI: Return feedback on filtered messages to the user
+* TGR-800: Added HTTP client to test-lib
 * TGR-575: Added support for CETP messages in tiger-rbel
 * TGR-796: Delayed evaluation for TigerGlobalConfiguration added
 * TGR-559: Code optimized in TigerDirector
