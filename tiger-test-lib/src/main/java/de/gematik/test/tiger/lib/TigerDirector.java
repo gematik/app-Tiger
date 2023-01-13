@@ -4,6 +4,9 @@
 
 package de.gematik.test.tiger.lib;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SHOW_TIGER_LOGO;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SKIP_ENVIRONMENT_SETUP;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -142,7 +145,7 @@ public class TigerDirector {
     }
 
     private static void setupTestEnvironent(Optional<IRbelMessageListener> tigerProxyMessageListener) {
-        if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+        if (!SKIP_ENVIRONMENT_SETUP.getValueOrDefault()) {
             log.info("\n" + Banner.toBannerStr("SETTING UP TESTENV...", RbelAnsiColors.BLUE_BOLD.toString()));
             tigerTestEnvMgr.setUpEnvironment(tigerProxyMessageListener);
             log.info("\n" + Banner.toBannerStr("TESTENV SET UP OK", RbelAnsiColors.BLUE_BOLD.toString()));
@@ -156,7 +159,7 @@ public class TigerDirector {
 
     private static void showTigerBanner() {
         // created via https://kirilllive.github.io/ASCII_Art_Paint/ascii_paint.html
-        if (TigerGlobalConfiguration.readBoolean("TIGER_LOGO", false)) {
+        if (SHOW_TIGER_LOGO.getValueOrDefault()) {
             try {
                 log.info("\n" + IOUtils.toString(
                     Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
@@ -184,8 +187,7 @@ public class TigerDirector {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(Map.of("server.port",
-                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElse(0)))
+            .properties(Map.of("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault()))
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)
@@ -199,7 +201,7 @@ public class TigerDirector {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
             TigerBrowserUtil.openUrlInBrowser( "http://localhost:" +
-                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElseThrow(
+                TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow(
                         () -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!"))
                     .toString(), "Workflow UI");
             log.info("Waiting for workflow Ui to fetch status...");

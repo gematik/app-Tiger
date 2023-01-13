@@ -373,7 +373,6 @@ public class DockerMgr {
             throw new TigerTestEnvException(
                 "Failed to configure start script on container for server " + server.getServerId(), ioe);
         }
-
     }
 
     private static String getTigerProxyRootCaCertificate(AbstractTigerServer server) {

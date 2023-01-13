@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
@@ -29,6 +30,9 @@ class TigerProxyStartupErrorsTest {
             .withInitializer(new ConfigDataApplicationContextInitializer())
             .withBean("webServerAppCtxt", ServletWebServerApplicationContext.class,
                 () -> mock(ServletWebServerApplicationContext.class))
+            .withBean("serverProperties", ServerProperties.class,
+                () -> mock(ServerProperties.class))
+            .withSystemProperties("LOCAL_SERVER_PORT", "666")
             .withConfiguration(AutoConfigurations.of(TigerProxyApplication.class));
     }
 }

@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.controller;
 
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
@@ -63,10 +62,10 @@ public class EnvStatusController implements TigerUpdateListener {
     }
 
     private void initializeLocalProxyUrl() {
-        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl()) && TigerGlobalConfiguration.readStringOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).isPresent()) {
+        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
             tigerEnvStatus.setLocalProxyWebUiUrl(
                 "http://localhost:"
-                    + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
+                    + tigerTestEnvMgr.getLocalTigerProxyOrFail().getAdminPort()
                     + "/webui");
         }
     }

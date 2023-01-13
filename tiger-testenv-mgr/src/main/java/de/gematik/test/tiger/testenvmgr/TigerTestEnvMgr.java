@@ -4,6 +4,9 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_PROXY_PORT;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,17 +62,16 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 @Slf4j
 @Getter
-public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean,
-    AutoCloseable {
+public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean, AutoCloseable {
 
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
-    public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
-    public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
-    public static final String LOCAL_TIGER_PROXY_TYPE = "local_tiger_proxy";
     private final Configuration configuration;
     private final Map<String, Object> environmentVariables;
     private TigerProxy localTigerProxy;
+    public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
+    public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
+    public static final String LOCAL_TIGER_PROXY_TYPE = "local_tiger_proxy";
     private final List<TigerRoute> routesList = new ArrayList<>();
     private final Map<String, AbstractTigerServer> servers = new HashMap<>();
     private final ExecutorService executor = Executors
@@ -192,14 +194,13 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
         Map<String, Object> properties = new HashMap<>(TigerSerializationUtil.toMap(proxyConfig, "tigerProxy"));
         if (configuration.getTigerProxy().getAdminPort() == 0) {
-            int port = TigerGlobalConfiguration.readIntegerOptional("tiger.internal.localproxy.admin.port")
+            int port = LOCALPROXY_ADMIN_RESERVED_PORT.getValue()
                 .orElseThrow(
                     () -> new TigerEnvironmentStartupException("No free port reserved for local Tiger Proxy admin"));
             properties.put("server.port", Integer.toString(port));
         } else {
             properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
-            TigerGlobalConfiguration.putValue("tiger.internal.localproxy.port",
-                Integer.toString(configuration.getTigerProxy().getAdminPort()));
+            LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
         }
         localTigerProxyApplicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
@@ -211,13 +212,9 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             .run();
 
         localTigerProxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
-        if (localTigerProxy.getName().isEmpty()) {
-            localTigerProxy.setName(Optional.of("localTigerProxy"));
-        }
 
-        TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT, localTigerProxy.getProxyPort());
-        TigerGlobalConfiguration.putValue(CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT,
-            String.valueOf(localTigerProxyApplicationContext.getWebServer().getPort()));
+        LOCAL_PROXY_PROXY_PORT.putValue(localTigerProxy.getProxyPort());
+        LOCAL_PROXY_ADMIN_PORT.putValue(localTigerProxy.getAdminPort());
 
         return localTigerProxy;
     }
@@ -227,7 +224,9 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             getExecutor().submit(
                 () -> listeners.parallelStream()
                     .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                        .serverUpdate(new LinkedHashMap<>(Map.of(getLocalTigerProxy().getName().orElse(getLocalTigerProxy().proxyName()), update)))
+                        .serverUpdate(new LinkedHashMap<>(Map.of(getLocalTigerProxyOptional()
+                            .flatMap(TigerProxy::getName)
+                            .orElse(getLocalTigerProxy().proxyName()), update)))
                         .build()))
             );
         }

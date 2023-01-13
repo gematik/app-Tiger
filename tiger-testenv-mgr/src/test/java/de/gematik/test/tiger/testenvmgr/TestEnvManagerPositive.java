@@ -4,6 +4,8 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_PROXY_PORT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
@@ -299,9 +301,9 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         skipEnvironmentSetup = true)
     void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
         envMgr.startLocalTigerProxyIfActivated();
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).get())
+        assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault())
             .isBetween(0, 655536);
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get())
+        assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault())
             .isBetween(0, 655536);
     }
 
@@ -321,11 +323,11 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--httpPort=${free.port.0}\"\n" +
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
-    void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch(TigerTestEnvMgr envMgr) {
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
-            .get()).isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT)
-            .get()).isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
+    void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch() {
+        assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
+        assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
     }
 
     private void executeWithSecureShutdown(Runnable test, TigerTestEnvMgr envMgr) {

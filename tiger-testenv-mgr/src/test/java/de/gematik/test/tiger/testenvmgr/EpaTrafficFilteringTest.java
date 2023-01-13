@@ -48,6 +48,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
 
         await()
             .atMost(5, TimeUnit.SECONDS)
+            .ignoreExceptions()
             .until(() -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst().findElement("$.body.recordId")
                 .get()
                 .getFacetOrFail(RbelValueFacet.class)
