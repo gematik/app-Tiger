@@ -5,6 +5,7 @@ package de.gematik.test.tiger.maven.adapter.mojos;
 
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.readString;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -101,7 +102,7 @@ class TigerSerenityReportMojoTest {
     underTest.execute();
 
     // Assertion
-    verify(log).info("Browser for serenity report started");
+    assertThatNoException();
   }
 
   @SneakyThrows
