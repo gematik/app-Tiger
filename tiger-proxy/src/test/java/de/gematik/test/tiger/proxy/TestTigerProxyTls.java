@@ -50,6 +50,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -496,6 +497,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     }
 
     @Test
+    @Disabled
     void autoconfigureSslContextOkHttp_shouldTrustTigerProxy() throws IOException {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()

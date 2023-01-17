@@ -57,7 +57,6 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.model.ExpectationId;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.netty.MockServer;
-import org.mockserver.netty.proxy.BinaryRequestProxyingHandler;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.mockserver.socket.tls.ForwardProxyTLSX509CertificatesTrustManager;
 import org.mockserver.socket.tls.KeyAndCertificateFactoryFactory;
@@ -150,6 +149,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     private MockServer spawnDirectInverseTigerProxy(Configuration mockServerConfiguration,
         Optional<ProxyConfiguration> forwardProxyConfig) {
+        mockServerConfiguration.forwardBinaryRequestsWithoutWaitingForResponse(true);
+        mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
         if (forwardProxyConfig.isPresent()) {
             throw new TigerProxyStartupException(
                 "DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy is always HTTP!)");
@@ -158,10 +159,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             getTigerProxyConfiguration().getDirectReverseProxy().getPort(),
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getPortAsArray());
-        BinaryRequestProxyingHandler.binaryExchangeCallback = BinaryExchangeHandler.builder()
-            .rbelLogger(getRbelLogger())
-            .tigerProxy(this)
-            .build();
         addReverseProxyRouteIfNotPresent();
         return mockServer;
     }

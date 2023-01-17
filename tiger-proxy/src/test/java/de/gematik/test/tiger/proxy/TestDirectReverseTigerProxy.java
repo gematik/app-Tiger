@@ -17,6 +17,7 @@ import java.net.Socket;
 import java.time.ZonedDateTime;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -35,11 +36,13 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
                     .build())
                 .build());
             try (Socket clientSocket = new Socket("localhost", tigerProxy.getProxyPort())) {
-                final byte[] requestPayload = "Hallo Welt!".getBytes(UTF_8);
-                final byte[] responsePayload = "Response String".getBytes(UTF_8);
+                final byte[] requestPayload = "{'msg':'Hallo Welt!'}".getBytes(UTF_8);
+                final byte[] responsePayload = "{'msg':'Response String'}".getBytes(UTF_8);
 
                 ZonedDateTime beforeRequest = ZonedDateTime.now();
-                clientSocket.getOutputStream().write(requestPayload);
+                clientSocket.getOutputStream().write(ArrayUtils.subarray(requestPayload, 0, 10));
+                clientSocket.getOutputStream().flush();
+                clientSocket.getOutputStream().write(ArrayUtils.subarray(requestPayload, 10, requestPayload.length));
 
                 final Socket serverSocket = backendServer.accept();
                 assertThat(serverSocket.getInputStream().readNBytes(requestPayload.length))
