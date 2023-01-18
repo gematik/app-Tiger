@@ -104,7 +104,7 @@
         <version.lombok>1.18.24</version.lombok>
         <version.maven>3.8.7</version.maven>
         <version.maven.failsafe>3.0.0-M8</version.maven.failsafe>
-        <version.maven.surefire>3.0.0-M7</version.maven.surefire>
+        <version.maven.surefire>3.0.0-M8</version.maven.surefire>
         <version.maven-plugin-tools>3.7.1</version.maven-plugin-tools>
         <version.mockserver>5.15.0</version.mockserver>
         <version.serenity.core>3.3.10</version.serenity.core>
