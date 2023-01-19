@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 1.1.0-SNAPSHOT - 2022-11-24</span>
+<span id="revdate">Version 1.1.1-SNAPSHOT - 2023-01-19</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -276,6 +276,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_understanding_rbelpath">4.7. Understanding RBelPath</a></li>
 <li><a href="#_running_tiger_proxy_as_standalone_jar">4.8. Running Tiger Proxy as standalone JAR</a></li>
 <li><a href="#_additional_configuration">4.9. Additional configuration</a></li>
+<li><a href="#_understanding_filtering">4.10. Understanding filtering</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_test_library_2">5. Tiger Test library</a>
@@ -303,7 +304,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <ul class="sectlevel2">
 <li><a href="#_admin_ui">7.1. Admin UI</a></li>
 <li><a href="#_workflow_ui_2">7.2. Workflow UI</a></li>
-<li><a href="#_standalone_tiger_proxy_ui">7.3. Standalone Tiger Proxy UI</a></li>
+<li><a href="#_web_ui">7.3. Standalone Tiger Proxy UI (WebUI)</a></li>
 </ul>
 </li>
 <li><a href="#_links_to_test_relevant_topics">8. Links to test relevant topics</a></li>
@@ -630,7 +631,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
 
     <span class="tag">&lt;groupId&gt;</span>de.gematik.test.tiger.examples<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>TigerTestBDD<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>1.0.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>1.1.1-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 
     <span class="tag">&lt;properties&gt;</span>
         <span class="tag">&lt;maven.compiler.source&gt;</span>11<span class="tag">&lt;/maven.compiler.source&gt;</span>
@@ -640,10 +641,10 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
         <span class="comment">&lt;!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
           or from gematik internal Nexus
-          https://build.top.local/nexus/#nexus-search;quick~tiger-test-lib
+          https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;</span>
-        <span class="tag">&lt;version.tiger&gt;</span>0.23.2<span class="tag">&lt;/version.tiger&gt;</span>
-        <span class="tag">&lt;version.serenity.core&gt;</span>3.2.5<span class="tag">&lt;/version.serenity.core&gt;</span>
+        <span class="tag">&lt;version.tiger&gt;</span>1.1.1<span class="tag">&lt;/version.tiger&gt;</span>
+        <span class="tag">&lt;version.serenity.core&gt;</span>3.3.10<span class="tag">&lt;/version.serenity.core&gt;</span>
     <span class="tag">&lt;/properties&gt;</span>
 
     <span class="comment">&lt;!-- tag::dependencies[] --&gt;</span>
@@ -1251,10 +1252,10 @@ If none of these files exist it will fail the start up.</p>
 </div>
 <div class="paragraph">
 <p>If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named <code>tiger.yaml</code>.<br>
-If none of these files exist it will fail the startup.</p>
+If none of these files exist it will fail the start up.</p>
 </div>
 <div class="paragraph">
-<p>In the startup phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.</p>
+<p>In the start up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.</p>
 </div>
 <div class="paragraph">
 <p>To configure your test environment you can either compose the <code>tiger.yaml</code> file manually or much preferred<br>
@@ -1266,7 +1267,7 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 <div class="sect2">
 <h3 id="_supported_server_nodes_and_their_configuration">3.1. Supported server nodes and their configuration</h3>
 <div class="paragraph">
-<p>The Tiger testenviroment manager currently supports the following list of server nodes.</p>
+<p>The Tiger testenvironment manager currently supports the following list of server nodes.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1284,6 +1285,9 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 </li>
 <li>
 <p><strong>Tiger Proxy</strong> is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or <a href="#_excurse_what_are_proxies_reverse_forward">use a reverse proxy set up scenario</a>.</p>
+</li>
+<li>
+<p><strong>Helm Chart</strong> is a node that will be added to tiger via a plugin mechanism that starts a helm chart within a kubernetes environment.</p>
 </li>
 </ul>
 </div>
@@ -1364,7 +1368,7 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 <p>Here is a little example how the server names are set and used and how there server is reachable via the Tiger Proxy.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 5. Example with there servers</div>
+<div class="title">Listing 5. Example with three external jar servers</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="comment"># here the server name is &quot;identityServer&quot; and</span>
@@ -1769,12 +1773,63 @@ If it is ever necessary to change the external URL, the test suite does not have
 </div>
 </div>
 <div class="sect3">
-<h4 id="_tiger_proxy_node">3.1.9. Tiger Proxy node</h4>
+<h4 id="_helm_chart_node">3.1.9. Helm Chart node</h4>
 <div class="paragraph">
-<p>The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the startup time can be minimized, and it is always guaranteed to start the current version.</p>
+<p>The helm chart node allows to start a helm chart from the configured image. The helm chart is started and the<br>
+server is ready when the pod is running and the pod is ready, if port-forward is used (if exposedPorts are set),<br>
+then port-forwarding is also done and the startup is finished and the service can be used for testing.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 13. Tiger Proxy configuration</div>
+<div class="title">Listing 13. Helm chart configuration</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
+  <span class="key">helmChart_Demis_HLS</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">helmChart</span></span>
+    <span class="key">startupTimeoutSec</span>: <span class="string"><span class="content">150</span></span>
+    <span class="comment"># MANDATORY repository from where to download the docker image</span>
+    <span class="comment"># if the helm chart is stored on the local file system that the</span>
+    <span class="comment"># workingDir should be set.</span>
+    <span class="key">source</span>:
+      - <span class="string"><span class="content">demis-gematik/hospital-location-service</span></span>
+    <span class="comment"># OPTIONAL version of the image</span>
+    <span class="key">version</span>: <span class="string"><span class="content">1.0.4-b69</span></span>
+    <span class="key">helmChartOptions</span>:
+      <span class="comment"># The kubernetes context</span>
+      <span class="key">context</span>:
+      <span class="comment"># OPTIONAL if no working directory is set the default . is used.</span>
+      <span class="comment"># if the helm chart is stored on the local file system the workingDir</span>
+      <span class="comment"># should be set.</span>
+      <span class="key">workingDir</span>:
+      <span class="comment"># OPTIONAL override the POD_NAMESPACE environment variable if set.</span>
+      <span class="comment"># if not set, &quot;default&quot; will be used.</span>
+      <span class="key">nameSpace</span>:
+      <span class="comment"># OPTIONAL prints out debug messages if set to true, default is false.</span>
+      <span class="key">debug</span>: <span class="string"><span class="content">true</span></span>
+      <span class="comment"># MANDATORY pod name of the helm chart</span>
+      <span class="key">podName</span>: <span class="string"><span class="content">hospital-location-service</span></span>
+      <span class="comment"># OPTIONAL key-value pairs that will be used for starting the helm chart</span>
+      <span class="key">values</span>:
+        - <span class="string"><span class="content">required.image.tag=1.0.2</span></span>
+      <span class="comment"># OPTIONAL should contain a list of pods for the health check, regex can be used.</span>
+      <span class="key">healthcheckPods</span>:
+        - <span class="string"><span class="content">fachdienst-.*</span></span>
+        - <span class="string"><span class="content">idp-wrapper-.*</span></span>
+      <span class="comment"># OPTIONAL contains a list that will be used for the port forwarding,</span>
+      <span class="comment"># if empty no port forwarding is done.</span>
+      <span class="comment"># The syntax is &lt;POD_NAME_OR_REGEX&gt;,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;[,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;]*</span>
+      <span class="key">exposedPorts</span>:
+        - <span class="string"><span class="content">hospital-location-service.*,8080:8090</span></span>
+        - <span class="string"><span class="content">someOther-service.*,8080:8096,10000:8096</span></span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_tiger_proxy_node">3.1.10. Tiger Proxy node</h4>
+<div class="paragraph">
+<p>The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the start up time can be minimized, and it is always guaranteed to start the current version.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 14. Tiger Proxy configuration</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">tigerProxy_001</span>:
   <span class="key">hostname</span>: <span class="string"><span class="content">myTigerProxy</span></span>
@@ -1924,7 +1979,7 @@ For more information about what the Tiger Proxy is and how it works see the chap
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="yaml"><span class="comment"># Flag whether to activate the local Tiger Proxy</span>
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="comment"># Flag whether to activate the local Tiger Proxy. The local tiger proxy field will be null if this property is set to false</span>
 <span class="comment"># Default value is true</span>
 <span class="key">localProxyActive</span>: <span class="string"><span class="content">true</span></span>
 
@@ -1940,7 +1995,7 @@ For more information about what the Tiger Proxy is and how it works see the chap
 <span class="key">tigerProxy</span>:
   <span class="comment"># the port under which the server will be booted</span>
   <span class="key">adminPort</span>: <span class="string"><span class="content">7777</span></span>
-  <span class="comment"># logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!</span>
+  <span class="comment"># logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!</span>
   <span class="key">proxyLogLevel</span>: <span class="string"><span class="content">TRACE</span></span>
   <span class="comment"># section to configure whether and where the proxy should dump</span>
   <span class="comment"># a traffic HTML report on shutdown</span>
@@ -1951,6 +2006,8 @@ For more information about what the Tiger Proxy is and how it works see the chap
     <span class="key">filename</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">foobar.tgr</span><span class="delimiter">&quot;</span></span>
     <span class="comment"># default false</span>
     <span class="key">clearFileOnBoot</span>: <span class="string"><span class="content">true</span></span>
+    <span class="comment"># filter messages read from file (JEXL expression)</span>
+    <span class="key">readFilter</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">message.statusCode == '200'</span><span class="delimiter">&quot;</span></span>
   <span class="comment"># a list of routing entries the proxy should apply to traffic</span>
   <span class="key">proxyRoutes</span>:
       <span class="comment"># defines a forward-proxy-route from this server...</span>
@@ -2097,7 +2154,7 @@ For more information about what the Tiger Proxy is and how it works see the chap
 To do so, you need to create a customized test environment configuration file (call it tiger-standalone.yaml,<br>
 set the env var TIGER_TESTENV_CFGFILE accordingly) containing all the server nodes needed and<br>
 deactivate the local Tiger Proxy in this configuration file.<br>
-Now download the <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/0.17.1/tiger-testenv-mgr-0.17.1-jar-with-all-dependencies.jar">tiger test environment jar-with-all-dependencies file v0.17.1</a> from maven or go to <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/">maven index folder</a> to choose a more recent version.</p>
+Now download the <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/1.1.0/tiger-testenv-mgr-1.1.0-springboot.jar">tiger test environment jar-with-springboot file v1.1.0</a> from maven or go to <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/">maven index folder</a> to choose a more recent version.</p>
 </div>
 <div class="paragraph">
 <p>If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}. In the latter case it is not guaranteed that all processes are cleanly shut down. Please check your process list with operating system specific tools.</p>
@@ -2105,7 +2162,7 @@ Now download the <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-t
 <div class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="shell script">export TIGER_TESTENV_CFGFILE=....../tiger-standalone.yaml
-java -jar tiger-testenv-mgr-${VERSION}-jar-with-all-dependencies.jar</code></pre>
+java -jar tiger-testenv-mgr-${VERSION}-springboot.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2264,7 +2321,7 @@ to the reverse proxy.</p>
 </div>
 <div class="paragraph">
 <p>Both types have a proxy-port (configurable via <code>tigerProxy.proxyPort</code>),<br>
-which supports both http- and https-traffic, (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>). This provides a webui to monitor the traffic,<br>
+which supports both http- and https-traffic, (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>). This provides a WebUI to monitor the traffic (described in detail <a href="#_web_ui">here</a>),<br>
 a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
 </div>
 </div>
@@ -2547,8 +2604,11 @@ The reverse proxy could either be started by the test environment manager or as 
     <span class="key">trafficEndpoints</span>:
       - <span class="string"><span class="content">http://another.tiger.proxy:&lt;adminPort&gt;</span></span>
     <span class="comment"># A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to</span>
-    <span class="comment"># gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the</span>
+    <span class="comment"># gather traffic via the STOMP-protocol.</span>
+    <span class="key">skipTrafficEndpointsSubscription</span>: <span class="string"><span class="content">false</span></span>
+    <span class="comment"># If false then the subscription is tested at the beginning and if any of the given endpoints are not accessible the</span>
     <span class="comment"># server will not boot. (fail fast, fail early)</span>
+    <span class="comment"># default of skipTrafficEndpointsSubscription is false</span>
     <span class="key">downloadInitialTrafficFromEndpoints</span>: <span class="string"><span class="content">true</span></span>
     <span class="comment"># Should the traffic currently available (cached) in the remote be download upon initial connection?</span></code></pre>
 </div>
@@ -2831,7 +2891,7 @@ Is <code>null</code> if not present</p>
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">tigerProxy</span>:
     <span class="key">activateRbelParsing</span>: <span class="string"><span class="content">true</span></span>
     <span class="key">activateAsn1Parsing</span>: <span class="string"><span class="content">false</span></span>
-    <span class="key">activateVauAnalysis</span>: <span class="string"><span class="content">false</span></span>
+    <span class="key">activateEpaVauAnalysis</span>: <span class="string"><span class="content">false</span></span>
     <span class="key">parsingShouldBlockCommunication</span>: <span class="string"><span class="content">false</span></span></code></pre>
 </div>
 </div>
@@ -2848,7 +2908,7 @@ Is <code>null</code> if not present</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_activatevauanalysis">activateVauAnalysis</h5>
+<h5 id="_activateepavauanalysisactivateerpvauanalysis">activateEpaVauAnalysis/activateErpVauAnalysis</h5>
 <div class="paragraph">
 <p>VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze ePA-VAU messages leave this option turned off. If you do, enabling it will give you additional information about the messages.</p>
 </div>
@@ -2875,8 +2935,76 @@ Is <code>null</code> if not present</p>
 <div class="paragraph">
 <p>This will directly forward any request to the given host. This is a form of reverseProxy, only also applicable for non-http-traffic. HTTP traffic will still be forwarded through use of a global reverse proxy. Other traffic will be directly forwarded, rerouted directly on the TCP layer. Messages transmitted can still be parsed via RBel.</p>
 </div>
-<div style="page-break-after: always;"></div>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_understanding_filtering">4.10. Understanding filtering</h3>
+<div class="paragraph">
+<p>The filtering of messages in the tiger proxy consists of three main stages. These are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Traffic filter (trafficEndpointFilterString / readFilter, Determines which messages are accepted into the tiger proxy)</p>
+</li>
+<li>
+<p>WebUI filter (Which messages are displayed in the WebUI?)</p>
+</li>
+<li>
+<p>Pagination (Look around in smaller pages of messages)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Lets dive a bit deeper!</p>
+</div>
+<div class="sect3">
+<h4 id="_traffic_filter">4.10.1. Traffic filter</h4>
+<div class="paragraph">
+<p>At the core of the Tiger Proxy sits a RbelLogger instance. Here the messages are parsed and stored. Three sources feed into the RbelLogger:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Messages intercepted in the Tiger Proxy</p>
+</li>
+<li>
+<p>Messages relayed using a mesh setup</p>
+</li>
+<li>
+<p>Messages imported from a file</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Messages that are intercepted are automatically stored (the exception being the <code>tigerProxy.activateForwardAllLogging</code>-property, which can deactivate the logging of traffic not specifically forwarded via a route). For messages in a mesh setup and from a source file filter expressions can be defined to limit the messages that are actually stored. These can be defined using the <code>tigerProxy.trafficEndpointFilterString</code> (for mesh setups) and <code>tigerProxy.fileSaveInfo.readFilter</code> (for tgr-files) respectively.</p>
+</div>
+<div class="paragraph">
+<p>When messages pass the filter, partner messages (request/response pairs) are kept intact. So when you filter for messages that have a return code of 200 the corresponding requests do not match the filter expression. They are however kept in memory since the partner, the response in that case, do match.</p>
+</div>
+<div class="paragraph">
+<p>Filter expressions are <a href="#_jexl_expressions">JEXL-expressions</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_webui_filter">4.10.2. WebUI filter</h4>
+<div class="paragraph">
+<p>When you display the messages on the WebUI you have the ability to filter out certain messages to be displayed exclusively. The messages, which are filtered out, do still remain stored in the Tiger Proxy. Consequently, this has no effect if you store a TGR file (be it via the WebUI or the YAML).</p>
+</div>
+<div class="paragraph">
+<p>The menu on the right side will only show the messages being filtered out to avoid confusion. However, the messages numbers do reference the order in the main Tiger Proxy store. This way they are consistent across different WebUI filters (message #10 will always refer to the same message, regardless of the WebUI filter being applied).</p>
+</div>
+<div class="paragraph">
+<p>Filter expressions are <a href="#_jexl_expressions">JEXL-expressions</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_pagination">4.10.3. Pagination</h4>
+<div class="paragraph">
+<p>Finally, pagination is applied in the WebUI. This comes after the WebUI-Filter has been applied. So when would filter out every second message via a WebUI-Filter every page would still contain 20 (or whatever page size you have set) messages.</p>
+</div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
@@ -3029,7 +3157,7 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 14. Tiger response validation steps example</div>
+<div class="title">Listing 15. Tiger response validation steps example</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="gherkin">Feature Tiger validation steps
 
@@ -3040,14 +3168,14 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
     And TGR filter requests based on method &quot;POST&quot;
     And TGR set request wait timeout to 20 seconds
     When TGR find request to path &quot;/path/path/blabla&quot; with &quot;$..tag.value.text&quot; matching &quot;abc.*&quot;
-    And When TGR find request to path &quot;/path/path/blabla&quot; contaning &quot;$..tag2&quot;
+    And TGR find request to path &quot;/path/path/blabla&quot; containing node &quot;$..tag&quot;
     Then TGR current response with attribute &quot;$..answer.result.text&quot; matches &quot;OK.*&quot;
     But TGR current response with attribute &quot;$..answer.reason.text&quot; does not match &quot;REQUEST.*&quot;
     And TGR current response body matches:
     &quot;&quot;&quot;
          body content
         &quot;&quot;&quot;
-    And TGR current response at &quot;$..tag&quot; matches as JSON
+    And TGR current response at &quot;$..tag&quot; matches as JSON:
     &quot;&quot;&quot;
           {
             &quot;arr1&quot;: [
@@ -3055,7 +3183,7 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
             ]
           }
         &quot;&quot;&quot;
-    And TGR current response at &quot;$..tag&quot; matches as XML
+    And TGR current response at &quot;$..tag&quot; matches as XML:
     &quot;&quot;&quot;
           &lt;arr1&gt;
             &lt;entry index=&quot;1&quot;&gt;asso&lt;/entry&gt;
@@ -3067,8 +3195,8 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
 <div class="sect4">
 <h5 id="_xmlunit_diff_builder">XMLUnit Diff Builder</h5>
 <div class="paragraph">
-<p>Using the validation steps <code>TGR current response at {string} matches as XML</code> or<br>
-<code>TGR current response at {string} matches as XML and diff options {string}</code> you are able to compare<br>
+<p>Using the validation steps <code>TGR current response at {string} matches as XML:</code> or<br>
+<code>TGR current response at {string} matches as XML and diff options {string}:</code> you are able to compare<br>
 the content of any RbelPath node in the response.<br>
 The latter method even allows passing in the following options to the XMLUnit&#8217;s DiffBuilder:</p>
 </div>
@@ -3098,7 +3226,7 @@ The latter method even allows passing in the following options to the XMLUnit&#8
 <div class="sect4">
 <h5 id="_jsonchecker">JSONChecker</h5>
 <div class="paragraph">
-<p>Using the validation step <code>TGR current response at {string} matches as JSON</code> you are able to compare the content of any RbelPath node<br>
+<p>Using the validation step <code>TGR current response at {string} matches as JSON:</code> you are able to compare the content of any RbelPath node<br>
 in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.</p>
 </div>
 <div class="paragraph">
@@ -3137,7 +3265,7 @@ Please note that checking whether a nested key is optional, is not yet possible 
 <p>It should also be noted, that although JSONChecker can match multilevel JSON objects at a high level, it is not yet possible to access nested attributes out of the box. We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 15. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 16. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">  {
     <span class="key"><span class="delimiter">&quot;</span><span class="content">alg</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">dir</span><span class="delimiter">&quot;</span></span>,
@@ -3506,7 +3634,7 @@ The image below shows all three sections of the Workflow UI.</p>
 This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Current message steps for Workflow UI</div>
+<div class="title">Listing 17. Current message steps for Workflow UI</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// copied from module /tiger-test-lib</span>
 <span class="comment">// /src/test/java/de/gematik/test/tiger/glue/TigerGlue.java</span>
@@ -3615,40 +3743,46 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requriements maintained in Polarion we have a Tiger sub project that syncrhonizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.</p>
 </div>
 <div class="paragraph">
-<p>To use this feature the scenarios need a minimal set of annotations:</p>
+<p>To use this feature the scenarios need a minimal set of mandatory annotations:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>@TCID:XXXXX</strong> &#8230;&#8203; Mandatory - an unique test case identifier, where XXXXX matches the value of the custom field "cfInternalId" in Polarion</p>
+<p><strong>@TCID:xxx</strong> - an unique test case identifier, where 'xxx' matches the value of the custom field "cfInternalId" in Polarion</p>
 </li>
 <li>
-<p><strong>@Product:PPPPP</strong> &#8230;&#8203; Mandatory - reference to the custom field "cfProductType". As the value most likely is identical for all scenarios you may attach this annotation also to the feature.</p>
-</li>
-<li>
-<p><strong>@PRIO:N</strong> &#8230;&#8203;. Mandatory - priority number (1-4)</p>
-</li>
-<li>
-<p>and the following optional annotations:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>@Ready &#8230;&#8203; sets status of test case to "Implemented". If not set defaults to "In progress"</p>
-</li>
-<li>
-<p>@Negative &#8230;&#8203; reference to the custom field "cfNegPosTF". If not set defaults to be "Positive"</p>
-</li>
-<li>
-<p>@manual &#8230;&#8203; to mark the test case as being manually executed. If not set defaults to "Automatic"</p>
-</li>
-<li>
-<p>@Afo:AAAAA &#8230;&#8203; a link to a defined requirement (Anforderung) in Polarion, where AAAAA matches the custom field "cfAfoId"</p>
-</li>
-<li>
-<p>@AF-ID:AAAAA &#8230;&#8203; a link to a defined requirement (Anwendungsfall) in Polarion, where AAAAA matches the custom field "cfAfId"</p>
+<p><strong>@PRODUKT:p,p,p</strong> - reference to the custom field "cfProductType". You add this annotation above each feature, not each scenario. 'p' is a product, one is mandatory but it can be a list.</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>And following optional annotations exist:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>@AFO-ID:xxx - a link to a defined requirement (Anforderung) in Polarion, where 'xxx' matches the custom field "cfAfoId"</p>
+</li>
+<li>
+<p>@AF-ID:xxx - a link to a defined requirement (Anwendungsfall) in Polarion, where 'xxx' matches the custom field "cfAfId"</p>
+</li>
+<li>
+<p>@PRIO:n - priority number (1-4), default is '1'</p>
+</li>
+<li>
+<p>@MODUS:xxx - describes the way of testing, default is 'automatisch'</p>
+</li>
+<li>
+<p>@STATUS:xxx - describes the status of the test, default is 'implementiert'</p>
+</li>
+<li>
+<p>@TESTFALL:n - describes if the test case is a negative testcase or positive one, default is 'positiv'</p>
+</li>
+<li>
+<p>@TESTSTUFE:n - describes the test type, default is '3' (which is E2E-Test)</p>
+</li>
+<li>
+<p>@DESCRIPTION - if your test case has a description, and you use this annotation, the description will be parsed. If not, the description stays empty and won&#8217;t overwrite the one already existing in Polarion</p>
 </li>
 </ul>
 </div>
@@ -3656,7 +3790,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>If a scenario is identified that has no test case with a matching TCID, it will be created automatically in the sync run. Background blocks will be merged to each scenario before exporting its steps to Polarion.</p>
 </div>
 <div class="paragraph">
-<p>For more details on how to perform the synchronisation and how to also upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.</p>
+<p>For more details on how to perform the synchronisation, all choices for the annotations and how to upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -3760,7 +3894,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>You could achieve this by exporting the URL (<code>servers.myServer.exports</code>) and referencing it in an argument which is passed into server "B" (<code>serverAUrl=${serverA.url}</code>. The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Configuring using placeholders and exports</div>
+<div class="title">Listing 18. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">servers</span>:
   <span class="key">serverAInternet</span>:
@@ -3834,7 +3968,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 19. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -3857,7 +3991,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>In the above example let&#8217;s say you only want to customize the port. This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 20. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -3882,7 +4016,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. The testsuite</div>
+<div class="title">Listing 21. The testsuite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="Gherkin">    TGR current response with attribute &quot;$.body.ReplyStructure.Header.Sender.url&quot; matches &quot;http://127.0.0.1:${backend.server.port}&quot;</code></pre>
 </div>
@@ -4037,7 +4171,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 <p>Now open your firefox browser and go to <a href="http://127.0.0.1:8080" class="bare">http://127.0.0.1:8080</a>.</p>
 </div>
 <div class="paragraph">
-<p>Voila you are ready to start working with the Tiger Admin UI</p>
+<p>Voila you are ready to start working with the Tiger Admin UI.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4049,7 +4183,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_standalone_tiger_proxy_ui">7.3. Standalone Tiger Proxy UI</h3>
+<h3 id="_web_ui">7.3. Standalone Tiger Proxy UI (WebUI)</h3>
 <div class="paragraph">
 <p>To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:</p>
 </div>
@@ -4084,13 +4218,13 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <p><strong>Toggle Button</strong>  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as reponse headers) or all the detailed information of the requests and responses.</p>
 </li>
 <li>
-<p><strong>Filter</strong>  … allows you to filter the incoming messages with a RbelPath or a JEXL expression. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").</p>
+<p><strong>Filter</strong>  … allows you to filter the received messages with a RbelPath or a JEXL expression. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").</p>
 </li>
 <li>
 <p><strong>Reset</strong> … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!</p>
 </li>
 <li>
-<p><strong>Save</strong> … allows you to save the current HTML page or the raw traffic as tgr file.</p>
+<p><strong>Save</strong> … allows you to save all received messages as a HTML page or as a machine-readable tgr file.</p>
 </li>
 <li>
 <p><strong>Page</strong> … allows pagination of the messages.</p>
@@ -4106,6 +4240,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </li>
 </ul>
 </div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
@@ -4223,7 +4358,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-11-24 13:24:23 UTC
+Last updated 2023-01-19 09:45:33 UTC
 </div>
 </div>
 </body>
