@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package de.gematik.test.tiger;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import static org.mockito.Mockito.mock;
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
@@ -58,13 +59,14 @@ public class TestTigerCucumberListener {
     @BeforeAll
     public static void startTiger() {
         TigerDirector.start();
-        envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr());
+        envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
+            TigerBuildPropertiesService.class));
     }
 
     @BeforeEach
     public void initListener() {
         listener = new TigerCucumberListener();
-        TigerGlobalConfiguration.putValue(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT, 9999);
+        LOCAL_PROXY_ADMIN_PORT.putValue(9999);
         envStatusController.getStatus().getFeatureMap().clear();
     }
 

@@ -94,8 +94,8 @@ include::validation-example.feature[]
 
 ===== XMLUnit Diff Builder
 
-Using the validation steps `TGR current response at \{string} matches as XML` or
-`TGR current response at \{string} matches as XML and diff options \{string}` you are able to compare
+Using the validation steps `TGR current response at \{string} matches as XML:` or
+`TGR current response at \{string} matches as XML and diff options \{string}:` you are able to compare
 the content of any RbelPath node in the response.
 The latter method even allows passing in the following options to the XMLUnit's DiffBuilder:
 
@@ -110,7 +110,7 @@ For more detailed explanation about the XMLUnit difference evaluator we refer to
 
 ===== JSONChecker
 
-Using the validation step `TGR current response at \{string} matches as JSON` you are able to compare the content of any RbelPath node
+Using the validation step `TGR current response at \{string} matches as JSON:` you are able to compare the content of any RbelPath node
 in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.
 
 The purpose of JSONChecker class is to compare JSON structures, including checking for the integrity of the whole RbelPath node, as well as matching values for particular keys.
@@ -284,18 +284,22 @@ For more information about REST testing in Tiger/SerenityBDD please check these 
 
 Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requriements maintained in Polarion we have a Tiger sub project that syncrhonizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.
 
-To use this feature the scenarios need a minimal set of annotations:
+To use this feature the scenarios need a minimal set of mandatory annotations:
 
-* **@TCID:XXXXX** ... Mandatory - an unique test case identifier, where XXXXX matches the value of the custom field "cfInternalId" in Polarion
-* **@Product:PPPPP** ... Mandatory - reference to the custom field "cfProductType". As the value most likely is identical for all scenarios you may attach this annotation also to the feature.
-* **@PRIO:N** .... Mandatory - priority number (1-4)
-* and the following optional annotations:
-** @Ready ... sets status of test case to "Implemented". If not set defaults to "In progress"
-** @Negative ... reference to the custom field "cfNegPosTF". If not set defaults to be "Positive"
-** @manual ... to mark the test case as being manually executed. If not set defaults to "Automatic"
-** @Afo:AAAAA ... a link to a defined requirement (Anforderung) in Polarion, where AAAAA matches the custom field "cfAfoId"
-** @AF-ID:AAAAA ... a link to a defined requirement (Anwendungsfall) in Polarion, where AAAAA matches the custom field "cfAfId"
+* **@TCID:xxx** - an unique test case identifier, where 'xxx' matches the value of the custom field "cfInternalId" in Polarion
+* **@PRODUKT:p,p,p** - reference to the custom field "cfProductType". You add this annotation above each feature, not each scenario. 'p' is a product, one is mandatory but it can be a list.
+
+And following optional annotations exist:
+
+* @AFO-ID:xxx - a link to a defined requirement (Anforderung) in Polarion, where 'xxx' matches the custom field "cfAfoId"
+* @AF-ID:xxx - a link to a defined requirement (Anwendungsfall) in Polarion, where 'xxx' matches the custom field "cfAfId"
+* @PRIO:n - priority number (1-4), default is '1'
+* @MODUS:xxx - describes the way of testing, default is 'automatisch'
+* @STATUS:xxx - describes the status of the test, default is 'implementiert'
+* @TESTFALL:n - describes if the test case is a negative testcase or positive one, default is 'positiv'
+* @TESTSTUFE:n - describes the test type, default is '3' (which is E2E-Test)
+* @DESCRIPTION - if your test case has a description, and you use this annotation, the description will be parsed. If not, the description stays empty and won't overwrite the one already existing in Polarion
 
 If a scenario is identified that has no test case with a matching TCID, it will be created automatically in the sync run. Background blocks will be merged to each scenario before exporting its steps to Polarion.
 
-For more details on how to perform the synchronisation and how to also upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.
+For more details on how to perform the synchronisation, all choices for the annotations and how to upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,9 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private boolean activateRbelParsing = true;
     @Builder.Default
-    private boolean activateVauAnalysis = false;
+    private boolean activateEpaVauAnalysis = false;
+    @Builder.Default
+    private boolean activateErpVauAnalysis = false;
     @Builder.Default
     private boolean parsingShouldBlockCommunication = false;
     @Builder.Default

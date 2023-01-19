@@ -1,5 +1,5 @@
 <!--
-  - Copyright (c) 2022 gematik GmbH
+  - Copyright (c) 2023 gematik GmbH
   - 
   - Licensed under the Apache License, Version 2.0 (the License);
   - you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@
       <div class="col-2 logDate">{{ getReadableTime(serverLog.localDateTime) }}</div>
       <div :class="`col-9 type-${serverLog.logLevel.toLowerCase()}`">
         [{{serverLog.logLevel.toUpperCase()}}]
-        <span v-html="serverLog.logMessage.replaceAll('\n', '<br/>')"></span>
+           <span v-if="serverLog.logMessage" v-html="serverLog.logMessage.replaceAll('\n', '<br/>')"></span>
       </div>
     </div>
   </div>

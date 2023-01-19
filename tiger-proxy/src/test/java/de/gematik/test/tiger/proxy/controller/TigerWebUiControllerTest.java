@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -201,7 +201,7 @@ public class TigerWebUiControllerTest {
 
             assertThat(tigerProxy.getRbelMessages()).hasSize(2);
         } finally {
-            tigerProxy.getRbelMessages().clear();
+            tigerProxy.clearAllMessages();
         }
     }
 
@@ -225,7 +225,7 @@ public class TigerWebUiControllerTest {
 
     @Test
     void largeMessage_shouldNotBeRenderedCompletelyButStillAppear() {
-        tigerProxy.getRbelMessages().clear();
+        tigerProxy.clearAllMessages();
 
         val proxyRest = Unirest.spawnInstance();
         proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());

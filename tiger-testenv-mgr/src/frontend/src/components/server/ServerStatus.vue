@@ -1,5 +1,5 @@
 <!--
-  - Copyright (c) 2022 gematik GmbH
+  - Copyright (c) 2023 gematik GmbH
   - 
   - Licensed under the Apache License, Version 2.0 (the License);
   - you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
       <i class="fa-solid fa-spinner left"></i> Waiting for updates...
     </div>
     <div v-else class="alert alert-light">
-      <div v-for="(server,serverName) in serverStatusData" :key="serverName">
-        <ServerCard :server="server[1]"/>
+      <div v-for="server in sortedServerList(serverStatusData)">
+        <ServerCard :server="server"/>
       </div>
     </div>
   </div>
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import ServerCard from "@/components/server/ServerCard.vue";
 import TigerServerStatusDto from "@/types/TigerServerStatusDto";
+import {sortedServerList} from "@/types/TigerServerStatus";
 
 defineProps<{
   serverStatusData: Map<string, TigerServerStatusDto>;

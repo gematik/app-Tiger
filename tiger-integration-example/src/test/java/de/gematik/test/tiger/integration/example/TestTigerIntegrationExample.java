@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class TestTigerIntegrationExample {
     @When("User requests the startpage")
     public void userRequestsStartpage() {
         var rest = Unirest.spawnInstance();
-        rest.config().proxy("127.0.0.1", TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getProxyPort());
+        rest.config().proxy("127.0.0.1", TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getProxyPort());
 
         final HttpResponse<String> httpResponse = rest.get("http://winstone").asString();
 

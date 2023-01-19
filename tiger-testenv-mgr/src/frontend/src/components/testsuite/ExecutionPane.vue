@@ -1,5 +1,5 @@
 <!--
-  - Copyright (c) 2022 gematik GmbH
+  - Copyright (c) 2023 gematik GmbH
   - 
   - Licensed under the Apache License, Version 2.0 (the License);
   - you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@
         Rbel Log Details
         <a :href="`${localProxyWebUiUrl}`" target="poxywebui"><i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i></a>
       </h2>
-      <iframe id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
+      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
     </div>
   </div>
 </template>

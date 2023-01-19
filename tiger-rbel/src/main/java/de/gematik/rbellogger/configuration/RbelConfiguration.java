@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ public class RbelConfiguration {
 
     @Builder.Default
     private List<RbelConverterPlugin> postConversionListener = new ArrayList<>();
+    @Builder.Default
+    private List<RbelConverterPlugin> additionalConverters = new ArrayList<>();
     @Builder.Default
     private Map<Class<? extends RbelElement>, List<BiFunction<RbelElement, RbelConverter, RbelElement>>> preConversionMappers
         = new HashMap<>();
@@ -94,6 +96,11 @@ public class RbelConfiguration {
 
     public RbelConfiguration setActivateAsn1Parsing(boolean activateAsn1Parsing) {
         this.activateAsn1Parsing = activateAsn1Parsing;
+        return this;
+    }
+
+    public RbelConfiguration addAdditionalConverter(RbelConverterPlugin converter) {
+        additionalConverters.add(converter);
         return this;
     }
 

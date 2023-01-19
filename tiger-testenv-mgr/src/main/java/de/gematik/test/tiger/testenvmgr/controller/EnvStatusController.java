@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.controller;
 
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.TigerProperties;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
@@ -39,19 +38,21 @@ public class EnvStatusController implements TigerUpdateListener {
 
     private final TigerEnvStatusDto tigerEnvStatus = new TigerEnvStatusDto();
 
-    TigerTestEnvMgr tigerTestEnvMgr;
+    private final TigerTestEnvMgr tigerTestEnvMgr;
+    private final TigerBuildPropertiesService buildProperties;
 
-    private TigerProperties tigerProperties = new TigerProperties();
-
-    public EnvStatusController(final TigerTestEnvMgr tigerTestEnvMgr) {
+    public EnvStatusController(final TigerTestEnvMgr tigerTestEnvMgr, TigerBuildPropertiesService buildProperties) {
         this.tigerTestEnvMgr = tigerTestEnvMgr;
         this.tigerTestEnvMgr.registerNewListener(this);
+        this.buildProperties = buildProperties;
     }
 
     @Override
     public synchronized void receiveTestEnvUpdate(final TigerStatusUpdate update) {
         log.trace("receiving update {}", update);
         try {
+            initializeLocalProxyUrl();
+
             receiveTestSuiteUpdate(update.getFeatureMap());
 
             update.getServerUpdate().forEach(this::receiveServerStatusUpdate);
@@ -69,6 +70,15 @@ public class EnvStatusController implements TigerUpdateListener {
             }
         } catch (Exception e) {
             log.error("Unable to parse update", e);
+        }
+    }
+
+    private void initializeLocalProxyUrl() {
+        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
+            tigerEnvStatus.setLocalProxyWebUiUrl(
+                "http://localhost:"
+                    + tigerTestEnvMgr.getLocalTigerProxyOrFail().getAdminPort()
+                    + "/webui");
         }
     }
 
@@ -147,12 +157,6 @@ public class EnvStatusController implements TigerUpdateListener {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public TigerEnvStatusDto getStatus() {
         log.trace("Fetch request to getStatus() received");
-        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
-            tigerEnvStatus.setLocalProxyWebUiUrl(
-                "http://localhost:"
-                    + TigerGlobalConfiguration.readString(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
-                    + "/webui");
-        }
         tigerTestEnvMgr.setWorkflowUiSentFetch(true);
         log.trace("Sending test env status {}", tigerEnvStatus);
         return tigerEnvStatus;
@@ -183,12 +187,12 @@ public class EnvStatusController implements TigerUpdateListener {
     @GetMapping(path = "/version")
     public String getTigerVersion() {
         log.trace("Fetch requests the tiger version");
-        return tigerProperties.getBuildVersion();
+        return buildProperties.tigerVersionAsString();
     }
 
     @GetMapping(path = "/build")
     public String getBuildDate() {
         log.trace("Fetch requests the build date");
-        return tigerProperties.getBuildDate();
+        return buildProperties.tigerBuildDateAsString();
     }
 }

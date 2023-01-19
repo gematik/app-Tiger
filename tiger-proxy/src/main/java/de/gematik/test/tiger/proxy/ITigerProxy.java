@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 package de.gematik.test.tiger.proxy;
 
 
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import java.security.Key;
-import java.util.Deque;
 import java.util.List;
 
 public interface ITigerProxy {
@@ -37,8 +35,6 @@ public interface ITigerProxy {
     String getBaseUrl();
 
     int getProxyPort();
-
-    Deque<RbelElement> getRbelMessages();
 
     void addKey(String keyid, Key key);
 

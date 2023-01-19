@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.apache.commons.jexl3.MapContext;
 public class RbelJexlExecutor {
 
     private static final Map<Integer, JexlExpression> JEXL_EXPRESSION_CACHE = new HashMap<>();
+    private static final int MAXIMUM_JEXL_ELEMENT_SIZE = 16_000;
 
     public boolean matchesAsJexlExpression(Object element, String jexlExpression) {
         return matchesAsJexlExpression(element, jexlExpression, Optional.empty());
@@ -42,8 +43,8 @@ public class RbelJexlExecutor {
 
     public boolean matchesAsJexlExpression(Object element, String jexlExpression, Optional<String> key) {
         try {
-            final JexlExpression expression = buildExpression(evaluateRbelPathExpressions(jexlExpression, element));
             final MapContext mapContext = new MapContext(buildJexlMapContext(element, key));
+            final JexlExpression expression = buildExpression(evaluateRbelPathExpressions(jexlExpression, element, mapContext));
 
             final boolean result = Optional.of(expression.evaluate(mapContext))
                 .filter(Boolean.class::isInstance)
@@ -82,7 +83,7 @@ public class RbelJexlExecutor {
         }
     }
 
-    private String evaluateRbelPathExpressions(String jexlExpression, Object element) {
+    private String evaluateRbelPathExpressions(String jexlExpression, Object element, MapContext mapContext) {
         if (!(element instanceof RbelElement)
             || !jexlExpression.contains("$.")) {
             return jexlExpression;
@@ -91,7 +92,9 @@ public class RbelJexlExecutor {
             .filter(str -> str.startsWith("$.")
                 && str.length() > 2)
             .findAny().orElseThrow();
-        return jexlExpression.replace(rbelPath, "\"" + extractPathAndConvertToString((RbelElement) element, rbelPath) + "\"");
+        final String rbelEvaluationResult = extractPathAndConvertToString((RbelElement) element, rbelPath);
+        mapContext.set("rbelEvaluationResult", rbelEvaluationResult);
+        return jexlExpression.replace(rbelPath, "rbelEvaluationResult");
     }
 
     private static String extractPathAndConvertToString(RbelElement source, String rbelPath) {
@@ -168,13 +171,25 @@ public class RbelJexlExecutor {
             .map(RbelElement::findNodePath)
             .orElse(null));
         mapContext.put("type", element.getClass().getSimpleName());
-        if (element instanceof RbelElement) {
-            mapContext.put("content", ((RbelElement) element).getRawStringContent());
-        } else {
-            mapContext.put("content", element.toString());
-        }
+        mapContext.put("content", getContent(element));
 
         return mapContext;
+    }
+
+    private static String getContent(Object element) {
+        if (element instanceof RbelElement) {
+            return getMaxedOutContentOfElement((RbelElement) element);
+        } else {
+            return element.toString();
+        }
+    }
+
+    private static String getMaxedOutContentOfElement(RbelElement element) {
+        if (element.getSize() < MAXIMUM_JEXL_ELEMENT_SIZE) {
+            return element.getRawStringContent();
+        } else {
+            return "";
+        }
     }
 
     private Map<String, String> buildPositionDescriptor(RbelElement element) {
@@ -183,9 +198,10 @@ public class RbelJexlExecutor {
             .forEach(entry -> {
                 if (entry.getValue().hasFacet(RbelJsonFacet.class) && entry.getValue().hasFacet(RbelNestedFacet.class)) {
                     result.put(entry.getKey(),
-                        entry.getValue().getFacetOrFail(RbelNestedFacet.class).getNestedElement().getRawStringContent());
+                        getMaxedOutContentOfElement(
+                            entry.getValue().getFacetOrFail(RbelNestedFacet.class).getNestedElement()));
                 } else {
-                    result.put(entry.getKey(), entry.getValue().getRawStringContent());
+                    result.put(entry.getKey(), getMaxedOutContentOfElement(entry.getValue()));
                 }
             });
         return result;
@@ -227,7 +243,8 @@ public class RbelJexlExecutor {
     }
 
     private JexlMessage convertToJexlMessage(RbelElement element) {
-        final Optional<RbelElement> bodyOptional = element.getFirst("body");
+        final Optional<RbelElement> bodyOptional = element.getFirst("body")
+            .filter(el -> el.getSize() < MAXIMUM_JEXL_ELEMENT_SIZE);
         return JexlMessage.builder()
             .request(element.getFacet(RbelHttpRequestFacet.class).isPresent())
             .response(element.getFacet(RbelHttpResponseFacet.class).isPresent())

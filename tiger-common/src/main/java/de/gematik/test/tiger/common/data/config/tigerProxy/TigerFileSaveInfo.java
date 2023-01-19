@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,10 @@
 package de.gematik.test.tiger.common.data.config.tigerProxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
@@ -25,12 +28,14 @@ import lombok.*;
 @Builder
 public class TigerFileSaveInfo {
 
-    private String sourceFile;
-
+    @Builder.Default
+    private String sourceFile = "";
     @Builder.Default
     private boolean writeToFile = false;
     @Builder.Default
     private String filename = "tiger-proxy.tgr";
     @Builder.Default
     private boolean clearFileOnBoot = false;
+    @Builder.Default
+    private String readFilter = "";
 }

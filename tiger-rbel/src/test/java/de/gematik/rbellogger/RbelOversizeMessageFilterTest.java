@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ class RbelOversizeMessageFilterTest {
 
     private static RbelLogger rbelLogger;
 
-
     @BeforeAll
     static void initializeRbelLogger() throws IOException {
         final String oversizedRequest = readCurlFromFileWithCorrectedLineBreaks
@@ -45,13 +44,13 @@ class RbelOversizeMessageFilterTest {
 
     @Test
     void oversizedMessageShouldNotBeParsed() {
-        assertThat(rbelLogger.getMessageHistory().getFirst().getFirst("body").get().getFacets())
+        assertThat(rbelLogger.getMessageList().get(0).getFirst("body").get().getFacets())
             .isEmpty();
     }
 
     @Test
     void oversizedMessageShouldNotBeRendered() throws Exception {
-        final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+        final String html = RbelHtmlRenderer.render(rbelLogger.getMessageList());
 
         FileUtils.writeStringToFile(new File("target/large.html"), html, StandardCharsets.UTF_8);
 

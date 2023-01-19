@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,23 @@
 package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-public class TestTokenSubstituteHelper {
+class TestTokenSubstituteHelper {
 
     @BeforeEach
-    public void init() {
+    void init() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("key1", "value1");
         TigerGlobalConfiguration.putValue("key2", "KEY2VALUE");
         TigerGlobalConfiguration.putValue("foo.bar", "FOOBARVALUE");
         TigerGlobalConfiguration.putValue("give.me.a.foo", "foo");
+        TigerGlobalConfiguration.putValue("some.boolean.value", "true");
     }
 
     @ParameterizedTest
@@ -54,10 +53,16 @@ public class TestTokenSubstituteHelper {
         "${foo.bar}} , FOOBARVALUE}",
         "${${foo.bar} , ${FOOBARVALUE",
         "${foo.bar}}fds , FOOBARVALUE}fds",
-        "fdsafdas${${foo.bar} , fdsafdas${FOOBARVALUE"
-    }
-    )
-    public void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
+        "fdsafdas${${foo.bar} , fdsafdas${FOOBARVALUE",
+        // mix JEXL and TigerGlobalConfiguration
+        "give me a ${!{'give.me' + '.a.foo'}}, give me a foo",
+        "${!{'give.me' + '.a.foo'}}, foo",
+        "!{not ${some.boolean.value}}, false",
+        // non resolvable placeholders
+        "${non.existing.value}, ${non.existing.value}",
+        "!{'blub' + ${non.existing.value}}, !{'blub' + ${non.existing.value}}"
+    })
+    void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
             .isEqualTo(expectedString);
     }
@@ -65,19 +70,20 @@ public class TestTokenSubstituteHelper {
     @ParameterizedTest
     @CsvSource(value = {
         "is it !{10 == 0} or not? , is it false or not?",
-        "!{file('src/test/resources/helloworld.txt')},  Hello World!"
+        "!{file('src/test/resources/helloworld.txt')},  Hello World!",
+        "!{not ${some.boolean.value}},  false"
     })
-    public void testFunctionExecution(String stringToSubstitute, String expectedString) {
+    void testFunctionExecution(String stringToSubstitute, String expectedString) {
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
             .isEqualTo(expectedString);
     }
 
     @Test
-    public void testRegisteringAndDeregisteringAdditionalNamespaces() {
+    void testRegisteringAndDeregisteringAdditionalNamespaces() {
         final String expression = "!{foo:bar()}";
 
-        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(expression))
-            .isInstanceOf(JexlException.class);
+        assertThat(TigerGlobalConfiguration.resolvePlaceholders(expression))
+            .isEqualTo(expression);
 
         TigerJexlExecutor.registerAdditionalNamespace("foo", new FooBarClass());
 
@@ -85,17 +91,19 @@ public class TestTokenSubstituteHelper {
 
         TigerJexlExecutor.deregisterNamespace("foo");
 
-        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(expression))
-            .isInstanceOf(JexlException.class);
+        assertThat(TigerGlobalConfiguration.resolvePlaceholders(expression))
+            .isEqualTo(expression);
     }
 
     @Test
-    public void testCombinedExpressions() {
+    void testCombinedExpressions() {
         TigerJexlExecutor.registerAdditionalNamespace("foo", new FooBarClass());
         assertThat(TigerGlobalConfiguration.resolvePlaceholders("!{foo:asPlaceholder('key1')}"))
             .isEqualTo("value1");
         TigerJexlExecutor.deregisterNamespace("foo");
     }
+
+
 
     public static class FooBarClass {
 

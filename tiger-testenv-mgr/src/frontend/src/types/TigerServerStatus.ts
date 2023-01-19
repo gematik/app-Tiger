@@ -28,3 +28,9 @@ export function currentOverallServerStatus(currentServerStatus : Map<string, Tig
   return status.toLowerCase();
 }
 
+export function sortedServerList(currentServerStatus : Map<string, TigerServerStatusDto> ) :  Array<TigerServerStatusDto> {
+  let arr = Array.from(currentServerStatus.values());
+  arr.sort((a,b) => a.type === "local_tiger_proxy" ? -1 : 1);
+  return arr;
+}
+

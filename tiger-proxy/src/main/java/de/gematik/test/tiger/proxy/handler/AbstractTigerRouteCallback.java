@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -183,6 +183,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
     private void executeHttpTrafficPairParsing(HttpRequest req, HttpResponse resp) {
         try {
+            if (isHealthEndpointRequest(req)) {
+                return;
+            }
+
             final RbelElement request = getTigerProxy().getMockServerToRbelConverter()
                 .convertRequest(req, extractProtocolAndHostForRequest(req));
             //TODO TGR-651 null ersetzen durch echten wert
@@ -213,6 +217,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             propagateExceptionMessageSafe(e);
             log.error("Rbel-parsing failed!", e);
         }
+    }
+
+    private boolean isHealthEndpointRequest(HttpRequest request) {
+        return request.getQueryStringParameters() != null &&
+            request.getQueryStringParameters().
+                containsEntry("healthEndPointUuid", getTigerProxy().getHealthEndpointRequestUuid().toString());
     }
 
     private Optional<RbelFacet> parseCertificateChainIfPresent(HttpRequest httpRequest, RbelElement message) {

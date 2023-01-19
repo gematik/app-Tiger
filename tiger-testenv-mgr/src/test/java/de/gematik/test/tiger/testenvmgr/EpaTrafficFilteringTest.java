@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
     @Test
     @TigerTest(tigerYaml = "tigerProxy:\n"
         + "  skipTrafficEndpointsSubscription: true\n"
-        + "  activateVauAnalysis: true\n"
+        + "  activateEpaVauAnalysis: true\n"
         + "  trafficEndpointFilterString: \"$.body.recordId == 'X114428539'\"\n"
         + "  keyFolders:\n"
         + "    - '../tiger-proxy/src/test/resources'\n"
@@ -60,7 +60,8 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
 
         await()
             .atMost(5, TimeUnit.SECONDS)
-            .until(() -> envMgr.getLocalTigerProxy().getRbelMessages().getFirst().findElement("$.body.recordId")
+            .ignoreExceptions()
+            .until(() -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst().findElement("$.body.recordId")
                 .get()
                 .getFacetOrFail(RbelValueFacet.class)
                 .getValue().equals("X114428539"));

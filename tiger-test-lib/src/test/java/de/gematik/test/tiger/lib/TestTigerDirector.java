@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.mock;
 import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -77,10 +80,10 @@ class TestTigerDirector {
 
             assertThat(TigerDirector.isInitialized()).isTrue();
             assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
-            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getBaseUrl()).startsWith(
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isNotNull();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getBaseUrl()).startsWith(
                 "http://localhost");
-            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy().getRbelLogger()).isNotNull();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getRbelLogger()).isNotNull();
             assertThat(
                 TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
                     .getPorts()).hasSize(1);
@@ -105,7 +108,7 @@ class TestTigerDirector {
 
                 assertThat(TigerDirector.isInitialized()).isTrue();
                 assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-                assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()).isNotNull();
+                assertThatThrownBy(() -> TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isInstanceOf(TigerTestEnvException.class);
 
                 final var url = new URL("http://idp-rise-tu-noproxy");
 
@@ -207,7 +210,7 @@ class TestTigerDirector {
                         System.out.println("Execution resumes!");
                     }).start();
 
-                    await().atMost(400, TimeUnit.MILLISECONDS)
+                    await().atMost(2000, TimeUnit.MILLISECONDS)
                         .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
                     TigerDirector.getTigerTestEnvMgr().resetUserInput();
                     assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
@@ -218,7 +221,8 @@ class TestTigerDirector {
     void testPauseExecutionViaWorkflowUI() {
         executeWithSecureShutdown(() -> {
             TigerDirector.start();
-            EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr());
+            EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
+                TigerBuildPropertiesService.class));
             TigerDirector.getLibConfig().activateWorkflowUi = true;
             new Thread(() -> {
                 TigerDirector.pauseExecution();
@@ -226,7 +230,7 @@ class TestTigerDirector {
             }).start();
 
             envStatusController.getConfirmContinueExecution();
-            await().atMost(400, TimeUnit.MILLISECONDS)
+            await().atMost(2000, TimeUnit.MILLISECONDS)
                 .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
         });
     }
@@ -270,7 +274,7 @@ class TestTigerDirector {
     void testQuitTestRunViaWorkFlowUi() throws Exception {
         TigerDirector.start();
         EnvStatusController envStatusController = new EnvStatusController(
-            TigerDirector.getTigerTestEnvMgr());
+            TigerDirector.getTigerTestEnvMgr(), mock(TigerBuildPropertiesService.class));
         TigerDirector.getLibConfig().activateWorkflowUi = true;
 
         withTextFromSystemIn("quit\n")
@@ -279,7 +283,7 @@ class TestTigerDirector {
                     assertThat(catchSystemExit(() -> {
                         new Thread(TigerDirector::waitForQuit).start();
                         envStatusController.getConfirmQuit();
-                        Thread.sleep(600); // Director polls at 200ms so give it time to system exit
+                        Thread.sleep(1500); // Director polls at 1s so give it time to system exit
                     })).isEqualTo(0)));
     }
 

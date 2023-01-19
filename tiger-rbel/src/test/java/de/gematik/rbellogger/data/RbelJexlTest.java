@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -150,6 +150,12 @@ class RbelJexlTest {
     @Test
     void testValueFacetComparison() {
         assertThat(jexlExecutor.matchesAsJexlExpression(response, "$..signature.isValid == 'true'"))
+            .isTrue();
+    }
+
+    @Test
+    void testRbelEscaping() {
+        assertThat(jexlExecutor.matchesAsJexlExpression(response, "$.body.header =~ '.*discSig.*'"))
             .isTrue();
     }
 }

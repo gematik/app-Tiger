@@ -9,9 +9,9 @@ The test environment manager first checks if the env variable is set and tries t
 If none of these files exist it will fail the start up.
 
 If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named `tiger.yaml`.
-If none of these files exist it will fail the startup.
+If none of these files exist it will fail the start up.
 
-In the startup phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
+In the start up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
 
 To configure your test environment you can either compose the `tiger.yaml` file manually or much preferred
 use the xref:tiger_user_manual.adoc#_admin_ui[Tiger Admin UI].
@@ -20,13 +20,14 @@ The nodes configured in the yaml file will be started asynchronously unless the 
 
 === Supported server nodes and their configuration
 
-The Tiger testenviroment manager currently supports the following list of server nodes.
+The Tiger testenvironment manager currently supports the following list of server nodes.
 
 * **Docker container** is a node based on instantiating a specific docker image that is either locally available or downloaded from a remote docker repo configured in the source property.
 * **Docker compose** is a node that you can use to start a group of services defined in one to several compose yaml files configured in the source list.
 * **External jar** is a node that is started by running `java -jar XXXX.jar` after downloading a Jar archive from the configured source URL.
 * **External URL** is a symbolic node that is actually maintained outside of the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.
 * **Tiger Proxy** is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
+* **Helm Chart** is a node that will be added to tiger via a plugin mechanism that starts a helm chart within a kubernetes environment.
 
 ==== YAML configuration files in a nutshell
 
@@ -99,7 +100,7 @@ serverKey_xxx:
 
 Here is a little example how the server names are set and used and how there server is reachable via the Tiger Proxy.
 
-[source,yaml,title="Example with there servers"]
+[source,yaml,title="Example with three external jar servers"]
 ----
 servers:
   # here the server name is "identityServer" and
@@ -433,10 +434,57 @@ externalUrl_001:
   exports: []
 ----
 
+==== Helm Chart node
+
+The helm chart node allows to start a helm chart from the configured image. The helm chart is started and the
+server is ready when the pod is running and the pod is ready, if port-forward is used (if exposedPorts are set),
+then port-forwarding is also done and the startup is finished and the service can be used for testing.
+
+[source,yaml,title="Helm chart configuration"]
+----
+servers:
+  helmChart_Demis_HLS:
+    type: helmChart
+    startupTimeoutSec: 150
+    # MANDATORY repository from where to download the docker image
+    # if the helm chart is stored on the local file system that the
+    # workingDir should be set.
+    source:
+      - demis-gematik/hospital-location-service
+    # OPTIONAL version of the image
+    version: 1.0.4-b69
+    helmChartOptions:
+      # The kubernetes context
+      context:
+      # OPTIONAL if no working directory is set the default . is used.
+      # if the helm chart is stored on the local file system the workingDir
+      # should be set.
+      workingDir:
+      # OPTIONAL override the POD_NAMESPACE environment variable if set.
+      # if not set, "default" will be used.
+      nameSpace:
+      # OPTIONAL prints out debug messages if set to true, default is false.
+      debug: true
+      # MANDATORY pod name of the helm chart
+      podName: hospital-location-service
+      # OPTIONAL key-value pairs that will be used for starting the helm chart
+      values:
+        - required.image.tag=1.0.2
+      # OPTIONAL should contain a list of pods for the health check, regex can be used.
+      healthcheckPods:
+        - fachdienst-.*
+        - idp-wrapper-.*
+      # OPTIONAL contains a list that will be used for the port forwarding,
+      # if empty no port forwarding is done.
+      # The syntax is <POD_NAME_OR_REGEX>,<LOCAL_PORT>:<FORWARDING_PORT>[,<LOCAL_PORT>:<FORWARDING_PORT>]*
+      exposedPorts:
+        - hospital-location-service.*,8080:8090
+        - someOther-service.*,8080:8096,10000:8096
+----
 
 ==== Tiger Proxy node
 
-The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the startup time can be minimized, and it is always guaranteed to start the current version.
+The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the start up time can be minimized, and it is always guaranteed to start the current version.
 
 [source,yaml,title="Tiger Proxy configuration"]
 ----
@@ -561,7 +609,7 @@ For more information about what the Tiger Proxy is and how it works see the chap
 
 [source,yaml]
 ----
-# Flag whether to activate the local Tiger Proxy
+# Flag whether to activate the local Tiger Proxy. The local tiger proxy field will be null if this property is set to false
 # Default value is true
 localProxyActive: true
 
@@ -577,7 +625,7 @@ additionalYamls:
 tigerProxy:
   # the port under which the server will be booted
   adminPort: 7777
-  # logLevel of the proxy-server. DBEUG and TRACE will print traffic, so use with care!
+  # logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
   # section to configure whether and where the proxy should dump
   # a traffic HTML report on shutdown
@@ -588,6 +636,8 @@ tigerProxy:
     filename: "foobar.tgr"
     # default false
     clearFileOnBoot: true
+    # filter messages read from file (JEXL expression)
+    readFilter: "message.statusCode == '200'"
   # a list of routing entries the proxy should apply to traffic
   proxyRoutes:
       # defines a forward-proxy-route from this server...
@@ -733,14 +783,14 @@ If your test environment is very "expensive" to start or if you are developing y
 To do so, you need to create a customized test environment configuration file (call it tiger-standalone.yaml,
 set the env var TIGER_TESTENV_CFGFILE accordingly) containing all the server nodes needed and
 deactivate the local Tiger Proxy in this configuration file.
-Now download the https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/0.17.1/tiger-testenv-mgr-0.17.1-jar-with-all-dependencies.jar[tiger test environment jar-with-all-dependencies file v0.17.1] from maven or go to https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/[maven index folder] to choose a more recent version.
+Now download the https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/1.1.0/tiger-testenv-mgr-1.1.0-springboot.jar[tiger test environment jar-with-springboot file v1.1.0] from maven or go to https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/[maven index folder] to choose a more recent version.
 
 If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}. In the latter case it is not guaranteed that all processes are cleanly shut down. Please check your process list with operating system specific tools.
 
 [source,shell script]
 ----
 export TIGER_TESTENV_CFGFILE=....../tiger-standalone.yaml
-java -jar tiger-testenv-mgr-${VERSION}-jar-with-all-dependencies.jar
+java -jar tiger-testenv-mgr-${VERSION}-springboot.jar
 ----
 
 Now before starting your test suite scenarios you need to

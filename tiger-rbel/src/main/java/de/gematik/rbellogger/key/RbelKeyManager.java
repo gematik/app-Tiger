@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@ package de.gematik.rbellogger.key;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
-import lombok.extern.slf4j.Slf4j;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.util.*;
 import java.util.stream.Stream;
+import javax.crypto.spec.SecretKeySpec;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class RbelKeyManager {
@@ -37,9 +36,13 @@ public class RbelKeyManager {
                     .map(RbelElement::getRawStringContent)
                     .map(tokenB64 -> {
                         try {
-                            return Base64.getDecoder().decode(tokenB64);
-                        } catch (Exception e) {
-                            return null;
+                            return Base64.getUrlDecoder().decode(tokenB64);
+                        } catch (Exception e1) {
+                            try {
+                                return Base64.getDecoder().decode(tokenB64);
+                            } catch (Exception e2) {
+                                return null;
+                            }
                         }
                     })
                     .filter(Objects::nonNull)

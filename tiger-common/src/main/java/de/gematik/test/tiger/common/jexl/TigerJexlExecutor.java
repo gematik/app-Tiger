@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.jexl3.JexlBuilder;
-import org.apache.commons.jexl3.JexlEngine;
-import org.apache.commons.jexl3.JexlExpression;
-import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.jexl3.*;
 
 @Slf4j
 public class TigerJexlExecutor {
@@ -34,14 +31,16 @@ public class TigerJexlExecutor {
         NAMESPACE_MAP.put(null, InlineJexlToolbox.class);
     }
 
-    public static String execute(String value) {
-        final JexlExpression expression = buildExpression(value);
-        final MapContext mapContext = new MapContext();
+    public static Optional<String> executeOptional(String value) {
+        try {
+            final JexlExpression expression = buildExpression(value);
+            final MapContext mapContext = new MapContext();
 
-        return Optional.ofNullable(expression.evaluate(mapContext))
-            .map(Object::toString)
-            .orElseThrow(() -> new TigerJexlException(
-                "Error while executing expression, got null result. Expression evaluated: " + value));
+            return Optional.ofNullable(expression.evaluate(mapContext))
+                .map(Object::toString);
+        } catch (JexlException e) {
+            return Optional.empty();
+        }
     }
 
     private static JexlExpression buildExpression(String jexlExpression) {
@@ -59,12 +58,5 @@ public class TigerJexlExecutor {
 
     public static void deregisterNamespace(String namespace) {
         NAMESPACE_MAP.remove(namespace);
-    }
-
-    private static class TigerJexlException extends RuntimeException {
-
-        public TigerJexlException(String s) {
-            super(s);
-        }
     }
 }

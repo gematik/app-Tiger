@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -33,13 +34,16 @@ import java.util.Optional;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.SocketUtils;
+import org.springframework.web.context.WebApplicationContext;
 
 @TigerServerType("tigerProxy")
 public class TigerProxyServer extends AbstractExternalTigerServer {
 
     private ConfigurableApplicationContext applicationContext;
+
 
     public TigerProxyServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
@@ -96,6 +100,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         TigerServerLogManager.addProxyCustomerAppender(this);
 
         waitForServerUp();
+        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+            .baseUrl("http://localhost:" + ((ServletWebServerApplicationContext)applicationContext).getWebServer().getPort() + "/webui")
+            .build());
     }
 
     @Override

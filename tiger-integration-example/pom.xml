@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -30,6 +30,11 @@
         <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-cucumber</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${version.junit5}</version>
         </dependency>
     </dependencies>
 
@@ -79,7 +84,7 @@
                 <!-- FIXME: marmer 10.03.2022 Fieser Hack, mus weg (mit tiger-testenv-yml -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -126,7 +131,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.2</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>empty-javadoc-jar</id>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,17 @@ package de.gematik.test.tiger.proxy;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
+import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.RbelFileWriter;
+import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
@@ -43,13 +47,11 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,12 +60,28 @@ import org.slf4j.LoggerFactory;
 @Data
 public abstract class AbstractTigerProxy implements ITigerProxy {
 
+    public static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
+    private static final RbelMessagePostProcessor pairingPostProcessor = (el, conv, json) -> {
+        if (json.has(PAIRED_MESSAGE_UUID)) {
+            final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
+            final Optional<RbelElement> partner = conv.messagesStreamLatestFirst()
+                .filter(element -> element.getUuid().equals(partnerUuid))
+                .findFirst();
+            if (partner.isPresent()) {
+                final TracingMessagePairFacet pairFacet = TracingMessagePairFacet.builder()
+                    .response(el)
+                    .request(partner.get())
+                    .build();
+                el.addFacet(pairFacet);
+                partner.get().addFacet(pairFacet);
+            }
+        }
+    };
     private static final String FIX_VAU_KEY = "-----BEGIN PRIVATE KEY-----\n" +
         "MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIAeOzpSQT8a/mQDM\n" +
         "7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx\n" +
         "9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==\n" +
         "-----END PRIVATE KEY-----\n";
-    private static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
     private final TigerProxyConfiguration tigerProxyConfiguration;
     private RbelLogger rbelLogger;
@@ -73,6 +91,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     protected final org.slf4j.Logger log;
     @Getter
     private final ExecutorService trafficParserExecutor = Executors.newSingleThreadExecutor();
+    private AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
+    private AtomicReference<RuntimeException> fileParsingException = new AtomicReference<>();
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         this(configuration, null);
@@ -99,6 +119,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         if (configuration.getFileSaveInfo() != null
             && StringUtils.isNotEmpty(configuration.getFileSaveInfo().getSourceFile())) {
             readTrafficFromSourceFile(configuration.getFileSaveInfo().getSourceFile());
+        } else {
+            fileParsedCompletely.set(true);
         }
     }
 
@@ -117,29 +139,22 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         new Thread(() -> {
             log.info("Trying to read traffic from file '{}'...", sourceFile);
             try {
-                rbelFileWriter.postConversionListener.add((el, conv, json) -> {
-                    if (json.has(PAIRED_MESSAGE_UUID)) {
-                        final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
-                        for (var it = conv.getMessageHistory().descendingIterator(); it.hasNext(); ) {
-                            final RbelElement element = it.next();
-                            if (element.getUuid().equals(partnerUuid)) {
-                                final TracingMessagePairFacet pairFacet = TracingMessagePairFacet.builder()
-                                    .response(el)
-                                    .request(element)
-                                    .build();
-                                el.addFacet(pairFacet);
-                                element.addFacet(pairFacet);
-                                break;
-                            }
-                        }
-                    }
-                });
+                rbelFileWriter.postConversionListener.add(pairingPostProcessor);
+                if (StringUtils.isNotEmpty(getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
+                    rbelFileWriter.postConversionListener.add(new ProxyFileReadingFilter(
+                        getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
+                }
                 rbelFileWriter.convertFromRbelFile(
                     Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                fileParsedCompletely.set(true);
+                log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
+            } catch (Exception e) {
+                log.error("Exception while parsing traffic file", e);
+                fileParsingException.set(
+                    new TigerProxyStartupException("Error while parsing traffic file '" + sourceFile + "'", e));
+            } finally {
+                rbelFileWriter.postConversionListener.remove(pairingPostProcessor);
             }
-            log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
         }, "readTrafficFromSourceFile").start();
     }
 
@@ -166,8 +181,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
             configuration.getKeyFolders()
                 .forEach(folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
         }
-        if (configuration.isActivateVauAnalysis()) {
+        if (configuration.isActivateEpaVauAnalysis()) {
             rbelConfiguration.addPostConversionListener(new RbelVauSessionListener());
+            rbelConfiguration.addAdditionalConverter(new RbelVauEpaConverter());
+        }
+        if (configuration.isActivateErpVauAnalysis()) {
+            rbelConfiguration.addAdditionalConverter(new RbelErpVauDecrpytionConverter());
         }
         initializeFileSaver(configuration);
         rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
@@ -203,13 +222,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         }
     }
 
-    @Override
-    public Deque<RbelElement> getRbelMessages() {
-        return rbelLogger.getMessageHistory();
-    }
 
     public List<RbelElement> getRbelMessagesList() {
-        return new ArrayList<>(rbelLogger.getMessageHistory());
+        return rbelLogger.getMessageList();
     }
 
     @Override
@@ -261,5 +276,21 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         return name
             .map(s -> s + ": ")
             .orElse("");
+    }
+
+    public void clearAllMessages() {
+        getRbelLogger().getRbelConverter().clearAllMessages();
+    }
+
+
+    public Boolean isFileParsed() {
+        if (fileParsingException.get() != null) {
+            throw fileParsingException.get();
+        }
+        return fileParsedCompletely.get();
+    }
+
+    public Deque<RbelElement> getRbelMessages() {
+        return getRbelLogger().getMessageHistory();
     }
 }

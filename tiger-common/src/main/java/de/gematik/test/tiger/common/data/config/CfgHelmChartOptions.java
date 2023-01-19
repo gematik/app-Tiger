@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -36,4 +36,7 @@ public class CfgHelmChartOptions {
      * "podNameRegex:xxxx:yyyy" where xxxx is the local port and yyyy is the port in the pod
      */
     private List<String> exposedPorts;
+
+    /** list of regex names for pods to be logged **/
+    private List<String> logPods;
 }

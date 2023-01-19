@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.admin;
 
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,7 +27,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.FileTemplateResolver;
 import org.thymeleaf.templateresolver.ITemplateResolver;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackageClasses = {TigerBuildPropertiesService.class, TigerAdminApplication.class})
 public class TigerAdminApplication {
 
     @Autowired

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package de.gematik.test.tiger.lib;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SHOW_TIGER_LOGO;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SKIP_ENVIRONMENT_SETUP;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -24,9 +27,11 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
+import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
@@ -39,6 +44,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -84,9 +90,8 @@ public class TigerDirector {
         applyTestLibConfig();
         // get free port
         startTestEnvMgr();
-        tigerTestEnvMgr.getLocalTigerProxy().addRbelMessageListener(LocalProxyRbelMessageListener.rbelMessageListener);
         startWorkflowUi();
-        setupTestEnvironent();
+        setupTestEnvironent(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
         setDefaultProxyToLocalTigerProxy();
 
         initialized = true;
@@ -101,57 +106,72 @@ public class TigerDirector {
         shutdownHookRegistered = true;
 
         log.info("Registering shutdown hook...");
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                if (getLibConfig().isActivateWorkflowUi() && !tigerTestEnvMgr.isUserAcknowledgedShutdown()) {
-                    System.out.println(
-                        Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...",
-                            RbelAnsiColors.GREEN_BOLD));
-                    if (tigerTestEnvMgr != null) {
-                        tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                            .bannerMessage("Test run finished, press QUIT")
-                            .bannerColor("green")
-                            .bannerType(BannerType.TESTRUN_ENDED)
-                            .build());
-                        try {
-                            await().pollInterval(1, TimeUnit.SECONDS)
-                                .atMost(5, TimeUnit.HOURS)
-                                .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
-                        } finally {
-                            tigerTestEnvMgr.shutDown();
-                        }
-                    }
-                } else if (tigerTestEnvMgr != null) {
-                    System.out.println("TGR Shutting down test env...");
-                    tigerTestEnvMgr.shutDown();
-                }
-                unregisterRestAssuredFilter();
-            } finally {
-                System.out.println("TGR Destroying spring boot context after testrun...");
-                if (envMgrApplicationContext != null) {
-                    envMgrApplicationContext.close();
-                }
-                System.out.println("TGR Tiger shut down orderly");
-            }
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> quit(false, tigerTestEnvMgr.isUserAcknowledgedShutdown())));
     }
 
-    private static void setupTestEnvironent() {
-        if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+    public static void waitForQuit() {
+        quit(true, false);
+    }
+
+    private static void quit(boolean withWaitForQuit, boolean isUserAcknowledgedShutdown) {
+        try {
+            if (getLibConfig().isActivateWorkflowUi() && !isUserAcknowledgedShutdown) {
+                System.out.println(
+                    Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...",
+                        RbelAnsiColors.GREEN_BOLD));
+                if (tigerTestEnvMgr != null) {
+                    tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                        .bannerMessage("Test run finished, press QUIT")
+                        .bannerColor("green")
+                        .bannerType(BannerType.TESTRUN_ENDED)
+                        .build());
+                    try {
+                        await().pollInterval(1, TimeUnit.SECONDS)
+                            .atMost(5, TimeUnit.HOURS)
+                            .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
+                    } finally {
+                        tigerTestEnvMgr.shutDown();
+                        if (withWaitForQuit) {
+                            System.exit(0);
+                        }
+                    }
+                }
+            } else if (tigerTestEnvMgr != null) {
+                System.out.println("TGR Shutting down test env...");
+                if (withWaitForQuit) {
+                    TigerTestEnvMgr.waitForConsoleInput("quit");
+                }
+                tigerTestEnvMgr.shutDown();
+                if (withWaitForQuit) {
+                    System.exit(0);
+                }
+            }
+            unregisterRestAssuredFilter();
+        } finally {
+            System.out.println("TGR Destroying spring boot context after testrun...");
+            if (envMgrApplicationContext != null) {
+                envMgrApplicationContext.close();
+            }
+            System.out.println("TGR Tiger shut down orderly");
+        }
+    }
+
+    private static void setupTestEnvironent(Optional<IRbelMessageListener> tigerProxyMessageListener) {
+        if (!SKIP_ENVIRONMENT_SETUP.getValueOrDefault()) {
             log.info("\n" + Banner.toBannerStr("SETTING UP TESTENV...", RbelAnsiColors.BLUE_BOLD.toString()));
-            tigerTestEnvMgr.setUpEnvironment();
+            tigerTestEnvMgr.setUpEnvironment(tigerProxyMessageListener);
             log.info("\n" + Banner.toBannerStr("TESTENV SET UP OK", RbelAnsiColors.BLUE_BOLD.toString()));
         }
     }
 
     private static synchronized void readConfiguration() {
-        libConfig = TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB")
+        libConfig = TigerGlobalConfiguration.instantiateConfigurationBeanStrict(TigerLibConfig.class, "TIGER_LIB")
             .orElseGet(TigerLibConfig::new);
     }
 
     private static void showTigerBanner() {
         // created via https://kirilllive.github.io/ASCII_Art_Paint/ascii_paint.html
-        if (TigerGlobalConfiguration.readBoolean("TIGER_LOGO", false)) {
+        if (SHOW_TIGER_LOGO.getValueOrDefault()) {
             try {
                 log.info("\n" + IOUtils.toString(
                     Objects.requireNonNull(TigerDirector.class.getResourceAsStream("/tiger2-logo.ansi")),
@@ -179,8 +199,7 @@ public class TigerDirector {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(Map.of("server.port",
-                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElse(0)))
+            .properties(Map.of("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault()))
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)
@@ -193,10 +212,10 @@ public class TigerDirector {
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
-            TigerTestEnvMgr.openWorkflowUiInBrowser(
-                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElseThrow(
+            TigerBrowserUtil.openUrlInBrowser( "http://localhost:" +
+                TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow(
                         () -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!"))
-                    .toString());
+                    .toString(), "Workflow UI");
             log.info("Waiting for workflow Ui to fetch status...");
             try {
                 await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofSeconds(1))
@@ -222,21 +241,24 @@ public class TigerDirector {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     RbelAnsiColors.RED_BOLD));
             } else {
-                log.info(Ansi.colorize(
-                    "SETTING TIGER PROXY http://localhost:" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort()
-                        + "...", RbelAnsiColors.BLUE_BOLD));
-                System.setProperty("http.proxyHost", "localhost");
-                System.setProperty("http.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
-                System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
-                System.setProperty("https.proxyHost", "localhost");
-                System.setProperty("https.proxyPort", "" + tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
-                System.setProperty("java.net.useSystemProxies", "true");
-                SerenityRestUtils.setupSerenityRest(tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
+                tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy -> {
+                    log.info(Ansi.colorize(
+                        "SETTING TIGER PROXY http://localhost:" + proxy.getProxyPort()
+                            + "...", RbelAnsiColors.BLUE_BOLD));
+                    System.setProperty("http.proxyHost", "localhost");
+                    System.setProperty("http.proxyPort", "" + proxy.getProxyPort());
+                    System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
+                    System.setProperty("https.proxyHost", "localhost");
+                    System.setProperty("https.proxyPort", "" + proxy.getProxyPort());
+                    System.setProperty("java.net.useSystemProxies", "true");
+                    SerenityRestUtils.setupSerenityRest(proxy.getProxyPort());
+                });
             }
         } else {
             log.info(
                 Ansi.colorize("SKIPPING TIGER PROXY settings as localProxyActive==false...", RbelAnsiColors.RED_BOLD));
         }
+
     }
 
     public static synchronized boolean isInitialized() {
@@ -250,30 +272,10 @@ public class TigerDirector {
 
     public static String getLocalTigerProxyUrl() {
         assertThatTigerIsInitialized();
-        if (tigerTestEnvMgr.getLocalTigerProxy() == null || !tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
+        if (tigerTestEnvMgr.getLocalTigerProxyOptional().isEmpty() || !tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
             return null;
         } else {
-            return tigerTestEnvMgr.getLocalTigerProxy().getBaseUrl();
-        }
-    }
-
-    public static void waitForQuit() {
-        if (getLibConfig().isActivateWorkflowUi()) {
-            tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                .bannerMessage("Press QUIT to abort test run")
-                .bannerColor("green")
-                .bannerType(BannerType.TESTRUN_ENDED)
-                .build());
-            try {
-                await().pollInterval(200, TimeUnit.MILLISECONDS)
-                    .atMost(5, TimeUnit.HOURS)
-                    .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
-            } finally {
-                System.exit(0);
-            }
-        } else {
-            tigerTestEnvMgr.waitForConsoleInput("quit");
-            System.exit(0);
+            return tigerTestEnvMgr.getLocalTigerProxyOrFail().getBaseUrl();
         }
     }
 
@@ -355,7 +357,9 @@ public class TigerDirector {
             tigerTestEnvMgr.resetUserInput();
         } else {
             // TGR-585
-            log.warn(String.format("The step 'TGR pause test run execution with message \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.", message));
+            log.warn(String.format(
+                "The step 'TGR pause test run execution with message \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.",
+                message));
         }
     }
 
@@ -383,7 +387,8 @@ public class TigerDirector {
         } else {
             // TGR-585
             log.warn(String.format(
-                "The step 'TGR pause test run execution with message \"%s\" and message in case of error \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.", message, errorMessage));
+                "The step 'TGR pause test run execution with message \"%s\" and message in case of error \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.",
+                message, errorMessage));
         }
     }
 }

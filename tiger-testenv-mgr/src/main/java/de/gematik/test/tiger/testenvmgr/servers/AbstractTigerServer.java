@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.SourceType;
@@ -61,6 +60,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     private CfgServer configuration;
     private TigerServerStatus status = TigerServerStatus.NEW;
 
+    // protected because implementing servers use this var
     protected final org.slf4j.Logger log;
 
     protected AbstractTigerServer(String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
@@ -118,10 +118,12 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                 }
 
                 String[] routeParts = mapping.split(" --> ", 2);
-                testEnvMgr.getLocalTigerProxy().addRoute(TigerRoute.builder()
-                    .from(routeParts[0])
-                    .to(routeParts[1])
-                    .build());
+                testEnvMgr.getLocalTigerProxyOptional().ifPresent(
+                    proxy -> proxy.addRoute(TigerRoute.builder()
+                        .from(routeParts[0])
+                        .to(routeParts[1])
+                        .build())
+                );
 
             });
         }
@@ -146,7 +148,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
     private void reloadConfiguration() {
         try {
-            this.configuration = TigerGlobalConfiguration.instantiateConfigurationBean(CfgServer.class,
+            this.configuration = TigerGlobalConfiguration.instantiateConfigurationBeanStrict(CfgServer.class,
                     "tiger", "servers", getServerId())
                 .orElseThrow(
                     () -> new TigerEnvironmentStartupException("Could not reload configuration for server with id %s", getServerId()));
@@ -168,11 +170,12 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                         "Your certificate is empty, please check your .yaml-file for " + key.getId());
                 }
                 log.info("Adding certificate {}", key.getId());
-                getTigerTestEnvMgr().getLocalTigerProxy().addKey(
+                getTigerTestEnvMgr().getLocalTigerProxyOptional().ifPresent(proxy -> proxy.addKey(
                     key.getId(),
                     KeyMgr.readCertificateFromPem("-----BEGIN CERTIFICATE-----\n"
                         + key.getPem().replace(" ", "\n")
-                        + "\n-----END CERTIFICATE-----").getPublicKey());
+                        + "\n-----END CERTIFICATE-----").getPublicKey())
+                );
             });
         getConfiguration().getPkiKeys().stream()
             .filter(key -> key.getType() == PkiType.Key)
@@ -182,11 +185,12 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                         "Your Key is empty, please check your .yaml-file for " + key.getId());
                 }
                 log.info("Adding key {}", key.getId());
-                getTigerTestEnvMgr().getLocalTigerProxy().addKey(
+                getTigerTestEnvMgr().getLocalTigerProxyOptional().ifPresent(proxy -> proxy.addKey(
                     key.getId(),
                     KeyMgr.readKeyFromPem("-----BEGIN PRIVATE KEY-----\n"
                         + key.getPem().replace(" ", "\n")
-                        + "\n-----END PRIVATE KEY-----"));
+                        + "\n-----END PRIVATE KEY-----"))
+                );
             });
     }
 
@@ -204,7 +208,9 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
 
     public void assertThatConfigurationIsCorrect() {
-        assertThat(serverId).withFailMessage("Server Id must not be blank!").isNotBlank();
+        if (StringUtils.isBlank(serverId)) {
+            throw new TigerTestEnvException("Server Id must not be blank!");
+        }
         assertCfgPropertySet(getConfiguration(), "type");
 
         // set default values for all types
@@ -269,15 +275,19 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
 
     void addRoute(TigerRoute newRoute) {
-        getTigerTestEnvMgr().getLocalTigerProxy().addRoute(newRoute);
-        routes.add(newRoute);
+        getTigerTestEnvMgr().getLocalTigerProxyOptional().ifPresent(proxy -> {
+            proxy.addRoute(newRoute);
+            routes.add(newRoute);
+        });
     }
 
     void removeAllRoutes() {
-        log.info("Removing routes for {}...", getServerId());
-        routes.stream()
-            .map(TigerRoute::getId)
-            .forEach(getTigerTestEnvMgr().getLocalTigerProxy()::removeRoute);
+        getTigerTestEnvMgr().getLocalTigerProxyOptional().ifPresent(proxy -> {
+            log.info("Removing routes for {}...", getServerId());
+            routes.stream()
+                .map(TigerRoute::getId)
+                .forEach(proxy::removeRoute);
+        });
     }
 
     public abstract void shutdown();

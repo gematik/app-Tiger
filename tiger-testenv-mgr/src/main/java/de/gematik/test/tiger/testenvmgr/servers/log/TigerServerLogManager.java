@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,11 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
-import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.io.File;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TigerServerLogManager  {
@@ -95,9 +97,18 @@ public class TigerServerLogManager  {
     public static void addProxyCustomerAppender(TigerProxyServer tigerProxyServer) {
         ch.qos.logback.classic.Logger logbackLogger = ((ch.qos.logback.classic.Logger)tigerProxyServer.getTigerProxy().getLog());
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        CustomerProxyAppender customerAppender = new CustomerProxyAppender(tigerProxyServer);
+        CustomerProxyServerAppender customerAppender = new CustomerProxyServerAppender(tigerProxyServer);
         customerAppender.setContext(loggerContext);
         customerAppender.start();
         logbackLogger.addAppender(customerAppender);
+    }
+
+    public static void addProxyCustomerAppender(TigerTestEnvMgr tigerTestEnvMgr, Logger log) {
+        ch.qos.logback.classic.Logger logbackLoggerLocalProxy = ((ch.qos.logback.classic.Logger)log);
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        CustomerLocalProxyAppender customerAppender = new CustomerLocalProxyAppender(tigerTestEnvMgr);
+        customerAppender.setContext(loggerContext);
+        customerAppender.start();
+        logbackLoggerLocalProxy.addAppender(customerAppender);
     }
 }

@@ -10,7 +10,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
         <version.commons-collections4>4.4</version.commons-collections4>
         <version.jsonassert>1.5.1</version.jsonassert>
         <version.json-unit>2.36.0</version.json-unit>
-        <version.xmlunit-core>2.9.0</version.xmlunit-core>
+        <version.xmlunit-core>2.9.1</version.xmlunit-core>
     </properties>
 
     <dependencies>
@@ -167,7 +167,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.4.1</version>
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>

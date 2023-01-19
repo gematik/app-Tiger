@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class JweConverterTest {
                 .build()));
         rbelConverter.getRbelCapturer().initialize();
 
-        final RbelElement postChallengeResponse = rbelConverter.getMessageHistory().stream()
+        final RbelElement postChallengeResponse = rbelConverter.getMessageList().stream()
             .filter(e -> e.hasFacet(RbelHttpRequestFacet.class))
             .filter(request -> request.getFacet(RbelHttpRequestFacet.class).get()
                 .getPath().getRawStringContent().contains("/sign_response")

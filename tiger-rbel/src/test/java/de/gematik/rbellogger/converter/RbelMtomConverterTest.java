@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -43,6 +42,7 @@ class RbelMtomConverterTest {
             rbelLogger = RbelLogger.build(new RbelConfiguration()
                 .setActivateAsn1Parsing(false)
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .addAdditionalConverter(new RbelVauEpaConverter())
                 .addCapturer(rbelFileReaderCapturer));
             rbelFileReaderCapturer.initialize();
         }

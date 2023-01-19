@@ -38,7 +38,7 @@ to the reverse proxy.
 The Tiger Proxy is a proxy-server. It comes in two flavours: Tiger Proxy and Tiger Standalone Proxy. The standalone tiger proxy is started from a JAR-file. The test environment manager boots the main tiger proxy (local tiger proxy) and also any additional ones (normal tiger proxy, not standalone).
 
 Both types have a proxy-port (configurable via `tigerProxy.proxyPort`),
-which supports both http- and https-traffic, (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via `tigerProxy.adminPort`). This provides a webui to monitor the traffic,
+which supports both http- and https-traffic, (so you do not have to differentiate between the two). Additionally, they have an admin-port (configurable via `tigerProxy.adminPort`). This provides a WebUI to monitor the traffic (described in detail xref:tiger_user_manual.adoc#_web_ui[here]),
 a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.
 
 === Understanding routes
@@ -263,8 +263,11 @@ tigerProxy:
     trafficEndpoints:
       - http://another.tiger.proxy:<adminPort>
     # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
-    # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible the
+    # gather traffic via the STOMP-protocol.
+    skipTrafficEndpointsSubscription: false
+    # If false then the subscription is tested at the beginning and if any of the given endpoints are not accessible the
     # server will not boot. (fail fast, fail early)
+    # default of skipTrafficEndpointsSubscription is false
     downloadInitialTrafficFromEndpoints: true
     # Should the traffic currently available (cached) in the remote be download upon initial connection?
 ----
@@ -361,6 +364,7 @@ and
 
 will both return the same elements (maybe amongst other elements).
 
+[#_jexl_expressions]
 ==== JEXL expressions
 RBeL-Path can be integrated with JEXL-expression, giving a much more powerful and flexible tool to extract certain element. This can be done using the syntax from the following example:
 
@@ -440,7 +444,7 @@ Below some properties along with their respective default values:
 tigerProxy:
     activateRbelParsing: true
     activateAsn1Parsing: false
-    activateVauAnalysis: false
+    activateEpaVauAnalysis: false
     parsingShouldBlockCommunication: false
 ----
 
@@ -450,7 +454,7 @@ Deactivating this flag turns off all Rbel-Analysis of the incoming traffic. This
 ===== activateAsn1Parsing
 This is off by default. ASN.1 objects are very common in crypto applications. While parsing them will enable you to directly have a look inside certificates it comes with a penalty in performance and also clutters the object-tree. Often it's enough to know that there is a certificate, only in some scenarios is the content of interest. If the latter is of interest to you activate ASN.1 parsing.
 
-===== activateVauAnalysis
+===== activateEpaVauAnalysis/activateErpVauAnalysis
 VAU-Analysis adds information about the current session to every single VAU-message. If you are not trying to analyze ePA-VAU messages leave this option turned off. If you do, enabling it will give you additional information about the messages.
 
 ===== parsingShouldBlockCommunication
@@ -468,3 +472,39 @@ tigerProxy:
 ----
 
 This will directly forward any request to the given host. This is a form of reverseProxy, only also applicable for non-http-traffic. HTTP traffic will still be forwarded through use of a global reverse proxy. Other traffic will be directly forwarded, rerouted directly on the TCP layer. Messages transmitted can still be parsed via RBel.
+
+=== Understanding filtering
+
+The filtering of messages in the tiger proxy consists of three main stages. These are:
+
+* Traffic filter (trafficEndpointFilterString / readFilter, Determines which messages are accepted into the tiger proxy)
+* WebUI filter (Which messages are displayed in the WebUI?)
+* Pagination (Look around in smaller pages of messages)
+
+Lets dive a bit deeper!
+
+==== Traffic filter
+
+At the core of the Tiger Proxy sits a RbelLogger instance. Here the messages are parsed and stored. Three sources feed into the RbelLogger:
+
+* Messages intercepted in the Tiger Proxy
+* Messages relayed using a mesh setup
+* Messages imported from a file
+
+Messages that are intercepted are automatically stored (the exception being the `tigerProxy.activateForwardAllLogging`-property, which can deactivate the logging of traffic not specifically forwarded via a route). For messages in a mesh setup and from a source file filter expressions can be defined to limit the messages that are actually stored. These can be defined using the `tigerProxy.trafficEndpointFilterString` (for mesh setups) and `tigerProxy.fileSaveInfo.readFilter` (for tgr-files) respectively.
+
+When messages pass the filter, partner messages (request/response pairs) are kept intact. So when you filter for messages that have a return code of 200 the corresponding requests do not match the filter expression. They are however kept in memory since the partner, the response in that case, do match.
+
+Filter expressions are xref:tigerProxy.adoc#_jexl_expressions[JEXL-expressions].
+
+==== WebUI filter
+
+When you display the messages on the WebUI you have the ability to filter out certain messages to be displayed exclusively. The messages, which are filtered out, do still remain stored in the Tiger Proxy. Consequently, this has no effect if you store a TGR file (be it via the WebUI or the YAML).
+
+The menu on the right side will only show the messages being filtered out to avoid confusion. However, the messages numbers do reference the order in the main Tiger Proxy store. This way they are consistent across different WebUI filters (message #10 will always refer to the same message, regardless of the WebUI filter being applied).
+
+Filter expressions are xref:tigerProxy.adoc#_jexl_expressions[JEXL-expressions].
+
+==== Pagination
+
+Finally, pagination is applied in the WebUI. This comes after the WebUI-Filter has been applied. So when would filter out every second message via a WebUI-Filter every page would still contain 20 (or whatever page size you have set) messages.

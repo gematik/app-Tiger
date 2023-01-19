@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,13 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
-import de.gematik.test.tiger.common.config.TigerProperties;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -82,10 +81,9 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private final ApplicationConfiguration applicationConfiguration;
     private ApplicationContext applicationContext;
-    private final AtomicBoolean versionToBeAdded = new AtomicBoolean(false);
-    private boolean versionAdded = false;
 
     public final SimpMessagingTemplate template;
+    private final TigerBuildPropertiesService buildProperties;
 
     private static final String COLOR_INHERIT = "color:inherit;";
     private static final String WS_NEWMESSAGES = "/topic/ws";
@@ -93,6 +91,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     @PostConstruct
     public void addWebSocketListener() {
         tigerProxy.addRbelMessageListener(this::informClientOfNewMessageArrival);
+        renderer.setSubTitle(getVersionStringAsRawHtml() + renderer.getSubTitle());
     }
 
     private void informClientOfNewMessageArrival(RbelElement element) {
@@ -113,7 +112,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         HttpServletResponse response) {
         int actualPageSize = pageSize
             .orElse(getApplicationConfiguration().getMaximumTrafficDownloadPageSize());
-        final ArrayList<RbelElement> filteredMessages = getTigerProxy().getRbelMessages().stream()
+        final ArrayList<RbelElement> filteredMessages = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .dropWhile(messageIsBefore(lastMsgUuid))
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .collect(Collectors.toCollection(ArrayList::new));
@@ -134,16 +133,6 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
-        TigerProperties tigerProperties = new TigerProperties();
-        synchronized (versionToBeAdded) {
-            if (!versionAdded) {
-                String versionHtml =
-                    "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">"
-                        + tigerProperties.getFullBuildVersion() + "</div>";
-                renderer.setSubTitle(versionHtml + renderer.getSubTitle());
-                versionAdded = true;
-            }
-        }
         String html = renderer.getEmptyPage();
         // hide sidebar
         String targetDiv;
@@ -182,6 +171,15 @@ public class TigerWebUiController implements ApplicationContextAware {
                 loadResourceToString("/jexlModal.html") +
                 loadResourceToString("/saveModal.html"))
             .replace("</body>", configJSSnippetStr + "</body>");
+    }
+
+    private String getVersionStringAsRawHtml() {
+        return
+            "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom: 1rem!important;margin-right: 1.5em;\">"
+                + buildProperties.tigerVersionAsString()
+                + " - "
+                + buildProperties.tigerBuildDateAsString()
+                + "</div>";
     }
 
     private String getNavbarItemNot4embedded() {
@@ -327,7 +325,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 span("Upload").withClass("ml-2").withStyle(COLOR_INHERIT)
                             )
                         ),
-                        div().withClass(navbarItem()).with(
+                        div().withClass(getNavbarItemNot4embedded()).with(
                             span("Proxy port "),
                             b("" + tigerProxy.getProxyPort()).withClass("ml-3")
                         ),
@@ -379,7 +377,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         @RequestParam(name = "msgUuid") final String msgUuid,
         @RequestParam(name = "query") final String query) {
         RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
-        final RbelElement targetMessage = getTigerProxy().getRbelMessages().stream()
+        final RbelElement targetMessage = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .findFirst().orElseThrow();
         final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
@@ -406,7 +404,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     public JexlQueryResponseDto testRbelExpression(
         @RequestParam(name = "msgUuid") final String msgUuid,
         @RequestParam(name = "rbelPath") final String rbelPath) {
-        final List<RbelElement> targetElements = getTigerProxy().getRbelMessages().stream()
+        final List<RbelElement> targetElements = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .map(msg -> msg.findRbelPathMembers(rbelPath))
             .flatMap(List::stream)
@@ -459,7 +457,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         var jexlExecutor = new RbelJexlExecutor();
 
-        List<RbelElement> msgs = getTigerProxy().getRbelMessages().stream()
+        List<RbelElement> msgs = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .filter(msg -> {
                 if (StringUtils.isEmpty(filterCriterion)) {
                     return true;
@@ -494,8 +492,9 @@ public class TigerWebUiController implements ApplicationContextAware {
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList()));
         result.setPagesAvailable((msgs.size() / pageSize) + 1);
+        result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
-            result.getHtmlMsgList().size(), result.getMetaMsgList().size()  , msgs.size(), tigerProxy.getRbelMessages().size());
+            result.getHtmlMsgList().size(), result.getMetaMsgList().size()  , msgs.size(), tigerProxy.getRbelLogger().getMessageHistory().size());
         return result;
     }
 
@@ -524,10 +523,10 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/resetMsgs", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResetMessagesDto resetMessages() {
         log.info("Resetting currently recorded messages on rbel logger..");
-        int size = getTigerProxy().getRbelMessages().size();
+        int size = getTigerProxy().getRbelLogger().getMessageHistory().size();
         ResetMessagesDto result = new ResetMessagesDto();
         result.setNumMsgs(size);
-        getTigerProxy().getRbelMessages().clear();
+        getTigerProxy().getRbelLogger().clearAllMessages();
         return result;
     }
 
@@ -554,6 +553,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         log.info("Uploading report to {}...", applicationConfiguration.getUploadUrl());
         performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
     }
+
 
     private void performUploadReport(String htmlReport) {
         // Connect to the web server endpoint

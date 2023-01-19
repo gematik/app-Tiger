@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -28,11 +28,11 @@
         <version.asciidoctor.maven.plugin>2.2.2</version.asciidoctor.maven.plugin>
         <version.asciidoctorj>2.5.2</version.asciidoctorj>
         <version.asciidoctorj.pdf>2.3.3</version.asciidoctorj.pdf>
-        <version.asciidoctorj.diagram>2.2.1</version.asciidoctorj.diagram>
+        <version.asciidoctorj.diagram>2.2.3</version.asciidoctorj.diagram>
         <version.bootstrap>5.1.1</version.bootstrap>
         <version.font-awesome>6.2.0</version.font-awesome>
         <version.selenium>4.4.0</version.selenium>
-        <version.jquery>3.6.1</version.jquery>
+        <version.jquery>3.6.3</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>
         <version.jsonschema>4.28.0</version.jsonschema>
         <version.junit-platform>1.9.1</version.junit-platform>
@@ -301,6 +301,12 @@
                             <goal>repackage</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -339,7 +345,7 @@
                         <webdriver.base.url>${webdriver.base.url}</webdriver.base.url>
                         <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
                     </systemPropertyVariables>
-                    <parallel>classes</parallel>
+                    <parallel>methods</parallel>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
                     <forkCount>2</forkCount>
                     <testFailureIgnore>true</testFailureIgnore>
@@ -461,70 +467,6 @@
                         <goals>
                             <goal>run</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.asciidoctor</groupId>
-                <artifactId>asciidoctor-maven-plugin</artifactId>
-                <version>${version.asciidoctor.maven.plugin}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-diagram</artifactId>
-                        <version>${version.asciidoctorj.diagram}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-pdf</artifactId>
-                        <version>${version.asciidoctorj.pdf}</version>
-                    </dependency>
-                    <!-- seems to be outdated / obsolete / not working with current version of asciidoctor.
-                         So as of now no way to support Gherkin blocks in asciidoc!
-                         Please do not DELETE as this is important knowledge
-                    <dependency>
-                        <groupId>com.github.domgold.doctools.asciidoctor</groupId>
-                        <artifactId>asciidoctor-gherkin-extension</artifactId>
-                        <version>1.0.1</version>
-                    </dependency>
-                    -->
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>convert-to-html</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>process-asciidoc</goal>
-                        </goals>
-                        <configuration>
-                            <backend>html5</backend>
-                            <sourceDirectory>${project.basedir}/../doc/user_manual</sourceDirectory>
-                            <sourceDocumentName>tiger_user_manual.adoc</sourceDocumentName>
-                            <outputDirectory>${project.build.directory}/adoc/user_manual</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../doc/examples</directory>
-                                    <targetPath>examples</targetPath>
-                                </resource>
-                                <resource>
-                                    <directory>../doc/user_manual/media</directory>
-                                    <targetPath>media</targetPath>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                            <attributes>
-                                <source-highlighter>coderay</source-highlighter>
-                                <!--<imagesdir>${project.basedir}/doc/images</imagesdir>-->
-                                <toc>left</toc>
-                                <icons>font</icons>
-                                <pagenums/>
-                            </attributes>
-                            <requires>
-                                <require>asciidoctor-diagram</require>
-                            </requires>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

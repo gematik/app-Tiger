@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -37,11 +37,12 @@ public class UpdateLogController implements TigerServerLogListener {
     @PostConstruct
     public void addWebSocketListener() {
         tigerTestEnvMgr.getServers().values().forEach(server -> server.registerLogListener(this));
+        tigerTestEnvMgr.registerLogListener(this);
     }
 
     @Override
     public void receiveServerLogUpdate(TigerServerLogUpdate update) {
-        log.trace("Propagating tiger server log udpate {}", update);
+        log.trace("Propagating tiger server log update {}", update);
         template.convertAndSend("/topic/serverLog", TigerServerLogDto.createFrom(update));
     }
 }

@@ -4,7 +4,12 @@
       <i :class="`${getServerIcon(server.type)} left serverstatus-${server.status.toLowerCase()}`" :title="`${server.status}`"></i>
       <span>{{ server.name }}</span> <small>({{ server.status }})</small>
     </div>
-    <div class="serverurl truncate-text" v-if="server.baseUrl">{{ server.baseUrl }}</div>
+    <div class="serverurl truncate-text" v-if="server.baseUrl">
+      {{ server.baseUrl }}
+      <a :href="server.baseUrl" :target="server.name">
+        <i class="fa-solid fa-up-right-from-square" alt="pop out server"></i>
+      </a>
+    </div>
     <span v-else></span>
     <div class="serverstatus">
       <a class="p-1 btn btn-sm btn-serverstatus-history" data-bs-toggle="collapse" :href="`#history_${server.name}`" role="button"
@@ -73,6 +78,11 @@ function getServerIcon(type: string): string {
 .serverurl {
   font-size: 75%;
   margin-left: 1rem;
+}
+
+.serverurl a {
+  color: inherit;
+  padding-left: 0.25rem;
 }
 
 .serverstatus {

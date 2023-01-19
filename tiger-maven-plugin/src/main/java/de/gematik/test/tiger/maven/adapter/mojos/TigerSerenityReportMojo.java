@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package de.gematik.test.tiger.maven.adapter.mojos;
 
+import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import java.io.File;
 import java.nio.file.Path;
 import lombok.Data;
@@ -50,6 +51,12 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     @Parameter(defaultValue = "src/test/resources/features", required = true)
     public String requirementsBaseDir;
 
+    /**
+     * Opens browser with serenity report files if set to true.
+     */
+    @Parameter(defaultValue = "false", required = false)
+    public boolean openSerenityReportInBrowser;
+
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -77,6 +84,9 @@ public class TigerSerenityReportMojo extends AbstractMojo {
         singlePageReporter.setSourceDirectory(reportDirectory.toPath());
         singlePageReporter.setOutputDirectory(reportDirectory.toPath());
         Path generatedReport = singlePageReporter.generateReport();
+        if (openSerenityReportInBrowser) {
+            TigerBrowserUtil.openUrlInBrowser(reportDirectory.toPath() + "\\index.html", "browser for serenity report");
+        }
         getLog().info("  - " + singlePageReporter.getDescription() + ": " + generatedReport.toUri());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -385,12 +385,11 @@ public class DockerMgr {
             throw new TigerTestEnvException(
                 "Failed to configure start script on container for server " + server.getServerId(), ioe);
         }
-
     }
 
     private static String getTigerProxyRootCaCertificate(AbstractTigerServer server) {
         try {
-            final Certificate certificate = server.getTigerTestEnvMgr().getLocalTigerProxy()
+            final Certificate certificate = server.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
                 .buildTruststore().getCertificate(CA_CERT_ALIAS);
             final Base64.Encoder encoder = Base64.getMimeEncoder(64, "\r\n".getBytes());
 

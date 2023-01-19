@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,8 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TracingpointsController {
 
     private final TigerProxy tigerProxy;
-    @Value("${app.version:unknown}")
-    private String applicationVersion;
+    private final Optional<BuildProperties> buildProperties;
     private final TigerProxyConfiguration tigerProxyConfiguration;
 
     @GetMapping(value = "/tracingpoints", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -50,7 +52,17 @@ public class TracingpointsController {
                 .stompTopic("/topic" + tigerProxyConfiguration.getTrafficEndpointConfiguration().getStompTopic())
 
                 .protocolType("tigerProxyStomp")
-                .protocolVersion(applicationVersion)
+                .protocolVersion(buildProperties
+                    .map(BuildProperties::getVersion)
+                    .orElse("<unknown version>"))
+
+                .serverVersion(buildProperties
+                    .map(BuildProperties::getVersion)
+                    .orElse("<unknown version>"))
+                .serverDate(buildProperties
+                    .map(BuildProperties::getTime)
+                    .map(t -> t.atZone(ZoneId.systemDefault()))
+                    .orElse(null))
 
                 .build()
         };
@@ -68,5 +80,7 @@ public class TracingpointsController {
         private final String stompTopic;
         private final String protocolType;
         private final String protocolVersion;
+        private final String serverVersion;
+        private final ZonedDateTime serverDate;
     }
 }

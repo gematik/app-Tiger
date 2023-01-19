@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
@@ -60,6 +61,8 @@ import org.xmlunit.diff.Difference;
 public class RbelMessageValidator {
 
     public final static RbelMessageValidator instance = new RbelMessageValidator();
+    private static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
+        new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class);
 
     private static final Map<String, Function<DiffBuilder, DiffBuilder>> diffOptionMap = new HashMap<>();
 
@@ -90,7 +93,7 @@ public class RbelMessageValidator {
     }
 
     public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
-        final int waitsec = TigerGlobalConfiguration.readIntegerOptional("tiger.rbel.request.timeout").orElse(5);
+        final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
         currentRequest = findRequestByDescription(requestParameter);
         try {
             await("Waiting for matching response").atMost(waitsec, TimeUnit.SECONDS)
@@ -110,7 +113,7 @@ public class RbelMessageValidator {
     }
 
     protected RbelElement findRequestByDescription(final RequestParameter requestParameter) {
-        final int waitsec = TigerGlobalConfiguration.readIntegerOptional("tiger.rbel.request.timeout").orElse(5);
+        final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
 
         final AtomicReference<RbelElement> candidate = new AtomicReference<>();
         try {
@@ -391,8 +394,8 @@ public class RbelMessageValidator {
     }
 
     public void findLastRequest() {
-        final Iterator<RbelElement> descendingIterator = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxy()
-            .getRbelMessages()
+        final Iterator<RbelElement> descendingIterator = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
+            .getRbelLogger().getMessageHistory()
             .descendingIterator();
         final RbelElement lastRequest = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(descendingIterator, Spliterator.ORDERED), false)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_PROXY_PORT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
@@ -28,14 +30,12 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -312,9 +312,10 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
     void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT).get())
+        envMgr.startLocalTigerProxyIfActivated();
+        assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault())
             .isBetween(0, 655536);
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT).get())
+        assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault())
             .isBetween(0, 655536);
     }
 
@@ -334,11 +335,11 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         "        - \"--httpPort=${free.port.0}\"\n" +
         "        - \"--webroot=.\"\n",
         skipEnvironmentSetup = true)
-    void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch(TigerTestEnvMgr envMgr) {
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT)
-            .get()).isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
-        assertThat(TigerGlobalConfiguration.readIntegerOptional(TigerTestEnvMgr.CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT)
-            .get()).isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
+    void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch() {
+        assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
+        assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
     }
 
     private void executeWithSecureShutdown(Runnable test, TigerTestEnvMgr envMgr) {

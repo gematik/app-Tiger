@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ public class RbelLoggerTest {
 
         FileUtils.writeStringToFile(new File("target/pairingList.html"),
                 new RbelHtmlRenderer()
-                        .doRender(rbelLogger.getMessageHistory()), Charset.defaultCharset());
+                        .doRender(rbelLogger.getMessageList()), Charset.defaultCharset());
 
         assertThat(rbelLogger.getMessageList().get(9)
                 .findRbelPathMembers("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")

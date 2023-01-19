@@ -1,6 +1,47 @@
 # Changelog Tiger Testplattform
 
 -------
+# Release 1.1.1
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Bugfixes
+
+* TGR-789: Fixed escaping-problems for Rbel-Path expressions embedded in JEXL
+* TGR-763: Fix for varying Base64-Encryption methods used for token_key
+
+## Features
+
+* TGR-745: Small performance boost for JEXL-execution
+* TGR-745: More compact Rbel-messages in WebUI
+* TGR-745: Ability added to filter TGR-files
+* TGR-793: TigerTypedConfigurationKey added
+* TGR-788: Negated JEXL filters are now correctly applied when reading TGR files in the Tiger Proxy
+* TGR-758: Pairs are no longer discarded when filtering remote Traffic
+* TGR-782: Version is now displayed correctly for Standalone-Proxies
+* TGR-766: Added support for Java 8 Date/Time Types to TigerGlobalConfiguration
+* TGR-757: WebUI: Return feedback on filtered messages to the user
+* TGR-800: Added HTTP client to test-lib
+* TGR-575: Added support for CETP messages in tiger-rbel
+* TGR-796: Delayed evaluation for TigerGlobalConfiguration added
+* TGR-559: Code optimized in TigerDirector
+* TGR-696: Added helm chart to User Manual 
+* TGR-640: Logs out tiger configuration and environment variables when debug log level is set
+* TGR-732: WorkflowUi: LokalTigerProxy is shown in server list on the left and also appears in the logs
+* TGR-705: Tiger Proxy health endpoint now also checks responsiveness of internal mock server and adds more details to the health status
+* TGR-748: MavenTigerPlugin: add configuration property for opening the browser containing the serenity report when performing the generate-serenity-report goal
+
+## Breaking changes
+
+* TGR-745: VAU traffic is no longer decrypted by default. Please set the appropriate flags to do so (activateErpVauAnalysis and activateEpaVauAnalysis)
+* TGR-640: when using the tiger yaml property ```localProxyActive: false``` the field localTigerProxy in the TigerTestEnvMgr is now returned as null to save test execution time as we don't start it up any longer if no local proxy is desired.
+
+-------
 # Release 1.1.0
 
 * Serenity BDD 3.3.10

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package de.gematik.test.tiger.common.config;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_TESTENV_CFGFILE_LOCATION;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_YAML_VALUE;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
@@ -77,23 +81,14 @@ public class TigerGlobalConfiguration {
         readYamlFiles();
 
         readAdditionalYamlFiles();
-        printBuildVersionAndDate();
-    }
-
-    static void printBuildVersionAndDate() {
-        TigerProperties tigerProperties = new TigerProperties();
-        log.info(tigerProperties.getFullBuildVersion());
     }
 
     private static void addFreePortVariables() {
         List<ServerSocket> sockets = new ArrayList<>();
-        String[] tigerApps = { "testenvmgr", "localproxy.admin" };
-        for (String tigerApp : tigerApps) {
+        for (TigerTypedConfigurationKey<Integer> key : List.of(TESTENV_MGR_RESERVED_PORT, LOCALPROXY_ADMIN_RESERVED_PORT)) {
             try {
                 final ServerSocket serverSocket = new ServerSocket(0);
-                globalConfigurationLoader.putValue("tiger.internal." + tigerApp + ".port",
-                    Integer.toString(serverSocket.getLocalPort()),
-                    SourceType.RUNTIME_EXPORT);
+                key.putValue(serverSocket.getLocalPort());
                 sockets.add(serverSocket);
             } catch (IOException e) {
                 throw new TigerConfigurationException("Exception while trying to add tiger internal port variables", e);
@@ -141,6 +136,13 @@ public class TigerGlobalConfiguration {
         String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanClass, baseKeys);
+    }
+
+    @SneakyThrows
+    public static synchronized <T> Optional<T> instantiateConfigurationBeanStrict(Class<T> configurationBeanClass,
+        String... baseKeys) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.instantiateConfigurationBeanStrict(configurationBeanClass, baseKeys);
     }
 
     @SneakyThrows
@@ -244,11 +246,10 @@ public class TigerGlobalConfiguration {
     }
 
     private static void readYamlFiles() {
-        TigerGlobalConfiguration.readStringOptional("TIGER_YAML")
+        TIGER_YAML_VALUE.getValue()
             .ifPresent(s -> globalConfigurationLoader.readFromYaml(s, SourceType.TEST_YAML, "tiger"));
 
-        final Optional<File> customCfgFile = TigerGlobalConfiguration.readStringOptional(
-                "TIGER_TESTENV_CFGFILE")
+        final Optional<File> customCfgFile = TIGER_TESTENV_CFGFILE_LOCATION.getValue()
             .map(File::new);
         if (customCfgFile.isPresent()) {
             if (customCfgFile.get().exists()) {
@@ -263,7 +264,7 @@ public class TigerGlobalConfiguration {
         String computerName = getComputerName();
 
         final Optional<File> cfgFile = Stream.of(
-                TigerGlobalConfiguration.readStringOptional("TIGER_TESTENV_CFGFILE").orElse(null),
+                TIGER_TESTENV_CFGFILE_LOCATION.getValue().orElse(null),
                 "tiger-" + computerName + ".yaml", "tiger-" + computerName + ".yml",
                 "tiger.yaml", "tiger.yml")
             .filter(Objects::nonNull)
@@ -276,7 +277,7 @@ public class TigerGlobalConfiguration {
         }
 
         final Optional<File> oldCfgFile = Stream.of(
-                TigerGlobalConfiguration.readStringOptional("TIGER_TESTENV_CFGFILE").orElse(null),
+                TIGER_TESTENV_CFGFILE_LOCATION.getValue().orElse(null),
                 "tiger-testenv-" + computerName + ".yaml", "tiger-testenv-" + computerName + ".yml",
                 "tiger-testenv.yaml", "tiger-testenv.yml")
             .filter(Objects::nonNull)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr.HTTP;
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgDockerOptions;

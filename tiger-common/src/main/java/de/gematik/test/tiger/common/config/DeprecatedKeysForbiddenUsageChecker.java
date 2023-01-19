@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,16 @@ public final class DeprecatedKeysForbiddenUsageChecker {
             .compareKey("tiger.servers.*.externaljaroptions.healthcheckurl")
             .deprecatedKey("tiger.servers.*.externalJarOptions.healthcheckurl")
             .newKey("tiger.servers.*.healthcheckUrl")
+            .build(),
+        DeprecatedKeyDescriptor.builder()
+            .compareKey("tiger.tigerproxy.activateVauAnalysis")
+            .deprecatedKey("activateVauAnalysis")
+            .newKey("activateEpaVauAnalysis")
+            .build(),
+        DeprecatedKeyDescriptor.builder()
+            .compareKey("tiger.servers.*.tigerproxycfg.proxycfg.activateVauAnalysis")
+            .deprecatedKey("activateVauAnalysis")
+            .newKey("activateEpaVauAnalysis")
             .build());
 
     public static void checkForDeprecatedKeys(Map<TigerConfigurationKey, String> valueMap)

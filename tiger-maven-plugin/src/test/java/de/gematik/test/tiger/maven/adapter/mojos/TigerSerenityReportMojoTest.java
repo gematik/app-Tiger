@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package de.gematik.test.tiger.maven.adapter.mojos;
 
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.readString;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -24,7 +25,6 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +33,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -102,10 +103,25 @@ class TigerSerenityReportMojoTest {
     );
   }
 
+  @Tag("de.gematik.test.tiger.common.LongrunnerTest")
+  @Test
+  @DisplayName("If the property openSerenityReportInBrowser is set, the browser should open with the serenity report")
+  @SneakyThrows
+  void testIfTheBrowserOpensWithSerenityReport() {
+    // Preparation
+    underTest.setOpenSerenityReportInBrowser(true);
+    // Execution
+    underTest.execute();
+
+    // Assertion
+    assertThatNoException();
+  }
+
   @SneakyThrows
   private void prepareReportDir() {
     final var repoRessourceDir = Paths.get(
         getClass().getResource("/serenetyReports/fresh").toURI());
     FileUtils.copyDirectory(repoRessourceDir.toFile(), reportDir.toFile());
   }
+
 }

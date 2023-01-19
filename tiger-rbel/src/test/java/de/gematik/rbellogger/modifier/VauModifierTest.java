@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
+import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
@@ -49,6 +51,8 @@ public class VauModifierTest {
         if (rbelLogger == null) {
             rbelLogger = RbelLogger.build(
                 new RbelConfiguration()
+                    .addAdditionalConverter(new RbelVauEpaConverter())
+                    .addAdditionalConverter(new RbelErpVauDecrpytionConverter())
                     .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
         }
         rbelLogger.getRbelModifier().deleteAllModifications();
@@ -91,6 +95,7 @@ public class VauModifierTest {
     public void modifyEpaVauRequestBody() {
         rbelLogger = RbelLogger.build(new RbelConfiguration()
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+            .addAdditionalConverter(new RbelVauEpaConverter())
             .addCapturer(RbelFileReaderCapturer.builder()
                 .rbelFile("src/test/resources/vauFlow.tgr")
                 .build())

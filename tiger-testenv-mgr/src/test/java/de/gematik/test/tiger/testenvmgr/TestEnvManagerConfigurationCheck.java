@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -324,10 +324,11 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "    tigerProxyCfg:\n" +
         "      adminPort: 9999", skipEnvironmentSetup = true)
     void defaultForLocalTigerProxyShouldBeBlockingMode(TigerTestEnvMgr envMgr) {
+        envMgr.startLocalTigerProxyIfActivated();
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
         assertThat(srv.getTigerProxyCfg().isParsingShouldBlockCommunication())
             .isFalse();
-        assertThat(envMgr.getLocalTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
+        assertThat(envMgr.getLocalTigerProxyOrFail().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
             .isTrue();
     }
 
@@ -335,7 +336,29 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     @TigerTest(tigerYaml = "tigerProxy:\n"
         + "  parsingShouldBlockCommunication: false", skipEnvironmentSetup = true)
     void localTigerProxyConfigurationForNonBlockingModeShouldBePossible(TigerTestEnvMgr envMgr) {
-        assertThat(envMgr.getLocalTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
+        envMgr.startLocalTigerProxyIfActivated();
+        assertThat(envMgr.getLocalTigerProxyOrFail().getTigerProxyConfiguration().isParsingShouldBlockCommunication())
             .isFalse();
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  tigerServer1:\n"
+        + "    type: tigerProxy\n"
+        + "    exports: \n"
+        + "      - OTHER_PORT=${FREE_PORT_3}\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${FREE_PORT_1}\n"
+        + "      proxyPort: ${FREE_PORT_2}\n"
+        + "  tigerServer2:\n"
+        + "    type: tigerProxy\n"
+        + "    dependsUpon: tigerServer1\n"
+        + "    tigerProxyCfg:\n"
+        + "      adminPort: ${OTHER_PORT}\n"
+        + "      proxyPort: ${free.port.4}\n"
+        + "localProxyActive: false\n")
+    void testDelayedEvaluation(TigerTestEnvMgr envMgr) {
+        assertThat(envMgr.getServers().get("tigerServer2").getConfiguration().getTigerProxyCfg().getAdminPort())
+            .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
     }
 }

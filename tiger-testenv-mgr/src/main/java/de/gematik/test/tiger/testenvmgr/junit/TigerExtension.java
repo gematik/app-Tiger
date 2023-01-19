@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.testenvmgr.junit;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SKIP_ENVIRONMENT_SETUP;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
@@ -49,7 +51,7 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
     public void afterTestExecution(ExtensionContext context) {
         if (tigerTestEnvMgr != null) {
             log.info("After test execution - tearing down context");
-            if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+            if (!SKIP_ENVIRONMENT_SETUP.getValueOrDefault()) {
                 log.info("Stopping Test-Env");
                 tigerTestEnvMgr.shutDown();
             }
@@ -81,7 +83,8 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
             return this.tigerTestEnvMgr;
         } else if (parameterContext.getParameter().getType().isAssignableFrom(UnirestInstance.class)) {
             final UnirestInstance unirestInstance = Unirest.spawnInstance();
-            unirestInstance.config().proxy("127.0.0.1", tigerTestEnvMgr.getLocalTigerProxy().getProxyPort());
+            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy ->
+                unirestInstance.config().proxy("127.0.0.1", proxy.getProxyPort()));
             return unirestInstance;
         } else {
             throw new RuntimeException("Could not instantiate parameter, unsupported typ "
@@ -109,7 +112,7 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
             additionalProperties.put("TIGER_YAML", tigerAnnotation.tigerYaml());
             TigerGlobalConfiguration.setRequireTigerYaml(false);
         }
-        additionalProperties.put("tiger.skipEnvironmentSetup",
+        additionalProperties.put(SKIP_ENVIRONMENT_SETUP.getKey().downsampleKey(),
             Boolean.toString(tigerAnnotation.skipEnvironmentSetup()));
         if (tigerAnnotation.additionalProperties() != null) {
             Arrays.stream(tigerAnnotation.additionalProperties())
@@ -121,15 +124,14 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
 
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(Map.of("server.port",
-                TigerGlobalConfiguration.readIntegerOptional("tiger.internal.testenvmgr.port").orElse(0)))
+            .properties(Map.of("server.port", TESTENV_MGR_RESERVED_PORT.getValue().orElse(0)))
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .initializers()
             .run();
 
         tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
-        if (!TigerGlobalConfiguration.readBoolean("tiger.skipEnvironmentSetup", false)) {
+        if (!SKIP_ENVIRONMENT_SETUP.getValueOrDefault()) {
             log.info("Starting Test-Env setup");
             tigerTestEnvMgr.setUpEnvironment();
         }

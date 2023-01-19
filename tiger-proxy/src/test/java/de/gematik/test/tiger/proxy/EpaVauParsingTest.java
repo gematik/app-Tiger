@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class EpaVauParsingTest {
                 .sourceFile("src/test/resources/vauEpa2Flow.tgr")
                 .build())
             .keyFolders(List.of("src/test/resources"))
-            .activateVauAnalysis(true)
+            .activateEpaVauAnalysis(true)
             .build())) {
 
             await()
@@ -89,7 +89,7 @@ class EpaVauParsingTest {
             .fileSaveInfo(TigerFileSaveInfo.builder()
                 .sourceFile("src/test/resources/rise-vau-log.tgr")
                 .build())
-            .activateVauAnalysis(true)
+            .activateEpaVauAnalysis(true)
             .build())) {
 
             await()

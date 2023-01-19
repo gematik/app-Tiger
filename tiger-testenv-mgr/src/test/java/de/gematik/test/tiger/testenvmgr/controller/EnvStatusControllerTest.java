@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -31,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -41,7 +43,7 @@ class EnvStatusControllerTest {
     @Test
     @TigerTest(tigerYaml = "")
     void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
-        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
@@ -70,7 +72,7 @@ class EnvStatusControllerTest {
     @Test
     @TigerTest(tigerYaml = "")
     void mergeStepsOfScenario(final TigerTestEnvMgr envMgr) {
-        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
@@ -118,7 +120,7 @@ class EnvStatusControllerTest {
     @Test
     @TigerTest(tigerYaml = "")
     void checkBannerMessages(final TigerTestEnvMgr envMgr) {
-        final EnvStatusController envStatusController = new EnvStatusController(envMgr);
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
         assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
@@ -193,5 +195,18 @@ class EnvStatusControllerTest {
         } finally {
             envMgr.shutDown();
         }
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "", skipEnvironmentSetup = true)
+    void test_webUiUrlShouldBeSet(final TigerTestEnvMgr envMgr) {
+        final EnvStatusController envStatusController = new EnvStatusController(envMgr,
+            mock(TigerBuildPropertiesService.class));
+
+        assertThat(envMgr.getLocalTigerProxyOptional()).isEmpty();
+        assertThat(StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl())).isTrue();
+        envMgr.setUpEnvironment();
+        assertThat(envMgr.getLocalTigerProxyOptional()).isNotEmpty();
+        assertThat(StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl())).isFalse();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -444,6 +445,15 @@ public class TigerConfigurationTest {
                     Users.builder().username("guest").password("guest1234").roles(List.of("VIEW")).build());
     }
 
+    @Test
+    void shouldParseJava8Date() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.readFromYaml("users.blub: 2007-12-24T18:21Z");
+        final Users users = TigerGlobalConfiguration.instantiateConfigurationBean(Users.class, "users").get();
+        assertThat(users.blub)
+            .isEqualTo("2007-12-24");
+    }
+
     /**
      * ${ENV => GlobalConfigurationHelper.getString() ${json-unit.ignore} => interessiert dann folglich nicht
      * ${VAR.foobar} => GlobalConfigurationHelper.getSourceByName("VAR").getString()
@@ -690,12 +700,48 @@ public class TigerConfigurationTest {
             .isEqualTo("fooBar");
     }
 
+    @Test
+    void unresolveablePrimitives_shouldBeIgnored() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.readFromYaml(
+            "integer: '123${this.value.does.not.exist}'\n"
+                + "b: ${this.value.does.not.exist}\n"
+                + "c: ${this.value.does.not.exist}\n"
+                + "d: ${this.value.does.not.exist}\n"
+                + "l: ${this.value.does.not.exist}\n"
+                + "s: ${this.value.does.not.exist}\n"
+                + "by: ${this.value.does.not.exist}\n"
+                + "f: ${this.value.does.not.exist}\n"
+                + "objectInt: ${this.value.does.not.exist}\n"
+                + "nestedBean.bar: ${this.value.does.not.exist}");
+        var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
+            .get();
+        assertThat(dummyBean.getInteger()).isEqualTo(-1);
+        assertThat(dummyBean.isB()).isFalse();
+        assertThat(dummyBean.getC()).isEqualTo(' ');
+        assertThat(dummyBean.getD()).isEqualTo(-1.0);
+        assertThat(dummyBean.getF()).isEqualTo(-1.0f);
+        assertThat(dummyBean.getL()).isEqualTo(-1l);
+        assertThat(dummyBean.getBy()).isEqualTo((byte) -1);
+        assertThat(dummyBean.getS()).isEqualTo((short) -1);
+        assertThat(dummyBean.getObjectInt()).isNull();
+        assertThat(dummyBean.getNestedBean().getBar()).isEqualTo(-1);
+    }
+
     @Data
     @Builder
     public static class DummyBean {
 
         private String string;
         private int integer;
+        private boolean b;
+        private char c;
+        private double d;
+        private float f;
+        private long l;
+        private short s;
+        private byte by;
+        private Integer objectInt;
         private NestedBean nestedBean;
     }
 
@@ -724,6 +770,7 @@ public class TigerConfigurationTest {
     public static class Users {
         private String username;
         private String password;
+        private LocalDate blub;
         private List<String> roles;
     }
 }

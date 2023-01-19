@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 gematik GmbH
+ * Copyright (c) 2023 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,12 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
 @AllArgsConstructor
+@Slf4j
 public class RbelFileWriter {
 
     private static final String FILE_DIVIDER = "\n";
@@ -92,22 +94,30 @@ public class RbelFileWriter {
     }
 
     private List<RbelElement> readRbelFileStream(Stream<String> rbelFileStream) {
-        final List<String> collect = rbelFileStream
+        final List<String> rawMessageStrings = rbelFileStream
             .filter(StringUtils::isNotEmpty)
             .collect(Collectors.toList());
-        return collect.stream()
-            .map(JSONObject::new)
-            .map(this::parseFileObject)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(Collectors.toList());
+        List<RbelElement> list = new ArrayList<>();
+        log.info("Found {} messages in file, starting parsing...", rawMessageStrings.size());
+        int numberOfParsedMessages = 0;
+        for (String rawMessageString : rawMessageStrings) {
+            if ((++numberOfParsedMessages % 1000) == 0) {
+                log.info("Parsed {} messages, continuing...", numberOfParsedMessages);
+            }
+            JSONObject jsonObject = new JSONObject(rawMessageString);
+            Optional<RbelElement> rbelElement = parseFileObject(jsonObject);
+            if (rbelElement.isPresent()) {
+                RbelElement element = rbelElement.get();
+                list.add(element);
+            }
+        }
+        return list;
     }
 
     private Optional<RbelElement> parseFileObject(JSONObject messageObject) {
         try {
             final String msgUuid = messageObject.optString(MESSAGE_UUID);
-            if (rbelConverter.getMessageHistory().stream()
-                .anyMatch(msg -> msg.getUuid().equals(msgUuid))) {
+            if (rbelConverter.isMessageUuidAlreadyKnown(msgUuid)) {
                 return Optional.empty();
             }
             final RbelElement parsedMessage = rbelConverter.parseMessage(
