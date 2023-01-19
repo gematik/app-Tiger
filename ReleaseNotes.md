@@ -13,6 +13,7 @@
 ## Bugfixes
 
 * TGR-789: Fixed escaping-problems for Rbel-Path expressions embedded in JEXL
+* TGR-763: Fix for varying Base64-Encryption methods used for token_key
 
 ## Features
 
