@@ -277,9 +277,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <forkCount>1</forkCount>
-                    <reuseForks>false</reuseForks>
-                    <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
+                    <!-- very pessimistic value for slow environment. Default is 30. Rare errors observed. -->
+                    <forkedProcessExitTimeoutInSeconds>300</forkedProcessExitTimeoutInSeconds>
                 </configuration>
             </plugin>
         </plugins>
