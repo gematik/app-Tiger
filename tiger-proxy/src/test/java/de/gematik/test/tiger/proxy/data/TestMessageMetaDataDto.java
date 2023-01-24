@@ -8,6 +8,7 @@ import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverridde
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -23,6 +24,7 @@ import org.mockserver.netty.MockServer;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
 
     public static MockServerClient forwardProxy;

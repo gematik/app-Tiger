@@ -6,6 +6,7 @@ package de.gematik.test.tiger.testenvmgr.controller;
 
 import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import java.lang.reflect.Type;
@@ -39,18 +40,13 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 @Slf4j
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@ResetTigerConfiguration
 class UpdatePushControllerTest {
 
     @LocalServerPort
     private int port;
     @Autowired
     private TigerTestEnvMgr tigerTestEnvMgr;
-
-    @BeforeAll
-    @AfterAll
-    public static void resetConfiguration() {
-        TigerGlobalConfiguration.reset();
-    }
 
     @Test
     @Disabled("Failed auf dem Jenkins, lokal läuft er grün. Am ende der timebox keine lösung, master grün, gogo")

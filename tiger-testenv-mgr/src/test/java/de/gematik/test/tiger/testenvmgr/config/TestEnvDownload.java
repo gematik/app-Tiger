@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
@@ -34,7 +35,8 @@ import org.mockserver.netty.MockServer;
 import org.springframework.util.SocketUtils;
 
 @Slf4j
-public class TestEnvDownload {
+@ResetTigerConfiguration
+class TestEnvDownload {
     private static final Path DOWNLOAD_FOLDER_PATH = Path.of("target", "jarDownloadTest");
     private static final Integer MOCKSERVER_PORT = SocketUtils.findAvailableTcpPorts(1).first();
 
@@ -56,7 +58,6 @@ public class TestEnvDownload {
         } else {
             FileUtils.forceMkdir(DOWNLOAD_FOLDER_PATH.toFile());
         }
-        TigerGlobalConfiguration.reset();
     }
 
 

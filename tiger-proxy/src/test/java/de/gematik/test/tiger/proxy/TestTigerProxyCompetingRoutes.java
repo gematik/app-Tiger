@@ -10,6 +10,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
 
     @Test
@@ -25,7 +27,6 @@ class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
         final String wrongDst = "http://localhost:" + fakeBackendServer.port() + "/wrong";
         final String correctDst = "http://localhost:" + fakeBackendServer.port() + "/right";
 
-        TigerGlobalConfiguration.reset();
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .build());
 

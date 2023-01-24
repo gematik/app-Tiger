@@ -11,6 +11,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo.TigerFileSaveInfoBuilder;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxyFile extends AbstractTigerProxyTest {
     private static final String TGR_FILENAME = "target/reconstruction.tgr";
 

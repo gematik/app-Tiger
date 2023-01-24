@@ -12,6 +12,7 @@ import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
 
     @Test

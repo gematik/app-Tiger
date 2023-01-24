@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,13 +22,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
+@ResetTigerConfiguration
 class TestCetpCommunication extends AbstractNonHttpTest{
 
     private byte[] message;
 
     @BeforeEach
     public void setupFixture() throws IOException {
-        TigerGlobalConfiguration.reset();
         String xml = Files.readString(Path.of("pom.xml"));
         message = Arrays.concatenate(
             Arrays.concatenate("CETP".getBytes(), ByteBuffer.allocate(4).putInt(xml.length()).array()),

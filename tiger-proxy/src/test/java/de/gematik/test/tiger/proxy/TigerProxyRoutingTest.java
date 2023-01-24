@@ -11,6 +11,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import java.util.List;
 import kong.unirest.Config;
@@ -27,6 +28,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @WireMockTest
 @RequiredArgsConstructor
+@ResetTigerConfiguration
 public class TigerProxyRoutingTest {
 
     private UnirestInstance unirestInstance;

@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -19,15 +20,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
+@ResetTigerConfiguration
 class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest{
 
     private static final String MESSAGE = "Client to Server message\n";
     private static final String RESPONSE_MESSAGE = "Server to Client message\n";
-
-    @BeforeAll
-    public static void resetConfiguration(){
-        TigerGlobalConfiguration.reset();
-    }
 
     @Test
     @DisplayName("Client sends two non-http request, no reply from server, connection stays open")

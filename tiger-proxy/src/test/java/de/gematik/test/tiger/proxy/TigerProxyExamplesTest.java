@@ -15,6 +15,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,14 +33,13 @@ import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 
 @RequiredArgsConstructor
+@ResetTigerConfiguration
 public class TigerProxyExamplesTest {
 
     private static ClientAndServer mockServerClient = new ClientAndServer();
 
     @BeforeAll
     public static void beforeEachLifecyleMethod() {
-        TigerGlobalConfiguration.reset();
-
         mockServerClient.when(request()
                 .withPath("/foo"))
             .respond(httpRequest ->

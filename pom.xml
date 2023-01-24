@@ -69,8 +69,9 @@
     </repositories>
 
     <modules>
-        <module>tiger-rbel</module>
         <module>tiger-common</module>
+        <module>tiger-rbel</module>
+        <module>tiger-test-utils</module>
         <module>tiger-proxy</module>
         <module>tiger-standalone-proxy</module>
         <module>tiger-testenv-mgr</module>

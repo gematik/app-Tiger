@@ -34,4 +34,12 @@ public class RbelOptions {
     public static void deactivateFacetsPrinting() {
         ACTIVATE_FACETS_PRINTING = false;
     }
+
+    public static void reset() {
+        ACTIVATE_RBEL_PATH_DEBUGGING = false;
+        RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH = 3;
+        RBEL_PATH_TREE_VIEW_VALUE_OUTPUT_LENGTH = 50;
+        ACTIVATE_JEXL_DEBUGGING = false;
+        ACTIVATE_FACETS_PRINTING = true;
+    }
 }

@@ -23,6 +23,7 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
@@ -67,6 +68,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @DirtiesContext
+@ResetTigerConfiguration
 class TigerRemoteProxyClientTest {
     /*
      *  Our Testsetup:
@@ -105,11 +107,6 @@ class TigerRemoteProxyClientTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @BeforeAll
-    public static void resetConfiguration(){
-        TigerGlobalConfiguration.reset();
     }
 
     @BeforeEach

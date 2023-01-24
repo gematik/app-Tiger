@@ -23,6 +23,7 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
 import java.security.Key;
@@ -64,14 +65,10 @@ import org.springframework.util.SocketUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxy extends AbstractTigerProxyTest {
 
     public MockServerClient forwardProxy;
-
-    @BeforeAll
-    public static void resetConfiguration() {
-        TigerGlobalConfiguration.reset();
-    }
 
     @BeforeEach
     public void setupForwardProxy() {

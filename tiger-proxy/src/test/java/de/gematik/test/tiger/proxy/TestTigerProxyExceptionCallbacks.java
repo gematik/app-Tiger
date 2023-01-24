@@ -10,6 +10,7 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Unirest;
@@ -23,6 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
 
     @Test

@@ -14,6 +14,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import io.restassured.RestAssured;
 import java.time.OffsetDateTime;
@@ -33,6 +34,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "tigerProxy.skipDisplayWhenMessageLargerThanKb = 1")
+@ResetTigerConfiguration
 public class TigerWebUiControllerTest {
 
     public static WireMockServer fakeBackendServer;

@@ -15,6 +15,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import io.restassured.RestAssured;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
@@ -62,12 +63,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxyTls extends AbstractTigerProxyTest {
-
-    @BeforeAll
-    public static void resetConfiguration() {
-        TigerGlobalConfiguration.reset();
-    }
 
     @Test
     void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate()

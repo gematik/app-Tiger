@@ -4,6 +4,8 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <artifactId>tiger-integration-example</artifactId>
+
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
@@ -13,8 +15,6 @@
 
     <packaging>jar</packaging>
 
-    <groupId>de.gematik.test.tiger.integration.example</groupId>
-    <artifactId>tiger-integration-example</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

@@ -10,6 +10,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
+@ResetTigerConfiguration
 class EpaVauParsingTest {
 
     @Test
