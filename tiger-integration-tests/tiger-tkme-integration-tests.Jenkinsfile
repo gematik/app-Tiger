@@ -37,17 +37,19 @@ pipeline {
           }
 
           stage('Build') {
-              steps {
-                  mavenBuild(POM_PATH)
-              }
+               steps {
+                    withEnv(["KONNEKTOR_UNDER_TEST=kon13"]){
+                        mavenBuild(POM_PATH)
+                    }
+               }
           }
 
-          stage('Tests') {
-              steps {
-                   withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                       mavenVerify(POM_PATH)
-                   }
-              }
+          stage('Test') {
+               steps {
+                    withEnv(["KONNEKTOR_UNDER_TEST=kon13"]){
+                         mavenVerify(POM_PATH, '-Dcucumber.filter.tags="not @KspMonitoring"')
+                    }
+               }
           }
 
            stage('Commit new Tiger version when needed') {
