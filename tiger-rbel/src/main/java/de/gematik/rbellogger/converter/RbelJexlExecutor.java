@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Data
@@ -41,10 +42,10 @@ public class RbelJexlExecutor {
 
             if (result && ACTIVATE_JEXL_DEBUGGING) {
                 if (element instanceof RbelElement) {
-                    log.debug("Found match: '{}' with path {} matches '{}'", element,
+                    log.trace("Found match: '{}' with path {} matches '{}'", StringUtils.abbreviate(((RbelElement) element).getRawStringContent(), 30),
                         ((RbelElement) element).findNodePath(), jexlExpression);
                 } else {
-                    log.debug("Found match: '{}' matches '{}'", element, jexlExpression);
+                    log.trace("Found match: '{}' matches '{}'", element, jexlExpression);
                 }
             }
 

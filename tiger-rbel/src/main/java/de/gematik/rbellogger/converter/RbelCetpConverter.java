@@ -19,15 +19,20 @@ public class RbelCetpConverter implements RbelConverterPlugin {
             || !startsWithCetpMarker(targetElement.getRawContent())) {
             return;
         }
-        byte[] messageLength = new byte[CETP_INTRO_MARKER.length];
-        System.arraycopy(targetElement.getRawContent(), 4, messageLength, 0, CETP_INTRO_MARKER.length);
+        byte[] messageLengthBytes = new byte[CETP_INTRO_MARKER.length];
+        System.arraycopy(targetElement.getRawContent(), 4, messageLengthBytes, 0, CETP_INTRO_MARKER.length);
+
+        int messageLength = java.nio.ByteBuffer.wrap(messageLengthBytes).getInt();
+        if (targetElement.getSize() != 8 + messageLength) {
+            return;
+        }
+
         byte[] messageBody = new byte[targetElement.getRawContent().length - 8];
         System.arraycopy(targetElement.getRawContent(), 8, messageBody, 0,
             targetElement.getRawContent().length - 8);
 
         final RbelCetpFacet cetpFacet = RbelCetpFacet.builder()
-            .messageLength(
-                RbelElement.wrap(messageLength, targetElement, java.nio.ByteBuffer.wrap(messageLength).getInt()))
+            .messageLength(RbelElement.wrap(messageLengthBytes, targetElement, messageLength))
             .body(converter.convertElement(messageBody, targetElement))
             .build();
 

@@ -30,6 +30,7 @@ import org.mockserver.model.BinaryProxyListener;
 @AllArgsConstructor
 @Slf4j
 public class BinaryExchangeHandler implements BinaryProxyListener {
+
     private final TigerProxy tigerProxy;
     private final Map<Pair<SocketAddress, SocketAddress>, byte[]> bufferedParts = new HashMap<>();
 

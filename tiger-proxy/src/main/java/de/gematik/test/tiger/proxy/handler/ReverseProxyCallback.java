@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
 
 @Slf4j
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class ReverseProxyCallback extends AbstractTigerRouteCallback {
 
     private static final String HTTPS_PREFIX = "https://";

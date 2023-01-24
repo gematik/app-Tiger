@@ -19,7 +19,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RequiredArgsConstructor
-public class EpaTracingpointsTest {
+class EpaTracingpointsTest {
 
     @LocalServerPort
     private int springBootPort;
@@ -29,7 +29,7 @@ public class EpaTracingpointsTest {
     public String version;
 
     @Test
-    public void retrieveTracingpoints_shouldMatchSpecification() {
+    void retrieveTracingpoints_shouldMatchSpecification() {
         final JsonNode tracingpointsBody = Unirest.get("http://localhost:" + springBootPort + "/tracingpoints")
             .asJson().getBody();
 

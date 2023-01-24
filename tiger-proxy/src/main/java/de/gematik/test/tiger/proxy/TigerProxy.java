@@ -537,6 +537,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             .forEach(TigerRemoteProxyClient::close);
         mockServerClient.stop();
         mockServer.stop();
+        NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
+        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(null);
     }
 
     @Override

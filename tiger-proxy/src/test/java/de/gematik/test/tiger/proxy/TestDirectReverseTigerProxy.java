@@ -7,6 +7,7 @@ package de.gematik.test.tiger.proxy;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.ForwardProxyInfo;
@@ -35,6 +36,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
                     .port(backendServer.getLocalPort())
                     .build())
                 .build());
+            log.info("Backendserver running on port {}", backendServer.getLocalPort());
             try (Socket clientSocket = new Socket("localhost", tigerProxy.getProxyPort())) {
                 final byte[] requestPayload = "{'msg':'Hallo Welt!'}".getBytes(UTF_8);
                 final byte[] responsePayload = "{'msg':'Response String'}".getBytes(UTF_8);
@@ -53,6 +55,9 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
                 assertThat(clientSocket.getInputStream().readNBytes(responsePayload.length))
                     .isEqualTo(responsePayload);
                 ZonedDateTime afterRespone = ZonedDateTime.now();
+
+                await()
+                    .until(() -> tigerProxy.getRbelMessages().size() >= 2);
 
                 // check content
                 assertThat(tigerProxy.getRbelMessagesList().get(0).getRawContent())

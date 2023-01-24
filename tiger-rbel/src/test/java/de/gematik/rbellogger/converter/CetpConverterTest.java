@@ -7,7 +7,6 @@ package de.gematik.rbellogger.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.io.Files;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelCetpFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -18,25 +17,25 @@ import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class CetpConverterTest {
 
-    private static RbelElement convertedMessage;
     private static final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
+    private static byte[] cetpMessageAsBytes;
 
     @SneakyThrows
     @BeforeAll
     public static void parseMessage() {
-        byte[] cetpMessageAsBytes = Files.toByteArray(new File("src/test/resources/sampleMessages/cetp_ti_down.bin"));
-
-        convertedMessage = rbelConverter
-            .parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
+        cetpMessageAsBytes = Files.toByteArray(new File("src/test/resources/sampleMessages/cetp_ti_down.bin"));
     }
 
     @Test
     void convertMessage_shouldGiveCetpFacet() {
+        var convertedMessage = rbelConverter
+            .parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
         assertThat(convertedMessage.hasFacet(RbelCetpFacet.class))
             .isTrue();
         assertThat(convertedMessage.findElement("$.body")
@@ -45,7 +44,18 @@ class CetpConverterTest {
     }
 
     @Test
-    void messageLengthShouldBeWrappedCorrectly() throws IOException {
+    void convertMessageWithMissingBytes_shouldNotGiveCetpFacet() {
+        var convertedMessage = rbelConverter.parseMessage(
+            Arrays.copyOfRange(cetpMessageAsBytes, 0, 50),
+                null, null, Optional.empty());
+        assertThat(convertedMessage.hasFacet(RbelCetpFacet.class))
+            .isFalse();
+    }
+
+    @Test
+    void messageLengthShouldBeWrappedCorrectly() {
+        var convertedMessage = rbelConverter
+            .parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
         assertThat(convertedMessage.findElement("$.messageLength").get()
             .seekValue(Integer.class))
             .get()
@@ -58,6 +68,7 @@ class CetpConverterTest {
 
     @Test
     void checkRendering() throws IOException {
+        rbelConverter.parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
         FileUtils.writeStringToFile(new File("target/cetpMessage.html"),
             RbelHtmlRenderer.render(rbelConverter.getMessageHistory()), StandardCharsets.UTF_8);
     }
@@ -65,6 +76,8 @@ class CetpConverterTest {
     @SneakyThrows
     @Test
     void shouldRenderCleanHtmlCetp2() {
+        var convertedMessage = rbelConverter
+            .parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
         assertThat(RbelHtmlRenderer.render(List.of(convertedMessage)))
             .isNotBlank();
     }

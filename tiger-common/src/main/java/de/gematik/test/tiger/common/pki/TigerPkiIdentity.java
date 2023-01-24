@@ -4,7 +4,16 @@
 
 package de.gematik.test.tiger.common.pki;
 
+import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.TigerPkiIdentityLoaderException;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStore.PasswordProtection;
+import java.security.KeyStore.PrivateKeyEntry;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,5 +67,23 @@ public class TigerPkiIdentity {
         }
 
         return currentPosition.getSubjectDN().equals(currentPosition.getIssuerDN());
+    }
+
+    public KeyStore toKeyStoreWithPassword(String password) {
+        try {
+            final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null);
+
+            final Certificate[] keystoreEntryChain = new Certificate[certificateChain.size() + 1];
+            keystoreEntryChain[0] = getCertificate();
+            for (int i = 0; i < certificateChain.size(); i++) {
+                keystoreEntryChain[i + 1] = certificateChain.get(i);
+            }
+            keyStore.setEntry("entry", new PrivateKeyEntry(getPrivateKey(), keystoreEntryChain),
+                new PasswordProtection(password.toCharArray()));
+            return keyStore;
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
+            throw new TigerPkiIdentityLoaderException("Error while creating keystore", e);
+        }
     }
 }

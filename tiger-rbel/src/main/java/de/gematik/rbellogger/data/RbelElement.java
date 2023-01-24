@@ -31,8 +31,7 @@ public class RbelElement {
     private final List<RbelFacet> facets = new ArrayList<>();
     @Setter
     @Getter(AccessLevel.PRIVATE)
-    @Builder.Default
-    private Optional<Charset> charset = Optional.empty();
+    private Optional<Charset> charset;
 
     private final long size;
 

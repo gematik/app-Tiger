@@ -51,6 +51,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -66,6 +67,11 @@ import org.springframework.util.SocketUtils;
 class TestTigerProxy extends AbstractTigerProxyTest {
 
     public MockServerClient forwardProxy;
+
+    @BeforeAll
+    public static void resetConfiguration() {
+        TigerGlobalConfiguration.reset();
+    }
 
     @BeforeEach
     public void setupForwardProxy() {

@@ -1,0 +1,239 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
+package de.gematik.test.tiger.proxy;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import de.gematik.test.tiger.common.data.config.tigerProxy.DirectReverseProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.security.KeyStore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import lombok.Data;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.awaitility.core.ConditionTimeoutException;
+import org.jetbrains.annotations.NotNull;
+import org.mockserver.configuration.Configuration;
+import org.mockserver.model.BinaryProxyListener;
+import org.springframework.test.util.ReflectionTestUtils;
+
+@Slf4j
+@Data
+abstract class AbstractNonHttpTest {
+
+    private TigerProxy tigerProxy;
+
+    public static void writeSingleRequestMessage(Socket socket, byte[] message) throws IOException {
+        socket.setSendBufferSize(message.length);
+        OutputStream output = socket.getOutputStream();
+        output.write(message);
+        output.flush();
+    }
+
+    public static void readSingleResponseMessage(Socket socket, byte[] message) throws IOException {
+        InputStream input = socket.getInputStream();
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+        final String clientArrivedMessage = reader.readLine();
+        assertThat((clientArrivedMessage + "\n").getBytes()).isEqualTo(message);
+    }
+
+    private static void log(String s) {
+        log.info(s);
+    }
+
+    public static void waitForCondition(ThrowingSupplier<Boolean> condition, ThrowingSupplier<String> errorMessage) {
+        try {
+            await()
+                .atMost(100, TimeUnit.SECONDS)
+                .until(condition::get);
+        } catch (ConditionTimeoutException e) {
+            throw new AssertionError(errorMessage.get(), e);
+        }
+    }
+
+    public void executeTestRun(
+        ThrowingConsumer<Socket> clientActionCallback,
+        VerifyInteractionsConsumer interactionsVerificationCallback,
+        ThrowingConsumer<Socket> serverAcceptedConnectionCallback
+    ) throws Exception {
+        try (GenericRespondingServer listenerServer = new GenericRespondingServer()) {
+            AtomicInteger handlerCalledRequest = new AtomicInteger(0);
+            AtomicInteger handlerCalledResponse = new AtomicInteger(0);
+            AtomicInteger serverCalled = new AtomicInteger(0);
+            listenerServer.setAcceptedConnectionConsumer(socket -> {
+                serverCalled.incrementAndGet();
+                serverAcceptedConnectionCallback.accept(socket);
+            });
+            tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
+                .directReverseProxy(DirectReverseProxyInfo.builder()
+                    .port(listenerServer.getLocalPort())
+                    .hostname("localhost")
+                    .build())
+                .build());
+
+            final Configuration configuration = (Configuration) ReflectionTestUtils.getField(
+                ReflectionTestUtils.getField(tigerProxy, "mockServer"), "configuration");
+            final BinaryProxyListener oldListener = configuration.binaryProxyListener();
+            configuration
+                .binaryProxyListener((binaryMessage, completableFuture, socketAddress, socketAddress1) -> {
+                    log.info("ports are {} and {}",
+                        ((InetSocketAddress)socketAddress).getPort(),
+                        ((InetSocketAddress)socketAddress1).getPort());
+                    handlerCalledRequest.incrementAndGet();
+                    log.info("call received to the binary handler. resp is '{}'",
+                        StringUtils.abbreviate(new String(binaryMessage.getBytes()), 100));
+                    completableFuture.thenApply(msg -> {
+                        handlerCalledResponse.incrementAndGet();
+                        log.info("call received to the binary handler. req is '{}'",
+                            StringUtils.abbreviate(new String(msg.getBytes()), 100));
+                        return msg;
+                    });
+                    oldListener.onProxy(binaryMessage, completableFuture, socketAddress, socketAddress1);
+                });
+
+            try (
+                Socket clientSocket = newClientSocketTo(tigerProxy)) {
+                log("listenerServer on port: " + listenerServer.getLocalPort());
+                clientActionCallback.accept(clientSocket);
+            }
+
+            log("Verifying interactions... (requests=" + handlerCalledRequest.get() + ", response="
+                + handlerCalledResponse.get() + ", serverCalled=" + serverCalled.get() + ")");
+            interactionsVerificationCallback.acceptThrows(
+                handlerCalledRequest,
+                handlerCalledResponse,
+                serverCalled
+            );
+        } finally {
+            if (tigerProxy != null) {
+                tigerProxy.close();
+            }
+        }
+    }
+
+    public static class GenericRespondingServer implements AutoCloseable {
+
+        private final ServerSocket listenerServer;
+        private ThrowingConsumer<Socket> acceptedConnectionConsumer;
+
+        public GenericRespondingServer() {
+            listenerServer = newSslServerSocket();
+            AtomicBoolean isServerReady = new AtomicBoolean(false);
+            new Thread(() -> {
+                isServerReady.set(true);
+                log.info("listener server: waiting for incoming connections on port {} & {} & {}...",
+                    listenerServer.getLocalPort(), listenerServer.getInetAddress(),
+                    listenerServer.getLocalSocketAddress());
+                while (true) {
+                    try {
+                        final Socket serverSocket = listenerServer.accept();
+                        log.info("listener server: got connection from port {}", serverSocket.getPort());
+                        acceptedConnectionConsumer.accept(serverSocket);
+                        log("listener server: after assert");
+                    } catch (IOException e) {
+                        // swallow. makes for a less confusing test run output
+                    }
+                }
+            }).start();
+            await()
+                .until(isServerReady::get);
+        }
+
+        @Override
+        public void close() throws Exception {
+            listenerServer.close();
+        }
+
+        public void setAcceptedConnectionConsumer(ThrowingConsumer<Socket> acceptedConnectionConsumer) {
+            this.acceptedConnectionConsumer = acceptedConnectionConsumer;
+        }
+
+        public Integer getLocalPort() {
+            return listenerServer.getLocalPort();
+        }
+    }
+
+    @FunctionalInterface
+    public interface ThrowingConsumer<T> extends Consumer<T> {
+
+        @Override
+        default void accept(final T elem) {
+            try {
+                acceptThrows(elem);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        void acceptThrows(T elem) throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface ThrowingSupplier<T> extends Supplier<T> {
+
+        @Override
+        default T get() {
+            try {
+                return getThrows();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        T getThrows() throws Exception;
+    }
+
+    public interface VerifyInteractionsConsumer {
+
+        void acceptThrows(AtomicInteger request,
+            AtomicInteger responses,
+            AtomicInteger serverCalls) throws Exception;
+
+    }
+
+    @NotNull
+    public static Socket newClientSocketTo(TigerProxy tigerProxy)
+        throws IOException {
+        return tigerProxy.buildSslContext().getSocketFactory()
+            .createSocket("localhost", tigerProxy.getProxyPort());
+    }
+
+    @NotNull
+    @SneakyThrows
+    public static ServerSocket newSslServerSocket() {
+        final KeyStore ks = buildTruststore();
+
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(ks);
+        KeyManagerFactory keyManagerFactory =
+            KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        keyManagerFactory.init(ks, "gematik".toCharArray());
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+
+        return sslContext.getServerSocketFactory().createServerSocket(50000);
+    }
+
+    @SneakyThrows
+    private static KeyStore buildTruststore() {
+        final TigerPkiIdentity serverIdentity =
+            new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
+        return serverIdentity.toKeyStoreWithPassword("gematik");
+    }
+}

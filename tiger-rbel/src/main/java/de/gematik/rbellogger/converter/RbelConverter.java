@@ -34,6 +34,7 @@ public class RbelConverter {
     private int rbelBufferSizeInMb = 1024;
     @Builder.Default
     private boolean manageBuffer = false;
+    @Builder.Default
     private long currentBufferSize = 0;
     private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
     private final Set<String> knownMessageUuids = ConcurrentHashMap.newKeySet();
