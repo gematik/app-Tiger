@@ -1017,9 +1017,9 @@ function addMessageToMenu(msgMetaData, index) {
 function setFilterMessage() {
   const element = document.getElementById("filteredMessage");
   if (allMessagesAmount === filteredMessagesAmount) {
-    element.textContent = "Keine der " + allMessagesAmount + " Nachrichten wurde herausgefiltert.";
+    element.textContent = "Filter didn't match any of the " + allMessagesAmount + " messages.";
   } else {
-    element.textContent = filteredMessagesAmount + " von "+ allMessagesAmount + " Nachrichten entsprechen den Filterkriterien.";
+    element.textContent = filteredMessagesAmount + " of "+ allMessagesAmount + " did match the filter criteria.";
   }
 }
 
