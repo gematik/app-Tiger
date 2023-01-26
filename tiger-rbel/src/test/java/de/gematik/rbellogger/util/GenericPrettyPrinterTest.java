@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 
 public class GenericPrettyPrinterTest {
 
-    private final Predicate<ASN1Encodable> isLeaf = asn1 -> (asn1 instanceof ASN1Sequence)
-        || (asn1 instanceof ASN1Set);
+    private final Predicate<ASN1Encodable> isLeaf = asn1 -> !((asn1 instanceof ASN1Sequence)
+        || (asn1 instanceof ASN1Set));
     private final GenericPrettyPrinter<ASN1Encodable> genericPrettyPrinter = new GenericPrettyPrinter<>(
         isLeaf, Object::toString,
         asn1 -> Streams.stream((Iterable<ASN1Encodable>) asn1)

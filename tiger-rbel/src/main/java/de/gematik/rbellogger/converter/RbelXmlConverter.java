@@ -7,15 +7,12 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
+import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.util.RbelException;
-
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
 import lombok.extern.slf4j.Slf4j;
 import org.dom4j.*;
 import org.dom4j.io.SAXReader;
@@ -67,7 +64,7 @@ public class RbelXmlConverter implements RbelConverterPlugin {
     }
 
     private void buildXmlElementForNode(Branch branch, RbelElement parentElement, RbelConverter converter) {
-        final RbelMultiMap childElements = new RbelMultiMap();
+        final RbelMultiMap<RbelElement> childElements = new RbelMultiMap();
         parentElement.addFacet(RbelXmlFacet.builder()
             .childElements(childElements)
             .build());
@@ -104,9 +101,9 @@ public class RbelXmlConverter implements RbelConverterPlugin {
 
         if (branch instanceof Element) {
             for (Attribute attribute : ((Element) branch).attributes()) {
-                childElements.put(
-                    attribute.getName(),
-                    converter.convertElement(attribute.getText(), parentElement));
+                final RbelElement value = converter.convertElement(attribute.getText(), parentElement);
+                value.addFacet(new RbelXmlAttributeFacet());
+                childElements.put(attribute.getName(), value);
             }
         }
     }

@@ -11,10 +11,12 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> {
 
@@ -48,7 +50,7 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
         });
     }
 
-    private final RbelMultiMap values;
+    private final RbelMultiMap<RbelElement> values;
 
     public RbelHttpHeaderFacet() {
         this.values = new RbelMultiMap();
@@ -130,7 +132,7 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
     }
 
     @Override
-    public RbelMultiMap getChildElements() {
+    public RbelMultiMap<RbelElement> getChildElements() {
         return values;
     }
 

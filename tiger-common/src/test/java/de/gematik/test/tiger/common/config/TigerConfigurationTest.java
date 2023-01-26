@@ -409,28 +409,28 @@ public class TigerConfigurationTest {
 
     @Test
     void fillGenericObjectShouldWork() {
-                TigerGlobalConfiguration.reset();
-                TigerGlobalConfiguration.readFromYaml(
-                    "users:\n" +
-                        "  -\n" +
-                        "     username: admin\n" +
-                        "     password: admin1234\n" +
-                        "     roles:\n" +
-                        "           - READ\n" +
-                        "           - WRITE\n" +
-                        "           - VIEW\n" +
-                        "           - DELETE\n" +
-                        "  -\n" +
-                        "     username: guest\n" +
-                        "     password: guest1234\n" +
-                        "     roles:\n" +
-                        "        - VIEW\n");
-                final List<Users> usersList = TigerGlobalConfiguration.instantiateConfigurationBean(new TypeReference<>() {
-                    }, "users");
-                assertThat(usersList).isNotEmpty();
-                assertThat(usersList).hasSize(2);
-                assertThat(usersList).containsOnly(Users.builder().username("admin").password("admin1234").roles(List.of("READ", "WRITE", "VIEW", "DELETE")).build(),
-                    Users.builder().username("guest").password("guest1234").roles(List.of("VIEW")).build());
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.readFromYaml(
+            "users:\n" +
+                "  -\n" +
+                "     username: admin\n" +
+                "     password: admin1234\n" +
+                "     roles:\n" +
+                "           - READ\n" +
+                "           - WRITE\n" +
+                "           - VIEW\n" +
+                "           - DELETE\n" +
+                "  -\n" +
+                "     username: guest\n" +
+                "     password: guest1234\n" +
+                "     roles:\n" +
+                "        - VIEW\n");
+        final List<Users> usersList = TigerGlobalConfiguration.instantiateConfigurationBean(new TypeReference<>() {
+        }, "users");
+        assertThat(usersList).isNotEmpty();
+        assertThat(usersList).hasSize(2);
+        assertThat(usersList).containsOnly(Users.builder().username("admin").password("admin1234").roles(List.of("READ", "WRITE", "VIEW", "DELETE")).build(),
+            Users.builder().username("guest").password("guest1234").roles(List.of("VIEW")).build());
     }
 
     @Test
@@ -443,8 +443,8 @@ public class TigerConfigurationTest {
     }
 
     /**
-     * ${ENV => GlobalConfigurationHelper.getString() ${json-unit.ignore} => interessiert dann folglich nicht
-     * ${VAR.foobar} => GlobalConfigurationHelper.getSourceByName("VAR").getString()
+     * ${ENV => GlobalConfigurationHelper.getString() ${json-unit.ignore} => interessiert dann folglich nicht ${VAR.foobar} =>
+     * GlobalConfigurationHelper.getSourceByName("VAR").getString()
      * <p>
      * ${ENV.foo.bar} ${ENV.FOO_BAR} FOO_GITHUBBAR => foo.githubBar
      * <p>
@@ -516,7 +516,7 @@ public class TigerConfigurationTest {
     void placeNewStructuredValue_shouldFindNestedValueAgain() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.putValue("foo.value", TigerConfigurationTest.NestedBean.builder()
-                .bar(42)
+            .bar(42)
             .build());
         assertThat(TigerGlobalConfiguration.readString("foo.value.bar"))
             .isEqualTo("42");
@@ -616,9 +616,9 @@ public class TigerConfigurationTest {
             .isEqualTo(1234);
         assertThat(TigerGlobalConfiguration.readString("an.integer"))
             .isEqualTo("1234");
-        assertThat(TigerGlobalConfiguration.readString("an.integer","fallback-unused"))
+        assertThat(TigerGlobalConfiguration.readString("an.integer", "fallback-unused"))
             .isEqualTo("1234");
-        assertThat(TigerGlobalConfiguration.readString("wrong.key","${my.key}"))
+        assertThat(TigerGlobalConfiguration.readString("wrong.key", "${my.key}"))
             .isEqualTo("1234");
         assertThat(TigerGlobalConfiguration.readStringOptional("an.integer"))
             .get()
@@ -716,6 +716,36 @@ public class TigerConfigurationTest {
         assertThat(dummyBean.getNestedBean().getBar()).isEqualTo(-1);
     }
 
+    @SneakyThrows
+    @Test
+    void testReadMapWithSubKey() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.readFromYaml(
+            "key:\n"
+                + "  select:\n"
+                + "    aKey: aValue\n"
+                + "    bKey: bValue");
+        var map = TigerGlobalConfiguration.readMap("key.select");
+        assertThat(map).containsAllEntriesOf(Map.of(
+            "akey", "aValue",
+            "bkey", "bValue"));
+    }
+
+    @SneakyThrows
+    @Test
+    void testReadMapWithoutSubKey() {
+        TigerGlobalConfiguration.reset();
+        TigerGlobalConfiguration.readFromYaml(
+            "key:\n"
+                + "  select:\n"
+                + "    aKey: aValue\n"
+                + "    bKey: bValue");
+        var map = TigerGlobalConfiguration.readMap();
+        assertThat(map).containsAllEntriesOf(Map.of(
+            "key.select.akey", "aValue",
+            "key.select.bkey", "bValue"));
+    }
+
     @Data
     @Builder
     public static class DummyBean {
@@ -756,6 +786,7 @@ public class TigerConfigurationTest {
     @Data
     @Builder
     public static class Users {
+
         private String username;
         private String password;
         private LocalDate blub;

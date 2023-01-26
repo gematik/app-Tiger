@@ -15,18 +15,19 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
-public class XmlConverterTest {
+class XmlConverterTest {
 
     private String curlMessage;
     private String curlMessageHtml;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    void setUp() throws IOException {
         curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/xmlMessage.curl");
         curlMessageHtml = readCurlFromFileWithCorrectedLineBreaks
@@ -34,7 +35,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void shouldRenderCleanHtml() throws IOException {
+    void shouldRenderCleanHtml() throws IOException {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
         convertedMessage.addFacet(RbelTcpIpMessageFacet.builder()
@@ -47,7 +48,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void convertMessage_shouldGiveHtmlBody() {
+    void convertMessage_shouldGiveHtmlBody() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessageHtml, null);
 
@@ -63,7 +64,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void convertMessage_shouldGiveXmlBody() {
+    void convertMessage_shouldGiveXmlBody() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
 
@@ -73,7 +74,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void retrieveXmlAttribute_shouldReturnAttributeWithContent() {
+    void retrieveXmlAttribute_shouldReturnAttributeWithContent() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
 
@@ -84,7 +85,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void retrieveListMemberAttribute() {
+    void retrieveListMemberAttribute() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
 
@@ -97,10 +98,31 @@ public class XmlConverterTest {
             .isEqualTo("XDSDuplicateUniqueIdInRegistry");
     }
 
+    @Test
+    void shouldConserveMemberOrder() {
+        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
+            .convertElement(curlMessage, null);
+
+        final RbelElement registryResponseNode = convertedMessage.findRbelPathMembers("$.body.RegistryResponse").get(0);
+        List<String> childNodeTextInOrder = registryResponseNode.getChildNodes().stream()
+            .map(RbelElement::getRawStringContent).collect(Collectors.toList());
+
+        assertThat(childNodeTextInOrder.get(0)).isEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0");
+        assertThat(childNodeTextInOrder.get(1)).isEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0");
+        assertThat(childNodeTextInOrder.get(2)).isEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0");
+
+        final RbelElement registryErrorList = convertedMessage.findRbelPathMembers("$.body.RegistryResponse.RegistryErrorList").get(0);
+        childNodeTextInOrder = registryErrorList.getChildNodes().stream()
+            .map(RbelElement::getRawStringContent).collect(Collectors.toList());
+
+        assertThat(childNodeTextInOrder.get(0).trim()).isEqualTo("foo");
+        assertThat(childNodeTextInOrder.get(2).trim()).isEqualTo("bar");
+    }
+
     @RepeatedTest(10)
     // repeated since this is a test very sensitive to wrong element ordering. It should be our canary in case
     // we screw up the element ordering while parsing!
-    public void retrieveTextContent() {
+    void retrieveTextContent() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
 
@@ -112,7 +134,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void diveIntoNestedJwt() {
+    void diveIntoNestedJwt() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
 
@@ -125,7 +147,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void retrieveEmptyTextContent() {
+    void retrieveEmptyTextContent() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
 
@@ -137,7 +159,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void retrieveUrlAsTextContent() {
+    void retrieveUrlAsTextContent() {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(curlMessage, null);
 
@@ -149,7 +171,7 @@ public class XmlConverterTest {
     }
 
     @Test
-    public void longNestedTextContent() throws IOException {
+    void longNestedTextContent() throws IOException {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .convertElement(readCurlFromFileWithCorrectedLineBreaks("src/test/resources/XmlWithLongTextNode.curl"),
                 null);

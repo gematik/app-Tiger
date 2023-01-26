@@ -7,7 +7,10 @@ package de.gematik.rbellogger.data.facet;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 
-public interface RbelFacet {
+public class RbelXmlAttributeFacet implements RbelFacet {
 
-    RbelMultiMap<RbelElement> getChildElements();
+    @Override
+    public RbelMultiMap<RbelElement> getChildElements() {
+        return RbelMultiMap.EMPTY;
+    }
 }

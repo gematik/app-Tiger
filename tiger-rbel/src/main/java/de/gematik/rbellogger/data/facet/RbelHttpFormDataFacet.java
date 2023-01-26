@@ -4,23 +4,17 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import static j2html.TagCreator.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import lombok.Builder;
-import lombok.Data;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static j2html.TagCreator.*;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder(toBuilder = true)
@@ -59,10 +53,10 @@ public class RbelHttpFormDataFacet implements RbelFacet {
         });
     }
 
-    private final RbelMultiMap formDataMap;
+    private final RbelMultiMap<RbelElement> formDataMap;
 
     @Override
-         public RbelMultiMap getChildElements() {
+         public RbelMultiMap<RbelElement> getChildElements() {
             return formDataMap;
         }
 }

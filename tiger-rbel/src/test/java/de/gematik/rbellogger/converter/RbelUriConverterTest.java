@@ -5,24 +5,16 @@
 package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJweFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
-
-import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.http.client.utils.URIUtils;
-import org.eclipse.jetty.util.URIUtil;
 import org.junit.jupiter.api.Test;
 
 public class RbelUriConverterTest {

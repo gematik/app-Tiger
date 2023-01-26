@@ -102,7 +102,7 @@ public class RbelElement {
             .collect(Collectors.toList());
     }
 
-    public RbelMultiMap getChildNodesWithKey() {
+    public RbelMultiMap<RbelElement> getChildNodesWithKey() {
         return Collections.unmodifiableList(facets).stream()
             .map(RbelFacet::getChildElements)
             .map(RbelMultiMap::getValues)
