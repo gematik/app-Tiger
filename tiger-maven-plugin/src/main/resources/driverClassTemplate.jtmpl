@@ -1,9 +1,9 @@
 ${package}
 import io.cucumber.junit.CucumberOptions;
-import de.gematik.test.tiger.TigerCucumberRunner;
+import net.serenitybdd.cucumber.CucumberWithSerenity;
 import org.junit.runner.RunWith;
 
-@RunWith(TigerCucumberRunner.class)
+@RunWith(CucumberWithSerenity.class)
 @CucumberOptions(
     features = {"${feature}"},
     plugin = {"json:target/cucumber-parallel/${ctr}.json", "de.gematik.test.tiger.TigerCucumberListener"},

@@ -12,8 +12,10 @@
 
 ## Bugfixes
 
+* TGR-592: we are resorting the JUnit driver class template back to run with CucumberWithSerenity ensuring the TiǵerCucumberListener as plugin is set. This listener will now initialize the Tiger on test run started event.
+
 ## Features
-* 
+
 * TGR-814: Interface for remote traffic sources added in Tiger Proxy
 
 ## Breaking changes

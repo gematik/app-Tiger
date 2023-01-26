@@ -19,6 +19,9 @@
         <version.jsonassert>1.5.1</version.jsonassert>
         <version.json-unit>2.36.0</version.json-unit>
         <version.xmlunit-core>2.9.1</version.xmlunit-core>
+
+        <tiger.build.timestamp>${maven.build.timestamp}</tiger.build.timestamp>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
     </properties>
 
     <dependencies>
@@ -142,6 +145,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.projectlombok</groupId>

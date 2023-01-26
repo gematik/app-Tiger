@@ -17,7 +17,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.maven.monitor.logging.DefaultLog;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.intellij.lang.annotations.Language;
@@ -102,10 +101,10 @@ class DriverGeneratorTest {
             getNormalizedJavaFrom(";\n"
                 + "\n"
                 + "import io.cucumber.junit.CucumberOptions;\n"
-                + "import de.gematik.test.tiger.TigerCucumberRunner;\n"
+                + "import net.serenitybdd.cucumber.CucumberWithSerenity;\n"
                 + "import org.junit.runner.RunWith;\n"
                 + "\n"
-                + "@RunWith(TigerCucumberRunner.class)\n"
+                + "@RunWith(CucumberWithSerenity.class)\n"
                 + "@CucumberOptions(" + "features = {\"featureFile.feature\"},"
                 + " plugin = {\n" + "    \"json:target/cucumber-parallel/1.json\", \"de.gematik.test.tiger.TigerCucumberListener\" },"
                 + " glue = {\"de.gematik.test.tiger.glue\"},"

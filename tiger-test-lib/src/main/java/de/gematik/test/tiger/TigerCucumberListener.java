@@ -6,6 +6,7 @@ package de.gematik.test.tiger;
 
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
+import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.parser.FeatureParser;
@@ -20,6 +21,7 @@ import io.cucumber.plugin.Plugin;
 import io.cucumber.plugin.event.*;
 import java.awt.Color;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
@@ -93,14 +95,48 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 
+    private static RuntimeException tigerStartupFailedException;
+
     @Override
     public void setEventPublisher(EventPublisher eventPublisher) {
         eventPublisher.registerHandlerFor(TestSourceRead.class, sourceRead);
+        eventPublisher.registerHandlerFor(TestRunStarted.class, runStarted);
         eventPublisher.registerHandlerFor(TestCaseStarted.class, caseStarted);
         eventPublisher.registerHandlerFor(TestStepStarted.class, stepStarted);
         eventPublisher.registerHandlerFor(TestStepFinished.class, stepFinished);
         eventPublisher.registerHandlerFor(TestCaseFinished.class, caseFinished);
     }
+
+    private EventHandler<TestRunStarted> runStarted = event -> {
+        showTigerVersion();
+        initializeTiger();
+    };
+
+    private void showTigerVersion() {
+        try {
+            Properties p = new Properties();
+            p.load(this.getClass().getResourceAsStream("/build.properties"));
+            String version = p.getProperty("tiger.version");
+            if (!version.equals("${project.version}")) {
+                log.info(Ansi.colorize("Starting Tiger version " + version + "-" + p.getProperty("tiger.build.timestamp"), RbelAnsiColors.GREEN_BRIGHT));
+            }
+        } catch (RuntimeException | IOException ignored) { }
+    }
+
+    synchronized void initializeTiger() {
+        if (tigerStartupFailedException != null) {
+            return;
+        }
+        try {
+            TigerDirector.registerShutdownHook();
+            TigerDirector.start();
+        } catch (RuntimeException rte) {
+            tigerStartupFailedException = rte;
+            throw tigerStartupFailedException;
+        }
+    }
+
+
 
     private final EventHandler<TestSourceRead> sourceRead = event -> {
         log.debug("Parsing feature file {}", event.getUri());
@@ -118,7 +154,6 @@ public class TigerCucumberListener implements ConcurrentEventListener, Plugin {
         Scenario scenario = feature.getScenario(scenarioName, testcase.getTestCase().getLocation().getLine());
         scenario.setId(currentScenarioId);
         scenarioStepsMap.computeIfAbsent(currentScenarioId, id -> scenario.getSteps());
-
 
         processDataVariantsForScenarioOutlines(scenario);
         if (feature.getBackground() != null && currentScenarioDataVariantIndex < 1) {

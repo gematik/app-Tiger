@@ -279,6 +279,7 @@
                 <configuration>
                     <!-- very pessimistic value for slow environment. Default is 30. Rare errors observed. -->
                     <forkedProcessExitTimeoutInSeconds>300</forkedProcessExitTimeoutInSeconds>
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
         </plugins>
