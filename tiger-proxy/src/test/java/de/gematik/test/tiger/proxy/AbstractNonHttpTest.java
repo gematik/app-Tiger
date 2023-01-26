@@ -227,7 +227,7 @@ abstract class AbstractNonHttpTest {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
 
-        return sslContext.getServerSocketFactory().createServerSocket(50000);
+        return sslContext.getServerSocketFactory().createServerSocket(0);
     }
 
     @SneakyThrows
