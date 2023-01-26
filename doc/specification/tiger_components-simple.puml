@@ -1,33 +1,8 @@
-
 @startuml
 
-skinparam backgroundColor #ffffff
+!include plantuml.style
 
 hide stereotype
-
-' left to right direction
-
-skinparam component {
-    BackgroundColor Gold
-    BorderColor DarkOrange
-    BackgroundColor<<External>> LightGray
-    BorderColor<<External>> Blue
-    BackgroundColor<<Idp>> LightGreen
-    BorderColor<<Idp>> Green
-    BackgroundColor<<Other>> DeepSkyBlue
-    BorderColor<<Other>> Blue
-    BackgroundColor<<NextRelease>> LightGray
-    FontColor<<NextRelease>> Gray
-    BorderColor<<NextRelease>> Gray
-    ArrowColor<<HTTP>> DodgerBlue
-    FontColor<<HTTP>> Gray
-    ArrowFontColor DarkOrange
-    ArrowThickness 1
-}
-
-skinparam interface {
-    BorderColor<<HTTP>> DodgerBlue
-}
 
 
 ' left to right direction
@@ -36,10 +11,12 @@ skinparam interface {
 
 component tsys <<Other>> [
      Testsysteme
-     ----------------
+
+     ---
+
      RU/TU service instances
      locally started docker containers
-     cloud based docker containers
+     helm charts
      Simulators
 ]
 
@@ -50,10 +27,25 @@ component Serenity <<Other>> [
 ]
 
 rectangle Tiger as tiger {
-component TigerTestEnvMgr as tem
-component TigerProxy as tp
+component TigerTestEnvMgr as tem <<Tiger>>
+component TigerProxy as tp <<Tiger>>
 
-component TigerTestLib
+component TigerTestLib <<Tiger>>
+
+component tex <<Tiger>> [
+    Tiger Extensions
+
+    ---
+
+    Cloud
+    Konnektormanagement
+    CATS
+    PSSim
+    HTTP Client
+    FHIR validation
+    Zi0n mock server
+    Kartenterminal Robot
+]
 
 'suites
 ' interface "Steps" as isteps
@@ -67,7 +59,7 @@ component TigerTestLib
 ' ts
 ' interface "IRBelMessaging" as irbel
 
-component "Current Testsuite" as tdir <<Other>>
+component "Current Testsuite" as tdir <<Current>>
 
 
 
@@ -90,6 +82,7 @@ tp -left-> tsys <<HTTP>> : routed test traffic
 tem --> tp : configure\nroutes and PKI
 
 tdir -left-> tem : build me\na test env
+tdir -left-> tex : use
 
 tem -left-> tsys
 tdir <-up- suites : reuse

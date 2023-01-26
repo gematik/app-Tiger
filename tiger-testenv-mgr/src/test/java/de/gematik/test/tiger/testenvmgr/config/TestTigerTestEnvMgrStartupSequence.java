@@ -170,6 +170,7 @@ class TestTigerTestEnvMgrStartupSequence {
     }
 
     private static TigerTestEnvMgr buildTestEnvMgr() {
+        TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.readFromYaml(
             "cfgfile: \"src/test/resources/de/gematik/test/tiger/testenvmgr/testNoTigerProxy.yaml\"",
             "tiger", "testenv");

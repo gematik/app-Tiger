@@ -53,7 +53,7 @@ class TestTigerDirector {
 
     @Test
     void tigerActiveNotSet_TigerDirectorShouldThrowException() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyDisabled.yaml");
 
         assertThat(TigerDirector.isInitialized()).isFalse();
         assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
@@ -61,8 +61,8 @@ class TestTigerDirector {
     }
 
     @Test
-    void testDirectorSimpleIdp() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/simpleIdp2.yaml");
+    void testDirectorConfigReadandAvailable() {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
         executeWithSecureShutdown(() -> {
             TigerDirector.start();
 
@@ -73,11 +73,9 @@ class TestTigerDirector {
                 "http://localhost");
             assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getRbelLogger()).isNotNull();
             assertThat(
-                TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
-                    .getPorts()).hasSize(1);
+                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions().getArguments()).hasSize(2);
             assertThat(
-                TigerDirector.getTigerTestEnvMgr().getServers().get("idp2-simple").getConfiguration().getDockerOptions()
-                    .getPorts().get(8080)).isNotNull();
+                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions().getArguments().get(1)).isEqualTo("--webroot=.");
         });
     }
 

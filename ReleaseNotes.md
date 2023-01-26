@@ -1,12 +1,24 @@
 # Changelog Tiger Testplattform
 
 -------
-
 # Release 1.2.0
 
-## Features
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
 
+## Bugfixes
+
+## Features
+* 
 * TGR-814: Interface for remote traffic sources added in Tiger Proxy
+
+## Breaking changes
+
+TGR-714: docker, docker compose server types have been merged with helm chart support into the tiger-cloud-extension a separate project to be published together with this release. **So to keep using docker functionality within tiger make sure to add the additional dependency to your project.** If you dont use docker or helm chart you should not be affected at all.
 
 -------
 # Release 1.1.1

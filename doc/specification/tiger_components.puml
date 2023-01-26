@@ -14,7 +14,7 @@ rectangle "Test environment" as tsys <<Rect>> {
     component "Simulators" as sims <<Other>>
     component "RU/TU service\ninstances" as rutu <<Other>>
     component "locally started\ndocker containers" as locdock <<Other>>
-    component "cloud based\ndocker containers" as clddock <<NextRelease>>
+    component "helm charts on\nlocal/remote kubernetes" as clddock <<Other>>
 }
 
 rectangle "Current test project" as tiger {
@@ -24,70 +24,42 @@ rectangle "Current test project" as tiger {
       TigerTestLib
 
       ---
-
       Validation & Workflow steps
       TestContext steps
-
-      ---
-
-      TestConfig
-      Context
-      Variables
+      TigerGlobalConfiguration
       JsonChecker
-      Banner
-      AfoReporter
-      TestCodeParser
-      TestResultParser
       PolarionToolbox
-      SerenityIntegration
+      SerenityIntegration ...
     ]
 
-    'suites
-    ' interface "Steps" as isteps
-    ' interface "Helpers" as ihelpers
-    interface "Reuse" as ireuse
-    ' tem
-    interface ITestEnvironment as item
+    component tex <<Tiger>> [
+      Tiger Extenions
+
+      ---
+      Cloud, CATS
+      Konnektormanagement
+      PSSim, HTTP Client
+      FHIR validation
+      Zi0n mock server
+      KartenTerminal Robot
+    ]
+
     ' tp
     interface "Local Http traffic" as ihttp <<HTTP>>
     interface "ProxyConfiguration" as ipconf
     ' ts
     interface "IRBelMessaging" as irbel
 
-    component "Tiger Director in \ncurrent test suite"  as tdir <<Current>>
-    component Serenity <<External>> [
-        <img:../images/serenitybdd.png{scale=0.2}>
-    ]
-
-
-    component Polarion <<External>> [
-        <img:https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-thumbnail/s3/0024/4635/brand.gif?itok=imrp3xNh{scale=0.75}>
-    ]
-
-    component suites <<Other>> [
-      Other test suites
-
-      -----
-
-      IDP test suite
-      ERp test suite
-      ePA test suite
-      CATS test suite
-      Other test suites
-    ]
+    component "Current test suite\n via TigerCucumberRunner"  as tdir <<Current>>
 }
-
-
-
 
 'tsys
 interface "Routed HTTP traffic" as iroutes <<HTTP>>
 
-sims -up- locdock <<HTTP2>>
-'sims -down- clddock <<HTTP2>>
-rutu -up- clddock <<HTTP2>>
+'sims -up- locdock <<HTTP2>>
+'rutu -up- clddock <<HTTP2>>
 locdock -down- rutu <<HTTP2>>
-locdock -left- clddock <<HTTP2>>
+locdock -right- clddock <<HTTP2>>
 sims -left- rutu <<HTTP2>>
 
 ihttp -down- tp <<HTTP>>
@@ -96,26 +68,21 @@ tdir --> ihttp <<HTTP>> : test traffic
 irbel -up-> tdir
 tp -up-> irbel : return traffic\nmessages\nfrom test traffic
 
-iroutes -up-> sims <<HTTP>>
-iroutes -left-> rutu <<HTTP>>
-iroutes -left-> locdock <<HTTP>>
+tsys <--- iroutes <<HTTP>>
+'iroutes <--up-> tsys <<HTTP>>
 
 tp -left-> iroutes <<HTTP>> : routed test traffic
 
 ipconf -- tp
 tem --> ipconf : configure URLs, \nURL mappings and certs
 
-tem -right- item
-tdir -left-> item : build me\na test env
+tdir -left-> tem : build me\na test env
 
+tem -down--> clddock : creates helm chart instances\non local or remote cluster
 locdock <-down- tem : creates containers
-tem -right--> sims : starts\nsimulators
-tdir -right-> ireuse
-ireuse -right- suites
-tdir -down- TigerTestLib : use generic helpers
+tem -right--> sims : starts simulators from  e.g. jar files
+tdir -down-- tex : use extensions for standard functionality
+tdir -right- TigerTestLib : use generic helpers
 
-tdir -down--> Serenity : creates detailed\nlocal test reports
 
-Serenity -right-> Polarion
-TigerTestLib -down-> Polarion : sync test cases and test results
 @enduml

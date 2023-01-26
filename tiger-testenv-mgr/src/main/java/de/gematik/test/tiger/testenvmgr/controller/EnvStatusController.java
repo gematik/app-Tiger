@@ -63,10 +63,10 @@ public class EnvStatusController implements TigerUpdateListener {
 
     private void initializeLocalProxyUrl() {
         if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
+            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy ->
             tigerEnvStatus.setLocalProxyWebUiUrl(
-                "http://localhost:"
-                    + tigerTestEnvMgr.getLocalTigerProxyOrFail().getAdminPort()
-                    + "/webui");
+                "http://localhost:" + proxy.getAdminPort() + "/webui")
+            );
         }
     }
 

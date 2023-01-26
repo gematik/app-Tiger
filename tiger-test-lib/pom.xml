@@ -164,7 +164,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- end create reusable test jar part -->
             <plugin>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <groupId>org.jacoco</groupId>

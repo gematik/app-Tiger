@@ -1,8 +1,0 @@
-servers:
-  testDockerMVP:
-    startupTimeoutSec: 1
-    hostname: testDocker1
-    source:
-      - gematik1/tiger-test-image
-    type: docker
-    version: 1.1.0

@@ -24,6 +24,7 @@ The Tiger testenvironment manager currently supports the following list of serve
 
 * **Docker container** is a node based on instantiating a specific docker image that is either locally available or downloaded from a remote docker repo configured in the source property.
 * **Docker compose** is a node that you can use to start a group of services defined in one to several compose yaml files configured in the source list.
+* **Helm charts** is a node that installs/updates a given helm chart on a local or remote kubernetes cluster (configuring a local context for remote clusters has to be done outside of Tiger)
 * **External jar** is a node that is started by running `java -jar XXXX.jar` after downloading a Jar archive from the configured source URL.
 * **External URL** is a symbolic node that is actually maintained outside of the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.
 * **Tiger Proxy** is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
@@ -43,6 +44,7 @@ serverKey_xxx:
   # OPTIONAL hostname of this node when accessing it via the test suite
   # (rerouted via the local test suite Tiger Proxy).
   # Defaults to the server name (serverKey_xxx)
+  # For docker compsoe and helm chart this property must NOT be set!
   hostname: string
   # MANDATORY one of [tigerProxy|docker|compose|externalJar|externalUrl]
   type: string
@@ -183,6 +185,33 @@ Their meaning and format are explained in the related section.
     proxied: boolean
     oneShot: boolean
     entryPoint: string
+  # type specific sub structure for helm charts
+  helmChartOptions:
+    # context to install the helm chart to
+    context:
+    # name for the helm chart
+    podName:
+    # working directory for local helm and kubectl calls
+    workingDir:
+    # name sapce to install the helm chart to
+    nameSpace:
+    # flag whether to show more detailed infos about
+    # the helm chart installation in the console
+    debug:
+    # list of regex names for pods to be running to signal
+    # successful startup of helm chart **/
+    healthcheckPods:
+    # list of key value pairs to be used by the helm chart
+    values:
+    # comma separated list of port forwardings
+    # Entries can be either "podNameRegex:xxxx", which is shorthand for
+    # "podNameRegex:xxxx:xxxx or
+    # "podNameRegex:xxxx:yyyy" where xxxx is the local port
+    # and yyyy is the port in the pod
+    exposedPorts:
+    # list of regex for pod names logs should be shown
+    logPods:
+
 ----
 
 The configuration of the Tiger Proxy is explained in detail in the section xref:_configuring_the_local_test_suite_tiger_proxy[]
@@ -246,6 +275,7 @@ The exposed port of the docker container is available as a special token in the 
 To customize the docker container you may alter the entry point command line and add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
 For containers that should exit after a single command you may enable the oneShot property.
 
+NOTE: To use this server type you must include the tiger-cloud-extension dependency!
 
 [source,yaml,title="Docker container configuration"]
 ----
@@ -295,6 +325,8 @@ For now we support the ePA2 FD module and the DEMIS Meldeportal.
 If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check xref:tigerConfiguration.adoc#_tiger_configuration[this chapter]).
 
 The processing/copying flatens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have an random UUID appended to its filename.
+
+NOTE: To use this server type you must include the tiger-cloud-extension dependency!
 
 [source,yaml,title="Docker compose configuration"]
 ----
@@ -436,50 +468,52 @@ externalUrl_001:
 
 ==== Helm Chart node
 
-The helm chart node allows to start a helm chart from the configured image. The helm chart is started and the
-server is ready when the pod is running and the pod is ready, if port-forward is used (if exposedPorts are set),
-then port-forwarding is also done and the startup is finished and the service can be used for testing.
+The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart). The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.
+
+NOTE: To use this server type you must include the tiger-cloud-extension dependency!
 
 [source,yaml,title="Helm chart configuration"]
 ----
+
 servers:
-  helmChart_Demis_HLS:
+  testHelmChart_Nginx:
     type: helmChart
-    startupTimeoutSec: 150
+    startupTimeoutSec: 50
     # MANDATORY repository from where to download the docker image
     # if the helm chart is stored on the local file system that the
     # workingDir should be set.
     source:
-      - demis-gematik/hospital-location-service
+      - bitnami/nginx
     # OPTIONAL version of the image
-    version: 1.0.4-b69
+    version: 1.1.0
     helmChartOptions:
       # The kubernetes context
       context:
       # OPTIONAL if no working directory is set the default . is used.
       # if the helm chart is stored on the local file system the workingDir
       # should be set.
-      workingDir:
-      # OPTIONAL override the POD_NAMESPACE environment variable if set.
-      # if not set, "default" will be used.
-      nameSpace:
+      workingdir:
       # OPTIONAL prints out debug messages if set to true, default is false.
       debug: true
+      # OPTIONAL override the POD_NAMESPACE environment variable if set.
+      # if not set, "default" will be used.
+      nameSpace: buildslaves
       # MANDATORY pod name of the helm chart
-      podName: hospital-location-service
+      podName: test-tiger-nginx
       # OPTIONAL key-value pairs that will be used for starting the helm chart
       values:
-        - required.image.tag=1.0.2
       # OPTIONAL should contain a list of pods for the health check, regex can be used.
       healthcheckPods:
-        - fachdienst-.*
-        - idp-wrapper-.*
+        - test-tiger-nginx-.*
+      # OPTIONAL contains a list of regex to identify the pods whose logs
+      # should be forwarded to the console and Tiger Workflow UI.
+      logPods:
+        - test-tiger-nginx.*
       # OPTIONAL contains a list that will be used for the port forwarding,
-      # if empty no port forwarding is done.
-      # The syntax is <POD_NAME_OR_REGEX>,<LOCAL_PORT>:<FORWARDING_PORT>[,<LOCAL_PORT>:<FORWARDING_PORT>]*
+      # if empty no port forwarding is done. The syntax is:
+      # <POD_NAME_OR_REGEX>,<LOCAL_PORT>:<FORWARDING_PORT>[,<LOCAL_PORT>:<FORWARDING_PORT>]*
       exposedPorts:
-        - hospital-location-service.*,8080:8090
-        - someOther-service.*,8080:8096,10000:8096
+        - test-tiger-nginx.*,8080:80
 ----
 
 ==== Tiger Proxy node

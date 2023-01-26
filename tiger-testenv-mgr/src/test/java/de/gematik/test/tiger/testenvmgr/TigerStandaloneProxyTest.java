@@ -5,8 +5,8 @@
 package de.gematik.test.tiger.testenvmgr;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import com.google.common.io.Files;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import java.io.File;
@@ -22,7 +22,6 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.io.Files;
 
 @Slf4j
 @Getter

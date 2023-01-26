@@ -29,11 +29,14 @@
         <version.asciidoctorj>2.5.2</version.asciidoctorj>
         <version.asciidoctorj.pdf>2.3.3</version.asciidoctorj.pdf>
         <version.asciidoctorj.diagram>2.2.3</version.asciidoctorj.diagram>
+        <version.selenium>4.4.0</version.selenium>
+        <!-- when changing the webjar version here make sure to adapt the web ui links too -->
+        <!-- see src/main/resources/templates/adminui.html -->
         <version.bootstrap>5.1.1</version.bootstrap>
         <version.font-awesome>6.2.0</version.font-awesome>
-        <version.selenium>4.4.0</version.selenium>
         <version.jquery>3.6.3</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>
+
         <version.jsonschema>4.28.0</version.jsonschema>
         <version.junit-platform>1.9.1</version.junit-platform>
     </properties>

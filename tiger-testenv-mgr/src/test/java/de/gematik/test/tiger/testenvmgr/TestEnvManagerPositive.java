@@ -9,7 +9,6 @@ import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_P
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
-import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -17,17 +16,13 @@ import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Map;
-import java.util.stream.Collectors;
-import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.testcontainers.DockerClientFactory;
 
 @Slf4j
 @Getter
@@ -37,11 +32,10 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     //
     // check minimum configurations pass the check and MVP configs are started successfully,
     // check hostname is set to key if missing
-    // check for docker compose not hostname is allowed!
     //
 
     @ParameterizedTest
-    @ValueSource(strings = {"testDocker", "testTigerProxy", "testExternalJar", "testExternalUrl"})
+    @ValueSource(strings = {"testTigerProxy", "testExternalJar", "testExternalUrl"})
     void testCheckCfgPropertiesMinimumConfigPasses_OK(String cfgFileName) {
         log.info("Starting testCheckCfgPropertiesMinimumConfigPasses_OK for {}", cfgFileName);
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
@@ -54,16 +48,9 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"testComposeMVP", "testDockerMVP", "testTigerProxy", "testExternalJarMVP",
-        "testExternalUrl"})
+    @ValueSource(strings = {"testTigerProxy", "testExternalJarMVP","testExternalUrl"})
     void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) throws IOException {
         log.info("Starting testSetUpEnvironmentNShutDownMinimumConfigPasses_OK for {}", cfgFileName);
-        if (cfgFileName.equals("testDockerMVP")) {
-            log.info("Active Docker containers: \n{}",
-                DockerClientFactory.instance().client().listContainersCmd().exec().stream()
-                    .map(container -> String.join(", ", container.getNames()) + " -> " + container.toString())
-                    .collect(Collectors.joining("\n")));
-        }
         FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
         createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
@@ -82,52 +69,6 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
         });
     }
 
-    @Test
-    void testHostnameForDockerComposeNotAllowed_NOK() {
-        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testComposeWithHostname.yaml"));
-
-        assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
-    }
-
-    // -----------------------------------------------------------------------------------------------------------------
-    //
-    // docker details
-    //
-
-    @Test
-    void testCreateDockerNonExistingVersion() {
-        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDockerMVPNonExistingVersion.yaml"));
-        createTestEnvMgrSafelyAndExecute(envMgr ->
-            assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class));
-    }
-
-    @Test
-    void testCreateDockerComposeAndCheckPortIsAvailable() throws IOException {
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
-            envMgr.setUpEnvironment();
-            String host = System.getenv("DOCKER_HOST");
-            if (host == null) {
-                host = "localhost";
-            } else {
-                host = new URI(host).getHost();
-            }
-            log.info("Web server expected to serve at {}",
-                TigerGlobalConfiguration.resolvePlaceholders("http://" + host + ":${free.port.1}"));
-            try {
-                log.info("Web server responds with: " +
-                    Unirest.spawnInstance()
-                        .get(TigerGlobalConfiguration.resolvePlaceholders("http://" + host + ":${free.port.1}"))
-                        .asString().getBody());
-            } catch (Exception e) {
-                log.error("Unable to retrieve document from docker compose webserver...", e);
-            }
-            assertThat(Unirest.spawnInstance().get(
-                    TigerGlobalConfiguration.resolvePlaceholders("http://" + host + ":${free.port.1}"))
-                .asString().getStatus()).isEqualTo(200);
-        }, "src/test/resources/de/gematik/test/tiger/testenvmgr/testComposeMVP.yaml");
-    }
 
     // -----------------------------------------------------------------------------------------------------------------
     //
@@ -149,19 +90,6 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_" + cfgFileName + ".yaml"));
         createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
         assertThatNoException();
-    }
-
-    @Test
-    @TigerTest(cfgFilePath = "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrlInternalServer.yaml",
-        skipEnvironmentSetup = true)
-    void testExternalUrlInternalUrl(TigerTestEnvMgr envMgr) {
-        executeWithSecureShutdown(() -> {
-            envMgr.getConfiguration().getTigerProxy().setForwardToProxy(null);
-            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalUrlInternalServer");
-            srv.getSource().set(0, "https://build.top.local");
-            envMgr.setUpEnvironment();
-            assertThatNoException();
-        }, envMgr);
     }
 
     @Test

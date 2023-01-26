@@ -37,9 +37,6 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     // -----------------------------------------------------------------------------------------------------------------
     @ParameterizedTest
     @CsvSource({
-        "testDocker,type",
-        "testDocker,source",
-        "testDocker,version",
         "testTigerProxy,type",
         "testExternalJar,type",
         "testExternalJar,source",
