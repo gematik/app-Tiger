@@ -1,6 +1,14 @@
 # Changelog Tiger Testplattform
 
 -------
+
+# Release 1.2.0
+
+## Features
+
+* TGR-814: Interface for remote traffic sources added in Tiger Proxy
+
+-------
 # Release 1.1.1
 
 * Serenity BDD 3.3.10
