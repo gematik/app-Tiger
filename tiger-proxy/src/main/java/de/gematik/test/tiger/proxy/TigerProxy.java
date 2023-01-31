@@ -99,6 +99,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         mockServerConfiguration.maxLogEntries(0);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             mockServerConfiguration.logLevel(configuration.getProxyLogLevel());
+        } else {
+            mockServerConfiguration.logLevel("WARN");
         }
 
         customizeSslSuitesIfApplicable();

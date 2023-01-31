@@ -117,9 +117,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         if (configuration.isLocalProxyActive()) {
             TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
             localTigerProxy = startLocalTigerProxy(configuration);
-            proxyStatusMessage("LocalTigerProxy started", RbelAnsiColors.GREEN_BOLD);
-            proxyStatusMessage("Local Tiger Proxy URL http://localhost:" + localTigerProxy.getProxyPort(), RbelAnsiColors.BLUE_BOLD);
-            proxyStatusMessage("Local Tiger Proxy UI http://localhost:" + localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui", RbelAnsiColors.BLUE_BOLD);
+            proxyStatusMessage("LocalTigerProxy started\nLocal Tiger Proxy URL http://localhost:" + localTigerProxy.getProxyPort() +
+                "\nLocal Tiger Proxy UI http://localhost:" + localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui", RbelAnsiColors.BLUE_BOLD);
             environmentVariables.put("PROXYHOST", "host.docker.internal");
             environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
             TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
@@ -222,7 +221,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     private void publishNewStatusUpdate(TigerServerStatusUpdate update) {
         if (getExecutor() != null) {
             getExecutor().submit(
-                () -> listeners.parallelStream()
+                () -> listeners.stream()
                     .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
                         .serverUpdate(new LinkedHashMap<>(Map.of(getLocalTigerProxyOptional()
                             .flatMap(TigerProxy::getName)

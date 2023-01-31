@@ -53,8 +53,12 @@ public class EnvStatusController implements TigerUpdateListener {
             }
             // TODO make sure to check that the index is the expected next number, if not we do have to cache this and wait for the correct message
             //  TODO to be received and then process the cached messages in order, currently this is done on the client side
-            if (update.getIndex() > tigerEnvStatus.getCurrentIndex()) {
-                tigerEnvStatus.setCurrentIndex(update.getIndex());
+
+            // This synchronized block is needed to ensure there is no concurrency when for example receiving updates very fast!
+            synchronized (tigerEnvStatus) {
+                if (update.getIndex() > tigerEnvStatus.getCurrentIndex()) {
+                    tigerEnvStatus.setCurrentIndex(update.getIndex());
+                }
             }
         } catch (Exception e) {
             log.error("Unable to parse update", e);

@@ -8,10 +8,10 @@ umgesetzt werden kann.
 == Status
 
 * Es gibt verschiedene Möglichkeiten.
-* Configuration Option: Man kann über die die Cucumber Tag Expression einzelne Scenarien exkluden.
+* Configuration Option: Man kann über die die Cucumber Tag Expression einzelne Scenarien filtern.
 ** Zum Beispiel: mvn test -Dcucumber.filter.tags="not @Ignore"
 * CucumberTag über die CucumberOptions setzen
-** `@CucumberOptions(tags = "not @ignore")`
+** `@CucumberOptions(tags = "not @Ignore")`
 ** `public class RunCucumberTest {}`
 * JUnit5 Tag Expression: mvn verify -DexcludedGroups="Ignore"
 ** Für den Serenity-Report generiert unter /target/site/serenity/serenity-summary.html werden die Test die im "@Ignore" getaggt sind bereits ignoriert.
@@ -31,7 +31,7 @@ IntelliJ ignorierte Scenarien und Feature wenn sie mit @Ignore getaggt sind und 
 == Entscheidungen
 
 * Es wurden zwei Änderungen vorgenommen, damit das Ignorieren der Tests für maven als auch über IntelliJ out-of-the-box funktioniert.
-* 1. Änderung (IntelliJ): Für eine leichtere Bedienbarkeit wird das --tags "not @Ignore" standardmäßig in den TigerCucumberRunner eingebaut. In den run configuraion können zusätzliche Tags angegeben werden. Das "and not @Ignore" wird automatisch im TigerCucumberRunner hinzugefügt.
+* 1. Änderung (IntelliJ): Für eine leichtere Bedienbarkeit wird das --tags "not @Ignore" standardmäßig in den TigerCucumberRunner eingebaut. In den run configuraion können zusätzliche Tags angegeben werden. Das "and not @Ignore" mass dann aber händisch hinzugefügt werden.
 * 2. Änderung (maven): Für maven haben wir das driverClassTemplate.jtmpl Template angepasst und das tag "not @Ignore" hinzugefügt.
 
 == Verifikation

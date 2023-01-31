@@ -44,8 +44,12 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     const scenario: ScenarioUpdate = new ScenarioUpdate();
     scenario.steps = StepUpdate.mapFromJson(json.steps);
     scenario.description = json.description;
-    scenario.exampleKeys = json.exampleKeys;
-    scenario.exampleList = this.mapScenarioOutlineFromJson(json.exampleList);
+    if (json.exampleKeys) {
+      scenario.exampleKeys = json.exampleKeys;
+    }
+    if (json.exampleList) {
+      scenario.exampleList = this.mapScenarioOutlineFromJson(json.exampleList);
+    }
     if (json.variantIndex !== -1) {
       scenario.variantIndex = json.variantIndex;
     }

@@ -99,6 +99,10 @@
             <version>${version.commons-collections4}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
             <artifactId>json-unit-spring</artifactId>
             <groupId>net.javacrumbs.json-unit</groupId>
             <version>${version.json-unit}</version>

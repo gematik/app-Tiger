@@ -20,7 +20,11 @@
 
 ## Breaking changes
 
-TGR-714: docker, docker compose server types have been merged with helm chart support into the tiger-cloud-extension a separate project to be published together with this release. **So to keep using docker functionality within tiger make sure to add the additional dependency to your project.** If you dont use docker or helm chart you should not be affected at all.
+TGR-714: docker, docker compose server types have been merged with helm chart support into the tiger-cloud-extension a separate project to be published together with this release. **So to keep using docker functionality within tiger make sure to add the additional dependency to your project.** If you don't use docker or helm chart you should not be affected at all.
+
+* TGR-817: major rewrite of Tiger Serenity integration. We now more closely are integrated with Serenity, fixing bugs like cucumber tag filter property not always being respected, using multiple examples (with Annotations) causes the Workflow UI to show wrong data in the test execution pane. When using the tiger-maven-plugin to generate your test driver classes no modification to your code is necessary. Else, please note that:
+  * the package of teh TigerCucumberRunner class has been changed
+  * the TigerCucumberListener is now automatically added in standalone and mvn context, so remove it from your plugins cucumber options.
 
 -------
 # Release 1.1.1

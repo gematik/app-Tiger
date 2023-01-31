@@ -18,6 +18,7 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class EnvStatusControllerTest {
 
     @Test
-    @TigerTest(tigerYaml = "")
+    @TigerTest(tigerYaml = "localProxyActive: false")
     void displayMessage_shouldPushToClient(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
@@ -58,7 +59,7 @@ class EnvStatusControllerTest {
     }
 
     @Test
-    @TigerTest(tigerYaml = "")
+    @TigerTest(tigerYaml = "localProxyActive: false")
     void mergeStepsOfScenario(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
@@ -106,7 +107,7 @@ class EnvStatusControllerTest {
     }
 
     @Test
-    @TigerTest(tigerYaml = "")
+    @TigerTest(tigerYaml = "localProxyActive: false")
     void checkBannerMessages(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
 
@@ -122,7 +123,8 @@ class EnvStatusControllerTest {
     }
 
     @Test
-    @TigerTest(tigerYaml = "servers:\n"
+    @TigerTest(tigerYaml = "localProxyActive: false\n"
+        + "servers:\n"
         + "  winstoneServer:\n"
         + "    type: externalJar\n"
         + "    source:\n"
@@ -186,7 +188,7 @@ class EnvStatusControllerTest {
     }
 
     @Test
-    @TigerTest(tigerYaml = "", skipEnvironmentSetup = true)
+    @TigerTest(tigerYaml = "localProxyActive: true", skipEnvironmentSetup = true)
     void test_webUiUrlShouldBeSet(final TigerTestEnvMgr envMgr) {
         final EnvStatusController envStatusController = new EnvStatusController(envMgr,
             mock(TigerBuildPropertiesService.class));
@@ -195,6 +197,10 @@ class EnvStatusControllerTest {
         assertThat(StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl())).isTrue();
         envMgr.setUpEnvironment();
         assertThat(envMgr.getLocalTigerProxyOptional()).isNotEmpty();
-        assertThat(StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl())).isFalse();
+        await("Check env status controller has received the proxy web ui url with in 4 seconds")
+            .pollDelay(200, TimeUnit.MILLISECONDS)
+            .pollInterval(100, TimeUnit.MILLISECONDS)
+            .atMost(4, TimeUnit.SECONDS)
+            .until(() -> !StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl()));
     }
 }
