@@ -13,6 +13,7 @@
 ## Bugfixes
 
 * TGR-592: we are resorting the JUnit driver class template back to run with CucumberWithSerenity ensuring the TiǵerCucumberListener as plugin is set. This listener will now initialize the Tiger on test run started event.
+* TGR-780: outputs of external jar type servers will now be logged
 
 ## Features
 
