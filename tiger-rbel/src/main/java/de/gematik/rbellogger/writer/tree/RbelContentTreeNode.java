@@ -50,10 +50,18 @@ public abstract class RbelContentTreeNode {
 
     public Optional<Boolean> hasTypeOptional(String typeToCheck) {
         return Optional.ofNullable(getType())
-            .map(t -> StringUtils.equals(t, typeToCheck));
+            .map(t -> StringUtils.equalsIgnoreCase(t, typeToCheck));
     }
 
     public Optional<RbelContentTreeNode> getParentNode() {
         return Optional.ofNullable(parentNode);
+    }
+
+    public Optional<RbelContentTreeNode> childNode(String nodeKey) {
+        return Optional.ofNullable(childNodes.get(nodeKey));
+    }
+
+    public String getContentAsString() {
+        return new String(getContent(), getCharset());
     }
 }

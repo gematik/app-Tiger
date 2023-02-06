@@ -47,4 +47,11 @@ public class RbelX509ConverterTest {
             .isEqualTo(xmlMessage.findElement(
                 "$.body.RegistryResponse.RegistryErrorList.RegistryError.jwtTag.text.header.x5c.0.content").get());
     }
+
+    @SneakyThrows
+    @Test
+    void shouldParseX500ContentAsWell() {
+        assertThat(xmlMessage.findElement("$..subject.CN").get().getRawStringContent())
+            .isEqualTo("IDP Sig 3");
+    }
 }

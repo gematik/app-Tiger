@@ -2,11 +2,11 @@ package de.gematik.rbellogger.data;
 
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.assertj.core.api.AbstractAssert;
-import org.assertj.core.api.StringAssert;
+import org.assertj.core.api.*;
 
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
@@ -47,6 +47,10 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
         return new StringAssert(actual.getRawStringContent());
     }
 
+    public OptionalAssert<String> valueAsString() {
+        return AssertionsForClassTypes.assertThat(actual.printValue());
+    }
+
     public RbelElementAssertion hasFacet(Class<? extends RbelFacet> facetToTest) {
         if (!actual.hasFacet(facetToTest)) {
             failWithMessage("Expecting element to have facet of type %s, but only found facets %s",
@@ -59,6 +63,16 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
         if (actual.hasFacet(facetToTest)) {
             failWithMessage("Expecting element to have NOT facet of type %s, but it was found along with %s",
                 facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()));
+        }
+        return this.myself;
+    }
+
+    public RbelElementAssertion hasValueEqualTo(Object expected) {
+        hasFacet(RbelValueFacet.class);
+        final Object actualValue = actual.getFacetOrFail(RbelValueFacet.class).getValue();
+        if (!expected.equals(actualValue)) {
+            failWithMessage("Expecting element to have value of %s, but found %s instead",
+                expected, actualValue);
         }
         return this.myself;
     }

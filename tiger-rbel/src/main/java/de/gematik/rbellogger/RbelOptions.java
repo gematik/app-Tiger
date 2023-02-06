@@ -4,6 +4,8 @@
 
 package de.gematik.rbellogger;
 
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+
 public class RbelOptions {
     public static boolean ACTIVATE_RBEL_PATH_DEBUGGING = false;
     public static int RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH = 3;
@@ -13,10 +15,12 @@ public class RbelOptions {
 
     public static void activateJexlDebugging() {
         ACTIVATE_JEXL_DEBUGGING = true;
+        TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = true;
     }
 
     public static void deactivateJexlDebugging() {
         ACTIVATE_JEXL_DEBUGGING = false;
+        TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = false;
     }
 
     public static void activateRbelPathDebugging() {
@@ -37,6 +41,7 @@ public class RbelOptions {
 
     public static void reset() {
         ACTIVATE_RBEL_PATH_DEBUGGING = false;
+        TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = false;
         RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH = 3;
         RBEL_PATH_TREE_VIEW_VALUE_OUTPUT_LENGTH = 50;
         ACTIVATE_JEXL_DEBUGGING = false;

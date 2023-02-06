@@ -5,8 +5,10 @@
 package de.gematik.rbellogger.converter.initializers;
 
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.key.IdentityBackedRbelKey;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.RbelPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -40,42 +42,13 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
                 .filter(File::isFile)
                 .filter(File::canRead)
                 .filter(file -> file.getName().endsWith(".p12"))
-                .map(this::readFileToKeyList)
+                .map(file -> new TigerPkiIdentity(file.getAbsolutePath() + ";00")
+                    .withKeyId(Optional.ofNullable(file.getName().split("\\.")[0])))
+                .map(IdentityBackedRbelKey::generateRbelKeyPairForIdentity)
                 .flatMap(List::stream)
                 .forEach(rbelConverter.getRbelKeyManager()::addKey);
         } catch (IOException e) {
             throw new RuntimeException("Error while initializing keys", e);
-        }
-    }
-
-    private List<RbelKey> readFileToKeyList(File file) {
-        try {
-            return getIdentityFromP12(FileUtils.readFileToByteArray(file),
-                file.getName().replace(".p12", ""));
-        } catch (IOException e) {
-            return List.of();
-        }
-    }
-
-    private static List<RbelKey> getIdentityFromP12(final byte[] p12FileContent, final String fileName) {
-        try {
-            final KeyStore p12 = KeyStore.getInstance("pkcs12", BOUNCY_CASTLE_PROVIDER);
-            p12.load(new ByteArrayInputStream(p12FileContent), "00".toCharArray());
-
-            final Enumeration<String> e = p12.aliases();
-            while (e.hasMoreElements()) {
-                final String alias = e.nextElement();
-                final X509Certificate certificate = (X509Certificate) p12.getCertificate(alias);
-                final PrivateKey privateKey = (PrivateKey) p12.getKey(alias, "00".toCharArray());
-                final RbelKey rbelPublicKey = new RbelKey(certificate.getPublicKey(), "puk_" + fileName,
-                    RbelKey.PRECEDENCE_KEY_FOLDER);
-                return List.of(rbelPublicKey,
-                    new RbelKey(privateKey, "prk_" + fileName, RbelKey.PRECEDENCE_KEY_FOLDER, rbelPublicKey));
-            }
-            return List.of();
-        } catch (final IOException | KeyStoreException | NoSuchAlgorithmException
-            | UnrecoverableKeyException | CertificateException e) {
-            return List.of();
         }
     }
 }

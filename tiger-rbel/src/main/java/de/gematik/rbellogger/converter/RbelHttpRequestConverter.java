@@ -62,7 +62,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
             throw new RuntimeException("Encountered ill-formatted path: " + path);
         }
 
-        final byte[] bodyData = extractBodyData(targetElement.getRawContent(), messageHeader.length() + 4,
+        final byte[] bodyData = extractBodyData(targetElement.getRawContent(), messageHeader.length() + eol.length() * 2,
             headerElement.getFacetOrFail(RbelHttpHeaderFacet.class), eol);
         final RbelElement bodyElement = new RbelElement(bodyData, targetElement,
             findCharsetInHeader(headerElement.getFacetOrFail(RbelHttpHeaderFacet.class)));

@@ -10,6 +10,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.exceptions.RbelContentTreeConversionException;
 import de.gematik.rbellogger.writer.tree.*;
 import de.gematik.test.tiger.common.config.*;
+import de.gematik.test.tiger.common.util.ImmutableDequeFacade;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,7 @@ public class RbelContentTreeConverter {
     );
     private final RbelElement input;
     private RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
+    private Set<String> transitiveTypes = Set.of("xml", "json");
 
     public RbelContentTreeConverter(RbelElement input) {
         this.input = input;
@@ -55,11 +57,12 @@ public class RbelContentTreeConverter {
             return List.of();
         }
         // tgrEncodeAs
-        final Optional<RbelElement> encodeAsOptional = input.getFirst(TGR_ENCODE_AS);
-        if (encodeAsOptional.isPresent()) {
+        final Optional<String> encodeAsOptional = input.getFirst(TGR_ENCODE_AS)
+            .flatMap(el -> extractEncodingType(conversionContext, el));
+        if (encodeAsOptional.isPresent() && isTransitiveType(encodeAsOptional.get())) {
             encodingConfigurationSource = Optional.of(new BasicTigerConfigurationSource(SourceType.THREAD_CONTEXT,
                 new TigerConfigurationKey(),
-                Map.of(ENCODE_AS, encodeAsOptional.get().getRawStringContent())));
+                Map.of(ENCODE_AS, encodeAsOptional.get())));
             conversionContext.addConfigurationSource(encodingConfigurationSource.get());
         }
 
@@ -73,8 +76,26 @@ public class RbelContentTreeConverter {
         }
 
         encodingConfigurationSource.ifPresent(conversionContext::removeConfigurationSource);
+        if (encodeAsOptional.isPresent()){
+            result.stream()
+                .forEach(node -> node.setType(encodeAsOptional.get()));
+        }
 
         return result;
+    }
+
+    private boolean isTransitiveType(String encodingType) {
+        return transitiveTypes.contains(encodingType);
+    }
+
+    private Optional<String> extractEncodingType(TigerConfigurationLoader conversionContext, RbelElement encodeAsOptional) {
+        return Optional.ofNullable(encodeAsOptional)
+            .map(el -> convertRbelElement(el, TGR_ENCODE_AS, conversionContext))
+            .stream()
+            .flatMap(List::stream)
+            .map(el -> el.childNodes().stream().findFirst().orElse(el))
+            .map(el -> new String(el.getContent(), el.getCharset()))
+            .findFirst();
     }
 
     private static List<RbelContentTreeNode> evaluateTgrEncodeAsIfPresent(RbelElement element, List<RbelContentTreeNode> input) {

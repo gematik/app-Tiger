@@ -77,6 +77,7 @@ public class TigerPkiIdentityLoader {
             final TigerPkiIdentity tigerPkiIdentity = new TigerPkiIdentity();
             tigerPkiIdentity.setCertificate(rbelPkiIdentity.getCertificate());
             tigerPkiIdentity.setPrivateKey(rbelPkiIdentity.getPrivateKey());
+            tigerPkiIdentity.setKeyId(rbelPkiIdentity.getKeyId());
             return tigerPkiIdentity;
         }
     }

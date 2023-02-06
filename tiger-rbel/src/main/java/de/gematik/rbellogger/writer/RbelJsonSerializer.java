@@ -7,7 +7,9 @@ package de.gematik.rbellogger.writer;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.rbellogger.writer.tree.RbelJsonElementToNodeConverter;
 import java.util.StringJoiner;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class RbelJsonSerializer implements RbelSerializer {
 
     @Override
@@ -16,7 +18,7 @@ public class RbelJsonSerializer implements RbelSerializer {
     }
 
     public String renderToString(RbelContentTreeNode node, RbelWriter rbelWriter) {
-        if (isPrimitive(node)) {
+        if (isPrimitive(node) || !node.hasTypeOptional("JSON").orElse(true)) {
             if (isStringPrimitive(node)) {
                 return "\"" + getStringContentForNode(node, rbelWriter) + "\"";
             } else {
@@ -47,7 +49,7 @@ public class RbelJsonSerializer implements RbelSerializer {
         }
     }
 
-    private boolean isJsonArray(RbelContentTreeNode node) {
+    public static boolean isJsonArray(RbelContentTreeNode node) {
         return node.attributes().containsKey(RbelJsonElementToNodeConverter.JSON_ARRAY);
     }
 

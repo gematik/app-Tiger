@@ -135,6 +135,7 @@
         <module>tiger-test-lib</module>
         <module>tiger-admin</module>
         <module>tiger-maven-plugin</module>
+        <module>tiger-zion</module>
     </modules>
 
     <profiles>

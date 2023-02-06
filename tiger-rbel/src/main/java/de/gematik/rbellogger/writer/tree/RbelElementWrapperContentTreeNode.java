@@ -8,6 +8,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.List;
 
 public class RbelElementWrapperContentTreeNode extends RbelContentTreeNode {

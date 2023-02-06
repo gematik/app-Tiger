@@ -60,6 +60,11 @@
             <artifactId>tiger-testenv-mgr</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-zion</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

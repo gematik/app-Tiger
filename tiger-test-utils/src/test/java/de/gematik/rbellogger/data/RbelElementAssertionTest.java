@@ -71,4 +71,11 @@ class RbelElementAssertionTest {
             .isInstanceOf(AssertionError.class)
             .hasMessageContaining("Expected rbelPath $..* to find one member, but did return ");
     }
+
+    @Test
+    void testHasValueEqualTo() {
+        assertThat(sampleElement)
+            .extractChildWithPath("$..0.kid.content")
+            .hasValueEqualTo("idpSig");
+    }
 }

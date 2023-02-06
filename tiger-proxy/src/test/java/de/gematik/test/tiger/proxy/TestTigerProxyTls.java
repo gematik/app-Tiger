@@ -5,11 +5,11 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
@@ -51,6 +51,8 @@ import org.apache.hc.core5.ssl.SSLContexts;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.assertj.core.api.StringAssert;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
@@ -291,9 +293,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         assertThat(response.getStatus())
             .isEqualTo(666);
 
-        assertThat(secondProxy.getRbelMessagesList().get(0)
-            .findElement("$.clientTlsCertificateChain.0.subject")
-            .map(RbelElement::getRawStringContent))
+        RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+            .valueAsString()
             .get()
             .usingComparator((s1, s2) -> splitDn(s1).containsAll(splitDn(s2)) ? 0 : 1)
             .isEqualTo(clientIdentity.getCertificate().getSubjectDN().getName());
@@ -366,8 +368,10 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         }
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.clientTlsCertificateChain.0.subject")
-            .get().getRawStringContent())
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+            .valueAsString()
+            .get(InstanceOfAssertFactories.STRING)
             .contains("CN=mailuser-rsa1");
     }
 

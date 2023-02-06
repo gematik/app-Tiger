@@ -18,10 +18,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
@@ -31,6 +28,7 @@ public class TigerPkiIdentity {
 
     private X509Certificate certificate;
     private PrivateKey privateKey;
+    @With
     private Optional<String> keyId;
 
     private final List<X509Certificate> certificateChain = new ArrayList<>();

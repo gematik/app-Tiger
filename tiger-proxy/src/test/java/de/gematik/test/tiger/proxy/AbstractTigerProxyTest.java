@@ -40,11 +40,11 @@ public abstract class AbstractTigerProxyTest {
     @BeforeAll
     public static void setupBackendServer() {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("wiremock")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("WireMock")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("io.netty")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("org.eclipse.jetty")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("com.networknt")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("org.apache.http")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("WireMock")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("io.netty")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("org.eclipse.jetty")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("com.networknt")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("org.apache.http")).setLevel(Level.WARN);
 
         fakeBackendServer = new WireMockServer(
             new WireMockConfiguration()

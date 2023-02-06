@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -145,5 +146,22 @@ class RbelJexlTest {
     void testRbelEscaping() {
         assertThat(jexlExecutor.matchesAsJexlExpression(response, "$.body.header =~ '.*discSig.*'"))
             .isTrue();
+    }
+
+    @Test
+    void conditionalDescent() {
+        assertThat(jexlExecutor.matchesAsJexlExpression(response, "$.body.header =~ '.*discSig.*'"))
+            .isTrue();
+    }
+
+    @Test
+    void tokenSubstituteHelperRbelPathExtension() {
+        RbelJexlExecutor.ELEMENT_STACK.push(response);
+        try {
+            assertThat(TokenSubstituteHelper.substitute("?{$.body.header}", null))
+                .contains("discSig");
+        } finally {
+            RbelJexlExecutor.ELEMENT_STACK.removeFirstOccurrence(response);
+        }
     }
 }

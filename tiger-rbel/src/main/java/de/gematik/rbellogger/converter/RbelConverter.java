@@ -58,6 +58,7 @@ public class RbelConverter {
         new RbelVauKeyDeriver(),
         new RbelMtomConverter(),
         new RbelX509Converter(),
+        new RbelX500Converter(),
         new RbelSicctEnvelopeConverter(),
         new RbelSicctCommandConverter(),
         new RbelCetpConverter()
