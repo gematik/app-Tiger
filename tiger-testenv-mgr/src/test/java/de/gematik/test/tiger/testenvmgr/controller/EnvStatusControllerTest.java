@@ -194,13 +194,12 @@ class EnvStatusControllerTest {
             mock(TigerBuildPropertiesService.class));
 
         assertThat(envMgr.getLocalTigerProxyOptional()).isEmpty();
-        assertThat(StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl())).isTrue();
         envMgr.setUpEnvironment();
         assertThat(envMgr.getLocalTigerProxyOptional()).isNotEmpty();
         await("Check env status controller has received the proxy web ui url with in 4 seconds")
             .pollDelay(200, TimeUnit.MILLISECONDS)
             .pollInterval(100, TimeUnit.MILLISECONDS)
             .atMost(4, TimeUnit.SECONDS)
-            .until(() -> !StringUtils.isEmpty(envStatusController.getStatus().getLocalProxyWebUiUrl()));
+            .until(() -> !StringUtils.isEmpty(envStatusController.getStatus().getServers().get(TigerTestEnvMgr.LOCAL_TIGER_PROXY_TYPE).getBaseUrl()));
     }
 }

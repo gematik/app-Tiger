@@ -13,7 +13,6 @@ import de.gematik.test.tiger.testenvmgr.env.*;
 import java.util.ArrayList;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,8 +38,6 @@ public class EnvStatusController implements TigerUpdateListener {
     public synchronized void receiveTestEnvUpdate(final TigerStatusUpdate update) {
         log.trace("receiving update {}", update);
         try {
-            initializeLocalProxyUrl();
-
             receiveTestSuiteUpdate(update.getFeatureMap());
 
             update.getServerUpdate().forEach(this::receiveServerStatusUpdate);
@@ -62,15 +59,6 @@ public class EnvStatusController implements TigerUpdateListener {
             }
         } catch (Exception e) {
             log.error("Unable to parse update", e);
-        }
-    }
-
-    private void initializeLocalProxyUrl() {
-        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
-            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy ->
-            tigerEnvStatus.setLocalProxyWebUiUrl(
-                "http://localhost:" + proxy.getAdminPort() + "/webui")
-            );
         }
     }
 
@@ -164,7 +152,8 @@ public class EnvStatusController implements TigerUpdateListener {
     public void getConfirmContinueExecution() {
         log.trace("Fetch request to continueExecution() received");
         tigerTestEnvMgr.receivedResumeTestRunExecution();
-        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Resuming test run").bannerType(BannerType.MESSAGE).bannerColor("green").build();
+        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Resuming test run").bannerType(BannerType.MESSAGE)
+            .bannerColor("green").build();
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 
@@ -172,7 +161,8 @@ public class EnvStatusController implements TigerUpdateListener {
     public void getConfirmToFailExecution() {
         log.trace("Fetch request to failExecution() received");
         tigerTestEnvMgr.receivedCancelTestRunExecution();
-        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Ending test run").bannerType(BannerType.MESSAGE).bannerColor("red").build();
+        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Ending test run").bannerType(BannerType.MESSAGE)
+            .bannerColor("red").build();
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 

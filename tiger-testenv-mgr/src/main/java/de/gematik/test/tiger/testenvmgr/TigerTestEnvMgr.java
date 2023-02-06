@@ -117,8 +117,10 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         if (configuration.isLocalProxyActive()) {
             TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
             localTigerProxy = startLocalTigerProxy(configuration);
-            proxyStatusMessage("LocalTigerProxy started\nLocal Tiger Proxy URL http://localhost:" + localTigerProxy.getProxyPort() +
-                "\nLocal Tiger Proxy UI http://localhost:" + localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui", RbelAnsiColors.BLUE_BOLD);
+            proxyStatusMessage("Local Tiger Proxy URL http://localhost:" +
+                localTigerProxy.getProxyPort(), RbelAnsiColors.BLUE_BOLD);
+            proxyStatusMessage("Local Tiger Proxy UI http://localhost:" +
+                localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui", RbelAnsiColors.BLUE_BOLD);
             environmentVariables.put("PROXYHOST", "host.docker.internal");
             environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
             TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
@@ -132,7 +134,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             .type(LOCAL_TIGER_PROXY_TYPE)
             .status(TigerServerStatus.RUNNING)
             .statusMessage(statusMessage)
-            .baseUrl("http://localhost:" + getLocalTigerProxyOrFail().getProxyPort())
+            .baseUrl("http://localhost:" + localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui")
             .build());
         if (localProxyLog.isInfoEnabled()) {
             localProxyLog.info(Ansi.colorize(statusMessage, color));
@@ -186,6 +188,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
         }
         TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
+        proxyConfig.setName(LOCAL_TIGER_PROXY_TYPE);
         proxyConfig.setSkipTrafficEndpointsSubscription(true);
         if (proxyConfig.getProxyRoutes() == null) {
             proxyConfig.setProxyRoutes(List.of());
