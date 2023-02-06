@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import javax.annotation.PreDestroy;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -534,6 +535,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         exceptionListeners.add(newConsumer);
     }
 
+    @PreDestroy
     public void shutdown() {
         remoteProxyClients
             .forEach(TigerRemoteProxyClient::close);

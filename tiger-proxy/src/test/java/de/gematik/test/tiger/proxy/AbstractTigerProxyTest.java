@@ -10,6 +10,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
+import ch.qos.logback.classic.Level;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.matching.RequestPattern;
@@ -26,6 +27,7 @@ import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.slf4j.LoggerFactory;
 
 @Slf4j
 public abstract class AbstractTigerProxyTest {
@@ -37,6 +39,13 @@ public abstract class AbstractTigerProxyTest {
 
     @BeforeAll
     public static void setupBackendServer() {
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("wiremock")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("WireMock")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("io.netty")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("org.eclipse.jetty")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("com.networknt")).setLevel(Level.WARN);
+        ((ch.qos.logback.classic.Logger)LoggerFactory.getILoggerFactory().getLogger("org.apache.http")).setLevel(Level.WARN);
+
         fakeBackendServer = new WireMockServer(
             new WireMockConfiguration()
                 .dynamicPort()
@@ -86,6 +95,8 @@ public abstract class AbstractTigerProxyTest {
     }
 
     public void spawnTigerProxyWith(TigerProxyConfiguration configuration) {
+        System.setProperty("java.util.logging.config.file", "SKIP_MOCKSERVER_LOG_INIT!");
+        configuration.setProxyLogLevel("ERROR");
         tigerProxy = new TigerProxy(configuration);
 
         proxyRest = Unirest.spawnInstance();
