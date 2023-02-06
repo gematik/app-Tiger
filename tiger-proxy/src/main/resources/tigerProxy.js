@@ -853,6 +853,7 @@ function testRbelExpression() {
   toggleHelp(collapsibleRbelBtn, "rbel-help", true);
   const xhttp = new XMLHttpRequest();
   let rbelPath = document.getElementById("rbelExpressionInput").value;
+
   xhttp.open("GET", "/webui/testRbelExpression"
       + "?msgUuid=" + jexlQueryElementUuid
       + "&rbelPath=" + encodeURIComponent(rbelPath),
@@ -889,6 +890,7 @@ function setAddEventListener() {
 
 function copyPathToInputField(event, element) {
   event.preventDefault();
+  var oldValue = document.getElementById("rbelExpressionInput").value;
   var text = element.textContent;
   var el = element.previousElementSibling;
   var marker = el.textContent;
@@ -904,7 +906,13 @@ function copyPathToInputField(event, element) {
     }
     el = el.previousElementSibling;
   }
-  document.getElementById("rbelExpressionInput").value = "$." + text;
+  if (oldValue == null) {
+    document.getElementById("rbelExpressionInput").value = "$." + text;
+  } else {
+    const words = oldValue.split('.');
+    oldValue = oldValue.substring(0, oldValue.length - words[words.length-1].length);
+    document.getElementById("rbelExpressionInput").value = oldValue + text;
+  }
 }
 
 function shortenStrings(obj) {
