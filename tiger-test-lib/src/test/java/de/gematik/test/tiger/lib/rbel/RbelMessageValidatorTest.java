@@ -6,14 +6,21 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addTwoRequestsToTigerTestHooks;
 import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.buildRequestFromCurlFile;
+import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import org.junit.Test;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -244,6 +251,15 @@ class RbelMessageValidatorTest {
     }
 
     @Test
+    void testFindLastRequest_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.findLastRequest();
+        RbelElement request = validator.currentRequest;
+        assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
+    }
+
+    @Test
     void testFilterRequestsRbelPath_OK() {
         addTwoRequestsToTigerTestHooks();
         RbelMessageValidator validator = RbelMessageValidator.instance;
@@ -310,5 +326,96 @@ class RbelMessageValidatorTest {
         assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
         assertThat(validator.currentResponse.getFacet(RbelHttpResponseFacet.class).get().getResponseCode()
             .getRawStringContent()).isEqualTo("500");
+    }
+
+    @Test
+    void testFindElementInCurrentResponse_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
+        assertThat(validator.findElementInCurrentResponse("$.body..h1")).isInstanceOf(RbelElement.class);
+    }
+    @Test
+    void testFindElementInCurrentResponse_NOK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
+        assertThatThrownBy(() -> validator.findElementInCurrentResponse("$.body..h2")).isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void testFindElementInCurrentRequest_OK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
+        assertThat(validator.findElementInCurrentRequest("$..User-Agent")).isInstanceOf(RbelElement.class);
+    }
+    @Test
+    void testFindElementInCurrentRequest_NOK() {
+        addTwoRequestsToTigerTestHooks();
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        validator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
+        assertThatThrownBy(() -> validator.findElementInCurrentRequest("$..UnknownHeader")).isInstanceOf(AssertionError.class);
+    }
+    @Test
+    void testValidatorAllowsToMatchNodesBeingBooleanRbelValues_True() throws IOException {
+        // parse in signature cert
+        final String keyMessage = readCurlFromFileWithCorrectedLineBreaks
+            ("idpSigMessage.curl", StandardCharsets.UTF_8);
+        final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
+        rbelConverter.parseMessage(keyMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+
+        // now add signed response as current response
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        final String challengeMessage = readCurlFromFileWithCorrectedLineBreaks
+            ("getChallenge.curl", StandardCharsets.UTF_8);
+        final RbelElement convertedMessage = rbelConverter.parseMessage(challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        validator.currentResponse = convertedMessage;
+        validator.getRbelMessages().add(convertedMessage);
+
+
+        // validate
+        validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", true);
+        validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", false);
+        validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true");
+        assertThatThrownBy(() -> {
+            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", false);
+        }).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> {
+            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", true);
+        }).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> {
+            validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "false");
+        }).isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void testValidatorAllowsToMatchNodesBeingBooleanRbelValues_False() throws IOException {
+        final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
+        // add signed response as current response without sign cert being avail
+        RbelMessageValidator validator = RbelMessageValidator.instance;
+        final String challengeMessage = readCurlFromFileWithCorrectedLineBreaks
+            ("getChallenge.curl", StandardCharsets.UTF_8);
+        final RbelElement convertedMessage = rbelConverter.parseMessage(challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        validator.currentResponse = convertedMessage;
+        validator.getRbelMessages().add(convertedMessage);
+
+        // validate
+        validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", true);
+        validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", false);
+        validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "false");
+        assertThatThrownBy(() -> {
+            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", false);
+        }).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> {
+            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", true);
+        }).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> {
+            validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true");
+        }).isInstanceOf(AssertionError.class);
     }
 }

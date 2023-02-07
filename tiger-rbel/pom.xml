@@ -119,9 +119,9 @@
             <version>20220320</version>
         </dependency>
         <dependency>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
             <groupId>org.bouncycastle</groupId>
-            <version>1.70</version>
+            <version>1.72</version>
         </dependency>
         <dependency>
             <artifactId>commons-io</artifactId>
