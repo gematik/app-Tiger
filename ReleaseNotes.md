@@ -16,6 +16,7 @@
 * TGR-780: outputs of external jar type servers will now be logged
 * TGR-809: error during selection of nodes in rbel tree in WebUi fixed
 * TGR-823: fixed a regression in the workflow UI not showing the rbel log details pane correctly.
+* TGR-768: flag createRbelHtmlReports added for creation of the RBEL HTML reports in Tiger testsuites
 
 ## Features
 

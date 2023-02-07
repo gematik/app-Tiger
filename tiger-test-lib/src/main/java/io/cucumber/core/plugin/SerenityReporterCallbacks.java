@@ -331,7 +331,9 @@ public class SerenityReporterCallbacks {
         }
         log.info("------------ STATUS: {} passed {}", scPassed, scFailed > 0 ? scFailed + " failed or error" : "");
 
-        createRbelLogReport(tscEvent.getTestCase().getName(), tscEvent.getTestCase().getUri(), context);
+        if (TigerDirector.getLibConfig().createRbelHtmlReports) {
+            createRbelLogReport(tscEvent.getTestCase().getName(), tscEvent.getTestCase().getUri(), context);
+        }
     }
 
     private void createRbelLogReport(String scenarioName, URI scenarioUri, ScenarioContext context) {

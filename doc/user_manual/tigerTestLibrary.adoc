@@ -36,6 +36,9 @@ lib:
     # SerenityRest Restassured calls
     # in the Serenity BDD report
     addCurlCommandsForRaCallsToReport: true
+    # Flag whether to create the RBEL HTML reports during
+    # a testsuite run, activated by default
+    createRbelHtmlReports: true
 
 # flag whether to start the local Tiger Proxy (default) or to omit it completely.
 # if you have the local Tiger Proxy deactivated you will NOT be able to

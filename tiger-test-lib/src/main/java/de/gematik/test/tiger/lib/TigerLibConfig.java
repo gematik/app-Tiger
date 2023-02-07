@@ -25,4 +25,6 @@ public class TigerLibConfig {
     private boolean addCurlCommandsForRaCallsToReport = true;
     @Builder.Default
     public boolean activateWorkflowUi = false;
+    @Builder.Default
+    public boolean createRbelHtmlReports = true;
 }
