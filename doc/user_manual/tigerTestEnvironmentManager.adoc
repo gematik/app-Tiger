@@ -2,16 +2,16 @@
 
 As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the test environment manager is one of the three core components of the Tiger test framework.
 Its main task is to start various test server nodes configured in the `tiger.yaml` configuration file and initialize the local Tiger Proxy for the test suite.
-To choose a different test environmental configuration file you may set the environment variable TIGER_TESTENV_CFGFILE.
+To choose a different test environmental configuration file you may set the environment variable `TIGER_TESTENV_CFGFILE`.
 
 
 The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from `tiger.yaml`.
-If none of these files exist it will fail the start up.
+If none of these files exist it will fail the start-up.
 
-If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named `tiger.yaml`.
-If none of these files exist it will fail the start up.
+If the environment variable is not set, then the test environment manager first checks for a file named `tiger-${COMPUTERNAME}.yaml`, and if this also does not exist, it searches for a file named `tiger.yaml`.
+If none of these files exist it will fail the start-up.
 
-In the start up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
+In the start-up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
 
 To configure your test environment you can either compose the `tiger.yaml` file manually or much preferred
 use the xref:tiger_user_manual.adoc#_admin_ui[Tiger Admin UI].
@@ -26,7 +26,7 @@ The Tiger testenvironment manager currently supports the following list of serve
 * **Docker compose** is a node that you can use to start a group of services defined in one to several compose yaml files configured in the source list.
 * **Helm charts** is a node that installs/updates a given helm chart on a local or remote kubernetes cluster (configuring a local context for remote clusters has to be done outside of Tiger)
 * **External jar** is a node that is started by running `java -jar XXXX.jar` after downloading a Jar archive from the configured source URL.
-* **External URL** is a symbolic node that is actually maintained outside of the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.
+* **External URL** is a symbolic node that is actually maintained outside the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.
 * **Tiger Proxy** is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
 * **Helm Chart** is a node that will be added to tiger via a plugin mechanism that starts a helm chart within a kubernetes environment.
 
@@ -44,7 +44,7 @@ serverKey_xxx:
   # OPTIONAL hostname of this node when accessing it via the test suite
   # (rerouted via the local test suite Tiger Proxy).
   # Defaults to the server name (serverKey_xxx)
-  # For docker compsoe and helm chart this property must NOT be set!
+  # For docker compose and helm chart this property must NOT be set!
   hostname: string
   # MANDATORY one of [tigerProxy|docker|compose|externalJar|externalUrl]
   type: string
@@ -55,7 +55,7 @@ serverKey_xxx:
   # before this node is set up.
   # Default value is empty
   dependsUpon: csv string
-  # OPTIONAL duration in seconds to wait for a successful start up of the server node
+  # OPTIONAL duration in seconds to wait for a successful start-up of the server node
   # Default value is 20
   startupTimeoutSec: int
   # MANDATORY type specific property in that for some types it's a list,
@@ -81,12 +81,12 @@ serverKey_xxx:
   pkiKeys: []
   # OPTIONAL type specific list of environmental variable assignments to be used
   # when starting the server node.
-  # Each entry has to have the format ENVVARNAME=VALUE
+  # Each entry has to have the format ENV_VAR_NAME=VALUE
   # Has NO EFFECT on external Url nodes.
   # Default value is empty array
   environment:
-    - ENVVAR1=VALUE1
-    - ENVVAR2=VALUE2
+    - ENV_VAR1=VALUE1
+    - ENV_VAR2=VALUE2
     - http://tsl --> https://download-ref.tsl.ti-dienste.de
   # OPTIONAL list of routes to be added to the local Tiger Proxy of the test suite.
   # Default value is empty array
@@ -270,10 +270,16 @@ Each part can be one of:
 ==== Docker Container node
 
 The docker container node allows to instantiate a local docker container from the configured image.
-The exposed port of the docker container is available as a special token in the substitution process of the exports entries.
+The exposed port of the docker container is available as a special token in the substitution process of the exports entries (`${PORT:xxxx}` where xxxx is the port being exposed inside the container).
 
 To customize the docker container you may alter the entry point command line and add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
 For containers that should exit after a single command you may enable the oneShot property.
+
+If there is no health check configured inside the docker image, Tiger will try to guess a healthcheck url by assuming the first exposed port as a get request to localhost to check for a successful startup of the docker container (e.g. http://127.0.0.1:xxxx).
+
+If no port is exposed at all, the startupTimeoutSec property will determine the wait period, after which Tiger assumes the container is up and running.
+
+If you have your local docker environment set up hosting the docker containers on a remote docker hub server, you may set the environment variable `TIGER_DOCKER_HOST` to allow the health check url determined on runtime to point to the remote host instead of localhost.
 
 NOTE: To use this server type you must include the tiger-cloud-extension dependency!
 
@@ -320,11 +326,11 @@ dockerContainer_001:
 
 The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support. So many of the yaml compose files will need to be modified to work with the testcontainer library.
 
-For now we support the ePA2 FD module and the DEMIS Meldeportal.
+For now, we support the ePA2 FD module and the DEMIS Meldeportal.
 
 If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check xref:tigerConfiguration.adoc#_tiger_configuration[this chapter]).
 
-The processing/copying flatens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have an random UUID appended to its filename.
+The processing/copying flattens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have a random UUID appended to its filename.
 
 NOTE: To use this server type you must include the tiger-cloud-extension dependency!
 
@@ -421,7 +427,7 @@ externalJar_001:
   exports: []
 ----
 
-By default the JVM used to start the JAR-File is the taken from the `java.home` system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property `tiger.lib.javaHome` (e.g. by setting `-Dtiger.lib.javaHome`, by setting `TIGER_LIB_JAVAHOME` in the environment or by setting `lib.javaHome` in the `tiger.yaml`).
+By default, the JVM used to start the JAR-File is the taken from the `java.home` system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property `tiger.lib.javaHome` (e.g. by setting `-Dtiger.lib.javaHome`, by setting `TIGER_LIB_JAVAHOME` in the environment or by setting `lib.javaHome` in the `tiger.yaml`).
 
 ==== External URL node
 
@@ -518,7 +524,7 @@ servers:
 
 ==== Tiger Proxy node
 
-The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the start up time can be minimized, and it is always guaranteed to start the current version.
+The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the start-up time can be minimized, and it is always guaranteed to start the current version.
 
 [source,yaml,title="Tiger Proxy configuration"]
 ----
@@ -611,7 +617,7 @@ The idp-rise-tu template provides the TU instance accordingly.
 This template provides the reference implementation of the eRezept server as a local docker container. The docker image is loaded from a gematik internal docker registry server.
 Make sure that an IDP server node is instantiated before the ERp FD is started and that it is available under http://idp or adapt the environment variable configuration.
 
-A large list of environment variables is set. But dont worry, it is just the server that uses them.
+A large list of environment variables is set. But don't worry, it is just the server that uses them.
 
 ==== Local ePA2 reference nodes
 
@@ -845,7 +851,7 @@ The first and the latter most of the time are identical besides the root level f
 ==== Token/variable substitution
 
 // TODO TGR-313 JULIAN check which properties exactly are substituted with tokens?
-// If i remember correctly you changed the code or?
+// If I remember correctly you changed the code or?
 
 Entries in the exports list of a node will be parsed and specific tokens will be substituted:
 
