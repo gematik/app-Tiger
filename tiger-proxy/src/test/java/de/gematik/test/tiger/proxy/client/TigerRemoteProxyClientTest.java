@@ -141,6 +141,11 @@ class TigerRemoteProxyClientTest {
             .build());
     }
 
+    @AfterAll
+    public void tearDown(WireMockRuntimeInfo remoteServer) {
+        tigerRemoteProxyClient.close();
+    }
+
     @Test
     void sendMessage_shouldTriggerListener() {
         AtomicInteger listenerCallCounter = new AtomicInteger(0);

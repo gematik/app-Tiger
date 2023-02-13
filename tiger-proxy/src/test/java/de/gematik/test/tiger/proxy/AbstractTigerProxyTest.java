@@ -12,6 +12,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 import ch.qos.logback.classic.Level;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.matching.RequestPattern;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
@@ -39,13 +40,6 @@ public abstract class AbstractTigerProxyTest {
 
     @BeforeAll
     public static void setupBackendServer() {
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("wiremock")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("WireMock")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("io.netty")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("org.eclipse.jetty")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("com.networknt")).setLevel(Level.WARN);
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getILoggerFactory().getLogger("org.apache.http")).setLevel(Level.WARN);
-
         fakeBackendServer = new WireMockServer(
             new WireMockConfiguration()
                 .dynamicPort()
