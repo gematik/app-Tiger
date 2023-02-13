@@ -12,7 +12,7 @@
 
 ## Bugfixes
 
-* TGR-592: we are resorting the JUnit driver class template back to run with CucumberWithSerenity ensuring the TiǵerCucumberListener as plugin is set. This listener will now initialize the Tiger on test run started event.
+* TGR-592: we are resorting the JUnit driver class template back to run with CucumberWithSerenity ensuring the TigerCucumberListener as plugin is set. This listener will now initialize the Tiger on test run started event.
 * TGR-780: outputs of external jar type servers will now be logged
 * TGR-809: error during selection of nodes in rbel tree in WebUi fixed
 * TGR-823: fixed a regression in the workflow UI not showing the rbel log details pane correctly.
@@ -21,6 +21,7 @@
 ## Features
 
 * TGR-814: Interface for remote traffic sources added in Tiger Proxy
+* TGR-826: Support for Form-Parameter added to HTTP-Client-Extension
 
 ## Breaking changes
 
