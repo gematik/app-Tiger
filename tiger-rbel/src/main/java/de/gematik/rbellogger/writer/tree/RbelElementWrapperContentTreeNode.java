@@ -10,16 +10,27 @@ import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 public class RbelElementWrapperContentTreeNode extends RbelContentTreeNode {
 
-    private final RbelElement source;
-
-    public RbelElementWrapperContentTreeNode(RbelElement source, TigerConfigurationLoader conversionContext) {
-        super(new RbelMultiMap<>());
-        setContent(TokenSubstituteHelper.substitute(source.getRawStringContent(), conversionContext)
+    public static RbelElementWrapperContentTreeNode constructFromRbelElement(RbelElement source, TigerConfigurationLoader conversionContext) {
+        var result = new RbelElementWrapperContentTreeNode();
+        result.setContent(TokenSubstituteHelper.substitute(source.getRawStringContent(), conversionContext)
             .getBytes());
-        this.source = source;
+        return result;
+    }
+
+    public static RbelElementWrapperContentTreeNode constructFromValueElement(RbelElement source, TigerConfigurationLoader conversionContext) {
+        var result = new RbelElementWrapperContentTreeNode();
+        result.setContent(TokenSubstituteHelper.substitute(source.printValue().orElseGet(source::getRawStringContent), conversionContext)
+            .getBytes());
+        return result;
+    }
+
+    private RbelElementWrapperContentTreeNode() {
+        super(new RbelMultiMap<>());
     }
 
     @Override

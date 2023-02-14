@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.writer;
 
+import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.util.Collection;
 import java.util.Optional;
@@ -12,11 +13,11 @@ import java.util.stream.Collectors;
 public class RbelUrlSerializer implements RbelSerializer {
 
     @Override
-    public byte[] render(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         return renderToString(node, rbelWriter).getBytes();
     }
 
-    public String renderToString(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         final String basicPath = node.childNode("basicPath")
             .map(RbelContentTreeNode::getContentAsString)
             .orElse("");
@@ -26,7 +27,7 @@ public class RbelUrlSerializer implements RbelSerializer {
             .orElse("");
     }
 
-    private Optional<String> getQueryString(Optional<RbelContentTreeNode> headers, RbelWriter rbelWriter) {
+    private Optional<String> getQueryString(Optional<RbelContentTreeNode> headers, RbelWriterInstance rbelWriter) {
         return Optional.of(headers
                 .map(RbelContentTreeNode::childNodes)
                 .stream()

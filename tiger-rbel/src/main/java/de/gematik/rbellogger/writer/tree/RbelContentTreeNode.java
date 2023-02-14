@@ -5,7 +5,9 @@
 package de.gematik.rbellogger.writer.tree;
 
 import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.writer.RbelContentType;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,15 +15,15 @@ import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.With;
 import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
-public abstract class RbelContentTreeNode {
+public class RbelContentTreeNode {
 
 
     private final RbelMultiMap<RbelContentTreeNode> childNodes;
     private Map<String, String> attributeMap = new HashMap<>();
-    @Getter
     @Setter
     private Charset charset;
     @Getter
@@ -29,7 +31,7 @@ public abstract class RbelContentTreeNode {
     private String key;
     @Getter
     @Setter
-    private String type;
+    private RbelContentType type;
     @Setter
     private RbelContentTreeNode parentNode;
     @Getter @Setter
@@ -48,9 +50,9 @@ public abstract class RbelContentTreeNode {
         return attributeMap;
     }
 
-    public Optional<Boolean> hasTypeOptional(String typeToCheck) {
+    public Optional<Boolean> hasTypeOptional(RbelContentType typeToCheck) {
         return Optional.ofNullable(getType())
-            .map(t -> StringUtils.equalsIgnoreCase(t, typeToCheck));
+            .map(t -> t == typeToCheck);
     }
 
     public Optional<RbelContentTreeNode> getParentNode() {
@@ -63,5 +65,10 @@ public abstract class RbelContentTreeNode {
 
     public String getContentAsString() {
         return new String(getContent(), getCharset());
+    }
+
+    public Charset getCharset() {
+        return Optional.ofNullable(charset)
+            .orElse(StandardCharsets.UTF_8);
     }
 }

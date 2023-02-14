@@ -11,6 +11,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelNestedFacet;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
+import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
@@ -33,7 +34,7 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
                 .map(childNode -> Pair.of(entry.getKey(), childNode)))
             .collect(RbelMultiMap.COLLECTOR);
         final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map);
-        result.setType(context.readStringOptional(ENCODE_AS).orElse("json"));
+        result.setType(context.readStringOptional(ENCODE_AS).map(RbelContentType::seekValueFor).orElse(RbelContentType.JSON));
         return result;
     }
 

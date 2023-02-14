@@ -4,21 +4,23 @@
 
 package de.gematik.rbellogger.writer;
 
+import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.rbellogger.writer.tree.RbelJsonElementToNodeConverter;
 import java.util.StringJoiner;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class RbelJsonSerializer implements RbelSerializer {
 
     @Override
-    public byte[] render(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         return renderToString(node, rbelWriter).getBytes();
     }
 
-    public String renderToString(RbelContentTreeNode node, RbelWriter rbelWriter) {
-        if (isPrimitive(node) || !node.hasTypeOptional("JSON").orElse(true)) {
+    public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+        if (isPrimitive(node) || !node.hasTypeOptional(RbelContentType.JSON).orElse(true)) {
             if (isStringPrimitive(node)) {
                 return "\"" + getStringContentForNode(node, rbelWriter) + "\"";
             } else {
@@ -41,8 +43,11 @@ public class RbelJsonSerializer implements RbelSerializer {
         }
     }
 
-    private static String getStringContentForNode(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    private static String getStringContentForNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         if (node.childNodes().isEmpty()) {
+            if (node.getContent() == null) {
+                return "{}";
+            }
             return new String(node.getContent(), node.getCharset());
         } else {
             return new String(rbelWriter.renderTree(node), node.getCharset());

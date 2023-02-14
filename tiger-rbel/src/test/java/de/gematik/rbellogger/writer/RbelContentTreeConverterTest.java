@@ -6,12 +6,15 @@ package de.gematik.rbellogger.writer;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.xmlunit.assertj.XmlAssert;
 
@@ -39,8 +42,7 @@ class RbelContentTreeConverterTest {
     void tgrIfTagInXml_shouldOnlyRenderCorrectNode() {
         final RbelElement input = rbelConverter.convertElement("<?xml version=\"1.0\"?>\n"
             + "<rootNode>\n"
-            + "    <toBeRendered tgrIf=\"1 != 5\">yes!"
-            + "</toBeRendered>\n"
+            + "    <toBeRendered tgrIf=\"1 != 5\">yes!</toBeRendered>\n"
             + "    <notToBeRendered tgrIf=\"10 == 5\">NOOOO!</notToBeRendered>\n"
             + "</rootNode>", null);
 

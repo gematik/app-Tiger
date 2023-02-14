@@ -35,7 +35,19 @@ class RbelJwtWriterTests {
 
         var output = serializeElement(input);
 
-        System.out.println(output.printTreeStructure());
+        System.out.println(output.getRawStringContent());
+
+        assertThat(output)
+            .hasFacet(RbelJwtFacet.class)
+            .extractChildWithPath("$.signature.verifiedUsing")
+            .hasValueEqualTo("puk_idpEnc");
+    }
+
+    @Test
+    void roundTripJwtSerialization() {
+        final RbelElement input = rbelConverter.convertElement("eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0.eyJzdWIiOiAiMTIzNDU2Nzg5MCIsIm5hbWUiOiAiSm9obiBEb2UiLCJpYXQiOiAxNTE2MjM5MDIyfQ.XqVOo3RGw8eBjpDJtw7NVTRW5Io5BTQ9MiW4QVxhy5943glx3TFvkMqCvEtiuQDxpJwsrXMmkmUemBaZr1qzFw", null);
+
+        var output = serializeElement(input);
 
         assertThat(output)
             .hasFacet(RbelJwtFacet.class)

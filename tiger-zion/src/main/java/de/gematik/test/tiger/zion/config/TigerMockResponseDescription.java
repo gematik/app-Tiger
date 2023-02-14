@@ -20,7 +20,7 @@ public class TigerMockResponseDescription {
     private String body;
     private String bodyFile;
     @Builder.Default
-    private Map<String, String> header = new HashMap<>();
+    private Map<String, String> headers = new HashMap<>();
     @Builder.Default
     private Integer statusCode = 200;
 }

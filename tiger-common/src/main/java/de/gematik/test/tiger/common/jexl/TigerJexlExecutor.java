@@ -25,7 +25,6 @@ public class TigerJexlExecutor {
         NAMESPACE_MAP.put(null, InlineJexlToolbox.class);
     }
 
-
     public boolean matchesAsJexlExpression(Object element, String jexlExpression) {
         return matchesAsJexlExpression(element, jexlExpression, Optional.empty());
     }

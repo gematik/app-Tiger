@@ -16,6 +16,7 @@ class TestTigerTestEnvMgrDebugLog {
     @Test
     void checkDebugOutputIsLogged_OK() throws Exception {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(TigerTestEnvMgr.class)).setLevel(Level.DEBUG);
+        TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.initialize();
         TigerGlobalConfiguration.putValue("tiger.localProxyActive", false);
         assertThat(tapSystemOut(TigerTestEnvMgr::new))
@@ -26,11 +27,11 @@ class TestTigerTestEnvMgrDebugLog {
     @Test
     void checkDebugOutputIsNotLoggedOnInfoLevel_OK() throws Exception {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(TigerTestEnvMgr.class)).setLevel(Level.INFO);
+        TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.initialize();
         TigerGlobalConfiguration.putValue("tiger.localProxyActive", false);
         assertThat(tapSystemOut(TigerTestEnvMgr::new))
             .doesNotContain("TigerTestEnvMgr - Tiger configuration: {")
             .doesNotContain("TigerTestEnvMgr - Environment variables: {");
     }
-
 }

@@ -10,7 +10,9 @@ import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,13 +20,13 @@ import org.springframework.stereotype.Service;
 public class KeyManagerFunctions {
 
     private final RbelLogger rbelLogger;
-    private final ServletWebServerApplicationContext webServerAppCtxt;
+    private final Environment environment;
 
     @PostConstruct
     public void initJexl() {
         TigerJexlExecutor.INSTANCE = new RbelJexlExecutor();
         TigerJexlExecutor.registerAdditionalNamespace("keyMgr", this);
-        TigerGlobalConfiguration.putValue("zion.port", webServerAppCtxt.getWebServer().getPort(), SourceType.YAML);
+        TigerGlobalConfiguration.putValue("zion.port", environment.getProperty("local.server.port"));
     }
 
     public String b64Certificate(String name) {

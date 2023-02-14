@@ -26,7 +26,8 @@ public class RbelContentTreeConverter {
     private static final String TGR_IF = "tgrIf";
     private List<RbelElementToContentTreeNodeConverter> converters = List.of(
         new RbelXmlElementToNodeConverter(),
-        new RbelJsonElementToNodeConverter()
+        new RbelJsonElementToNodeConverter(),
+        new RbelJwtElementToNodeConverter()
     );
     private final RbelElement input;
     private RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
@@ -78,7 +79,7 @@ public class RbelContentTreeConverter {
         encodingConfigurationSource.ifPresent(conversionContext::removeConfigurationSource);
         if (encodeAsOptional.isPresent()){
             result.stream()
-                .forEach(node -> node.setType(encodeAsOptional.get()));
+                .forEach(node -> node.setType(RbelContentType.seekValueFor(encodeAsOptional.get())));
         }
 
         return result;
@@ -102,7 +103,7 @@ public class RbelContentTreeConverter {
         // tgrEncodeWith
         if (element.getFirst(TGR_ENCODE_AS).isPresent()) {
             input.stream()
-                .forEach(node -> node.setType(element.getFirst(TGR_ENCODE_AS).get().getRawStringContent()));
+                .forEach(node -> node.setType(RbelContentType.valueOf(element.getFirst(TGR_ENCODE_AS).get().getRawStringContent())));
             return input;
         } else {
             return input;
@@ -159,7 +160,7 @@ public class RbelContentTreeConverter {
             .filter(entry -> entry.shouldConvert(input))
             .findFirst()
             .map(converter -> converter.convert(input, conversionContext, this))
-            .orElseGet(() -> new RbelElementWrapperContentTreeNode(input, conversionContext));
+            .orElseGet(() -> RbelElementWrapperContentTreeNode.constructFromRbelElement(input, conversionContext));
         result.setCharset(input.getElementCharset());
         result.setKey(key);
         return List.of(result);

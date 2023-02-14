@@ -10,6 +10,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
+import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
                 .map(childNode -> Pair.of(entry.getKey(), childNode)))
             .collect(RbelMultiMap.COLLECTOR);
         final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map);
-        result.setType(context.readStringOptional(ENCODE_AS).orElse("xml"));
+        result.setType(context.readStringOptional(ENCODE_AS).map(RbelContentType::seekValueFor).orElse(RbelContentType.XML));
         return result;
     }
 
@@ -50,11 +51,11 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
                 final List<RbelContentTreeNode> childNodes = new ArrayList<>();
                 for (RbelContentTreeNode childNode : node.childNodes()) {
                     if (childNode.getType() == null && childNode.getKey().equals("text")
-                        && !"xml".equals(node.getType())) {
+                        && node.getType() != RbelContentType.XML) {
                         node.setContent(childNode.getContent());
                         node.setChildNodes(List.of());
-                        log.trace("pulling up node {}", node.getContent());
-                    } else if (!childNode.hasTypeOptional("xml").orElse(true)
+                        log.trace("pulling up node '{}'", node.getContentAsString());
+                    } else if (!childNode.hasTypeOptional(RbelContentType.XML).orElse(true)
                         && !childNode.getKey().equals("text")) {
                         // wrap in text-node (will be rendered as text inside the xml)
                         RbelContentTreeNode wrapperNode = new RbelStrictOrderContentTreeNode(

@@ -31,8 +31,7 @@ public class RbelCetpFacet implements RbelFacet {
             }
 
             @Override
-            public ContainerTag performRendering(RbelElement element, Optional<String> key,
-                RbelHtmlRenderingToolkit renderingToolkit) {
+            public ContainerTag performRendering(RbelElement element, Optional<String> key, RbelHtmlRenderingToolkit renderingToolkit) {
                 return div(t1ms("CETP ")
                     .with(showContentButtonAndDialog(element, renderingToolkit)))
                     .with(addNotes(element, "mb-5"))

@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerProxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -92,8 +94,8 @@ abstract class AbstractNonHttpTest {
             configuration
                 .binaryProxyListener((binaryMessage, completableFuture, socketAddress, socketAddress1) -> {
                     log.info("ports are {} and {}",
-                        ((InetSocketAddress)socketAddress).getPort(),
-                        ((InetSocketAddress)socketAddress1).getPort());
+                        ((InetSocketAddress) socketAddress).getPort(),
+                        ((InetSocketAddress) socketAddress1).getPort());
                     handlerCalledRequest.incrementAndGet();
                     log.info("call received to the binary handler. resp is '{}'",
                         StringUtils.abbreviate(new String(binaryMessage.getBytes()), 100));
@@ -114,11 +116,22 @@ abstract class AbstractNonHttpTest {
 
             log("Verifying interactions... (requests=" + handlerCalledRequest.get() + ", response="
                 + handlerCalledResponse.get() + ", serverCalled=" + serverCalled.get() + ")");
-            interactionsVerificationCallback.acceptThrows(
-                handlerCalledRequest,
-                handlerCalledResponse,
-                serverCalled
-            );
+            try {
+                await()
+                    .atMost(10, TimeUnit.SECONDS)
+                    .untilAsserted(() ->
+                        interactionsVerificationCallback.acceptThrows(
+                            handlerCalledRequest,
+                            handlerCalledResponse,
+                            serverCalled
+                        ));
+            } catch (RuntimeException e) {
+                log.error("Found messages: \n\n{}",
+                    getTigerProxy().getRbelMessages().stream()
+                        .map(RbelElement::printTreeStructureWithoutColors)
+                        .collect(Collectors.joining("\n\n\n\n")));
+                throw e;
+            }
         } finally {
             if (tigerProxy != null) {
                 tigerProxy.close();

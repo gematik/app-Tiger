@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.writer;
 
 import de.gematik.rbellogger.key.RbelKey;
+import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.awt.List;
 import java.security.Key;
@@ -18,11 +19,11 @@ import org.jose4j.lang.JoseException;
 public class RbelJwtSerializer implements RbelSerializer {
 
     @Override
-    public byte[] render(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         return renderToString(node, rbelWriter).getBytes();
     }
 
-    public String renderToString(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         final JsonWebSignature jws = new JsonWebSignature();
 
         ProviderContext context = new ProviderContext();
@@ -43,7 +44,7 @@ public class RbelJwtSerializer implements RbelSerializer {
         }
     }
 
-    private Key findSignerKey(Optional<RbelContentTreeNode> signature, RbelWriter rbelWriter) {
+    private Key findSignerKey(Optional<RbelContentTreeNode> signature, RbelWriterInstance rbelWriter) {
         if (signature.isEmpty()) {
             throw new RbelSerializationException("Could not find signature-node needed for JWT serialization!");
         }
@@ -51,12 +52,16 @@ public class RbelJwtSerializer implements RbelSerializer {
             .orElseThrow(() -> new RbelSerializationException("Could not find verifiedUsing-node needed for JWT serialization!"));
         final String keyName = verifiedUsing.getContentAsString();
         final RbelKey rbelKey = rbelWriter.getRbelKeyManager().findKeyByName(keyName)
+            .filter(RbelKey::isPrivateKey)
             .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("prk_" + keyName))
+            .filter(RbelKey::isPrivateKey)
+            .or(() -> rbelWriter.getRbelKeyManager().findKeyByName(keyName.replace("puk_", "prk_")))
+            .filter(RbelKey::isPrivateKey)
             .orElseThrow(() -> new RbelSerializationException("Could not find key named '" + keyName + "'!"));
         return rbelKey.getKey();
     }
 
-    private void writeHeaderInJws(Optional<RbelContentTreeNode> headers, JsonWebSignature jws, RbelWriter rbelWriter) {
+    private void writeHeaderInJws(Optional<RbelContentTreeNode> headers, JsonWebSignature jws, RbelWriterInstance rbelWriter) {
         headers
             .map(RbelContentTreeNode::childNodes)
             .stream()

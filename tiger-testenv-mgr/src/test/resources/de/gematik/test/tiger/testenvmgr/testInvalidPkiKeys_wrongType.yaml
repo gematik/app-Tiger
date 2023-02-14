@@ -2,12 +2,10 @@ tigerProxy:
 
 servers:
   testPkiKeysWithWrongType:
-    hostname: wrongType
-    template: idp-ref
-    type: externalUrl
-    source:
-      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    active: true
+    type: tigerProxy
+    tigerProxyCfg:
+      adminPort: ${free.port.2}
+      proxyPort: ${free.port.3}
     pkiKeys:
     - id: disc_sig
       type: WRONG

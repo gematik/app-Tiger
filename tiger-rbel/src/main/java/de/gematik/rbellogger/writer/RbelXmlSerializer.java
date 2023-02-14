@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.writer;
 
+import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -24,7 +25,7 @@ import org.dom4j.tree.DefaultText;
 public class RbelXmlSerializer implements RbelSerializer {
 
     @SneakyThrows
-    public byte[] render(RbelContentTreeNode treeRootNode, RbelWriter rbelWriter) {
+    public byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
         final Document document = DocumentHelper.createDocument();
         for (RbelContentTreeNode childNode : treeRootNode.childNodes()) {
             addNode(childNode, document, rbelWriter);
@@ -32,7 +33,7 @@ public class RbelXmlSerializer implements RbelSerializer {
         return convertDocumentToString(document);
     }
 
-    private void addNode(RbelContentTreeNode treeNode, Branch parentBranch, RbelWriter rbelWriter) {
+    private void addNode(RbelContentTreeNode treeNode, Branch parentBranch, RbelWriterInstance rbelWriter) {
         if (log.isTraceEnabled()) {
             log.trace("converting xml node '{}'", treeNode.getContent() == null ? "<null>" : new String(treeNode.getContent()));
         }
@@ -40,7 +41,7 @@ public class RbelXmlSerializer implements RbelSerializer {
 
         if (StringUtils.isEmpty(key)) {
             return;
-        } else if ("text".equals(key) || !treeNode.hasTypeOptional("xml").orElse(true)) {
+        } else if ("text".equals(key) || !treeNode.hasTypeOptional(RbelContentType.XML).orElse(true)) {
             if (!(parentBranch instanceof Document)) {
                 parentBranch.add(new DefaultText(new String(rbelWriter.renderTree(treeNode), treeNode.getCharset())));
             }

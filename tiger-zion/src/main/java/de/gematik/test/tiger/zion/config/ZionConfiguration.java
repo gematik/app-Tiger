@@ -12,4 +12,6 @@ import org.springframework.stereotype.Component;
 public class ZionConfiguration {
 
     private Map<String, TigerMockResponse> mockResponses = new HashMap<>();
+    private Map<String, String> mockResponseFiles = new HashMap<>();
+    private ZionSpyConfiguration spy;
 }

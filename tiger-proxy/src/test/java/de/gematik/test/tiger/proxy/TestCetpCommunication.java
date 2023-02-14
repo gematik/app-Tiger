@@ -68,8 +68,8 @@ class TestCetpCommunication extends AbstractNonHttpTest{
                 }
             },
             (requestCalls, responseCalls, serverCalled) -> {
-                waitForCondition(() -> getTigerProxy().getRbelMessages().size() == 2,
-                    () -> "Wait timed out. No tiger-messages found!");
+                assertThat(getTigerProxy().getRbelMessages())
+                    .hasSize(2);
                 assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
                     .isEqualTo(message);
                 assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())

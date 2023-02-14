@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.writer;
 
 import de.gematik.rbellogger.key.RbelKey;
+import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.security.Key;
 import java.security.Security;
@@ -22,11 +23,11 @@ import org.jose4j.lang.JoseException;
 public class RbelJweSerializer implements RbelSerializer {
 
     @Override
-    public byte[] render(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         return renderToString(node, rbelWriter).getBytes();
     }
 
-    public String renderToString(RbelContentTreeNode node, RbelWriter rbelWriter) {
+    public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         final JsonWebEncryption jwe = new JsonWebEncryption();
 
         ProviderContext context = new ProviderContext();
@@ -47,7 +48,7 @@ public class RbelJweSerializer implements RbelSerializer {
         }
     }
 
-    private Key findSignerKey(Optional<RbelContentTreeNode> signature, RbelWriter rbelWriter) {
+    private Key findSignerKey(Optional<RbelContentTreeNode> signature, RbelWriterInstance rbelWriter) {
         if (signature.isEmpty()) {
             throw new RbelSerializationException("Could not find signature-node needed for JWT serialization!");
         }
@@ -64,7 +65,7 @@ public class RbelJweSerializer implements RbelSerializer {
             .orElseThrow(() -> new RbelSerializationException("Unable to find key!"));
     }
 
-    private void writeHeaderInJwe(Optional<RbelContentTreeNode> headers, JsonWebEncryption jwe, RbelWriter rbelWriter) {
+    private void writeHeaderInJwe(Optional<RbelContentTreeNode> headers, JsonWebEncryption jwe, RbelWriterInstance rbelWriter) {
         headers
             .map(RbelContentTreeNode::childNodes)
             .stream()

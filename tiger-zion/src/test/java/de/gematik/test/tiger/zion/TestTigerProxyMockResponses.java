@@ -1,18 +1,29 @@
 package de.gematik.test.tiger.zion;
 
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
+import static org.assertj.core.api.Assertions.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.TigerMockResponseDescription;
 import de.gematik.test.tiger.zion.config.ZionConfiguration;
+import de.gematik.test.tiger.zion.config.ZionSpyConfiguration;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
-import org.assertj.core.api.Assertions;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.netty.MockServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -22,11 +33,29 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ResetTigerConfiguration
 class TestTigerProxyMockResponses {
+    final Path tempDirectory = Path.of("target", "zionResponses");
 
     @Autowired
     private ZionConfiguration configuration;
+    @Autowired
+    private ObjectMapper objectMapper;
     @LocalServerPort
     private int port;
+    private Map<String, TigerMockResponse> mockResponsesBackup;
+
+    @SneakyThrows
+    @BeforeEach
+    public void setupTempDirectory() {
+        Files.createDirectories(tempDirectory);
+        Files.list(tempDirectory).forEach(path -> path.toFile().delete());
+        mockResponsesBackup = configuration.getMockResponses();
+    }
+
+    @AfterEach
+    public void resetMockResponses() {
+        configuration.setMockResponses(mockResponsesBackup);
+        configuration.setSpy(null);
+    }
 
     @Test
     void simpleMockedResponse() {
@@ -46,10 +75,78 @@ class TestTigerProxyMockResponses {
 
         final HttpResponse<JsonNode> response = Unirest.get("http://localhost:" + port
             + "/userJsonPath?username=someUsername").asJson();
-        Assertions.assertThat(response.getStatus())
+        assertThat(response.getStatus())
             .isEqualTo(666);
-        Assertions.assertThat(response.getBody().getObject().getString("authorizedUser"))
+        assertThat(response.getBody().getObject().getString("authorizedUser"))
             .isEqualTo("someUsername");
+    }
+
+    @Test
+    void testMockResponseFromFile() {
+        final HttpResponse<JsonNode> response = Unirest.post("http://localhost:" + port + "/specificEndpoint")
+            .body("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im15SGFwcHlMaXR0bGVGb29iYXIifQ.u0NTCYczr5qVmwgvU21GgecaibDwnn6voWmvmFPvPh8")
+            .asJson();
+        assertThat(response.getStatus())
+            .isEqualTo(203);
+        assertThat(response.getBody().getObject().getString("authorizedUser"))
+            .isEqualTo("myHappyLittleFoobar");
+    }
+
+    @Test
+    void testSpyFunctionality() throws IOException {
+        try (MockServer mockServer = new MockServer();
+            MockServerClient mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort())) {
+            mockServerClient.when(request()
+                    .withMethod("GET")
+                    .withPath(".*"))
+                .respond(response().withStatusCode(666).withBody("{\"foo\":\"bar\"}"));
+
+            configuration.setSpy(ZionSpyConfiguration.builder()
+                .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
+                .protocolToPath("target/zionResponses")
+                .build());
+
+            Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
+
+            final TigerMockResponse mockResponse = objectMapper.readValue(
+                Files.list(Path.of("target", "zionResponses"))
+                    .findAny().get().toFile(),
+                TigerMockResponse.class);
+
+            assertThat(mockResponse.getRequestCriterions())
+                .contains("message.method == 'GET'")
+                .contains("message.url =$ '/shallowPath?foo=bar'");
+        }
+    }
+
+    @Test
+    void testSpyFunctionalityWithJwt() throws IOException {
+        try (MockServer mockServer = new MockServer();
+            MockServerClient mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort())) {
+            mockServerClient.when(request()
+                    .withMethod("GET")
+                    .withPath(".*"))
+                .respond(response().withStatusCode(666).withBody("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"));
+
+            configuration.setSpy(ZionSpyConfiguration.builder()
+                .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
+                .protocolToPath("target/zionResponses")
+                .build());
+
+            Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
+
+            final TigerMockResponse mockResponse = objectMapper.readValue(
+                Files.list(tempDirectory)
+                    .findAny().get().toFile(),
+                TigerMockResponse.class);
+
+            assertThat(mockResponse.getResponse().getBody())
+                .containsIgnoringWhitespaces("{\n"
+                    + "  \"sub\": \"1234567890\",\n"
+                    + "  \"name\": \"John Doe\",\n"
+                    + "  \"iat\": 1516239022\n"
+                    + "}");
+        }
     }
 
     @Test
@@ -94,7 +191,7 @@ class TestTigerProxyMockResponses {
                 "message.url =~ '.*/sign_response?.*'"))
             .response(TigerMockResponseDescription.builder()
                 .statusCode(302)
-                .header(Map.of("Location", "{\n"
+                .headers(Map.of("Location", "{\n"
                     + "  \"tgrEncodeAs\": \"url\",\n"
                     + "  \"basicPath\": \"http://redirect.gematik.de/erezept\",\n"
                     + "  \"parameters\": {\n"
