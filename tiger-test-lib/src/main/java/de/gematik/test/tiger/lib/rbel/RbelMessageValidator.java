@@ -25,7 +25,6 @@ import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
@@ -195,7 +194,7 @@ public class RbelMessageValidator {
                 return Optional.of(candidateMessage);
             } else {
                 final String content = pathExecutionResult.stream()
-                    .map(RbelElement::getRawStringContent)
+                    .map(this::getValueOrContentString)
                     .map(String::trim)
                     .collect(Collectors.joining());
                 try {
@@ -220,7 +219,7 @@ public class RbelMessageValidator {
         try {
             final URI uri = new URI(req.getFacet(RbelHttpRequestFacet.class)
                 .map(RbelHttpRequestFacet::getPath)
-                .map(RbelElement::getRawStringContent)
+                .map(this::getValueOrContentString)
                 .orElse(""));
             boolean match = uri.getPath().equals(path) || uri.getPath().matches(path);
             if (!match && emptyPath.contains(path) && emptyPath.contains(uri.getPath())) {
@@ -261,27 +260,31 @@ public class RbelMessageValidator {
     public void assertAttributeOfCurrentResponseMatches(final String rbelPath, final String value,
         boolean shouldMatch) {
         final String text = findElementsInCurrentResponse(rbelPath).stream()
-            .map(RbelElement::getRawStringContent)
+            .map(this::getValueOrContentString)
             .filter(Objects::nonNull)
             .map(String::trim)
             .collect(Collectors.joining());
         if (shouldMatch) {
             if (!text.equals(value)) {
-                assertThat(text).matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+                assertThat(text).as("Rbelpath '%s' matches", rbelPath).matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
             }
         } else {
             if (text.equals(value)) {
                 Assertions.fail("Did not expect that node '" + rbelPath + "' is equal to '" + value);
             }
-            assertThat(text).doesNotMatch(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+            assertThat(text).as("Rbelpath '%s' does not match", rbelPath).doesNotMatch(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
         }
+    }
+
+    private String getValueOrContentString(RbelElement elem) {
+        return elem.printValue().orElseGet(elem::getRawStringContent);
     }
 
     public void assertAttributeOfCurrentResponseMatchesAs(String rbelPath, ModeType mode, String oracle) {
         switch (mode) {
             case JSON:
                 new JsonChecker().compareJsonStrings(
-                    findElementInCurrentResponse(rbelPath).getRawStringContent(),
+                    getValueOrContentString(findElementInCurrentResponse(rbelPath)),
                     oracle,
                     false);
                 break;
@@ -354,7 +357,7 @@ public class RbelMessageValidator {
         try {
             final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
             assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
-            assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
+            assertThat(elems).withFailMessage("Expected exactly one match for path '" + rbelPath + "'!").hasSize(1);
             return elems.get(0);
         } catch (final Exception e) {
             throw new AssertionError("Unable to find element in last response for rbel path '" + rbelPath + "'");
@@ -384,7 +387,15 @@ public class RbelMessageValidator {
 
     public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
         if (getRbelMessages().stream()
-            .map(msg -> new RbelPathExecutor(msg, rbelPath).execute().get(0).getRawStringContent())
+            .map(msg -> {
+                List<RbelElement> findings = new RbelPathExecutor(msg, rbelPath).execute();
+
+                if (findings.isEmpty()) {
+                    return null;
+                } else {
+                    return getValueOrContentString(findings.get(0));
+                }
+            })
             .filter(Objects::nonNull)
             .filter(msg -> msg.equals(value))
             .findAny().isEmpty()) {
@@ -394,9 +405,7 @@ public class RbelMessageValidator {
     }
 
     public void findLastRequest() {
-        final Iterator<RbelElement> descendingIterator = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
-            .getRbelLogger().getMessageHistory()
-            .descendingIterator();
+        final Iterator<RbelElement> descendingIterator = new ReverseListIterator(getRbelMessages());
         final RbelElement lastRequest = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(descendingIterator, Spliterator.ORDERED), false)
             .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
@@ -423,7 +432,7 @@ public class RbelMessageValidator {
         }
 
         public String currentRequestAsString(final String rbelPath) {
-            return findElementInCurrentRequest(rbelPath).getRawStringContent();
+            return getValueOrContentString(findElementInCurrentRequest(rbelPath));
         }
 
         public String currentRequestAsString() {

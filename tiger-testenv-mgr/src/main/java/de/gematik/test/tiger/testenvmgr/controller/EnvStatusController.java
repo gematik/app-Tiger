@@ -25,7 +25,6 @@ import de.gematik.test.tiger.testenvmgr.env.*;
 import java.util.ArrayList;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,8 +50,6 @@ public class EnvStatusController implements TigerUpdateListener {
     public synchronized void receiveTestEnvUpdate(final TigerStatusUpdate update) {
         log.trace("receiving update {}", update);
         try {
-            initializeLocalProxyUrl();
-
             receiveTestSuiteUpdate(update.getFeatureMap());
 
             update.getServerUpdate().forEach(this::receiveServerStatusUpdate);
@@ -65,20 +62,15 @@ public class EnvStatusController implements TigerUpdateListener {
             }
             // TODO make sure to check that the index is the expected next number, if not we do have to cache this and wait for the correct message
             //  TODO to be received and then process the cached messages in order, currently this is done on the client side
-            if (update.getIndex() > tigerEnvStatus.getCurrentIndex()) {
-                tigerEnvStatus.setCurrentIndex(update.getIndex());
+
+            // This synchronized block is needed to ensure there is no concurrency when for example receiving updates very fast!
+            synchronized (tigerEnvStatus) {
+                if (update.getIndex() > tigerEnvStatus.getCurrentIndex()) {
+                    tigerEnvStatus.setCurrentIndex(update.getIndex());
+                }
             }
         } catch (Exception e) {
             log.error("Unable to parse update", e);
-        }
-    }
-
-    private void initializeLocalProxyUrl() {
-        if (StringUtils.isEmpty(tigerEnvStatus.getLocalProxyWebUiUrl())) {
-            tigerEnvStatus.setLocalProxyWebUiUrl(
-                "http://localhost:"
-                    + tigerTestEnvMgr.getLocalTigerProxyOrFail().getAdminPort()
-                    + "/webui");
         }
     }
 
@@ -172,7 +164,8 @@ public class EnvStatusController implements TigerUpdateListener {
     public void getConfirmContinueExecution() {
         log.trace("Fetch request to continueExecution() received");
         tigerTestEnvMgr.receivedResumeTestRunExecution();
-        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Resuming test run").bannerType(BannerType.MESSAGE).bannerColor("green").build();
+        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Resuming test run").bannerType(BannerType.MESSAGE)
+            .bannerColor("green").build();
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 
@@ -180,7 +173,8 @@ public class EnvStatusController implements TigerUpdateListener {
     public void getConfirmToFailExecution() {
         log.trace("Fetch request to failExecution() received");
         tigerTestEnvMgr.receivedCancelTestRunExecution();
-        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Ending test run").bannerType(BannerType.MESSAGE).bannerColor("red").build();
+        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Ending test run").bannerType(BannerType.MESSAGE)
+            .bannerColor("red").build();
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 

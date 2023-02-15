@@ -18,7 +18,9 @@ package de.gematik.test.tiger.testenvmgr.config;
 
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class CfgServer extends CfgTemplate {
 

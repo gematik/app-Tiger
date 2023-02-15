@@ -24,31 +24,32 @@ import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Base64;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static de.gematik.rbellogger.util.CryptoLoader.getCertificateFromPem;
 
 @Slf4j
 public class RbelX509Converter implements RbelConverterPlugin {
+
     private static final ZoneId utcZone = ZoneId.of("UTC");
 
     @Override
     public void consumeElement(final RbelElement element, final RbelConverter context) {
-        tryConversion(element, () -> element.getRawContent());
-        tryConversion(element, () -> Base64.getDecoder().decode(element.getRawContent()));
+        tryConversion(element, context, () -> element.getRawContent());
+        tryConversion(element, context, () -> Base64.getDecoder().decode(element.getRawContent()));
     }
 
-    private void tryConversion(RbelElement element, Supplier<byte[]> binaryContentExtractor) {
+    private void tryConversion(RbelElement element, RbelConverter context, Supplier<byte[]> binaryContentExtractor) {
         try {
             final X509Certificate certificate = getCertificateFromPem(binaryContentExtractor.get());
             element.addFacet(RbelX509Facet.builder()
                 .serialnumber(certificate.getSerialNumber().toString())
-                .issuer(certificate.getIssuerDN().getName())
+                .issuer(context.convertElement(certificate.getIssuerX500Principal().getEncoded(), element))
                 .validFrom(ZonedDateTime.ofInstant(certificate.getNotBefore().toInstant(), utcZone))
                 .validUntil(ZonedDateTime.ofInstant(certificate.getNotAfter().toInstant(), utcZone))
-                .subject(certificate.getSubjectDN().getName())
+                .subject(context.convertElement(certificate.getSubjectX500Principal().getEncoded(), element))
                 .parent(element)
+                .certificate(certificate)
                 .build());
         } catch (RuntimeException e) {
             //swallow

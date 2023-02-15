@@ -356,10 +356,15 @@ function fetchInitialServerStatus() {
     debug("FETCH: " + data);
     const json = JSON.parse(data);
 
-    localProxyWebUiUrl.value = json.localProxyWebUiUrl;
-
     const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
     TigerServerStatusDto.addToMapFromJson(fetchedServerStatus, json.servers);
+
+    if (fetchedServerStatus.has("local_tiger_proxy")) {
+      const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
+      if (url) {
+        localProxyWebUiUrl.value = url;
+      }
+    }
 
     if (currentServerStatus.value.size !== 0) {
       console.error("Fetching while currentServerStatus is set is not supported!")
@@ -428,6 +433,11 @@ function updateServerStatus(serverStatus: Map<string, TigerServerStatusDto>, upd
           }
         } else {
           serverStatus.set(key, TigerServerStatusDto.fromUpdateDto(key, value));
+        }
+        if (key == "local_tiger_proxy") {
+          if (value.baseUrl) {
+            localProxyWebUiUrl.value = value.baseUrl;
+          }
         }
       }
   );

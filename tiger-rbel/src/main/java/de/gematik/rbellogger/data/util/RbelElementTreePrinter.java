@@ -21,7 +21,6 @@ import static de.gematik.rbellogger.RbelOptions.RBEL_PATH_TREE_VIEW_VALUE_OUTPUT
 import static de.gematik.rbellogger.util.RbelAnsiColors.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import java.util.Iterator;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class RbelElementTreePrinter {
 
     public String execute() {
         final RbelElement position = new RbelElement(null, null);
-        position.addFacet(() -> new RbelMultiMap()
+        position.addFacet(() -> new RbelMultiMap<RbelElement>()
             .with(findKeyOfRootElement(), rootElement));
         return executeRecursive(position, "",
             Math.max(maximumLevels, maximumLevels + 1) // avoid overflow problems

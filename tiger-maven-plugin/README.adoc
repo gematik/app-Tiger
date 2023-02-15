@@ -57,13 +57,13 @@ For each feature (or use wildcards / directories for single driver class) you ca
 package de.gematik.test.tiger.integration.YOURPROJECT;
 
 import io.cucumber.junit.CucumberOptions;
-import de.gematik.test.tiger.TigerCucumberRunner;
+import io.cucumber.junit.TigerCucumberRunner;
 import org.junit.runner.RunWith;
 
 @RunWith(TigerCucumberRunner.class)
 @CucumberOptions(
     features = {"src/test/resources/features/YOURFEATURE.feature"},
-    plugin = {"json:target/cucumber-parallel/1.json", "de.gematik.test.tiger.TigerCucumberListener"},
+    plugin = {"json:target/cucumber-parallel/1.json"},
     monochrome = false,
     glue = {"de.gematik.test.tiger.glue",
         "ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code"})

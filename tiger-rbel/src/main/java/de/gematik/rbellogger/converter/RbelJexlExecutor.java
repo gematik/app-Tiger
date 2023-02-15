@@ -16,58 +16,38 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.RbelOptions.ACTIVATE_JEXL_DEBUGGING;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @Data
-public class RbelJexlExecutor {
+public class RbelJexlExecutor extends TigerJexlExecutor {
 
-    private static final Map<Integer, JexlExpression> JEXL_EXPRESSION_CACHE = new HashMap<>();
+    static {
+        TokenSubstituteHelper.REPLACER_ORDER.addFirst(
+            Pair.of('?', (str, source) -> Optional.ofNullable(ELEMENT_STACK.peek())
+                .filter(RbelElement.class::isInstance)
+                .map(RbelElement.class::cast)
+                .flatMap(el -> el.findElement(str))
+                .map(el -> el.printValue()
+                    .orElseGet(el::getRawStringContent)))
+        );
+    }
+
     private static final int MAXIMUM_JEXL_ELEMENT_SIZE = 16_000;
-
-    public boolean matchesAsJexlExpression(Object element, String jexlExpression) {
-        return matchesAsJexlExpression(element, jexlExpression, Optional.empty());
-    }
-
-    public boolean matchesAsJexlExpression(Object element, String jexlExpression, Optional<String> key) {
-        try {
-            final MapContext mapContext = new MapContext(buildJexlMapContext(element, key));
-            final JexlExpression expression = buildExpression(evaluateRbelPathExpressions(jexlExpression, element, mapContext));
-
-            final boolean result = Optional.of(expression.evaluate(mapContext))
-                .filter(Boolean.class::isInstance)
-                .map(Boolean.class::cast)
-                .orElse(false);
-
-            if (result && ACTIVATE_JEXL_DEBUGGING) {
-                if (element instanceof RbelElement) {
-                    log.debug("Found match: '{}' with path {} matches '{}'", element,
-                        ((RbelElement) element).findNodePath(), jexlExpression);
-                } else {
-                    log.debug("Found match: '{}' matches '{}'", element, jexlExpression);
-                }
-            }
-
-            return result;
-        } catch (Exception e) {
-            if (ACTIVATE_JEXL_DEBUGGING) {
-                log.info("Error during Jexl-Evaluation.", e);
-            }
-            return false;
-        }
-    }
 
     public boolean matchAsTextExpression(Object element, String textExpression) {
         try {
@@ -81,6 +61,12 @@ public class RbelJexlExecutor {
             }
             return false;
         }
+    }
+
+    @Override
+    public JexlExpression buildExpression(String jexlExpression, Object element, MapContext mapContext) {
+        return super.buildExpression(evaluateRbelPathExpressions(jexlExpression, element, mapContext),
+            element, mapContext);
     }
 
     private String evaluateRbelPathExpressions(String jexlExpression, Object element, MapContext mapContext) {
@@ -109,21 +95,11 @@ public class RbelJexlExecutor {
         return "";
     }
 
-    private JexlExpression buildExpression(String jexlExpression) {
-        final int hashCode = jexlExpression.hashCode();
-        if (JEXL_EXPRESSION_CACHE.containsKey(hashCode)) {
-            return JEXL_EXPRESSION_CACHE.get(hashCode);
-        }
-        final JexlExpression expression = new JexlBuilder().create().createExpression(jexlExpression);
-        JEXL_EXPRESSION_CACHE.put(hashCode, expression);
-        return expression;
-    }
-
     public Map<String, Object> buildJexlMapContext(Object element, Optional<String> key) {
         final Map<String, Object> mapContext = new HashMap<>();
+        mapContext.putAll(super.buildJexlMapContext(element, key));
         final Optional<RbelElement> parentElement = getParentElement(element);
 
-        mapContext.put("element", element);
         mapContext.put("parent", parentElement.orElse(null));
         final Optional<RbelElement> message = findMessage(element);
         mapContext.put("message", message
@@ -132,6 +108,7 @@ public class RbelJexlExecutor {
         if (element instanceof RbelElement) {
             mapContext.put("charset", ((RbelElement) element).getElementCharset().displayName());
             mapContext.put("@", buildPositionDescriptor((RbelElement) element));
+            mapContext.put("pos", buildPositionDescriptor((RbelElement) element));
         }
 
         final Optional<RbelElement> requestMessage = tryToFindRequestMessage(element);
@@ -170,17 +147,17 @@ public class RbelJexlExecutor {
             .map(RbelElement.class::cast)
             .map(RbelElement::findNodePath)
             .orElse(null));
-        mapContext.put("type", element.getClass().getSimpleName());
-        mapContext.put("content", getContent(element));
 
-        return mapContext;
+        final TreeMap<String, Object> treeMap = new TreeMap<>(mapContext);
+        return new LinkedHashMap<>(treeMap);
     }
 
-    private static String getContent(Object element) {
+    @Override
+    public String getContent(Object element) {
         if (element instanceof RbelElement) {
             return getMaxedOutContentOfElement((RbelElement) element);
         } else {
-            return element.toString();
+            return super.getContent(element);
         }
     }
 
@@ -192,19 +169,41 @@ public class RbelJexlExecutor {
         }
     }
 
-    private Map<String, String> buildPositionDescriptor(RbelElement element) {
-        final HashMap<String, String> result = new HashMap<>();
+    private static String getMaxedOutContentOfElement(String string) {
+        return StringUtils.abbreviate(string, MAXIMUM_JEXL_ELEMENT_SIZE);
+    }
+
+    private Map<String, Object> buildPositionDescriptor(RbelElement element) {
+        final HashMap<String, Object> result = new HashMap<>();
         element.getChildNodesWithKey().stream()
             .forEach(entry -> {
+                final String key = buildKey(entry.getKey());
                 if (entry.getValue().hasFacet(RbelJsonFacet.class) && entry.getValue().hasFacet(RbelNestedFacet.class)) {
-                    result.put(entry.getKey(),
+                    result.put(key,
                         getMaxedOutContentOfElement(
                             entry.getValue().getFacetOrFail(RbelNestedFacet.class).getNestedElement()));
+                } else if (entry.getValue().hasFacet(RbelValueFacet.class)) {
+                    result.put(key, getMaxedOutContentOfElement(entry.getValue().getFacetOrFail(RbelValueFacet.class).getValue().toString()));
+                } else if (!entry.getValue().getChildNodes().isEmpty()) {
+                    result.put(key, buildPositionDescriptor(entry.getValue()));
                 } else {
-                    result.put(entry.getKey(), getMaxedOutContentOfElement(entry.getValue()));
+                    result.put(key, getMaxedOutContentOfElement(entry.getValue()));
                 }
             });
         return result;
+    }
+
+    private static String buildKey(String key) {
+        boolean isPureInteger = true;
+        try {
+            Integer.parseInt(key);
+        } catch (RuntimeException e) {
+            isPureInteger = false;
+        }
+        if (isPureInteger) {
+            return "_" + key;
+        }
+        return key;
     }
 
     private Optional<RbelElement> tryToFindRequestMessage(Object element) {

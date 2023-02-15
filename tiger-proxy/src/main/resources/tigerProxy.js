@@ -825,17 +825,20 @@ function executeJexlQuery() {
       + "?msgUuid=" + jexlQueryElementUuid
       + "&query=" + encodeURIComponent(jexlQuery),
       true);
+
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
         const response = JSON.parse(this.responseText);
 
         shortenStrings(response);
+        const map = new Map(Object.entries(response.messageContext));
         jexlInspectionContextDiv.innerHTML =
-            "<h3 class='is-size-4'>JEXL context</h3>"
-            + "<pre id='json'>"
-            + JSON.stringify(response.messageContext, null, 6)
-            + "</pre>";
+            "<h3 class='is-size-4'>JEXL context</h3>";
+        map.forEach((value, key) => {
+          jexlInspectionContextDiv.innerHTML += "<prekey id='json_" + encodeURIComponent(key) + "'>" +  key + "</prekey><pre class='paddingLeft' id='json__" + encodeURIComponent(key) + "'>" + JSON.stringify(value, null, 6) + "</pre><br>";
+        });
+
         jexlInspectionContextParentDiv.classList.remove("is-hidden");
         jexlInspectionNoContextDiv.classList.add("is-hidden");
         if (response.matchSuccessful) {
@@ -865,6 +868,7 @@ function testRbelExpression() {
   toggleHelp(collapsibleRbelBtn, "rbel-help", true);
   const xhttp = new XMLHttpRequest();
   let rbelPath = document.getElementById("rbelExpressionInput").value;
+
   xhttp.open("GET", "/webui/testRbelExpression"
       + "?msgUuid=" + jexlQueryElementUuid
       + "&rbelPath=" + encodeURIComponent(rbelPath),
@@ -901,6 +905,7 @@ function setAddEventListener() {
 
 function copyPathToInputField(event, element) {
   event.preventDefault();
+  var oldValue = document.getElementById("rbelExpressionInput").value;
   var text = element.textContent;
   var el = element.previousElementSibling;
   var marker = el.textContent;
@@ -916,7 +921,13 @@ function copyPathToInputField(event, element) {
     }
     el = el.previousElementSibling;
   }
-  document.getElementById("rbelExpressionInput").value = "$." + text;
+  if (oldValue == null) {
+    document.getElementById("rbelExpressionInput").value = "$." + text;
+  } else {
+    const words = oldValue.split('.');
+    oldValue = oldValue.substring(0, oldValue.length - words[words.length-1].length);
+    document.getElementById("rbelExpressionInput").value = oldValue + text;
+  }
 }
 
 function shortenStrings(obj) {
@@ -1029,9 +1040,9 @@ function addMessageToMenu(msgMetaData, index) {
 function setFilterMessage() {
   const element = document.getElementById("filteredMessage");
   if (allMessagesAmount === filteredMessagesAmount) {
-    element.textContent = "Keine der " + allMessagesAmount + " Nachrichten wurde herausgefiltert.";
+    element.textContent = "Filter didn't match any of the " + allMessagesAmount + " messages.";
   } else {
-    element.textContent = filteredMessagesAmount + " von "+ allMessagesAmount + " Nachrichten entsprechen den Filterkriterien.";
+    element.textContent = filteredMessagesAmount + " of "+ allMessagesAmount + " did match the filter criteria.";
   }
 }
 

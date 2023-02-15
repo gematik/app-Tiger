@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.glue;
 
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -10,12 +11,15 @@ import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
 import io.restassured.http.Method;
 import io.restassured.specification.RequestSpecification;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 
 import static de.gematik.test.tiger.proxy.TigerProxy.CA_CERT_ALIAS;
 
@@ -26,12 +30,11 @@ public class HttpGlueCode {
         return Method.valueOf(requestedMethod);
     }
 
-
     @SneakyThrows
     @When("TGR send empty {requestType} request to {string}")
     public void sendEmptyRequest(Method method, String address) {
         givenDefaultSpec()
-                .request(method, new URI(address));
+            .request(method, new URI(address));
     }
 
     @SneakyThrows
@@ -40,16 +43,16 @@ public class HttpGlueCode {
         Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader");
         defaultHeaders.putAll(table.asMap());
         givenDefaultSpec()
-                .headers(defaultHeaders)
-                .request(method, new URI(address));
+            .headers(defaultHeaders)
+            .request(method, new URI(address));
     }
 
     @SneakyThrows
     @When("TGR send {requestType} request with {string} to {string}")
     public void sendRequestWithBody(Method method, String message, String address) {
         givenDefaultSpec()
-                .body(TigerGlobalConfiguration.resolvePlaceholders(message))
-                .request(method, new URI(address));
+            .body(TigerGlobalConfiguration.resolvePlaceholders(message))
+            .request(method, new URI(address));
     }
 
     @When("TGR set default header {string} to {string}")
@@ -77,8 +80,8 @@ public class HttpGlueCode {
 
     private static RequestSpecification givenDefaultSpec() {
         return RestAssured
-                .given()
-                .headers(TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader"));
+            .given()
+            .headers(TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader"));
     }
 
     @SneakyThrows
@@ -91,5 +94,24 @@ public class HttpGlueCode {
             keyStore.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
         }
         return keyStore;
+    }
+
+    @SneakyThrows
+    @When("Send {requestType} request to {string} with")
+    public void sendPostRequestToWith(Method method, String url, DataTable dataTable) {
+        if (dataTable.asMaps().size() != 1) {
+            throw new AssertionError("Expected exactly one entry for datatable, "
+                + "got "+dataTable.asMaps().size());
+        }
+
+        final Map<String, String> resolvedValuesMap = dataTable.asMaps().get(0).entrySet().stream()
+            .map(entry -> Pair.of(
+                TigerGlobalConfiguration.resolvePlaceholders(entry.getKey()),
+                TigerGlobalConfiguration.resolvePlaceholders(entry.getValue())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        givenDefaultSpec()
+            .formParams(resolvedValuesMap)
+            .request(method, new URI(url));
     }
 }

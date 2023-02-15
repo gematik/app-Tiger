@@ -22,6 +22,7 @@ import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
+@ResetTigerConfiguration
 class IdpDecryptionTest {
 
     @Test

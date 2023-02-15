@@ -18,7 +18,7 @@ Tiger is a toolbox that supports and guides you when writing test suites. It let
 
 * Tiger does not focus on components but on the interactions between them. The Tiger Proxy captures the traffic between components.
 * Tiger Proxy parses the traffic and builds a tree-structure which abstracts away the encoding (XML, JSON...) and lets you focus on the data.
-* The Tiger test environment manager handles dockers, JARs and external servers, boots the configured setup and routes the traffic, all with zero lines of Java, all in YAML only.
+* The Tiger test environment manager handles dockers, helm charts, JARs and external servers, boots the configured setup and routes the traffic, all with zero lines of Java, all in YAML only.
 * A complete configuration toolkit, which combines multiple source and supports custom configuration of your testsuite as well, again with zero lines of Java.
 * Common tasks (JSON-validation, message-filtering, scenario configuration, configuration of simulators...) can be performed with the Tiger test library, which can be seamlessly imported into BDD test suites.
 This allows you to build mighty test suites with zero lines of java.
@@ -61,7 +61,7 @@ Structured data like JSON, XML, JWT is displayed in a sophisticated HTML report.
 
 The Tiger test environment manager provides methods to configure and instantiate multiple server nodes in your test environment and offers the following core feature set:
 
-* **Instantiating test nodes** - docker containers, docker compositions, external Jars** and
+* **Instantiating test nodes** - docker containers, docker compositions, helm charts, external Jars** and
 accessing server instances via external URL configurations
 * **Instantiating preconfigured server nodes** - for common test scenarios like ePA, ERp, IDP, Demis
 * **Automatic shutdown** - on tear down of test run, all the instantiated test nodes are ended
@@ -96,3 +96,15 @@ The BDD or JUnit test suite can integrate the Tiger test library to validate mes
 over Tiger Proxies using features such as RBelPath, VAU decryption, JSON checker and XML checker.
 
 image::media/tiger_components.svg[title="Tiger components"]
+
+==== Tiger extensions
+
+As Tiger evolves we have implemented quite a nice set of extensions that eases your job as tester in areas not directly fitting the core of Tiger. The currently or soon available extensions are:
+
+* **Cloud** extension provides the docker, docker compose and helm chart server types for the Tiger test environment mgr
+* **CATS** extension provides BDD steps to configure and interact with the Cats Card Terminal simulator of gematik
+* **Konnektormanagement** extension provides BDD steps to administer Konnektors
+* **PSSim** extension provides BDD steps to simulate a Primärsystem
+* **HTTP Client** extension follows the zero code philosophy and provides BDD steps to perform http requests without having to write any line of code
+* **FHIR validation** extension provides BDD steps to perform FHIR scheme based / FHIRPath based validations (planned release early spring 2023)
+* **Kartenterminal Robot** extension provides BDD steps to control the card terminal robot currently constructed at gematik labs (release mid 2023)

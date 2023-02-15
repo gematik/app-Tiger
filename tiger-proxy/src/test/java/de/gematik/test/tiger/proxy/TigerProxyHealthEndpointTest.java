@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +67,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 })
 @WireMockTest
 @RequiredArgsConstructor
+@ResetTigerConfiguration
 class TigerProxyHealthEndpointTest {
 
     private UnirestInstance unirestInstance;

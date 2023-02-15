@@ -105,10 +105,14 @@ public class TigerConfigurationLoader {
     public Optional<String> readStringOptional(String key) {
         TigerConfigurationKey splittedKey = new TigerConfigurationKey(
             TokenSubstituteHelper.substitute(key, this));
+        return readStringOptional(splittedKey);
+    }
+
+    public Optional<String> readStringOptional(TigerConfigurationKey key) {
         return loadedSources.stream()
             .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
-            .filter(source -> source.getValues().containsKey(splittedKey))
-            .map(source -> source.getValues().get(splittedKey))
+            .filter(source -> source.getValues().containsKey(key))
+            .map(source -> source.getValues().get(key))
             .findFirst();
     }
 
@@ -397,7 +401,7 @@ public class TigerConfigurationLoader {
         return key.getValue();
     }
 
-    private Map<TigerConfigurationKey, String> addYamlToMap(
+    public static Map<TigerConfigurationKey, String> addYamlToMap(
         final Object value,
         final TigerConfigurationKey baseKeys,
         final Map<TigerConfigurationKey, String> valueMap) {

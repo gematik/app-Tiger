@@ -73,11 +73,11 @@ public class LocalProxyRbelMessageListener {
         rbelMessages.clear();
     }
 
-    static List<RbelElement> getMessages() {
+    public static List<RbelElement> getMessages() {
         return Collections.unmodifiableList(rbelMessages);
     }
 
-    static List<RbelElement> getStepRbelMessages() {
+    public static List<RbelElement> getStepRbelMessages() {
         return stepRbelMessages;
     }
 }

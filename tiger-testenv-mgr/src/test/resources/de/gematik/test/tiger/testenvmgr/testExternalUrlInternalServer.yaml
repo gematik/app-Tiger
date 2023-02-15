@@ -1,8 +1,0 @@
-tigerProxy:
-
-servers:
-  testExternalUrlInternalServer:
-    hostname: testExternalJarInternalServer
-    type: externalUrl
-    source:
-      - http://localhost:${mockserver.port}/download

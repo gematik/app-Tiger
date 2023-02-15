@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.List;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
     @Test

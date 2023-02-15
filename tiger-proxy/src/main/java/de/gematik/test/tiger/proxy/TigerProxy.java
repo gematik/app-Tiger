@@ -47,6 +47,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import javax.annotation.PreDestroy;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -111,6 +112,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         mockServerConfiguration.maxLogEntries(0);
         if (StringUtils.isNotEmpty(configuration.getProxyLogLevel())) {
             mockServerConfiguration.logLevel(configuration.getProxyLogLevel());
+        } else {
+            mockServerConfiguration.logLevel("WARN");
         }
 
         customizeSslSuitesIfApplicable();
@@ -544,11 +547,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         exceptionListeners.add(newConsumer);
     }
 
+    @PreDestroy
     public void shutdown() {
         remoteProxyClients
             .forEach(TigerRemoteProxyClient::close);
         mockServerClient.stop();
         mockServer.stop();
+        NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
+        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(null);
     }
 
     @Override

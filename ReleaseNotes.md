@@ -1,6 +1,39 @@
 # Changelog Tiger Testplattform
 
 -------
+# Release 1.2.0
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Bugfixes
+
+* TGR-592: we are resorting the JUnit driver class template back to run with CucumberWithSerenity ensuring the TigerCucumberListener as plugin is set. This listener will now initialize the Tiger on test run started event.
+* TGR-780: outputs of external jar type servers will now be logged
+* TGR-829: When using the RbelKeyFolderInitializer the used files are not used via filenames but rather directly
+* TGR-809: error during selection of nodes in rbel tree in WebUi fixed
+* TGR-823: fixed a regression in the workflow UI not showing the rbel log details pane correctly.
+* TGR-768: flag createRbelHtmlReports added for creation of the RBEL HTML reports in Tiger testsuites
+* TGR-810: improve JEXL context display
+
+## Features
+
+* TGR-814: Interface for remote traffic sources added in Tiger Proxy
+* TGR-826: Support for Form-Parameter added to HTTP-Client-Extension
+
+## Breaking changes
+
+TGR-714: docker, docker compose server types have been merged with helm chart support into the tiger-cloud-extension a separate project to be published together with this release. **So to keep using docker functionality within tiger make sure to add the additional dependency to your project.** If you don't use docker or helm chart you should not be affected at all.
+
+* TGR-817: major rewrite of Tiger Serenity integration. We now more closely are integrated with Serenity, fixing bugs like cucumber tag filter property not always being respected, using multiple examples (with Annotations) causes the Workflow UI to show wrong data in the test execution pane. When using the tiger-maven-plugin to generate your test driver classes no modification to your code is necessary. Else, please note that:
+  * the package of the TigerCucumberRunner class has been changed
+  * the TigerCucumberListener is now automatically added in standalone and mvn context, so remove it from your plugins cucumber options.
+
+-------
 # Release 1.1.1
 
 * Serenity BDD 3.3.10

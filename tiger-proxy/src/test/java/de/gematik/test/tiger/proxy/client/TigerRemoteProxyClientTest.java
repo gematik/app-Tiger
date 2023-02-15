@@ -32,8 +32,10 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
@@ -54,10 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -81,6 +80,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @DirtiesContext
+@ResetTigerConfiguration
 class TigerRemoteProxyClientTest {
     /*
      *  Our Testsetup:
@@ -151,6 +151,11 @@ class TigerRemoteProxyClientTest {
             .from("http://myserv.er")
             .to("http://localhost:" + remoteServer.getHttpPort())
             .build());
+    }
+
+    @AfterAll
+    public void tearDown(WireMockRuntimeInfo remoteServer) {
+        tigerRemoteProxyClient.close();
     }
 
     @Test

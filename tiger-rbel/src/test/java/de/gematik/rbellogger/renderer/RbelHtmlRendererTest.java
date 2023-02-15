@@ -172,7 +172,7 @@ class RbelHtmlRendererTest {
 
     @Test
     public void shouldRenderXmlMessagesDirectly() throws IOException {
-        byte[] xmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/log4j2.xml"));
+        byte[] xmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/randomXml.xml"));
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .parseMessage(xmlBytes,
                 new RbelHostname("sender", 13421),

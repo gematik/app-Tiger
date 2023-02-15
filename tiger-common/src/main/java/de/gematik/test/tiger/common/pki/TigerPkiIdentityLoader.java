@@ -47,31 +47,43 @@ public class TigerPkiIdentityLoader {
     }
 
     /**
-     * Loads the described identity. The information string can be
-     * "my/file/name.p12;p12password" or
-     * "p12password;my/file/name.p12" or
-     * "cert.pem;key.pkcs8" or
-     * "rsaCert.pem;rsaKey.pkcs1" or
-     * "key/store.jks;key" or
-     * "key/store.jks;key1;key2" or
-     * "key/store.jks;jks;key"
+     * Loads the described identity. The information string can be "my/file/name.p12;p12password" or "p12password;my/file/name.p12" or "cert.pem;key.pkcs8" or
+     * "rsaCert.pem;rsaKey.pkcs1" or "key/store.jks;key" or "key/store.jks;key1;key2" or "key/store.jks;jks;key"
      * <p>
-     * Each part can be one of:
-     * * filename
-     * * password
-     * * store-type (accepted are P12, PKCS12, JKS)
+     * Each part can be one of: * filename * password * store-type (accepted are P12, PKCS12, JKS)
      *
      * @param information
      * @return
      */
     public static TigerPkiIdentity loadRbelPkiIdentity(String information) {
-        final List<String> informationSplits = Stream.of(information.split(";"))
+        return loadRbelPkiIdentity(Optional.empty(), information);
+    }
+
+    public static TigerPkiIdentity loadRbelPkiIdentity(File file, String information) {
+        return loadRbelPkiIdentity(Optional.of(file), information);
+    }
+
+    private static TigerPkiIdentity loadRbelPkiIdentity(Optional<File> fileOptional, String information) {
+        final List<String> informationSplits = Stream.concat(
+                Stream.of(fileOptional)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(File::getAbsolutePath),
+                Stream.of(information.split(";")))
             .map(String::trim)
             .collect(Collectors.toUnmodifiableList());
         final StoreType storeType = extractStoreType(informationSplits)
             .or(() -> guessStoreType(informationSplits))
             .orElseThrow(() -> new TigerPkiIdentityLoaderException("Unable to determine store-type for input '" + information + "'!"));
-        List<Pair<String, byte[]>> fileNamesAndContent = extractFileNames(informationSplits);
+        List<Pair<String, byte[]>> fileNamesAndContent = fileOptional
+            .map(f -> {
+                try {
+                    return List.of(Pair.of(f.getAbsolutePath(), FileUtils.readFileToByteArray(f)));
+                } catch (IOException e) {
+                    throw new IllegalArgumentException("Error while reading from file '" + f.getAbsolutePath() + "'!", e);
+                }
+            })
+            .orElseGet(() -> extractFileNames(informationSplits));
         List<String> fileNames = fileNamesAndContent.stream()
             .map(Pair::getLeft)
             .collect(Collectors.toUnmodifiableList());
@@ -89,6 +101,7 @@ public class TigerPkiIdentityLoader {
             final TigerPkiIdentity tigerPkiIdentity = new TigerPkiIdentity();
             tigerPkiIdentity.setCertificate(rbelPkiIdentity.getCertificate());
             tigerPkiIdentity.setPrivateKey(rbelPkiIdentity.getPrivateKey());
+            tigerPkiIdentity.setKeyId(rbelPkiIdentity.getKeyId());
             return tigerPkiIdentity;
         }
     }
@@ -177,7 +190,7 @@ public class TigerPkiIdentityLoader {
         if (StringUtils.isEmpty(entityLocation)) {
             throw new IllegalArgumentException("Trying to load data from empty location! (value is '" + entityLocation + "')");
         }
-        if (entityLocation.contains("\\"))  {
+        if (entityLocation.contains("\\")) {
             throw new TigerFileSeparatorException("Please use forward slash (/) as a file separator");
         }
         if (!entityLocation.startsWith("classpath:") && new File(entityLocation).exists()) {
@@ -235,6 +248,7 @@ public class TigerPkiIdentityLoader {
     }
 
     public static class TigerPkiIdentityLoaderException extends RuntimeException {
+
         public TigerPkiIdentityLoaderException(String message, Exception e) {
             super(message, e);
         }

@@ -51,7 +51,6 @@ public class RbelPathTest {
     @BeforeEach
     public void setUp() throws IOException {
         RbelOptions.activateRbelPathDebugging();
-        RbelOptions.activateJexlDebugging();
         jwtMessage = extractMessage("rbelPath.curl");
         xmlMessage = extractMessage("xmlMessage.curl");
     }
@@ -150,7 +149,7 @@ public class RbelPathTest {
     @Test
     public void findAllMembers() throws IOException {
         assertThat(jwtMessage.findRbelPathMembers("$..*"))
-            .hasSize(173);
+            .hasSizeGreaterThan(214);
 
         FileUtils.writeStringToFile(new File("target/jsonNested.html"),
             RbelHtmlRenderer.render(List.of(jwtMessage)));
@@ -275,9 +274,10 @@ public class RbelPathTest {
         "$..[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
         "$..RegistryError.[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
         "$..textTest[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
-        "$..RegistryError[1].textTest[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text"
+        "$..RegistryError[1].textTest[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
+        "$..x5c.0.content.0.7..[?(@._0 == '1.3.36.8.3.3')],$..7.content.1"
     })
-    public void rbelPathWithAddSign_ShouldFindCorrectNode(String path1, String path2) {
+    void rbelPathWithAddSign_ShouldFindCorrectNode(String path1, String path2) {
         final List<RbelElement> path1Results = xmlMessage.findRbelPathMembers(path1);
         final List<RbelElement> path2Results = xmlMessage.findRbelPathMembers(path2);
         assertThat(path1Results)

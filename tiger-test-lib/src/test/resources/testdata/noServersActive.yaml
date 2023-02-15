@@ -6,22 +6,7 @@ tigerProxy:
     serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 servers:
-  idp-ref:
-    hostname: idp
-    template: idp-ref
-    active: false
-
-  idp-ref-snapshot:
-    hostname: idp
-    template: idp-ref
-    version: 0.1-SNAPSHOT
-    active: false
-
   idp-rise-tu-manual:
     hostname: idp
     template: idp-rise-tu
-    active: false
-
-  erzpt-default:
-    template: erzpt-fd-ref
     active: false

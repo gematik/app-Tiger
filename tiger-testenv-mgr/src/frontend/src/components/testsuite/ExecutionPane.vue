@@ -97,9 +97,15 @@
       <h2>
         <img alt="RBel logo" src="img/rbellog.png" class="rbel-logo">
         Rbel Log Details
-        <a :href="`${localProxyWebUiUrl}`" target="poxywebui"><i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i></a>
+        <a v-if="localProxyWebUiUrl" :href="`${localProxyWebUiUrl}`" target="poxywebui">
+          <i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i>
+        </a>
       </h2>
       <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
+      <div v-else class="w-100 no-connection-local-proxy serverstatus-stopped">
+        <i class="fas fa-project-diagram left"></i>
+        No connection to local proxy.
+      </div>
     </div>
   </div>
 </template>
@@ -238,5 +244,12 @@ h4.scenariotitle {
   font-size: 50%;
   vertical-align: top;
   color: var(--gem-primary-400);
+}
+
+.no-connection-local-proxy {
+  height: 15rem;
+  background: white;
+  text-align: center;
+  line-height: 15rem;
 }
 </style>

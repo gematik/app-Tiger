@@ -35,6 +35,7 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
 import java.security.Key;
@@ -63,6 +64,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -75,6 +77,7 @@ import org.springframework.util.SocketUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxy extends AbstractTigerProxyTest {
 
     public MockServerClient forwardProxy;

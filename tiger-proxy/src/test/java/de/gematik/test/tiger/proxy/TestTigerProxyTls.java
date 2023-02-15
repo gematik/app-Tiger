@@ -17,15 +17,17 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import io.restassured.RestAssured;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
@@ -34,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.Proxy.Type;
 import java.security.*;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -60,8 +63,11 @@ import org.apache.hc.core5.ssl.SSLContexts;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.assertj.core.api.StringAssert;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -71,6 +77,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
+@ResetTigerConfiguration
 class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     @Test
@@ -298,9 +305,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         assertThat(response.getStatus())
             .isEqualTo(666);
 
-        assertThat(secondProxy.getRbelMessagesList().get(0)
-            .findElement("$.clientTlsCertificateChain.0.subject")
-            .map(RbelElement::getRawStringContent))
+        RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+            .valueAsString()
             .get()
             .usingComparator((s1, s2) -> splitDn(s1).containsAll(splitDn(s2)) ? 0 : 1)
             .isEqualTo(clientIdentity.getCertificate().getSubjectDN().getName());
@@ -373,8 +380,10 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         }
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.clientTlsCertificateChain.0.subject")
-            .get().getRawStringContent())
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+            .valueAsString()
+            .get(InstanceOfAssertFactories.STRING)
             .contains("CN=mailuser-rsa1");
     }
 
@@ -513,19 +522,19 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     void autoconfigureSslContextOkHttp_shouldTrustTigerProxy() throws IOException {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://backend")
+                .from("http://backend")
                 .to("http://localhost:" + fakeBackendServer.port())
                 .build()))
             .build());
 
         OkHttpClient client = new OkHttpClient.Builder()
-            .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
+            .proxy(new Proxy(Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
             .sslSocketFactory(tigerProxy.getConfiguredTigerProxySslContext().getSocketFactory(),
                 tigerProxy.buildTrustManagerForTigerProxy())
             .build();
 
         Request request = new Request.Builder()
-            .url("https://backend/foobar")
+            .url("http://backend/foobar")
             .build();
 
         okhttp3.Response response = client.newCall(request).execute();

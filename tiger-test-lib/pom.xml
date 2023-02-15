@@ -10,7 +10,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>1.1.1</version>
+        <version>1.2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,6 +19,9 @@
         <version.jsonassert>1.5.1</version.jsonassert>
         <version.json-unit>2.36.0</version.json-unit>
         <version.xmlunit-core>2.9.1</version.xmlunit-core>
+
+        <tiger.build.timestamp>${maven.build.timestamp}</tiger.build.timestamp>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
     </properties>
 
     <dependencies>
@@ -96,6 +99,10 @@
             <version>${version.commons-collections4}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
             <artifactId>json-unit-spring</artifactId>
             <groupId>net.javacrumbs.json-unit</groupId>
             <version>${version.json-unit}</version>
@@ -142,6 +149,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.projectlombok</groupId>
@@ -163,6 +176,10 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -212,7 +229,7 @@
                     </includes>
                     <skipITs>false</skipITs>
                     <systemPropertyVariables>
-                        <TIGER_TESTENV_CFGFILE>src/test/resources/testdata/noServersActive.yaml</TIGER_TESTENV_CFGFILE>
+                        <TIGER_TESTENV_CFGFILE>src/test/resources/testdata/noServersNoForwardProxy.yaml</TIGER_TESTENV_CFGFILE>
                     </systemPropertyVariables>
                     <threadCount>16</threadCount>
                     <forkCount>2</forkCount>
@@ -238,10 +255,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <groupId>org.jacoco</groupId>
             </plugin>
             <plugin>
                 <artifactId>sonar-maven-plugin</artifactId>

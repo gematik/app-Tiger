@@ -16,10 +16,10 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import java.util.List;
 
 public interface RbelFacet {
 
-    RbelMultiMap getChildElements();
+    RbelMultiMap<RbelElement> getChildElements();
 }

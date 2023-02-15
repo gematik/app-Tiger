@@ -49,7 +49,7 @@ public class RbelPathExecutor {
 
     public List<RbelElement> execute() {
         if (!rbelPath.startsWith("$")) {
-            throw new RbelPathException("RbelPath expressions always start with $.");
+            throw new RbelPathException("RbelPath expressions always start with $. (got '"+rbelPath+"')");
         }
         final List<String> keys = List.of(rbelPath.substring(2).split("\\.(?![^\\(]*\\))"));
         List<RbelElement> candidates = List.of(rbelElement);

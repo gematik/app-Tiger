@@ -36,7 +36,14 @@ lib:
     # SerenityRest Restassured calls
     # in the Serenity BDD report
     addCurlCommandsForRaCallsToReport: true
+    # Flag whether to create the RBEL HTML reports during
+    # a testsuite run, activated by default
+    createRbelHtmlReports: true
 
+# flag whether to start the local Tiger Proxy (default) or to omit it completely.
+# if you have the local Tiger Proxy deactivated you will NOT be able to
+# validate / log any traffic data from test requests / responses.
+localProxyActive: true
 ----
 
 [#_cucumber_hooks]
@@ -44,18 +51,16 @@ lib:
 
 As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.
 
-That's why it is mandatory to add the plugin `de.gematik.test.tiger.TigerCucumberListener` to the plugins list and use the TigerCucumberRunner.
+That's why it is mandatory to use the TigerCucumberRunner, which internally registers the plugin `io.cucumber.core.TigerCucumberListener` to the plugins list.
 
 The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
 
-At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the workflow UI.
+At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local Tiger Proxy (unless it's configured to be not active) and optionally the workflow UI.
 It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.
 Utilizing the close integration of SerenityBDD and RestAssured at startup also a Restassured request filter, which parses the details and adds a curl Command details button to the Serenity BDD report, is registered.
 The curl command shown in that section in the report allows to repeat the performed REST request, for manual test failure analysis.
 
 After each scenario / data variant all collected RbelMessages are saved as HTML file to the `target/rbellogs` folder, and attached to the SerenityBDD report as test evidence. The current test run state (success/failed rate) is logged to the console.
-
-NOTE: For now, the TigerDirector, TigerCucumberRunner, TigerCucumberListener are only for internal use and do not provide any implementation of the aforementioned features.
 
 === Using the Cucumber Tiger validation steps
 

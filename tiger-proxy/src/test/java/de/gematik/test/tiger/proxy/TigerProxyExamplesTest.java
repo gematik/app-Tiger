@@ -22,10 +22,12 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 
 @RequiredArgsConstructor
+@ResetTigerConfiguration
 public class TigerProxyExamplesTest {
 
     private static ClientAndServer mockServerClient = new ClientAndServer();

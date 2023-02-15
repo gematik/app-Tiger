@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RequiredArgsConstructor
-public class EpaTracingpointsTest {
+@ResetTigerConfiguration
+class EpaTracingpointsTest {
 
     @LocalServerPort
     private int springBootPort;
@@ -41,7 +43,7 @@ public class EpaTracingpointsTest {
     public String version;
 
     @Test
-    public void retrieveTracingpoints_shouldMatchSpecification() {
+    void retrieveTracingpoints_shouldMatchSpecification() {
         final JsonNode tracingpointsBody = Unirest.get("http://localhost:" + springBootPort + "/tracingpoints")
             .asJson().getBody();
 

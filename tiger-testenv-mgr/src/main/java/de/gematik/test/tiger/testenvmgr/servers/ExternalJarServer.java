@@ -17,7 +17,6 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static java.time.LocalDateTime.now;
-
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -122,7 +121,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                 final ProcessBuilder processBuilder = new ProcessBuilder()
                     .command(options.toArray(String[]::new))
                     .directory(new File(workingDir))
-                    .inheritIO();
+                    .redirectErrorStream(true);
                 applyEnvPropertiesToProcess(processBuilder);
                 processReference.set(processBuilder.start());
                 new TigerStreamLogFeeder(log, processReference.get().getInputStream(), Level.INFO);

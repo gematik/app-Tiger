@@ -1,12 +1,12 @@
 ${package}
 import io.cucumber.junit.CucumberOptions;
-import de.gematik.test.tiger.TigerCucumberRunner;
+import io.cucumber.junit.TigerCucumberRunner;
 import org.junit.runner.RunWith;
 
 @RunWith(TigerCucumberRunner.class)
 @CucumberOptions(
     features = {"${feature}"},
-    plugin = {"json:target/cucumber-parallel/${ctr}.json", "de.gematik.test.tiger.TigerCucumberListener"},
+    plugin = {"json:target/cucumber-parallel/${ctr}.json"},
     glue = { ${glues} },
     tags = "${tags}")
 public class ${driverClassName} {

@@ -20,7 +20,6 @@ servers:
   remoteTigerProxy:
     type: tigerProxy
     tigerProxyCfg:
-      proxyLogLevel: "TRACE"
       adminPort: ${free.port.2}
       activateRbelParsing: false
       rbelBufferSizeInMb: 0

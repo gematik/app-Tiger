@@ -1,8 +1,0 @@
-servers:
-  testDockerMVPNonExistingVersion:
-    startupTimeoutSec: 1
-    hostname: testDockerNonExistingVersion
-    source:
-      - gematik1/tiger-test-image
-    type: docker
-    version: 200.200.200

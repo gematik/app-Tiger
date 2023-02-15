@@ -18,12 +18,10 @@ package de.gematik.rbellogger.converter;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Optional;
 
@@ -59,7 +57,7 @@ public class RbelJsonConverter implements RbelConverterPlugin {
             .jsonElement(jsonElement)
             .build());
         if (jsonElement.isJsonObject()) {
-            final RbelMultiMap elementMap = new RbelMultiMap();
+            final RbelMultiMap<RbelElement> elementMap = new RbelMultiMap();
             parentElement.addFacet(RbelMapFacet.builder().childNodes(elementMap).build());
             for (Entry<String, JsonElement> entry : jsonElement.getAsJsonObject().entrySet()) {
                 RbelElement newChild = new RbelElement(entry.getValue().toString().getBytes(parentElement.getElementCharset()), parentElement);

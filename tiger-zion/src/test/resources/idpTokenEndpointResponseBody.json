@@ -1,0 +1,86 @@
+{
+  "expires_in": 300,
+  "token_type": "Bearer",
+  "id_token": {
+    "tgrEncodeAs": "JWE",
+    "header": {
+      "alg": "dir",
+      "enc": "A256GCM",
+      "exp": 1667404778,
+      "cty": "NJWT"
+    },
+    "body": {
+      "njwt": {
+        "tgrEncodeAs": "JWT",
+        "header": {
+          "alg": "BP256R1",
+          "typ": "JWT",
+          "kid": "puk_idp_sig"
+        },
+        "body": {
+          "iss": "http://url.des.idp",
+          "response_type": "code",
+          "snc": "uJdv7zlE6Fh1I0Xl6MSBFA-VUgD3nL7U6i2W2P2pUrA",
+          "code_challenge_method": "S256",
+          "token_type": "challenge",
+          "nonce": "?{$.path.nonce.value}",
+          "client_id": "?{$.path.client_id.value}",
+          "scope": "openid e-rezept",
+          "state": "dU9TWgLIoSTLIEBXgftr",
+          "redirect_uri": "http://redirect.gematik.de/erezept",
+          "exp": 1667404656,
+          "iat": 1667404476,
+          "code_challenge": "ztagmrO3wT6_3eNn9jRJO_exBvxn8xj1SKRPNN1wuf0",
+          "jti": "03d29fb8634fdfa2"
+        },
+        "signature": {
+          "verifiedUsing": "idp_sig"
+        }
+      }
+    },
+    "encryptionInfo": {
+      "decryptedUsingKey": "?{$..token_key.content}"
+    }
+  },
+  "access_token": {
+    "tgrEncodeAs": "JWE",
+    "header": {
+      "alg": "dir",
+      "enc": "A256GCM",
+      "exp": 1667404778,
+      "cty": "NJWT"
+    },
+    "body": {
+      "njwt": {
+        "tgrEncodeAs": "JWT",
+        "header": {
+          "alg": "BP256R1",
+          "typ": "JWT",
+          "kid": "puk_idp_sig"
+        },
+        "body": {
+          "iss": "http://url.des.idp",
+          "response_type": "code",
+          "snc": "uJdv7zlE6Fh1I0Xl6MSBFA-VUgD3nL7U6i2W2P2pUrA",
+          "code_challenge_method": "S256",
+          "token_type": "challenge",
+          "nonce": "?{$.path.nonce.value}",
+          "client_id": "?{$.path.client_id.value}",
+          "scope": "openid e-rezept",
+          "state": "dU9TWgLIoSTLIEBXgftr",
+          "redirect_uri": "http://redirect.gematik.de/erezept",
+          "exp": 1667404656,
+          "iat": 1667404476,
+          "code_challenge": "ztagmrO3wT6_3eNn9jRJO_exBvxn8xj1SKRPNN1wuf0",
+          "jti": "03d29fb8634fdfa2"
+        },
+        "signature": {
+          "verifiedUsing": "idp_sig"
+        }
+      }
+    },
+    "encryptionInfo": {
+      "decryptedUsingKey": "?{$..token_key.content}"
+    }
+  }
+}

@@ -28,7 +28,6 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.GenericPrettyPrinter;
 import j2html.tags.ContainerTag;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
@@ -42,7 +41,7 @@ import org.bouncycastle.asn1.ASN1Set;
 public class RbelAsn1Facet implements RbelFacet {
 
     private static final GenericPrettyPrinter<ASN1Encodable> ASN1_PRETTY_PRINTER = new GenericPrettyPrinter<>(
-            asn1 -> (asn1 instanceof ASN1Sequence) || (asn1 instanceof ASN1Set),
+            asn1 -> !((asn1 instanceof ASN1Sequence) || (asn1 instanceof ASN1Set)),
             Object::toString,
             asn1 -> StreamSupport.stream(((Iterable<ASN1Encodable>) asn1).spliterator(), false)
     );

@@ -68,4 +68,8 @@ public class RbelKey {
             return Optional.empty();
         }
     }
+
+    public boolean isPrivateKey() {
+        return getKey() instanceof PrivateKey;
+    }
 }

@@ -119,6 +119,14 @@ pre {
     padding: .7rem;
 }
 
+prekey {
+    color: orangered !important;
+    background-color: #444 !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    padding: .2rem;
+}
+
 pre.json {
     color: greenyellow !important;
 }

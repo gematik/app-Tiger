@@ -23,6 +23,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.GenericPrettyPrinter;
 import j2html.tags.ContainerTag;
+import java.security.cert.X509Certificate;
 import lombok.Builder;
 import lombok.Data;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -49,7 +50,7 @@ public class RbelX509Facet implements RbelFacet {
 
             @Override
             public ContainerTag performRendering(RbelElement element, Optional<String> key,
-                                                 RbelHtmlRenderingToolkit renderingToolkit) {
+                RbelHtmlRenderingToolkit renderingToolkit) {
                 final RbelX509Facet x509Facet = element.getFacetOrFail(RbelX509Facet.class);
                 return div(
                     h2().withClass("title").withText("X509 Certificate"),
@@ -71,15 +72,18 @@ public class RbelX509Facet implements RbelFacet {
     private final RbelElement validFrom;
     private final RbelElement validUntil;
     private final RbelElement subject;
+    private final X509Certificate certificate;
 
     @Builder
-    public RbelX509Facet(final RbelElement parent, final String serialnumber, final String issuer,
-                         final ZonedDateTime validFrom, final ZonedDateTime validUntil, final String subject) {
+    public RbelX509Facet(final RbelElement parent, final String serialnumber, final RbelElement issuer,
+        final ZonedDateTime validFrom, final ZonedDateTime validUntil, final RbelElement subject,
+        final X509Certificate certificate) {
         this.serialnumber = RbelElement.wrap(parent, serialnumber);
-        this.issuer = RbelElement.wrap(parent, issuer);
+        this.issuer = issuer;
         this.validFrom = RbelElement.wrap(parent, validFrom);
         this.validUntil = RbelElement.wrap(parent, validUntil);
-        this.subject = RbelElement.wrap(parent, subject);
+        this.subject = subject;
+        this.certificate = certificate;
     }
 
     @Override

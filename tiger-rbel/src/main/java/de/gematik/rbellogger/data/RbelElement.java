@@ -43,8 +43,7 @@ public class RbelElement {
     private final List<RbelFacet> facets = new ArrayList<>();
     @Setter
     @Getter(AccessLevel.PRIVATE)
-    @Builder.Default
-    private Optional<Charset> charset = Optional.empty();
+    private Optional<Charset> charset;
 
     private final long size;
 
@@ -115,7 +114,7 @@ public class RbelElement {
             .collect(Collectors.toList());
     }
 
-    public RbelMultiMap getChildNodesWithKey() {
+    public RbelMultiMap<RbelElement> getChildNodesWithKey() {
         return Collections.unmodifiableList(facets).stream()
             .map(RbelFacet::getChildElements)
             .map(RbelMultiMap::getValues)
