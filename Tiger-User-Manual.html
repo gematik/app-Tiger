@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 1.1.1-SNAPSHOT - 2023-01-19</span>
+<span id="revdate">Version 1.1.2-SNAPSHOT - 2023-02-15</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -349,7 +349,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <p>Tiger Proxy parses the traffic and builds a tree-structure which abstracts away the encoding (XML, JSON&#8230;&#8203;) and lets you focus on the data.</p>
 </li>
 <li>
-<p>The Tiger test environment manager handles dockers, JARs and external servers, boots the configured setup and routes the traffic, all with zero lines of Java, all in YAML only.</p>
+<p>The Tiger test environment manager handles dockers, helm charts, JARs and external servers, boots the configured setup and routes the traffic, all with zero lines of Java, all in YAML only.</p>
 </li>
 <li>
 <p>A complete configuration toolkit, which combines multiple source and supports custom configuration of your testsuite as well, again with zero lines of Java.</p>
@@ -448,7 +448,7 @@ Structured data like JSON, XML, JWT is displayed in a sophisticated HTML report.
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Instantiating test nodes</strong> - docker containers, docker compositions, external Jars** and<br>
+<p><strong>Instantiating test nodes</strong> - docker containers, docker compositions, helm charts, external Jars** and<br>
 accessing server instances via external URL configurations</p>
 </li>
 <li>
@@ -516,6 +516,37 @@ over Tiger Proxies using features such as RBelPath, VAU decryption, JSON checker
 <img src="media/tiger_components.svg" alt="tiger components">
 </div>
 <div class="title">Figure 3. Tiger components</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_tiger_extensions">1.2.5. Tiger extensions</h4>
+<div class="paragraph">
+<p>As Tiger evolves we have implemented quite a nice set of extensions that eases your job as tester in areas not directly fitting the core of Tiger. The currently or soon available extensions are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Cloud</strong> extension provides the docker, docker compose and helm chart server types for the Tiger test environment mgr</p>
+</li>
+<li>
+<p><strong>CATS</strong> extension provides BDD steps to configure and interact with the Cats Card Terminal simulator of gematik</p>
+</li>
+<li>
+<p><strong>Konnektormanagement</strong> extension provides BDD steps to administer Konnektors</p>
+</li>
+<li>
+<p><strong>PSSim</strong> extension provides BDD steps to simulate a Primärsystem</p>
+</li>
+<li>
+<p><strong>HTTP Client</strong> extension follows the zero code philosophy and provides BDD steps to perform http requests without having to write any line of code</p>
+</li>
+<li>
+<p><strong>FHIR validation</strong> extension provides BDD steps to perform FHIR scheme based / FHIRPath based validations (planned release early spring 2023)</p>
+</li>
+<li>
+<p><strong>Kartenterminal Robot</strong> extension provides BDD steps to control the card terminal robot currently constructed at gematik labs (release mid 2023)</p>
+</li>
+</ul>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -981,13 +1012,13 @@ comma separated list of glue/hook packages as specified by the glues configurati
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">de.gematik.test.tiger.integration.YOURPROJECT</span>;
 
 <span class="keyword">import</span> <span class="include">io.cucumber.junit.CucumberOptions</span>;
-<span class="keyword">import</span> <span class="include">de.gematik.test.tiger.TigerCucumberRunner</span>;
+<span class="keyword">import</span> <span class="include">io.cucumber.junit.TigerCucumberRunner</span>;
 <span class="keyword">import</span> <span class="include">org.junit.runner.RunWith</span>;
 
 <span class="annotation">@RunWith</span>(TigerCucumberRunner.class)
 <span class="annotation">@CucumberOptions</span>(
     features = {<span class="string"><span class="delimiter">&quot;</span><span class="content">src/test/resources/features/YOURFEATURE.feature</span><span class="delimiter">&quot;</span></span>},
-    plugin = {<span class="string"><span class="delimiter">&quot;</span><span class="content">json:target/cucumber-parallel/1.json</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">de.gematik.test.tiger.TigerCucumberListener</span><span class="delimiter">&quot;</span></span>},
+    plugin = {<span class="string"><span class="delimiter">&quot;</span><span class="content">json:target/cucumber-parallel/1.json</span><span class="delimiter">&quot;</span></span>},
     monochrome = <span class="predefined-constant">false</span>,
     glue = {<span class="string"><span class="delimiter">&quot;</span><span class="content">de.gematik.test.tiger.glue</span><span class="delimiter">&quot;</span></span>,
         <span class="string"><span class="delimiter">&quot;</span><span class="content">ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code</span><span class="delimiter">&quot;</span></span>})
@@ -1147,7 +1178,7 @@ making it very complicated to make sure your validations are working as expected
 <div class="title">Run/Debug settings for Java Cucumber template</div>
 <ul>
 <li>
-<p>Main class: de.gematik.test.tiger.TigerCucumberRunner</p>
+<p>Main class: io.cucumber.junit.Tiger<strong>Serenity</strong>Runner</p>
 </li>
 <li>
 <p>Glue:</p>
@@ -1172,16 +1203,6 @@ if you are using the screenplay pattern (PREFERRED!)</p>
 <ul>
 <li>
 <p>Java proxy system properties (see <a href="#_proxy_configuration">Proxy configuration</a> below)</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Program arguments:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>--plugin de.gematik.test.tiger.TigerCucumberListener</p>
 </li>
 </ul>
 </div>
@@ -1244,18 +1265,18 @@ BOTH settings (environment variables and system properties) are required as Mave
 <div class="paragraph">
 <p>As outlined in <a href="#_overview">the overview section</a> the test environment manager is one of the three core components of the Tiger test framework.<br>
 Its main task is to start various test server nodes configured in the <code>tiger.yaml</code> configuration file and initialize the local Tiger Proxy for the test suite.<br>
-To choose a different test environmental configuration file you may set the environment variable TIGER_TESTENV_CFGFILE.</p>
+To choose a different test environmental configuration file you may set the environment variable <code>TIGER_TESTENV_CFGFILE</code>.</p>
 </div>
 <div class="paragraph">
 <p>The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from <code>tiger.yaml</code>.<br>
-If none of these files exist it will fail the start up.</p>
+If none of these files exist it will fail the start-up.</p>
 </div>
 <div class="paragraph">
-<p>If the environment variable is not set, then the test environment manager first checks for a file named tiger-${COMPUTERNAME}.yaml, and if this also does not exist, it searches for a file named <code>tiger.yaml</code>.<br>
-If none of these files exist it will fail the start up.</p>
+<p>If the environment variable is not set, then the test environment manager first checks for a file named <code>tiger-${COMPUTERNAME}.yaml</code>, and if this also does not exist, it searches for a file named <code>tiger.yaml</code>.<br>
+If none of these files exist it will fail the start-up.</p>
 </div>
 <div class="paragraph">
-<p>In the start up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.</p>
+<p>In the start-up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.</p>
 </div>
 <div class="paragraph">
 <p>To configure your test environment you can either compose the <code>tiger.yaml</code> file manually or much preferred<br>
@@ -1278,10 +1299,13 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 <p><strong>Docker compose</strong> is a node that you can use to start a group of services defined in one to several compose yaml files configured in the source list.</p>
 </li>
 <li>
+<p><strong>Helm charts</strong> is a node that installs/updates a given helm chart on a local or remote kubernetes cluster (configuring a local context for remote clusters has to be done outside of Tiger)</p>
+</li>
+<li>
 <p><strong>External jar</strong> is a node that is started by running <code>java -jar XXXX.jar</code> after downloading a Jar archive from the configured source URL.</p>
 </li>
 <li>
-<p><strong>External URL</strong> is a symbolic node that is actually maintained outside of the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.</p>
+<p><strong>External URL</strong> is a symbolic node that is actually maintained outside the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.</p>
 </li>
 <li>
 <p><strong>Tiger Proxy</strong> is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or <a href="#_excurse_what_are_proxies_reverse_forward">use a reverse proxy set up scenario</a>.</p>
@@ -1309,6 +1333,7 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
   <span class="comment"># OPTIONAL hostname of this node when accessing it via the test suite</span>
   <span class="comment"># (rerouted via the local test suite Tiger Proxy).</span>
   <span class="comment"># Defaults to the server name (serverKey_xxx)</span>
+  <span class="comment"># For docker compose and helm chart this property must NOT be set!</span>
   <span class="key">hostname</span>: <span class="string"><span class="content">string</span></span>
   <span class="comment"># MANDATORY one of [tigerProxy|docker|compose|externalJar|externalUrl]</span>
   <span class="key">type</span>: <span class="string"><span class="content">string</span></span>
@@ -1319,7 +1344,7 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
   <span class="comment"># before this node is set up.</span>
   <span class="comment"># Default value is empty</span>
   <span class="key">dependsUpon</span>: <span class="string"><span class="content">csv string</span></span>
-  <span class="comment"># OPTIONAL duration in seconds to wait for a successful start up of the server node</span>
+  <span class="comment"># OPTIONAL duration in seconds to wait for a successful start-up of the server node</span>
   <span class="comment"># Default value is 20</span>
   <span class="key">startupTimeoutSec</span>: <span class="string"><span class="content">int</span></span>
   <span class="comment"># MANDATORY type specific property in that for some types it's a list,</span>
@@ -1345,12 +1370,12 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
   <span class="key">pkiKeys</span>: <span class="string"><span class="content">[]</span></span>
   <span class="comment"># OPTIONAL type specific list of environmental variable assignments to be used</span>
   <span class="comment"># when starting the server node.</span>
-  <span class="comment"># Each entry has to have the format ENVVARNAME=VALUE</span>
+  <span class="comment"># Each entry has to have the format ENV_VAR_NAME=VALUE</span>
   <span class="comment"># Has NO EFFECT on external Url nodes.</span>
   <span class="comment"># Default value is empty array</span>
   <span class="key">environment</span>:
-    - <span class="string"><span class="content">ENVVAR1=VALUE1</span></span>
-    - <span class="string"><span class="content">ENVVAR2=VALUE2</span></span>
+    - <span class="string"><span class="content">ENV_VAR1=VALUE1</span></span>
+    - <span class="string"><span class="content">ENV_VAR2=VALUE2</span></span>
     - <span class="string"><span class="content">http://tsl --&gt; https://download-ref.tsl.ti-dienste.de</span></span>
   <span class="comment"># OPTIONAL list of routes to be added to the local Tiger Proxy of the test suite.</span>
   <span class="comment"># Default value is empty array</span>
@@ -1452,7 +1477,33 @@ Their meaning and format are explained in the related section.</p>
     <span class="comment"># all properties below only used by docker container nodes</span>
     <span class="key">proxied</span>: <span class="string"><span class="content">boolean</span></span>
     <span class="key">oneShot</span>: <span class="string"><span class="content">boolean</span></span>
-    <span class="key">entryPoint</span>: <span class="string"><span class="content">string</span></span></code></pre>
+    <span class="key">entryPoint</span>: <span class="string"><span class="content">string</span></span>
+  <span class="comment"># type specific sub structure for helm charts</span>
+  <span class="key">helmChartOptions</span>:
+    <span class="comment"># context to install the helm chart to</span>
+    <span class="key">context</span>:
+    <span class="comment"># name for the helm chart</span>
+    <span class="key">podName</span>:
+    <span class="comment"># working directory for local helm and kubectl calls</span>
+    <span class="key">workingDir</span>:
+    <span class="comment"># name sapce to install the helm chart to</span>
+    <span class="key">nameSpace</span>:
+    <span class="comment"># flag whether to show more detailed infos about</span>
+    <span class="comment"># the helm chart installation in the console</span>
+    <span class="key">debug</span>:
+    <span class="comment"># list of regex names for pods to be running to signal</span>
+    <span class="comment"># successful startup of helm chart **/</span>
+    <span class="key">healthcheckPods</span>:
+    <span class="comment"># list of key value pairs to be used by the helm chart</span>
+    <span class="key">values</span>:
+    <span class="comment"># comma separated list of port forwardings</span>
+    <span class="comment"># Entries can be either &quot;podNameRegex:xxxx&quot;, which is shorthand for</span>
+    <span class="comment"># &quot;podNameRegex:xxxx:xxxx or</span>
+    <span class="comment"># &quot;podNameRegex:xxxx:yyyy&quot; where xxxx is the local port</span>
+    <span class="comment"># and yyyy is the port in the pod</span>
+    <span class="key">exposedPorts</span>:
+    <span class="comment"># list of regex for pod names logs should be shown</span>
+    <span class="key">logPods</span>:</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1559,11 +1610,32 @@ Invalid pathname strings will also produce an exception.</p>
 <h4 id="_docker_container_node">3.1.5. Docker Container node</h4>
 <div class="paragraph">
 <p>The docker container node allows to instantiate a local docker container from the configured image.<br>
-The exposed port of the docker container is available as a special token in the substitution process of the exports entries.</p>
+The exposed port of the docker container is available as a special token in the substitution process of the exports entries (<code>${PORT:xxxx}</code> where xxxx is the port being exposed inside the container).</p>
 </div>
 <div class="paragraph">
 <p>To customize the docker container you may alter the entry point command line and add the Tiger Proxy certificate to the container&#8217;s operating system list of trusted certificates.<br>
 For containers that should exit after a single command you may enable the oneShot property.</p>
+</div>
+<div class="paragraph">
+<p>If there is no health check configured inside the docker image, Tiger will try to guess a healthcheck url by assuming the first exposed port as a get request to localhost to check for a successful startup of the docker container (e.g. <a href="http://127.0.0.1:xxxx" class="bare">http://127.0.0.1:xxxx</a>).</p>
+</div>
+<div class="paragraph">
+<p>If no port is exposed at all, the startupTimeoutSec property will determine the wait period, after which Tiger assumes the container is up and running.</p>
+</div>
+<div class="paragraph">
+<p>If you have your local docker environment set up hosting the docker containers on a remote docker hub server, you may set the environment variable <code>TIGER_DOCKER_HOST</code> to allow the health check url determined on runtime to point to the remote host instead of localhost.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To use this server type you must include the tiger-cloud-extension dependency!
+</td>
+</tr>
+</table>
 </div>
 <div class="listingblock">
 <div class="title">Listing 8. Docker container configuration</div>
@@ -1612,13 +1684,25 @@ For containers that should exit after a single command you may enable the oneSho
 <p>The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support. So many of the yaml compose files will need to be modified to work with the testcontainer library.</p>
 </div>
 <div class="paragraph">
-<p>For now we support the ePA2 FD module and the DEMIS Meldeportal.</p>
+<p>For now, we support the ePA2 FD module and the DEMIS Meldeportal.</p>
 </div>
 <div class="paragraph">
 <p>If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check <a href="#_tiger_configuration">this chapter</a>).</p>
 </div>
 <div class="paragraph">
-<p>The processing/copying flatens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have an random UUID appended to its filename.</p>
+<p>The processing/copying flattens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have a random UUID appended to its filename.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To use this server type you must include the tiger-cloud-extension dependency!
+</td>
+</tr>
+</table>
 </div>
 <div class="listingblock">
 <div class="title">Listing 9. Docker compose configuration</div>
@@ -1721,7 +1805,7 @@ So if your jar archive expects some configuration files make sure to choose the 
 </div>
 </div>
 <div class="paragraph">
-<p>By default the JVM used to start the JAR-File is the taken from the <code>java.home</code> system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property <code>tiger.lib.javaHome</code> (e.g. by setting <code>-Dtiger.lib.javaHome</code>, by setting <code>TIGER_LIB_JAVAHOME</code> in the environment or by setting <code>lib.javaHome</code> in the <code>tiger.yaml</code>).</p>
+<p>By default, the JVM used to start the JAR-File is the taken from the <code>java.home</code> system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property <code>tiger.lib.javaHome</code> (e.g. by setting <code>-Dtiger.lib.javaHome</code>, by setting <code>TIGER_LIB_JAVAHOME</code> in the environment or by setting <code>lib.javaHome</code> in the <code>tiger.yaml</code>).</p>
 </div>
 </div>
 <div class="sect3">
@@ -1775,58 +1859,69 @@ If it is ever necessary to change the external URL, the test suite does not have
 <div class="sect3">
 <h4 id="_helm_chart_node">3.1.9. Helm Chart node</h4>
 <div class="paragraph">
-<p>The helm chart node allows to start a helm chart from the configured image. The helm chart is started and the<br>
-server is ready when the pod is running and the pod is ready, if port-forward is used (if exposedPorts are set),<br>
-then port-forwarding is also done and the startup is finished and the service can be used for testing.</p>
+<p>The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart). The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To use this server type you must include the tiger-cloud-extension dependency!
+</td>
+</tr>
+</table>
 </div>
 <div class="listingblock">
 <div class="title">Listing 13. Helm chart configuration</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
-  <span class="key">helmChart_Demis_HLS</span>:
+  <span class="key">testHelmChart_Nginx</span>:
     <span class="key">type</span>: <span class="string"><span class="content">helmChart</span></span>
-    <span class="key">startupTimeoutSec</span>: <span class="string"><span class="content">150</span></span>
+    <span class="key">startupTimeoutSec</span>: <span class="string"><span class="content">50</span></span>
     <span class="comment"># MANDATORY repository from where to download the docker image</span>
     <span class="comment"># if the helm chart is stored on the local file system that the</span>
     <span class="comment"># workingDir should be set.</span>
     <span class="key">source</span>:
-      - <span class="string"><span class="content">demis-gematik/hospital-location-service</span></span>
+      - <span class="string"><span class="content">bitnami/nginx</span></span>
     <span class="comment"># OPTIONAL version of the image</span>
-    <span class="key">version</span>: <span class="string"><span class="content">1.0.4-b69</span></span>
+    <span class="key">version</span>: <span class="string"><span class="content">1.1.0</span></span>
     <span class="key">helmChartOptions</span>:
       <span class="comment"># The kubernetes context</span>
       <span class="key">context</span>:
       <span class="comment"># OPTIONAL if no working directory is set the default . is used.</span>
       <span class="comment"># if the helm chart is stored on the local file system the workingDir</span>
       <span class="comment"># should be set.</span>
-      <span class="key">workingDir</span>:
-      <span class="comment"># OPTIONAL override the POD_NAMESPACE environment variable if set.</span>
-      <span class="comment"># if not set, &quot;default&quot; will be used.</span>
-      <span class="key">nameSpace</span>:
+      <span class="key">workingdir</span>:
       <span class="comment"># OPTIONAL prints out debug messages if set to true, default is false.</span>
       <span class="key">debug</span>: <span class="string"><span class="content">true</span></span>
+      <span class="comment"># OPTIONAL override the POD_NAMESPACE environment variable if set.</span>
+      <span class="comment"># if not set, &quot;default&quot; will be used.</span>
+      <span class="key">nameSpace</span>: <span class="string"><span class="content">buildslaves</span></span>
       <span class="comment"># MANDATORY pod name of the helm chart</span>
-      <span class="key">podName</span>: <span class="string"><span class="content">hospital-location-service</span></span>
+      <span class="key">podName</span>: <span class="string"><span class="content">test-tiger-nginx</span></span>
       <span class="comment"># OPTIONAL key-value pairs that will be used for starting the helm chart</span>
       <span class="key">values</span>:
-        - <span class="string"><span class="content">required.image.tag=1.0.2</span></span>
       <span class="comment"># OPTIONAL should contain a list of pods for the health check, regex can be used.</span>
       <span class="key">healthcheckPods</span>:
-        - <span class="string"><span class="content">fachdienst-.*</span></span>
-        - <span class="string"><span class="content">idp-wrapper-.*</span></span>
+        - <span class="string"><span class="content">test-tiger-nginx-.*</span></span>
+      <span class="comment"># OPTIONAL contains a list of regex to identify the pods whose logs</span>
+      <span class="comment"># should be forwarded to the console and Tiger Workflow UI.</span>
+      <span class="key">logPods</span>:
+        - <span class="string"><span class="content">test-tiger-nginx.*</span></span>
       <span class="comment"># OPTIONAL contains a list that will be used for the port forwarding,</span>
-      <span class="comment"># if empty no port forwarding is done.</span>
-      <span class="comment"># The syntax is &lt;POD_NAME_OR_REGEX&gt;,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;[,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;]*</span>
+      <span class="comment"># if empty no port forwarding is done. The syntax is:</span>
+      <span class="comment"># &lt;POD_NAME_OR_REGEX&gt;,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;[,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;]*</span>
       <span class="key">exposedPorts</span>:
-        - <span class="string"><span class="content">hospital-location-service.*,8080:8090</span></span>
-        - <span class="string"><span class="content">someOther-service.*,8080:8096,10000:8096</span></span></code></pre>
+        - <span class="string"><span class="content">test-tiger-nginx.*,8080:80</span></span></code></pre>
 </div>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_tiger_proxy_node">3.1.10. Tiger Proxy node</h4>
 <div class="paragraph">
-<p>The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the start up time can be minimized, and it is always guaranteed to start the current version.</p>
+<p>The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the start-up time can be minimized, and it is always guaranteed to start the current version.</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 14. Tiger Proxy configuration</div>
@@ -1935,7 +2030,7 @@ They are available for all subsequently initiated test environment nodes.</p>
 Make sure that an IDP server node is instantiated before the ERp FD is started and that it is available under <a href="http://idp" class="bare">http://idp</a> or adapt the environment variable configuration.</p>
 </div>
 <div class="paragraph">
-<p>A large list of environment variables is set. But dont worry, it is just the server that uses them.</p>
+<p>A large list of environment variables is set. But don&#8217;t worry, it is just the server that uses them.</p>
 </div>
 </div>
 <div class="sect3">
@@ -3057,7 +3152,15 @@ and activate / deactivate certain features.</p>
     <span class="comment"># Flag whether to add a curl command details button to</span>
     <span class="comment"># SerenityRest Restassured calls</span>
     <span class="comment"># in the Serenity BDD report</span>
-    <span class="key">addCurlCommandsForRaCallsToReport</span>: <span class="string"><span class="content">true</span></span></code></pre>
+    <span class="key">addCurlCommandsForRaCallsToReport</span>: <span class="string"><span class="content">true</span></span>
+    <span class="comment"># Flag whether to create the RBEL HTML reports during</span>
+    <span class="comment"># a testsuite run, activated by default</span>
+    <span class="key">createRbelHtmlReports</span>: <span class="string"><span class="content">true</span></span>
+
+<span class="comment"># flag whether to start the local Tiger Proxy (default) or to omit it completely.</span>
+<span class="comment"># if you have the local Tiger Proxy deactivated you will NOT be able to</span>
+<span class="comment"># validate / log any traffic data from test requests / responses.</span>
+<span class="key">localProxyActive</span>: <span class="string"><span class="content">true</span></span></code></pre>
 </div>
 </div>
 </div>
@@ -3067,31 +3170,19 @@ and activate / deactivate certain features.</p>
 <p>As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.</p>
 </div>
 <div class="paragraph">
-<p>That&#8217;s why it is mandatory to add the plugin <code>de.gematik.test.tiger.TigerCucumberListener</code> to the plugins list and use the TigerCucumberRunner.</p>
+<p>That&#8217;s why it is mandatory to use the TigerCucumberRunner, which internally registers the plugin <code>io.cucumber.core.TigerCucumberListener</code> to the plugins list.</p>
 </div>
 <div class="paragraph">
 <p>The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.</p>
 </div>
 <div class="paragraph">
-<p>At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local Tiger Proxy and optionally the workflow UI.<br>
+<p>At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local Tiger Proxy (unless it&#8217;s configured to be not active) and optionally the workflow UI.<br>
 It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.<br>
 Utilizing the close integration of SerenityBDD and RestAssured at startup also a Restassured request filter, which parses the details and adds a curl Command details button to the Serenity BDD report, is registered.<br>
 The curl command shown in that section in the report allows to repeat the performed REST request, for manual test failure analysis.</p>
 </div>
 <div class="paragraph">
 <p>After each scenario / data variant all collected RbelMessages are saved as HTML file to the <code>target/rbellogs</code> folder, and attached to the SerenityBDD report as test evidence. The current test run state (success/failed rate) is logged to the console.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-For now, the TigerDirector, TigerCucumberRunner, TigerCucumberListener are only for internal use and do not provide any implementation of the aforementioned features.
-</td>
-</tr>
-</table>
 </div>
 </div>
 <div class="sect2">
@@ -4358,7 +4449,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-01-19 09:45:33 UTC
+Last updated 2023-02-15 11:47:35 UTC
 </div>
 </div>
 </body>
