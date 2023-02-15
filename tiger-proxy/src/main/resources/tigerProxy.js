@@ -813,17 +813,20 @@ function executeJexlQuery() {
       + "?msgUuid=" + jexlQueryElementUuid
       + "&query=" + encodeURIComponent(jexlQuery),
       true);
+
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
         const response = JSON.parse(this.responseText);
 
         shortenStrings(response);
+        const map = new Map(Object.entries(response.messageContext));
         jexlInspectionContextDiv.innerHTML =
-            "<h3 class='is-size-4'>JEXL context</h3>"
-            + "<pre id='json'>"
-            + JSON.stringify(response.messageContext, null, 6)
-            + "</pre>";
+            "<h3 class='is-size-4'>JEXL context</h3>";
+        map.forEach((value, key) => {
+          jexlInspectionContextDiv.innerHTML += "<prekey id='json_" + encodeURIComponent(key) + "'>" +  key + "</prekey><pre class='paddingLeft' id='json__" + encodeURIComponent(key) + "'>" + JSON.stringify(value, null, 6) + "</pre><br>";
+        });
+
         jexlInspectionContextParentDiv.classList.remove("is-hidden");
         jexlInspectionNoContextDiv.classList.add("is-hidden");
         if (response.matchSuccessful) {

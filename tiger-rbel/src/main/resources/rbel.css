@@ -18,7 +18,12 @@ h2.title{
 }
 pre{
     padding: .7rem;
+
 }
+.paddingLeft{
+    padding-left: 5rem;
+}
+
 div.message-header {
     padding: .4rem;
 }

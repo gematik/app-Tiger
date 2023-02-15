@@ -49,6 +49,7 @@ public class TigerJexlExecutor {
     public Optional<Object> evaluateJexlExpression(Object element, String jexlExpression, Optional<String> key) {
         try {
             final MapContext mapContext = new MapContext(buildJexlMapContext(element, key));
+            NAMESPACE_MAP.forEach(mapContext::set);
             final JexlExpression expression = buildExpression(jexlExpression, element, mapContext);
 
             return Optional.ofNullable(expression.evaluate(mapContext));
@@ -72,7 +73,6 @@ public class TigerJexlExecutor {
             mapContext.put("type", element.getClass().getSimpleName());
             mapContext.put("content", getContent(element));
         }
-        mapContext.putAll(NAMESPACE_MAP);
 
         return mapContext;
     }

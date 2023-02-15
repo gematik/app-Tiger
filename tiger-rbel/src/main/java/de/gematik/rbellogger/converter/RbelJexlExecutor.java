@@ -136,7 +136,8 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
             .map(RbelElement::findNodePath)
             .orElse(null));
 
-        return mapContext;
+        final TreeMap<String, Object> treeMap = new TreeMap<>(mapContext);
+        return new LinkedHashMap<>(treeMap);
     }
 
     @Override
@@ -293,16 +294,6 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
             .filter(entry -> entry.getValue() == element)
             .map(Map.Entry::getKey)
             .findFirst();
-    }
-
-    @Override
-    public void printDebugMessage(Object element, String jexlExpression) {
-        if (element instanceof RbelElement) {
-            log.trace("Found match: '{}' with path {} matches '{}'", StringUtils.abbreviate(((RbelElement) element).getRawStringContent(), 30),
-                ((RbelElement) element).findNodePath(), jexlExpression);
-        } else {
-            log.trace("Found match: '{}' matches '{}'", element, jexlExpression);
-        }
     }
 
     @Builder

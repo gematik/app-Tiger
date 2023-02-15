@@ -17,6 +17,7 @@
 * TGR-809: error during selection of nodes in rbel tree in WebUi fixed
 * TGR-823: fixed a regression in the workflow UI not showing the rbel log details pane correctly.
 * TGR-768: flag createRbelHtmlReports added for creation of the RBEL HTML reports in Tiger testsuites
+* TGR-810: improve JEXL context display
 
 ## Features
 
