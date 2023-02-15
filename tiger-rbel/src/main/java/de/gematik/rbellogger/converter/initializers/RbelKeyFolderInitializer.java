@@ -42,7 +42,7 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
                 .filter(File::isFile)
                 .filter(File::canRead)
                 .filter(file -> file.getName().endsWith(".p12"))
-                .map(file -> new TigerPkiIdentity(file.getAbsolutePath() + ";00")
+                .map(file -> new TigerPkiIdentity(file, "00")
                     .withKeyId(Optional.ofNullable(file.getName().split("\\.")[0])))
                 .map(IdentityBackedRbelKey::generateRbelKeyPairForIdentity)
                 .flatMap(List::stream)

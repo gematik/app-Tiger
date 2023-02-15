@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.common.pki;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.TigerPkiIdentityLoaderException;
+import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
@@ -41,6 +42,14 @@ public class TigerPkiIdentity {
 
     public TigerPkiIdentity(String fileLoadingInformation) {
         final TigerPkiIdentity identity = TigerPkiIdentityLoader.loadRbelPkiIdentity(fileLoadingInformation);
+        setCertificate(identity.getCertificate());
+        setPrivateKey(identity.getPrivateKey());
+        setKeyId(identity.getKeyId());
+        certificateChain.addAll(identity.getCertificateChain());
+    }
+
+    public TigerPkiIdentity(File file, String fileLoadingInformation) {
+        final TigerPkiIdentity identity = TigerPkiIdentityLoader.loadRbelPkiIdentity(file, fileLoadingInformation);
         setCertificate(identity.getCertificate());
         setPrivateKey(identity.getPrivateKey());
         setKeyId(identity.getKeyId());
