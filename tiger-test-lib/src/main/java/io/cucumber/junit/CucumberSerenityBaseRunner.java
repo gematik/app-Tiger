@@ -173,6 +173,7 @@ public class CucumberSerenityBaseRunner extends ParentRunner<ParentRunner<?>> {
     public static void setRuntimeOptions(RuntimeOptions runtimeOptions) {
         RUNTIME_OPTIONS.set(runtimeOptions);
         DEFAULT_RUNTIME_OPTIONS = runtimeOptions;
+        CucumberSerenityRunner.setRuntimeOptions(runtimeOptions);
     }
 
     public static RuntimeOptions currentRuntimeOptions() {
