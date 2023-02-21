@@ -1176,8 +1176,8 @@ function updatePageSelector(pagesAvailable) {
 function scrollToMessage(uuid, sequenceNumber) {
 //    const sidebar = getAll('.menu')[0];
   if ((sequenceNumber < pageNumber * pageSize)
-      || (sequenceNumber > (pageNumber + 1) * pageSize)) {
-    setPageNumber(Math.ceil(sequenceNumber / pageSize) - 1)
+      || (sequenceNumber >= (pageNumber + 1) * pageSize)) {
+    setPageNumber(Math.ceil((sequenceNumber +1) / pageSize) - 1)
   }
 
   let elements = document.getElementsByName(uuid);
