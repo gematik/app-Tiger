@@ -5,7 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,15 +42,14 @@ class TestCetpCommunication extends AbstractNonHttpTest{
         executeTestRun(
             socket -> {
                 writeSingleRequestMessage(socket);
+                await().atMost(5, TimeUnit.SECONDS).pollInterval(100, TimeUnit.MILLISECONDS)
+                    .until(() -> getTigerProxy().getRbelMessages().size() >= 1);
                 writeSingleRequestMessage(socket);
             },
             (requestCalls, responseCalls, serverCalled) -> {
-                waitForCondition(() -> getTigerProxy().getRbelMessages().size() == 2,
-                    () -> "Wait timed out. No tiger-messages found!");
-                assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
-                    .isEqualTo(message);
-                assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())
-                    .isEqualTo(message);
+                assertThat(getTigerProxy().getRbelMessages()).hasSize(2);
+                assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent()).isEqualTo(message);
+                assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent()).isEqualTo(message);
             }
         );
     }
@@ -63,17 +63,16 @@ class TestCetpCommunication extends AbstractNonHttpTest{
                 try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
                     writeSingleRequestMessage(clientSocket);
                 }
+                await().atMost(5, TimeUnit.SECONDS).pollInterval(100, TimeUnit.MILLISECONDS)
+                    .until(() -> getTigerProxy().getRbelMessages().size() >= 1);
                 try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
                     writeSingleRequestMessage(clientSocket);
                 }
             },
             (requestCalls, responseCalls, serverCalled) -> {
-                assertThat(getTigerProxy().getRbelMessages())
-                    .hasSize(2);
-                assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
-                    .isEqualTo(message);
-                assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())
-                    .isEqualTo(message);
+                assertThat(getTigerProxy().getRbelMessages()).hasSize(2);
+                assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent()).isEqualTo(message);
+                assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent()).isEqualTo(message);
             }
         );
     }
