@@ -1,7 +1,28 @@
 # Changelog Tiger Testplattform
 
 -------
-# Release 1.2.0
+# Release 1.3.0
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Bugfixes
+
+* TGR-838: workflow UI links to messages in Rbel details pane did not work for messages not on current page
+
+## Features
+
+* Small workflow UI improvements
+* Tiger show message steps now replace ${} tokens with content from TigerGlobalConfiguration
+
+## Breaking changes
+
+-------
+# Release 1.2.1
 
 * Serenity BDD 3.3.10
 * Cucumber 7.4.1

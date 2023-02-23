@@ -8,7 +8,7 @@ export default class Ui {
   private executionTable: HTMLElement | undefined;
   private executionPanel: HTMLElement | undefined;
   private rbelLogDetailsPane: HTMLElement | undefined;
-  private iframe : HTMLIFrameElement | undefined;
+  private iframe: HTMLIFrameElement | undefined;
   private readonly mouseMoveListener: (ev: MouseEvent) => void;
   private readonly mouseUpListener: (ev: MouseEvent) => void;
 
@@ -77,7 +77,7 @@ export default class Ui {
     }
   }
 
-  public showRbelLogDetails(rbelMessageUuid: string, event: MouseEvent) {
+  public showRbelLogDetails(rbelMessageUuid: string, rbelMessageSequenceNumber: string, event: MouseEvent) {
     this.init();
     event.preventDefault();
 
@@ -86,9 +86,8 @@ export default class Ui {
       this.mouseUpHandler();
     }
     // firefox does not navigate to the uuid if the iframe is hidden :(
-    window.setTimeout(() => {
-      this.iframe!.src = this.iframe!.src.split("#")[0] + "#" + rbelMessageUuid;
-    }, 100);
+    (window?.document?.getElementById("rbellog-details-iframe") as HTMLIFrameElement)
+      .contentWindow?.postMessage(rbelMessageUuid + "," + rbelMessageSequenceNumber, "*")
   }
 
   public resizeMouseX = -1;

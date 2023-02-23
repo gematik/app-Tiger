@@ -55,8 +55,8 @@
                   <td class="step_text">
                     <div>{{ step[1].description }}</div>
                     <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
-                      <div v-if="rbelmsg.method">
-                        <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, $event)"
+                      <div v-if="rbelmsg.method" class="rbelmessage">
+                        <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, rbelmsg.sequenceNumber, $event)"
                            href="#" class="badge rbelDetailsBadge">
                           {{ rbelmsg.sequenceNumber + 1 }}
                         </a>
@@ -133,7 +133,7 @@ function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<
 
 <style scoped>
 
-#execution_pane {
+#execution_pane,.rbelmessage {
   padding-left: 2rem;
 }
 
@@ -173,7 +173,7 @@ h4.scenariotitle {
 
 .step_status {
   text-align: center;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .step_text {

@@ -1152,13 +1152,13 @@ function setPageSize(newSize) {
   pollMessages();
 }
 
-function setPageNumber(newPageNumber) {
+function setPageNumber(newPageNumber, callback) {
   pageNumber = newPageNumber;
   document.getElementById("pageNumberDisplay").textContent =
       "Page " + (newPageNumber + 1);
   closeAllDropdowns();
   resetAllReceivedMessages();
-  pollMessages();
+  pollMessages(callback);
 }
 
 function updatePageSelector(pagesAvailable) {
@@ -1173,17 +1173,36 @@ function updatePageSelector(pagesAvailable) {
   selector.innerHTML = selectorInnerHtml;
 }
 
+let tobeScrolledToUUID;
+
 function scrollToMessage(uuid, sequenceNumber) {
-//    const sidebar = getAll('.menu')[0];
   if ((sequenceNumber < pageNumber * pageSize)
       || (sequenceNumber >= (pageNumber + 1) * pageSize)) {
-    setPageNumber(Math.ceil((sequenceNumber +1) / pageSize) - 1)
+    tobeScrolledToUUID = uuid;
+    setPageNumber(Math.ceil((sequenceNumber +1) / pageSize) - 1, scrollMessageIntoView)
+  } else {
+    scrollMessageIntoView(uuid)
   }
+}
 
+function scrollMessageIntoView(uuid) {
+  if (!uuid) {
+    uuid = tobeScrolledToUUID;
+  }
   let elements = document.getElementsByName(uuid);
   if (elements.length > 0) {
     elements[0].scrollIntoView({behaviour: "smooth", alignToTop: true});
   }
+}
+
+function messageScrollToReceiver(ev) {
+  scrollToMessage(ev.data.split(",")[0], Number(ev.data.split(",")[1]));
+}
+
+if (window.addEventListener) {
+  window.addEventListener("message", messageScrollToReceiver, false);
+} else {
+  window.attachEvent("onmessage", messageScrollToReceiver);
 }
 
 function addDropdownClickListener(el, callback) {

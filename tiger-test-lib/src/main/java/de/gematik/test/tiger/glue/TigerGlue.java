@@ -96,19 +96,19 @@ public class TigerGlue {
     @Gegebensei("TGR zeige {word} Banner {string}")
     @Given("TGR show {word} banner {string}")
     public void tgrShowColoredBanner(String color, String text) {
-        log.info("\n" + Banner.toBannerStrWithCOLOR(text, color.toUpperCase()));
+        log.info("\n" + Banner.toBannerStrWithCOLOR(TigerGlobalConfiguration.resolvePlaceholders(text), color.toUpperCase()));
     }
 
     @Gegebensei("TGR zeige {word} Text {string}")
     @Given("TGR show {word} text {string}")
     public void tgrShowColoredText(String color, String text) {
-        log.info("\n" + Banner.toTextStr(text, color.toUpperCase()));
+        log.info("\n" + Banner.toTextStr(TigerGlobalConfiguration.resolvePlaceholders(text), color.toUpperCase()));
     }
 
     @Gegebensei("TGR zeige Banner {string}")
     @Given("TGR show banner {string}")
     public void tgrIWantToShowBanner(String text) {
-        log.info("\n" + Banner.toBannerStrWithCOLOR(text, "WHITE"));
+        log.info("\n" + Banner.toBannerStrWithCOLOR(TigerGlobalConfiguration.resolvePlaceholders(text), "WHITE"));
     }
 
     @When("TGR wait for user abort")
@@ -126,19 +126,20 @@ public class TigerGlue {
     @When("TGR pause test run execution with message {string}")
     @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
     public void tgrPauseExecutionWithMessage(String message) {
-        TigerDirector.pauseExecution(message);
+        TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
     }
 
     @When("TGR pause test run execution with message {string} and message in case of error {string}")
     @Wenn("TGR pausiere Testausführung mit Nachricht {string} und Meldung im Fehlerfall {string}")
     public void tgrPauseExecutionWithMessageAndErrorMessage(String message, String errorMessage) {
-        TigerDirector.pauseExecutionAndFailIfDesired(message, errorMessage);
+        TigerDirector.pauseExecutionAndFailIfDesired(TigerGlobalConfiguration.resolvePlaceholders(message),
+            TigerGlobalConfiguration.resolvePlaceholders(errorMessage));
     }
 
     @When("TGR show HTML Notification:")
     @Wenn("TGR zeige HTML Notification:")
     public void tgrShowHtmlNotification(String message) {
-        TigerDirector.pauseExecution(message, true);
+        TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message), true);
     }
 
     @When("TGR assert {string} matches {string}")

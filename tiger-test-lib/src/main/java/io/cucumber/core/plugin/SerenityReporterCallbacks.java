@@ -8,6 +8,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
@@ -235,7 +236,7 @@ public class SerenityReporterCallbacks {
             }
             statusUpdateBuilder
                 .bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())))
-                .bannerMessage(replaceLineWithCurrentDataVariantValues(m.group(4), variantDataMap));
+                .bannerMessage(TigerGlobalConfiguration.resolvePlaceholders(replaceLineWithCurrentDataVariantValues(m.group(4), variantDataMap)));
         }
     }
 
