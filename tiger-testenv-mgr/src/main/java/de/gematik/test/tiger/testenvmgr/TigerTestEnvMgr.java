@@ -120,21 +120,22 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             proxyStatusMessage("Local Tiger Proxy URL http://localhost:" +
                 localTigerProxy.getProxyPort(), RbelAnsiColors.BLUE_BOLD);
             proxyStatusMessage("Local Tiger Proxy UI http://localhost:" +
-                localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui", RbelAnsiColors.BLUE_BOLD);
+                localTigerProxyApplicationContext.getWebServer().getPort() + "/webui", RbelAnsiColors.BLUE_BOLD);
             environmentVariables.put("PROXYHOST", "host.docker.internal");
             environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
             TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
-         } else {
+        } else {
             log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));
             localTigerProxy = null;
         }
     }
+
     private void proxyStatusMessage(String statusMessage, RbelAnsiColors color) {
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
             .type(LOCAL_TIGER_PROXY_TYPE)
             .status(TigerServerStatus.RUNNING)
             .statusMessage(statusMessage)
-            .baseUrl("http://localhost:" + localTigerProxyApplicationContext.getWebServer().getPort()+ "/webui")
+            .baseUrl("http://localhost:" + localTigerProxyApplicationContext.getWebServer().getPort() + "/webui")
             .build());
         if (localProxyLog.isInfoEnabled()) {
             localProxyLog.info(Ansi.colorize(statusMessage, color));
@@ -368,6 +369,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     public void setUpEnvironment() {
         setUpEnvironment(Optional.empty());
     }
+
     public void setUpEnvironment(Optional<IRbelMessageListener> localTigerProxyMessageListener) {
         assertNoCyclesInGraph();
         assertNoUnknownServersInDependencies();
@@ -375,6 +377,20 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         startLocalTigerProxyIfActivated();
         localTigerProxyMessageListener.ifPresent(provider -> getLocalTigerProxyOptional()
             .ifPresent(proxy -> proxy.addRbelMessageListener(provider)));
+
+        Map<String, TigerServerStatusUpdate> activeServers = servers.values().stream()
+            .filter(server -> server.getConfiguration().isActive())
+            .collect(Collectors.toMap(AbstractTigerServer::getServerId, server -> TigerServerStatusUpdate.builder()
+                .type(server.getConfiguration().getType().value())
+                .status(TigerServerStatus.NEW)
+                .build()));
+
+        getExecutor().submit(
+            () -> listeners.parallelStream()
+                .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                    .serverUpdate(new LinkedHashMap<>(activeServers))
+                    .build()))
+        );
 
         final List<AbstractTigerServer> initialServersToBoot = servers.values().parallelStream()
             .filter(server -> server.getDependUponList().isEmpty())
@@ -468,7 +484,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
     /**
      * @return local Tiger Proxy instance
-     * @deprecated to avoid the null pointer hassle, the API has been changed to return Optional, see {@link #getLocalTigerProxyOrFail()} and {@link #getLocalTigerProxyOptional()}.
+     * @deprecated to avoid the null pointer hassle, the API has been changed to return Optional, see {@link #getLocalTigerProxyOrFail()}
+     * and {@link #getLocalTigerProxyOptional()}.
      */
     @Deprecated(since = "1.1.1", forRemoval = true)
     public TigerProxy getLocalTigerProxy() {

@@ -4,7 +4,7 @@
 
 <template>
   <span :class="`${highlightText ? 'statustext' : ''}`">
-    <i :class="`statusbadge ${testStatus.toLowerCase()} left fa-solid ${getTestResultIcon(testStatus)}`"
+    <i :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
        :title="`${testStatus}`"
        :id="`${link}`" ></i>
     {{ text }}

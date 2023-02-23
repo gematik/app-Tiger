@@ -50,7 +50,7 @@
                 <tbody>
                 <tr v-for="(step, index) in scenario[1].steps" :key="index">
                   <td :class="`${step[1].status.toLowerCase()} step_status `">
-                    <i :class="`fa-solid ${getTestResultIcon(step[1].status)}`" :title="`${step[1].status}`"></i>
+                    <i :class="`fa-solid ${getTestResultIcon(step[1].status, 'solid')}`" :title="`${step[1].status}`"></i>
                   </td>
                   <td class="step_text">
                     <div>{{ step[1].description }}</div>
