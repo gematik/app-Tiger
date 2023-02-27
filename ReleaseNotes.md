@@ -18,6 +18,7 @@
 
 * Small workflow UI improvements
 * Tiger show message steps now replace ${} tokens with content from TigerGlobalConfiguration
+* Integration tests added for new projects and the test for erp-testsuite removed
 
 ## Breaking changes
 
