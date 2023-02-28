@@ -53,7 +53,7 @@
                     <i :class="`fa-solid ${getTestResultIcon(step[1].status, 'solid')}`" :title="`${step[1].status}`"></i>
                   </td>
                   <td class="step_text">
-                    <div>{{ step[1].description }}</div>
+                    <div v-html="step[1].description"></div>
                     <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
                       <div v-if="rbelmsg.method" class="rbelmessage">
                         <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, rbelmsg.sequenceNumber, $event)"
@@ -73,7 +73,6 @@
           </div>
         </div>
       </div>
-      <div class="row footer-spacing"></div>
     </div>
     <div class="position-fixed" id="rbellog_resize"
          v-on:mouseenter="ui.mouseEnterHandler"
@@ -89,7 +88,7 @@
           <i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i>
         </a>
       </h2>
-      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
+      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?embedded=true`"/>
       <div v-else class="w-100 no-connection-local-proxy serverstatus-stopped">
         <i class="fas fa-project-diagram left"></i>
         No connection to local proxy.

@@ -39,6 +39,7 @@ public class UpdatePushConfiguration implements WebSocketMessageBrokerConfigurer
 
     @Override
     public void configureClientOutboundChannel(final ChannelRegistration registration) {
-        registration.taskExecutor(new ThreadPoolTaskExecutor());
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        registration.taskExecutor(executor);
     }
 }

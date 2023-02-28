@@ -49,6 +49,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         if (getConfiguration().getExternalJarOptions() == null) {
             folder = new File(".").getAbsolutePath();
             log.info("Defaulting to current working folder '{}' as working directory for server {}", folder, getServerId());
+            getConfiguration().setExternalJarOptions(new CfgExternalJarOptions());
         } else {
             folder = getConfiguration().getExternalJarOptions().getWorkingDir();
             if (folder == null) {

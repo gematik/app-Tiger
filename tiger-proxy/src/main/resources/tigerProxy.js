@@ -298,12 +298,6 @@ document.addEventListener('DOMContentLoaded', function () {
   fieldRouteTo.addEventListener("mouseleave", updateAddRouteBtnState);
 
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has("updateMode")) {
-    console.log("UpdateMode:" + urlParams.get("updateMode"));
-    window.setTimeout(function () {
-      document.getElementById(urlParams.get("updateMode")).click();
-    }, 100);
-  }
   if (urlParams.has("embedded")) {
     scrollLock = true;
     let elem = document.getElementsByClassName("sidebar")[0];

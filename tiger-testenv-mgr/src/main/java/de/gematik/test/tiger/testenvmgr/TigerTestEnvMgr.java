@@ -32,15 +32,13 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.io.BufferedReader;
-import java.io.Console;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -86,6 +84,10 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     private boolean userAcknowledgedShutdown = false;
     private boolean userAcknowledgedContinueTestRun = false;
     private boolean userAcknowledgedFailingTestRun = false;
+    private boolean isShuttingDown = false;
+
+    @Getter
+    private boolean isShutDown = false;
 
     @Setter
     @Getter
@@ -222,39 +224,21 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         return localTigerProxy;
     }
 
-    private void publishNewStatusUpdate(TigerServerStatusUpdate update) {
-        if (getExecutor() != null) {
-            getExecutor().submit(
-                () -> listeners.stream()
-                    .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+    public void publishNewStatusUpdate(TigerServerStatusUpdate update) {
+        publishStatusUpdateToListeners(TigerStatusUpdate.builder()
                         .serverUpdate(new LinkedHashMap<>(Map.of(getLocalTigerProxyOptional()
                             .flatMap(TigerProxy::getName)
                             .orElse(getLocalTigerProxy().proxyName()), update)))
-                        .build()))
-            );
-        }
+                        .build(), listeners);
     }
 
-    public static void waitForConsoleInput(String textToEnter) {
-        Console c = System.console();
-        String message =
-            "\n" + Banner.toBannerStr("Press " + (textToEnter.isEmpty() ? "" : "'" + textToEnter + "' and ") + "ENTER.",
-                RbelAnsiColors.RED_BOLD.toString());
-        if (c != null) {
-            readCommandFromInput(textToEnter, message, v -> c.readLine());
-        } else {
-            log.warn("No Console interface found, trying System in stream...");
-            BufferedReader rdr = new BufferedReader(new InputStreamReader(System.in));
-            readCommandFromInput(textToEnter, message, v -> {
-                try {
-                    return rdr.readLine();
-                } catch (IOException e) {
-                    log.warn("Unable to open input stream from console! Continuing with test run...", e);
-                    return null;
-                }
-            });
+    public synchronized void publishStatusUpdateToListeners(TigerStatusUpdate update, List<TigerUpdateListener> listeners) {
+        if (getExecutor() != null && !isShuttingDown) {
+            getExecutor().submit(
+                () -> listeners.stream()
+                    .forEach(listener -> listener.receiveTestEnvUpdate(update))
+            );
         }
-        log.info("Step wait acknowledged. Continueing...");
     }
 
     private static void readCommandFromInput(String textToEnter, String message, Function<Void, String> readLine) {
@@ -416,24 +400,40 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     }
 
     private void startServer(AbstractTigerServer server) {
-        synchronized (server) { //NOSONAR
-            // we REALLY want to synchronize ONLY on the server!
-            if (server.getStatus() != TigerServerStatus.NEW) {
+        try {
+            if (isShuttingDown) {
+                log.warn("Aborting startup of {}, already shutting down!", server.getServerId());
                 return;
             }
-            server.start(this);
-        }
+            synchronized (server) { //NOSONAR
+                // we REALLY want to synchronize ONLY on the server!
+                if (server.getStatus() != TigerServerStatus.NEW) {
+                    return;
+                }
+                server.start(this);
+            }
 
-        servers.values().parallelStream()
-            .peek(toBeStartedServer -> log.debug("Considering to start server {} with status {}...",
-                toBeStartedServer.getServerId(), toBeStartedServer.getStatus()))
-            .filter(candidate -> candidate.getStatus() == TigerServerStatus.NEW)
-            .filter(candidate -> candidate.getDependUponList().stream()
-                .filter(depending -> depending.getStatus() != TigerServerStatus.RUNNING)
-                .findAny().isEmpty())
-            .peek(toBeStartedServer -> log.info("Starting server {} with status {}",
-                toBeStartedServer.getServerId(), toBeStartedServer.getStatus()))
-            .forEach(this::startServer);
+            executor.submit(() ->
+                servers.values().parallelStream()
+                    .peek(toBeStartedServer -> log.debug("Considering to start server {} with status {}...",
+                        toBeStartedServer.getServerId(), toBeStartedServer.getStatus()))
+                    .filter(candidate -> candidate.getStatus() == TigerServerStatus.NEW)
+                    .filter(candidate -> candidate.getDependUponList().stream()
+                        .filter(depending -> depending.getStatus() != TigerServerStatus.RUNNING)
+                        .findAny().isEmpty())
+                    .peek(toBeStartedServer -> log.info("Starting server {} with status {}",
+                        toBeStartedServer.getServerId(), toBeStartedServer.getStatus()))
+                    .forEach(this::startServer))
+                .get();
+        } catch (RuntimeException e) {
+            shutDown();
+            throw e;
+        } catch (ExecutionException e) {
+            throw new TigerEnvironmentStartupException("Error during server startup", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TigerTestEnvException("Interrupt received while starting servers", e);
+        }
     }
 
     public String replaceSysPropsInString(String str) {
@@ -441,6 +441,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     }
 
     public synchronized void shutDown() {
+        if (isShuttingDown) {
+            return;
+        }
+        isShuttingDown = true;
+        log.info(Ansi.colorize("Sending shutdown to executor pool...", RbelAnsiColors.RED_BOLD));
+        executor.shutdownNow();
         log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
         for (AbstractTigerServer server : servers.values()) {
             try {
@@ -465,6 +471,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         }
 
         log.info(Ansi.colorize("Finished shutdown test environment OK", RbelAnsiColors.RED_BOLD));
+        isShutDown = true;
     }
 
     public void receiveTestEnvUpdate(TigerStatusUpdate statusUpdate) {
@@ -484,8 +491,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
     /**
      * @return local Tiger Proxy instance
-     * @deprecated to avoid the null pointer hassle, the API has been changed to return Optional, see {@link #getLocalTigerProxyOrFail()}
-     * and {@link #getLocalTigerProxyOptional()}.
+     * @deprecated to avoid the null pointer hassle, the API has been changed to return Optional, see {@link #getLocalTigerProxyOrFail()} and
+     * {@link #getLocalTigerProxyOptional()}.
      */
     @Deprecated(since = "1.1.1", forRemoval = true)
     public TigerProxy getLocalTigerProxy() {

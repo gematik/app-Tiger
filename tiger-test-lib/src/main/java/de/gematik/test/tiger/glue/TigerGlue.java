@@ -5,11 +5,14 @@
 package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
+import de.gematik.test.tiger.testenvmgr.data.BannerType;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
@@ -18,6 +21,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -139,7 +143,20 @@ public class TigerGlue {
     @When("TGR show HTML Notification:")
     @Wenn("TGR zeige HTML Notification:")
     public void tgrShowHtmlNotification(String message) {
-        TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message), true);
+        if (TigerDirector.getLibConfig().isActivateWorkflowUi()) {
+            TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
+                .bannerMessage(message)
+                .bannerColor("green")
+                .bannerType(BannerType.STEP_WAIT)
+                .bannerIsHtml(true)
+                .build());
+            await().pollInterval(1, TimeUnit.SECONDS)
+                .atMost(5, TimeUnit.HOURS)
+                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
+            TigerDirector.getTigerTestEnvMgr().resetUserInput();
+        } else {
+            log.warn("Workflow UI is not active! Can't display message '{}'", message);
+        }
     }
 
     @When("TGR assert {string} matches {string}")

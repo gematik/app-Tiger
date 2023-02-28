@@ -27,7 +27,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @Slf4j
 @Getter
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
+class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
 
     // -----------------------------------------------------------------------------------------------------------------
     //
@@ -43,7 +43,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "testExternalUrl,type",
         "testExternalUrl,source"})
     // TODO add tests for helm charts
-    public void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop) {
+    void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop) {
         createTestEnvMgrSafelyAndExecute(
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml",
             envMgr -> {
@@ -61,7 +61,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "    type: tigerProxy\n" +
         "    tigerProxyCfg:\n" +
         "      adminPort: 9999", skipEnvironmentSetup = true)
-    public void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
+    void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
         CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
         assertThatThrownBy(() -> envMgr.createServer("testTigerProxy", srv)
             .assertThatConfigurationIsCorrect())
@@ -69,7 +69,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCheckDoubleKey_NOK() {
+    void testCheckDoubleKey_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDoubleKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
@@ -77,7 +77,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCheckDeprecatedKey_port_NOK() {
+    void testCheckDeprecatedKey_port_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
@@ -86,7 +86,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCheckDeprecatedKey_tigerport_NOK() {
+    void testCheckDeprecatedKey_tigerport_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
@@ -94,7 +94,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
             .hasMessageContaining("The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
     }
     @Test
-    public void testCheckDeprecatedKey_serverPort_NOK() {
+    void testCheckDeprecatedKey_serverPort_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
@@ -103,7 +103,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
    }
 
     @Test
-    public void testCheckDeprecatedKey_proxyCfg_NOK() {
+    void testCheckDeprecatedKey_proxyCfg_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
@@ -112,7 +112,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCheckDeprecatedKey_healthcheck_NOK() {
+    void testCheckDeprecatedKey_healthcheck_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
@@ -121,7 +121,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCheckDeprecatedKey_healthcheckurl_NOK() {
+    void testCheckDeprecatedKey_healthcheckurl_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
@@ -150,7 +150,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         + "      proxyPort: ${free.port.4}\n"
         + "localProxyActive: false",
         additionalProperties = {"custom.value = ftp"})
-    public void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
+    void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
         final AbstractTigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
         assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getAdminPort())
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
@@ -166,7 +166,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     //
 
     @Test
-    public void testCreateInvalidInstanceType() {
+    void testCreateInvalidInstanceType() {
         TigerGlobalConfiguration.readFromYaml("servers:\n"
                 + "  testInvalidType:\n"
                 + "    type: NOTEXISTING\n"
@@ -182,7 +182,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCreateUnknownTemplate() {
+    void testCreateUnknownTemplate() {
         TigerGlobalConfiguration.setRequireTigerYaml(false);
         TigerGlobalConfiguration.readFromYaml("servers:\n"
                 + "  unknownTemplate:\n"
@@ -196,14 +196,14 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCreateInvalidPkiKeys_wrongType() {
+    void testCreateInvalidPkiKeys_wrongType() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_wrongType.yaml"));
         assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
     }
 
     @Test
-    public void testCreateInvalidPkiKeys_missingCertificate() {
+    void testCreateInvalidPkiKeys_missingCertificate() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_missingCertificate.yaml"));
 
@@ -214,7 +214,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testCreateInvalidPkiKeys_emptyCertificate() {
+    void testCreateInvalidPkiKeys_emptyCertificate() {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_emptyCertificate.yaml"));
 
@@ -225,7 +225,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testInvalidUrlMappings_noArrow() {
+    void testInvalidUrlMappings_noArrow() {
         TigerGlobalConfiguration.setRequireTigerYaml(false);
         TigerGlobalConfiguration.readFromYaml("servers:\n"
                 + "  testInvalidUrlMappings_noArrow:\n"
@@ -243,7 +243,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     }
 
     @Test
-    public void testInvalidUrlMappings_noDestinationRoute() {
+    void testInvalidUrlMappings_noDestinationRoute() {
         TigerGlobalConfiguration.setRequireTigerYaml(false);
         TigerGlobalConfiguration.readFromYaml("servers:\n"
                 + "  testInvalidUrlMappings_noDestinationRoute:\n"
@@ -265,7 +265,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
         "additionalYamls:\n"
             + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml\n"
             + "    baseKey: tiger\n")
-    public void readAdditionalYamlFiles(UnirestInstance unirestInstance) {
+    void readAdditionalYamlFiles(UnirestInstance unirestInstance) {
         assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
             .isTrue();
     }
@@ -274,7 +274,7 @@ public class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMg
     @TigerTest(tigerYaml =
         "additionalYamls:\n"
             + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml\n")
-    public void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
+    void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
         assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
             .isTrue();
     }

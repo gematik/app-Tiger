@@ -41,6 +41,8 @@
 * TGR-823: fixed a regression in the workflow UI not showing the rbel log details pane correctly.
 * TGR-768: flag createRbelHtmlReports added for creation of the RBEL HTML reports in Tiger testsuites
 * TGR-810: improve JEXL context display
+* TGR-792: Fixed failures in startup phase not causing the test run to abort
+* TGR-792: Fixed Workflow ui not showing docstring and datatable data of steps
 
 ## Features
 

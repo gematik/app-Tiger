@@ -186,11 +186,21 @@ public class SerenityReporterCallbacks {
         return parsedLine;
     }
 
+    private String getStepDescription(Step step) {
+        final StringBuilder stepText = new StringBuilder(step.getText());
+        step.getDocString().ifPresent(docStr ->
+            stepText.append("<div class=\"steps-docstring\">")
+                .append(docStr.getContent().replace("\n", "<br/>"))
+                .append("</div>" ));
+        step.getDataTable().ifPresent(dataTable -> stepText.append("<br/>" + dataTable ));
+        return stepText.toString();
+    }
+
     private Map<String, StepUpdate> mapStepsToStepUpdateMap(List<Step> steps, UnaryOperator<String> postProduction) {
         Map<String, StepUpdate> map = new HashMap<>();
         for (int stepIndex = 0; stepIndex < steps.size(); stepIndex++) {
             if (map.put(Integer.toString(stepIndex), StepUpdate.builder()
-                .description(postProduction.apply(steps.get(stepIndex).getText()))
+                .description(postProduction.apply(getStepDescription(steps.get(stepIndex))))
                 .status(de.gematik.test.tiger.testenvmgr.env.TestResult.PENDING)
                 .stepIndex(stepIndex)
                 .build()) != null) {
@@ -297,7 +307,7 @@ public class SerenityReporterCallbacks {
                                 .variantIndex(currentScenarioDataVariantIndex)
                                 .steps(new HashMap<>(Map.of(String.valueOf(currentStepIndex), StepUpdate.builder()
                                     .description(
-                                        replaceLineWithCurrentDataVariantValues(context.getCurrentStep().getText(), variantDataMap))
+                                        replaceLineWithCurrentDataVariantValues(getStepDescription(context.getCurrentStep()), variantDataMap))
                                     .status(de.gematik.test.tiger.testenvmgr.env.TestResult.valueOf(status))
                                     .stepIndex(currentStepIndex)
                                     .rbelMetaData(stepMessagesMetaDataList)

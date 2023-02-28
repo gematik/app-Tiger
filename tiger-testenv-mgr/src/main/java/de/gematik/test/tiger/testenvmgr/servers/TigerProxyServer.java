@@ -54,8 +54,8 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
     @Override
     public void performStartup() {
+        log.info("Entering pre-startup of tiger-proxy {}", getServerId());
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .type("tigerProxy")
             .statusMessage("Pre-start Tiger Proxy " + getServerId())
             .build());
 
@@ -75,6 +75,15 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             route.setTo(getTigerTestEnvMgr().replaceSysPropsInString(route.getTo()));
         });
 
+        if (getTigerTestEnvMgr().isShuttingDown()) {
+            log.debug("Skipping startup, already shutting down...");
+            publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+                .statusMessage("Skipped startup of Tiger Proxy " + getServerId())
+                .build());
+            return;
+        }
+
+        log.info("Actually performing startup of tiger-proxy {}", getServerId());
         statusMessage("Starting Tiger Proxy " + getServerId() + " at " + reverseProxyCfg.getAdminPort() + "...");
         applicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
@@ -98,9 +107,11 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         log.info("Stopping tiger proxy {}...", getServerId());
         if (applicationContext != null
             && applicationContext.isRunning()) {
+            log.info("Triggering tiger-server shutdown for {}...", getServerId());
             applicationContext.close();
             setStatus(TigerServerStatus.STOPPED, "Stopped Tiger Proxy " + getServerId());
         } else {
+            log.info("Skipping tiger-server shutdown for {}!", getServerId());
             setStatus(TigerServerStatus.STOPPED, "Tiger Proxy " + getServerId() + " already stopped");
         }
     }
