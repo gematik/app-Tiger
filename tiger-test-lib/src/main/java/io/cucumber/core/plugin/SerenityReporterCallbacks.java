@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 @Slf4j
 public class SerenityReporterCallbacks {
@@ -187,12 +188,12 @@ public class SerenityReporterCallbacks {
     }
 
     private String getStepDescription(Step step) {
-        final StringBuilder stepText = new StringBuilder(step.getText());
+        final StringBuilder stepText = new StringBuilder(StringEscapeUtils.escapeHtml4(step.getText()));
         step.getDocString().ifPresent(docStr ->
             stepText.append("<div class=\"steps-docstring\">")
-                .append(docStr.getContent().replace("\n", "<br/>"))
+                .append(StringEscapeUtils.escapeHtml4(docStr.getContent().replace("\n", "<br/>")))
                 .append("</div>" ));
-        step.getDataTable().ifPresent(dataTable -> stepText.append("<br/>" + dataTable ));
+        step.getDataTable().ifPresent(dataTable -> stepText.append("<br/>" + StringEscapeUtils.escapeHtml4(dataTable.toString())));
         return stepText.toString();
     }
 
