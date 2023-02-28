@@ -57,6 +57,7 @@ abstract class AbstractNonHttpTest {
         OutputStream output = socket.getOutputStream();
         output.write(message);
         output.flush();
+        log("msg written");
     }
 
     public static void readSingleResponseMessage(Socket socket, byte[] message) throws IOException {
@@ -120,23 +121,25 @@ abstract class AbstractNonHttpTest {
                     oldListener.onProxy(binaryMessage, completableFuture, socketAddress, socketAddress1);
                 });
 
-            try (
-                Socket clientSocket = newClientSocketTo(tigerProxy)) {
+            try (Socket clientSocket = newClientSocketTo(tigerProxy)) {
                 log("listenerServer on port: " + listenerServer.getLocalPort());
                 clientActionCallback.accept(clientSocket);
             }
 
-            log("Verifying interactions... (requests=" + handlerCalledRequest.get() + ", response="
-                + handlerCalledResponse.get() + ", serverCalled=" + serverCalled.get() + ")");
             try {
                 await()
                     .atMost(10, TimeUnit.SECONDS)
-                    .untilAsserted(() ->
+                    .pollDelay(200, TimeUnit.MILLISECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
+                    .untilAsserted(() -> {
+                        log("Verifying interactions... (requests=" + handlerCalledRequest.get() + ", response="
+                            + handlerCalledResponse.get() + ", serverCalled=" + serverCalled.get() + ", rbelMsgs=" + getTigerProxy().getRbelMessages().size() + ")");
                         interactionsVerificationCallback.acceptThrows(
                             handlerCalledRequest,
                             handlerCalledResponse,
                             serverCalled
-                        ));
+                        );
+                    });
             } catch (RuntimeException e) {
                 log.error("Found messages: \n\n{}",
                     getTigerProxy().getRbelMessages().stream()

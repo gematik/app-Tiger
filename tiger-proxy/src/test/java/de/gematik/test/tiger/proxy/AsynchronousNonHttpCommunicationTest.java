@@ -17,7 +17,6 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,7 +25,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,9 +47,6 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest{
             serverSocket -> {
             },
             (requestCalls, responseCalls, serverCalled) -> {
-                waitForCondition(() -> serverCalled.get() >= 2,
-                    () -> "Timeout while waiting for server to receive two messages "
-                        + "(got " + serverCalled.get() + ")");
                 assertThat(requestCalls.get()).isEqualTo(2);
                 assertThat(responseCalls.get()).isEqualTo(0);
                 assertThat(serverCalled.get()).isEqualTo(2);
@@ -75,8 +70,6 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest{
             serverSocket -> {
             },
             (requestCalls, responseCalls, serverCalled) -> {
-                waitForCondition(() -> serverCalled.get() >= 2,
-                    () -> "Wait timed out. ServerCalled never reached 2, is currently at " + serverCalled.get());
                 assertThat(serverCalled).hasValue(2);
                 assertThat(responseCalls).hasValue(0);
                 assertThat(requestCalls).hasValue(2);
@@ -164,9 +157,7 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest{
 
             },
             (requestCalls, responseCalls, serverCalled) -> {
-                waitForCondition(() -> serverResponsesRead.get() >= 4,
-                    () -> "Wait timed out. serverResponsesRead never reached 4, is currently at "
-                        + serverResponsesRead.get());
+                assertThat(serverResponsesRead).hasValueGreaterThanOrEqualTo(4);
                 assertThat(requestCalls).hasValue(1);
                 assertThat(responseCalls).hasValue(1);
                 assertThat(serverCalled).hasValue(1);

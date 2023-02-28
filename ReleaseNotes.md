@@ -1,7 +1,29 @@
 # Changelog Tiger Testplattform
 
 -------
-# Release 1.2.0
+# Release 1.3.0
+
+* Serenity BDD 3.3.10
+* Cucumber 7.4.1
+* RestAssured 5.2.0
+* Selenium 4.5.2
+* Appium 8.1.1
+* Spring Boot 2.7.5
+
+## Bugfixes
+
+* TGR-838: workflow UI links to messages in Rbel details pane did not work for messages not on current page
+
+## Features
+
+* Small workflow UI improvements
+* Tiger show message steps now replace ${} tokens with content from TigerGlobalConfiguration
+* Integration tests added for new projects and the test for erp-testsuite removed
+
+## Breaking changes
+
+-------
+# Release 1.2.1
 
 * Serenity BDD 3.3.10
 * Cucumber 7.4.1
@@ -19,6 +41,8 @@
 * TGR-823: fixed a regression in the workflow UI not showing the rbel log details pane correctly.
 * TGR-768: flag createRbelHtmlReports added for creation of the RBEL HTML reports in Tiger testsuites
 * TGR-810: improve JEXL context display
+* TGR-792: Fixed failures in startup phase not causing the test run to abort
+* TGR-792: Fixed Workflow ui not showing docstring and datatable data of steps
 
 ## Features
 

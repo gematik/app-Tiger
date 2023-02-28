@@ -16,9 +16,7 @@
 
 package de.gematik.test.tiger.lib;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withTextFromSystemIn;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -85,9 +83,11 @@ class TestTigerDirector {
                 "http://localhost");
             assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getRbelLogger()).isNotNull();
             assertThat(
-                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions().getArguments()).hasSize(2);
+                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions()
+                    .getArguments()).hasSize(2);
             assertThat(
-                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions().getArguments().get(1)).isEqualTo("--webroot=.");
+                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions()
+                    .getArguments().get(1)).isEqualTo("--webroot=.");
         });
     }
 
@@ -106,7 +106,8 @@ class TestTigerDirector {
 
                 assertThat(TigerDirector.isInitialized()).isTrue();
                 assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-                assertThatThrownBy(() -> TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isInstanceOf(TigerTestEnvException.class);
+                assertThatThrownBy(() -> TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isInstanceOf(
+                    TigerTestEnvException.class);
 
                 final var url = new URL("http://idp-rise-tu-noproxy");
 
@@ -156,10 +157,11 @@ class TestTigerDirector {
     @Test
     void testDirectorFalsePathToYaml() {
         final Path nonExistingPath = Paths.get("non", "existing", "file.yaml");
-        System.setProperty("TIGER_TESTENV_CFGFILE", nonExistingPath.toString());
-        assertThatThrownBy(TigerDirector::start)
-            .isInstanceOf(TigerConfigurationException.class)
-            .hasMessageContaining(nonExistingPath.toString());
+        withEnvironmentVariable("TIGER_TESTENV_CFGFILE", nonExistingPath.toString()).execute(() -> {
+            assertThatThrownBy(TigerDirector::start)
+                .isInstanceOf(TigerConfigurationException.class)
+                .hasMessageContaining(nonExistingPath.toString());
+        });
     }
 
     @Test
@@ -198,76 +200,47 @@ class TestTigerDirector {
 
     @Test
     void testPauseExecutionViaConsole() throws Exception {
-        withTextFromSystemIn("next\n")
-            .execute(() ->
-                executeWithSecureShutdown(() -> {
-                    TigerDirector.start();
-                    new Thread(() -> {
-                        TigerDirector.pauseExecution();
-                        TigerDirector.getTigerTestEnvMgr().receivedResumeTestRunExecution();
-                        System.out.println("Execution resumes!");
-                    }).start();
-
-                    await().atMost(2000, TimeUnit.MILLISECONDS)
-                        .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
-                    TigerDirector.getTigerTestEnvMgr().resetUserInput();
-                    assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
-                }));
+        withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
+            TigerDirector.start();
+            assertThatThrownBy(TigerDirector::pauseExecution).isInstanceOf(TigerTestEnvException.class);
+            assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
+        });
     }
 
     @Test
     void testPauseExecutionViaWorkflowUI() {
         executeWithSecureShutdown(() -> {
-            TigerDirector.start();
-            EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
-                TigerBuildPropertiesService.class));
-            TigerDirector.getLibConfig().activateWorkflowUi = true;
-            new Thread(() -> {
-                TigerDirector.pauseExecution();
-                System.out.println("Execution resumes!");
-            }).start();
+            withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
+                TigerDirector.start();
+                EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
+                    TigerBuildPropertiesService.class));
+                TigerDirector.getLibConfig().activateWorkflowUi = true;
+                new Thread(() -> {
+                    TigerDirector.pauseExecution();
+                    System.out.println("Execution resumes!");
+                }).start();
 
-            envStatusController.getConfirmContinueExecution();
-            await().atMost(2000, TimeUnit.MILLISECONDS)
-                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
+                envStatusController.getConfirmContinueExecution();
+                await().atMost(2000, TimeUnit.MILLISECONDS)
+                    .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
+            });
         });
     }
 
     @Test
-    void testPauseExecutionViaConsoleWrongEnter() throws Exception {
-        withTextFromSystemIn("notnext\n")
-            .execute(() ->
-                executeWithSecureShutdown(() -> {
-                    TigerDirector.start();
-                    Thread thread = new Thread(TigerDirector::pauseExecution);
-                    thread.start();
-
-                    Thread.sleep(400);
-                    assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun())
-                        .isFalse();
-                    thread.interrupt();
-                }));
-    }
-
-    @Test
     void testQuitTestRunViaConsole() throws Exception {
-        withTextFromSystemIn("quit\n")
-            .execute(() ->
-                executeWithSecureShutdown(() ->
-                    assertThat(catchSystemExit(() -> {
-                            TigerDirector.start();
-                            await().atMost(2, TimeUnit.SECONDS)
-                                .until(() -> {
-                                    TigerDirector.waitForQuit();
-                                    return false;
-                                });
-                        })
-                    ).isEqualTo(0)));
+        withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
+            TigerDirector.start();
+            TigerDirector.waitForQuit();
+            assertThat(TigerDirector.getTigerTestEnvMgr().isShuttingDown()).isTrue();
+            assertThat(TigerDirector.getTigerTestEnvMgr().isShutDown()).isTrue();
+        });
+
     }
 
     /*
-    * see doc/specification/TigerTestEnvWaitForQuit.puml
-    */
+     * see doc/specification/TigerTestEnvWaitForQuit.puml
+     */
     @Test
     void testQuitTestRunViaWorkFlowUi() throws Exception {
         TigerDirector.start();
@@ -275,14 +248,9 @@ class TestTigerDirector {
             TigerDirector.getTigerTestEnvMgr(), mock(TigerBuildPropertiesService.class));
         TigerDirector.getLibConfig().activateWorkflowUi = true;
 
-        withTextFromSystemIn("quit\n")
-            .execute(() ->
-                executeWithSecureShutdown(() ->
-                    assertThat(catchSystemExit(() -> {
-                        new Thread(TigerDirector::waitForQuit).start();
-                        envStatusController.getConfirmQuit();
-                        Thread.sleep(1500); // Director polls at 1s so give it time to system exit
-                    })).isEqualTo(0)));
+        new Thread(TigerDirector::waitForQuit).start();
+        envStatusController.getConfirmQuit();
+        await().atMost(3000, TimeUnit.MILLISECONDS).until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedShutdown() && TigerDirector.getTigerTestEnvMgr().isShutDown());
     }
 
     private void executeWithSecureShutdown(Statement test) {

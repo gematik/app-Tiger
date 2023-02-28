@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
@@ -196,11 +197,15 @@ class TestTigerTestEnvMgrStartupSequence {
 
     @ParameterizedTest
     @MethodSource("checkSuccessfullStartupSequencesParameters")
-    void checkSuccessfullStartupSequences(Map<String, AbstractTigerServer> serverMap,
-        List<List<String>> startupSequences) {
+    void checkSuccessfullStartupSequences(Map<String, AbstractTigerServer> serverMap, List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
+        ReflectionTestUtils.setField(envMgr, "isShuttingDown", false);
+        ReflectionTestUtils.setField(envMgr, "executor", Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2));
         try {
             envMgr.setUpEnvironment();
+
+            log.info("Completed startup normally, now checking the order");
 
             startupSequences.stream()
                 .map(potentialOrder -> {
@@ -262,7 +267,7 @@ class TestTigerTestEnvMgrStartupSequence {
             synchronized (startupSequence) {
                 startupSequence.add(getHostname());
             }
-            log.info("Starting server {}", getHostname());
+            log.info("Starting server {}, current sequence is {}", getHostname(), startupSequence);
             delayStartupUntilThisServerIsRunning.ifPresent(s -> await()
                 .atMost(1, TimeUnit.SECONDS)
                 .pollInterval(Duration.ofMillis(1))

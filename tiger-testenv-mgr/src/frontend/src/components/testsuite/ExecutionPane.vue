@@ -62,13 +62,13 @@
                 <tbody>
                 <tr v-for="(step, index) in scenario[1].steps" :key="index">
                   <td :class="`${step[1].status.toLowerCase()} step_status `">
-                    <i :class="`fa-solid ${getTestResultIcon(step[1].status)}`" :title="`${step[1].status}`"></i>
+                    <i :class="`fa-solid ${getTestResultIcon(step[1].status, 'solid')}`" :title="`${step[1].status}`"></i>
                   </td>
                   <td class="step_text">
-                    <div>{{ step[1].description }}</div>
+                    <div v-html="step[1].description"></div>
                     <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
-                      <div v-if="rbelmsg.method">
-                        <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, $event)"
+                      <div v-if="rbelmsg.method" class="rbelmessage">
+                        <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, rbelmsg.sequenceNumber, $event)"
                            href="#" class="badge rbelDetailsBadge">
                           {{ rbelmsg.sequenceNumber + 1 }}
                         </a>
@@ -85,7 +85,6 @@
           </div>
         </div>
       </div>
-      <div class="row footer-spacing"></div>
     </div>
     <div class="position-fixed" id="rbellog_resize"
          v-on:mouseenter="ui.mouseEnterHandler"
@@ -101,7 +100,7 @@
           <i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i>
         </a>
       </h2>
-      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?updateMode=update1&embedded=true`"/>
+      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?embedded=true`"/>
       <div v-else class="w-100 no-connection-local-proxy serverstatus-stopped">
         <i class="fas fa-project-diagram left"></i>
         No connection to local proxy.
@@ -145,7 +144,7 @@ function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<
 
 <style scoped>
 
-#execution_pane {
+#execution_pane,.rbelmessage {
   padding-left: 2rem;
 }
 
@@ -185,7 +184,7 @@ h4.scenariotitle {
 
 .step_status {
   text-align: center;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .step_text {

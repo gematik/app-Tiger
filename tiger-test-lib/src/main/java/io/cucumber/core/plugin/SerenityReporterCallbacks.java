@@ -20,6 +20,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
@@ -49,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 @Slf4j
 public class SerenityReporterCallbacks {
@@ -197,11 +199,21 @@ public class SerenityReporterCallbacks {
         return parsedLine;
     }
 
+    private String getStepDescription(Step step) {
+        final StringBuilder stepText = new StringBuilder(StringEscapeUtils.escapeHtml4(step.getText()));
+        step.getDocString().ifPresent(docStr ->
+            stepText.append("<div class=\"steps-docstring\">")
+                .append(StringEscapeUtils.escapeHtml4(docStr.getContent().replace("\n", "<br/>")))
+                .append("</div>" ));
+        step.getDataTable().ifPresent(dataTable -> stepText.append("<br/>" + StringEscapeUtils.escapeHtml4(dataTable.toString())));
+        return stepText.toString();
+    }
+
     private Map<String, StepUpdate> mapStepsToStepUpdateMap(List<Step> steps, UnaryOperator<String> postProduction) {
         Map<String, StepUpdate> map = new HashMap<>();
         for (int stepIndex = 0; stepIndex < steps.size(); stepIndex++) {
             if (map.put(Integer.toString(stepIndex), StepUpdate.builder()
-                .description(postProduction.apply(steps.get(stepIndex).getText()))
+                .description(postProduction.apply(getStepDescription(steps.get(stepIndex))))
                 .status(de.gematik.test.tiger.testenvmgr.env.TestResult.PENDING)
                 .stepIndex(stepIndex)
                 .build()) != null) {
@@ -247,7 +259,7 @@ public class SerenityReporterCallbacks {
             }
             statusUpdateBuilder
                 .bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())))
-                .bannerMessage(replaceLineWithCurrentDataVariantValues(m.group(4), variantDataMap));
+                .bannerMessage(TigerGlobalConfiguration.resolvePlaceholders(replaceLineWithCurrentDataVariantValues(m.group(4), variantDataMap)));
         }
     }
 
@@ -308,7 +320,7 @@ public class SerenityReporterCallbacks {
                                 .variantIndex(currentScenarioDataVariantIndex)
                                 .steps(new HashMap<>(Map.of(String.valueOf(currentStepIndex), StepUpdate.builder()
                                     .description(
-                                        replaceLineWithCurrentDataVariantValues(context.getCurrentStep().getText(), variantDataMap))
+                                        replaceLineWithCurrentDataVariantValues(getStepDescription(context.getCurrentStep()), variantDataMap))
                                     .status(de.gematik.test.tiger.testenvmgr.env.TestResult.valueOf(status))
                                     .stepIndex(currentStepIndex)
                                     .rbelMetaData(stepMessagesMetaDataList)

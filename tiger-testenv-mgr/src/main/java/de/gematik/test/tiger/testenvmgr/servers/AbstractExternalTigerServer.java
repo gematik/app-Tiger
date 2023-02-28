@@ -54,18 +54,22 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
             setStatus(TigerServerStatus.STARTING);
         }
         waitForServiceHalfTime(true);
-        String exMsg = "Unable to start %s '%s' (Status %s)!";
+        TigerTestEnvException exceptionAtStartup = new TigerTestEnvException(
+            startupException.get(), "Unable to start %s '%s' (Status %s)!",
+            getConfiguration().getType().value(), getServerId(), getStatus().toString());
         if (startupException.get() != null) {
-            throw new TigerTestEnvException( startupException.get(), exMsg,  getConfiguration().getType().value(), getServerId(), getStatus());
+            throw exceptionAtStartup;
         } else if (getStatus() == TigerServerStatus.STOPPED) {
-            throw new TigerTestEnvException(exMsg, getConfiguration().getType().value(), getServerId(), getStatus());
+            throw new TigerTestEnvException("%s Server %s stopped unexpectedly!",
+                getConfiguration().getType().value(), getServerId());
         } else if (getStatus() == TigerServerStatus.STARTING) {
             waitForServiceHalfTime(false);
             if (startupException.get() != null) {
-                throw new TigerTestEnvException(startupException.get(), exMsg, getConfiguration().getType().value(), getServerId(), getStatus());
+                throw exceptionAtStartup;
             } else {
                 if (getStatus() != TigerServerStatus.RUNNING) {
-                    throw new TigerTestEnvException(exMsg, startupException.get());
+                    throw new TigerTestEnvException("%s Server %s still not running (Status %s)!",
+                        getConfiguration().getType().value(), getServerId(), getStatus().toString());
                 }
             }
         }

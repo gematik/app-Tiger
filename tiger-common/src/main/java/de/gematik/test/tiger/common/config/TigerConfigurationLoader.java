@@ -169,7 +169,7 @@ public class TigerConfigurationLoader {
                 .writeValueAsString(targetTree));
             throw new TigerConfigurationException(
                 "Error while reading configuration for class " + configurationBeanClass.getName() + " with base-keys "
-                    + baseKeys, e);
+                    + Arrays.toString(baseKeys), e);
         }
     }
 
@@ -192,7 +192,7 @@ public class TigerConfigurationLoader {
                 .writeValueAsString(targetTree));
             throw new TigerConfigurationException(
                 "Error while reading configuration for class " + configurationBeanType.getType().getTypeName()
-                    + " with base-keys " + baseKeys, e);
+                    + " with base-keys " + Arrays.toString(baseKeys), e);
         }
     }
 

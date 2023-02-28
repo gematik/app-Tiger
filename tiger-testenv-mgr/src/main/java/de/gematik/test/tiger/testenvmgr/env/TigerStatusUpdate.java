@@ -21,9 +21,11 @@ import java.util.LinkedHashMap;
 import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Builder
+@Slf4j
 public class TigerStatusUpdate {
     static long lastIndex;
     static final Object indexMutex = new Object();

@@ -91,6 +91,13 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
 
     public void start(TigerTestEnvMgr testEnvMgr) {
+        if (testEnvMgr.isShuttingDown()) {
+            log.debug("Skipping startup, already shutting down...");
+            synchronized (this) {
+                setStatus(TigerServerStatus.STOPPED, getServerId() + " skipped startup");
+            }
+            return;
+        }
         synchronized (this) {
             if (getStatus() != TigerServerStatus.NEW) {
                 throw new TigerEnvironmentStartupException("Server %s was already started!", getServerId());
@@ -131,6 +138,13 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         loadPkiForProxy();
 
         try {
+            if (testEnvMgr.isShuttingDown()) {
+                log.debug("Skipping startup, already shutting down...");
+                synchronized (this) {
+                    setStatus(TigerServerStatus.STOPPED, getServerId() + " skipped startup");
+                }
+                return;
+            }
             performStartup();
         } catch (Throwable t) {
             log.warn(String.format(t.getClass().getSimpleName() + " during startup of server %s. Used configuration was %s",
@@ -347,14 +361,10 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
 
     void publishNewStatusUpdate(TigerServerStatusUpdate update) {
-        if (tigerTestEnvMgr.getExecutor() != null) {
-            tigerTestEnvMgr.getExecutor().submit(
-                () -> listeners.parallelStream()
-                    .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
+        update.setType(getServerTypeToken());
+        tigerTestEnvMgr.publishStatusUpdateToListeners(TigerStatusUpdate.builder()
                         .serverUpdate(new LinkedHashMap<>(Map.of(serverId, update)))
-                        .build()))
-            );
-        }
+                        .build(), listeners);
     }
 
     @SuppressWarnings("unused")

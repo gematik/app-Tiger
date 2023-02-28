@@ -124,7 +124,7 @@ We recommend to use latest version of IntelliJ at least version 2021.1.
 To be able to successfully start scenarios/features you first need to configure the Run/Debug settings of your project:
 
 .Run/Debug settings for Java Cucumber template
-* Main class: io.cucumber.junit.Tiger**Serenity**Runner
+* Main class: io.cucumber.junit.TigerCucumberRunner
 * Glue:
     ** de.gematik.test.tiger.glue
     ** net.serenitybdd.cucumber.actors +

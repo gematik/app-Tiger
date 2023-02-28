@@ -105,7 +105,7 @@
  *
  * If the index of a new received message is not the next expected index (+1)
  * we do not merge but store this message in the #outOfOrderMessageList and set the timestamp in the field #firstOutOfOrderTimestamp.
- * We do this outermost for 2 seconds hoping to meanwhile receive all missing messages.
+ * We do this outermost for 1 second hoping to meanwhile receive all missing messages.
  *
  * So on receiving a new message we also check if we can already replay the cached messages
  * (all in order and first cached message is current index +1). If so we empty the cache and reset the timestamp to -1.
@@ -258,10 +258,9 @@ function connectToWebSocket() {
             if (firstOutOfOrderTimestamp === -1) {
               firstOutOfOrderTimestamp = Date.now();
             }
-            if (Date.now() - firstOutOfOrderTimestamp > 1000) {
+            if (Date.now() - firstOutOfOrderTimestamp > 200) {
               // resorting to re fetch the status
               firstOutOfOrderTimestamp = -1;
-              outOfOrderMessageList = new Array<TestEnvStatusDto>();
               currentServerStatus.value.clear();
               console.warn(Date.now() + ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
               currentMessageIndex = -1;
@@ -272,15 +271,14 @@ function connectToWebSocket() {
               // adding message to cache
               outOfOrderMessageList.push(pushedMessage);
               TestEnvStatusDto.sortArray(outOfOrderMessageList);
-              console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index}`);
+              console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` + firstOutOfOrderTimestamp);
             }
           } else {
             // TODO evt. there could be earlier messages coming very late??
             mergeMessage(currentServerStatus.value, pushedMessage);
             replayingCachedMessages();
             debug("MERGE DONE " + currentMessageIndex);
-          }
-
+          };
         });
       },
       (error: Frame | CloseEvent) => {
@@ -329,7 +327,8 @@ function replayingCachedMessages() {
       outOfOrderMessageList = new Array<TestEnvStatusDto>();
       firstOutOfOrderTimestamp = -1;
     } else {
-      debug("Still missing some messages in cache, so wait");
+      debug("Still missing some messages in cache, so wait " + (Date.now() - firstOutOfOrderTimestamp));
+      debug("oooml: " + JSON.stringify(outOfOrderMessageList));
     }
   }
 }
@@ -401,6 +400,9 @@ function fetchInitialServerStatus() {
     fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
     fetchedInitialStatus = true;
     debug("FETCH DONE " + currentMessageIndex);
+    //TODO now check outOfOrder list if there is any new messages with higher index in list
+    debug("OOFList: " + JSON.stringify(outOfOrderMessageList));
+    outOfOrderMessageList = new Array<TestEnvStatusDto>();
   });
 }
 
@@ -566,4 +568,12 @@ i.resizer-left-icon {
 .footer-spacing {
   margin-top: 20rem;
 }
+
+
+.steps-docstring {
+  color: #0a8694;
+  font-family: Courier,monospace;
+  padding-left: 1rem;
+}
+
 </style>

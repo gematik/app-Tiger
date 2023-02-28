@@ -25,6 +25,7 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
@@ -84,15 +85,23 @@ public class TigerDirector {
             log.info("Tiger Director already started, skipping");
             return;
         }
-        showTigerBanner();
-        readConfiguration();
-        registerRestAssuredFilter();
-        applyTestLibConfig();
-        // get free port
-        startTestEnvMgr();
-        startWorkflowUi();
-        setupTestEnvironent(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
-        setDefaultProxyToLocalTigerProxy();
+        try {
+            showTigerBanner();
+            readConfiguration();
+            registerRestAssuredFilter();
+            applyTestLibConfig();
+        } catch(RuntimeException rte) {
+            throw new TigerConfigurationException("Unable to read/process configuration - " + rte.getMessage(), rte);
+        }
+        try{
+            // get free port
+            startTestEnvMgr();
+            startWorkflowUi();
+            setupTestEnvironent(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
+            setDefaultProxyToLocalTigerProxy();
+        } catch (RuntimeException e) {
+            quit(false, false);
+        }
 
         initialized = true;
     }
@@ -106,16 +115,17 @@ public class TigerDirector {
         shutdownHookRegistered = true;
 
         log.info("Registering shutdown hook...");
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> quit(false, tigerTestEnvMgr.isUserAcknowledgedShutdown())));
+        Runtime.getRuntime().addShutdownHook(new Thread(() ->
+            quit(false, false)));
     }
 
     public static void waitForQuit() {
         quit(true, false);
     }
 
-    private static void quit(boolean withWaitForQuit, boolean isUserAcknowledgedShutdown) {
+    private static void quit(boolean withWaitForQuit, boolean shouldUserAcknowledgeShutdown) {
         try {
-            if (getLibConfig().isActivateWorkflowUi() && !isUserAcknowledgedShutdown) {
+            if (getLibConfig() != null && getLibConfig().isActivateWorkflowUi() && !shouldUserAcknowledgeShutdown) {
                 System.out.println(
                     Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...",
                         RbelAnsiColors.GREEN_BOLD));
@@ -131,20 +141,11 @@ public class TigerDirector {
                             .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
                     } finally {
                         tigerTestEnvMgr.shutDown();
-                        if (withWaitForQuit) {
-                            System.exit(0);
-                        }
                     }
                 }
             } else if (tigerTestEnvMgr != null) {
                 System.out.println("TGR Shutting down test env...");
-                if (withWaitForQuit) {
-                    TigerTestEnvMgr.waitForConsoleInput("quit");
-                }
                 tigerTestEnvMgr.shutDown();
-                if (withWaitForQuit) {
-                    System.exit(0);
-                }
             }
             unregisterRestAssuredFilter();
         } finally {
@@ -212,7 +213,7 @@ public class TigerDirector {
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
-            TigerBrowserUtil.openUrlInBrowser( "http://localhost:" +
+            TigerBrowserUtil.openUrlInBrowser("http://localhost:" +
                 TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow(
                         () -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!"))
                     .toString(), "Workflow UI");
@@ -356,10 +357,9 @@ public class TigerDirector {
                 .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun());
             tigerTestEnvMgr.resetUserInput();
         } else {
-            // TGR-585
-            log.warn(String.format(
-                "The step 'TGR pause test run execution with message \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.",
-                message));
+            throw new TigerTestEnvException("The step 'TGR pause test run execution with message \"{}\"' is not supported "
+                + "outside the Workflow UI. Please check the manual for more information.",
+                message);
         }
     }
 
@@ -385,10 +385,10 @@ public class TigerDirector {
                 tigerTestEnvMgr.resetUserInput();
             }
         } else {
-            // TGR-585
-            log.warn(String.format(
-                "The step 'TGR pause test run execution with message \"%s\" and message in case of error \"%s\"' is not supported outside the Workflow UI. Please check the manual for more information.",
-                message, errorMessage));
+            throw new TigerTestEnvException("The step 'TGR pause test run execution with message \"{}\" and "
+                + "message in case of error \"{}\"' is not supported outside the Workflow UI. "
+                + "Please check the manual for more information.",
+                message, errorMessage);
         }
     }
 }
