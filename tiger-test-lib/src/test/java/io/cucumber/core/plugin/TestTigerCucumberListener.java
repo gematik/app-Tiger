@@ -7,13 +7,27 @@ package io.cucumber.core.plugin;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import io.cucumber.plugin.event.*;
+import io.cucumber.plugin.event.Argument;
+import io.cucumber.plugin.event.Location;
+import io.cucumber.plugin.event.PickleStepTestStep;
+import io.cucumber.plugin.event.Result;
+import io.cucumber.plugin.event.Status;
+import io.cucumber.plugin.event.Step;
+import io.cucumber.plugin.event.StepArgument;
+import io.cucumber.plugin.event.TestCase;
+import io.cucumber.plugin.event.TestCaseFinished;
+import io.cucumber.plugin.event.TestCaseStarted;
+import io.cucumber.plugin.event.TestSourceRead;
+import io.cucumber.plugin.event.TestStep;
+import io.cucumber.plugin.event.TestStepFinished;
+import io.cucumber.plugin.event.TestStepStarted;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -60,7 +74,8 @@ public class TestTigerCucumberListener {
 
     @Test
     void testCaseStartedSimpleScenario() throws IOException {
-        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
+        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(
+            featureUri, StandardCharsets.UTF_8));
         listener.handleTestSourceRead(event);
 
         assertThat(listener.getContext().currentFeaturePath()).isNull();
@@ -70,40 +85,51 @@ public class TestTigerCucumberListener {
         listener.handleTestCaseStarted(startedEvent);
         assertThat(listener.getContext().currentFeaturePath()).isEqualTo(featureUri);
 
-        assertThat(listener.getContext().currentScenarioDefinition.getName()).isEqualTo(scenarioName);
-        assertThat(listener.getSerenityReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(-1);
+        assertThat(listener.getContext().currentScenarioDefinition.getName()).isEqualTo(
+            scenarioName);
+        assertThat(
+            listener.getSerenityReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(
+            -1);
 
         TigerEnvStatusDto status = envStatusController.getStatus();
         assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
-        Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
+        Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName)
+            .getScenarios();
         assertThat(scenarios).hasSize(1);
-        assertThat(scenarios.get(listener.getContext().currentScenarioDefinition.getId()).getDescription()).isEqualTo(scenarioName);
+        assertThat(scenarios.get(listener.getContext().currentScenarioDefinition.getId())
+            .getDescription()).isEqualTo(
+            scenarioName);
     }
 
     @Test
     void testCaseStartedScenarioOutline() throws IOException {
-        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
+        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(
+            featureUri, StandardCharsets.UTF_8));
         listener.handleTestSourceRead(event);
         assertThat(listener.getContext().currentFeaturePath()).isNull();
 
-        TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), new ScenarioOutlineTestCaseAdapter());
+        TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(),
+            new ScenarioOutlineTestCaseAdapter());
         listener.handleTestCaseStarted(startedEvent);
         assertThat(listener.getContext().currentFeaturePath()).isEqualTo(featureUri);
 
-
         assertThat(listener.getContext().getTable().getHeaders()).contains(
-            "http_code", "err_id", "err", "client_id", "scope", "code_challenge", "code_challenge_method",
+            "http_code", "err_id", "err", "client_id", "scope", "code_challenge",
+            "code_challenge_method",
             "redirect_uri", "state", "nonce", "response_type");
         TigerEnvStatusDto status = envStatusController.getStatus();
         assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
-        Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
+        Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName)
+            .getScenarios();
         assertThat(scenarios).hasSize(1);
         String scenarioId0 = "0-" + listener.getContext().currentScenarioDefinition.getId();
         assertThat(scenarios.get(scenarioId0).getDescription()).isEqualTo(scenarioOutlineName);
         assertThat(scenarios.get(scenarioId0).getVariantIndex()).isZero();
 
         listener.handleTestCaseStarted(startedEvent);
-        assertThat(listener.getSerenityReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(1);
+        assertThat(
+            listener.getSerenityReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(
+            1);
         status = envStatusController.getStatus();
         String scenarioId1 = "1-" + listener.getContext().currentScenarioDefinition.getId();
         scenarios = status.getFeatureMap().get(featureName).getScenarios();
@@ -119,27 +145,33 @@ public class TestTigerCucumberListener {
         */
     @Test
     void testStepsHandling() throws IOException {
-        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
+        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(
+            featureUri, StandardCharsets.UTF_8));
         listener.handleTestSourceRead(event);
         TestCase testCase = new TestcaseAdapter();
         TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
         listener.handleTestCaseStarted(startedEvent);
 
-        TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
+        TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase,
+            new TestStepAdapter());
         listener.handleTestStepStarted(stepStartedEvent);
         // TODO assertThat(listener.getContext().getCurrentStep().getLocation().getLine()).isEqualTo(1);
-        listener.handleTestStepFinished(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.PASSED,
-            Duration.ofMillis(500), null)));
+        listener.handleTestStepFinished(
+            new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(),
+                new Result(Status.PASSED,
+                    Duration.ofMillis(500), null)));
 
         listener.handleTestStepStarted(stepStartedEvent);
         // TODO assertThat(listener.getContext().getCurrentStep().getLocation().getLine()).isEqualTo(1);
-        listener.handleTestStepFinished(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED,
-            Duration.ofMillis(500), new TigerTestEnvException("Test Tiger A"))));
-
+        listener.handleTestStepFinished(
+            new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(),
+                new Result(Status.FAILED,
+                    Duration.ofMillis(500), new TigerTestEnvException("Test Tiger A"))));
 
         TigerEnvStatusDto status = envStatusController.getStatus();
         assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
-        ScenarioUpdate scenario = status.getFeatureMap().get(featureName).getScenarios().get(listener.getContext().currentScenarioDefinition.getId());
+        ScenarioUpdate scenario = status.getFeatureMap().get(featureName).getScenarios().get(
+            listener.getContext().currentScenarioDefinition.getId());
         // TODO assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PASSED);
         // TODO assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.FAILED);
 
@@ -148,15 +180,20 @@ public class TestTigerCucumberListener {
     @Test
     void testCaseFinished() throws IOException {
         long startms = System.currentTimeMillis();
-        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
+        TestSourceRead event = new TestSourceRead(Instant.now(), featureUri, IOUtils.toString(
+            featureUri, StandardCharsets.UTF_8));
         listener.handleTestSourceRead(event);
         TestCase testCase = new TestcaseAdapter();
         TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
         listener.handleTestCaseStarted(startedEvent);
 
-        TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
+        TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase,
+            new TestStepAdapter());
         listener.handleTestStepStarted(stepStartedEvent);
-        listener.handleTestStepFinished(new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(), new Result(Status.FAILED, Duration.ofMillis(500), new TigerTestEnvException("Testing tiger 1"))));
+        listener.handleTestStepFinished(
+            new TestStepFinished(Instant.now(), testCase, new TestStepAdapter(),
+                new Result(Status.FAILED, Duration.ofMillis(500),
+                    new TigerTestEnvException("Testing tiger 1"))));
         TestCaseFinished finishedEvent = new TestCaseFinished(Instant.now(), testCase,
             new Result(Status.FAILED, Duration.ofMillis(500), null));
         listener.handleTestCaseFinished(finishedEvent);
@@ -165,16 +202,20 @@ public class TestTigerCucumberListener {
         assertThat(listener.getSerenityReporterCallbacks().getScPassed()).isZero();
 
         File logFileFolder = new File("target/rbellogs/");
-        File logFile = Arrays.stream(logFileFolder.listFiles()).filter(file -> file.lastModified() > startms).findFirst().get();
-        assertThat(logFile.getName()).startsWith(listener.getSerenityReporterCallbacks().replaceSpecialCharacters(scenarioName));
+        File logFile = Arrays.stream(logFileFolder.listFiles())
+            .filter(file -> file.lastModified() > startms).findFirst().get();
+        assertThat(logFile.getName()).startsWith(
+            listener.getSerenityReporterCallbacks().replaceSpecialCharacters(scenarioName));
         assertThat(logFile)
             .exists()
-            .hasName(listener.getSerenityReporterCallbacks().replaceSpecialCharacters(logFile.getName()))
+            .hasName(
+                listener.getSerenityReporterCallbacks().replaceSpecialCharacters(logFile.getName()))
             .content(StandardCharsets.UTF_8).hasSizeGreaterThan(800).contains(scenarioName);
 
         TigerEnvStatusDto status = envStatusController.getStatus();
         assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
-        ScenarioUpdate scenario = status.getFeatureMap().get(featureName).getScenarios().get(listener.getContext().currentScenarioDefinition.getId());
+        ScenarioUpdate scenario = status.getFeatureMap().get(featureName).getScenarios().get(
+            listener.getContext().currentScenarioDefinition.getId());
         // TODO as the scenario status is dervided from all step status, doesnt work, see above
         //  assertThat(scenario.getStatus()).isEqualTo(TestResult.FAILED);
 
@@ -244,7 +285,7 @@ public class TestTigerCucumberListener {
 
         @Override
         public int getStepLine() {
-            return 0;
+            return 26;
         }
 
         @Override

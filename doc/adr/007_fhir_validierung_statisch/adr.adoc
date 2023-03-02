@@ -1,0 +1,47 @@
+= ADR 007: FHIR-Validierung-Statisch
+
+== Kontext
+
+Statische Validierung von FHIR Ressourcen mithilfe des TIGERS
+
+== Status
+
+Umgesetzt
+
+== Entscheidungen
+
+Validierung wird mithilfe einer Tiger-Extension (namens Tiger-on-FHIR) umgesetzt, welche den Referenz-validator verwendet
+
+== Vorteile
+
+* Weniger Wartungsintensiv und für Nutzer ggf. bekannte Ergebnisse
+
+== Nachteile
+
+* Die Verwendung des Referenzvalidators beschränkt die Validierung auf darin implementierte Profile und bei Upgrades des Referenzvalidators muss ggf. eine neue Version der Extension ausgerollt werden.
+(Dies sollte sich automatisieren lassen)
+
+== Alternativen
+
+=== Verwendung der https://github.com/hapifhir/org.hl7.fhir.core/blob/master/org.hl7.fhir.validation/src/main/java/org/hl7/fhir/validation/ValidatorCli.java[ValidatorCLI] als Dependency oder Prozess
+
+==== Vorteile
+
+* Konfiguration und Fähigkeiten sind in der FHIR-Welt bekannt und können einfach wie Kommandozeilenparameter durchgereicht werden
+* Validierung scheinbar für alle Profile out of the box möglich
+
+==== Nachteile
+
+* Zu langsam um es für jeden Request und Response live auszuführen
+
+=== Verwendung des InstanceValidators
+
+==== Vorteile
+
+* Ofiziell empfohlener Weg ==== Nachteile
+* Entspricht dem, was auch der Referenzvalidator macht
+** Entscheidungen werden redundant zum Referenzvalidator gefällt
+** Entscheidungen werden redundant bei jeder Validierung "implementiert" bzw. konfiguriert
+** Umfangreiche Behandlung zu erwartender Issues auf verschiedenen Leveln (INFORMATION, ERROR, WARNING)
+* Manuelles Parsen der FIHR-Resourcen notwendig um an weiterführende Informationen zu kommen
+* Automatisches oder Manuelles Einspielen möglicher Profilpakete ins Projekt nötig

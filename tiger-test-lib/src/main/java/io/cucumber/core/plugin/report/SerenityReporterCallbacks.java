@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package io.cucumber.core.plugin;
+package io.cucumber.core.plugin.report;
 
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -16,34 +16,58 @@ import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
 import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import io.cucumber.core.plugin.FeatureFileLoader;
+import io.cucumber.core.plugin.ScenarioContextDelegate;
+import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.messages.types.Feature;
 import io.cucumber.messages.types.Scenario;
 import io.cucumber.messages.types.Step;
-import io.cucumber.plugin.event.*;
+import io.cucumber.plugin.event.Event;
+import io.cucumber.plugin.event.HookTestStep;
+import io.cucumber.plugin.event.PickleStepTestStep;
+import io.cucumber.plugin.event.TestCaseFinished;
+import io.cucumber.plugin.event.TestSourceRead;
+import io.cucumber.plugin.event.TestStepFinished;
+import io.cucumber.plugin.event.TestStepStarted;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 
 @Slf4j
 public class SerenityReporterCallbacks {
 
 
+    public static final String TARGET_DIR = "target";
     private static RuntimeException tigerStartupFailedException;
 
     @Getter
@@ -66,6 +90,10 @@ public class SerenityReporterCallbacks {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 
+    private final EvidenceRecorder evidenceRecorder = EvidenceRecorderFactory.getEvidenceRecorder();
+    private final EvidenceRenderer evidenceRenderer = new EvidenceRenderer(
+        new HtmlEvidenceRenderer());
+
 
     // -------------------------------------------------------------------------------------------------------------------------------------
     //
@@ -79,7 +107,9 @@ public class SerenityReporterCallbacks {
     //
     // test run start
     //
-    public void handleTestRunStarted(Event ignoredEvent, ScenarioContext ignoredContext) { //NOSONAR
+    @SuppressWarnings("java:S1172")
+    public void handleTestRunStarted(Event ignoredEvent,
+        ScenarioContextDelegate ignoredContext) {
         showTigerVersion();
         initializeTiger();
     }
@@ -116,16 +146,17 @@ public class SerenityReporterCallbacks {
     //
     // test case start
     //
-    public void handleTestCaseStarted(Event ignoredEvent, ScenarioContext context) /* NOSONAR */ {
+    public void handleTestCaseStarted(Event event, ScenarioContextDelegate context) /* NOSONAR */ {
 
         // TGR
         if (context.isAScenarioOutline()) {
             currentScenarioDataVariantIndex++;
         }
-        Optional<Feature> currentFeature = featureFrom(context.currentFeaturePath);
+        Optional<Feature> currentFeature = featureFrom(context.currentFeaturePath());
         currentFeature.ifPresent(feature ->
             informWorkflowUiAboutCurrentScenario(feature, context)
         );
+        evidenceRecorder.reset();
     }
 
     FeatureFileLoader featureLoader = new FeatureFileLoader();
@@ -135,12 +166,14 @@ public class SerenityReporterCallbacks {
     }
 
 
-    private void informWorkflowUiAboutCurrentScenario(Feature feature, ScenarioContext context) {
-        Scenario scenario = context.currentScenarioDefinition;
+    private void informWorkflowUiAboutCurrentScenario(Feature feature,
+        ScenarioContextDelegate context) {
+        Scenario scenario = context.getCurrentScenarioDefinition();
         log.info("Scenario location {}", scenario.getLocation());
         Map<String, String> variantDataMap = context.isAScenarioOutline() ?
             context.getTable().currentRow().toStringMap() : null;
-        log.info("Current row for scenario variant {} {}", currentScenarioDataVariantIndex, variantDataMap);
+        log.info("Current row for scenario variant {} {}", currentScenarioDataVariantIndex,
+            variantDataMap);
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
             .featureMap(
                 new LinkedHashMap<>(Map.of(feature.getName(),
@@ -148,9 +181,12 @@ public class SerenityReporterCallbacks {
                         .description(feature.getName())
                         .scenarios(
                             new LinkedHashMap<>(Map.of(
-                                mapScenarioToScenarioUpdateMap(scenario, context.isAScenarioOutline()),
+                                mapScenarioToScenarioUpdateMap(scenario,
+                                    context.isAScenarioOutline()),
                                 ScenarioUpdate.builder()
-                                    .description(replaceLineWithCurrentDataVariantValues(scenario.getName(), variantDataMap))
+                                    .description(
+                                        replaceLineWithCurrentDataVariantValues(scenario.getName(),
+                                            variantDataMap))
                                     .variantIndex(currentScenarioDataVariantIndex)
                                     .exampleKeys(
                                         context.isAScenarioOutline() ?
@@ -191,7 +227,7 @@ public class SerenityReporterCallbacks {
         final StringBuilder stepText = new StringBuilder(StringEscapeUtils.escapeHtml4(step.getText()));
         step.getDocString().ifPresent(docStr ->
             stepText.append("<div class=\"steps-docstring\">")
-                .append(StringEscapeUtils.escapeHtml4(docStr.getContent().replace("\n", "<br/>")))
+                .append(StringEscapeUtils.escapeHtml4(docStr.getContent()))
                 .append("</div>" ));
         step.getDataTable().ifPresent(dataTable -> stepText.append("<br/>" + StringEscapeUtils.escapeHtml4(dataTable.toString())));
         return stepText.toString();
@@ -215,17 +251,24 @@ public class SerenityReporterCallbacks {
     //
     // test step start
     //
-    public void handleTestStepStarted(Event event, ScenarioContext context) {
+    public void handleTestStepStarted(Event event, ScenarioContextDelegate context) {
         TestStepStarted tssEvent = ((TestStepStarted) event);
 
         Map<String, String> variantDataMap = context.isAScenarioOutline() ?
             context.getTable().currentRow().toStringMap() : null;
 
-        if (!(tssEvent.getTestStep() instanceof HookTestStep) && tssEvent.getTestStep() instanceof PickleStepTestStep) {
+        if (!(tssEvent.getTestStep() instanceof HookTestStep)
+            && tssEvent.getTestStep() instanceof PickleStepTestStep) {
             PickleStepTestStep pickleTestStep = (PickleStepTestStep) tssEvent.getTestStep();
             TigerStatusUpdate.TigerStatusUpdateBuilder statusUpdateBuilder = TigerStatusUpdate.builder();
             addBannerMessageToUpdate(variantDataMap, pickleTestStep, statusUpdateBuilder);
             TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(statusUpdateBuilder.build());
+        }
+
+        if (context.getCurrentStep() != null) {
+            evidenceRecorder.openStepContext(
+                new ReportStepConfiguration(
+                    context.getCurrentStep().getKeyword() + getStepDescription(context.getCurrentStep())));
         }
     }
 
@@ -255,7 +298,7 @@ public class SerenityReporterCallbacks {
     //
     // test step end
     //
-    public void handleTestStepFinished(Event event, ScenarioContext context) {
+    public void handleTestStepFinished(Event event, ScenarioContextDelegate context) {
         TestStepFinished tsfEvent = ((TestStepFinished) event);
 
         if (!(tsfEvent.getTestStep() instanceof HookTestStep)) {
@@ -266,21 +309,39 @@ public class SerenityReporterCallbacks {
             }
             if (context.getCurrentStep() != null) {
                 informWorkflowUiAboutCurrentStep(tsfEvent, context);
+
+                if (TigerDirector.isSerenityAvailable()) {
+                    addStepEvidence();
+                }
             }
         }
+
     }
 
-    private void informWorkflowUiAboutCurrentStep(TestStepFinished event, ScenarioContext context) {
+    private void addStepEvidence() {
+        evidenceRecorder.getCurrentStep()
+            .ifPresent(step -> step
+                .getEvidenceEntries()
+                .forEach(entry -> Serenity.recordReportData()
+                    .asEvidence()
+                    .withTitle(entry.getType() + " - " + entry.getTitle())
+                    .andContents(
+                        new JSONObject(
+                            entry.getDetails()).toString(2))));
+    }
+
+    private void informWorkflowUiAboutCurrentStep(TestStepFinished event,
+        ScenarioContextDelegate context) {
 
         String status = event.getResult().getStatus().name();
-        Scenario scenario = context.currentScenarioDefinition;
+        Scenario scenario = context.getCurrentScenarioDefinition();
         PickleStepTestStep pickleTestStep = (PickleStepTestStep) event.getTestStep();
 
         int currentStepIndex = scenario.getSteps().indexOf(context.getCurrentStep());
         TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
 
         String featureName;
-        Optional<Feature> feature = featureFrom(context.currentFeaturePath);
+        Optional<Feature> feature = featureFrom(context.currentFeaturePath());
         if (feature.isPresent()) {
             featureName = feature.get().getName();
         } else {
@@ -325,7 +386,7 @@ public class SerenityReporterCallbacks {
     //
     // test case end
     //
-    public void handleTestCaseFinished(Event event, ScenarioContext context) {
+    public void handleTestCaseFinished(Event event, ScenarioContextDelegate context) {
         TestCaseFinished tscEvent = ((TestCaseFinished) event);
         String scenarioStatus = tscEvent.getResult().getStatus().toString();
 
@@ -341,19 +402,77 @@ public class SerenityReporterCallbacks {
             default:
                 break;
         }
-        log.info("------------ STATUS: {} passed {}", scPassed, scFailed > 0 ? scFailed + " failed or error" : "");
+        log.info("------------ STATUS: {} passed {}", scPassed,
+            scFailed > 0 ? scFailed + " failed or error" : "");
 
         if (TigerDirector.getLibConfig().createRbelHtmlReports) {
-            createRbelLogReport(tscEvent.getTestCase().getName(), tscEvent.getTestCase().getUri(), context);
+            createRbelLogReport(tscEvent.getTestCase().getName(), tscEvent.getTestCase().getUri(),
+                context);
         }
+
+        createEvidenceFile((TestCaseFinished) event, context);
     }
 
-    private void createRbelLogReport(String scenarioName, URI scenarioUri, ScenarioContext context) {
+    @SneakyThrows
+    private void createEvidenceFile(
+        TestCaseFinished testCaseFinishedEvent, final ScenarioContextDelegate scenarioContext) {
+        final EvidenceReport evidenceReport = getEvidenceReport(testCaseFinishedEvent,
+            scenarioContext);
+
+        Path reportFile = createReportFile(scenarioContext, evidenceReport);
+
+        if (TigerDirector.isSerenityAvailable()) {
+            (Serenity.recordReportData().asEvidence()
+                .withTitle("Evidence Report"))
+                .downloadable()
+                .fromFile(reportFile);
+        }
+
+    }
+
+    @NotNull
+    private Path createReportFile(ScenarioContextDelegate scenarioContext,
+        EvidenceReport evidenceReport)
+        throws IOException {
+        var renderedReport = evidenceRenderer.render(evidenceReport);
+
+        final Path parentDir = getEvidenceDir();
+
+        return Files.write(
+            parentDir.resolve(
+                scenarioContext.getScenarioName() + "_" + UUID.randomUUID()
+                    + ".html"),
+            renderedReport.getBytes(StandardCharsets.UTF_8),
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    @NotNull
+    private static Path getEvidenceDir() throws IOException {
+        final Path parentDir = Path.of(TARGET_DIR,
+            "evidences");
+        if (Files.notExists(parentDir)) {
+            Files.createDirectories(parentDir);
+        }
+        return parentDir;
+    }
+
+    private EvidenceReport getEvidenceReport(TestCaseFinished testCaseFinishedEvent,
+        ScenarioContextDelegate scenarioContext) {
+        return evidenceRecorder.getEvidenceReportForScenario(
+            new ReportContext(scenarioContext.getScenarioName(),
+                testCaseFinishedEvent.getTestCase().getUri()));
+    }
+
+    private void createRbelLogReport(String scenarioName, URI scenarioUri,
+        ScenarioContextDelegate context) {
         try {
             // make sure target/rbellogs folder exists
-            final File folder = Paths.get("target", "rbellogs").toFile();
+            final File folder = Paths.get(TARGET_DIR, "rbellogs").toFile();
             if (!folder.exists() && !folder.mkdirs()) {
-                throw new TigerOsException("Unable to create folder '" + folder.getAbsolutePath() + "'");
+                throw new TigerOsException(
+                    "Unable to create folder '" + folder.getAbsolutePath() + "'");
             }
             var rbelRenderer = new RbelHtmlRenderer();
             rbelRenderer.setSubTitle(
@@ -376,37 +495,45 @@ public class SerenityReporterCallbacks {
                 }
                 modal.append("    </table></div>\n</div>\n</div>\n");
 
-                if (bulmaModalJsScript == null) {
-                    try {
-                        bulmaModalJsScript = IOUtils.toString(getClass().getResourceAsStream("/js/bulma-modal.js"),
-                            StandardCharsets.UTF_8);
-                    } catch (NullPointerException npe) {
-                        log.error("Unable to locate bulma-modal.js in class path!");
-                    }
-                }
+                loadBulma();
             }
             String name = getFileNameFor(scenarioName, currentScenarioDataVariantIndex);
-            final File logFile = Paths.get("target", "rbellogs", name).toFile();
+            final File logFile = Paths.get(TARGET_DIR, "rbellogs", name).toFile();
             FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
             if (TigerDirector.isSerenityAvailable()) {
                 (Serenity.recordReportData().asEvidence()
                     .withTitle("RBellog " + (currentScenarioDataVariantIndex + 1))).downloadable()
                     .fromFile(logFile.toPath());
             }
-            log.info("Saved HTML report of scenario '{}' to {}", scenarioName, logFile.getAbsolutePath());
+            log.info("Saved HTML report of scenario '{}' to {}", scenarioName,
+                logFile.getAbsolutePath());
         } catch (final Exception e) {
             log.error("Unable to create/save rbel log for scenario " + scenarioName, e);
         }
     }
 
+    private void loadBulma() throws IOException {
+        if (bulmaModalJsScript == null) {
+            try {
+                bulmaModalJsScript = IOUtils.toString(
+                    getClass().getResourceAsStream("/js/bulma-modal.js"),
+                    StandardCharsets.UTF_8);
+            } catch (NullPointerException npe) {
+                log.error("Unable to locate bulma-modal.js in class path!");
+            }
+        }
+    }
+
     public String getFileNameFor(String scenarioName, int dataVariantIndex) {
         if (scenarioName.length() > 80) { // Serenity can not deal with longer filenames
-            scenarioName = scenarioName.substring(0, 60) + UUID.nameUUIDFromBytes(scenarioName.getBytes(StandardCharsets.UTF_8));
+            scenarioName = scenarioName.substring(0, 60) + UUID.nameUUIDFromBytes(
+                scenarioName.getBytes(StandardCharsets.UTF_8));
         }
         if (dataVariantIndex != -1) {
             scenarioName = scenarioName + "_" + (dataVariantIndex + 1);
         }
-        scenarioName = replaceSpecialCharacters(scenarioName) + "_" + sdf.format(new Date()) + ".html";
+        scenarioName =
+            replaceSpecialCharacters(scenarioName) + "_" + sdf.format(new Date()) + ".html";
         return scenarioName;
     }
 

@@ -4,29 +4,60 @@
 
 package io.cucumber.core.plugin;
 
-import static io.cucumber.core.plugin.TaggedScenario.*;
+import static io.cucumber.core.plugin.TaggedScenario.isIgnored;
+import static io.cucumber.core.plugin.TaggedScenario.isManual;
+import static io.cucumber.core.plugin.TaggedScenario.isPending;
+import static io.cucumber.core.plugin.TaggedScenario.isSkippedOrWIP;
+import static io.cucumber.core.plugin.TaggedScenario.manualResultDefinedIn;
 import static java.util.stream.Collectors.toList;
 import static net.serenitybdd.core.webdriver.configuration.RestartBrowserForEach.FEATURE;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+
 import com.google.common.collect.Lists;
+import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.junit.CucumberSerenityBaseRunner;
-import io.cucumber.messages.types.*;
+import io.cucumber.messages.types.Background;
+import io.cucumber.messages.types.Examples;
+import io.cucumber.messages.types.Feature;
+import io.cucumber.messages.types.FeatureChild;
+import io.cucumber.messages.types.Scenario;
+import io.cucumber.messages.types.TableCell;
+import io.cucumber.messages.types.TableRow;
+import io.cucumber.messages.types.Tag;
 import io.cucumber.plugin.ConcurrentEventListener;
 import io.cucumber.plugin.Plugin;
+import io.cucumber.plugin.event.DataTableArgument;
+import io.cucumber.plugin.event.EventHandler;
+import io.cucumber.plugin.event.EventPublisher;
+import io.cucumber.plugin.event.HookTestStep;
+import io.cucumber.plugin.event.PickleStepTestStep;
+import io.cucumber.plugin.event.Result;
+import io.cucumber.plugin.event.Status;
+import io.cucumber.plugin.event.StepArgument;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
 import io.cucumber.plugin.event.TestRunFinished;
 import io.cucumber.plugin.event.TestRunStarted;
+import io.cucumber.plugin.event.TestSourceRead;
 import io.cucumber.plugin.event.TestStep;
 import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
-import io.cucumber.plugin.event.*;
+import io.cucumber.plugin.event.WriteEvent;
 import io.cucumber.tagexpressions.Expression;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -40,11 +71,19 @@ import net.serenitybdd.cucumber.util.StepDefinitionAnnotationReader;
 import net.thucydides.core.guice.Injectors;
 import net.thucydides.core.model.DataTable;
 import net.thucydides.core.model.Rule;
-import net.thucydides.core.model.*;
+import net.thucydides.core.model.Story;
+import net.thucydides.core.model.TakeScreenshots;
+import net.thucydides.core.model.TestOutcome;
+import net.thucydides.core.model.TestResult;
+import net.thucydides.core.model.TestTag;
 import net.thucydides.core.model.screenshots.StepDefinitionAnnotations;
 import net.thucydides.core.model.stacktrace.RootCauseAnalyzer;
 import net.thucydides.core.reports.ReportService;
-import net.thucydides.core.steps.*;
+import net.thucydides.core.steps.BaseStepListener;
+import net.thucydides.core.steps.ExecutedStepDescription;
+import net.thucydides.core.steps.StepEventBus;
+import net.thucydides.core.steps.StepFailure;
+import net.thucydides.core.steps.TestSourceType;
 import net.thucydides.core.util.Inflector;
 import net.thucydides.core.webdriver.Configuration;
 import net.thucydides.core.webdriver.ThucydidesWebDriverSupport;
@@ -65,43 +104,44 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
 
     private static final String SCENARIO_OUTLINE_NOT_KNOWN_YET = "";
 
-    private Configuration systemConfiguration;
+    private final Configuration<?> systemConfiguration;
 
     private final List<BaseStepListener> baseStepListeners;
 
     private static final String FEATURES_ROOT_PATH = "/features/"; // NOSONAR
     private static final String FEATURES_CLASSPATH_ROOT_PATH = ":features/";
-    private FeatureFileLoader featureLoader = new FeatureFileLoader();
+    private final FeatureFileLoader featureLoader = new FeatureFileLoader();
 
     private List<Tag> scenarioTags;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TigerCucumberListener.class);
 
-    private ThreadLocal<ScenarioContext> localContext = ThreadLocal.withInitial(ScenarioContext::new);
+    private final ThreadLocal<ScenarioContext> localContext = ThreadLocal.withInitial(
+        ScenarioContext::new);
 
-    private Set<URI> contextURISet = new CopyOnWriteArraySet<>();
+    private final Set<URI> contextURISet = new CopyOnWriteArraySet<>();
 
     ScenarioContext getContext() {
         return localContext.get();
     }
 
     @Getter
-    private SerenityReporterCallbacks serenityReporterCallbacks = new SerenityReporterCallbacks();
+    private final SerenityReporterCallbacks serenityReporterCallbacks = new SerenityReporterCallbacks();
 
     /**
      * Constructor automatically called by cucumber when class is specified as plugin in @CucumberOptions.
      */
     public TigerCucumberListener() {
-        this.systemConfiguration = Injectors.getInjector().getInstance(Configuration.class);
+        systemConfiguration = Injectors.getInjector().getInstance(Configuration.class);
         baseStepListeners = Collections.synchronizedList(new ArrayList<>());
     }
 
-    public TigerCucumberListener(Configuration systemConfiguration) {
+    public TigerCucumberListener(Configuration<?> systemConfiguration) {
         this.systemConfiguration = systemConfiguration;
         baseStepListeners = Collections.synchronizedList(new ArrayList<>());
     }
 
-    private FeaturePathFormatter featurePathFormatter = new FeaturePathFormatter();
+    private final FeaturePathFormatter featurePathFormatter = new FeaturePathFormatter();
 
     private StepEventBus getStepEventBus(URI featurePath) {
         URI prefixedPath = featurePathFormatter.featurePathWithPrefixIfNecessary(featurePath);
@@ -117,21 +157,23 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
         if (getStepEventBus(featurePath).isBaseStepListenerRegistered()) {
             return;
         }
-        SerenityListeners listeners = new SerenityListeners(getStepEventBus(featurePath), systemConfiguration);
+        SerenityListeners listeners = new SerenityListeners(getStepEventBus(featurePath),
+            systemConfiguration);
         baseStepListeners.add(listeners.getBaseStepListener());
     }
 
-    private EventHandler<TestSourceRead> testSourceReadHandler = this::handleTestSourceRead;
-    private EventHandler<TestCaseStarted> caseStartedHandler = this::handleTestCaseStarted;
-    private EventHandler<TestCaseFinished> caseFinishedHandler = this::handleTestCaseFinished;
-    private EventHandler<TestStepStarted> stepStartedHandler = this::handleTestStepStarted;
-    private EventHandler<TestStepFinished> stepFinishedHandler = this::handleTestStepFinished;
-    private EventHandler<TestRunStarted> runStartedHandler = this::handleTestRunStarted;
-    private EventHandler<TestRunFinished> runFinishedHandler = this::handleTestRunFinished;
-    private EventHandler<WriteEvent> writeEventHandler = this::handleWrite;
+    private final EventHandler<TestSourceRead> testSourceReadHandler = this::handleTestSourceRead;
+    private final EventHandler<TestCaseStarted> caseStartedHandler = this::handleTestCaseStarted;
+    private final EventHandler<TestCaseFinished> caseFinishedHandler = this::handleTestCaseFinished;
+    private final EventHandler<TestStepStarted> stepStartedHandler = this::handleTestStepStarted;
+    private final EventHandler<TestStepFinished> stepFinishedHandler = this::handleTestStepFinished;
+    private final EventHandler<TestRunStarted> runStartedHandler = this::handleTestRunStarted;
+    private final EventHandler<TestRunFinished> runFinishedHandler = this::handleTestRunFinished;
+    private final EventHandler<WriteEvent> writeEventHandler = this::handleWrite;
 
     void handleTestRunStarted(TestRunStarted event) {
-        serenityReporterCallbacks.handleTestRunStarted(event, null);
+        serenityReporterCallbacks.handleTestRunStarted(event,
+            new ScenarioContextDelegate(getContext()));
     }
 
 
@@ -272,7 +314,8 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
                     TestSourcesModel.convertToId(getContext().currentScenarioDefinition.getName()));
             } else {
                 if (getContext().isAScenarioOutline()) {
-                    startExample(Long.valueOf(event.getTestCase().getLocation().getLine()), scenarioName);
+                    startExample((long) event.getTestCase().getLocation().getLine(),
+                        scenarioName);
                 }
             }
             TestSourcesModel.getBackgroundForTestCase(astNode).ifPresent(this::handleBackground);
@@ -282,7 +325,8 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
             getContext().stepEventBus().setRule(Rule.from(rule));
         }
 
-        serenityReporterCallbacks.handleTestCaseStarted(event, getContext());
+        serenityReporterCallbacks.handleTestCaseStarted(event,
+            new ScenarioContextDelegate(getContext()));
     }
 
     private io.cucumber.messages.types.Rule getRuleForTestCase(TestSourcesModel.AstNode astNode) {
@@ -312,17 +356,20 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
     }
 
     void handleTestCaseFinished(TestCaseFinished event) {
-        serenityReporterCallbacks.handleTestCaseFinished(event, getContext());
+        serenityReporterCallbacks.handleTestCaseFinished(event,
+            new ScenarioContextDelegate(getContext()));
 
-        if (this.getContext().examplesAreRunning()) {
-            this.handleResult(event.getResult());
-            this.finishExample();
+        if (getContext().examplesAreRunning()) {
+            handleResult(event.getResult());
+            finishExample();
         }
 
-        if (Status.FAILED.equals(event.getResult().getStatus()) && this.noAnnotatedResultIdDefinedFor(event)) {
-            this.getStepEventBus(event.getTestCase().getUri()).testFailed(event.getResult().getError());
+        if (Status.FAILED.equals(event.getResult().getStatus()) && noAnnotatedResultIdDefinedFor(
+            event)) {
+            getStepEventBus(event.getTestCase().getUri()).testFailed(event.getResult().getError());
         } else {
-            this.getStepEventBus(event.getTestCase().getUri()).testFinished(this.getContext().examplesAreRunning());
+            getStepEventBus(event.getTestCase().getUri()).testFinished(
+                getContext().examplesAreRunning());
         }
         getContext().clearStepQueue();
     }
@@ -341,7 +388,7 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
     void handleTestStepStarted(TestStepStarted event) {
         StepDefinitionAnnotations.setScreenshotPreferencesTo(
             StepDefinitionAnnotationReader
-                .withScreenshotLevel((TakeScreenshots) systemConfiguration.getScreenshotLevel()
+                .withScreenshotLevel(systemConfiguration.getScreenshotLevel()
                     .orElse(TakeScreenshots.UNDEFINED))
                 .forStepDefinition(event.getTestStep().getCodeLocation())
                 .getScreenshotPreferences());
@@ -363,12 +410,14 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
                 }
                 io.cucumber.messages.types.Step currentStep = getContext().getCurrentStep();
                 String stepTitle = stepTitleFrom(currentStep, pickleTestStep);
-                getContext().stepEventBus().stepStarted(ExecutedStepDescription.withTitle(stepTitle));
+                getContext().stepEventBus()
+                    .stepStarted(ExecutedStepDescription.withTitle(stepTitle));
                 getContext().stepEventBus().updateCurrentStepTitle(normalized(stepTitle));
 
             }
         }
-        serenityReporterCallbacks.handleTestStepStarted(event, getContext());
+        serenityReporterCallbacks.handleTestStepStarted(event,
+            new ScenarioContextDelegate(getContext()));
     }
 
     private void handleWrite(WriteEvent event) {
@@ -377,7 +426,8 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
     }
 
     void handleTestStepFinished(TestStepFinished event) {
-        serenityReporterCallbacks.handleTestStepFinished(event, getContext());
+        serenityReporterCallbacks.handleTestStepFinished(event,
+            new ScenarioContextDelegate(getContext()));
         if (!(event.getTestStep() instanceof HookTestStep)) {
 
             handleResult(event.getResult());
@@ -542,10 +592,11 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
     private List<Map<String, String>> getValuesFrom(List<TableRow> examplesTableRows, List<String> headers) {
 
         List<Map<String, String>> rows = new ArrayList<>();
-        for (int row = 0; row < examplesTableRows.size(); row++) {
+        for (TableRow examplesTableRow : examplesTableRows) {
             Map<String, String> rowValues = new HashMap<>();
             int column = 0;
-            List<String> cells = examplesTableRows.get(row).getCells().stream().map(TableCell::getValue).collect(Collectors.toList());
+            List<String> cells = examplesTableRow.getCells().stream().map(TableCell::getValue)
+                .collect(Collectors.toList());
             for (String cellValue : cells) {
                 String columnName = headers.get(column++);
                 rowValues.put(columnName, cellValue);
@@ -629,13 +680,16 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
                 scenarioIdFrom(TestSourcesModel.convertToId(currentFeature.getName()),
                     TestSourcesModel.convertToId(scenarioName)));
 
-        getContext().stepEventBus().addDescriptionToCurrentTest(scenarioDefinition.getDescription());
-        getContext().stepEventBus().addTagsToCurrentTest(convertCucumberTags(currentFeature.getTags()));
-        getContext().stepEventBus().addTagsToCurrentTest(tagsInEnclosingRule(currentFeature, scenarioDefinition));
-        if (isScenario(scenarioDefinition)) {
-            getContext().stepEventBus().addTagsToCurrentTest(convertCucumberTags(scenarioDefinition.getTags()));
-        } else if (isScenarioOutline(scenarioDefinition)) {
-            getContext().stepEventBus().addTagsToCurrentTest(convertCucumberTags(scenarioDefinition.getTags()));
+        getContext().stepEventBus()
+            .addDescriptionToCurrentTest(scenarioDefinition.getDescription());
+        getContext().stepEventBus()
+            .addTagsToCurrentTest(convertCucumberTags(currentFeature.getTags()));
+        getContext().stepEventBus()
+            .addTagsToCurrentTest(tagsInEnclosingRule(currentFeature, scenarioDefinition));
+        if (isScenario(scenarioDefinition) ||
+            isScenarioOutline(scenarioDefinition)) {
+            getContext().stepEventBus()
+                .addTagsToCurrentTest(convertCucumberTags(scenarioDefinition.getTags()));
         }
 
         registerFeatureJiraIssues(currentFeature.getTags());
@@ -650,7 +704,6 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
         List<io.cucumber.messages.types.Rule> nestedRules = feature.getChildren().stream()
             .filter(fc -> fc.getRule().isPresent())
             .map(fc -> fc.getRule().get())
-            .filter(Objects::nonNull)
             .collect(toList());
 
         return nestedRules.stream()
@@ -679,13 +732,11 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
     }
 
     private List<Tag> getTagsOfScenarioDefinition(Scenario scenarioDefinition) {
-        List<Tag> tags = new ArrayList<>();
-        if (isScenario(scenarioDefinition)) {
-            tags = scenarioDefinition.getTags();
-        } else if (isScenarioOutline(scenarioDefinition)) {
-            tags = scenarioDefinition.getTags();
+        if (isScenario(scenarioDefinition) || isScenarioOutline(scenarioDefinition)) {
+            return scenarioDefinition.getTags();
+        } else {
+            return new ArrayList<>();
         }
-        return tags;
     }
 
     private void registerFeatureJiraIssues(List<Tag> tags) {
@@ -726,7 +777,7 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
     }
 
     private boolean doesNotContainResultTag(List<Tag> tags) {
-        return !tags.stream().noneMatch(tag -> tag.getName().startsWith("@manual:"));
+        return tags.stream().anyMatch(tag -> tag.getName().startsWith("@manual:"));
     }
 
     private Optional<Tag> unqualifiedManualTag(List<Tag> tags) {
@@ -869,7 +920,8 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
         manualResultDefinedIn(scenarioTags).ifPresent(
             testResult ->
                 UpdateManualScenario.forScenario(getContext().currentScenarioDefinition.getDescription())
-                    .inContext(getContext().stepEventBus().getBaseStepListener(), systemConfiguration.getEnvironmentVariables())
+                    .inContext(getContext().stepEventBus().getBaseStepListener(),
+                        systemConfiguration.getEnvironmentVariables())
                     .updateManualScenario(testResult, scenarioTags)
         );
     }
@@ -918,10 +970,13 @@ public class TigerCucumberListener implements Plugin, ConcurrentEventListener {
     }
 
     private boolean errorOrFailureRecordedForStep(String stepTitle, Throwable cause) {
-        if (!latestTestOutcome().isPresent() || !latestTestOutcome().get().testStepWithDescription(stepTitle).isPresent()) {
+        if (latestTestOutcome()
+            .map(it -> it.testStepWithDescription(stepTitle))
+            .isEmpty()) {
             return false;
         }
-        Optional<net.thucydides.core.model.TestStep> matchingTestStep = latestTestOutcome().get().testStepWithDescription(stepTitle);
+        Optional<net.thucydides.core.model.TestStep> matchingTestStep = latestTestOutcome().get()
+            .testStepWithDescription(stepTitle);
         if (matchingTestStep.isPresent() && matchingTestStep.get().getNestedException() != null) {
             return (matchingTestStep.get().getNestedException().getOriginalCause() == cause);
         }
