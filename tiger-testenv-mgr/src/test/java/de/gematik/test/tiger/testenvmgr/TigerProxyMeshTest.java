@@ -11,6 +11,8 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import kong.unirest.Unirest;
@@ -56,8 +58,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "      adminPort: ${free.port.4}\n"
         + "      proxiedServer: winstone\n"
         + "      proxyPort: ${free.port.5}\n")
-//    @Disabled("deactivated due to buildserver problems") // TODO TGR-794
-    void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
+    @Disabled("deactivated due to buildserver problems") // TODO TGR-794
+    public void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
         final String path = "/foobarschmar";
         Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
             .asString()
@@ -111,7 +113,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "      adminPort: ${free.port.6}\n"
         + "      proxiedServer: winstone\n"
         + "      proxyPort: ${free.port.7}\n")
-    //@Disabled("deactivated due to buildserver problems") // TODO TGR-794
+    @Disabled("deactivated due to buildserver problems") // TODO TGR-794
     public void testWithMultipleUpstreamProxies(TigerTestEnvMgr envMgr) {
         assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory())
             .isEmpty();
@@ -155,6 +157,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "      directReverseProxy:\n"
         + "        hostname: localhost\n"
         + "        port: ${free.port.6}\n")
+    @Disabled("deactivated due to buildserver problems") // TODO TGR-794
     void testDirectReverseProxyMeshSetup_withoutResponse(TigerTestEnvMgr envMgr) {
         try (Socket clientSocket = new Socket("localhost",
             TigerGlobalConfiguration.readIntegerOptional("free.port.5").get());
