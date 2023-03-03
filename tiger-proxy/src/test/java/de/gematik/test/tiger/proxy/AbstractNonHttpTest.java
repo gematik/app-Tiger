@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.net.ssl.KeyManagerFactory;
@@ -29,7 +30,6 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.mockserver.configuration.Configuration;
 import org.mockserver.model.BinaryProxyListener;
@@ -37,7 +37,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 @Data
-abstract class AbstractNonHttpTest {
+public abstract class AbstractNonHttpTest {
 
     private TigerProxy tigerProxy;
 
@@ -60,37 +60,38 @@ abstract class AbstractNonHttpTest {
         log.info(s);
     }
 
-    public static void waitForCondition(ThrowingSupplier<Boolean> condition, ThrowingSupplier<String> errorMessage) {
-        try {
-            await()
-                .atMost(100, TimeUnit.SECONDS)
-                .until(condition::get);
-        } catch (ConditionTimeoutException e) {
-            throw new AssertionError(errorMessage.get(), e);
-        }
-    }
-
     public void executeTestRun(
         ThrowingConsumer<Socket> clientActionCallback,
         VerifyInteractionsConsumer interactionsVerificationCallback,
         ThrowingConsumer<Socket> serverAcceptedConnectionCallback
     ) throws Exception {
+        executeTestRun(clientActionCallback,
+            interactionsVerificationCallback,
+            serverAcceptedConnectionCallback,
+            serverPort -> new TigerProxy(TigerProxyConfiguration.builder()
+                .directReverseProxy(DirectReverseProxyInfo.builder()
+                    .port(serverPort)
+                    .hostname("localhost")
+                    .build())
+                .build())
+            );
+    }
+
+    public void executeTestRun(
+        ThrowingConsumer<Socket> clientActionCallback,
+        VerifyInteractionsConsumer interactionsVerificationCallback,
+        ThrowingConsumer<Socket> serverAcceptedConnectionCallback,
+        Function<Integer, TigerProxy> tigerProxyGenerator
+    ) throws Exception {
         try (GenericRespondingServer listenerServer = new GenericRespondingServer()) {
             AtomicInteger handlerCalledRequest = new AtomicInteger(0);
             AtomicInteger handlerCalledResponse = new AtomicInteger(0);
             AtomicInteger serverCalled = new AtomicInteger(0);
-
-            tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-                .directReverseProxy(DirectReverseProxyInfo.builder()
-                    .port(listenerServer.getLocalPort())
-                    .hostname("localhost")
-                    .build())
-                .build());
-
             listenerServer.setAcceptedConnectionConsumer(socket -> {
                 serverCalled.incrementAndGet();
                 serverAcceptedConnectionCallback.accept(socket);
             });
+            tigerProxy = tigerProxyGenerator.apply(listenerServer.getLocalPort());
 
             final Configuration configuration = (Configuration) ReflectionTestUtils.getField(
                 ReflectionTestUtils.getField(tigerProxy, "mockServer"), "configuration");

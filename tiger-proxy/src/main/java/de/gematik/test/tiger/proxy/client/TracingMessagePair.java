@@ -16,13 +16,14 @@ import lombok.val;
 
 @Data
 @Slf4j
-public class TracingMessagePair {
+public class TracingMessagePair implements TracingMessageFrame {
 
     private PartialTracingMessage request;
     private PartialTracingMessage response;
     @ToString.Exclude
     private final TigerRemoteProxyClient remoteProxyClient;
 
+    @Override
     public void checkForCompletePairAndPropagateIfComplete() {
         if (request != null && response != null
             && request.isComplete() && response.isComplete()) {

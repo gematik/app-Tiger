@@ -62,6 +62,7 @@
 
 * TGR-814: Interface for remote traffic sources added in Tiger Proxy
 * TGR-826: Support for Form-Parameter added to HTTP-Client-Extension
+* TGR-574: CETP messages can now also be transmitted in a mesh-setup
 
 ## Breaking changes
 

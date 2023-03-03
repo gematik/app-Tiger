@@ -13,6 +13,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
 
+/**
+ * A tracing message which is in the process of being received by the TigerRemoteProxyClient. Can be created by receiving either the
+ * metadata for a message (TigerTracingDto) or any of the data-message parts. When the message is complete (all TracingMessageParts
+ * and the TigerTracingDto have been received) the underlying message can be processed further.
+ */
 @Data
 @Builder(toBuilder = true)
 public class PartialTracingMessage {
@@ -22,7 +27,7 @@ public class PartialTracingMessage {
     private final RbelHostname sender;
     private final RbelHostname receiver;
     @ToString.Exclude
-    private final TracingMessagePair messagePair;
+    private final TracingMessageFrame messageFrame;
     private final ZonedDateTime transmissionTime;
     private final ZonedDateTime receivedTime = ZonedDateTime.now();
     private final List<TracingMessagePart> messageParts = new ArrayList<>();

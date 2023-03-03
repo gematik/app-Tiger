@@ -7,16 +7,17 @@ package de.gematik.test.tiger.proxy.handler;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
+import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
+import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,10 +39,46 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
     public void onProxy(BinaryMessage binaryRequest, CompletableFuture<BinaryMessage> binaryResponseFuture,
         SocketAddress serverAddress, SocketAddress clientAddress) {
         try {
-            log.trace("Finalizing binary exchange...");
-            convertBinaryMessageOrPushToBuffer(binaryRequest, clientAddress, serverAddress);
-            binaryResponseFuture.thenAccept(binaryResponse ->
-                convertBinaryMessageOrPushToBuffer(binaryResponse, serverAddress, clientAddress));
+            log.info("Finalizing binary exchange...");
+            var convertedRequest = convertBinaryMessageOrPushToBuffer(binaryRequest, clientAddress, serverAddress);
+            log.info("converted request, now waiting on response...");
+            boolean shouldWaitForResponse = shouldWaitForResponse(convertedRequest);
+            if (!shouldWaitForResponse) {
+                convertedRequest.ifPresent(msg -> {
+                    msg.addFacet(new TigerNonPairedMessageFacet());
+                    getTigerProxy().triggerListener(msg);
+                });
+            }
+            binaryResponseFuture
+                .thenApply(binaryResponse -> convertBinaryMessageOrPushToBuffer(binaryResponse, serverAddress, clientAddress))
+                .thenAccept(convertedResponse -> {
+                    if (shouldWaitForResponse) {
+                        if (convertedResponse.isPresent() && convertedRequest.isPresent()) {
+                            final TracingMessagePairFacet pairFacet = new TracingMessagePairFacet(convertedResponse.get(), convertedRequest.get());
+                            convertedRequest.get().addFacet(pairFacet);
+                            convertedResponse.get().addFacet(pairFacet);
+                            getTigerProxy().triggerListener(convertedRequest.get());
+                            getTigerProxy().triggerListener(convertedResponse.get());
+                        } else {
+                            convertedRequest.or(() -> convertedResponse)
+                                .ifPresent(msg -> {
+                                    msg.addFacet(new TigerNonPairedMessageFacet());
+                                    getTigerProxy().triggerListener(msg);
+                                });
+                        }
+                    } else {
+                        convertedResponse.ifPresent(msg -> {
+                            msg.addFacet(new TigerNonPairedMessageFacet());
+                            getTigerProxy().triggerListener(msg);
+                        });
+                    }
+                })
+                .exceptionally(t -> {
+                    log.warn("Exception during Direct-Proxy handling:", t);
+                    propagateExceptionMessageSafe(t);
+                    return null;
+                });
+            log.trace("Returning from BinaryExchangeHandler!");
         } catch (RuntimeException e) {
             log.warn("Uncaught exception during handling of request", e);
             propagateExceptionMessageSafe(e);
@@ -49,25 +86,34 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
         }
     }
 
-    private void convertBinaryMessageOrPushToBuffer(BinaryMessage message, SocketAddress senderAddress,
+    private boolean shouldWaitForResponse(Optional<RbelElement> convertedRequest) {
+        return convertedRequest
+            .map(RbelElement::getFacets)
+            .stream()
+            .flatMap(List::stream)
+            .anyMatch(RbelFacet::shouldExpectReplyMessage);
+    }
+
+    private Optional<RbelElement> convertBinaryMessageOrPushToBuffer(BinaryMessage message, SocketAddress senderAddress,
         SocketAddress receiverAddress) {
         if (message == null) {
-            return;
+            return Optional.empty();
         }
-        Optional<RbelElement> requestOptional = tryToConvertMessageAndBufferUnusedBytes(message, senderAddress, receiverAddress);
-        if (requestOptional.isEmpty()) {
-            return;
+        Optional<RbelElement> rbelMessageOptional = tryToConvertMessageAndBufferUnusedBytes(message, senderAddress, receiverAddress);
+        if (rbelMessageOptional.isEmpty()) {
+            return Optional.empty();
         }
-        requestOptional.get().addFacet(RbelMessageTimingFacet.builder()
+        rbelMessageOptional.get().addFacet(RbelMessageTimingFacet.builder()
             .transmissionTime(message.getTimestamp().atZone(ZoneId.systemDefault()))
             .build());
-        requestOptional.get().addFacet(new RbelBinaryFacet());
-        log.trace("Finalized binary exchange {}",
-            requestOptional
+        rbelMessageOptional.get().addFacet(new RbelBinaryFacet());
+        log.info("Finalized binary exchange {}",
+            rbelMessageOptional
                 .flatMap(msg -> msg.getFacet(RbelTcpIpMessageFacet.class))
                 .map(RbelTcpIpMessageFacet::getSenderHostname)
                 .map(Objects::toString)
                 .orElse(""));
+        return rbelMessageOptional;
     }
 
     private Optional<RbelElement> tryToConvertMessageAndBufferUnusedBytes(BinaryMessage message, SocketAddress senderAddress,
@@ -106,7 +152,7 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
         return Optional.of(result);
     }
 
-    private void propagateExceptionMessageSafe(RuntimeException exception) {
+    private void propagateExceptionMessageSafe(Throwable exception) {
         try {
             tigerProxy.propagateException(exception);
         } catch (Exception handlingException) {
