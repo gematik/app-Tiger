@@ -19,6 +19,7 @@ public interface JSON {
     String TESTART = "Testart";
     String AFOLINKS = "AFO-Verknüpfungen";
     String AF_ID = "Anwendungsfälle";
+    String AK_ID = "Akzeptanzkriterium";
     String DATAVARIANTS = "Datenvarianten";
     String NEGATIVE_TF = "NegativTestfall";
 }

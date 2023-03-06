@@ -6,10 +6,12 @@ package de.gematik.test.tiger.lib.parser.model.gherkin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -66,7 +68,8 @@ public class Scenario extends GherkinStruct {
         }
 
         json.put(JSON.NEGATIVE_TF,
-            hasTag("@TESTFALL") && StringUtils.equals(getTag("@TESTFALL").getParameter(), "Negativ"));
+            hasTag("@TESTFALL") && StringUtils.equals(getTag("@TESTFALL").getParameter(),
+                "Negativ"));
 
         if (hasTag("@TESTSTUFE")) {
             json.put(JSON.TESTSTUFE, getTag("@TESTSTUFE").getParameter());
@@ -74,17 +77,14 @@ public class Scenario extends GherkinStruct {
             json.put(JSON.TESTSTUFE, "3");
         }
 
-        final JSONArray anforderungen = new JSONArray(getTags().stream()
-            .filter(tag -> tag.getName().equals("@AFO-ID"))
-            .map(Tag::getParameter)
-            .collect(Collectors.toList()));
+        final JSONArray anforderungen = new JSONArray(collectTagsInWholeFile("@AFO-ID"));
         json.put(JSON.AFOLINKS, anforderungen);
 
-        final JSONArray anwendungsfaelle = new JSONArray(getTags().stream()
-            .filter(tag -> tag.getName().equals("@AF-ID"))
-            .map(Tag::getParameter)
-            .collect(Collectors.toList()));
+        final JSONArray anwendungsfaelle = new JSONArray(collectTagsInWholeFile("@AF-ID"));
         json.put(JSON.AF_ID, anwendungsfaelle);
+
+        final JSONArray akzeptanzkriterien = new JSONArray(collectTagsInWholeFile("@AK-ID"));
+        json.put(JSON.AK_ID, akzeptanzkriterien);
 
         final JSONArray produkte = new JSONArray(feature.getTags().stream()
             .filter(tag -> tag.getName().equals("@PRODUKT"))
@@ -120,6 +120,18 @@ public class Scenario extends GherkinStruct {
         }
         json.put(JSON.TESTABLAUF, sb.toString());
         return json;
+    }
+
+    @NotNull
+    private Set<String> collectTagsInWholeFile(String tagName) {
+        Set<String> tagValues = getTags().stream()
+            .filter(tag -> tag.getName().equals(tagName))
+            .map(Tag::getParameter)
+            .collect(Collectors.toSet());
+        tagValues.addAll(feature.getTags().stream()
+            .filter(e -> e.getName().equals(tagName))
+            .map(Tag::getParameter).collect(Collectors.toList()));
+        return tagValues;
     }
 
     protected void addStep(final Step step, final String header, final StringBuilder sb) {
