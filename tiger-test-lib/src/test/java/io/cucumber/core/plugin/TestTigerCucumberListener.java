@@ -205,7 +205,7 @@ public class TestTigerCucumberListener {
         File logFile = Arrays.stream(logFileFolder.listFiles())
             .filter(file -> file.lastModified() > startms).findFirst().get();
         assertThat(logFile.getName()).startsWith(
-            listener.getSerenityReporterCallbacks().replaceSpecialCharacters(scenarioName));
+            "rbel_" + listener.getSerenityReporterCallbacks().replaceSpecialCharacters(scenarioName));
         assertThat(logFile)
             .exists()
             .hasName(

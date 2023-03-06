@@ -73,7 +73,7 @@ function sendContinue(event: MouseEvent) {
   fetch(process.env.BASE_URL + "status/continueExecution")
   .then((response) => response.text())
   .then((data) => {
-    // do nothing as the resume message will appear shortly after the click
+    closeWindow(event);
   });
 }
 

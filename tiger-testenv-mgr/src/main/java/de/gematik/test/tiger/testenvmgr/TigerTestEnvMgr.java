@@ -445,8 +445,6 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             return;
         }
         isShuttingDown = true;
-        log.info(Ansi.colorize("Sending shutdown to executor pool...", RbelAnsiColors.RED_BOLD));
-        executor.shutdownNow();
         log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
         for (AbstractTigerServer server : servers.values()) {
             try {
@@ -455,6 +453,9 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
                 log.warn("Exception while shutting down server " + server.getServerId(), e);
             }
         }
+
+        log.info(Ansi.colorize("Sending shutdown to executor pool...", RbelAnsiColors.RED_BOLD));
+        executor.shutdownNow();
 
         if (localTigerProxy != null) {
             log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));

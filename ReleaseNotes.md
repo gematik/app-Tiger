@@ -10,6 +10,9 @@
 
 * TGR-760: Einfache Serenity-Evidences aus Extensions heraus.
 * TGR-760: FHIR Validierungen mit der Tiger-Extension "Tiger-on-FHIR möglich"
+* TGR-000: Fixed special scenario name causes evidence reporter to fail saving file and to abort test run
+* TGR-000: Workflow ui does not show keywords of steps
+* TGR-000: Shutdown of helm charts is broken
 
 ## Breaking changes
 

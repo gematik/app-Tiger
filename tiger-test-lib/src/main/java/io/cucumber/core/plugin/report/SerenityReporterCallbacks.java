@@ -224,7 +224,8 @@ public class SerenityReporterCallbacks {
     }
 
     private String getStepDescription(Step step) {
-        final StringBuilder stepText = new StringBuilder(StringEscapeUtils.escapeHtml4(step.getText()));
+        final StringBuilder stepText = new StringBuilder(step.getKeyword());
+        stepText.append(" ").append(StringEscapeUtils.escapeHtml4(step.getText()));
         step.getDocString().ifPresent(docStr ->
             stepText.append("<div class=\"steps-docstring\">")
                 .append(StringEscapeUtils.escapeHtml4(docStr.getContent()))
@@ -267,8 +268,7 @@ public class SerenityReporterCallbacks {
 
         if (context.getCurrentStep() != null) {
             evidenceRecorder.openStepContext(
-                new ReportStepConfiguration(
-                    context.getCurrentStep().getKeyword() + getStepDescription(context.getCurrentStep())));
+                new ReportStepConfiguration(getStepDescription(context.getCurrentStep())));
         }
     }
 
@@ -419,15 +419,16 @@ public class SerenityReporterCallbacks {
         final EvidenceReport evidenceReport = getEvidenceReport(testCaseFinishedEvent,
             scenarioContext);
 
-        Path reportFile = createReportFile(scenarioContext, evidenceReport);
+        if (evidenceReport.getSteps().stream().anyMatch(step -> !step.getEvidenceEntries().isEmpty())) {
+            Path reportFile = createReportFile(scenarioContext, evidenceReport);
 
-        if (TigerDirector.isSerenityAvailable()) {
-            (Serenity.recordReportData().asEvidence()
-                .withTitle("Evidence Report"))
-                .downloadable()
-                .fromFile(reportFile);
+            if (TigerDirector.isSerenityAvailable()) {
+                (Serenity.recordReportData().asEvidence()
+                    .withTitle("Evidence Report"))
+                    .downloadable()
+                    .fromFile(reportFile);
+            }
         }
-
     }
 
     @NotNull
@@ -440,8 +441,7 @@ public class SerenityReporterCallbacks {
 
         return Files.write(
             parentDir.resolve(
-                scenarioContext.getScenarioName() + "_" + UUID.randomUUID()
-                    + ".html"),
+                getFileNameFor("evidence", scenarioContext.getScenarioName(), currentScenarioDataVariantIndex)),
             renderedReport.getBytes(StandardCharsets.UTF_8),
             StandardOpenOption.CREATE,
             StandardOpenOption.WRITE,
@@ -497,7 +497,7 @@ public class SerenityReporterCallbacks {
 
                 loadBulma();
             }
-            String name = getFileNameFor(scenarioName, currentScenarioDataVariantIndex);
+            String name = getFileNameFor("rbel", scenarioName, currentScenarioDataVariantIndex);
             final File logFile = Paths.get(TARGET_DIR, "rbellogs", name).toFile();
             FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
             if (TigerDirector.isSerenityAvailable()) {
@@ -524,7 +524,7 @@ public class SerenityReporterCallbacks {
         }
     }
 
-    public String getFileNameFor(String scenarioName, int dataVariantIndex) {
+    public String getFileNameFor(String type, String scenarioName, int dataVariantIndex) {
         if (scenarioName.length() > 80) { // Serenity can not deal with longer filenames
             scenarioName = scenarioName.substring(0, 60) + UUID.nameUUIDFromBytes(
                 scenarioName.getBytes(StandardCharsets.UTF_8));
@@ -533,7 +533,7 @@ public class SerenityReporterCallbacks {
             scenarioName = scenarioName + "_" + (dataVariantIndex + 1);
         }
         scenarioName =
-            replaceSpecialCharacters(scenarioName) + "_" + sdf.format(new Date()) + ".html";
+            type + "_" + replaceSpecialCharacters(scenarioName) + "_" + sdf.format(new Date()) + ".html";
         return scenarioName;
     }
 
