@@ -319,7 +319,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
     private void checkForCompletion(PartialTracingMessage tracingMessage, String messageUuid) {
         if (tracingMessage.isComplete()) {
-            tracingMessage.getMessagePair().checkForCompletePairAndPropagateIfComplete();
+            tracingMessage.getMessageFrame().checkForCompletePairAndPropagateIfComplete();
             partiallyReceivedMessageMap.remove(messageUuid);
         }
     }
@@ -371,5 +371,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
     public boolean messageUuidKnown(final String messageUuid) {
         return getRbelLogger().getRbelConverter().isMessageUuidAlreadyKnown(messageUuid);
+    }
+
+    public boolean isConnected() {
+        return stompSession.get().isConnected();
     }
 }

@@ -51,4 +51,9 @@ public class RbelHttpRequestFacet implements RbelFacet {
     public String getPathAsString() {
         return path.getRawStringContent();
     }
+
+    @Override
+    public boolean shouldExpectReplyMessage() {
+        return true;
+    }
 }

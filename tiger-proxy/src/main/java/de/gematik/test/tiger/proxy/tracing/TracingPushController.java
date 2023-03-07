@@ -20,9 +20,11 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
+import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -71,15 +73,48 @@ public class TracingPushController {
             log.trace("Skipping propagation, not a TCP/IP message {}", msg.getUuid());
             return;
         }
-        if (!msg.hasFacet(RbelHttpResponseFacet.class)
-            && !msg.hasFacet(TracingMessagePairFacet.class)) {
+        if (msg.hasFacet(TigerNonPairedMessageFacet.class)) {
+            sendNonPairedMessage(msg);
+        } else if (msg.hasFacet(RbelHttpResponseFacet.class)
+            || msg.hasFacet(TracingMessagePairFacet.class)) {
+            sendPairedMessage(msg);
+        } else {
             log.trace("Skipping propagation, not a response (facets: {}, uuid: {})", msg.getFacets().stream()
-                .map(Object::getClass)
-                .map(Class::getSimpleName)
-                .collect(Collectors.joining(", ")),
+                    .map(Object::getClass)
+                    .map(Class::getSimpleName)
+                    .collect(Collectors.joining(", ")),
                 msg.getUuid());
-            return;
         }
+    }
+
+    private void sendNonPairedMessage(RbelElement msg) {
+        try {
+            RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
+            final RbelHostname sender = RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
+                .orElse(null);
+            final RbelHostname receiver = RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
+                .orElse(null);
+
+            log.info("{}Propagating new non-paired message (ID: {})", tigerProxy.proxyName(), msg.getUuid());
+
+            template.convertAndSend(TigerRemoteProxyClient.WS_TRACING,
+                TigerTracingDto.builder()
+                    .receiver(receiver)
+                    .sender(sender)
+                    .requestUuid(msg.getUuid())
+                    .requestTransmissionTime(msg.getFacet(RbelMessageTimingFacet.class)
+                        .map(RbelMessageTimingFacet::getTransmissionTime)
+                        .orElse(null))
+                    .build());
+
+            mapRbelMessageAndSent(msg);
+        } catch (RuntimeException e){
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    private void sendPairedMessage(RbelElement msg) {
         RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
         final RbelHostname sender = RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
             .orElse(null);

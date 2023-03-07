@@ -1,6 +1,23 @@
 # Changelog Tiger Testplattform
 
 -------
+
+# Release 1.3.1-SNAPSHOT
+
+## Bugfixes
+
+## Features
+
+* TGR-760: Einfache Serenity-Evidences aus Extensions heraus.
+* TGR-760: FHIR Validierungen mit der Tiger-Extension "Tiger-on-FHIR möglich"
+* TGR-000: Fixed special scenario name causes evidence reporter to fail saving file and to abort test run
+* TGR-000: Workflow ui does not show keywords of steps
+* TGR-000: Shutdown of helm charts is broken
+
+## Breaking changes
+
+-------
+
 # Release 1.3.0
 
 * Serenity BDD 3.3.10
@@ -48,6 +65,7 @@
 
 * TGR-814: Interface for remote traffic sources added in Tiger Proxy
 * TGR-826: Support for Form-Parameter added to HTTP-Client-Extension
+* TGR-574: CETP messages can now also be transmitted in a mesh-setup
 
 ## Breaking changes
 

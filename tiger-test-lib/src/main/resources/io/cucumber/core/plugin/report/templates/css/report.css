@@ -1,0 +1,79 @@
+.scenario-title {
+    margin-left: 2rem;
+}
+
+div.row.evidence-type-FATAL {
+    background: #fff3f4;
+}
+
+div.evidence-type-FATAL {
+    color: purple;
+}
+
+div.row.evidence-type-WARN {
+    background: lightyellow;
+}
+
+div.evidence-type-WARN {
+    color: orangered;
+}
+
+div.row.evidence-type-ERROR {
+    background: #ffeeee;
+}
+
+div.evidence-type-ERROR {
+    color: darkred;
+}
+
+div.row.evidence-type-INFO {
+    background: #ebfae0;
+}
+
+div.evidence-type-INFO {
+    color: darkgreen;
+}
+
+.evidence-details {
+    font-family: monospace;
+}
+
+.step-evidences {
+    margin-left: 6rem;
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+}
+
+.step {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 1rem;
+    margin-left: 3rem;
+}
+
+.step:nth-child(2n) {
+    background: #f4f4f4;
+}
+
+body {
+    color: #333;
+}
+
+h1 {
+    line-height: 120px;
+    padding-left: 2rem;
+}
+
+header.sticky-top {
+    background: white;
+    border-bottom: 1px solid #333;
+    margin-bottom: 1rem;
+}
+
+.steps-docstring {
+    color: #0a8694;
+    font-family: Courier,monospace;
+    padding-left: 1rem;
+    padding-top: 1rem;
+    white-space: pre;
+}

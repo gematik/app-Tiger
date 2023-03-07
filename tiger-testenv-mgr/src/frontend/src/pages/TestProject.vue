@@ -574,6 +574,7 @@ i.resizer-left-icon {
   color: #0a8694;
   font-family: Courier,monospace;
   padding-left: 1rem;
+  white-space: pre;
 }
 
 </style>

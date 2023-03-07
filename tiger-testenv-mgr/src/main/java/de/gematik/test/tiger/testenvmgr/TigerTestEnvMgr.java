@@ -84,8 +84,10 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     public static final String LOCAL_TIGER_PROXY_TYPE = "local_tiger_proxy";
     private final List<TigerRoute> routesList = new ArrayList<>();
     private final Map<String, AbstractTigerServer> servers = new HashMap<>();
-    private final ExecutorService executor = Executors
-        .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    /** used for longer tasks, unbound in size thus also to be used for server startups and server tasks */
+    private final ExecutorService cachedExecutor = Executors.newCachedThreadPool();
+    /** used for short term tasks like status updates propagation */
+    private final ExecutorService fixedPoolExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
     private final List<TigerUpdateListener> listeners = new ArrayList<>();
 
     private final List<TigerServerLogListener> logListeners = new ArrayList<>();
@@ -245,8 +247,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     }
 
     public synchronized void publishStatusUpdateToListeners(TigerStatusUpdate update, List<TigerUpdateListener> listeners) {
-        if (getExecutor() != null && !isShuttingDown) {
-            getExecutor().submit(
+        if (!isShuttingDown) {
+            getFixedPoolExecutor().submit(
                 () -> listeners.stream()
                     .forEach(listener -> listener.receiveTestEnvUpdate(update))
             );
@@ -381,7 +383,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
                 .status(TigerServerStatus.NEW)
                 .build()));
 
-        getExecutor().submit(
+        getFixedPoolExecutor().submit(
             () -> listeners.parallelStream()
                 .forEach(listener -> listener.receiveTestEnvUpdate(TigerStatusUpdate.builder()
                     .serverUpdate(new LinkedHashMap<>(activeServers))
@@ -425,7 +427,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
                 server.start(this);
             }
 
-            executor.submit(() ->
+            cachedExecutor.submit(() ->
                 servers.values().parallelStream()
                     .peek(toBeStartedServer -> log.debug("Considering to start server {} with status {}...",
                         toBeStartedServer.getServerId(), toBeStartedServer.getStatus()))
@@ -457,8 +459,6 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             return;
         }
         isShuttingDown = true;
-        log.info(Ansi.colorize("Sending shutdown to executor pool...", RbelAnsiColors.RED_BOLD));
-        executor.shutdownNow();
         log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
         for (AbstractTigerServer server : servers.values()) {
             try {
@@ -467,6 +467,10 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
                 log.warn("Exception while shutting down server " + server.getServerId(), e);
             }
         }
+
+        log.info(Ansi.colorize("Sending shutdown to executor pool...", RbelAnsiColors.RED_BOLD));
+        cachedExecutor.shutdownNow();
+        fixedPoolExecutor.shutdownNow();
 
         if (localTigerProxy != null) {
             log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));
@@ -534,6 +538,10 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             return true;
         }
         return configuration.isLocalProxyActive();
+    }
+
+    public ExecutorService getExecutor() {
+        return cachedExecutor;
     }
 
     @Override

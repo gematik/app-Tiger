@@ -17,12 +17,14 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
@@ -42,6 +44,9 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest{
         executeTestRun(
             socket -> {
                 writeSingleRequestMessage(socket);
+                // seems like requests being neartime concurrently cause havoc sometimes
+                // (at least locally when run N times)
+                await().pollDelay(200, TimeUnit.MILLISECONDS).until(() -> true);
                 writeSingleRequestMessage(socket);
             },
             serverSocket -> {

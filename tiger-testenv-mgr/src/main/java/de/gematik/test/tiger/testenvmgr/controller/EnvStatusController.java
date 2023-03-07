@@ -164,9 +164,6 @@ public class EnvStatusController implements TigerUpdateListener {
     public void getConfirmContinueExecution() {
         log.trace("Fetch request to continueExecution() received");
         tigerTestEnvMgr.receivedResumeTestRunExecution();
-        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Resuming test run").bannerType(BannerType.MESSAGE)
-            .bannerColor("green").build();
-        tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 
     @GetMapping(path = "/failExecution")
