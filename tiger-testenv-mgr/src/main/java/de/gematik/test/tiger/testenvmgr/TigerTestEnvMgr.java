@@ -528,6 +528,10 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         return configuration.isLocalProxyActive();
     }
 
+    public ExecutorService getExecutor() {
+        return cachedExecutor;
+    }
+
     @Override
     public void registerNewListener(TigerUpdateListener listener) {
         listeners.add(listener);
