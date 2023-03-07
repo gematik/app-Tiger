@@ -188,11 +188,10 @@ class TestTigerTestEnvMgrStartupSequence {
     void checkSuccessfullStartupSequences(Map<String, AbstractTigerServer> serverMap, List<List<String>> startupSequences) {
         ReflectionTestUtils.setField(envMgr, "servers", serverMap);
         ReflectionTestUtils.setField(envMgr, "isShuttingDown", false);
-        ReflectionTestUtils.setField(envMgr, "executor", Executors
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2));
+        ReflectionTestUtils.setField(envMgr, "fixedPoolExecutor", Executors.newCachedThreadPool());
+        ReflectionTestUtils.setField(envMgr, "cachedExecutor", Executors.newCachedThreadPool());
         try {
             envMgr.setUpEnvironment();
-
             log.info("Completed startup normally, now checking the order");
 
             startupSequences.stream()

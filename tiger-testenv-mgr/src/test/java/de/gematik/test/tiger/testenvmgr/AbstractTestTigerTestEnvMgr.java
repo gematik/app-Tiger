@@ -102,7 +102,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     public TigerTestEnvMgr mockTestEnvMgr() {
         final TigerTestEnvMgr mockMgr = mock(TigerTestEnvMgr.class);
         doReturn(mock(ThreadPoolExecutor.class))
-            .when(mockMgr).getExecutor();
+            .when(mockMgr).getCachedExecutor();
         return mockMgr;
     }
 }

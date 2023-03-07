@@ -104,7 +104,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         statusMessage("Running '" + String.join(" ", options)
             + "' in folder '" + new File(workingDir).getAbsolutePath() + "'");
         processStartTime = now();
-        getTigerTestEnvMgr().getExecutor().submit(() -> {
+        getTigerTestEnvMgr().getCachedExecutor().submit(() -> {
             try {
                 statusMessage("Starting Jar process for " + getServerId());
                 final ProcessBuilder processBuilder = new ProcessBuilder()
