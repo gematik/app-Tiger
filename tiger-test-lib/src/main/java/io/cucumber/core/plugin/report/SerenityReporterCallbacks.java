@@ -22,13 +22,7 @@ import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.messages.types.Feature;
 import io.cucumber.messages.types.Scenario;
 import io.cucumber.messages.types.Step;
-import io.cucumber.plugin.event.Event;
-import io.cucumber.plugin.event.HookTestStep;
-import io.cucumber.plugin.event.PickleStepTestStep;
-import io.cucumber.plugin.event.TestCaseFinished;
-import io.cucumber.plugin.event.TestSourceRead;
-import io.cucumber.plugin.event.TestStepFinished;
-import io.cucumber.plugin.event.TestStepStarted;
+import io.cucumber.plugin.event.*;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
@@ -39,16 +33,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -261,9 +247,9 @@ public class SerenityReporterCallbacks {
         if (!(tssEvent.getTestStep() instanceof HookTestStep)
             && tssEvent.getTestStep() instanceof PickleStepTestStep) {
             PickleStepTestStep pickleTestStep = (PickleStepTestStep) tssEvent.getTestStep();
-            TigerStatusUpdate.TigerStatusUpdateBuilder statusUpdateBuilder = TigerStatusUpdate.builder();
-            addBannerMessageToUpdate(variantDataMap, pickleTestStep, statusUpdateBuilder);
-            TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(statusUpdateBuilder.build());
+
+            informWorkflowUiAboutCurrentStep(pickleTestStep, "EXECUTING", context);
+
         }
 
         if (context.getCurrentStep() != null) {
@@ -308,7 +294,7 @@ public class SerenityReporterCallbacks {
                 TigerDirector.curlLoggingFilter.printToReport();
             }
             if (context.getCurrentStep() != null) {
-                informWorkflowUiAboutCurrentStep(tsfEvent, context);
+                informWorkflowUiAboutCurrentStep(tsfEvent.getTestStep(), ((TestStepFinished) event).getResult().getStatus().name(), context);
 
                 if (TigerDirector.isSerenityAvailable()) {
                     addStepEvidence();
@@ -330,12 +316,11 @@ public class SerenityReporterCallbacks {
                             entry.getDetails()).toString(2))));
     }
 
-    private void informWorkflowUiAboutCurrentStep(TestStepFinished event,
+    private void informWorkflowUiAboutCurrentStep(TestStep event, String status,
         ScenarioContextDelegate context) {
 
-        String status = event.getResult().getStatus().name();
         Scenario scenario = context.getCurrentScenarioDefinition();
-        PickleStepTestStep pickleTestStep = (PickleStepTestStep) event.getTestStep();
+        PickleStepTestStep pickleTestStep = (PickleStepTestStep) event;
 
         int currentStepIndex = scenario.getSteps().indexOf(context.getCurrentStep());
         TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();

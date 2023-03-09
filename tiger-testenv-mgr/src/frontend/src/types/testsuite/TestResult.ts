@@ -38,6 +38,8 @@ export function getTestResultIcon(testResult: string, iconFamily: string): strin
     return 'fa-triangle-exclamation fa-solid';
   } else if (testResult === 'SKIPPED') {
     return 'fa-circle-down fa-' + iconFamily;
+  } else if (testResult === 'EXECUTING') {
+    return 'fa-solid fa-spinner blue fa-spin'; // there is no regular for spinner
   } else if (testResult === 'PENDING') {
     return 'fa-solid fa-spinner'; // there is no regular for spinner
   } else {

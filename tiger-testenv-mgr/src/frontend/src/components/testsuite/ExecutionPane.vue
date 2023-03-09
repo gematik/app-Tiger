@@ -239,4 +239,8 @@ h4.scenariotitle {
   text-align: center;
   line-height: 15rem;
 }
+
+.blue {
+  color: darkblue;
+}
 </style>
