@@ -9,7 +9,7 @@ pipeline {
       options {
           disableConcurrentBuilds()
       }
-      agent { label 'k8-maven-large' }
+      agent { label 'k8-maven' }
 
       tools {
           maven 'Default'
@@ -31,16 +31,7 @@ pipeline {
 
           stage('Set Tiger version in FHIR') {
               steps {
-                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
-              }
-          }
-
-          stage('Deactivate workflow UI') {
-              steps {
-                  script{
-                      activateWorkflowUi=false
-                  }
-                  sh "sed -i -e 's@activateWorkflowUi: [^ ]*@activateWorkflowUi: ${activateWorkflowUi}@' src/test/resources/tiger.yaml"
+                   sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' pom.xml"
               }
           }
 
@@ -56,21 +47,12 @@ pipeline {
                }
           }
 
-          stage('Activate workflow UI') {
-              steps {
-                  script{
-                      activateWorkflowUi=true
-                  }
-                  sh "sed -i -e 's@activateWorkflowUi: [^ ]*@activateWorkflowUi: ${activateWorkflowUi}@' src/test/resources/tiger.yaml"
-              }
-          }
-
           stage('Commit new Tiger version when needed') {
                 steps {
                     script {
                         if (params.UPDATE == 'YES') {
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                                sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' pom.xml"
                                 sh """
                                          git add -A
                                          git commit -m "Tiger version updated"

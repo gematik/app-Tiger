@@ -1,6 +1,6 @@
 @Library('gematik-jenkins-shared-library') _
 
-def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
+def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def REPO_URL = createGitUrl('git/communications/ti-m/ti-m-testsuite')
 def BRANCH = 'main'
 def POM_PATH = 'pom.xml'
@@ -8,11 +8,19 @@ def POM_PATH = 'pom.xml'
 pipeline {
       options {
           disableConcurrentBuilds()
+          buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '10')
       }
-      agent { label 'k8-maven-large' }
+      agent { label 'k8-maven' }
 
       tools {
           maven 'Default'
+      }
+
+      environment {
+              TIM_KEYSTORE_PW = 'gematik123'
+              TIM_TRUSTSTORE_PW = 'gematik123'
+              TIM_TRUSTSTORE = 'src/main/resources/certs/truststore.p12'
+              TIM_KEYSTORE = 'src/main/resources/certs/c_keystore.p12'
       }
 
       parameters {
@@ -51,13 +59,13 @@ pipeline {
 
           stage('Build') {
               steps {
-                  mavenBuild(POM_PATH,"-P disable-prepare-items")
+                  mavenBuild(POM_PATH,"-Dprofile.ci")
               }
           }
 
           stage('Tests') {
               steps {
-                  mavenVerify(POM_PATH, "-P ci-pipeline,disable-prepare-items")
+                    mavenVerify("pom.xml", "-Dprofile.ci")
               }
           }
 
