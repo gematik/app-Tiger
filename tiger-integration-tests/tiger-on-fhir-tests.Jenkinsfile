@@ -1,7 +1,7 @@
 @Library('gematik-jenkins-shared-library') _
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
-def REPO_URL = createGitUrl('git/Testtools/tiger-integration-eau')
+def REPO_URL = createGitUrl('git/Testtools/tiger/tiger-on-fhir')
 def BRANCH = 'main'
 def POM_PATH = 'pom.xml'
 
@@ -29,7 +29,7 @@ pipeline {
               }
           }
 
-          stage('Set Tiger version in eAU') {
+          stage('Set Tiger version in FHIR') {
               steps {
                    sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
               }
@@ -50,16 +50,10 @@ pipeline {
               }
           }
 
-          stage('Tests and Konnektor connection') {
-              steps {
-                    script{
-                         password="b672\$#H%@eki66"
-                         username="gematik_master"
-                    }
-                    withEnv(["GEMATIK_PASSWORD=${password}", "GEMATIK_USER=${username}"]){
-                         mavenVerify(POM_PATH, '-Dcucumber.filter.tags="@IntegrationTest and not @Test and not @Demo"')
-                    }
-              }
+          stage('Tests') {
+               steps {
+                   mavenVerify(POM_PATH)
+               }
           }
 
           stage('Activate workflow UI') {
@@ -96,14 +90,14 @@ pipeline {
           success {
              script {
                 if (params.UPDATE == 'YES')
-                    sendEMailNotification("yana.stasevich@gematik.de" + "," + "rafael.schirru@gematik.de" + "," + "thomas.eitzenberger@gematik.de" + "," + "juliane.baerwind@gematik.de")
+                    sendEMailNotification(getTigerEMailList())
              }
           }
 
           failure {
              script {
                 if (params.UPDATE == 'YES')
-                    sendEMailNotification("yana.stasevich@gematik.de" + "," + "rafael.schirru@gematik.de" + "," + "thomas.eitzenberger@gematik.de" + "," + "juliane.baerwind@gematik.de")
+                    sendEMailNotification(getTigerEMailList())
              }
           }
       }
