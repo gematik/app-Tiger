@@ -2,7 +2,7 @@
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def REPO_URL = createGitUrl('git/Testtools/tiger-integration-eau')
-def BRANCH = 'master'
+def BRANCH = 'main'
 def POM_PATH = 'pom.xml'
 
 pipeline {
