@@ -1,7 +1,6 @@
 # Changelog Tiger Testplattform
 
 -------
-* 
 * Serenity BDD 3.3.10
 * Cucumber 7.4.1
 * RestAssured 5.2.0
@@ -16,6 +15,7 @@
 ## Features
 
 * TGR-855: Currently executed step is now highlighted in workflow ui
+* TGR-822: Added a step to read .tgr files
 
 ## Breaking changes
 
@@ -29,6 +29,7 @@
 * Selenium 4.5.2
 * Appium 8.1.1
 * Spring Boot 2.7.5
+
 
 ## Bugfixes
 
