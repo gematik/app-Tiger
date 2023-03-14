@@ -201,6 +201,24 @@ pipeline {
                             }
                        }
           }
+
+          stage('Tiger-on-Fhir Integrationtest') {
+             steps {
+                 script {
+                      if (!NEW_VERSION?.trim()) {
+                               VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
+                               NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
+                      }
+                 }
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                build job: 'Tiger-Integrationtest-FHIR',
+                parameters: [
+                   string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
+                   string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
+                ]
+                }
+             }
+         }
     }
 
    post {
