@@ -18,6 +18,7 @@
 
 * TGR-855: Currently executed step is now highlighted in workflow ui
 * TGR-822: Added a step to read .tgr files
+* TGR-864: all params except for the HTTP method of steps from the http client extension are now resolving ${} expressions
 
 ## Breaking changes
 
