@@ -433,17 +433,21 @@ public class TigerConfigurationLoader {
     }
 
     public void putValue(String key, Object value) {
-        try {
-            Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
-            final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
-            addYamlToMap(yaml.load(objectMapper.writeValueAsString(value)), new TigerConfigurationKey(key), valueMap);
-            loadedSources.add(BasicTigerConfigurationSource.builder()
-                .values(valueMap)
-                .sourceType(SourceType.RUNTIME_EXPORT)
-                .basePath(new TigerConfigurationKey(key))
-                .build());
-        } catch (JsonProcessingException e) {
-            throw new TigerConfigurationException("Error during serialization", e);
+        if (value instanceof String) {
+            putValue(key, (String) value);
+        } else {
+            try {
+                Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
+                final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
+                addYamlToMap(yaml.load(objectMapper.writeValueAsString(value)), new TigerConfigurationKey(key), valueMap);
+                loadedSources.add(BasicTigerConfigurationSource.builder()
+                    .values(valueMap)
+                    .sourceType(SourceType.RUNTIME_EXPORT)
+                    .basePath(new TigerConfigurationKey(key))
+                    .build());
+            } catch (JsonProcessingException e) {
+                throw new TigerConfigurationException("Error during serialization", e);
+            }
         }
     }
 

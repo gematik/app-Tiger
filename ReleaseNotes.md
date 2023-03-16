@@ -12,6 +12,8 @@
 
 ## Bugfixes
 
+* TGR-743: TigerGlobalConfiguration.putValue supports String values supplied via Generics
+
 ## Features
 
 * TGR-855: Currently executed step is now highlighted in workflow ui
