@@ -89,7 +89,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
 
   @Ignore
   Scenario: Request with mutual TLS
-    Given TGR set default TLS client certificate to "src/test/resources/rsaStoreWithChain.jks;gematik"
+    # Given TGR set default TLS client certificate to "src/test/resources/rsaStoreWithChain.jks;gematik"
     When TGR send empty GET request to "https://winstone/not_a_file"
     Then TGR find last request to path ".*"
     And TGR print current request as rbel-tree

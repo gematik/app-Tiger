@@ -1,3 +1,7 @@
+
+trueBooleanValue: true
+falseBooleanValue: false
+
 tigerProxy:
   skipTrafficEndpointsSubscription: false
   # adminPort: 8080
@@ -6,7 +10,7 @@ tigerProxy:
 
 servers:
   winstone:
-    active: "!{not ${external.falseBooleanValue}}"
+    active: "!{not ${tiger.falseBooleanValue}}"
     hostname: winstone
     source:
       - local:target/winstone.jar
@@ -33,6 +37,5 @@ lib:
   activateWorkflowUi: false
 
 additionalYamls:
-  -
-    filename: specialEnvironment.yaml
+  - filename: src/test/resources/testdata/specialEnvironment.yaml
     baseKey: external

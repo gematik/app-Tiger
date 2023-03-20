@@ -89,6 +89,8 @@ public class SerenityReporterCallbacks {
     @Getter
     private int scFailed = 0;
 
+    private static final Object startupMutex = new Object();
+
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 
     private final EvidenceRecorder evidenceRecorder = EvidenceRecorderFactory.getEvidenceRecorder();
@@ -111,8 +113,13 @@ public class SerenityReporterCallbacks {
     @SuppressWarnings("java:S1172")
     public void handleTestRunStarted(Event ignoredEvent,
         ScenarioContextDelegate ignoredContext) {
-        showTigerVersion();
-        initializeTiger();
+        synchronized (startupMutex) {
+            if (TigerDirector.isInitialized()) {
+                return;
+            }
+            showTigerVersion();
+            initializeTiger();
+        }
     }
 
 

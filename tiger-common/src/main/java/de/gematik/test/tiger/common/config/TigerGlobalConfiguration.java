@@ -35,6 +35,7 @@ import org.apache.commons.io.FileUtils;
 public class TigerGlobalConfiguration {
 
     private static final TigerConfigurationLoader globalConfigurationLoader = new TigerConfigurationLoader();
+    public static final String TIGER_BASEKEY = "tiger";
     @Getter
     @Setter
     private static boolean requireTigerYaml = false;
@@ -235,13 +236,16 @@ public class TigerGlobalConfiguration {
 
     private static void readYamlFiles() {
         TIGER_YAML_VALUE.getValue()
-            .ifPresent(s -> globalConfigurationLoader.readFromYaml(s, SourceType.TEST_YAML, "tiger"));
+            .ifPresent(s -> {
+                log.info("Reading configuration from tiger.yaml property as string");
+                globalConfigurationLoader.readFromYaml(s, SourceType.TEST_YAML, TIGER_BASEKEY);
+            });
 
         final Optional<File> customCfgFile = TIGER_TESTENV_CFGFILE_LOCATION.getValue()
             .map(File::new);
         if (customCfgFile.isPresent()) {
             if (customCfgFile.get().exists()) {
-                readYamlFile(customCfgFile.get(), Optional.of("tiger"));
+                readYamlFile(customCfgFile.get(), Optional.of(TIGER_BASEKEY));
                 return;
             } else {
                 throw new TigerConfigurationException("Could not find configuration-file '"
@@ -260,7 +264,7 @@ public class TigerGlobalConfiguration {
             .filter(File::exists)
             .findFirst();
         if (cfgFile.isPresent()) {
-            readYamlFile(cfgFile.get(), Optional.of("tiger"));
+            readYamlFile(cfgFile.get(), Optional.of(TIGER_BASEKEY));
             return;
         }
 
@@ -274,7 +278,7 @@ public class TigerGlobalConfiguration {
             .findFirst();
         if (oldCfgFile.isPresent()) {
             log.warn("Older file format detected! Will be deprecated in upcoming versions. Please use tiger.yaml!");
-            readYamlFile(oldCfgFile.get(), Optional.of("tiger"));
+            readYamlFile(oldCfgFile.get(), Optional.of(TIGER_BASEKEY));
             return;
         }
 
@@ -286,7 +290,7 @@ public class TigerGlobalConfiguration {
     private static void readAdditionalYamlFiles() {
         final List<AdditionalYamlProperty> additionalYamls = globalConfigurationLoader.instantiateConfigurationBean(
             new TypeReference<>() {
-            }, "tiger", "additionalYamls");
+            }, TIGER_BASEKEY, "additionalYamls");
 
         for (AdditionalYamlProperty additionalYaml : additionalYamls) {
             readYamlFile(Optional.ofNullable(additionalYaml.getFilename())

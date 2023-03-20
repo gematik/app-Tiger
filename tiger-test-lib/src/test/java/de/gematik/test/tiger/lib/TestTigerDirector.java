@@ -60,7 +60,7 @@ class TestTigerDirector {
 
     @Test
     void testDirectorConfigReadandAvailable() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
         executeWithSecureShutdown(() -> {
             TigerDirector.start();
 
@@ -116,7 +116,7 @@ class TestTigerDirector {
 
     @Test
     void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
         executeWithSecureShutdown(() -> {
             try {
                 TigerDirector.start();
@@ -154,7 +154,7 @@ class TestTigerDirector {
 
     @Test
     void testLocalProxyActiveSetByDefault() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyEnabled.yaml");
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
         executeWithSecureShutdown(() -> {
             TigerDirector.start();
             assertThat(System.getProperty("http.proxyHost")).isNotNull();

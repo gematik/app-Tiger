@@ -5,17 +5,17 @@
 package de.gematik.test.tiger.lib.integrationtest;
 
 import io.cucumber.junit.CucumberOptions;
-import net.serenitybdd.cucumber.CucumberWithSerenity;
+import io.cucumber.junit.TigerCucumberRunner;
 import org.junit.runner.RunWith;
 
-@RunWith(CucumberWithSerenity.class)
+@RunWith(TigerCucumberRunner.class)
 @CucumberOptions(
     features = {
-        "./src/test/resources/features/tiger-test-lib/testcontext.feature"
+        "./src/test/resources/features/tiger-test-lib/HttpGlueCodeTest.feature"
     },
-    plugin = {"json:target/cucumber-parallel/1.json"},
+    plugin = {"json:target/cucumber-parallel/2.json"},
     glue = { "de.gematik.test.tiger.glue" },
     tags = "not @Ignore"
 )
-public class TestContextFeatureTest {
+public class TestHttpGlueCode {
 }
