@@ -90,13 +90,13 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/json"
 
-  @Ignore
-  Scenario: Request with mutual TLS
+  #@Ignore
+  #Scenario: Request with mutual TLS
     # Given TGR set default TLS client certificate to "src/test/resources/rsaStoreWithChain.jks;gematik"
-    When TGR send empty GET request to "https://winstone/not_a_file"
-    Then TGR find last request to path ".*"
-    And TGR print current request as rbel-tree
-    And TGR assert "!{rbel:currentRequestAsString('$.clientTlsCertificateChain.0.subject')}" matches ".*CN=authn.aktor.epa.telematik-test.*"
+    #When TGR send empty GET request to "https://winstone/not_a_file"
+    #Then TGR find last request to path ".*"
+    #And TGR print current request as rbel-tree
+    #And TGR assert "!{rbel:currentRequestAsString('$.clientTlsCertificateChain.0.subject')}" matches ".*CN=authn.aktor.epa.telematik-test.*"
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR show banner "Starting üöäß <txt>..."
