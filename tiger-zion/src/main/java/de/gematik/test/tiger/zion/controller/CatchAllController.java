@@ -63,10 +63,19 @@ public class CatchAllController implements WebMvcConfigurer {
     @SneakyThrows
     @PostConstruct
     public void loadMockReponsesFromFile() {
+        if (configuration.getMockResponseFiles() == null ||
+            configuration.getMockResponseFiles().isEmpty()) {
+            log.info("Skipping initialization for mock-responses from files, none specified");
+            return;
+        }
         for (Entry<String, String> entry : configuration.getMockResponseFiles().entrySet()) {
-            try (final FileInputStream fileInputStream = new FileInputStream(Path.of(entry.getValue()).toFile())) {
+            final File file = Path.of(entry.getValue()).toFile();
+            try (final FileInputStream fileInputStream = new FileInputStream(file)) {
                 final TigerMockResponse mockResponse = new Yaml(new Constructor(TigerMockResponse.class)).load(fileInputStream);
                 configuration.getMockResponses().put(entry.getKey(), mockResponse);
+                log.info("Successfully added mock-response from file {} with criteria {}",
+                    file.getAbsolutePath(),
+                    String.join(", ", mockResponse.getRequestCriterions()));
             }
         }
     }
