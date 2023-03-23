@@ -143,6 +143,7 @@ public class TigerGlue {
     @When("TGR show HTML Notification:")
     @Wenn("TGR zeige HTML Notification:")
     public void tgrShowHtmlNotification(String message) {
+        // TODO merge this with TigerDirector.pauseExecution
         if (TigerDirector.getLibConfig().isActivateWorkflowUi()) {
             TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
                 .bannerMessage(message)
@@ -151,7 +152,7 @@ public class TigerGlue {
                 .bannerIsHtml(true)
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
-                .atMost(5, TimeUnit.HOURS)
+                .atMost(TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
                 .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
             TigerDirector.getTigerTestEnvMgr().resetUserInput();
         } else {
