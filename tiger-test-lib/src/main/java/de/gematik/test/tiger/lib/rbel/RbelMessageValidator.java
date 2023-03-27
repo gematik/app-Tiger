@@ -38,6 +38,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.iterators.ReverseListIterator;
+import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.awaitility.core.ConditionTimeoutException;
@@ -55,7 +56,7 @@ public class RbelMessageValidator {
     RbelLogger rbelLogger;
     RbelFileWriter rbelFileWriter;
 
-    private AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
+    private final AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
 
 
     public final static RbelMessageValidator instance = new RbelMessageValidator();
@@ -83,7 +84,7 @@ public class RbelMessageValidator {
     }
 
     public List<RbelElement> getRbelMessages() {
-        return LocalProxyRbelMessageListener.getValidatableRbelMessages();
+        return new UnmodifiableList<>(new ArrayList<>(LocalProxyRbelMessageListener.getValidatableRbelMessages()));
     }
 
     public void clearRBelMessages() {
@@ -238,7 +239,7 @@ public class RbelMessageValidator {
             final String host = req.getFacetOrFail(RbelHttpMessageFacet.class)
                 .getHeader().getFacetOrFail(RbelHttpHeaderFacet.class)
                 .get("Host").getRawStringContent();
-            return host.equals(hostFilter) || host.matches(hostFilter);
+            return StringUtils.equals(host, hostFilter) || host.matches(hostFilter);
         } catch (final RuntimeException rte) {
             log.error("Probable error while parsing regex!", rte);
             return false;
@@ -471,10 +472,9 @@ public class RbelMessageValidator {
         }
 
         private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
-            final ReverseListIterator backwardsIterator = new ReverseListIterator(
-                LocalProxyRbelMessageListener.getValidatableRbelMessages());
+            final Iterator<RbelElement> backwardsIterator = LocalProxyRbelMessageListener.getValidatableRbelMessages().descendingIterator();
             while (backwardsIterator.hasNext()) {
-                final RbelElement element = (RbelElement) backwardsIterator.next();
+                final RbelElement element = backwardsIterator.next();
                 if (testMessage.test(element)) {
                     return element;
                 }

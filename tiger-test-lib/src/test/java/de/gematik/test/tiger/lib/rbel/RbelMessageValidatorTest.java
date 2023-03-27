@@ -415,7 +415,7 @@ class RbelMessageValidatorTest {
         final RbelElement convertedMessage = rbelConverter.parseMessage(challengeMessage.getBytes(), null, null,
             Optional.of(ZonedDateTime.now()));
         validator.currentResponse = convertedMessage;
-        validator.getRbelMessages().add(convertedMessage);
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
 
         // validate
         validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", true);
@@ -444,7 +444,7 @@ class RbelMessageValidatorTest {
         final RbelElement convertedMessage = rbelConverter.parseMessage(challengeMessage.getBytes(), null, null,
             Optional.of(ZonedDateTime.now()));
         validator.currentResponse = convertedMessage;
-        validator.getRbelMessages().add(convertedMessage);
+        LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
 
         // validate
         validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", true);

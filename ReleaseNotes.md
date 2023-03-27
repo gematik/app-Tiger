@@ -13,6 +13,7 @@
 ## Bugfixes
 
 * TGR-743: TigerGlobalConfiguration.putValue supports String values supplied via Generics
+* Fixed ConcurrentModificationException while waiting for request in rbel validation steps
 
 ## Features
 
