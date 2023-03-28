@@ -29,16 +29,16 @@
       Continue
     </div>
     <div class="row justify-content-around" v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.FAIL_PASS">
-        <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.FAIL_PASS"
-             v-on:click="sendContinue"
-             class="btn btn-success w-45 mt-3 mb-1">
-          Pass
-        </div>
-        <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.FAIL_PASS"
-             v-on:click="sendFail"
-             class="btn btn-danger w-45 mt-3 mb-1">
-          Fail
-        </div>
+      <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.FAIL_PASS"
+           v-on:click="sendContinue"
+           class="btn btn-success w-45 mt-3 mb-1">
+        Pass
+      </div>
+      <div v-if="bannerData.length > 0 && bannerData[bannerData.length-1].type === BannerType.FAIL_PASS"
+           v-on:click="sendFail"
+           class="btn btn-danger w-45 mt-3 mb-1">
+        Fail
+      </div>
     </div>
   </div>
 </template>
@@ -56,7 +56,7 @@ defineProps<{
   bannerData: BannerMessage[];
 }>();
 
-function closeWindow(ev : MouseEvent) {
+function closeWindow(ev: MouseEvent) {
   document.getElementById('workflow-messages')!.classList.toggle('show');
 }
 
@@ -65,6 +65,8 @@ function sendQuit(event: MouseEvent) {
   .then((response) => response.text())
   .then((data) => {
     closeWindow(event);
+    document.getElementById("sidebar-left")?.setAttribute("style", "background-color: lightcoral;");
+    document.getElementsByClassName("sidebar-title")?.item(0)?.setAttribute("style", "color:red;background-color: lightcoral;");
     alert("Backend of Workflow UI has been shut down!\nRbelLog details pane has no more filtering / search support!");
   });
 }

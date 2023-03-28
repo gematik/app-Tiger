@@ -13,6 +13,8 @@
 ## Bugfixes
 
 * TGR-743: TigerGlobalConfiguration.putValue supports String values supplied via Generics
+* TGR-874: Background steps show up in the workflow ui at the end of a scenario
+* TGR-874: Data tables show up in workflow ui as simple toString() text
 * Fixed ConcurrentModificationException while waiting for request in rbel validation steps
 
 ## Features
@@ -21,6 +23,7 @@
 * TGR-822: Added a step to read .tgr files
 * TGR-864: all params except for the HTTP method of steps from the http client extension are now resolving ${} expressions
 * Made timeout for execution pause in workflow ui configurable via property tiger.lib.pauseExecutionTimeoutSeconds
+* On quit the background of the sidebar of the workflow ui is now colored coral red to indicate that no backend server functionality is available anymore (reload page, backend calls on the rbel log details pane, access to the proxy webui page)
 
 ## Breaking changes
 
