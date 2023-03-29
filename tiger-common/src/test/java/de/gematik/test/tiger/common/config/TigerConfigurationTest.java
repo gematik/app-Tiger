@@ -232,6 +232,13 @@ public class TigerConfigurationTest {
                     .isFalse();
                 assertThat(TigerGlobalConfiguration.readBoolean("boolean.withfalse"))
                     .isFalse();
+                assertThat(TigerGlobalConfiguration.readBooleanOptional("boolean.withtrue")).isPresent()
+                    .contains(Boolean.TRUE);
+                assertThat(TigerGlobalConfiguration.readBooleanOptional("boolean.withfalse")).isPresent()
+                    .contains(Boolean.FALSE);
+                assertThat(TigerGlobalConfiguration.readBooleanOptional("boolean.null")).isNotPresent();
+                assertThat(TigerGlobalConfiguration.readBoolean("boolean.null", true)).isTrue();
+                assertThat(TigerGlobalConfiguration.readBoolean("boolean.null", false)).isFalse();
             });
     }
 

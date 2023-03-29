@@ -161,6 +161,11 @@ public class TigerGlobalConfiguration {
         return globalConfigurationLoader.readBoolean(key, defaultValue);
     }
 
+    public static synchronized Optional<Boolean> readBooleanOptional(String key) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.readBooleanOptional(key);
+    }
+
     public static synchronized void readTemplates(String templatesYaml, String... baseKeys) {
         assertGlobalConfigurationIsInitialized();
         globalConfigurationLoader.readTemplates(templatesYaml, baseKeys);
