@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractTigerProxy implements ITigerProxy {
 
     public static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
-    private static final RbelMessagePostProcessor pairingPostProcessor = (el, conv, json) -> {
+    public static final RbelMessagePostProcessor pairingPostProcessor = (el, conv, json) -> {
         if (json.has(PAIRED_MESSAGE_UUID)) {
             final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
             final Optional<RbelElement> partner = conv.messagesStreamLatestFirst()
@@ -135,28 +135,37 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
 
     }
 
-    protected void readTrafficFromSourceFile(String sourceFile) {
+    private void readTrafficFromSourceFile(String sourceFile) {
         new Thread(() -> {
-            log.info("Trying to read traffic from file '{}'...", sourceFile);
             try {
-                rbelFileWriter.postConversionListener.add(pairingPostProcessor);
-                if (StringUtils.isNotEmpty(getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
-                    rbelFileWriter.postConversionListener.add(new ProxyFileReadingFilter(
-                        getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
-                }
-                rbelFileWriter.convertFromRbelFile(
-                    Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
+                readTrafficFromTgrFile(sourceFile);
                 fileParsedCompletely.set(true);
-                log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
-            } catch (Exception e) {
-                log.error("Exception while parsing traffic file", e);
-                fileParsingException.set(
-                    new TigerProxyStartupException("Error while parsing traffic file '" + sourceFile + "'", e));
-            } finally {
-                rbelFileWriter.postConversionListener.remove(pairingPostProcessor);
+            } catch (RuntimeException e) {
+                fileParsingException.set(e);
             }
         }, "readTrafficFromSourceFile").start();
     }
+
+    public synchronized List<RbelElement> readTrafficFromTgrFile(String sourceFile) {
+        log.info("Trying to read traffic from file '{}'...", sourceFile);
+        try {
+            rbelFileWriter.postConversionListener.add(pairingPostProcessor);
+            if (getTigerProxyConfiguration().getFileSaveInfo() != null &&
+                StringUtils.isNotEmpty(getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
+                rbelFileWriter.postConversionListener.add(new ProxyFileReadingFilter(
+                    getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
+            }
+            List<RbelElement> readElmeents = rbelFileWriter.convertFromRbelFile(
+                Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
+            log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
+            return readElmeents;
+        } catch (Exception e) {
+            throw new TigerProxyStartupException("Error while parsing traffic file '" + sourceFile + "'", e);
+        } finally {
+            rbelFileWriter.postConversionListener.remove(pairingPostProcessor);
+        }
+    }
+
 
     private void addFixVauKey() {
         final KeyPair keyPair = KeyMgr.readEcdsaKeypairFromPkcs8Pem(FIX_VAU_KEY.getBytes(StandardCharsets.UTF_8));

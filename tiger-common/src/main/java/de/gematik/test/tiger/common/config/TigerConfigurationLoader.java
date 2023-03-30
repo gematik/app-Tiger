@@ -216,19 +216,19 @@ public class TigerConfigurationLoader {
     }
 
     public boolean readBoolean(String key) {
-        final String rawValue = readString(key);
-        if (rawValue.equals("1")) {
-            return true;
-        }
-        return Boolean.parseBoolean(rawValue);
+        return parseBoolean(readString(key));
     }
 
     public boolean readBoolean(String key, boolean defValue) {
-        final String rawValue = readString(key, defValue ? "1" : "0");
-        if (rawValue.equals("1")) {
-            return true;
-        }
-        return Boolean.parseBoolean(rawValue);
+        return readStringOptional(key).map(TigerConfigurationLoader::parseBoolean).orElse(defValue);
+    }
+
+    public Optional<Boolean> readBooleanOptional(String key) {
+        return readStringOptional(key).map(TigerConfigurationLoader::parseBoolean);
+    }
+
+    private static boolean parseBoolean(String rawValue) {
+        return "1".equals(rawValue) ? true : Boolean.parseBoolean(rawValue);
     }
 
     public void readTemplates(String templatesYaml, String... baseKeys) {
@@ -445,17 +445,21 @@ public class TigerConfigurationLoader {
     }
 
     public void putValue(String key, Object value) {
-        try {
-            Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
-            final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
-            addYamlToMap(yaml.load(objectMapper.writeValueAsString(value)), new TigerConfigurationKey(key), valueMap);
-            loadedSources.add(BasicTigerConfigurationSource.builder()
-                .values(valueMap)
-                .sourceType(SourceType.RUNTIME_EXPORT)
-                .basePath(new TigerConfigurationKey(key))
-                .build());
-        } catch (JsonProcessingException e) {
-            throw new TigerConfigurationException("Error during serialization", e);
+        if (value instanceof String) {
+            putValue(key, (String) value);
+        } else {
+            try {
+                Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
+                final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
+                addYamlToMap(yaml.load(objectMapper.writeValueAsString(value)), new TigerConfigurationKey(key), valueMap);
+                loadedSources.add(BasicTigerConfigurationSource.builder()
+                    .values(valueMap)
+                    .sourceType(SourceType.RUNTIME_EXPORT)
+                    .basePath(new TigerConfigurationKey(key))
+                    .build());
+            } catch (JsonProcessingException e) {
+                throw new TigerConfigurationException("Error during serialization", e);
+            }
         }
     }
 

@@ -1,5 +1,8 @@
 Feature: HTTP/HTTPS GlueCode Test feature
 
+  Background:
+    Given TGR clear recorded messages
+
   Scenario: Simple Get Request
     When TGR send empty GET request to "http://winstone"
     Then TGR find last request to path ".*"
@@ -87,10 +90,69 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/json"
 
-  @Ignore
-  Scenario: Request with mutual TLS
-    Given TGR set default TLS client certificate to "src/test/resources/rsaStoreWithChain.jks;gematik"
-    When TGR send empty GET request to "https://winstone/not_a_file"
-    Then TGR find last request to path ".*"
+  #@Ignore
+  #Scenario: Request with mutual TLS
+    # Given TGR set default TLS client certificate to "src/test/resources/rsaStoreWithChain.jks;gematik"
+    #When TGR send empty GET request to "https://winstone/not_a_file"
+    #Then TGR find last request to path ".*"
+    #And TGR print current request as rbel-tree
+    #And TGR assert "!{rbel:currentRequestAsString('$.clientTlsCertificateChain.0.subject')}" matches ".*CN=authn.aktor.epa.telematik-test.*"
+
+  Scenario Outline: JEXL Rbel Namespace Test
+    Given TGR show banner "Starting üöäß <txt>..."
+    #And TGR pausiere Testausführung mit Nachricht "Bitte einmal im Kreis drehen"
+    When TGR send empty GET request to "http://winstone"
+    Then TGR find request to path "/"
     And TGR print current request as rbel-tree
-    And TGR assert "!{rbel:currentRequestAsString('$.clientTlsCertificateChain.0.subject')}" matches ".*CN=authn.aktor.epa.telematik-test.*"
+    Then TGR current response with attribute "$.body.html.head.link.href" matches "!{rbel:currentResponseAsString('$.body.html.head.link.href')}"
+
+    Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
+      | txt   | txt2 | txt3| txt4| txt5|
+      | text2 | 21   |31   |41   |51   |
+      | text2 |22    |32   |42   |52   |
+
+  Scenario: Simple first test
+    Given TGR show banner "text2"
+    #And TGR pausiere Testausführung
+    Given TGR show red banner "Starting Demo..."
+    When TGR send empty GET request to "http://winstone"
+    Then TGR find request to path "/"
+    Then TGR current response with attribute "$.body.html.head.link.href" matches "jetty-dir.css"
+    # Given TGR warte auf Abbruch
+
+  Scenario: Test Find Last Request
+    Given TGR show banner "text1"
+    #And TGR pausiere Testausführung mit Nachricht "Regnet es draußen?" und Meldung im Fehlerfall "Es scheint die Sonne"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=1"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=2"
+    Then TGR find last request to path "/classes"
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute "$.header.Location.foobar.value" matches "2"
+
+  Scenario: Test find last request with parameters
+    Given TGR show banner "text1"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=1"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=1&xyz=4"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=2"
+    Then TGR find last request to path "/classes" with "$.path.foobar.value" matching "1"
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute "$.header.Location.xyz.value" matches "4"
+    #And TGR current response body matches:
+    #"""
+    #wdfersdferd
+    #"""
+    Then TGR current response with attribute "$.header.Location.xyz.value" matches "4"
+
+  Scenario: Test find last request
+    Given TGR show banner "text1"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=1"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=2"
+    Then TGR send empty GET request to "http://winstone/classes?foobar=3"
+    Then TGR send empty GET request to "http://winstone/directoryWhichDoesNotExist?other=param"
+    Then TGR find the last request
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute "$.responseCode" matches "404"
+    Then TGR assert "!{rbel:currentRequestAsString('$.path.other.value')}" matches "param"

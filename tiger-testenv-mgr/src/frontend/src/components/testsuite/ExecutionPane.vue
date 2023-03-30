@@ -64,7 +64,7 @@
                   <td :class="`${step[1].status.toLowerCase()} step_status `">
                     <i :class="`fa-solid ${getTestResultIcon(step[1].status, 'solid')}`" :title="`${step[1].status}`"></i>
                   </td>
-                  <td class="step_text">
+                  <td :class="`step_text step_index_${index}`">
                     <div v-html="step[1].description"></div>
                     <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
                       <div v-if="rbelmsg.method" class="rbelmessage">
@@ -250,5 +250,9 @@ h4.scenariotitle {
   background: white;
   text-align: center;
   line-height: 15rem;
+}
+
+.blue {
+  color: darkblue;
 }
 </style>

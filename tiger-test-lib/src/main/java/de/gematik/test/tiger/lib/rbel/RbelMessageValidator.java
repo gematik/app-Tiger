@@ -18,21 +18,26 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.util.RbelFileWriter;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -45,6 +50,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.iterators.ReverseListIterator;
+import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.awaitility.core.ConditionTimeoutException;
@@ -58,6 +64,12 @@ import org.xmlunit.diff.Difference;
 @SuppressWarnings("unused")
 @Slf4j
 public class RbelMessageValidator {
+
+    RbelLogger rbelLogger;
+    RbelFileWriter rbelFileWriter;
+
+    private final AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
+
 
     public final static RbelMessageValidator instance = new RbelMessageValidator();
     private static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
@@ -84,7 +96,7 @@ public class RbelMessageValidator {
     }
 
     public List<RbelElement> getRbelMessages() {
-        return LocalProxyRbelMessageListener.getValidatableRbelMessages();
+        return new UnmodifiableList<>(new ArrayList<>(LocalProxyRbelMessageListener.getValidatableRbelMessages()));
     }
 
     public void clearRBelMessages() {
@@ -239,7 +251,7 @@ public class RbelMessageValidator {
             final String host = req.getFacetOrFail(RbelHttpMessageFacet.class)
                 .getHeader().getFacetOrFail(RbelHttpHeaderFacet.class)
                 .get("Host").getRawStringContent();
-            return host.equals(hostFilter) || host.matches(hostFilter);
+            return StringUtils.equals(host, hostFilter) || host.matches(hostFilter);
         } catch (final RuntimeException rte) {
             log.error("Probable error while parsing regex!", rte);
             return false;
@@ -266,13 +278,15 @@ public class RbelMessageValidator {
             .collect(Collectors.joining());
         if (shouldMatch) {
             if (!text.equals(value)) {
-                assertThat(text).as("Rbelpath '%s' matches", rbelPath).matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+                assertThat(text).as("Rbelpath '%s' matches", rbelPath)
+                    .matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
             }
         } else {
             if (text.equals(value)) {
                 Assertions.fail("Did not expect that node '" + rbelPath + "' is equal to '" + value);
             }
-            assertThat(text).as("Rbelpath '%s' does not match", rbelPath).doesNotMatch(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+            assertThat(text).as("Rbelpath '%s' does not match", rbelPath)
+                .doesNotMatch(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
         }
     }
 
@@ -417,6 +431,16 @@ public class RbelMessageValidator {
             .orElse(null);
     }
 
+    public void readTgrFile(String filePath) {
+        if (TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOptional().isPresent()) {
+            List<RbelElement> readElements = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
+                .readTrafficFromTgrFile(filePath);
+            readElements.forEach(LocalProxyRbelMessageListener.rbelMessageListener::triggerNewReceivedMessage);
+        } else {
+            throw new TigerTestEnvException("No local proxy active, can't read from tgr file {}", filePath);
+        }
+    }
+
     public class JexlToolbox {
 
         public String currentResponseAsString(final String rbelPath) {
@@ -460,10 +484,9 @@ public class RbelMessageValidator {
         }
 
         private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
-            final ReverseListIterator backwardsIterator = new ReverseListIterator(
-                LocalProxyRbelMessageListener.getValidatableRbelMessages());
+            final Iterator<RbelElement> backwardsIterator = LocalProxyRbelMessageListener.getValidatableRbelMessages().descendingIterator();
             while (backwardsIterator.hasNext()) {
-                final RbelElement element = (RbelElement) backwardsIterator.next();
+                final RbelElement element = backwardsIterator.next();
                 if (testMessage.test(element)) {
                     return element;
                 }

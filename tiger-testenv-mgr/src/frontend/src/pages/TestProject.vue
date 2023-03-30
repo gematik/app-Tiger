@@ -577,4 +577,16 @@ i.resizer-left-icon {
   white-space: pre;
 }
 
+.step_text .table-data-table td {
+  border: 1px solid #aaa;
+  padding: 0.25rem;
+  color: #0a8694;
+}
+
+.step_text .table-data-table {
+  margin-top: 0.25rem;
+  margin-left: 2rem;
+  margin-bottom: 0.5rem;
+}
+
 </style>

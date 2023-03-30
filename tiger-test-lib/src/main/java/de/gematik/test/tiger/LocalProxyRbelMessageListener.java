@@ -20,7 +20,9 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +46,7 @@ public class LocalProxyRbelMessageListener {
      * TODO add test to ensure this statement
      */
     @Getter
-    public static final List<RbelElement> validatableRbelMessages = new ArrayList<>();
+    private static final Deque<RbelElement> validatableRbelMessages = new ConcurrentLinkedDeque<>();
 
     /**
      * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and SerenityBDD test report evidence. This

@@ -460,4 +460,13 @@ public class RBelValidatorGlue {
     public void printCurrentRequest() {
         System.out.println(RBelValidatorGlue.getRbelValidator().getCurrentRequest().printTreeStructure());
     }
+
+    /**
+     * Read TGR file and sends messages to local Tiger proxy
+     */
+    @Dann("TGR liest folgende .tgr Datei {string}")
+    @Then("TGR reads the following .tgr file {string}")
+    public void readTgrFile(String filePath) {
+        rbelValidator.readTgrFile(filePath);
+    }
 }

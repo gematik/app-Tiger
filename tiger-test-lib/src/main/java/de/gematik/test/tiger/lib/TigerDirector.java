@@ -137,7 +137,7 @@ public class TigerDirector {
                         .build());
                     try {
                         await().pollInterval(1, TimeUnit.SECONDS)
-                            .atMost(5, TimeUnit.HOURS)
+                            .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
                             .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
                     } finally {
                         tigerTestEnvMgr.shutDown();
@@ -353,7 +353,7 @@ public class TigerDirector {
                 .bannerIsHtml(isHtml)
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
-                .atMost(5, TimeUnit.HOURS)
+                .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
                 .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun());
             tigerTestEnvMgr.resetUserInput();
         } else {
@@ -375,7 +375,7 @@ public class TigerDirector {
                 .bannerType(BannerType.FAIL_PASS)
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
-                .atMost(5, TimeUnit.HOURS)
+                .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
                 .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun()
                     || tigerTestEnvMgr.isUserAcknowledgedFailingTestRun());
             if (tigerTestEnvMgr.isUserAcknowledgedFailingTestRun()) {
