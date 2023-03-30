@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 1.3.1-SNAPSHOT - 2023-03-07</span>
+<span id="revdate">Version 1.3.2-SNAPSHOT - 2023-03-30</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -3156,6 +3156,8 @@ and activate / deactivate certain features.</p>
     <span class="comment"># Flag whether to create the RBEL HTML reports during</span>
     <span class="comment"># a testsuite run, activated by default</span>
     <span class="key">createRbelHtmlReports</span>: <span class="string"><span class="content">true</span></span>
+    <span class="comment"># maximum amount of seconds to wait / pause execution via pop up in the workflow ui, default is 5 hours.</span>
+    <span class="key">pauseExecutionTimeoutSeconds</span>: <span class="string"><span class="content">18000</span></span>
 
 <span class="comment"># flag whether to start the local Tiger Proxy (default) or to omit it completely.</span>
 <span class="comment"># if you have the local Tiger Proxy deactivated you will NOT be able to</span>
@@ -3668,7 +3670,13 @@ only check for regex matches if they were not equal.</p>
 * Prints the rbel-tree of the current request to the System-out
 */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR gebe aktuelle Request als Rbel-Tree aus</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR print current request as rbel-tree</span><span class="delimiter">&quot;</span></span>)</code></pre>
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR print current request as rbel-tree</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Read TGR file and sends messages to local Tiger proxy
+*/</span>
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR liest folgende .tgr Datei {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR reads the following .tgr file {string}</span><span class="delimiter">&quot;</span></span>)</code></pre>
 </div>
 </div>
 </div>
@@ -4449,7 +4457,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-03-07 11:56:34 UTC
+Last updated 2023-03-30 12:29:52 UTC
 </div>
 </div>
 </body>
