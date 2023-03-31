@@ -41,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.jexl3.JexlException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Element;
@@ -241,7 +242,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 )
                         ),
 
-                       div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
+                        div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
                             button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
                                 i().withClass("far fa-trash-alt"),
                                 span("Reset").withClass("ml-2").withStyle(COLOR_INHERIT)
@@ -369,23 +370,22 @@ public class TigerWebUiController implements ApplicationContextAware {
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .findFirst().orElseThrow();
         final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
-        final RbelElementTreePrinter treePrinter = RbelElementTreePrinter.builder()
-            .rootElement(targetMessage)
-            .printFacets(false)
-            .build();
-        return JexlQueryResponseDto.builder()
-            .matchSuccessful(jexlExecutor.matchesAsJexlExpression(targetMessage, query))
-            .messageContext(messageContext)
-            .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
-                .replace(RbelAnsiColors.RESET.toString(), "</span>")
-                .replace(RbelAnsiColors.RED_BOLD.toString(), "<span class='has-text-danger'>")
-                .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
-                .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
-                    "<span class='has-text-primary has-text-weight-bold'>")
-                .replace(RbelAnsiColors.GREEN.toString(), "<span class='has-text-warning'>")
-                .replace(RbelAnsiColors.BLUE.toString(), "<span class='has-text-success'>")
-                .replace("\n", "<br/>"))
-            .build();
+
+        try {
+            return JexlQueryResponseDto.builder()
+                .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
+                .matchSuccessful(jexlExecutor.matchesAsJexlExpression(targetMessage, query))
+                .messageContext(messageContext).build();
+        } catch (JexlException jexlException) {
+            log.warn("Failed to perform JEXL query '" + query + "'", jexlException);
+            String msg = jexlException.getMessage();
+            msg = msg.replaceAll(".*:\\d* ", "");
+            return JexlQueryResponseDto.builder()
+                .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
+                .errorMessage(msg)
+                .build();
+
+        }
     }
 
     @GetMapping(value = "/testRbelExpression", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -401,26 +401,33 @@ public class TigerWebUiController implements ApplicationContextAware {
             return JexlQueryResponseDto.builder()
                 .build();
         }
-        final RbelElementTreePrinter treePrinter = RbelElementTreePrinter.builder()
-            .rootElement(targetElements.get(0))
-            .printFacets(false)
-            .build();
         return JexlQueryResponseDto.builder()
-            .rbelTreeHtml(HtmlEscapers.htmlEscaper().escape(treePrinter.execute())
-                .replace(RbelAnsiColors.RESET.toString(), "</span>")
-                .replace(RbelAnsiColors.RED_BOLD.toString(),
-                    "<span class='has-text-danger jexlResponseLink' style='cursor: pointer;'>")
-                .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
-                .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
-                    "<span class='has-text-primary has-text-weight-bold'>")
-                .replace(RbelAnsiColors.GREEN.toString(), "<span class='has-text-warning'>")
-                .replace(RbelAnsiColors.BLUE.toString(), "<span class='has-text-success'>")
-                .replace("\n", "<br/>"))
+            .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true))
             .elements(targetElements.stream()
                 .map(RbelElement::findNodePath)
                 .map(key -> "$." + key)
                 .collect(Collectors.toList()))
             .build();
+    }
+
+    private String createRbelTreeForElement(RbelElement targetElement, boolean addJexlResponseLinkCssClass) {
+        return HtmlEscapers.htmlEscaper().escape(
+                RbelElementTreePrinter.builder()
+                    .rootElement(targetElement)
+                    .printFacets(false)
+                    .build()
+                    .execute())
+            .replace(RbelAnsiColors.RESET.toString(), "</span>")
+            .replace(RbelAnsiColors.RED_BOLD.toString(),
+                "<span class='has-text-danger "
+                    + (addJexlResponseLinkCssClass ? "jexlResponseLink' style='cursor: pointer;'" : "'")
+                    + ">")
+            .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
+            .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
+                "<span class='has-text-primary has-text-weight-bold'>")
+            .replace(RbelAnsiColors.GREEN.toString(), "<span class='has-text-warning'>")
+            .replace(RbelAnsiColors.BLUE.toString(), "<span class='has-text-success'>")
+            .replace("\n", "<br/>");
     }
 
     @GetMapping(value = "/webfonts/{fontfile}", produces = "text/css")
@@ -482,7 +489,8 @@ public class TigerWebUiController implements ApplicationContextAware {
         result.setPagesAvailable((msgs.size() / pageSize) + 1);
         result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
-            result.getHtmlMsgList().size(), result.getMetaMsgList().size()  , msgs.size(), tigerProxy.getRbelLogger().getMessageHistory().size());
+            result.getHtmlMsgList().size(), result.getMetaMsgList().size(), msgs.size(),
+            tigerProxy.getRbelLogger().getMessageHistory().size());
         return result;
     }
 

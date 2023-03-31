@@ -10,7 +10,7 @@ let rootEl;
 let jexlQueryElementUuid = "";
 let pageSize = 20;
 let pageNumber = 0;
-let empty="empty";
+let empty = "empty";
 
 const NO_REQUEST = "no requests";
 
@@ -236,9 +236,9 @@ document.addEventListener('DOMContentLoaded', function () {
             collapseMessageDetails);
 
         document.getElementsByClassName('msglist')[0]
-            .childNodes.forEach(message => {
-              updateHidingForMessageElement(message)
-            });
+        .childNodes.forEach(message => {
+          updateHidingForMessageElement(message)
+        });
         if (firstElementOfView) {
           window.setTimeout(() => {
             firstElementOfView.scrollIntoView();
@@ -256,9 +256,9 @@ document.addEventListener('DOMContentLoaded', function () {
             collapseMessageHeaders);
 
         document.getElementsByClassName('msglist')[0]
-            .childNodes.forEach(message => {
-              updateHidingForMessageElement(message)
-            });
+        .childNodes.forEach(message => {
+          updateHidingForMessageElement(message)
+        });
         if (firstElementOfView) {
           window.setTimeout(() => {
             firstElementOfView.scrollIntoView();
@@ -594,7 +594,9 @@ function connectToWebSocket() {
         stompClient.subscribe('/topic/ws', () => {
           if (!currentlyPolling) {
             currentlyPolling = true;
-            pollMessages(() => {currentlyPolling = false;});
+            pollMessages(() => {
+              currentlyPolling = false;
+            });
           }
         });
       },
@@ -699,7 +701,7 @@ function setFilterCriterion() {
   setFilterCriterionBtn.classList.remove("is-loading");
 }
 
-function resetFilterCriterion(){
+function resetFilterCriterion() {
   resetFilterCriterionBtn.classList.add("is-loading");
   filterCriterion = "";
   setFilterCriterionInput.value = '';
@@ -814,32 +816,45 @@ function executeJexlQuery() {
         const response = JSON.parse(this.responseText);
 
         shortenStrings(response);
-        const map = new Map(Object.entries(response.messageContext));
-        jexlInspectionContextDiv.innerHTML =
-            "<h3 class='is-size-4'>JEXL context</h3>";
-        map.forEach((value, key) => {
-          jexlInspectionContextDiv.innerHTML += "<prekey id='json_" + encodeURIComponent(key) + "'>" +  key + "</prekey><pre class='paddingLeft' id='json__" + encodeURIComponent(key) + "'>" + JSON.stringify(value, null, 6) + "</pre><br>";
-        });
+        if (response.messageContext) {
+          const map = new Map(Object.entries(response.messageContext));
+          var html = "<h3 class='is-size-4'>JEXL context</h3>";
+          map.forEach((value, key) => {
+            html += "<prekey id='json_" + encodeURIComponent(key) + "'>" + key + "</prekey>"
+                + "<pre class='paddingLeft' id='json__" + encodeURIComponent(key) + "'>"
+                + JSON.stringify(value, null, 6)
+                + "</pre><br>";
+          });
+          jexlInspectionContextDiv.innerHTML = html;
+        } else {
+          jexlInspectionContextDiv.innerHTML = "<h3 class='is-size-4'>NO JEXL context received</h3>";
+        }
 
         jexlInspectionContextParentDiv.classList.remove("is-hidden");
         jexlInspectionNoContextDiv.classList.add("is-hidden");
-        if (response.matchSuccessful) {
+        if (response.errorMessage) {
+          jexlInspectionResultDiv.innerHTML = "<b>JEXL is invalid: </b>"
+              + "<code class='has-background-dark has-text-danger'>" + response.errorMessage
+              + "</code>";
+          jexlInspectionResultDiv.setAttribute("class", "box has-background-primary");
+
+        } else if (response.matchSuccessful) {
           jexlInspectionResultDiv.innerHTML = "<b>Condition is true: </b>"
               + "<code class='has-background-dark has-text-danger'>" + jexlQuery
               + "</code>";
-          jexlInspectionResultDiv.classList.add("has-background-success");
-          jexlInspectionResultDiv.classList.remove("has-background-primary");
-          jexlInspectionResultDiv.classList.remove("is-hidden");
+          jexlInspectionResultDiv.setAttribute("class", "box has-background-success");
         } else {
-          jexlInspectionResultDiv.innerHTML = "<b>Condition is false (or invalid): </b>"
+          jexlInspectionResultDiv.innerHTML = "<b>Condition is false: </b>"
               + "<code class='has-background-dark has-text-danger'>" + jexlQuery
               + "</code>";
-          jexlInspectionResultDiv.classList.remove("has-background-success");
-          jexlInspectionResultDiv.classList.add("has-background-primary");
-          jexlInspectionResultDiv.classList.remove("is-hidden");
+          jexlInspectionResultDiv.setAttribute("class", "box has-background-info");
         }
       } else {
-        console.log("ERROR " + this.status + " " + this.responseText);
+        jexlInspectionResultDiv.innerHTML = "<b>Error talking to server! </b>"
+            + (this.responseText ?
+                ("<code class='has-background-dark has-text-danger'>" + response.errorMessage + "</code>") :
+                "");
+        jexlInspectionResultDiv.setAttribute("class", "box has-background-warning");
       }
     }
   }
@@ -907,13 +922,14 @@ function copyPathToInputField(event, element) {
     document.getElementById("rbelExpressionInput").value = "$." + text;
   } else {
     const words = oldValue.split('.');
-    oldValue = oldValue.substring(0, oldValue.length - words[words.length-1].length);
+    oldValue = oldValue.substring(0, oldValue.length - words[words.length - 1].length);
     document.getElementById("rbelExpressionInput").value = oldValue + text;
   }
 }
 
 function shortenStrings(obj) {
   for (var property in obj) {
+    if (property === "errorMessage") continue;
     if (obj.hasOwnProperty(property)) {
       if (typeof obj[property] == "object") {
         shortenStrings(obj[property]);
@@ -995,7 +1011,7 @@ function addMessageToMenu(msgMetaData, index) {
     });
     if (foundSender == null) {
       let index = msgMetaData.sender.indexOf(":");
-      if(index >= 0) {
+      if (index >= 0) {
         let port = msgMetaData.sender.substring(index + 1);
         if (port < 32768) {
           senders.push(msgMetaData.sender);
@@ -1009,7 +1025,7 @@ function addMessageToMenu(msgMetaData, index) {
     });
     if (foundReceiver == null) {
       let index = msgMetaData.recipient.indexOf(":");
-      if(index >= 0){
+      if (index >= 0) {
         let port = msgMetaData.recipient.substring(index + 1);
         if (port < 32768) {
           receivers.push(msgMetaData.recipient);
@@ -1024,7 +1040,7 @@ function setFilterMessage() {
   if (allMessagesAmount === filteredMessagesAmount) {
     element.textContent = "Filter didn't match any of the " + allMessagesAmount + " messages.";
   } else {
-    element.textContent = filteredMessagesAmount + " of "+ allMessagesAmount + " did match the filter criteria.";
+    element.textContent = filteredMessagesAmount + " of " + allMessagesAmount + " did match the filter criteria.";
   }
 }
 
@@ -1173,7 +1189,7 @@ function scrollToMessage(uuid, sequenceNumber) {
   if ((sequenceNumber < pageNumber * pageSize)
       || (sequenceNumber >= (pageNumber + 1) * pageSize)) {
     tobeScrolledToUUID = uuid;
-    setPageNumber(Math.ceil((sequenceNumber +1) / pageSize) - 1, scrollMessageIntoView)
+    setPageNumber(Math.ceil((sequenceNumber + 1) / pageSize) - 1, scrollMessageIntoView)
   } else {
     scrollMessageIntoView(uuid)
   }
@@ -1200,7 +1216,7 @@ if (window.addEventListener) {
 }
 
 function addDropdownClickListener(el, callback) {
-  el.addEventListener('click', function(e) {
+  el.addEventListener('click', function (e) {
     let active = el.classList.contains('is-active');
     closeAllDropdowns();
     e.stopPropagation();
@@ -1220,6 +1236,6 @@ document.addEventListener('keydown', function (event) {
   }
 });
 
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   closeAllDropdowns();
 });

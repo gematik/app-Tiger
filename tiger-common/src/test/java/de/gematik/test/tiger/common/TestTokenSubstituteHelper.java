@@ -5,8 +5,10 @@
 package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,13 +48,22 @@ class TestTokenSubstituteHelper {
         "give me a ${!{'give.me' + '.a.foo'}}, give me a foo",
         "${!{'give.me' + '.a.foo'}}, foo",
         "!{not ${some.boolean.value}}, false",
-        // non resolvable placeholders
         "${non.existing.value}, ${non.existing.value}",
-        "!{'blub' + ${non.existing.value}}, !{'blub' + ${non.existing.value}}"
     })
     void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
             .isEqualTo(expectedString);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+        // non resolvable placeholders
+        "!{'blub' + ${non.existing.value}}",
+        "!{rbel:unknownMethod()}",
+        "!{rbel:unknownProperty}",
+    })
+    void testSubstituteTokenJexlNOK(String stringToSubstitute) {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute)).isInstanceOf(JexlException.class);
     }
 
     @ParameterizedTest
@@ -70,8 +81,7 @@ class TestTokenSubstituteHelper {
     void testRegisteringAndDeregisteringAdditionalNamespaces() {
         final String expression = "!{foo:bar()}";
 
-        assertThat(TigerGlobalConfiguration.resolvePlaceholders(expression))
-            .isEqualTo(expression);
+        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(expression)).isInstanceOf(JexlException.class);
 
         TigerJexlExecutor.registerAdditionalNamespace("foo", new FooBarClass());
 
@@ -79,8 +89,7 @@ class TestTokenSubstituteHelper {
 
         TigerJexlExecutor.deregisterNamespace("foo");
 
-        assertThat(TigerGlobalConfiguration.resolvePlaceholders(expression))
-            .isEqualTo(expression);
+        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(expression)).isInstanceOf(JexlException.class);
     }
 
     @Test

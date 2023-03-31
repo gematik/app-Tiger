@@ -493,7 +493,7 @@ public class RbelMessageValidator {
                 .flatMap(el -> el.getFacet(RbelValueFacet.class))
                 .map(RbelValueFacet::getValue)
                 .map(Object::toString)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new NoSuchElementException("Unable to find a matching element for '" + rbelPath+ "'"));
         }
     }
 }

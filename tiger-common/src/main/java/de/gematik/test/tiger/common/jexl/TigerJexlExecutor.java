@@ -6,14 +6,12 @@ package de.gematik.test.tiger.common.jexl;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
-import org.bouncycastle.cms.RecipientInformationStore;
 
 @Slf4j
 public class TigerJexlExecutor {
+
     private static final Map<Integer, JexlExpression> JEXL_EXPRESSION_CACHE = new HashMap<>();
     public static final Deque<Object> ELEMENT_STACK = new ConcurrentLinkedDeque<>();
     public static boolean ACTIVATE_JEXL_DEBUGGING = false;
@@ -54,9 +52,10 @@ public class TigerJexlExecutor {
 
             return Optional.ofNullable(expression.evaluate(mapContext));
         } catch (RuntimeException e) {
-            if (ACTIVATE_JEXL_DEBUGGING) {
-                log.info("Error during Jexl-Evaluation.", e);
+            if (e instanceof JexlException && !(e.getCause() instanceof NoSuchElementException)) {
+                throw e;
             }
+            log.warn("Error during Jexl-Evaluation.", e);
             return Optional.empty();
         }
     }

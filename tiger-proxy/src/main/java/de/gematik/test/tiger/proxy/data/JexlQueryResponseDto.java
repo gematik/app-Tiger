@@ -19,4 +19,6 @@ public class JexlQueryResponseDto {
     private final Map<String, Object> messageContext;
     private final String rbelTreeHtml;
     private final List<String> elements;
+
+    private final String errorMessage;
 }
