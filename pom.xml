@@ -43,7 +43,7 @@
         <version.commons-codec>1.15</version.commons-codec>
         <version.commons-jexl3>3.2.1</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
-        <version.cucumber>7.8.1</version.cucumber>
+        <version.cucumber>7.11.0</version.cucumber>
         <version.datatable>7.11.0</version.datatable>
         <version.gson>2.10.1</version.gson>
         <version.htmlunit>3.55.0</version.htmlunit>
@@ -62,8 +62,8 @@
         <version.serenity.core>3.6.1-SNAPSHOT</version.serenity.core>
         <version.serenity.maven.plugin>3.6.1-SNAPSHOT</version.serenity.maven.plugin>
 -->
-        <version.serenity.core>3.3.10</version.serenity.core>
-        <version.serenity.maven.plugin>3.3.10</version.serenity.maven.plugin>
+        <version.serenity.core>3.6.20</version.serenity.core>
+        <version.serenity.maven.plugin>3.6.20</version.serenity.maven.plugin>
         <version.slf4j>1.7.36</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spring>5.3.23</version.spring>

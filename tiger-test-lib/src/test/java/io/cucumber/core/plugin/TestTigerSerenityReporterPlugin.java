@@ -43,9 +43,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TestTigerCucumberListener {
+public class TestTigerSerenityReporterPlugin {
 
-    private TigerCucumberListener listener;
+    private TigerSerenityReporterPlugin listener;
 
     private static EnvStatusController envStatusController;
 
@@ -67,7 +67,7 @@ public class TestTigerCucumberListener {
 
     @BeforeEach
     public void initListener() {
-        listener = new TigerCucumberListener();
+        listener = new TigerSerenityReporterPlugin();
         LOCAL_PROXY_ADMIN_PORT.putValue(9999);
         envStatusController.getStatus().getFeatureMap().clear();
     }
@@ -88,7 +88,7 @@ public class TestTigerCucumberListener {
         assertThat(listener.getContext().currentScenarioDefinition.getName()).isEqualTo(
             scenarioName);
         assertThat(
-            listener.getSerenityReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(
+            listener.getReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(
             -1);
 
         TigerEnvStatusDto status = envStatusController.getStatus();
@@ -128,7 +128,7 @@ public class TestTigerCucumberListener {
 
         listener.handleTestCaseStarted(startedEvent);
         assertThat(
-            listener.getSerenityReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(
+            listener.getReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(
             1);
         status = envStatusController.getStatus();
         String scenarioId1 = "1-" + listener.getContext().currentScenarioDefinition.getId();
@@ -198,18 +198,18 @@ public class TestTigerCucumberListener {
             new Result(Status.FAILED, Duration.ofMillis(500), null));
         listener.handleTestCaseFinished(finishedEvent);
 
-        assertThat(listener.getSerenityReporterCallbacks().getScFailed()).isEqualTo(1);
-        assertThat(listener.getSerenityReporterCallbacks().getScPassed()).isZero();
+        assertThat(listener.getReporterCallbacks().getScFailed()).isEqualTo(1);
+        assertThat(listener.getReporterCallbacks().getScPassed()).isZero();
 
         File logFileFolder = new File("target/rbellogs/");
         File logFile = Arrays.stream(logFileFolder.listFiles())
             .filter(file -> file.lastModified() > startms).findFirst().get();
         assertThat(logFile.getName()).startsWith(
-            "rbel_" + listener.getSerenityReporterCallbacks().replaceSpecialCharacters(scenarioName));
+            "rbel_" + listener.getReporterCallbacks().replaceSpecialCharacters(scenarioName));
         assertThat(logFile)
             .exists()
             .hasName(
-                listener.getSerenityReporterCallbacks().replaceSpecialCharacters(logFile.getName()))
+                listener.getReporterCallbacks().replaceSpecialCharacters(logFile.getName()))
             .content(StandardCharsets.UTF_8).hasSizeGreaterThan(800).contains(scenarioName);
 
         TigerEnvStatusDto status = envStatusController.getStatus();
@@ -219,8 +219,8 @@ public class TestTigerCucumberListener {
         // TODO as the scenario status is dervided from all step status, doesnt work, see above
         //  assertThat(scenario.getStatus()).isEqualTo(TestResult.FAILED);
 
-        assertThat(listener.getSerenityReporterCallbacks().getScFailed()).isEqualTo(1);
-        assertThat(listener.getSerenityReporterCallbacks().getScPassed()).isZero();
+        assertThat(listener.getReporterCallbacks().getScFailed()).isEqualTo(1);
+        assertThat(listener.getReporterCallbacks().getScPassed()).isZero();
 
     }
 

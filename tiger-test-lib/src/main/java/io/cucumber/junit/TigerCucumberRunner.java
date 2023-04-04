@@ -7,9 +7,7 @@ package io.cucumber.junit;
 import io.cucumber.core.eventbus.EventBus;
 import io.cucumber.core.feature.FeatureParser;
 import io.cucumber.core.options.*;
-import io.cucumber.core.plugin.PluginFactory;
-import io.cucumber.core.plugin.Plugins;
-import io.cucumber.core.plugin.TigerCucumberListener;
+import io.cucumber.core.plugin.TigerSerenityReporterPlugin;
 import io.cucumber.core.resource.ClassLoaders;
 import io.cucumber.core.runtime.Runtime;
 import io.cucumber.core.runtime.*;
@@ -81,7 +79,7 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
         FeaturePathFeatureSupplier featureSupplier = new FeaturePathFeatureSupplier(classLoaderSupplier, runtimeOptions, parser);
 
         // NOSONAR 3.6.1 TigerSerenityReporterPlugin reporter = new TigerSerenityReporterPlugin(systemConfiguration);
-        TigerCucumberListener reporter = new TigerCucumberListener(systemConfiguration);
+        TigerSerenityReporterPlugin reporter = new TigerSerenityReporterPlugin(systemConfiguration);
 
         return Runtime.builder().withClassLoader(classLoaderSupplier).withRuntimeOptions(runtimeOptions).
             withAdditionalPlugins(reporter).
@@ -103,20 +101,20 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
         parseFeaturesEarly();
 
         // Create plugins after feature parsing to avoid the creation of empty files on lexer errors.
-        plugins = new Plugins(new PluginFactory(), runtimeOptions);
+        initiatePluginsList(runtimeOptions);
         ExitStatus exitStatus = new ExitStatus(runtimeOptions);
-        plugins.addPlugin(exitStatus);
+        addPlugin(exitStatus);
 
         ThreadLocalRunnerSupplier runnerSupplier = initializeServices(clazz, runtimeOptions);
 
         Configuration systemConfiguration = Injectors.getInjector().getInstance(Configuration.class);
         // 3.6.1 TigerSerenityReporterPlugin reporter = new TigerSerenityReporterPlugin(systemConfiguration);
-        TigerCucumberListener reporter = new TigerCucumberListener(systemConfiguration);
-        plugins.addPlugin(reporter);
+        TigerSerenityReporterPlugin reporter = new TigerSerenityReporterPlugin(systemConfiguration);
+        addPlugin(reporter);
 
-        this.context = new CucumberExecutionContext(bus, exitStatus, runnerSupplier);
+        initiateContext(exitStatus, runnerSupplier);
 
-        createFeatureRunners(features, runtimeOptions, junitOptions);
+        createFeatureRunners(getFeatures(), runtimeOptions, junitOptions);
 
     }
 }

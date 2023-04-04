@@ -53,7 +53,7 @@ localProxyActive: true
 
 As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.
 
-That's why it is mandatory to use the TigerCucumberRunner, which internally registers the plugin `io.cucumber.core.TigerCucumberListener` to the plugins list.
+That's why it is mandatory to use the TigerCucumberRunner, which internally registers the plugin `io.cucumber.core.pluginTigerSerenityReporterPlugin` to the plugins list.
 
 The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
 

@@ -4,7 +4,9 @@
 
 package io.cucumber.core.plugin;
 
+import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.plugin.event.*;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.thucydides.core.webdriver.Configuration;
 
@@ -14,7 +16,8 @@ import net.thucydides.core.webdriver.Configuration;
 @Slf4j
 public class TigerSerenityReporterPlugin extends SerenityReporter {
 
-    SerenityReporterCallbacks reporterCallbacks = new SerenityReporterCallbacks();
+    @Getter
+    private SerenityReporterCallbacks reporterCallbacks = new SerenityReporterCallbacks();
 
     public TigerSerenityReporterPlugin() {
         super();
@@ -24,6 +27,10 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
         super(systemConfiguration);
     }
 
+
+    public ScenarioContextDelegate getScenarioContextDelegate() {
+        return new ScenarioContextDelegate(getContext());
+    }
 
     @Override
     public void setEventPublisher(EventPublisher publisher) {
@@ -38,32 +45,32 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
     }
 
     protected void handleTestRunStarted(TestRunStarted event) {
-        reporterCallbacks.handleTestRunStarted(event, getContext());
+        reporterCallbacks.handleTestRunStarted(event, getScenarioContextDelegate());
         super.handleTestRunStarted(event);
     }
 
 
     protected void handleTestSourceRead(TestSourceRead event) {
         super.handleTestSourceRead(event);
-        reporterCallbacks.handleTestSourceRead(event, getContext());
+        reporterCallbacks.handleTestSourceRead(event);
     }
 
     protected void handleTestCaseStarted(TestCaseStarted event) {
         super.handleTestCaseStarted(event);
-        reporterCallbacks.handleTestCaseStarted(event, getContext());
+        reporterCallbacks.handleTestCaseStarted(event, getScenarioContextDelegate());
     }
 
     protected void handleTestStepStarted(TestStepStarted event) {
         super.handleTestStepStarted(event);
-        reporterCallbacks.handleTestStepStarted(event, getContext());
+        reporterCallbacks.handleTestStepStarted(event, getScenarioContextDelegate());
     }
 
     protected void handleTestStepFinished(TestStepFinished event) {
-        reporterCallbacks.handleTestStepFinished(event, getContext());
+        reporterCallbacks.handleTestStepFinished(event, getScenarioContextDelegate());
         super.handleTestStepFinished(event);
     }
     protected void handleTestCaseFinished(TestCaseFinished event) {
-        reporterCallbacks.handleTestCaseFinished(event, getContext());
+        reporterCallbacks.handleTestCaseFinished(event, getScenarioContextDelegate());
         super.handleTestCaseFinished(event);
     }
 

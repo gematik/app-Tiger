@@ -1,6 +1,24 @@
 # Changelog Tiger Testplattform
 
 -------
+* **Serenity BDD 3.6.20**
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 2.7.5
+
+# Release 2.0.0
+
+## Bugfixes
+
+* TGR-769 Serenity reports show examples now with a collapse icon clearly indicating whether its folded or unfolded
+
+## Features
+
+* Upgraded Serenity BDD to latest 3.6.20
+
+-------
 * Serenity BDD 3.3.10
 * Cucumber 7.4.1
 * RestAssured 5.2.0
