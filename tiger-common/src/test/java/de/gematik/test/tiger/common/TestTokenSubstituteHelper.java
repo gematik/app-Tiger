@@ -61,6 +61,7 @@ class TestTokenSubstituteHelper {
         "!{'blub' + ${non.existing.value}}",
         "!{rbel:unknownMethod()}",
         "!{rbel:unknownProperty}",
+        "!{not !{not ${some.boolean.value}}}",
     })
     void testSubstituteTokenJexlNOK(String stringToSubstitute) {
         assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute)).isInstanceOf(JexlException.class);
