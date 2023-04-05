@@ -93,7 +93,7 @@ public class RbelMessageValidator {
 
     public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
         final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
-        currentRequest = findRequestByDescription(requestParameter);
+        currentRequest = findMessageByDescription(requestParameter);
         try {
             await("Waiting for matching response").atMost(waitsec, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
@@ -111,7 +111,11 @@ public class RbelMessageValidator {
         }
     }
 
-    protected RbelElement findRequestByDescription(final RequestParameter requestParameter) {
+    public void waitForMessageToBePresent(final RequestParameter requestParameter) {
+        findMessageByDescription(requestParameter);
+    }
+
+    protected RbelElement findMessageByDescription(final RequestParameter requestParameter) {
         final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
 
         final AtomicReference<RbelElement> candidate = new AtomicReference<>();
@@ -124,9 +128,12 @@ public class RbelMessageValidator {
                     return found.isPresent();
                 });
         } catch (final ConditionTimeoutException cte) {
-            log.error("Didn't find any matching request!");
+            log.error("Didn't find any matching messages!");
             printAllPathsOfMessages(getRbelMessages());
-            if (requestParameter.getRbelPath() == null) {
+            if (requestParameter.getPath() == null) {
+                throw new AssertionError(
+                    "No request with matching rbelPath '" + requestParameter.getRbelPath() + "' found in messages");
+            } else if (requestParameter.getRbelPath() == null) {
                 throw new AssertionError(
                     "No request with path '" + requestParameter.getPath() + "' found in messages");
             } else {
@@ -216,6 +223,9 @@ public class RbelMessageValidator {
     }
 
     public boolean doesPathOfMessageMatch(final RbelElement req, final String path) {
+        if (path == null) {
+            return true;
+        }
         try {
             final URI uri = new URI(req.getFacet(RbelHttpRequestFacet.class)
                 .map(RbelHttpRequestFacet::getPath)

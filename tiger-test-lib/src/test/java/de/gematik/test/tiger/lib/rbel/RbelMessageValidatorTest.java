@@ -13,7 +13,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -22,14 +25,27 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.Deque;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 class RbelMessageValidatorTest {
+
+    @AfterEach
+    public void cleanUp() {
+        Deque<RbelElement> validatableRbelMessages
+            = (Deque<RbelElement>) ReflectionTestUtils.getField(LocalProxyRbelMessageListener.class, "validatableRbelMessages");
+        validatableRbelMessages.clear();
+    }
 
     @Test
     void testPathEqualsWithRelativePath_OK() {
@@ -379,9 +395,8 @@ class RbelMessageValidatorTest {
 
             RbelMessageValidator.instance.readTgrFile("src/test/resources/testdata/rezepsFiltered.tgr");
 
-            assertThat(LocalProxyRbelMessageListener.getValidatableRbelMessages()).hasSize(100);
+            assertThat(LocalProxyRbelMessageListener.getValidatableRbelMessages()).hasSize(96);
         });
-
     }
 
     private void executeWithSecureShutdown(Statement test) {
@@ -461,5 +476,34 @@ class RbelMessageValidatorTest {
         assertThatThrownBy(() -> {
             validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true");
         }).isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void testThatWaitForNonPairedMessageToBePresentFindsTargetMessage() throws ExecutionException, InterruptedException {
+        final RequestParameter messageParameters = RequestParameter.builder()
+            .rbelPath("$..Topic.text")
+            .value("CT/CONNECTED")
+            .build();
+        CompletableFuture waitForMessageFuture = CompletableFuture.runAsync(() -> RbelMessageValidator.instance.waitForMessageToBePresent(messageParameters));
+
+        readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
+
+        waitForMessageFuture.get();
+        assertThat(RbelMessageValidator.instance.findMessageByDescription(messageParameters)
+            .findElement("$..Topic.text").get().getRawStringContent())
+            .isEqualTo("CT/CONNECTED");
+    }
+
+    private static void readTgrFileAndStoreForRbelMessageValidator(String rbelFile) {
+        var rbelLogger = RbelLogger.build(new RbelConfiguration()
+            .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+            .addCapturer(RbelFileReaderCapturer.builder()
+                .rbelFile(rbelFile)
+                .build())
+        );
+        rbelLogger.getRbelCapturer().initialize();
+        Deque<RbelElement> validatableRbelMessages
+            = (Deque<RbelElement>) ReflectionTestUtils.getField(LocalProxyRbelMessageListener.class, "validatableRbelMessages");
+        validatableRbelMessages.addAll(rbelLogger.getMessageHistory());
     }
 }

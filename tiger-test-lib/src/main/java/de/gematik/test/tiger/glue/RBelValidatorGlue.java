@@ -94,6 +94,23 @@ public class RBelValidatorGlue {
     }
 
     /**
+     * Wait until a message is found in which the given node, specified by a RbelPath-Expression, matches the given value.
+     * This method will NOT alter currentRequest/currentResponse!!
+     *
+     * @param rbelPath rbel path to node/attribute
+     * @param value    value to match at given node/attribute
+     */
+    @Wenn("TGR warte auf eine Nachricht, in der Knoten {string} mit {string} übereinstimmt")
+    @When("TGR wait for message with node {string} matches {string}")
+    public void waitForMessageWithValue(final String rbelPath, final String value) {
+        rbelValidator.waitForMessageToBePresent(
+            RequestParameter.builder()
+                .rbelPath(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))
+                .value(TigerGlobalConfiguration.resolvePlaceholders(value))
+                .build());
+    }
+
+    /**
      * find the first request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
      * instance
      *
