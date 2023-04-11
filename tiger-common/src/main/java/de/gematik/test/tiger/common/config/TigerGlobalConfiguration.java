@@ -18,6 +18,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 import lombok.Getter;
@@ -44,6 +45,7 @@ public class TigerGlobalConfiguration {
     public static synchronized void reset() {
         globalConfigurationLoader.reset();
         initialized = false;
+        requireTigerYaml = false;
     }
 
     public static void initialize() {
@@ -74,7 +76,8 @@ public class TigerGlobalConfiguration {
 
     private static void addFreePortVariables() {
         List<ServerSocket> sockets = new ArrayList<>();
-        for (TigerTypedConfigurationKey<Integer> key : List.of(TESTENV_MGR_RESERVED_PORT, LOCALPROXY_ADMIN_RESERVED_PORT)) {
+        for (TigerTypedConfigurationKey<Integer> key : List.of(TESTENV_MGR_RESERVED_PORT,
+            LOCALPROXY_ADMIN_RESERVED_PORT)) {
             try {
                 final ServerSocket serverSocket = new ServerSocket(0);
                 key.putValue(serverSocket.getLocalPort());
@@ -240,14 +243,16 @@ public class TigerGlobalConfiguration {
     }
 
     private static void readYamlFiles() {
-        TIGER_YAML_VALUE.getValue()
-            .ifPresent(s -> {
-                log.info("Reading configuration from tiger.yaml property as string");
-                globalConfigurationLoader.readFromYaml(s, SourceType.TEST_YAML, TIGER_BASEKEY);
-            });
+        final Optional<String> tigerYamlValue = TIGER_YAML_VALUE.getValue();
+        if (tigerYamlValue.isPresent()) {
+            log.info("Reading configuration from tiger.yaml property as string");
+            globalConfigurationLoader.readFromYaml(tigerYamlValue.get(), SourceType.TEST_YAML, TIGER_BASEKEY);
+            return;
+        }
 
         final Optional<File> customCfgFile = TIGER_TESTENV_CFGFILE_LOCATION.getValue()
             .map(File::new);
+
         if (customCfgFile.isPresent()) {
             if (customCfgFile.get().exists()) {
                 readYamlFile(customCfgFile.get(), Optional.of(TIGER_BASEKEY));
@@ -298,15 +303,35 @@ public class TigerGlobalConfiguration {
             }, TIGER_BASEKEY, "additionalYamls");
 
         for (AdditionalYamlProperty additionalYaml : additionalYamls) {
-            readYamlFile(Optional.ofNullable(additionalYaml.getFilename())
-                    .filter(Objects::nonNull)
-                    .map(TigerGlobalConfiguration::resolvePlaceholders)
-                    .map(File::new)
-                    .filter(File::exists)
-                    .orElseThrow(() -> new TigerConfigurationException(
-                        "Unable to locate file from configuration " + additionalYaml)),
+            File additionalYamlFile = findAdditionalYamlFile(
+                TigerGlobalConfiguration.resolvePlaceholders(additionalYaml.getFilename()));
+            readYamlFile(additionalYamlFile,
                 Optional.ofNullable(additionalYaml.getBaseKey()));
         }
+    }
+
+    private static File findAdditionalYamlFile(String additionalYaml) {
+        Optional<Path> configFileLocation = TIGER_TESTENV_CFGFILE_LOCATION.getValue()
+            .map(Path::of);
+
+        if (configFileLocation.isPresent()) {
+            final File yamlRelativeToTigerYaml
+                = configFileLocation.get().resolveSibling(additionalYaml).toFile();
+            if (yamlRelativeToTigerYaml.exists()) {
+                return yamlRelativeToTigerYaml;
+            }
+        }
+
+        Path currentDirectory = Path.of(".");
+        final File yamlRelativeToWorkingDirectory
+            = currentDirectory.resolveSibling(additionalYaml).toFile();
+        if (yamlRelativeToWorkingDirectory.exists()) {
+            return yamlRelativeToWorkingDirectory;
+        }
+
+        throw new TigerConfigurationException(
+            "The file " + additionalYaml + " relative to parent folder of tiger.yaml " +
+                configFileLocation + " or current working directory " + currentDirectory + " not found.");
     }
 
     private static String getComputerName() {
