@@ -29,7 +29,9 @@ public class UpdatePushController implements TigerUpdateListener {
 
     @Override
     public void receiveTestEnvUpdate(TigerStatusUpdate update) {
-        log.trace("Propagating status udpate {}", update);
-        template.convertAndSend("/topic/envStatus", TestEnvStatusDto.createFrom(update));
+        if (tigerTestEnvMgr.isWorkflowUiSentFetch()) {
+            log.trace("Propagating status udpate {}", update);
+            template.convertAndSend("/topic/envStatus", TestEnvStatusDto.createFrom(update));
+        }
     }
 }

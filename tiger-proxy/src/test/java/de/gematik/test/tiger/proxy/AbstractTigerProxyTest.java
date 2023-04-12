@@ -79,11 +79,10 @@ public abstract class AbstractTigerProxyTest {
     }
 
     @AfterEach
-    public void stopSpawnedTigerProxy() throws Exception {
+    public void stopSpawnedTigerProxy() {
         if (tigerProxy != null) {
             log.info("Closing tigerProxy from '{}'...", this.getClass().getSimpleName());
             tigerProxy.close();
-            tigerProxy.shutdown();
             System.gc();
         }
     }

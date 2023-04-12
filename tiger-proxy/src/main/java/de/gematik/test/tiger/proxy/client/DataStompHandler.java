@@ -23,10 +23,14 @@ class DataStompHandler implements StompFrameHandler {
 
     @Override
     public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
+        if (log.isTraceEnabled()) {
+            log.trace("Received new frame of type {} in proxy {}",
+                frameContent.getClass().getSimpleName(), remoteProxyClient.getName().orElse("<>"));
+        }
         if (frameContent instanceof TracingMessagePart) {
             final TracingMessagePart tracingMessagePart = (TracingMessagePart) frameContent;
             log.trace("Received part {} of {} for UUID {}",
-                tracingMessagePart.getIndex(), tracingMessagePart.getNumberOfMessages(),
+                tracingMessagePart.getIndex() + 1, tracingMessagePart.getNumberOfMessages(),
                 tracingMessagePart.getUuid());
             remoteProxyClient.receiveNewMessagePart(tracingMessagePart);
         }

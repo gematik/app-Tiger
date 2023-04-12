@@ -72,7 +72,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     //
     // -----------------------------------------------------------------------------------------------------------------
 
-    public void createTestEnvMgrSafelyAndExecute(String configurationFilePath,
+    public static void createTestEnvMgrSafelyAndExecute(String configurationFilePath,
         ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
         TigerTestEnvMgr envMgr = null;
         try {
@@ -95,7 +95,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer, String configurationFilePath) {
         createTestEnvMgrSafelyAndExecute(configurationFilePath, testEnvMgrConsumer);
     }
-    public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
+    public static void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
         createTestEnvMgrSafelyAndExecute("", testEnvMgrConsumer);
     }
 

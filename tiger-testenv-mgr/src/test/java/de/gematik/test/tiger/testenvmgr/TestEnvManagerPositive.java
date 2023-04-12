@@ -17,6 +17,7 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -256,6 +257,25 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.2").get());
         assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault())
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.1").get());
+    }
+
+    @Test
+    @TigerTest(tigerYaml =
+        "additionalYamls:\n"
+            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml\n"
+            + "    baseKey: tiger\n")
+    void readAdditionalYamlFiles(UnirestInstance unirestInstance) {
+        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
+            .isTrue();
+    }
+
+    @Test
+    @TigerTest(tigerYaml =
+        "additionalYamls:\n"
+            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml\n")
+    void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
+        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
+            .isTrue();
     }
 
     private void executeWithSecureShutdown(Runnable test, TigerTestEnvMgr envMgr) {

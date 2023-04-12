@@ -117,6 +117,7 @@ class TigerRemoteProxyClientTest {
                 TigerProxyConfiguration.builder()
                     .proxyLogLevel("WARN")
                     .build());
+            tigerRemoteProxyClient.connect();
 
             unirestInstance = new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));
         }
@@ -406,6 +407,7 @@ class TigerRemoteProxyClientTest {
             TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(true)
                 .build())) {
+            newlyConnectedRemoteClient.connect();
 
             await()
                 .atMost(2, TimeUnit.SECONDS)
@@ -434,6 +436,7 @@ class TigerRemoteProxyClientTest {
                     .downloadInitialTrafficFromEndpoints(true)
                     .build(),
                 masterTigerProxy)) {
+                newlyConnectedRemoteClient.connect();
 
                 await()
                     .atMost(2, TimeUnit.SECONDS)
@@ -459,6 +462,7 @@ class TigerRemoteProxyClientTest {
             TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(true)
                 .build())) {
+            newlyConnectedRemoteClient.connect();
 
             log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
 

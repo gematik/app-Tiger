@@ -145,25 +145,25 @@ public class TracingPushController {
         );
     }
 
-    private void mapRbelMessageAndSent(RbelElement rbelHttpMessage) {
-        if (rbelHttpMessage == null) {
+    private void mapRbelMessageAndSent(RbelElement rbelMessage) {
+        if (rbelMessage == null) {
             return;
         }
 
-        final int numberOfParts = rbelHttpMessage.getRawContent().length / MAX_MESSAGE_SIZE + 1;
+        final int numberOfParts = rbelMessage.getRawContent().length / MAX_MESSAGE_SIZE + 1;
         for (int i = 0; i < numberOfParts; i++) {
             byte[] partContent = Arrays.copyOfRange(
-                rbelHttpMessage.getRawContent(),
+                rbelMessage.getRawContent(),
                 i * MAX_MESSAGE_SIZE,
-                Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelHttpMessage.getRawContent().length)
+                Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelMessage.getRawContent().length)
             );
 
-            log.trace("Sending part {} of {} for UUID {}...", i, numberOfParts, rbelHttpMessage.getUuid());
+            log.trace("Sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
             template.convertAndSend(TigerRemoteProxyClient.WS_DATA,
                 TracingMessagePart.builder()
                     .data(partContent)
                     .index(i)
-                    .uuid(rbelHttpMessage.getUuid())
+                    .uuid(rbelMessage.getUuid())
                     .numberOfMessages(numberOfParts)
                     .build());
         }

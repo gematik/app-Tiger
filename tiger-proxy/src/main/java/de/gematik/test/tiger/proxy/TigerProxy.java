@@ -271,6 +271,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                 .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
                 .build(), this))
             .forEach(remoteProxyClients::add);
+
+        remoteProxyClients.parallelStream()
+            .forEach(TigerRemoteProxyClient::connect);
     }
 
     @Override
@@ -535,19 +538,17 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         exceptionListeners.add(newConsumer);
     }
 
+    @Override
     @PreDestroy
-    public void shutdown() {
+    public void close() {
+        log.info("Shutting down Tiger-Proxy {}", getName().orElse(""));
+        super.close();
         remoteProxyClients
             .forEach(TigerRemoteProxyClient::close);
         mockServerClient.stop();
         mockServer.stop();
         NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
         KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(null);
-    }
-
-    @Override
-    public void close() throws Exception {
-        shutdown();
     }
 
     private static class TigerProxyTrustManagerBuildingException extends RuntimeException {

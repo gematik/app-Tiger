@@ -462,7 +462,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
         if (localTigerProxy != null) {
             log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));
-            localTigerProxy.shutdown();
+            localTigerProxy.close();
         }
         if (localTigerProxyApplicationContext != null) {
             localTigerProxyApplicationContext.close();

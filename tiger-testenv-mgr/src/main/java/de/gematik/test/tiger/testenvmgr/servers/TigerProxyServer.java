@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -19,13 +18,13 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.SocketUtils;
-import org.springframework.web.context.WebApplicationContext;
 
 @TigerServerType("tigerProxy")
 public class TigerProxyServer extends AbstractExternalTigerServer {
@@ -59,18 +58,21 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .statusMessage("Pre-start Tiger Proxy " + getServerId())
             .build());
 
-        TigerProxyConfiguration reverseProxyCfg = getConfiguration().getTigerProxyCfg();
+        TigerProxyConfiguration tigerProxyConfiguration = getConfiguration().getTigerProxyCfg();
         CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
-        standaloneCfg.setTigerProxy(reverseProxyCfg);
-        if (reverseProxyCfg.getProxyRoutes() == null) {
-            reverseProxyCfg.setProxyRoutes(new ArrayList<>());
+        standaloneCfg.setTigerProxy(tigerProxyConfiguration);
+        if (tigerProxyConfiguration.getProxyRoutes() == null) {
+            tigerProxyConfiguration.setProxyRoutes(new ArrayList<>());
         }
 
-        if (reverseProxyCfg.getProxiedServer() != null) {
-            getDestinationUrlFromProxiedServer(reverseProxyCfg);
+        if (tigerProxyConfiguration.getProxiedServer() != null) {
+            getDestinationUrlFromProxiedServer(tigerProxyConfiguration);
+        }
+        if (StringUtils.isEmpty(tigerProxyConfiguration.getName())) {
+            tigerProxyConfiguration.setName(getHostname());
         }
 
-        reverseProxyCfg.getProxyRoutes().forEach(route -> {
+        tigerProxyConfiguration.getProxyRoutes().forEach(route -> {
             route.setFrom(getTigerTestEnvMgr().replaceSysPropsInString(route.getFrom()));
             route.setTo(getTigerTestEnvMgr().replaceSysPropsInString(route.getTo()));
         });
@@ -84,7 +86,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         }
 
         log.info("Actually performing startup of tiger-proxy {}", getServerId());
-        statusMessage("Starting Tiger Proxy " + getServerId() + " at " + reverseProxyCfg.getAdminPort() + "...");
+        statusMessage("Starting Tiger Proxy " + getServerId() + " at " + tigerProxyConfiguration.getAdminPort() + "...");
         applicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(new HashMap<>(TigerSerializationUtil.toMap(standaloneCfg)))
@@ -93,6 +95,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .registerShutdownHook(false)
             .initializers()
             .run();
+
 
         TigerServerLogManager.addProxyCustomerAppender(this);
 
@@ -107,6 +110,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         log.info("Stopping tiger proxy {}...", getServerId());
         if (applicationContext != null
             && applicationContext.isRunning()) {
+            getTigerProxy().close();
             log.info("Triggering tiger-server shutdown for {}...", getServerId());
             applicationContext.close();
             setStatus(TigerServerStatus.STOPPED, "Stopped Tiger Proxy " + getServerId());

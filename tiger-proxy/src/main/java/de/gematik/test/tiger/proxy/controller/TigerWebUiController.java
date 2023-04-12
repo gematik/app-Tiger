@@ -84,7 +84,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     private void informClientOfNewMessageArrival(RbelElement element) {
-        log.trace("Propagating new message (uUID: {}) from proxy {}",
+        log.trace("Pushing new message (uUID: {}) from proxy {} to webUI-clients",
             element.getUuid(), tigerProxy.proxyName());
         template.convertAndSend(WS_NEWMESSAGES, element.getUuid());
     }
@@ -529,8 +529,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/quit", produces = MediaType.APPLICATION_JSON_VALUE)
     public void quitProxy(@RequestParam(name = "noSystemExit", required = false) final String noSystemExit) {
         log.info("Shutting down tiger standalone proxy at port " + tigerProxy.getProxyPort() + "...");
-        tigerProxy.clearAllRoutes();
-        tigerProxy.shutdown();
+        tigerProxy.close();
         log.info("Shutting down tiger standalone proxy ui...");
         int exitCode = SpringApplication.exit(applicationContext);
         if (exitCode != 0) {

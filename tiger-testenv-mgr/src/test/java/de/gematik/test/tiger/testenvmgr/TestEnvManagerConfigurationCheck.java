@@ -9,15 +9,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.Map;
-import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -28,8 +27,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 @Slf4j
 @Getter
 @TestInstance(Lifecycle.PER_CLASS)
-class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
+class TestEnvManagerConfigurationCheck {
 
+    @BeforeEach
+    public void resetConfig() {
+        TigerGlobalConfiguration.reset();
+    }
     // -----------------------------------------------------------------------------------------------------------------
     //
     // check missing mandatory props are detected
@@ -43,9 +46,8 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         "testExternalJar,source",
         "testExternalUrl,type",
         "testExternalUrl,source"})
-    // TODO add tests for helm charts
     void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop) {
-        createTestEnvMgrSafelyAndExecute(
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml",
             envMgr -> {
                 CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
@@ -265,24 +267,6 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         }).withMessage("The urlMappings configuration 'https://bla -->' is not correct. Please check your .yaml-file.");
     }
 
-    @Test
-    @TigerTest(tigerYaml =
-        "additionalYamls:\n"
-            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml\n"
-            + "    baseKey: tiger\n")
-    void readAdditionalYamlFiles(UnirestInstance unirestInstance) {
-        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
-            .isTrue();
-    }
-
-    @Test
-    @TigerTest(tigerYaml =
-        "additionalYamls:\n"
-            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml\n")
-    void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
-        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
-            .isTrue();
-    }
 
     @Test
     @TigerTest(tigerYaml =
@@ -312,7 +296,7 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/additionalAndTigerYamlCurrentDir/tiger.yaml"));
 
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             assertThat(TigerGlobalConfiguration.readString("external.someNotNested.notNestedKey"))
                 .isEqualTo("andValueToKey");
@@ -324,7 +308,7 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/additionalAndTigerYamlCurrentDir/tiger.yaml"));
 
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             assertThat(TigerGlobalConfiguration.readString("nested.someNested.nestedKey"))
                 .isEqualTo("nestedValue");
@@ -336,7 +320,7 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "../tiger-test-lib/src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
 
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             assertThat(TigerGlobalConfiguration.readString("notCurrentDir.someNotCurrentDir.notCurrentDirKeys"))
                 .isEqualTo("andNotCurrentDirValues");
@@ -348,7 +332,7 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "../tiger-test-lib/src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
 
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             assertThat(TigerGlobalConfiguration.readString("notCurrentDir.nested.someNotCurrentDirNested.notCurrentDirKeysNested"))
                 .isEqualTo("notCurrentDirNestedValues");
@@ -360,7 +344,7 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/tiger.yaml"));
 
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             assertThat(TigerGlobalConfiguration.readString("sameFolder.just.key"))
                 .isEqualTo("andValues");
@@ -368,7 +352,7 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
     }
     @Test
     void readAdditionalYamlFileFromCurrentDirNoTigerYamlSet() {
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             assertThat(TigerGlobalConfiguration.readString("rootFolder.someNested.nestedKey"))
                 .isEqualTo("nestedValue");
@@ -377,7 +361,7 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
 
     @Test
     void readAdditionalYamlFileFromCurrentDirNoTigerYamlSetNested() {
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
             envMgr.setUpEnvironment();
             assertThat(TigerGlobalConfiguration.readString("rootFolderNested.someNotNested.notNestedKey"))
                 .isEqualTo("andValueToKey");
