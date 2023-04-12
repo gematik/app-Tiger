@@ -7,6 +7,7 @@
 * Selenium 4.8.0
 * Appium 8.3.0
 * Spring Boot 2.7.5
+* Logback 1.2.11
 
 # Release 2.0.0
 
@@ -17,6 +18,7 @@
 ## Features
 
 * Upgraded Serenity BDD to latest 3.6.20
+* Added first version of FAQ.md
 
 -------
 * Serenity BDD 3.3.10
