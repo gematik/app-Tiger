@@ -8,7 +8,7 @@ pipeline {
     }
 
     //agent { label 'k8-maven' } timeout when accessing Gematik nexus, change when SWF-104 is fixed
-    agent { label 'Docker-Maven' } 
+    agent { label 'k8-backend-small' }
 
     stages {
         stage('Run Dependabots') {
