@@ -136,6 +136,10 @@ function getScenarioOutlineKeysParts(list: Array<string>, count: number): Array<
   padding-left: 2rem;
 }
 
+#execution_pane {
+  padding-bottom: 16rem; /* to always allow to scroll last steps to visible area if banner window is shown */
+}
+
 #execution_table {
   display: flex;
   width: 100%;

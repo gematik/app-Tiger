@@ -2,25 +2,27 @@
   ~ ${GEMATIK_COPYRIGHT_STATEMENT}
   -->
 
-<div class="modal" id="saveModalDialog">
-    <div class="modal-background"></div>
-    <div class="modal-content">
-      <article class="message">
-        <div class="message-header"><h2>Save Traffic Options</h2><button class="delete" aria-label="delete"></button></div>
-        <div class="message-body">
-          <div class="box content">
-            <p class="mt-5 mb-5">There are two options for saving:</p>
-            <ul>
-              <li>You can save the HTML-File as shown here (HTML)</li>
-              <li>Or you can save the raw traffic file (Traffic)</li>
+<div class="modal" id="saveModalDialog" role="dialog">
+  <div class="modal-dialog">
+  <div class="modal-background"></div>
+    <div class="modal-content" role="document" style="background-color:#ffff;">
+      <div class="modal-header bg-dark">
+        <h2 class="modal-title" style="color:#ffff;">Save Traffic Options</h2>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <div class="box">
+            <p class="mt-4 mb-4">There are two options for saving:</p>
+            <ul class="list-group">
+              <li class="list-group-item">You can save the HTML-File as shown here (HTML)</li>
+              <li class="list-group-item">Or you can save the raw traffic file (Traffic)</li>
             </ul>
           </div>
-          <div class="control buttons is-right">
-            <button class="button mt-3 is-success" id="saveHtmlBtn">Download HTML</button>
-            <button class="button mt-3 is-warning" id="saveTrafficBtn">Download Traffic</button>
-          </div>
-        </div>
-      </article>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" id="saveHtmlBtn">Download HTML</button>
+        <button class="btn btn-warning" id="saveTrafficBtn">Download Traffic</button>
+      </div>
     </div>
-    <button class="modal-close is-large" aria-label="close"></button>
   </div>
+</div>

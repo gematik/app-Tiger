@@ -40,8 +40,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Element;
@@ -65,6 +65,20 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class TigerWebUiController implements ApplicationContextAware {
 
+    private static final String ATTR_DATA_BS_TARGET = "data-bs-target";
+    private static final String ATTR_DATA_BS_TOGGLE = "data-bs-toggle";
+    private static final String ATTR_ARIA_HASPOPUP = "aria-haspopup";
+    private static final String ATTR_ARIA_CONTROLS = "aria-controls";
+    private static final String ATTR_ON_CLICK = "onClick";
+    private static final String CSS_BTN_DARK = "btn btn-dark";
+    private static final String CSS_BTN_OUTLINE_SUCCESS= "btn btn-outline-success";
+    private static final String CSS_COLOR_INHERIT = "color:inherit;";
+    private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = "dropdown-toggle" + CSS_BTN_DARK;
+    private static final String CSS_DROPDOWN_ITEM = "dropdown-item";
+    private static final String CSS_NAVBAR_ITEM= "navbar-item";
+    private static final String CSS_NAVBAR_ITEM_NOT4EMBEDDED = CSS_NAVBAR_ITEM + " not4embedded";
+    private static final String DROPDOWN_MENU = "dropdown-menu";
+    private static final String VALUE_MODAL = "modal";
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer;
 
@@ -74,7 +88,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     public final SimpMessagingTemplate template;
     private final TigerBuildPropertiesService buildProperties;
 
-    private static final String COLOR_INHERIT = "color:inherit;";
+
     private static final String WS_NEWMESSAGES = "/topic/ws";
 
     @PostConstruct
@@ -126,18 +140,17 @@ public class TigerWebUiController implements ApplicationContextAware {
         // hide sidebar
         String targetDiv;
         if (embedded) {
-            targetDiv = "<div class=\"column msglist embeddedlist\">";
+            targetDiv = "<div class=\"col msglist embeddedlist\">";
         } else {
-            targetDiv = "<div class=\"column ml-6 msglist\">";
+            targetDiv = "<div class=\"col ms-6 msglist\">";
         }
-        html = replaceScript(html.replace("<div class=\"column ml-6\">", targetDiv));
+        html = replaceScript(html.replace("<div class=\"col ms-6\">", targetDiv));
 
         if (applicationConfiguration.isLocalResources()) {
             log.info("Running with local resources...");
             html = html
-                .replace("https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css", "/webui/css/bulma.min.css")
-                .replace("https://jenil.github.io/bulmaswatch/simplex/bulmaswatch.min.css",
-                    "/webui/css/bulmaswatch.min.css")
+                //.replace("https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
+                //    "/webui/css/bootstrap.min.css")
                 .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
                     "/webui/css/all.min.css");
         }
@@ -145,7 +158,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         String navbar;
 
         if (embedded) {
-            navbar = createNavbar(tigerProxy, "margin-bottom: 4em;", "margin-inline: auto;");
+            navbar = createNavbar(tigerProxy, "margin-bottom: 2em;", "margin-inline: auto;");
         } else {
             navbar = createNavbar(tigerProxy, "", "");
         }
@@ -171,157 +184,137 @@ public class TigerWebUiController implements ApplicationContextAware {
                 + "</div>";
     }
 
-    private String getNavbarItemNot4embedded() {
-        return "navbar-item not4embedded";
-    }
-
-    private String navbarItem() {
-        return "navbar-item";
-    }
-
-    private String darkButton() {
-        return "button is-dark";
-    }
-
-    private String successOutlineButton() {
-        return "button is-outlined is-success";
-    }
-
-
     private String createNavbar(TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart) {
-        return nav().withClass("navbar is-dark is-fixed-bottom").withStyle(styleNavbar)
+        return nav().withClass("navbar bg-dark fixed-bottom").withStyle(styleNavbar)
             .with(
-                div().withClass("navbar-menu").with(
-                    div().withClass("navbar-start").withStyle(styleNavbarStart).with(
-                        div().withClass(getNavbarItemNot4embedded()).with(
-                            button().withId("routeModalBtn").withClass(successOutlineButton())
-                                .attr("data-target", "routeModalDialog").with(
+                div().withClass("container-fluid").with(
+                    div().withStyle(styleNavbarStart).with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
+                            button().withId("routeModalBtn").withClass(CSS_BTN_OUTLINE_SUCCESS)
+                                .attr(ATTR_DATA_BS_TARGET, "#routeModalDialog")
+                                .attr(ATTR_DATA_BS_TOGGLE, VALUE_MODAL).with(
                                     i().withClass("fas fa-exchange-alt"),
-                                    span("Routes").withClass("ml-2").withStyle(COLOR_INHERIT)
+                                    span("Routes").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                                 )
                         ),
-                        div().withClass(getNavbarItemNot4embedded()).with(
-                            button().withId("scrollLockBtn").withClass(darkButton()).with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
+                            button().withId("scrollLockBtn").withClass(CSS_BTN_DARK).with(
                                 div().withId("scrollLockLed").withClass("led"),
                                 span("Scroll Lock")
                             )
                         ),
-                        div().withClass("navbar-item dropdown is-up").with(
-                            div().withId("dropdown-hide-button").withClass("dropdown-trigger").with(
-                                button().withClass(darkButton()).with(
-                                    span().withClass("icon is-small").with(
-                                        i().withClass("fas fa-toggle-on")
-                                    )
-                                )
-                            ),
-                            div().withClass("dropdown-menu")
-                                .attr("role", "menu")
-                                .with(
-                                    div().withClass("dropdown-content-black").with(
-                                        div().withClass("dropdown-item dropdown").with(
-                                            button().withId("collapsibleMessageHeaderBtn").withClass(darkButton()).with(
-                                                div().withId("collapsibleMessageHeader").withClass("led"),
-                                                span("Hide Headers")
-                                            )
-                                        ),
-                                        div().withClass("dropdown-item dropdown").with(
-                                            button().withId("collapsibleMessageDetailsBtn").withClass(darkButton())
-                                                .with(
-                                                    div().withId("collapsibleMessageDetails").withClass("led"),
-                                                    span("Hide Details")
-                                                )
+                        div().withClass(CSS_NAVBAR_ITEM).with(
+                            div().withId("dropdown-hide-button").withClass("btn-group dropup").with(
+                                button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
+                                        .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                        .attr(ATTR_ARIA_HASPOPUP, "true")
+                                        .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU).with(
+                                        span().withClass("icon is-small").with(
+                                            i().withClass("fas fa-toggle-on")
                                         )
+                                ),
+                                div().withClass(DROPDOWN_MENU + " bg-dark")
+                                    .attr("role", "menu")
+                                    .with(
+                                        div().withClass(CSS_DROPDOWN_ITEM).with(
+                                                button().withId("collapsibleMessageHeaderBtn").withClass(CSS_BTN_DARK).with(
+                                                    div().withId("collapsibleMessageHeader").withClass("led"),
+                                                    span("Hide Headers")
+                                                )
+                                            ),
+                                            div().withClass(CSS_DROPDOWN_ITEM).with(
+                                                button().withId("collapsibleMessageDetailsBtn").withClass(CSS_BTN_DARK)
+                                                    .with(
+                                                        div().withId("collapsibleMessageDetails").withClass("led"),
+                                                        span("Hide Details")
+                                                    )
+                                            )
                                     )
-                                )
+                            )
                         ),
-                        div().withClass(navbarItem()).with(
-                            button().withId("filterModalBtn").withClass(successOutlineButton())
-                                .attr("data-target", "filterModalDialog").with(
+                        div().withClass(CSS_NAVBAR_ITEM).with(
+                            button().withId("filterModalBtn").withClass(CSS_BTN_OUTLINE_SUCCESS)
+                                .attr(ATTR_DATA_BS_TARGET, "#filterModalDialog")
+                                .attr(ATTR_DATA_BS_TOGGLE, VALUE_MODAL).with(
                                     i().withClass("fas fa-filter"),
-                                    span("Filter").withClass("ml-2").withStyle(COLOR_INHERIT)
+                                    span("Filter").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                                 )
                         ),
 
-                        div().withClass(getNavbarItemNot4embedded() + " ml-3").with(
-                            button().withId("resetMsgs").withClass("button is-outlined is-danger").with(
+                       div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED + " ms-3").with(
+                            button().withId("resetMsgs").withClass("btn btn-outline-danger").with(
                                 i().withClass("far fa-trash-alt"),
-                                span("Reset").withClass("ml-2").withStyle(COLOR_INHERIT)
+                                span("Reset").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
-                        div().withClass("navbar-item").with(
-                            button().withId("saveMsgs").withClass(successOutlineButton()).with(
+                        div().withClass(CSS_NAVBAR_ITEM).with(
+                            button().withId("saveMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS)
+                                .attr(ATTR_DATA_BS_TARGET, "#saveModalDialog")
+                                .attr(ATTR_DATA_BS_TOGGLE, VALUE_MODAL).with(
                                 i().withClass("far fa-save"),
-                                span("Save").withClass("ml-2").withStyle(COLOR_INHERIT)
+                                span("Save").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
-                        div().withClass("navbar-item").with(
-                            div().withId("dropdown-page-selection").withClass("dropdown is-up").with(
-                                div().withClass("dropdown-trigger").with(
-                                    button().withClass(darkButton())
-                                        .attr("aria-haspopup", "true")
-                                        .attr("aria-controls", "dropdown-menu")
+                        div().withClass(CSS_NAVBAR_ITEM).with(
+                            div().withId("dropdown-page-selection").withClass("btn-group dropup").with(
+                                button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
+                                        .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                        .attr(ATTR_ARIA_HASPOPUP, "true")
+                                        .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                         .with(
-                                            span().withText("Page 1").withId("pageNumberDisplay"),
-                                            span().withClass("icon is-small").with(
-                                                i().withClass("fas fa-angle-up").attr("aria-hidden", "true")
-                                            )
-                                        )
-                                ),
-                                div().withClass("dropdown-menu").attr("role", "menu").with(
+                                            span().withText("Page 1").withId("pageNumberDisplay")
+                                        ),
+                                div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
                                     div().withClass("dropdown-content").withId("pageSelector").with(
-                                        a().withClass("dropdown-item")
-                                            .attr("onClick", "setPageNumber(0)").withText("1")
+                                        a().withClass(CSS_DROPDOWN_ITEM)
+                                            .attr(ATTR_ON_CLICK, "setPageNumber(0)").withText("1")
                                     )
                                 )
                             )
                         ),
-                        div().withClass("navbar-item").with(
-                            div().withId("dropdown-page-size").withClass("dropdown is-up").with(
-                                div().withClass("dropdown-trigger").with(
-                                    button().withClass(darkButton())
-                                        .attr("aria-haspopup", "true")
-                                        .attr("aria-controls", "dropdown-menu")
+                        div().withClass(CSS_NAVBAR_ITEM).with(
+                            div().withId("dropdown-page-size").withClass("dropup").with(
+                                button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
+                                        .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                        .attr(ATTR_ARIA_HASPOPUP, "true")
+                                        .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                         .with(
-                                            span().withId("pageSizeDisplay").withText("Size"),
-                                            span().withClass("icon is-small").with(
-                                                i().withClass("fas fa-angle-up").attr("aria-hidden", "true")
-                                            )
-                                        )
-                                ),
-                                div().withClass("dropdown-menu").attr("role", "menu").with(
+                                            span().withId("pageSizeDisplay").withText("Size")
+                                        ),
+                                div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
                                     div().withClass("dropdown-content").with(
-                                        a().withClass("dropdown-item")
-                                            .attr("onClick", "event.stopPropagation(); setPageSize(10)").withText("10"),
-                                        a().withClass("dropdown-item")
-                                            .attr("onClick", "event.stopPropagation(); setPageSize(20)").withText("20"),
-                                        a().withClass("dropdown-item")
-                                            .attr("onClick", "event.stopPropagation(); setPageSize(50)").withText("50"),
-                                        a().withClass("dropdown-item")
-                                            .attr("onClick", "event.stopPropagation(); setPageSize(100)").withText("100")
+                                        a().withClass(CSS_DROPDOWN_ITEM)
+                                            .attr(ATTR_ON_CLICK, "setPageSize(10);").withText("10"),
+                                        a().withClass(CSS_DROPDOWN_ITEM)
+                                            .attr(ATTR_ON_CLICK, "setPageSize(20);").withText("20"),
+                                        a().withClass(CSS_DROPDOWN_ITEM)
+                                            .attr(ATTR_ON_CLICK, "setPageSize(50);").withText("50"),
+                                        a().withClass(CSS_DROPDOWN_ITEM)
+                                            .attr(ATTR_ON_CLICK, "setPageSize(100);").withText("100")
                                     )
                                 )
                             )
                         ),
-                        div().withClass(getNavbarItemNot4embedded()).with(
-                            button().withId("importMsgs").withClass(successOutlineButton()).with(
-                                i().withClass("far fa-folder-open"),
-                                span("Import").withClass("ml-2").withStyle(COLOR_INHERIT)
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
+                            button().withId("importMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS).with(
+                                    i().withClass("far fa-folder-open"),
+                                span("Import").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
-                        div().withClass(getNavbarItemNot4embedded()).with(
-                            button().withId("uploadMsgs").withClass("button is-outlined is-info").with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
+                            button().withId("uploadMsgs").withClass("btn btn-outline-info").with(
                                 i().withClass("far fa-upload"),
-                                span("Upload").withClass("ml-2").withStyle(COLOR_INHERIT)
+                                span("Upload").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
-                        div().withClass(getNavbarItemNot4embedded()).with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
                             span("Proxy port "),
-                            b("" + tigerProxy.getProxyPort()).withClass("ml-3")
+                            b(String.valueOf(tigerProxy.getProxyPort())).withClass("ms-3")
                         ),
-                        div().withClass(getNavbarItemNot4embedded()).with(
-                            button().withId("quitProxy").withClass("button is-outlined is-danger").with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
+                            button().withId("quitProxy").withClass("btn btn-outline-danger").with(
                                 i().withClass("fas fa-power-off"),
-                                span("Quit").withClass("ml-2").withStyle(COLOR_INHERIT)
+                                span("Quit").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         )
                     )
@@ -331,7 +324,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private String replaceScript(String html) {
         var jsoup = Jsoup.parse(html);
-        final Element script = jsoup.select("script").get(2);
+        final Element script = jsoup.select("script").get(4);
         script.dataNodes().get(0).replaceWith(
             new DataNode(loadResourceToString("/tigerProxy.js")));
         return jsoup.html();
@@ -370,7 +363,6 @@ public class TigerWebUiController implements ApplicationContextAware {
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .findFirst().orElseThrow();
         final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
-
         try {
             return JexlQueryResponseDto.builder()
                 .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
@@ -419,14 +411,14 @@ public class TigerWebUiController implements ApplicationContextAware {
                     .execute())
             .replace(RbelAnsiColors.RESET.toString(), "</span>")
             .replace(RbelAnsiColors.RED_BOLD.toString(),
-                "<span class='has-text-danger "
+                "<span class='text-warning "
                     + (addJexlResponseLinkCssClass ? "jexlResponseLink' style='cursor: pointer;'" : "'")
                     + ">")
-            .replace(RbelAnsiColors.CYAN.toString(), "<span class='has-text-info'>")
+            .replace(RbelAnsiColors.CYAN.toString(), "<span class='text-info'>")
             .replace(RbelAnsiColors.YELLOW_BRIGHT.toString(),
-                "<span class='has-text-primary has-text-weight-bold'>")
-            .replace(RbelAnsiColors.GREEN.toString(), "<span class='has-text-warning'>")
-            .replace(RbelAnsiColors.BLUE.toString(), "<span class='has-text-success'>")
+                "<span class='text-danger has-text-weight-bold'>")
+            .replace(RbelAnsiColors.GREEN.toString(), "<span class='text-warning'>")
+            .replace(RbelAnsiColors.BLUE.toString(), "<span class='text-success'>")
             .replace("\n", "<br/>");
     }
 

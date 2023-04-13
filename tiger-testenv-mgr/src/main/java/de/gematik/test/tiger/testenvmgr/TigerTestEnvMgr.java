@@ -188,7 +188,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     private TigerProxy startLocalTigerProxy(Configuration configuration) {
         log.info("\n" + Banner.toBannerStr("STARTING LOCAL PROXY...", RbelAnsiColors.BLUE_BOLD.toString()));
 
-        final TigerProxy localTigerProxy;
+        final TigerProxy proxy;
         if (configuration.getTigerProxy() == null) {
             configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
         }
@@ -218,12 +218,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             .initializers()
             .run();
 
-        localTigerProxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
+        proxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
 
-        LOCAL_PROXY_PROXY_PORT.putValue(localTigerProxy.getProxyPort());
-        LOCAL_PROXY_ADMIN_PORT.putValue(localTigerProxy.getAdminPort());
+        LOCAL_PROXY_PROXY_PORT.putValue(proxy.getProxyPort());
+        LOCAL_PROXY_ADMIN_PORT.putValue(proxy.getAdminPort());
 
-        return localTigerProxy;
+        return proxy;
     }
 
     public void publishNewStatusUpdate(TigerServerStatusUpdate update) {

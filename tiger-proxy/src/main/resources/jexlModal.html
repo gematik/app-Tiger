@@ -2,89 +2,88 @@
   ~ ${GEMATIK_COPYRIGHT_STATEMENT}
   -->
 
-<div class="modal" id="jexlQueryModal" xmlns="http://www.w3.org/1999/html">
-  <div class="modal-background"></div>
-  <button class="modal-close is-large" aria-label="close"></button>
-  <div class="modal-content" style="width: 85%">
-    <div class="message">
-      <div class="message-header">
-        <button class="delete" aria-label="delete"></button>
-      </div>
-      <div class="message-body">
-        <div class="tabs is-centered is-large">
-          <ul>
-            <li class="is-active tab" onclick="openTab(this,'rbelTab')">
-              <a>
-                <span class="icon is-small"><i class="fas fa-folder-tree"></i></span>
-                <span>RbelPath</span>
-              </a>
-            </li>
-            <li class="tab" onclick="openTab(this,'jexlTab')">
-              <a>
-                <span class="icon is-small"><i class="fas fa-magnifying-glass"></i></span>
-                <span>JEXL Debugging</span>
-              </a>
-            </li>
-          </ul>
+<div class="modal" id="jexlQueryModal" xmlns="http://www.w3.org/1999/html" role="dialog">
+  <div class="modal-dialog" id="jexlModal">
+    <div class="modal-background"></div>
+    <div class="modal-content" role="document" style="background-color:#ffff;width: 100%">
+        <div class="modal-header bg-dark">
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body">
+          <div class="tabs">
+            <ul class="jexlstyle">
+              <li class="show tab" onclick="openTab(this,'rbelTab')">
+                <a>
+                  <span class="icon is-small"><i class="fas fa-folder-tree"></i></span>
+                  <span>RbelPath</span>
+                </a>
+              </li>
+              <li class="tab" onclick="openTab(this,'jexlTab')">
+                <a>
+                  <span class="icon is-small"><i class="fas fa-magnifying-glass"></i></span>
+                  <span>JEXL Debugging</span>
+                </a>
+              </li>
+            </ul>
+          </div>
 
-        <div class="container section">
-          <div id="rbelTab" class="content-tab">
-            <h2 class="is-size-2">RbelPath Debugging</h2>
-            <div>
-              <div class="box">
-                <form id="jexlInspectionForm" onSubmit="return false;">
-                  <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                      <label class="label">Execute RbelPath on selected message</label>
-                    </div>
-                    <div class="field-body">
-                      <div class="control">
-                        <input class="input" size="100%" type="text" id="rbelExpressionInput"
+          <div class="container section">
+            <div id="rbelTab" class="content-tab">
+              <h2 class="is-size-2">RbelPath Debugging</h2>
+              <div>
+                <div class="box">
+                  <form id="jexlInspectionForm" onSubmit="return false;">
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Execute RbelPath on selected message</label>
+                      </div>
+                      <div class="field-body">
+                        <div class="control">
+                          <input class="form-control rounded-3" size="100%" type="text" id="rbelExpressionInput"
                                value='$.body'>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="control buttons is-right">
-                    <button class="button mt-3 is-success" id="testRbelExpression">Test RbelPath</button>
-                  </div>
-                </form>
-              </div>
-              <div>
-                <div class="content box is-size-6">
-                  <div class="full-width">
-                   <i id="rbel-help-icon" class="fas toggle-icon is-pulled-right mr-3 is-size-3 has-text-success fa-toggle-on"></i>
-                    <b>
-                      RBeL-Path Help
-                    </b>
-                  </div>
-                  <div id="rbel-help" style="display: block">
-                  <p>
-                    RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of
-                    captured RBeL-Traffic (navigation of the RbelElement-tree).
-                    It is described in detail
-                    <a href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_understanding_rbelpath">here</a>.
-                  </p>
-                  <p>
-                    <b>Some examples:</b>
-                  <ul>
-                    <li><code class='has-background-dark has-text-danger'>$.body</code>
-                      The body of the message
-                    </li>
-                    <li><code class='has-background-dark has-text-danger'>$..Action</code>
-                      All nodes named "Action" (searches the whole tree)
-                    </li>
-                    <li><code class='has-background-dark has-text-danger'>$.body..Action</code>
-                      All nodes named "Action" in the body.
-                    </li>
-                    <li><code class='has-background-dark has-text-danger'>$..[?(content =~ "UTF-.*")]</code>
-                      All nodes matching the given JEXL-Expression. (Here: All nodes that have text starting with
-                      "UTF-")
-                    </li>
-                  </ul>
-                  </p>
-                  </div>
+                    <div class="control buttons is-right">
+                      <button class="btn mt-3 btn-success" id="testRbelExpression">Test RbelPath</button>
+                    </div>
+                  </form>
                 </div>
+                <div>
+                  <div class="content box is-size-6">
+                    <div class="full-width">
+                     <i id="rbel-help-icon" class="fas toggle-icon is-pulled-right me-3 is-size-3 has-text-success fa-toggle-on"></i>
+                      <b>
+                        RBeL-Path Help
+                      </b>
+                    </div>
+                    <div id="rbel-help" style="display: block">
+                    <p>
+                      RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of
+                      captured RBeL-Traffic (navigation of the RbelElement-tree).
+                      It is described in detail
+                      <a href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_understanding_rbelpath">here</a>.
+                    </p>
+                    <p>
+                      <b>Some examples:</b>
+                    </p>
+                    </div>
+                    <ul>
+                      <li><code class='has-background-dark has-text-danger'>$.body</code>
+                        The body of the message
+                      </li>
+                      <li><code class='has-background-dark has-text-danger'>$..Action</code>
+                        All nodes named "Action" (searches the whole tree)
+                      </li>
+                      <li><code class='has-background-dark has-text-danger'>$.body..Action</code>
+                        All nodes named "Action" in the body.
+                      </li>
+                      <li><code class='has-background-dark has-text-danger'>$..[?(content =~ "UTF-.*")]</code>
+                        All nodes matching the given JEXL-Expression. (Here: All nodes that have text starting with
+                        "UTF-")
+                      </li>
+                    </ul>
+                  </div>
                 <div class="box" id="rbelResult">
                 </div>
                 <div class="box" id="rbelTestTree">
@@ -104,21 +103,21 @@
                     </div>
                     <div class="field-body">
                       <div class="control">
-                        <input class="input" size="100%" type="text" id="jexlQueryInput"
+                        <input class="form-control rounded-3" size="100%" type="text" id="jexlQueryInput"
                                value='"RbelHttpMessageFacet" =~facets'>
                       </div>
                     </div>
                   </div>
                   <div class="control buttons is-right">
-                    <button class="button mt-3 is-success" id="executeJexlQuery">Execute</button>
-                    <button class="button mt-3 is-info" id="copyToFilter">Use as filter</button>
+                    <button class="btn mt-3 btn-success" id="executeJexlQuery">Execute</button>
+                    <button class="btn mt-3 btn-info" id="copyToFilter">Use as filter</button>
                   </div>
                 </form>
               </div>
               <div>
                 <div class="content box is-size-6">
                   <div class="full-width">
-                    <i id="jexl-help-icon" class="fas toggle-icon is-pulled-right mr-3 is-size-3 has-text-success fa-toggle-on"></i>
+                    <i id="jexl-help-icon" class="fas toggle-icon is-pulled-right me-3 is-size-3 has-text-success fa-toggle-on"></i>
                     <b>
                       JEXL syntax Help
                     </b>
@@ -169,7 +168,7 @@
                 </div>
                 <div class="box is-hidden" id="jexlResult">
                 </div>
-                <div class="columns is-hidden" id="contextParent">
+                <div class="row is-hidden" id="contextParent">
                   <div class="box" id="jexlContext" style="width: 100%">
                   </div>
                 </div>

@@ -493,7 +493,7 @@ public class SerenityReporterCallbacks {
             rbelRenderer.setSubTitle(
                 "<p><b>" + scenarioName + "</b>&nbsp&nbsp;"
                     + (currentScenarioDataVariantIndex != -1 ?
-                    "<button class=\"js-modal-trigger\" data-target=\"modal-data-variant\">Variant " + (
+                    "<button class=\"js-modal-trigger\" data-bs-target=\"modal-data-variant\">Variant " + (
                         currentScenarioDataVariantIndex + 1) + "</button>" :
                     "")
                     + "</p><p><i>" + scenarioUri + "</i></p>");

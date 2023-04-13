@@ -16,7 +16,6 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.JsonNoteEntry;
 import j2html.tags.ContainerTag;
 import j2html.tags.Text;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,7 +56,7 @@ public class RbelXmlFacet implements RbelFacet {
                 return ancestorTitle()
                     .with(
                         vertParentTitle().with(
-                            div().withClass("tile is-child pr-3").with(
+                            div().withClass("tile is-child pe-3").with(
                                 pre(new Text(formattedXml))
                                     .withClass("json")
                             ).with(renderingToolkit.convertNested(element))));

@@ -9,7 +9,6 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTi
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
 import static j2html.TagCreator.br;
 import static j2html.TagCreator.div;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
@@ -17,16 +16,11 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import j2html.tags.UnescapedText;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
 import lombok.Builder;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Builder
 @Data
@@ -50,7 +44,7 @@ public class RbelUriFacet implements RbelFacet {
                 } else {
                     return ancestorTitle().with(
                         vertParentTitle().with(
-                            div().withClass("tile is-child pr-3")
+                            div().withClass("tile is-child pe-3")
                                 .with(urlContent)
                                 .with(addNotes(element))
                                 .with(renderingToolkit.convertNested(element))));
@@ -72,7 +66,7 @@ public class RbelUriFacet implements RbelFacet {
                             .orElse(queryElementEntry.getRawStringContent());
 
                         div.with(div((firstElement ? "" : "&") + shadedStringContent)
-                            .with(addNotes(queryElementEntry, " ml-6")));
+                            .with(addNotes(queryElementEntry, " ms-6")));
                         firstElement = false;
                     }
                     return div;

@@ -87,32 +87,35 @@ public class RbelHtmlRenderer {
                                                         final RbelHtmlRenderingToolkit renderingToolkit) {
         final String id = "dialog" + RandomStringUtils.randomAlphanumeric(20);//NOSONAR
         return span().with(
-            a().withClass("button modal-button modal-button-details is-pulled-right mx-3")
-                .attr("data-target", id)
+            a().withClass("btn modal-button modal-button-details is-pulled-right mx-3")
+                .attr("data-bs-target", "#"+id)
+                .attr("data-bs-toggle", "modal")
                 .with(span().withClass("icon is-small").with(
                     i().withClass("fas fa-align-left")
                 )),
             div().withClass("modal")
-                .withId(id)
+                .withId(id).attr("role", "dialog")
                 .with(
-                    div().withClass("modal-background"),
-                    div().withClass("modal-content").with(
-                        article().withClass("message").with(
-                            div().withClass("message-header").with(
-                                div().withStyle("display: inline-flex;").with(p("Raw content of " + el.findNodePath()).withStyle("align-self: center;"),
+                    div().withClass("modal-dialog").with(
+                        div().withClass("modal-background"),
+                        div().withClass("modal-content").attr("role", "document")
+                            .attr("style", "width: 900px;").with(
+                            div().withClass("modal-header bg-dark").with(
+                                div().withStyle("display: inline-flex;").with(p("Raw content of " + el.findNodePath()).withStyle("align-self: center;color:#ffff;").withClass("modal-title"),
                                 button().withClass("copyToClipboard-button").attr("data-target", "text-" + id).with(
                                     i().withClass("fa fa-clipboard")
                                 )),
-                                button().withClass("delete").attr("aria-label", "delete")
-                            ),
-                            div().withClass("message-body")
-                                .with(pre(printRawContentOfElement(el, renderingToolkit)).withId("text-"+id)
-                                    .withStyle("white-space: pre-wrap;word-wrap: break-word;"))
+                                button().withClass("btn btn-close btn-close-white")
+                                        .attr("data-bs-dismiss", "modal")
+                                            .attr("aria-label", "Close")),
+                            article().withClass("message").with(
+                                div().withClass("message-body")
+                                    .with(pre(printRawContentOfElement(el, renderingToolkit)).withId("text-"+id)
+                                        .withStyle("white-space: pre-wrap;word-wrap: break-word;"))
+                            )
                         )
-                    ),
-                    button().withClass("modal-close is-large")
-                        .attr("aria-label", "close")
                 )
+            )
         );
     }
 

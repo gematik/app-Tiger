@@ -32,7 +32,7 @@
         <version.selenium>4.4.0</version.selenium>
         <!-- when changing the webjar version here make sure to adapt the web ui links too -->
         <!-- see src/main/resources/templates/adminui.html -->
-        <version.bootstrap>5.1.1</version.bootstrap>
+        <version.bootstrap>5.1.3</version.bootstrap>
         <version.font-awesome>6.3.0</version.font-awesome>
         <version.jquery>3.6.3</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>

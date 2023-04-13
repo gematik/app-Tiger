@@ -66,34 +66,34 @@ let stompClient;
 let allMessagesAmount;
 let filteredMessagesAmount;
 
-const menuHtmlTemplateRequest = "<div class=\"ml-5\"><a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\"\n"
-    + "                               class=\"mt-3 is-block\">\n"
-    + "        <div class=\"is-size-6 mb-1 has-text-link\"><span\n"
-    + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
-    + "            class=\"fas fa-share\"></i> REQUEST\n"
-    + "            <span style=\"float:right\"\n"
-    + "                 class=\"is-size-6 ml-3 has-text-dark\">${timestamp}"
-    + "            </span>\n"
-    + "        </div>\n"
-    + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3 has-text-weight-bold\"\n"
-    + "             title=\"${menuInfoString}\">${menuInfoString}"
-    + "        </span>\n"
-    + "      </a></div>";
-const menuHtmlTemplateResponse = "<div class=\"ml-5\"><a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\"\n"
-    + "                               class=\"mt-3 is-block\">\n"
-    + "        <div class=\"is-size-6 mb-1 has-text-success\"><span\n"
-    + "            class=\"tag is-info is-light mr-1\">${sequence}</span><i\n"
-    + "            class=\"fas fa-reply\"></i> RESPONSE\n"
-    + "            <span style=\"float:right\"\n"
-    + "                 class=\"is-size-6 ml-3 has-text-dark\">${timestamp}"
-    + "            </span>\n"
-    + "        </div>\n"
-    + "        <span style=\"text-overflow: ellipsis;overflow: hidden;\"\n"
-    + "             class=\"is-size-6 ml-3 has-text-weight-bold\"\n"
-    + "             title=\"${menuInfoString}\">${menuInfoString}"
-    + "        </span>\n"
-    + "      </a></div>";
+const menuHtmlTemplateRequest =
+    "<div class=\"ms-1 is-size-7\">\n"
+    + "  <a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\" class=\"mt-3 is-block\">\n"
+    + "    <div class=\"has-text-link d-flex align-items-center\">\n"
+    + "      <span class=\"tag is-info is-light me-1\">${sequence}</span>\n"
+    + "      <i class=\"fas fa-share\"></i>\n"
+    + "      <span class=\"mx-1\">REQ</span>\n"
+    + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
+    + "    </div>\n"
+    + "    <div class=\"ms-4 has-text-link d-flex align-items-center\">\n"
+    + "      <span class=\"ms-1 has-text-weight-bold text-ellipsis\""
+    + "        title=\"${menuInfoString}\">${menuInfoString}"
+    + "      </span>\n"
+    + "    </div>\n"
+    + "  </a></div>";
+const menuHtmlTemplateResponse =
+    "<div class=\"ms-1 mb-4 is-size-7\">"
+    + "  <a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\" class=\"mt-3 is-block\">\n"
+    + "    <div class=\"mb-1 text-success d-flex align-items-center\">\n"
+    + "      <span class=\"tag is-info is-light me-1\">${sequence}</span>\n"
+    + "      <i class=\"fas fa-reply\"></i>\n"
+    + "      <span class=\"ms-1\">RES</span>\n"
+    + "      <span class=\"mx-1 has-text-weight-bold\"\n"
+    + "         title=\"${menuInfoString}\">${menuInfoString}"
+    + "      </span>\n"
+    + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
+    + "    </div>\n"
+    + "  </a></div>";
 
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
@@ -107,10 +107,6 @@ document.addEventListener('DOMContentLoaded', function () {
   jexlInspectionTreeDiv = document.getElementById("rbelTree");
   jexlInspectionContextParentDiv = document.getElementById("contextParent");
   jexlInspectionNoContextDiv = document.getElementById("jexlNoContext");
-
-  addDropdownClickListener(document.getElementById("dropdown-hide-button").parentNode);
-  addDropdownClickListener(document.getElementById("dropdown-page-selection"));
-  addDropdownClickListener(document.getElementById("dropdown-page-size"));
 
   setFilterCriterionBtn = document.getElementById("setFilterCriterionBtn");
   resetFilterCriterionBtn = document.getElementById("resetFilterCriterionBtn");
@@ -154,12 +150,6 @@ document.addEventListener('DOMContentLoaded', function () {
       "collapsibleMessageHeaderBtn");
 
   enableModals();
-  document.addEventListener('keydown', event => {
-    var e = event || window.event;
-    if (e.keyCode === 27) {
-      closeModals();
-    }
-  });
 
   enableCardToggles();
   enableCollapseExpandAll();
@@ -181,8 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.getElementById("saveHtmlBtn")
-  .addEventListener('click', e => {
-    closeModals();
+  .addEventListener('click', () => {
     saveHtmlToLocal();
   });
 
@@ -199,7 +188,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById("saveTrafficBtn")
   .addEventListener('click', e => {
-    closeModals();
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = `/webui/trafficLog-${todayAsString()}.tgr`;
@@ -212,14 +200,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   btnOpenRouteModal.addEventListener('click',
       () => {
-        btnOpenRouteModal.disabled = true;
         getRoutes();
         updateAddRouteBtnState();
-      });
-
-  btnOpenFilterModal.addEventListener('click',
-      () => {
-        btnOpenFilterModal.disabled = true;
       });
 
   btnScrollLock.addEventListener('click',
@@ -245,7 +227,6 @@ document.addEventListener('DOMContentLoaded', function () {
             window.scrollBy(0, -15);
           }, 50);
         }
-        closeAllDropdowns();
       });
 
   collapsibleMessageHeaderBtn.addEventListener('click',
@@ -265,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function () {
             window.scrollBy(0, -15);
           }, 50);
         }
-        closeAllDropdowns();
       });
 
   let selectRequestFromBtn = document.getElementById("requestFromContent");
@@ -275,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
   selectRequestToBtn.addEventListener('change', function (event) {
     if (event.target.value !== NO_REQUEST) {
       let filterField = document.getElementById("setFilterCriterionInput");
-      filterField.value = "@.receiver == \"" + event.target.value + "\"";
+      filterField.value = "$.receiver == \"" + event.target.value + "\"";
       selectRequestFromBtn.selectedIndex = 0;
     }
   });
@@ -284,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
   selectRequestFromBtn.addEventListener('change', function (event) {
     if (event.target.value !== NO_REQUEST) {
       let filterField = document.getElementById("setFilterCriterionInput");
-      filterField.value = "@.sender == \"" + event.target.value + "\"";
+      filterField.value = "$.sender == \"" + event.target.value + "\"";
       selectRequestToBtn.selectedIndex = 0;
     }
   });
@@ -317,13 +297,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Functions
-function removeActiveFlag(label) {
-  let divDropdownContent = document.getElementById(label);
-  Array.from(divDropdownContent.children).forEach(child => {
-    child.classList.remove("is-active");
-  });
-}
-
 function updateSelectContents() {
   updateSelectContent(requestFrom, senders);
   updateSelectContent(requestTo, receivers);
@@ -355,7 +328,9 @@ function updateSelectContent(label, list) {
           let element = document.createElement('option');
           element.textContent = list[i];
           element.id = getLabelId(label, list[i]);
-          select.appendChild(element);
+          if (select !== null) {
+            select.appendChild(element);
+          }
         }
       }
     }
@@ -365,12 +340,6 @@ function updateSelectContent(label, list) {
 function deleteRequestsLists() {
   senders = [];
   receivers = [];
-}
-
-function closeAllDropdowns() {
-  for (let item of document.getElementsByClassName("is-active dropdown")) {
-    item.classList.remove("is-active");
-  }
 }
 
 function initSelectContent(label, list) {
@@ -413,23 +382,7 @@ function htmlToElement(html) {
 
 function enableModals() {
   // Modals
-  let $modalCloses = getAll(
-      '.modal-background, .modal-close, .message-header .delete, .modal-card-foot .button');
-  let $modalButtons = getAll('.modal-button');
   let $copyButtons = getAll('.copyToClipboard-button');
-
-  if ($modalButtons.length > 0) {
-    $modalButtons.forEach(function ($el) {
-      $el.addEventListener('click', function (e) {
-        let target = $el.dataset.target;
-        let $target = document.getElementById(target);
-        rootEl.classList.add('is-clipped');
-        $target.classList.add('is-active');
-        e.preventDefault();
-        return false;
-      });
-    });
-  }
 
   if ($copyButtons.length > 0) {
     $copyButtons.forEach(function ($el) {
@@ -442,18 +395,9 @@ function enableModals() {
       });
     });
   }
-
-  if ($modalCloses.length > 0) {
-    $modalCloses.forEach(function ($el) {
-      $el.addEventListener('click', closeModals);
-    });
-  }
 }
 
 function showModalSave(e) {
-  const $target = document.getElementById("saveModalDialog");
-  rootEl.classList.add('is-clipped');
-  $target.classList.add('is-active');
   e.preventDefault();
   return false;
 }
@@ -485,9 +429,6 @@ function showModalImport(e) {
 }
 
 function showModalsCB(e) {
-  const $target = document.getElementById(e.currentTarget.dataset.target);
-  rootEl.classList.add('is-clipped');
-  $target.classList.add('is-active');
   e.preventDefault();
   return false;
 }
@@ -500,19 +441,6 @@ function toggleHelp(collapsibleBtn, collapsibleHelpId, isDisabledSet = false) {
   classList.toggle("fa-toggle-on", !flag);
   classList.toggle("fa-toggle-off", flag);
   collapsibleHelp.style.display = flag ? "none" : "block";
-}
-
-function closeModals() {
-  const $modals = getAll('.modal');
-  rootEl.classList.remove('is-clipped');
-  $modals.forEach(function ($el) {
-    $el.classList.remove('is-active');
-  });
-  btnOpenRouteModal.disabled = false;
-  btnOpenFilterModal.disabled = false;
-  jexlInspectionResultDiv.classList.add("is-hidden");
-  jexlInspectionContextParentDiv.classList.add("is-hidden");
-  jexlInspectionNoContextDiv.classList.remove("is-hidden");
 }
 
 function enableCardToggles() {
@@ -636,7 +564,9 @@ function resetAllReceivedMessages() {
   const sidebarMenu = document.getElementById("sidebar-menu")
   sidebarMenu.innerHTML = "";
   const listDiv = getAll('.msglist')[0];
-  listDiv.innerHTML = "";
+  if (listDiv) {
+    listDiv.innerHTML = "";
+  }
   deleteRequestsLists();
 }
 
@@ -694,22 +624,39 @@ function quitProxy() {
 }
 
 function setFilterCriterion() {
-  setFilterCriterionBtn.classList.add("is-loading");
+  let spinner = getSpinner();
+  setFilterCriterionBtn.children[0].classList.add("is-hidden");
+  setFilterCriterionBtn.appendChild(spinner);
   filterCriterion = setFilterCriterionInput.value;
   resetAllReceivedMessages();
   pollMessages();
-  setFilterCriterionBtn.classList.remove("is-loading");
+  setFilterCriterionBtn.children[0].classList.remove("is-hidden");
+  setFilterCriterionBtn.removeChild(spinner);
+}
+
+function getSpinner() {
+  let divElement = document.createElement('div');
+  divElement.classList.add("spinner-border");
+  divElement.setAttribute("role", "status");
+  let spanElement = document.createElement('span');
+  spanElement.classList.add("visually-hidden");
+  spanElement.textContent = "Loading...";
+  divElement.appendChild(spanElement);
+  return divElement;
 }
 
 function resetFilterCriterion() {
-  resetFilterCriterionBtn.classList.add("is-loading");
+  let spinner = getSpinner();
+  resetFilterCriterionBtn.children[0].classList.add("is-hidden");
+  resetFilterCriterionBtn.appendChild(spinner);
   filterCriterion = "";
   setFilterCriterionInput.value = '';
   document.getElementById("requestToContent").selectedIndex = 0;
   document.getElementById("requestFromContent").selectedIndex = 0;
   resetAllReceivedMessages();
   pollMessages();
-  resetFilterCriterionBtn.classList.remove("is-loading");
+  resetFilterCriterionBtn.children[0].classList.remove("is-hidden");
+  resetFilterCriterionBtn.removeChild(spinner);
 }
 
 function uploadReport() {
@@ -768,13 +715,11 @@ function addQueryBtn(reqEl) {
   let queryBtn = document.createElement('a');
   queryBtn.innerHTML =
       "<span>Inspect</span>";
-  queryBtn.setAttribute("class", "button modal-button is-pulled-right mx-3");
-  queryBtn.setAttribute("data-target", msgUuid);
+  queryBtn.setAttribute("class", "btn modal-button is-pulled-right mx-3");
+  queryBtn.setAttribute("data-bs-target", "#jexlQueryModal");
+  queryBtn.setAttribute("data-bs-toggle", "modal");
   queryBtn.addEventListener("click", function (e) {
-    const $target = document.getElementById("jexlQueryModal");
     jexlQueryElementUuid = msgUuid;
-    rootEl.classList.add('is-clipped');
-    $target.classList.add('is-active');
     e.preventDefault();
     return false;
   });
@@ -782,17 +727,12 @@ function addQueryBtn(reqEl) {
 }
 
 function openTab(sender, tabName) {
-  var i, x, tablinks;
+  var i, x;
   x = document.getElementsByClassName("content-tab");
   for (i = 0; i < x.length; i++) {
     x[i].style.display = "none";
   }
-  tablinks = document.getElementsByClassName("tab");
-  for (i = 0; i < x.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace("is-active", "");
-  }
   document.getElementById(tabName).style.display = "block";
-  sender.className += " is-active";
 }
 
 function copyToFilter() {
@@ -834,27 +774,27 @@ function executeJexlQuery() {
         jexlInspectionNoContextDiv.classList.add("is-hidden");
         if (response.errorMessage) {
           jexlInspectionResultDiv.innerHTML = "<b>JEXL is invalid: </b>"
-              + "<code class='has-background-dark has-text-danger'>" + response.errorMessage
+              + "<code class='bg-dark text-warning'>" + response.errorMessage
               + "</code>";
-          jexlInspectionResultDiv.setAttribute("class", "box has-background-primary");
+          jexlInspectionResultDiv.setAttribute("class", "box bg-danger");
 
         } else if (response.matchSuccessful) {
           jexlInspectionResultDiv.innerHTML = "<b>Condition is true: </b>"
-              + "<code class='has-background-dark has-text-danger'>" + jexlQuery
+              + "<code class='bg-dark text-warning'>" + jexlQuery
               + "</code>";
-          jexlInspectionResultDiv.setAttribute("class", "box has-background-success");
+          jexlInspectionResultDiv.setAttribute("class", "box bg-success");
         } else {
           jexlInspectionResultDiv.innerHTML = "<b>Condition is false: </b>"
-              + "<code class='has-background-dark has-text-danger'>" + jexlQuery
+              + "<code class='bg-dark text-warning'>" + jexlQuery
               + "</code>";
-          jexlInspectionResultDiv.setAttribute("class", "box has-background-info");
+          jexlInspectionResultDiv.setAttribute("class", "box bg-info");
         }
       } else {
         jexlInspectionResultDiv.innerHTML = "<b>Error talking to server! </b>"
             + (this.responseText ?
-                ("<code class='has-background-dark has-text-danger'>" + response.errorMessage + "</code>") :
+                ("<code class='bg-dark text-warning'>" + response.errorMessage + "</code>") :
                 "");
-        jexlInspectionResultDiv.setAttribute("class", "box has-background-warning");
+        jexlInspectionResultDiv.setAttribute("class", "box bg-warning");
       }
     }
   }
@@ -909,7 +849,7 @@ function copyPathToInputField(event, element) {
   while (el != null) {
     if (el.classList) {
       if (el.classList.contains('jexlResponseLink')) {
-        if (el.previousElementSibling.classList.contains('has-text-primary') &&
+        if (el.previousElementSibling.classList.contains('text-danger') &&
             el.previousElementSibling.textContent.length < marker.length) {
           text = el.textContent + "." + text;
           marker = el.previousElementSibling.textContent;
@@ -918,7 +858,7 @@ function copyPathToInputField(event, element) {
     }
     el = el.previousElementSibling;
   }
-  if (oldValue == null) {
+  if (oldValue == null || text.startsWith("body.html")) {
     document.getElementById("rbelExpressionInput").value = "$." + text;
   } else {
     const words = oldValue.split('.');
@@ -929,7 +869,9 @@ function copyPathToInputField(event, element) {
 
 function shortenStrings(obj) {
   for (var property in obj) {
-    if (property === "errorMessage") continue;
+    if (property === "errorMessage") {
+      continue;
+    }
     if (obj.hasOwnProperty(property)) {
       if (typeof obj[property] == "object") {
         shortenStrings(obj[property]);
@@ -963,7 +905,7 @@ function addMessageToMainView(msgHtmlData) {
   const message = htmlToElement(msgHtmlData.html);
   let span = getAll(".msg-sequence", message)[0];
   if (span != null) {
-    span.classList.add("tag", "is-info", "is-light", "mr-3", "is-size-3");
+    span.classList.add("tag", "is-info", "is-light", "me-3", "is-size-3");
     span.textContent = msgHtmlData.sequenceNumber + 1;
   }
   addQueryBtn(message);
@@ -1061,9 +1003,22 @@ function updateMessageList(json) {
   enableModals();
 }
 
+function getInnerHTMLForRoutes() {
+  let divElement = document.createElement('div');
+  divElement.style.justifyContent = "center";
+  divElement.style.display = "flex";
+  let spinner = getSpinner();
+  spinner.style.marginRight = "1rem";
+  divElement.appendChild(spinner);
+  let para = document.createElement('p');
+  para.textContent = "Loading...";
+  divElement.appendChild(para);
+  return divElement;
+}
+
 function getRoutes() {
-  getAll(
-      ".routeListDiv")[0].innerHTML = "<p align=\"center\" class=\"mt-5 mb-5\"><i class=\"fas fa-spinner\"></i> Loading...</p>";
+  getAll(".routeListDiv")[0].innerHTML = "";
+  getAll(".routeListDiv")[0].append(getInnerHTMLForRoutes());
   const xhttp = new XMLHttpRequest();
   xhttp.open("GET", "/route", true);
   xhttp.onreadystatechange = function () {
@@ -1089,13 +1044,13 @@ function updateRouteList(json) {
   }
   let html = "";
   json.forEach(function (route) {
-    html += "<div class='box routeentry columns'>"
-        + "<div class='column is-one-fifth'>"
+    html += "<div class='box routeentry row'>"
+        + "<div class='col-md-2'>"
         + "<button id='route-" + route.id
-        + "' class='button delete-route is-fullwidth is-danger'>"
+        + "' class='btn delete-route btn-danger'>"
         + "<i class=\"far fa-trash-alt\"></i>"
         + "</button></div>"
-        + "<div class='column is-four-fifths'>&rarr; " + route.from
+        + "<div class='col-md-10'>&rarr; " + route.from
         + "<br/>&larr; " + route.to + "</div></div>";
   });
   getAll(".routeListDiv")[0].innerHTML = html;
@@ -1157,7 +1112,6 @@ function setPageSize(newSize) {
   pageNumber = 0;
   document.getElementById("pageSizeDisplay").textContent =
       "Size " + newSize;
-  closeAllDropdowns();
   resetAllReceivedMessages();
   pollMessages();
 }
@@ -1166,7 +1120,6 @@ function setPageNumber(newPageNumber, callback) {
   pageNumber = newPageNumber;
   document.getElementById("pageNumberDisplay").textContent =
       "Page " + (newPageNumber + 1);
-  closeAllDropdowns();
   resetAllReceivedMessages();
   pollMessages(callback);
 }
@@ -1176,7 +1129,7 @@ function updatePageSelector(pagesAvailable) {
   let selectorInnerHtml = '';
   for (let i = 0; i < pagesAvailable; i++) {
     selectorInnerHtml +=
-        '<a class="dropdown-item" onclick="event.stopPropagation(); setPageNumber(' + i + ');">'
+        '<a class="dropdown-item" onclick="setPageNumber(' + i + ');">'
         + (i + 1)
         + '</a>';
   }
@@ -1215,27 +1168,3 @@ if (window.addEventListener) {
   window.attachEvent("onmessage", messageScrollToReceiver);
 }
 
-function addDropdownClickListener(el, callback) {
-  el.addEventListener('click', function (e) {
-    let active = el.classList.contains('is-active');
-    closeAllDropdowns();
-    e.stopPropagation();
-    if (!active) {
-      el.classList.add('is-active');
-    }
-    if (callback !== undefined) {
-      callback();
-    }
-  });
-}
-
-document.addEventListener('keydown', function (event) {
-  let e = event || window.event;
-  if (e.key === 'Esc' || e.key === 'Escape') {
-    closeAllDropdowns();
-  }
-});
-
-document.addEventListener('click', function (e) {
-  closeAllDropdowns();
-});
