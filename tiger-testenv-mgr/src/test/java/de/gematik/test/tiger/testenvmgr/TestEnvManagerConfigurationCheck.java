@@ -12,8 +12,11 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.Map;
+import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +36,7 @@ class TestEnvManagerConfigurationCheck {
     public void resetConfig() {
         TigerGlobalConfiguration.reset();
     }
+
     // -----------------------------------------------------------------------------------------------------------------
     //
     // check missing mandatory props are detected
@@ -215,9 +219,8 @@ class TestEnvManagerConfigurationCheck {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_missingCertificate.yaml"));
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
     }
 
     @Test
@@ -226,9 +229,8 @@ class TestEnvManagerConfigurationCheck {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_emptyCertificate.yaml"));
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
     }
 
     @Test
@@ -244,9 +246,8 @@ class TestEnvManagerConfigurationCheck {
             "tiger");
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("The urlMappings configuration 'https://bla' is not correct. Please check your .yaml-file.");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("The urlMappings configuration 'https://bla' is not correct. Please check your .yaml-file.");
     }
 
     @Test
@@ -262,9 +263,8 @@ class TestEnvManagerConfigurationCheck {
             "tiger");
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("The urlMappings configuration 'https://bla -->' is not correct. Please check your .yaml-file.");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("The urlMappings configuration 'https://bla -->' is not correct. Please check your .yaml-file.");
     }
 
 
@@ -350,6 +350,7 @@ class TestEnvManagerConfigurationCheck {
                 .isEqualTo("andValues");
         });
     }
+
     @Test
     void readAdditionalYamlFileFromCurrentDirNoTigerYamlSet() {
         AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
@@ -411,5 +412,20 @@ class TestEnvManagerConfigurationCheck {
     void testDelayedEvaluation(TigerTestEnvMgr envMgr) {
         assertThat(envMgr.getServers().get("tigerServer2").getConfiguration().getTigerProxyCfg().getAdminPort())
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  google:\n"
+        + "    type: externalUrl\n"
+        + "    source:\n"
+        + "      - https://www.google.com\n"
+        + "localProxyActive: true\n")
+    void testExtUrlServer_healthCheckUrlDefaultsToSource(TigerTestEnvMgr envMgr) {
+        assertThat(envMgr.getServers().get("google").getStatus()).isEqualTo(TigerServerStatus.RUNNING);
+        final UnirestInstance instance = Unirest.spawnInstance();
+        instance.config().proxy("127.0.0.1", envMgr.getLocalTigerProxyOrFail().getProxyPort());
+        assertThat(instance.get("http://google").asString().getStatus()).isEqualTo(200);
+        instance.close();
     }
 }

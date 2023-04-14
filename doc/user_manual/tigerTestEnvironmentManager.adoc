@@ -63,7 +63,7 @@ serverKey_xxx:
   source:
     - source entry 1
     - source entry 2
-  # used by all node types
+  # used by all node types, for external URL this property is OPTIONAl and fallback is the source URL
   healthcheckUrl: string
   # OPTIONAL only declare the server healthy once the specified return code
   # is given
@@ -157,7 +157,7 @@ Their meaning and format are explained in the related section.
 
 [source,yaml,title="Type specific properties"]
 ----
-  # type specific sub structure for external jar, external url and Tiger Proxy nodes
+  # type specific sub structure for external jar, Tiger Proxy, docker and helm chart nodes
   externalJarOptions:
     # used by external jar and Tiger Proxy nodes
     workingDir: string
