@@ -61,6 +61,22 @@ Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als 
 </dependency>
 ```
 
+### Wenn ich die tiger-cloud-extensions nutze schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl
+
+Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.
+Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:
+
+```
+stage('Test') {
+    environment {
+        TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+    }
+    steps {
+        mavenVerify(POM_PATH)
+    }
+}
+```
+
 ## Workflow UI
 
 ### In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)

@@ -72,7 +72,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
   Scenario: Request with custom and default header
     Given TGR set local variable "configured_state_value" to "some_value"
     Given TGR set local variable "configured_param_name" to "my_cool_param"
-    When Send POST request to "http://winstone/not_a_file" with
+    When TGR send POST request to "http://winstone/not_a_file" with:
       | ${configured_param_name}   | state                     | redirect_uri        |
       | client_id                  | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path ".*"
@@ -83,7 +83,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
 
   Scenario: Request with custom and default header
     Given TGR set default header "Content-Type" to "application/json"
-    When Send POST request to "http://winstone/not_a_file" with
+    When TGR send POST request to "http://winstone/not_a_file" with:
       | ${configured_param_name}   |
       | client_id                  |
     Then TGR find last request to path ".*"

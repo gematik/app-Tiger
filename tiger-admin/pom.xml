@@ -406,6 +406,14 @@
                                     </includes>
                                     <filtering>true</filtering>
                                 </resource>
+                                <resource>
+                                    <directory>../tiger-test-lib/src/test/resources/features/tiger-test-lib</directory>
+                                    <includes>
+                                        <include>HttpGlueCodeTest.feature</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+
                             </resources>
                         </configuration>
                     </execution>
@@ -457,13 +465,43 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>extract comments from glue code for user manual</id>
+                        <id>extract comments from validator glue code for user manual</id>
                         <phase>generate-resources</phase>
                         <configuration>
                             <skip>${isWindows}</skip>
                             <tasks>
                                 <exec dir="../doc/user_manual" executable="/bin/bash">
                                     <arg value="extractCommentsFromRbelValidatorGlue.sh"/>
+                                </exec>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>extract comments from http client glue code for user manual</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${isWindows}</skip>
+                            <tasks>
+                                <exec dir="../doc/user_manual" executable="/bin/bash">
+                                    <arg value="extractCommentsFromHttpGlueCode.sh"/>
+                                </exec>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>extract comments from tiger glue code for user manual</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${isWindows}</skip>
+                            <tasks>
+                                <exec dir="../doc/user_manual" executable="/bin/bash">
+                                    <arg value="extractCommentsFromTigerGlue.sh"/>
                                 </exec>
                             </tasks>
                         </configuration>

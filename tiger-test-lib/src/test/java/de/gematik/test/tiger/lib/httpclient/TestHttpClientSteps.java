@@ -122,7 +122,7 @@ public class TestHttpClientSteps {
 
     @Test
     void sendRequestWithDefaultHeader() {
-        httpGlueCode.addDefaultHeader("key", "value");
+        httpGlueCode.setDefaultHeader("key", "value");
         httpGlueCode.sendEmptyRequest(Method.GET,"http://winstone/target/not_a_file");
         rbelValidatorGlueCode. findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key')}","value");
@@ -134,7 +134,7 @@ public class TestHttpClientSteps {
 
     @Test
     void sendGetRequestWithCustomAndDefaultHeader() {
-        httpGlueCode.addDefaultHeader("key", "value");
+        httpGlueCode.setDefaultHeader("key", "value");
         List<List<String>> data = new ArrayList<>();
         data.add(List.of("foo", "bar"));
         httpGlueCode.sendEmptyRequestWithHeaders(Method.GET,"http://winstone/not_a_file", DataTable.create(data, tableConverter));
@@ -148,11 +148,11 @@ public class TestHttpClientSteps {
         tigerGlue.ctxtISetLocalVariableTo("configured_state_value","some_value");
         tigerGlue.ctxtISetLocalVariableTo("configured_param_name", "my_cool_param");
 
-        httpGlueCode.addDefaultHeader("key", "value");
+        httpGlueCode.setDefaultHeader("key", "value");
         List<List<String>> data = new ArrayList<>();
         data.add(List.of("${configured_param_name}", "state", "redirect_uri"));
         data.add(List.of("client_id", "${configured_state_value}", "https://my.redirect"));
-        httpGlueCode.sendPostRequestToWith(Method.POST,"http://winstone/not_a_file", DataTable.create(data, tableConverter));
+        httpGlueCode.sendRequestWithParams(Method.POST,"http://winstone/not_a_file", DataTable.create(data, tableConverter));
 
         rbelValidatorGlueCode. findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.state')}","some_value");
@@ -164,11 +164,11 @@ public class TestHttpClientSteps {
     void sendPostRequestWithCustomAndDefaultHeader2() {
         tigerGlue.ctxtISetLocalVariableTo("configured_param_name", "my_cool_param2");
 
-        httpGlueCode.addDefaultHeader("Content-Type", "application/json");
+        httpGlueCode.setDefaultHeader("Content-Type", "application/json");
         List<List<String>> data = new ArrayList<>();
         data.add(List.of("${configured_param_name}"));
         data.add(List.of( "client_id"));
-        httpGlueCode.sendPostRequestToWith(Method.POST,"http://winstone/not_a_file", DataTable.create(data, tableConverter));
+        httpGlueCode.sendRequestWithParams(Method.POST,"http://winstone/not_a_file", DataTable.create(data, tableConverter));
 
         rbelValidatorGlueCode.findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body')}","my_cool_param2=client_id");
