@@ -57,7 +57,7 @@ public class RBelValidatorGlue {
     @Wenn("TGR lösche aufgezeichnete Nachrichten")
     @When("TGR clear recorded messages")
     public void tgrClearRecordedMessages() {
-        rbelValidator.clearRBelMessages();
+        rbelValidator.clearRbelMessages();
     }
 
 
@@ -101,12 +101,32 @@ public class RBelValidatorGlue {
      * @param value    value to match at given node/attribute
      */
     @Wenn("TGR warte auf eine Nachricht, in der Knoten {string} mit {string} übereinstimmt")
-    @When("TGR wait for message with node {string} matches {string}")
+    @When("TGR wait for message with node {string} matching {string}")
     public void waitForMessageWithValue(final String rbelPath, final String value) {
         rbelValidator.waitForMessageToBePresent(
             RequestParameter.builder()
                 .rbelPath(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))
                 .value(TigerGlobalConfiguration.resolvePlaceholders(value))
+                .build());
+    }
+
+    /**
+     * Wait until a NEW message is found in which the given node, specified by a RbelPath-Expression, matches the given value.
+     * NEW in this context means that the step will wait and check only messages which are received after the step has started.
+     * Any previously received messages will NOT be checked.
+     * Please also note that the currentRequest/currentResponse used by the find / find next steps are not altered by this step.
+     *
+     * @param rbelPath rbel path to node/attribute
+     * @param value    value to match at given node/attribute
+     */
+    @Wenn("TGR warte auf eine neue Nachricht, in der Knoten {string} mit {string} übereinstimmt")
+    @When("TGR wait for new message with node {string} matching {string}")
+    public void waitForNewMessageWithValue(final String rbelPath, final String value) {
+        rbelValidator.waitForMessageToBePresent(
+            RequestParameter.builder()
+                .rbelPath(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))
+                .value(TigerGlobalConfiguration.resolvePlaceholders(value))
+                .requireNewMessage(true)
                 .build());
     }
 

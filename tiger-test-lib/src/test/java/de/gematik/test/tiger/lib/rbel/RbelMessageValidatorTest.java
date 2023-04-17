@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static de.gematik.rbellogger.data.RbelElementAssertion.*;
 import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -18,6 +19,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
@@ -29,6 +31,8 @@ import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -265,9 +269,11 @@ class RbelMessageValidatorTest {
         addTwoRequestsToTigerTestHooks();
         RbelMessageValidator validator = RbelMessageValidator.instance;
         validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
+
         validator.filterRequestsAndStoreInContext(
             RequestParameter.builder().path(".*").startFromLastRequest(true).build());
         RbelElement request = validator.currentRequest;
+
         assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
     }
 
@@ -465,17 +471,12 @@ class RbelMessageValidatorTest {
         validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", true);
         validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", false);
         validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "false");
-        assertThatThrownBy(() -> {
-            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false",
-                false);
-        }).isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> {
-            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true",
-                true);
-        }).isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> {
-            validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true");
-        }).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", false))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", true))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true"))
+            .isInstanceOf(AssertionError.class);
     }
 
     @Test
@@ -484,14 +485,35 @@ class RbelMessageValidatorTest {
             .rbelPath("$..Topic.text")
             .value("CT/CONNECTED")
             .build();
-        CompletableFuture waitForMessageFuture = CompletableFuture.runAsync(() -> RbelMessageValidator.instance.waitForMessageToBePresent(messageParameters));
+        CompletableFuture<RbelElement> waitForMessageFuture = CompletableFuture.supplyAsync(() -> RbelMessageValidator.instance.waitForMessageToBePresent(messageParameters));
 
         readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
 
         waitForMessageFuture.get();
-        assertThat(RbelMessageValidator.instance.findMessageByDescription(messageParameters)
-            .findElement("$..Topic.text").get().getRawStringContent())
-            .isEqualTo("CT/CONNECTED");
+        RbelElementAssertion.assertThat(RbelMessageValidator.instance.findMessageByDescription(messageParameters))
+            .extractChildWithPath("$..Topic.text")
+            .hasStringContentEqualTo("CT/CONNECTED");
+    }
+
+    @Test
+    void testWaitingForNewNonPairedMessage() throws ExecutionException, InterruptedException {
+        readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
+        final RequestParameter messageParameters = RequestParameter.builder()
+            .rbelPath("$..Topic.text")
+            .value("CT/CONNECTED")
+            .requireNewMessage(true)
+            .build();
+        CompletableFuture<RbelElement> waitForMessageFuture = CompletableFuture.supplyAsync(
+            () -> RbelMessageValidator.instance.waitForMessageToBePresent(messageParameters));
+
+        assertThatThrownBy(() -> waitForMessageFuture.get(500, TimeUnit.MILLISECONDS))
+            .isInstanceOf(TimeoutException.class);
+
+        readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
+
+        RbelElementAssertion.assertThat(waitForMessageFuture.get())
+            .extractChildWithPath("$..Topic.text")
+            .hasStringContentEqualTo("CT/CONNECTED");
     }
 
     private static void readTgrFileAndStoreForRbelMessageValidator(String rbelFile) {

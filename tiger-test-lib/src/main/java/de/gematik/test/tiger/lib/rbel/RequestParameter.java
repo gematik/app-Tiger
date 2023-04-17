@@ -18,6 +18,7 @@ public class RequestParameter {
     private String value;
     private final boolean startFromLastRequest;
     private final boolean filterPreviousRequest;
+    private final boolean requireNewMessage;
 
     public RequestParameter resolvePlaceholders()  {
         if (StringUtils.isNotEmpty(path)) {

@@ -20,6 +20,7 @@
 * Upgraded Serenity BDD to latest 3.6.20
 * Added first version of FAQ.md
 * TGR-867: ExternalUrl server uses source URL as default health check URL if not set
+* TGR-872: Added glue code to wait for non-paired messages (optional excluding existing messages)
 
 -------
 * Serenity BDD 3.3.10
