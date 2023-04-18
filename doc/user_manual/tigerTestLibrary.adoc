@@ -290,6 +290,7 @@ And following optional annotations exist:
 
 * @AFO-ID:xxx - a link to a defined requirement (Anforderung) in Polarion, where 'xxx' matches the custom field "cfAfoId"
 * @AF-ID:xxx - a link to a defined requirement (Anwendungsfall) in Polarion, where 'xxx' matches the custom field "cfAfId"
+* @AK-ID:xxx - a link to a defined requirement (Akzeptanzkriterium) in Polarion, where 'xxx' matches the work item id
 * @PRIO:n - priority number (1-4), default is '1'
 * @MODUS:xxx - describes the way of testing, default is 'automatisch'
 * @STATUS:xxx - describes the status of the test, default is 'implementiert'

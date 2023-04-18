@@ -122,7 +122,8 @@ public class FeatureParser {
 
     private boolean parseTagsFromLine(final String line, final List<Tag> tags) {
         if (line.startsWith("@")) {
-            Arrays.stream(line.split(" "))
+            Arrays.stream(line.split("(?=@)"))
+                .map(String::strip)
                 .map(Tag::fromString)
                 .forEach(tags::add);
             return true;
