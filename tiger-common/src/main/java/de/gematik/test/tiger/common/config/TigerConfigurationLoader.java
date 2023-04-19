@@ -185,7 +185,7 @@ public class TigerConfigurationLoader {
     }
 
     public void readFromYaml(String yamlSource, String... baseKeys) {
-        readFromYaml(yamlSource, SourceType.YAML, baseKeys);
+        readFromYaml(yamlSource, SourceType.ADDITIONAL_YAML, baseKeys);
     }
 
     public void readFromYaml(String yamlSource, SourceType sourceType, String... baseKeys) {

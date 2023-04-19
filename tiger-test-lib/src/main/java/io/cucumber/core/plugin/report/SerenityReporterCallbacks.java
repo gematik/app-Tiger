@@ -181,7 +181,7 @@ public class SerenityReporterCallbacks {
         log.info("Scenario location {}", scenario.getLocation());
         Map<String, String> variantDataMap = context.isAScenarioOutline() ?
             context.getTable().currentRow().toStringMap() : null;
-        log.info("Current row for scenario variant {} {}", currentScenarioDataVariantIndex,
+        log.debug("Current row for scenario variant {} {}", currentScenarioDataVariantIndex,
             variantDataMap);
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
             .featureMap(

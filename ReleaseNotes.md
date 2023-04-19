@@ -21,6 +21,11 @@
 * Added first version of FAQ.md
 * TGR-867: ExternalUrl server uses source URL as default health check URL if not set
 * TGR-872: Added glue code to wait for non-paired messages (optional excluding existing messages)
+* TGR-888: ${hostname} added as a configuration property
+
+## Breaking changes
+
+* tiger-<hostname>.yaml is now read additionally to the tiger.yaml, no longer instead of! Migration should be seamless unless you have both a tiger- and a tiger-<hostname>.yaml. In that case manual migration of the properties is required, depending on whether you want them as a default on all machines (tiger.yaml) or simply as a host-specific configuration (tiger-<hostname>.yaml).
 
 -------
 * Serenity BDD 3.3.10
@@ -46,8 +51,6 @@
 * TGR-864: all params except for the HTTP method of steps from the http client extension are now resolving ${} expressions
 * Made timeout for execution pause in workflow ui configurable via property tiger.lib.pauseExecutionTimeoutSeconds
 * On quit the background of the sidebar of the workflow ui is now colored coral red to indicate that no backend server functionality is available anymore (reload page, backend calls on the rbel log details pane, access to the proxy webui page)
-
-## Breaking changes
 
 -------
 

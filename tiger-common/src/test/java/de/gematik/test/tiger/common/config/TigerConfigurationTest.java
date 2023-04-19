@@ -753,6 +753,14 @@ public class TigerConfigurationTest {
             "key.select.bkey", "bValue"));
     }
 
+    @SneakyThrows
+    @Test
+    void hostnamePropertyShouldBePresent() {
+        TigerGlobalConfiguration.reset();
+        assertThat(TigerGlobalConfiguration.readString("hostname"))
+            .isEqualTo(TigerGlobalConfiguration.getComputerName());
+    }
+
     @Data
     @Builder
     public static class DummyBean {

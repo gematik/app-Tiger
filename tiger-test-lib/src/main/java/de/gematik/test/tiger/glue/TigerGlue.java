@@ -144,9 +144,10 @@ public class TigerGlue {
     @Wenn("TGR zeige HTML Notification:")
     public void tgrShowHtmlNotification(String message) {
         // TODO merge this with TigerDirector.pauseExecution
+        final String bannerMessage = TigerGlobalConfiguration.resolvePlaceholders(message);
         if (TigerDirector.getLibConfig().isActivateWorkflowUi()) {
             TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                .bannerMessage(message)
+                .bannerMessage(bannerMessage)
                 .bannerColor("green")
                 .bannerType(BannerType.STEP_WAIT)
                 .bannerIsHtml(true)
@@ -156,7 +157,7 @@ public class TigerGlue {
                 .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
             TigerDirector.getTigerTestEnvMgr().resetUserInput();
         } else {
-            log.warn("Workflow UI is not active! Can't display message '{}'", message);
+            log.warn("Workflow UI is not active! Can't display message '{}'", bannerMessage);
         }
     }
 
