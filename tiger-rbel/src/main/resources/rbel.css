@@ -70,17 +70,23 @@ td {
 }
 
 .logo img {
-    width: 320px;
     max-width: 100%;
-    border: 3px solid #ddd;
-    border-radius: 1rem;
     max-height: 250px;
+}
+
+.navbar-title {
+    color: rgb(2, 154, 207);
+}
+
+.navbar-version {
+    line-height: 4rem;
 }
 
 .header {
     border-bottom: 3px solid #ddd;
     margin-bottom: 2rem;
-    padding-bottom: 0;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
     background: #eee;
 }
 
@@ -183,9 +189,7 @@ pre.json {
     width: 20%;
 }
 
-.is-italic {
-    font-style: italic!important;
-}
+
 .is-size-6 {
     font-size: 1rem!important;
 }
@@ -202,6 +206,11 @@ p {
 .is-size-4 {
     font-size: 1.3rem !important;
 }
+
+.is-size-7 {
+    font-size:.75rem!important
+}
+
 .sidebar {
     overflow-x: hidden;
     overflow-y: auto;
@@ -212,12 +221,6 @@ p {
     bottom: 0;
     left: 0;
     right: 0;
-}
-.is-pulled-right {
-    float: right!important;
-}
-
-element.style {
 }
 
 #sidebar-menu, .menu + div {
@@ -407,7 +410,6 @@ pre.value, pre.json, pre.value div, pre.json div {
     word-break: break-all;
     white-space: break-spaces;
 }
-.is-hidden{display:none!important}
 
 .has-text-link {
     color: #029acf!important;

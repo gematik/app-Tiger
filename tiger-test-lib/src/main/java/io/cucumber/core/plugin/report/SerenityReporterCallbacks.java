@@ -111,16 +111,20 @@ public class SerenityReporterCallbacks {
 
 
     private void showTigerVersion() {
+        log.info(Ansi.colorize("Starting Tiger version " + getTigerVersionString(), RbelAnsiColors.GREEN_BRIGHT));
+    }
+
+    private String getTigerVersionString() {
         try {
             Properties p = new Properties();
             p.load(SerenityReporterCallbacks.class.getResourceAsStream("/build.properties"));
             String version = p.getProperty("tiger.version");
-            if (!version.equals("${project.version}")) {
-                log.info(Ansi.colorize("Starting Tiger version " + version + "-" + p.getProperty("tiger.build.timestamp"),
-                    RbelAnsiColors.GREEN_BRIGHT));
+            if (version.equals("${project.version}")) {
+                version = "UNKNOWN";
             }
+            return version + "-" + p.getProperty("tiger.build.timestamp");
         } catch (RuntimeException | IOException ignored) {
-            log.info(Ansi.colorize("Starting UNKNOWN Tiger version", RbelAnsiColors.RED_BRIGHT));
+            return "UNKNOWN";
         }
     }
 
@@ -356,10 +360,9 @@ public class SerenityReporterCallbacks {
         Scenario scenario = context.getCurrentScenarioDefinition();
         PickleStepTestStep pickleTestStep = (PickleStepTestStep) event;
 
-
         TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
 
-        String featureName = featureFrom(context.currentFeaturePath()).map(Feature::getName).orElse( "?");
+        String featureName = featureFrom(context.currentFeaturePath()).map(Feature::getName).orElse("?");
         List<MessageMetaDataDto> stepMessagesMetaDataList = new ArrayList<>(LocalProxyRbelMessageListener.getStepRbelMessages()).stream()
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList());
@@ -490,13 +493,15 @@ public class SerenityReporterCallbacks {
                     "Unable to create folder '" + folder.getAbsolutePath() + "'");
             }
             var rbelRenderer = new RbelHtmlRenderer();
+            rbelRenderer.setTitle(scenarioName);
             rbelRenderer.setSubTitle(
-                "<p><b>" + scenarioName + "</b>&nbsp&nbsp;"
-                    + (currentScenarioDataVariantIndex != -1 ?
+                "<p>" + (currentScenarioDataVariantIndex != -1 ?
                     "<button class=\"js-modal-trigger\" data-bs-target=\"modal-data-variant\">Variant " + (
                         currentScenarioDataVariantIndex + 1) + "</button>" :
                     "")
                     + "</p><p><i>" + scenarioUri + "</i></p>");
+            rbelRenderer.setVersionInfo(getTigerVersionString());
+
             String html = rbelRenderer.doRender(LocalProxyRbelMessageListener.getMessages());
 
             if (currentScenarioDataVariantIndex != -1) {

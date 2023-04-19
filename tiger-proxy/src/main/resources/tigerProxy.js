@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
   collapsibleMessageHeaderBtn = document.getElementById(
       "collapsibleMessageHeaderBtn");
 
-  enableModals();
+  enableCopyToClipboardButtons();
 
   enableCardToggles();
   enableCollapseExpandAll();
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById("copyToFilter")
   .addEventListener('click', copyToFilter)
   if (tigerProxyUploadUrl === "UNDEFINED") {
-    uploadBtn.classList.add("is-hidden");
+    uploadBtn.classList.add("d-none");
   } else {
     uploadBtn.addEventListener('click', uploadReport);
   }
@@ -188,13 +188,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById("saveTrafficBtn")
   .addEventListener('click', e => {
+    $('#saveModalDialog').modal('hide');
+
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = `/webui/trafficLog-${todayAsString()}.tgr`;
     a.download = `trafficLog-${todayAsString()}.tgr`;
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(a.href);
+
     e.preventDefault();
     return false;
   });
@@ -280,20 +283,21 @@ document.addEventListener('DOMContentLoaded', function () {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has("embedded")) {
     scrollLock = true;
-    let elem = document.getElementsByClassName("sidebar")[0];
-    elem.setAttribute("class", elem.getAttribute("class") + " hidden");
-    elem = document.getElementsByClassName("main-content")[0];
-    elem.setAttribute("class", elem.getAttribute("class") + " hidden");
+    document.getElementsByClassName("sidebar")[0].classList.add("d-none");
+    document.getElementsByClassName("main-content")[0].classList.add("d-none");
     const not4embeddedelems = document.getElementsByClassName("not4embedded");
     for (let i = 0; i < not4embeddedelems.length; i++) {
-      not4embeddedelems[i].setAttribute("class",
-          not4embeddedelems[i].getAttribute("class") + " hidden");
+      not4embeddedelems[i].classList.add("d-none");
     }
   }
 
-  connectToWebSocket();
+  try {
+    connectToWebSocket();
+    setPageSize(pageSize);
+  } catch (e) {
+    console.warn("Unable to connect to backend " + e);
+  }
 
-  setPageSize(pageSize);
 });
 
 // Functions
@@ -380,7 +384,7 @@ function htmlToElement(html) {
   return template.content.firstChild;
 }
 
-function enableModals() {
+function enableCopyToClipboardButtons() {
   // Modals
   let $copyButtons = getAll('.copyToClipboard-button');
 
@@ -398,6 +402,7 @@ function enableModals() {
 }
 
 function showModalSave(e) {
+  $('#saveModalDialog').modal('show');
   e.preventDefault();
   return false;
 }
@@ -407,21 +412,24 @@ function showModalImport(e) {
   input.setAttribute("type", "file");
   input.click(); // opening dialog
   input.onchange = function () {
+    $('.inProgressDialogText').text('Uploading data to backend...');
+    $('#showInProgressDialog').modal('show');
+
     fetch('/webui/traffic', {
       method: "POST",
       body: input.files[0]
     })
     .then(function (response) {
       if (!response.ok) {
-        alert('Error while uploading: ' + response.statusText);
+        $('.inProgressDialogText').text('Error while uploading: ' + response.status + " " + response.statusText);
       } else {
-        alert('The file has been uploaded successfully.');
-        pollMessages();
-        closeAllDropdowns();
+        pollMessages(false, pageSize, () => {
+          $('#showInProgressDialog').modal('hide');
+        });
       }
       return response;
-    }).then(function (_response) {
-      console.log("ok");
+    }).catch(reason => {
+      $('.inProgressDialogText').text('Error while uploading: ' + reason);
     });
   };
   e.preventDefault();
@@ -456,7 +464,7 @@ function enableCardToggles() {
 
 function toggleCardCB(e) {
   e.currentTarget.parentElement.parentElement.parentElement.parentElement.childNodes[1].classList.toggle(
-      'is-hidden');
+      'd-none');
   toggleCollapsableIcon(e.currentTarget);
   e.preventDefault();
   return false;
@@ -468,9 +476,7 @@ function enableCollapseExpandAll() {
   document.getElementById("collapse-all").addEventListener('click', e => {
     for (let i = 0; i < msgCards.length; i++) {
       const classList = msgCards[i].childNodes[1].classList;
-      if (!classList.contains('is-hidden')) {
-        classList.add('is-hidden');
-      }
+      classList.toggle('d-none', true);
       const classList2 = msgCards[i].children[0].children[0].children[0].children[1].classList;
       if (classList2.contains("fa-toggle-on")) {
         classList2.remove("fa-toggle-on");
@@ -484,9 +490,7 @@ function enableCollapseExpandAll() {
   document.getElementById("expand-all").addEventListener('click', e => {
     for (let i = 0; i < msgCards.length; i++) {
       const classList = msgCards[i].childNodes[1].classList;
-      if (classList.contains('is-hidden')) {
-        classList.remove('is-hidden');
-      }
+      classList.toggle('d-none', false);
       const classList2 = msgCards[i].children[0].children[0].children[0].children[1].classList;
       if (classList2.contains("fa-toggle-off")) {
         classList2.remove("fa-toggle-off");
@@ -522,7 +526,7 @@ function connectToWebSocket() {
         stompClient.subscribe('/topic/ws', () => {
           if (!currentlyPolling) {
             currentlyPolling = true;
-            pollMessages(() => {
+            pollMessages(false, pageSize, () => {
               currentlyPolling = false;
             });
           }
@@ -534,19 +538,22 @@ function connectToWebSocket() {
   )
 }
 
-function pollMessages(callback) {
+function pollMessages(eraseOldMessages, desiredPageSize, callback) {
   const xhttp = new XMLHttpRequest();
   xhttp.open("GET", "/webui/getMsgAfter"
-      + "?lastMsgUuid=" + lastUuid
+      + "?lastMsgUuid=" + (eraseOldMessages ? "" : lastUuid)
       + "&filterCriterion=" + encodeURIComponent(filterCriterion)
-      + "&pageSize=" + pageSize
-      + "&pageNumber=" + pageNumber, true);
+      + (desiredPageSize ? "&pageSize=" + desiredPageSize : "")
+      + (desiredPageSize ? "&pageNumber=" + pageNumber : ""), true);
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
       if (this.status === 200) {
         const response = JSON.parse(this.responseText);
         filteredMessagesAmount = response.metaMsgList.length;
         allMessagesAmount = response.totalMsgCount;
+        if (eraseOldMessages) {
+          resetAllReceivedMessages()
+        }
         updateMessageList(response);
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
@@ -625,12 +632,11 @@ function quitProxy() {
 
 function setFilterCriterion() {
   let spinner = getSpinner();
-  setFilterCriterionBtn.children[0].classList.add("is-hidden");
+  setFilterCriterionBtn.children[0].classList.add("d-none");
   setFilterCriterionBtn.appendChild(spinner);
   filterCriterion = setFilterCriterionInput.value;
-  resetAllReceivedMessages();
-  pollMessages();
-  setFilterCriterionBtn.children[0].classList.remove("is-hidden");
+  pollMessages(true, pageSize);
+  setFilterCriterionBtn.children[0].classList.remove("d-none");
   setFilterCriterionBtn.removeChild(spinner);
 }
 
@@ -647,15 +653,14 @@ function getSpinner() {
 
 function resetFilterCriterion() {
   let spinner = getSpinner();
-  resetFilterCriterionBtn.children[0].classList.add("is-hidden");
+  resetFilterCriterionBtn.children[0].classList.add("d-none");
   resetFilterCriterionBtn.appendChild(spinner);
   filterCriterion = "";
   setFilterCriterionInput.value = '';
   document.getElementById("requestToContent").selectedIndex = 0;
   document.getElementById("requestFromContent").selectedIndex = 0;
-  resetAllReceivedMessages();
-  pollMessages();
-  resetFilterCriterionBtn.children[0].classList.remove("is-hidden");
+  pollMessages(true, pageSize);
+  resetFilterCriterionBtn.children[0].classList.remove("d-none");
   resetFilterCriterionBtn.removeChild(spinner);
 }
 
@@ -683,28 +688,35 @@ function uploadReport() {
 }
 
 function saveHtmlToLocal() {
-  document.querySelector(".navbar").classList.add("is-hidden");
-  const text = document.querySelector("html").innerHTML;
-  const now = new Date();
-  const offsetMs = now.getTimezoneOffset() * 60 * 1000;
-  const dateLocal = new Date(now.getTime() - offsetMs);
-  const filename = tigerProxyFilenamePattern
-  .replace("${DATE}", dateLocal.toISOString().slice(0, 10).replace(/-/g, ""))
-  .replace("${TIME}",
-      dateLocal.toISOString().slice(11, 19).replace(/[^0-9]/g, ""))
-  .replace(".zip", ".html");
-  document.querySelector(".navbar").classList.remove("is-hidden");
-  const element = document.createElement('a');
-  element.setAttribute('href', 'data:text/html;charset=utf-8,' +
-      encodeURIComponent(text));
-  element.setAttribute('download', filename);
+  $('#saveModalDialog').modal('hide');
+  $('.inProgressDialogText').text('Retrieving data from backend...');
+  $('#showInProgressDialog').modal('show');
 
-  element.style.display = 'none';
-  document.body.appendChild(element);
+  pollMessages(true, false, () => {
+    $('#showInProgressDialog').modal('hide');
 
-  element.click();
+    document.querySelector(".navbar").classList.add("d-none");
+    const text = document.querySelector("html").innerHTML;
+    document.querySelector(".navbar").classList.remove("d-none");
 
-  document.body.removeChild(element);
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    const dateLocal = new Date(now.getTime() - offsetMs);
+    const filename = tigerProxyFilenamePattern
+    .replace("${DATE}", dateLocal.toISOString().slice(0, 10).replace(/-/g, ""))
+    .replace("${TIME}",
+        dateLocal.toISOString().slice(11, 19).replace(/[^0-9]/g, ""))
+    .replace(".zip", ".html");
+
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/html;charset=utf-8,' +
+        encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  });
 }
 
 function addQueryBtn(reqEl) {
@@ -713,9 +725,8 @@ function addQueryBtn(reqEl) {
   let msgUuid = getAll("a", titleDiv)[0].getAttribute("name");
 
   let queryBtn = document.createElement('a');
-  queryBtn.innerHTML =
-      "<span>Inspect</span>";
-  queryBtn.setAttribute("class", "btn modal-button is-pulled-right mx-3");
+  queryBtn.innerHTML = '<i class="fas fa-user-secret mx-2"></i>';
+  queryBtn.setAttribute("class", "btn modal-button float-end mx-3");
   queryBtn.setAttribute("data-bs-target", "#jexlQueryModal");
   queryBtn.setAttribute("data-bs-toggle", "modal");
   queryBtn.addEventListener("click", function (e) {
@@ -770,8 +781,8 @@ function executeJexlQuery() {
           jexlInspectionContextDiv.innerHTML = "<h3 class='is-size-4'>NO JEXL context received</h3>";
         }
 
-        jexlInspectionContextParentDiv.classList.remove("is-hidden");
-        jexlInspectionNoContextDiv.classList.add("is-hidden");
+        jexlInspectionContextParentDiv.classList.remove("d-none");
+        jexlInspectionNoContextDiv.classList.add("d-none");
         if (response.errorMessage) {
           jexlInspectionResultDiv.innerHTML = "<b>JEXL is invalid: </b>"
               + "<code class='bg-dark text-warning'>" + response.errorMessage
@@ -892,12 +903,12 @@ function updateHidingForMessageElement(messageElement) {
       messageElement.getElementsByClassName("header-toggle")[0],
       collapseMessageHeaders);
   messageElement.getElementsByClassName("msg-header-content")[0].classList
-  .toggle('is-hidden', collapseMessageHeaders);
+  .toggle('d-none', collapseMessageHeaders);
   setCollapsableIcon(
       messageElement.getElementsByClassName("msg-toggle")[0],
       collapseMessageDetails);
   messageElement.getElementsByClassName("msg-content")[0].classList
-  .toggle('is-hidden', collapseMessageDetails);
+  .toggle('d-none', collapseMessageDetails);
 }
 
 function addMessageToMainView(msgHtmlData) {
@@ -1000,7 +1011,7 @@ function updateMessageList(json) {
   }
   setFilterMessage();
   enableCardToggles();
-  enableModals();
+  enableCopyToClipboardButtons();
 }
 
 function getInnerHTMLForRoutes() {
@@ -1112,16 +1123,14 @@ function setPageSize(newSize) {
   pageNumber = 0;
   document.getElementById("pageSizeDisplay").textContent =
       "Size " + newSize;
-  resetAllReceivedMessages();
-  pollMessages();
+  pollMessages(true, pageSize);
 }
 
 function setPageNumber(newPageNumber, callback) {
   pageNumber = newPageNumber;
   document.getElementById("pageNumberDisplay").textContent =
       "Page " + (newPageNumber + 1);
-  resetAllReceivedMessages();
-  pollMessages(callback);
+  pollMessages(true, pageSize, callback);
 }
 
 function updatePageSelector(pagesAvailable) {
@@ -1167,4 +1176,3 @@ if (window.addEventListener) {
 } else {
   window.attachEvent("onmessage", messageScrollToReceiver);
 }
-

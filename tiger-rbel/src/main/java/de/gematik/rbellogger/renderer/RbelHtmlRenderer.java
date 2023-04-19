@@ -37,16 +37,11 @@ public class RbelHtmlRenderer {
     @Setter
     private int maximumEntitySizeInBytes = 4 * 1024 * 1024;
     @Setter
-    private String title = "RBelLogger";
+    private String title = "Tiger Proxy Log";
     @Setter
-    private String subTitle = "<p>The [R]everse [B]ridle [E]vent [L]ogger pays tribute to the fact "
-        + "that many agile projects' specifications, alas somewhat complete, "
-        + "lack specificality. Using PoCs most of the time does not resolve this as the code is not "
-        + "well enough documented and communication between nodes is not observable or "
-        + "logged in a well enough readable manner.</p> "
-        + "<p>This is where the RBeL Logger comes into play.</p> "
-        + "<p>Attaching it to a network, RestAssured or Wiremock interface or instructing it to read from a recorded PCAP file, "
-        + "produces this shiny communication log supporting Plain HTTP, JSON, JWT and even JWE!</p>";
+    private String subTitle = "";
+    @Setter
+    private String versionInfo = "";
 
     public RbelHtmlRenderer(final RbelValueShader rbelValueShader) {
         this.rbelValueShader = rbelValueShader;
@@ -87,7 +82,7 @@ public class RbelHtmlRenderer {
                                                         final RbelHtmlRenderingToolkit renderingToolkit) {
         final String id = "dialog" + RandomStringUtils.randomAlphanumeric(20);//NOSONAR
         return span().with(
-            a().withClass("btn modal-button modal-button-details is-pulled-right mx-3")
+            a().withClass("btn modal-button modal-button-details float-end mx-3")
                 .attr("data-bs-target", "#"+id)
                 .attr("data-bs-toggle", "modal")
                 .with(span().withClass("icon is-small").with(
@@ -150,7 +145,6 @@ public class RbelHtmlRenderer {
     @SneakyThrows
     private String performRendering(final Collection<RbelElement> elements) {
         RbelHtmlRenderingToolkit renderingToolkit = new RbelHtmlRenderingToolkit(this);
-
         return renderingToolkit.renderDocument(new ArrayList(elements));
     }
 

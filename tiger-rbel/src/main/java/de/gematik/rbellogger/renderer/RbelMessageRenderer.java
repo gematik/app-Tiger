@@ -92,7 +92,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         List<DomContent> messageTitleElements = new ArrayList<>();
         messageTitleElements.add(a().attr("name", element.getUuid()));
         messageTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right me-3 is-size-3 msg-toggle",
+            i().withClasses("fas fa-toggle-on toggle-icon float-end me-3 is-size-3 msg-toggle",
                 httpRequestFacet.map(f -> "has-text-link").orElse("has-text-success")));
         messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
         messageTitleElements.add(
@@ -102,13 +102,13 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                 httpRequestFacet.map(f ->
                     span().with(
                             span(" " + f.getMethod().getRawStringContent() + " " + f.getPathAsString())
-                                .withClass("is-family-monospace title is-size-6 ms-3")
+                                .withClass("font-monospace title is-size-6 ms-3")
                                 .withTitle(f.getPathAsString())
                                 .with(addNotes(f.getPath())))
                         .withClass("has-text-link text-ellipsis")).orElse(span()),
                 httpResponseFacet.map(response ->
                     span(response.getResponseCode().getRawStringContent())
-                        .withClass("is-family-monospace title ms-3")
+                        .withClass("font-monospace title ms-3")
                 ).orElse(span("")),
                 span().with(
                     buildTimingInfo(element), buildAddressInfo(element)
@@ -141,7 +141,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
         List<DomContent> headerTitleElements = new ArrayList<>();
         headerTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right me-3 is-size-3 has-text-primary header-toggle"));
+            i().withClasses("fas fa-toggle-on toggle-icon float-end me-3 is-size-3 has-text-primary header-toggle"));
         httpMessageFacet.map(
             a -> headerTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getHeader(), renderingToolkit)));
         headerTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Headers")).orElseGet(() -> t2("RES Headers")))
@@ -149,11 +149,11 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
         List<DomContent> bodyTitleElements = new ArrayList<>();
         bodyTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon is-pulled-right me-3 is-size-3 has-text-info body-toggle"));
+            i().withClasses("fas fa-toggle-on toggle-icon float-end me-3 is-size-3 text-info body-toggle"));
         httpMessageFacet.map(
             a -> bodyTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getBody(), renderingToolkit)));
         bodyTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Body")).orElseGet(() -> t2("RES Body")))
-            .withClass("has-text-info"));
+            .withClass("text-info"));
 
         List<DomContent> messageBodyElements = new ArrayList<>();
         messageBodyElements.add(

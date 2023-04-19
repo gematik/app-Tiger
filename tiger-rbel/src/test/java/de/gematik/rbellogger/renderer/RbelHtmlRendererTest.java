@@ -123,8 +123,8 @@ class RbelHtmlRendererTest {
         FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
 
         assertThat(convertedHtml)
-            .contains("foobar:666")
-            .doesNotContain("null");
+            .contains("foobar:666") // hostname
+            .contains("487275465566779"); // Serialnumber of cert
     }
 
     @Test

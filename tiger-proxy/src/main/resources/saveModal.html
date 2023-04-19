@@ -13,15 +13,28 @@
       <div class="modal-body">
           <div class="box">
             <p class="mt-4 mb-4">There are two options for saving:</p>
-            <ul class="list-group">
-              <li class="list-group-item">You can save the HTML-File as shown here (HTML)</li>
-              <li class="list-group-item">Or you can save the raw traffic file (Traffic)</li>
-            </ul>
+            <p class="mt-4 mb-4"><b>Download HTML</b>: Loads all messages from backend and saves them as HTML. Be aware that a large amount of messages might slow down your browser considerably!</p>
+            <p class="mt-4 mb-4"><b>Download Traffic</b>: Saves all messages as a machine-readable tgr-file. You may import such data again via the Import button at the bottom</p>
+            </p>
           </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-success" id="saveHtmlBtn">Download HTML</button>
         <button class="btn btn-warning" id="saveTrafficBtn">Download Traffic</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="showInProgressDialog" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-background"></div>
+    <div class="modal-content" role="document" style="background-color:#ffff;">
+      <div class="modal-header bg-dark">
+        <h2 class="modal-title" style="color:#ffff;">In Progress</h2>
+      </div>
+      <div class="modal-body">
+        <i class="fa-2x fas fa-spinner fa-spin me-3 text-info"></i><span class="inProgressDialogText">Currently retrieving data from backend...</span>
       </div>
     </div>
   </div>

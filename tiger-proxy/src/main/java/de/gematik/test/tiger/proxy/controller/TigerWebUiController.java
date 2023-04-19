@@ -71,11 +71,11 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String ATTR_ARIA_CONTROLS = "aria-controls";
     private static final String ATTR_ON_CLICK = "onClick";
     private static final String CSS_BTN_DARK = "btn btn-dark";
-    private static final String CSS_BTN_OUTLINE_SUCCESS= "btn btn-outline-success";
+    private static final String CSS_BTN_OUTLINE_SUCCESS = "btn btn-outline-success";
     private static final String CSS_COLOR_INHERIT = "color:inherit;";
     private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = "dropdown-toggle" + CSS_BTN_DARK;
     private static final String CSS_DROPDOWN_ITEM = "dropdown-item";
-    private static final String CSS_NAVBAR_ITEM= "navbar-item";
+    private static final String CSS_NAVBAR_ITEM = "navbar-item";
     private static final String CSS_NAVBAR_ITEM_NOT4EMBEDDED = CSS_NAVBAR_ITEM + " not4embedded";
     private static final String DROPDOWN_MENU = "dropdown-menu";
     private static final String VALUE_MODAL = "modal";
@@ -206,29 +206,29 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-hide-button").withClass("btn-group dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                        .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
-                                        .attr(ATTR_ARIA_HASPOPUP, "true")
-                                        .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU).with(
+                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_ARIA_HASPOPUP, "true")
+                                    .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU).with(
                                         span().withClass("icon is-small").with(
                                             i().withClass("fas fa-toggle-on")
                                         )
-                                ),
+                                    ),
                                 div().withClass(DROPDOWN_MENU + " bg-dark")
                                     .attr("role", "menu")
                                     .with(
                                         div().withClass(CSS_DROPDOWN_ITEM).with(
-                                                button().withId("collapsibleMessageHeaderBtn").withClass(CSS_BTN_DARK).with(
-                                                    div().withId("collapsibleMessageHeader").withClass("led"),
-                                                    span("Hide Headers")
-                                                )
-                                            ),
-                                            div().withClass(CSS_DROPDOWN_ITEM).with(
-                                                button().withId("collapsibleMessageDetailsBtn").withClass(CSS_BTN_DARK)
-                                                    .with(
-                                                        div().withId("collapsibleMessageDetails").withClass("led"),
-                                                        span("Hide Details")
-                                                    )
+                                            button().withId("collapsibleMessageHeaderBtn").withClass(CSS_BTN_DARK).with(
+                                                div().withId("collapsibleMessageHeader").withClass("led"),
+                                                span("Hide Headers")
                                             )
+                                        ),
+                                        div().withClass(CSS_DROPDOWN_ITEM).with(
+                                            button().withId("collapsibleMessageDetailsBtn").withClass(CSS_BTN_DARK)
+                                                .with(
+                                                    div().withId("collapsibleMessageDetails").withClass("led"),
+                                                    span("Hide Details")
+                                                )
+                                        )
                                     )
                             )
                         ),
@@ -241,7 +241,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 )
                         ),
 
-                       div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED + " ms-3").with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED + " ms-3").with(
                             button().withId("resetMsgs").withClass("btn btn-outline-danger").with(
                                 i().withClass("far fa-trash-alt"),
                                 span("Reset").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
@@ -249,21 +249,20 @@ public class TigerWebUiController implements ApplicationContextAware {
                         ),
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             button().withId("saveMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS)
-                                .attr(ATTR_DATA_BS_TARGET, "#saveModalDialog")
-                                .attr(ATTR_DATA_BS_TOGGLE, VALUE_MODAL).with(
-                                i().withClass("far fa-save"),
-                                span("Save").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
-                            )
+                                .with(
+                                    i().withClass("far fa-save"),
+                                    span("Save").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
+                                )
                         ),
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-page-selection").withClass("btn-group dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                        .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
-                                        .attr(ATTR_ARIA_HASPOPUP, "true")
-                                        .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
-                                        .with(
-                                            span().withText("Page 1").withId("pageNumberDisplay")
-                                        ),
+                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_ARIA_HASPOPUP, "true")
+                                    .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
+                                    .with(
+                                        span().withText("Page 1").withId("pageNumberDisplay")
+                                    ),
                                 div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
                                     div().withClass("dropdown-content").withId("pageSelector").with(
                                         a().withClass(CSS_DROPDOWN_ITEM)
@@ -275,12 +274,12 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-page-size").withClass("dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                        .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
-                                        .attr(ATTR_ARIA_HASPOPUP, "true")
-                                        .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
-                                        .with(
-                                            span().withId("pageSizeDisplay").withText("Size")
-                                        ),
+                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_ARIA_HASPOPUP, "true")
+                                    .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
+                                    .with(
+                                        span().withId("pageSizeDisplay").withText("Size")
+                                    ),
                                 div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
                                     div().withClass("dropdown-content").with(
                                         a().withClass(CSS_DROPDOWN_ITEM)
@@ -297,7 +296,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         ),
                         div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
                             button().withId("importMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS).with(
-                                    i().withClass("far fa-folder-open"),
+                                i().withClass("far fa-folder-open"),
                                 span("Import").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
@@ -478,7 +477,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList()));
-        result.setPagesAvailable((msgs.size() / pageSize) + 1);
+        result.setPagesAvailable(((msgs.size() - 1) / pageSize) + 1);
         result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
             result.getHtmlMsgList().size(), result.getMetaMsgList().size(), msgs.size(),
