@@ -83,7 +83,7 @@ public class TracingPushController {
             final RbelHostname receiver = RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
                 .orElse(null);
 
-            log.info("{}Propagating new non-paired message (ID: {})", tigerProxy.proxyName(), msg.getUuid());
+            log.trace("{}Propagating new non-paired message (ID: {})", tigerProxy.proxyName(), msg.getUuid());
 
             template.convertAndSend(TigerRemoteProxyClient.WS_TRACING,
                 TigerTracingDto.builder()
