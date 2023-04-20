@@ -920,6 +920,9 @@ function addMessageToMainView(msgHtmlData) {
     span.textContent = msgHtmlData.sequenceNumber + 1;
   }
   addQueryBtn(message);
+  message.querySelectorAll('pre.json').forEach(el => {
+    hljs.highlightElement(el);
+  });
   listDiv.appendChild(message);
   if (!scrollLock) {
     message.scrollIntoView({behaviour: "smooth", alignToTop: true});

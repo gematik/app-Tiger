@@ -140,6 +140,10 @@ document.addEventListener('DOMContentLoaded', function () {
       e.preventDefault();
       return false;
     });
+
+    document.querySelectorAll('pre.json').forEach(el => {
+      hljs.highlightElement(el);
+    });
   }
 
   let notification = document.getElementsByClassName('card notification');

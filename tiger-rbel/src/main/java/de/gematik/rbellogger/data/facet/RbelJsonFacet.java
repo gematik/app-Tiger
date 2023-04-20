@@ -65,7 +65,7 @@ public class RbelJsonFacet implements RbelFacet {
                         vertParentTitle().with(
                             div().withClass("tile is-child pe-3").with(
                                 pre(new UnescapedText(formatedJson))
-                                    .withClass("json")
+                                    .withClass("json language-json")
                             ).with(renderingToolkit.convertNested(element))));
             }
         });

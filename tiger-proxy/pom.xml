@@ -34,12 +34,15 @@
         <version.unirest>3.14.2</version.unirest>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
-        <version.bootstrap>5.1.3</version.bootstrap>
-        <version.jquery>3.6.3</version.jquery>
-        <version.jquery-ui>1.13.2</version.jquery-ui>
     </properties>
 
     <dependencies>
+        <!-- front end -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>webjars-locator-core</artifactId>
+            <version>${version.webjars-locator-core}</version>
+        </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>bootstrap</artifactId>
@@ -55,6 +58,28 @@
             <artifactId>jquery-ui</artifactId>
             <version>${version.jquery-ui}</version>
         </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>font-awesome</artifactId>
+            <version>${version.font-awesome}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>sockjs-client</artifactId>
+            <version>${version.sockjs-client}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>stomp-websocket</artifactId>
+            <version>${version.stomp-websocket}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>highlightjs</artifactId>
+            <version>${version.highlightjs}</version>
+        </dependency>
+
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

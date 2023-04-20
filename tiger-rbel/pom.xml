@@ -171,12 +171,6 @@
                 <version>3.3.0</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <nonFilteredFileExtensions>
-                        <nonFilteredFileExtension>ttf</nonFilteredFileExtension>
-                        <nonFilteredFileExtension>woff</nonFilteredFileExtension>
-                        <nonFilteredFileExtension>woff2</nonFilteredFileExtension>
-                        <nonFilteredFileExtension>pem</nonFilteredFileExtension>
-                    </nonFilteredFileExtensions>
                     <resources>
                         <resource>
                             <directory>src/main/resources</directory>

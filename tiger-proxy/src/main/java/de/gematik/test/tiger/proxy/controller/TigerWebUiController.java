@@ -136,7 +136,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
-        String html = renderer.getEmptyPage();
+        String html = renderer.getEmptyPage(applicationConfiguration.isLocalResources());
         // hide sidebar
         String targetDiv;
         if (embedded) {
@@ -145,15 +145,6 @@ public class TigerWebUiController implements ApplicationContextAware {
             targetDiv = "<div class=\"col ms-6 msglist\">";
         }
         html = replaceScript(html.replace("<div class=\"col ms-6\">", targetDiv));
-
-        if (applicationConfiguration.isLocalResources()) {
-            log.info("Running with local resources...");
-            html = html
-                //.replace("https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
-                //    "/webui/css/bootstrap.min.css")
-                .replace("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css",
-                    "/webui/css/all.min.css");
-        }
 
         String navbar;
 
@@ -323,7 +314,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     private String replaceScript(String html) {
         var jsoup = Jsoup.parse(html);
-        final Element script = jsoup.select("script").get(4);
+        final Element script = jsoup.select("script").get(6);
         script.dataNodes().get(0).replaceWith(
             new DataNode(loadResourceToString("/tigerProxy.js")));
         return jsoup.html();

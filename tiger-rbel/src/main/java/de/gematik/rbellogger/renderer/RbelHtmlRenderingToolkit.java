@@ -231,7 +231,8 @@ public class RbelHtmlRenderingToolkit {
         if (rbelElement.hasFacet(RbelRequestFacet.class)) {
             metaData.put("menuInfoString", rbelElement.getFacetOrFail(RbelRequestFacet.class).getMenuInfoString());
         } else {
-            metaData.put("menuInfoString", rbelElement.getFacet(RbelResponseFacet.class).map(RbelResponseFacet::getMenuInfoString).orElse(""));
+            metaData.put("menuInfoString",
+                rbelElement.getFacet(RbelResponseFacet.class).map(RbelResponseFacet::getMenuInfoString).orElse(""));
         }
         metaData.put("timestamp", rbelElement.getFacet(RbelMessageTimingFacet.class)
             .map(RbelMessageTimingFacet::getTransmissionTime).orElse(null));
@@ -247,22 +248,29 @@ public class RbelHtmlRenderingToolkit {
             .orElse("0");
     }
 
-    public String renderDocument(List<RbelElement> elements) throws IOException {
+    public String renderDocument(List<RbelElement> elements, boolean localRessources) throws IOException {
         String logoBase64Str = IOUtils.resourceToString("/tiger-monochrome-64.png.base64", StandardCharsets.UTF_8);
         return TagCreator.document(
             html(
                 head(
                     meta().attr("charset", "utf-8"),
                     meta().attr("name", "viewport").attr("content", "width=device-width, initial-scale=1"),
-                    title().withText("Rbel Flow"),
-                    script().withSrc("https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"),
-                    script().withSrc("https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"),
-                    script().withSrc("https://code.jquery.com/jquery-1.12.4.js"),
-                    // integrity="sha256-Qw82+bXyGq6MydymqBxNPYTaUXXq7c8v3CwiYwLLNXU="
-                    // crossorigin="anonymous">
-                    script().withSrc("https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"),
-                    link2CSS("https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"),
-                    link2CSS("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css"),
+                    title().withText(rbelHtmlRenderer.getTitle()),
+                    script().withSrc(localRessources ? "../webjars/sockjs-client/sockjs.min.js"
+                        : "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"),
+                    script().withSrc(localRessources ? "../webjars/stomp-websocket/stomp.min.js"
+                        : "https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"),
+                    script().withSrc(localRessources ? "../webjars/jquery/jquery.min.js" : "https://code.jquery.com/jquery-1.12.4.js"),
+                    script().withSrc(localRessources ? "../webjars/bootstrap/js/bootstrap.min.js"
+                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"),
+                    script().withSrc(localRessources ? "../webjars/highlightjs/highlight.min.js" : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"),
+                    script().withSrc(localRessources ? "../webjars/highlightjs/languages/xml.min.js" : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/languages/xml.min.js"),
+
+                    link2CSS(localRessources ? "../webjars/bootstrap/css/bootstrap.min.css"
+                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"),
+                    link2CSS(localRessources ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css" : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/stackoverflow-dark.min.css"),
+                    link2CSS(localRessources ? "../webjars/font-awesome/css/all.min.css"
+                        : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css"),
                     link().withRel("icon").withType("image/png").withHref(logoBase64Str),
                     tag("style").with(
                         new UnescapedText(IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))

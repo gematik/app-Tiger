@@ -11,24 +11,6 @@
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
     <description>Short project description</description>
-    <url>https://github.com/gematik/app-Tiger</url>
-
-    <scm>
-        <url>https://github.com/gematik/app-Tiger</url>
-        <connection>scm:git:git://github.com/gematik/app-Tiger.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:gematik/app-Tiger.git</developerConnection>
-    </scm>
-
-    <issueManagement>
-        <system>GitHub</system>
-        <url>https://github.com/gematik/app-Tiger/issues</url>
-    </issueManagement>
-
-    <organization>
-        <name>gematik GmbH</name>
-        <url>http://www.gematik.de</url>
-    </organization>
-
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
@@ -71,6 +53,19 @@
         <version.system-lambda>1.2.1</version.system-lambda>
         <version.wiremock>2.35.0</version.wiremock>
 
+        <!-- frontend -->
+        <!-- when changing the webjar version here make sure to adapt the web ui links too -->
+        <!-- see src/main/resources/templates/adminui.html -->
+        <version.webjars-locator-core>0.52</version.webjars-locator-core>
+        <version.bootstrap>5.1.3</version.bootstrap>
+        <version.jquery>3.6.3</version.jquery>
+        <version.jquery-ui>1.13.2</version.jquery-ui>
+        <version.font-awesome>6.3.0</version.font-awesome>
+        <version.sockjs-client>1.5.1</version.sockjs-client>
+        <version.stomp-websocket>2.3.4</version.stomp-websocket>
+        <version.highlightjs>11.5.0</version.highlightjs>
+
+
         <sonar.language>java</sonar.language>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
@@ -86,6 +81,24 @@
         -->
         <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
     </properties>
+
+    <url>https://github.com/gematik/app-Tiger</url>
+
+    <scm>
+        <url>https://github.com/gematik/app-Tiger</url>
+        <connection>scm:git:git://github.com/gematik/app-Tiger.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:gematik/app-Tiger.git</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/gematik/app-Tiger/issues</url>
+    </issueManagement>
+
+    <organization>
+        <name>gematik GmbH</name>
+        <url>http://www.gematik.de</url>
+    </organization>
 
     <licenses>
         <license>

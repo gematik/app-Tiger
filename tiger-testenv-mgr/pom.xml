@@ -16,9 +16,6 @@
         <version.frontend-maven-plugin>1.12.1</version.frontend-maven-plugin>
         <version.node>v16.14.0</version.node>
         <version.npm>8.3.1</version.npm>
-        <version.sockjs-client>1.5.1</version.sockjs-client>
-        <version.stomp-websocket>2.3.4</version.stomp-websocket>
-        <version.webjars-locator-core>0.52</version.webjars-locator-core>
     </properties>
 
     <dependencyManagement>
@@ -69,6 +66,11 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+        </dependency>
+
         <!--  frontend -->
         <dependency>
             <groupId>org.webjars</groupId>
@@ -90,10 +92,7 @@
             <artifactId>axios</artifactId>
             <version>${version.axios}</version>
         </dependency>
-        <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility</artifactId>
-        </dependency>
+
         <!-- test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

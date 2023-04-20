@@ -57,7 +57,7 @@ public class RbelHtmlRenderer {
 
     public static String render(final Collection<RbelElement> elements, final RbelValueShader valueShader) {
         return new RbelHtmlRenderer(valueShader)
-            .performRendering(elements);
+            .performRendering(elements, false);
     }
 
     public static ContainerTag collapsibleCard(final ContainerTag title, final ContainerTag body, String classes, String spaces, String contentClasses) {
@@ -139,13 +139,13 @@ public class RbelHtmlRenderer {
     }
 
     public String doRender(final Collection<RbelElement> elements) {
-        return performRendering(elements);
+        return performRendering(elements, false);
     }
 
     @SneakyThrows
-    private String performRendering(final Collection<RbelElement> elements) {
+    private String performRendering(final Collection<RbelElement> elements, boolean localRessources) {
         RbelHtmlRenderingToolkit renderingToolkit = new RbelHtmlRenderingToolkit(this);
-        return renderingToolkit.renderDocument(new ArrayList(elements));
+        return renderingToolkit.renderDocument(new ArrayList<>(elements), localRessources);
     }
 
     public Optional<ContainerTag> convert(final RbelElement element, final Optional<String> key,
@@ -169,7 +169,7 @@ public class RbelHtmlRenderer {
         }
     }
 
-    public String getEmptyPage() {
-        return performRendering(List.of());
+    public String getEmptyPage(boolean localRessources) {
+        return performRendering(List.of(), localRessources);
     }
 }
