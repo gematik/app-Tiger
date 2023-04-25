@@ -55,3 +55,86 @@ The displayed buttons can trigger the following actions:
 * *Size* … changes the size of the messages.
 * *Import* … allows you to import the previously stored traffic file.
 * *Quit* … allows you to quit the Tiger Proxy instance
+
+
+[#_jexl_expression]
+=== Explanation of JEXL Expressions
+
+In the xref:tigerTestLibrary.adoc#_workflow_ui[Workflow UI] and in the xref:_web_ui[WebUI] you can inspect the requests and response messages.
+For that you can use RbelPath and/or JEXL expressions. This section should give you a brief review on the JEXL expressions.
+
+Important to know is that an JEXL expression is usually a "condition1 operator condition2" expression which is compared.
+Therefore the following operators could be used.
+
+==== Operators
+
+[cols="10,~"]
+|===
+|Operator | Description
+
+|and \| && | cond1 __and__ cond2  and cond1 __&&__ cond2 are equivalent
+|or \| \|\| | cond1 __or__ cond2  and cond1 \|\| cond2 are equivalent
+|not \| ! | The ! operator can be used as well as the word __not__, e.g. !cond1 and not cond1 are equivalent
+|== | Equality, e.g. cond1 == cond2
+
+         __null__ is only ever equal to null, that means when you compare null to a non-null value, the result is false.
+
+|!= | Inequality
+|> | Greater than
+|< | Less than
+|>=| Greater than or equal
+|<= | Less than ot equal
+|=~ | In or match, can be used to check that a string matches a regular expression.
+      For example "abcdef" =~ "abc.* returns true. It also checks whether any collection, set or map contains a value or not;
+      in that case, it behaves as an "in" operator. "a" =~ ["a","b","c","d","e",f"] returns true.
+|!~ | Not in or not-match, can be used to check that a string does not match a regular expression.
+      For example "abcdef" !~ "abc.* returns false. It also checks whether any collection, set or map does not contain a value.
+     "a" !~ ["a","b","c","d","e",f"] returns false.
+|=^ | startsWith, for example "abcdef" =^ "abc" returns true
+|!^ | startsNotWith, "abcdef" !^ "abc" returns false
+|=$| endsWith, for example "abcdef" =$ "def" returns true
+|!$| endsNotWith, for example "abcdef" !$ "def" returns false
+|Empty| The unary empty operator behaves like the corresponding function empty().
+|size| The unary size operator behaves like the corresponding function size().
+|===
+Important to know is that when you use a RbelPath expression you have to make sure to add spaces before and after the operator.
+
+image::media/jexlspacesright.png[width=50%,title="Keep in mind to add spaces before and after the operator when using RbelPath "]
+
+If spaces are forgotten, the conition will return "false".
+
+image::media/jexlspaceswrong.png[width=50%,title="The condition will be false when spaces are forgotten "]
+
+==== Access on Array, Lists and Maps
+
+To access maps in JEXL/RbelPath the point notations is used. In case of lists use the number of the list entry you want to access, starting with 0, 1, 2 and so on.
+
+image::media/accessarray.png[width=50%,title="The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. "]
+
+==== Access JEXL contexts
+
+There are predefined JEXL contexts which can be used for the query, for example `isRequest`, `isResponse`, `charset`, `content` or also more
+complex contexts like `response.statuscode`, `request.url`, `message.method` etc.
+
+image::media/accessjexlcontext.png[width=50%,title="Use single quotes when using JEXL contexts with a hyphen. "]
+
+==== More Examples
+
+`message.headers.'content-length'.0 == "0"`  -> Use single quotes when using JEXL contexts with a hyphen.
+
+`@.body.0.name.content =^ "Jasmin"` -> check whether the content starts with "Jasmin"
+
+`$.body.recordId == "X12349035"`   -> checks for the recordId of a decrypted EPA-VAU-message
+
+`$.header.Content-Type == "application/json"`  -> check if the message is a JSON-message
+
+`request.method == "GET"` -> check if request is da GET request
+
+`charset =~ "UTF-.*"` -> check the charset with a regex
+
+`empty(response.url)==true` oder auch `empty(response.url)` -> url is not set
+
+`$.body.recordId == "Y243631459" && charset == "UTF-8"` -> combines the two criterions
+
+
+For further help on JEXL please check out the offical website (https://commons.apache.org/proper/commons-jexl).
