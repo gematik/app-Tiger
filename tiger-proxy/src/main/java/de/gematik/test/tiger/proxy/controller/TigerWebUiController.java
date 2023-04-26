@@ -134,6 +134,17 @@ public class TigerWebUiController implements ApplicationContextAware {
         return result;
     }
 
+    @GetMapping(value = "/tiger-report*.html", produces = MediaType.TEXT_HTML_VALUE)
+    public String downloadHtml() {
+        var rbelRenderer = new RbelHtmlRenderer();
+        rbelRenderer.setVersionInfo(buildProperties.tigerVersionAsString());
+        rbelRenderer.setTitle("RbelLog für " + tigerProxy.getName().orElse("Tiger Proxy - Port") + ":" + tigerProxy.getProxyPort());
+
+        final ArrayList<RbelElement> rbelMessages = getTigerProxy().getRbelLogger().getMessageHistory().stream()
+            .collect(Collectors.toCollection(ArrayList::new));
+        return rbelRenderer.doRender(rbelMessages);
+    }
+
     @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
     public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
         String html = renderer.getEmptyPage(applicationConfiguration.isLocalResources());

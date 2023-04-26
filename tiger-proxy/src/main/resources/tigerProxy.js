@@ -170,11 +170,6 @@ document.addEventListener('DOMContentLoaded', function () {
     uploadBtn.addEventListener('click', uploadReport);
   }
 
-  document.getElementById("saveHtmlBtn")
-  .addEventListener('click', () => {
-    saveHtmlToLocal();
-  });
-
   function todayAsString() {
     var now = new Date();
     return padStr(now.getFullYear() - 2000) +
@@ -201,6 +196,28 @@ document.addEventListener('DOMContentLoaded', function () {
     e.preventDefault();
     return false;
   });
+
+  document.getElementById("saveHtmlBtn")
+  .addEventListener('click', e => {
+    $('#saveModalDialog').modal('hide');
+
+    const a = document.createElement('a');
+    a.style.display = 'none';
+
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    const dateLocal = new Date(now.getTime() - offsetMs);
+
+    a.download = `tiger-report-${todayAsString()}-${dateLocal.toISOString().slice(11, 19).replace(/[^0-9]/g, "")}.html`;
+    a.href = `/webui/`+ a.download;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(a.href);
+
+    e.preventDefault();
+    return false;
+  });
+
   btnOpenRouteModal.addEventListener('click',
       () => {
         getRoutes();
@@ -630,6 +647,7 @@ function quitProxy() {
   xhttp.send();
 }
 
+
 function setFilterCriterion() {
   let spinner = getSpinner();
   setFilterCriterionBtn.children[0].classList.add("d-none");
@@ -685,38 +703,6 @@ function uploadReport() {
     }
   }
   xhttp.send(encodeURIComponent(document.querySelector("html").innerHTML));
-}
-
-function saveHtmlToLocal() {
-  $('#saveModalDialog').modal('hide');
-  $('.inProgressDialogText').text('Retrieving data from backend...');
-  $('#showInProgressDialog').modal('show');
-
-  pollMessages(true, false, () => {
-    $('#showInProgressDialog').modal('hide');
-
-    document.querySelector(".navbar").classList.add("d-none");
-    const text = document.querySelector("html").innerHTML;
-    document.querySelector(".navbar").classList.remove("d-none");
-
-    const now = new Date();
-    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
-    const dateLocal = new Date(now.getTime() - offsetMs);
-    const filename = tigerProxyFilenamePattern
-    .replace("${DATE}", dateLocal.toISOString().slice(0, 10).replace(/-/g, ""))
-    .replace("${TIME}",
-        dateLocal.toISOString().slice(11, 19).replace(/[^0-9]/g, ""))
-    .replace(".zip", ".html");
-
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/html;charset=utf-8,' +
-        encodeURIComponent(text));
-    element.setAttribute('download', filename);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  });
 }
 
 function addQueryBtn(reqEl) {
