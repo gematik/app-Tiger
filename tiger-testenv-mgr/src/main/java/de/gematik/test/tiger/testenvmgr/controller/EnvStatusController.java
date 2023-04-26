@@ -46,7 +46,7 @@ public class EnvStatusController implements TigerUpdateListener {
                 tigerEnvStatus.setBannerMessage(update.getBannerMessage());
                 tigerEnvStatus.setBannerColor(update.getBannerColor());
                 tigerEnvStatus.setBannerType(update.getBannerType());
-                tigerEnvStatus.setBannerHtml(update.isBannerIsHtml());
+                tigerEnvStatus.setBannerIsHtml(update.isBannerIsHtml());
             }
             // TODO make sure to check that the index is the expected next number, if not we do have to cache this and wait for the correct message
             //  TODO to be received and then process the cached messages in order, currently this is done on the client side
@@ -142,36 +142,36 @@ public class EnvStatusController implements TigerUpdateListener {
         return tigerEnvStatus;
     }
 
-    @GetMapping(path = "/quit")
-    public void getConfirmQuit() {
-        log.trace("Fetch request to getQuit() received");
-        tigerTestEnvMgr.receivedUserAcknowledgementForShutdown();
+    @GetMapping(path = "/confirmShutdown")
+    public void getConfirmShutdown() {
+        log.trace("Received shutdown confirmation");
+        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
     }
 
     @GetMapping(path = "/continueExecution")
     public void getConfirmContinueExecution() {
-        log.trace("Fetch request to continueExecution() received");
-        tigerTestEnvMgr.receivedResumeTestRunExecution();
+        log.trace("Received confirmation to continue test execution");
+        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
     }
 
     @GetMapping(path = "/failExecution")
     public void getConfirmToFailExecution() {
-        log.trace("Fetch request to failExecution() received");
-        tigerTestEnvMgr.receivedCancelTestRunExecution();
-        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Ending test run").bannerType(BannerType.MESSAGE)
+        log.trace("Received confirmation for failing test step");
+        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
+        TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Failing test run").bannerType(BannerType.MESSAGE)
             .bannerColor("red").build();
         tigerTestEnvMgr.receiveTestEnvUpdate(update);
     }
 
     @GetMapping(path = "/version")
     public String getTigerVersion() {
-        log.trace("Fetch requests the tiger version");
+        log.trace("Fetch requests the tiger version {}", buildProperties.tigerVersionAsString());
         return buildProperties.tigerVersionAsString();
     }
 
     @GetMapping(path = "/build")
     public String getBuildDate() {
-        log.trace("Fetch requests the build date");
+        log.trace("Fetch requests the build date ", buildProperties.tigerBuildDateAsString());
         return buildProperties.tigerBuildDateAsString();
     }
 }

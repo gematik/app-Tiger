@@ -4,7 +4,7 @@
 
 <template>
   <div class="tab-pane active execution-pane-tabs" id="execution_pane" role="tabpanel">
-    <BannerMessageWindow :banner-data="bannerData"></BannerMessageWindow>
+    <BannerMessageWindow :banner-message="bannerMessage" :quitTestrunOngoing="quitTestrunOngoing"></BannerMessageWindow>
     <div class="w-100">
       <div class="mt-2 small text-muted text-end">Started: {{ started }}</div>
       <div id="execution_table" class="pt-1">
@@ -107,10 +107,11 @@ import Ui from "@/types/ui/Ui";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
-  bannerData: BannerMessage[];
+  bannerMessage: BannerMessage | boolean;
   localProxyWebUiUrl: string;
   ui: Ui;
   started: Date;
+  quitTestrunOngoing: boolean
 }>();
 
 const maxOutlineTableColumns = 4;

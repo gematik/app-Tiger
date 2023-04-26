@@ -97,7 +97,8 @@ public class RbelMessageValidator {
         try {
             await("Waiting for matching response").atMost(waitsec, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until(() -> getRbelMessages().stream()
+                .until(() -> TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution() ||
+                    getRbelMessages().stream()
                     .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
                     .filter(
                         resp -> resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()
@@ -105,6 +106,9 @@ public class RbelMessageValidator {
                     .peek(rbelElement -> currentResponse = rbelElement)
                     .findAny()
                     .isPresent());
+            if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+                throw new AssertionError("User aborted test run");
+            }
         } catch (final ConditionTimeoutException cte) {
             log.error("Missing response message to filtered request!\n\n{}", currentRequest.getRawStringContent());
             throw new TigerLibraryException("Missing response message to filtered request!", cte);
@@ -125,10 +129,16 @@ public class RbelMessageValidator {
             await("Waiting for matching request").atMost(waitsec, TimeUnit.SECONDS)
                 .pollDelay(0, TimeUnit.SECONDS).pollInterval(400, TimeUnit.MILLISECONDS)
                 .until(() -> {
+                    if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+                        return true;
+                    }
                     final Optional<RbelElement> found = filterRequests(requestParameter, initialElement);
                     found.ifPresent(candidate::set);
                     return found.isPresent();
                 });
+                if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+                    throw new AssertionError("User aborted test run");
+                }
         } catch (final ConditionTimeoutException cte) {
             log.error("Didn't find any matching messages!");
             printAllPathsOfMessages(getRbelMessages());

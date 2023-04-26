@@ -30,7 +30,7 @@ public class UpdateLogController implements TigerServerLogListener {
 
     @Override
     public void receiveServerLogUpdate(TigerServerLogUpdate update) {
-        if (tigerTestEnvMgr.isWorkflowUiSentFetch()) {
+        if (tigerTestEnvMgr.isWorkflowUiSentFetch() && !tigerTestEnvMgr.isShouldAbortTestExecution()) {
             log.trace("Propagating tiger server log update {}", update);
             template.convertAndSend("/topic/serverLog", TigerServerLogDto.createFrom(update));
         }

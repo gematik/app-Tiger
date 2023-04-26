@@ -92,7 +92,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         List<DomContent> messageTitleElements = new ArrayList<>();
         messageTitleElements.add(a().attr("name", element.getUuid()));
         messageTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon float-end me-3 is-size-3 msg-toggle",
+            i().withClasses("fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 msg-toggle",
                 httpRequestFacet.map(f -> "has-text-link").orElse("has-text-success")));
         messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
         messageTitleElements.add(
@@ -141,15 +141,15 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
         List<DomContent> headerTitleElements = new ArrayList<>();
         headerTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon float-end me-3 is-size-3 has-text-primary header-toggle"));
+            i().withClasses("fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 text-danger header-toggle"));
         httpMessageFacet.map(
             a -> headerTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getHeader(), renderingToolkit)));
         headerTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Headers")).orElseGet(() -> t2("RES Headers")))
-            .withClass("has-text-primary"));
+            .withClass("text-danger"));
 
         List<DomContent> bodyTitleElements = new ArrayList<>();
         bodyTitleElements.add(
-            i().withClasses("fas fa-toggle-on toggle-icon float-end me-3 is-size-3 text-info body-toggle"));
+            i().withClasses("fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 text-info body-toggle"));
         httpMessageFacet.map(
             a -> bodyTitleElements.add(RbelHtmlRenderer.showContentButtonAndDialog(a.getBody(), renderingToolkit)));
         bodyTitleElements.add(div(httpRequestFacet.map(f -> t2("REQ Body")).orElseGet(() -> t2("RES Body")))

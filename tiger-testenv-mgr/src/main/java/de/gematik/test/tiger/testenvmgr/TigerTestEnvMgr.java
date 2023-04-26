@@ -55,6 +55,7 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
@@ -83,16 +84,13 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     private final DownloadManager downloadManager = new DownloadManager();
     private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
-    private boolean userAcknowledgedShutdown = false;
-    private boolean userAcknowledgedContinueTestRun = false;
-    private boolean userAcknowledgedFailingTestRun = false;
-    private boolean isShuttingDown = false;
+    private boolean userAcknowledgedOnWorkflowUi = false;
+    private boolean shouldAbortTestExecution = false;
 
-    @Getter
+    private boolean isShuttingDown = false;
     private boolean isShutDown = false;
 
     @Setter
-    @Getter
     private boolean workflowUiSentFetch = false;
     private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
 
@@ -542,21 +540,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         logListeners.add(listener);
     }
 
-    public void receivedUserAcknowledgementForShutdown() {
-        userAcknowledgedShutdown = true;
+    public void receivedConfirmationFromWorkflowUi() {
+        userAcknowledgedOnWorkflowUi = true;
     }
 
-    public void receivedResumeTestRunExecution() {
-        userAcknowledgedContinueTestRun = true;
-    }
-
-    public void receivedCancelTestRunExecution() {
-        userAcknowledgedFailingTestRun = true;
-    }
-
-    public void resetUserInput() {
-        userAcknowledgedContinueTestRun = false;
-        userAcknowledgedFailingTestRun = false;
+    public void resetConfirmationFromWorkflowUi() {
+        userAcknowledgedOnWorkflowUi = false;
     }
 
     @Override
@@ -568,4 +557,11 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     public void close() throws Exception {
         shutDown();
     }
+
+    public void abortTestExecution() {
+        shouldAbortTestExecution = true;
+    }
+
+    @Setter
+    public ConfigurableApplicationContext context;
 }

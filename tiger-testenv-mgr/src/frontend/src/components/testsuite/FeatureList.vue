@@ -4,7 +4,7 @@
 
 <template>
   <div class="container">
-    <div class="alert alert-light featurelistbox">
+    <div class="alert alert-light engraved featurelistbox">
       <div class="alert-heading featurelist">
         <div v-for="(feature, key) in featureUpdateMap" :key="key">
           <div class="truncate-text" :title="`${feature[1].description}`">
@@ -15,7 +15,7 @@
               <a class="scenarioLink" :href="'#' + scenario[1].getLink(feature[1].description)">
                 <i :class="`${scenario[1].status.toLowerCase()} ${getTestResultIcon(scenario[1].status, 'regular')}`"></i>
                 &nbsp;{{ scenario[1].description }}&nbsp;
-                <span v-if="scenario[1].variantIndex !== -1">[{{scenario[1].variantIndex+1}}]</span>
+                <span v-if="scenario[1].variantIndex !== -1">[{{ scenario[1].variantIndex + 1 }}]</span>
               </a>
             </div>
           </div>
@@ -36,14 +36,16 @@ defineProps<{
 
 <style>
 .featurelistbox {
-  padding: 0.5rem;
+    padding: 0.5rem;
+    color: var(--gem-primary-400);
 }
 
 .featurelist {
-  font-size: 85%;
+    font-size: 85%;
 }
+
 .scenarioLink {
-  text-decoration: none;
-  color: var(--gem-primary-400);
+    text-decoration: none;
+    color: var(--gem-primary-400);
 }
 </style>

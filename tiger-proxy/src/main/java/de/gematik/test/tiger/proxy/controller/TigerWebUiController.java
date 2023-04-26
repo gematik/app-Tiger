@@ -201,7 +201,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU).with(
                                         span().withClass("icon is-small").with(
-                                            i().withClass("fas fa-toggle-on")
+                                            i().withClass("fa-solid fa-toggle-on")
                                         )
                                     ),
                                 div().withClass(DROPDOWN_MENU + " bg-dark")

@@ -23,10 +23,12 @@ import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
+import de.gematik.test.tiger.testenvmgr.controller.TestExecutionController;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -78,17 +80,17 @@ public class TigerDirector {
             readConfiguration();
             registerRestAssuredFilter();
             applyTestLibConfig();
-        } catch(RuntimeException rte) {
+        } catch (RuntimeException rte) {
             throw new TigerConfigurationException("Unable to read/process configuration - " + rte.getMessage(), rte);
         }
-        try{
+        try {
             // get free port
             startTestEnvMgr();
             startWorkflowUi();
             setupTestEnvironent(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
             setDefaultProxyToLocalTigerProxy();
         } catch (RuntimeException e) {
-            quit(false, false);
+            quit(true);
         }
 
         initialized = true;
@@ -104,16 +106,20 @@ public class TigerDirector {
 
         log.info("Registering shutdown hook...");
         Runtime.getRuntime().addShutdownHook(new Thread(() ->
-            quit(false, false)));
+        {
+            if (!tigerTestEnvMgr.isShuttingDown()) {
+                quit(true);
+            }
+        }));
     }
 
-    public static void waitForQuit() {
-        quit(true, false);
+    public static void waitForAcknowledgedQuit() {
+        quit(true);
     }
 
-    private static void quit(boolean withWaitForQuit, boolean shouldUserAcknowledgeShutdown) {
+    private static void quit(boolean shouldUserAcknowledgeShutdown) {
         try {
-            if (getLibConfig() != null && getLibConfig().isActivateWorkflowUi() && !shouldUserAcknowledgeShutdown) {
+            if (getLibConfig() != null && getLibConfig().isActivateWorkflowUi() && shouldUserAcknowledgeShutdown) {
                 System.out.println(
                     Ansi.colorize("TGR Workflow UI is active, please press quit in browser window...",
                         RbelAnsiColors.GREEN_BOLD));
@@ -126,17 +132,20 @@ public class TigerDirector {
                     try {
                         await().pollInterval(1, TimeUnit.SECONDS)
                             .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-                            .until(() -> tigerTestEnvMgr.isUserAcknowledgedShutdown());
+                            .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi() || tigerTestEnvMgr.isShouldAbortTestExecution());
                     } finally {
                         tigerTestEnvMgr.shutDown();
                     }
                 }
             } else if (tigerTestEnvMgr != null) {
+                tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
+
                 System.out.println("TGR Shutting down test env...");
                 tigerTestEnvMgr.shutDown();
             }
-            unregisterRestAssuredFilter();
         } finally {
+            unregisterRestAssuredFilter();
+
             System.out.println("TGR Destroying spring boot context after testrun...");
             if (envMgrApplicationContext != null) {
                 envMgrApplicationContext.close();
@@ -196,6 +205,16 @@ public class TigerDirector {
             .run();
 
         tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
+        TestExecutionController testExecutionController = envMgrApplicationContext.getBean(TestExecutionController.class);
+
+        testExecutionController.setShutdownListener(() -> {
+            await().pollDelay(300, TimeUnit.MILLISECONDS).until(() -> true);
+            tigerTestEnvMgr.abortTestExecution();
+            quit(false);
+        });
+
+        testExecutionController.setPauseListener(() -> SerenityReporterCallbacks.setPauseMode(!SerenityReporterCallbacks.isPauseMode()));
+
     }
 
     private static synchronized void startWorkflowUi() {
@@ -342,8 +361,8 @@ public class TigerDirector {
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
                 .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-                .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun());
-            tigerTestEnvMgr.resetUserInput();
+                .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi());
+            tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
         } else {
             throw new TigerTestEnvException("The step 'TGR pause test run execution with message \"{}\"' is not supported "
                 + "outside the Workflow UI. Please check the manual for more information.",
@@ -364,13 +383,12 @@ public class TigerDirector {
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
                 .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-                .until(() -> tigerTestEnvMgr.isUserAcknowledgedContinueTestRun()
-                    || tigerTestEnvMgr.isUserAcknowledgedFailingTestRun());
-            if (tigerTestEnvMgr.isUserAcknowledgedFailingTestRun()) {
-                tigerTestEnvMgr.resetUserInput();
+                .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi());
+            if (tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi()) {
+                tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
                 Fail.fail(errorMessage);
             } else {
-                tigerTestEnvMgr.resetUserInput();
+                tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
             }
         } else {
             throw new TigerTestEnvException("The step 'TGR pause test run execution with message \"{}\" and "

@@ -118,7 +118,7 @@ public class TigerGlue {
     @When("TGR wait for user abort")
     @Wenn("TGR warte auf Abbruch")
     public void tgrWaitForUserAbort() {
-        TigerDirector.waitForQuit();
+        TigerDirector.waitForAcknowledgedQuit();
     }
 
     @When("TGR pause test run execution")
@@ -154,8 +154,8 @@ public class TigerGlue {
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
                 .atMost(TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
-            TigerDirector.getTigerTestEnvMgr().resetUserInput();
+                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi());
+            TigerDirector.getTigerTestEnvMgr().resetConfirmationFromWorkflowUi();
         } else {
             log.warn("Workflow UI is not active! Can't display message '{}'", bannerMessage);
         }

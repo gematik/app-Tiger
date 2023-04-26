@@ -191,7 +191,7 @@ class TestTigerDirector {
         withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
             TigerDirector.start();
             assertThatThrownBy(TigerDirector::pauseExecution).isInstanceOf(TigerTestEnvException.class);
-            assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun()).isFalse();
+            assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi()).isFalse();
         });
     }
 
@@ -210,7 +210,7 @@ class TestTigerDirector {
 
                 envStatusController.getConfirmContinueExecution();
                 await().atMost(2000, TimeUnit.MILLISECONDS)
-                    .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
+                    .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi());
             });
         });
     }
@@ -219,7 +219,7 @@ class TestTigerDirector {
     void testQuitTestRunViaConsole() throws Exception {
         withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
             TigerDirector.start();
-            TigerDirector.waitForQuit();
+            TigerDirector.waitForAcknowledgedQuit();
             assertThat(TigerDirector.getTigerTestEnvMgr().isShuttingDown()).isTrue();
             assertThat(TigerDirector.getTigerTestEnvMgr().isShutDown()).isTrue();
         });
@@ -236,9 +236,9 @@ class TestTigerDirector {
             TigerDirector.getTigerTestEnvMgr(), mock(TigerBuildPropertiesService.class));
         TigerDirector.getLibConfig().activateWorkflowUi = true;
 
-        new Thread(TigerDirector::waitForQuit).start();
-        envStatusController.getConfirmQuit();
-        await().atMost(3000, TimeUnit.MILLISECONDS).until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedShutdown() && TigerDirector.getTigerTestEnvMgr().isShutDown());
+        new Thread(TigerDirector::waitForAcknowledgedQuit).start();
+        envStatusController.getConfirmShutdown();
+        await().atMost(3000, TimeUnit.MILLISECONDS).until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi() && TigerDirector.getTigerTestEnvMgr().isShutDown());
     }
 
     private void executeWithSecureShutdown(Statement test) {

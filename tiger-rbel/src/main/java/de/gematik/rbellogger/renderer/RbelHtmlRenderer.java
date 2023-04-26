@@ -97,7 +97,7 @@ public class RbelHtmlRenderer {
                             .attr("style", "width: 900px;").with(
                             div().withClass("modal-header bg-dark").with(
                                 div().withStyle("display: inline-flex;").with(p("Raw content of " + el.findNodePath()).withStyle("align-self: center;color:#ffff;").withClass("modal-title"),
-                                button().withClass("copyToClipboard-button").attr("data-target", "text-" + id).with(
+                                button().withClass("btn btn-sm copyToClipboard-button").attr("data-target", "text-" + id).with(
                                     i().withClass("fa fa-clipboard")
                                 )),
                                 button().withClass("btn btn-close btn-close-white")

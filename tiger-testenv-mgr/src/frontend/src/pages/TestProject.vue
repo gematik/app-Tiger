@@ -8,47 +8,58 @@
     <div class="row">
 
       <!-- side bar -->
-      <div class="sidebar-collapsed" id="sidebar-left">
+      <div :class="`${sideBarCollapsed ? 'sidebar-collapsed' : 'col-md-3'} ${quitTestrunOngoing ? 'sidebar-state-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused' : '')}`"
+           id="sidebar-left">
         <!-- side bar title -->
-        <h3 class="sidebar-title">
-          <img v-on:click="Ui.toggleLeftSideBar(1)"
-               class="navbar-brand right" src="img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
+        <h3 :class="`sidebar-title ${quitTestrunOngoing ? 'sidebar-state-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused' : '')}`">
+          <img v-on:click="toggleLeftSideBar"
+               class="navbar-brand" src="img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
           <span>Workflow UI</span>
-          <i v-on:click="Ui.toggleLeftSideBar(0)"
-             class="fa-solid fa-angles-left resizer-left-icon">
-          </i>
+          <button type="button" v-on:click="toggleLeftSideBar" class="btn btn-sm mt-3 float-end resizer-left-icon">
+            <i class="fa-lg fa-solid fa-angles-left"></i>
+          </button>
         </h3>
+        <!-- interaction buttona -->
+        <div class="toolbar rounded bg-light m-2 p-2 engraved">
+          <button type="button" :class="`btn btn-sm btn-danger m-1 ${(quitTestrunOngoing ? 'disabled active' : 'enabled')}`"
+                  v-on:click="quitTestrun">
+            <i class="fa-lg fa-solid fa-power-off"></i>
+          </button>
+          <button type="button"
+                  :class="`btn btn-sm m-1 ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'btn-success' : 'btn-warning')} ${(quitTestrunOngoing ? 'disabled' : '')}`"
+                  v-on:click="pauseTestrun">
+            <i :class="`fa-lg fa-solid ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'fa-play' : 'fa-pause')} w-18px`" ></i>
+          </button>
+        </div>
         <!-- test run status -->
         <h4>
-          <i v-on:click="Ui.toggleLeftSideBar(1)"
-             :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-solid fa-square-poll-vertical left`">
+          <i v-on:click="toggleLeftSideBar"
+             :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`">
           </i>
           <span>Status</span>
         </h4>
         <TestStatus :featureUpdateMap="featureUpdateMap" :started="started"/>
         <!-- feature list -->
         <h4>
-          <i v-on:click="Ui.toggleLeftSideBar(1)"
-             class="fa-solid fa-address-card left">
-          </i>
+          <i v-on:click="toggleLeftSideBar" class="fa-lg fa-solid fa-address-card left"></i>
           <span>Features</span>
         </h4>
         <FeatureList :featureUpdateMap="featureUpdateMap"/>
         <!-- server status -->
         <h4>
-          <i v-on:click="Ui.toggleLeftSideBar(1)"
-             :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-solid fa-server left`">
+          <i v-on:click="toggleLeftSideBar"
+             :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-xl fa-solid fa-server left`">
           </i>
           <span>Servers</span>
         </h4>
         <ServerStatus :serverStatusData="currentServerStatus"/>
         <div class="container">
-          <div class="mt-2 small text-muted" style="margin-left: 1em;"> Tiger version: {{ version }}</div>
-          <div class="mt-2 small text-muted" style="margin-left: 1em;"> Build: {{ build }}</div>
+          <div class="mt-2 small text-muted ms-2"> Tiger version: {{ version }}</div>
+          <div class="mt-2 small text-muted ms-2"> Build: {{ build }}</div>
         </div>
       </div>
 
-      <div class="col-md-11" id="main-content">
+      <div :class="`${sideBarCollapsed ? 'col-md-11' : 'col-md-9'}`" id="main-content">
 
         <!-- execution pane buttons -->
         <nav class="navbar navbar-expand-lg">
@@ -66,8 +77,15 @@
 
         <!-- tabs -->
         <div class="tab-content">
-          <ExecutionPane :featureUpdateMap="featureUpdateMap" :bannerData="bannerData" :localProxyWebUiUrl="localProxyWebUiUrl" :ui="ui" :started="started"/>
-          <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers" :selectedLoglevel="LogLevel.ALL" />
+          <ExecutionPane
+              :featureUpdateMap="featureUpdateMap"
+              :bannerMessage="bannerData.length ? bannerData[bannerData.length-1] : false"
+              :localProxyWebUiUrl="localProxyWebUiUrl"
+              :ui="ui"
+              :started="started"
+              :quitTestrunOngoing="quitTestrunOngoing"/>
+          <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers"
+                     :selectedLoglevel="LogLevel.ALL.toString()" :selected-text="''"/>
         </div>
       </div>
     </div>
@@ -103,7 +121,7 @@
  * Sounds complicated and YES it is, but its also safe / defensive and reducing the load on the server
  */
 
-import {onMounted, Ref, ref} from "vue";
+import {onMounted, provide, ref, Ref} from "vue";
 import SockJS from "sockjs-client";
 import Stomp, {Client, Frame, Message} from "webstomp-client";
 import TigerServerStatusUpdateDto from "@/types/TigerServerStatusUpdateDto";
@@ -122,6 +140,7 @@ import Ui from "@/types/ui/Ui";
 import BannerType from "@/types/BannerType";
 import TigerServerLogDto from "@/types/TigerServerLogDto";
 import LogLevel from "@/types/LogLevel";
+import mitt, {Emitter} from "mitt";
 
 let baseURL = process.env.BASE_URL;
 let socket: WebSocket;
@@ -161,19 +180,32 @@ let featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, Feat
  */
 let serverLogList: Ref<Array<TigerServerLogDto>> = ref(new Array<TigerServerLogDto>());
 
-let logServers: Ref<Array<string>> = ref (new Array<string>());
+let logServers: Ref<Array<string>> = ref(new Array<string>());
 
-let selectedServers: Ref<Array<string>> = ref (new Array<string>("__all__"));
+let selectedServers: Ref<Array<string>> = ref(new Array<string>("__all__"));
 
 let localProxyWebUiUrl: Ref<string> = ref("");
 
 let version: Ref<string> = ref("");
 let build: Ref<string> = ref("");
 
-let ui = ref(new Ui());
+let ui = ref(new Ui(process.env.BASE_URL));
+
+let quitTestrunOngoing: Ref<boolean> = ref(false);
+let pauseTestrunOngoing: Ref<boolean> = ref(false);
+
+let sideBarCollapsed: Ref<boolean> = ref(true);
+
+const emitter : Emitter<any> = mitt();
+provide("emitter", emitter);
 
 onMounted(() => {
-  ui = ref(new Ui());
+  ui = ref(new Ui(process.env.BASE_URL));
+
+  emitter.on('confirmShutdownPressed', () => {
+    quitTestrunOngoing.value = true;
+  });
+
   connectToWebSocket();
   fetchInitialServerStatus();
   fetchTigerVersion();
@@ -202,6 +234,8 @@ function showTab(tabid: string, event: MouseEvent) {
   (event.target as HTMLElement)?.classList?.toggle("active", true);
   (event.target as HTMLElement)?.classList.toggle("show", true);
 }
+
+let reloadTimeoutHandle: number;
 
 /** process any incoming messages. */
 function connectToWebSocket() {
@@ -238,6 +272,9 @@ function connectToWebSocket() {
             return;
           }
 
+          if (reloadTimeoutHandle) {
+            clearTimeout(reloadTimeoutHandle);
+          }
           replayingCachedMessages();
 
           debug("Check push message order " + pushedMessage.index + " ?== " + (currentMessageIndex + 1));
@@ -260,20 +297,28 @@ function connectToWebSocket() {
               outOfOrderMessageList.push(pushedMessage);
               TestEnvStatusDto.sortArray(outOfOrderMessageList);
               console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` + firstOutOfOrderTimestamp);
+              reloadTimeoutHandle = setTimeout(() => {
+                firstOutOfOrderTimestamp = -1;
+                currentServerStatus.value.clear();
+                console.warn(Date.now() + ` TO handler - Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+                currentMessageIndex = -1;
+                preFetchMessageList = new Array<TestEnvStatusDto>();
+                preFetchMessageList.push(pushedMessage);
+                fetchInitialServerStatus();
+              }, 1000)
             }
           } else {
             // TODO evt. there could be earlier messages coming very late??
             mergeMessage(currentServerStatus.value, pushedMessage);
             replayingCachedMessages();
             debug("MERGE DONE " + currentMessageIndex);
-          };
+          }
         });
       },
       (error: Frame | CloseEvent) => {
         console.error("Websocket error: " + JSON.stringify(error));
       }
   );
-
 
 
   socketLog = new SockJS(baseURL + "testLog");
@@ -451,130 +496,195 @@ function updateFeatureMap(update: Map<string, FeatureUpdate>) {
   });
 }
 
+function toggleLeftSideBar() {
+  document.getElementById("execution_table")?.style.removeProperty('width');
+  document.getElementById("workflow-messages")?.style.removeProperty('width');
+  sideBarCollapsed.value = !sideBarCollapsed.value;
+}
+
+
+function quitTestrun(ev : MouseEvent) {
+  ev.preventDefault();
+  fetch(baseURL + "testExecution/quit", {method: 'PUT'})
+  .then(response => {
+        console.log("RES: " + JSON.stringify(response));
+        if (!response.ok) {
+          alert("Failed to abort test execution! " + response.statusText);
+          return false;
+        }
+        quitTestrunOngoing.value = true;
+      },
+      error => {
+        console.log("ERR: " + JSON.stringify(error))
+      })
+  .catch (error => {
+    console.log("CATCH: " + JSON.stringify(error))
+  });
+  return false;
+}
+
+function pauseTestrun(ev : MouseEvent) {
+  pauseTestrunOngoing.value = !pauseTestrunOngoing.value;
+  ev.preventDefault();
+  fetch(baseURL + "testExecution/pause", {method: 'PUT'})
+  .then(response => {
+        console.log("RES: " + JSON.stringify(response));
+        if (!response.ok) {
+          alert("Failed to pause test execution! " + response.statusText);
+          return false;
+        }
+      },
+      error => {
+        console.log("ERR: " + JSON.stringify(error))
+      })
+  .catch (error => {
+    console.log("CATCH: " + JSON.stringify(error))
+  });
+  return false;
+}
+
 </script>
 <style>
 #logs_pane {
-  border-left: 1px solid lightgray;
-  padding-left: 1rem;
-  min-height: 300px;
+    border-left: 1px solid lightgray;
+    padding-left: 1rem;
+    min-height: 300px;
+}
+
+.navbar-brand {
+    margin-left: 0.7rem;
 }
 
 #sidebar-left {
-  border-radius: 0.5rem;
-  border: 1px solid var(--gem-primary-100);
-  background: var(--gem-primary-100);
-  color: var(--gem-primary-400);
-  min-height: 100vh;
+    background: var(--gem-primary-100);
+    color: var(--gem-primary-400);
+    min-height: 100vh;
+    box-shadow: 7px 0 3px -4px #888;
+}
+
+#sidebar-left.sidebar-state-paused, .sidebar-title.sidebar-state-paused {
+    background-color: #FDD288;
+}
+
+#sidebar-left.sidebar-state-quit, .sidebar-title.sidebar-state-quit {
+    color: red;
+    background-color: lightcoral;
 }
 
 .sidebar-title {
-  background: var(--gem-primary-100);
-  color: var(--gem-primary-400);
-  min-height: 4rem;
-  line-height: 4rem;
+    background: var(--gem-primary-100);
+    color: var(--gem-primary-400);
+    min-height: 4rem;
+    line-height: 4rem;
 }
 
 #sidebar-left h4 {
-  color: var(--gem-neutral-700);
-  padding-left: 0.75rem;
-  margin-top: 2rem;
+    color: var(--gem-neutral-700);
+    padding-left: 0.75rem;
+    margin-top: 2rem;
 }
 
 .sidebar-collapsed {
-  max-width: 60px;
+    max-width: 60px;
 }
 
 .sidebar-collapsed .alert, .sidebar-collapsed h4 > span, .sidebar-collapsed h3 > span,
-.sidebar-collapsed i.resizer-left-icon, .sidebar-collapsed .container {
-  display: none;
+.sidebar-collapsed button.resizer-left-icon, .sidebar-collapsed .container {
+    display: none;
 }
 
-i.resizer-left-icon {
-  color: var(--gem-primary-400);
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  background: var(--gem-primary-025);
-  text-align: right;
-  margin: 1rem 1rem 1rem 0;
-  float: right;
-  font-size: 60%;
-  cursor: pointer;
+btnXXXXX.resizer-left-icon i {
+    color: var(--gem-primary-400);
 }
 
 
 .sidebar-collapsed h4, .sidebar-collapsed h3 {
-  text-align: center;
-  padding-left: 0 !important;
-  cursor: pointer;
+    text-align: center;
+    padding-left: 0 !important;
+    cursor: pointer;
 }
 
 .sidebar-collapsed h3 img {
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
 }
 
 .sidebar-collapsed h4 > i {
-  padding-right: 0 !important;
-  margin: 1rem 0;
+    padding-right: 0 !important;
+    margin: 1rem 0;
+}
+
+.sidebar-collapsed .toolbar {
+    background: none !important;
+    padding: 0 !important;
+    box-shadow: none;
 }
 
 .serverstatus-new {
-  color: var(--gem-warning-400) !important;
+    color: var(--gem-warning-400) !important;
 }
 
 .serverstatus-starting {
-  color: #0dcaf0 !important;
+    color: #0dcaf0 !important;
 }
 
 .serverstatus-running {
-  color: var(--gem-success-400) !important;
+    color: var(--gem-success-400) !important;
 }
 
 .serverstatus-stopped {
-  color: var(--gem-error-400) !important;
+    color: var(--gem-error-400) !important;
 }
 
 .execution-pane-nav {
-  background: var(--gem-primary-100);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+    background: var(--gem-primary-100);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
 }
 
 .execution-pane-buttons {
-  border: 1px solid var(--gem-primary-100);
-  border-radius: 1rem;
-  color: var(--gem-primary-400);
+    border: 1px solid var(--gem-primary-100);
+    border-radius: 1rem;
+    color: var(--gem-primary-400);
 }
 
 .execution-pane-buttons.active {
-  background: #FCFCFD;
-  color: var(--bs-primary);
-  cursor: default;
+    background: #FCFCFD;
+    color: var(--bs-primary);
+    cursor: default;
 }
 
 .footer-spacing {
-  margin-top: 20rem;
+    margin-top: 20rem;
 }
 
 
 .steps-docstring {
-  color: #0a8694;
-  font-family: Courier,monospace;
-  padding-left: 1rem;
-  white-space: pre;
+    color: #0a8694;
+    font-family: Courier, monospace;
+    padding-left: 1rem;
+    white-space: pre;
 }
 
 .step_text .table-data-table td {
-  border: 1px solid #aaa;
-  padding: 0.25rem;
-  color: #0a8694;
+    border: 1px solid #aaa;
+    padding: 0.25rem;
+    color: #0a8694;
 }
 
 .step_text .table-data-table {
-  margin-top: 0.25rem;
-  margin-left: 2rem;
-  margin-bottom: 0.5rem;
+    margin-top: 0.25rem;
+    margin-left: 2rem;
+    margin-bottom: 0.5rem;
 }
 
+.w-18px {
+    width: 18px;
+}
+
+.engraved {
+    box-shadow: inset 0px 5px 10px 0px rgba(0, 0, 0, 0.25);
+    border: none;
+}
 </style>
