@@ -11,7 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static de.gematik.rbellogger.data.RbelElementAssertion.*;
 import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -23,6 +22,7 @@ import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +43,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 class RbelMessageValidatorTest {
+
+    @BeforeEach
+    public void clearConfig() {
+        TigerGlobalConfiguration.reset();
+    }
 
     @AfterEach
     public void cleanUp() {
