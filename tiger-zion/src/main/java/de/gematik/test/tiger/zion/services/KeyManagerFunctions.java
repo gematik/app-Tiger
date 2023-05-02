@@ -3,15 +3,12 @@ package de.gematik.test.tiger.zion.services;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.key.IdentityBackedRbelKey;
-import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import jakarta.annotation.PostConstruct;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
-import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 

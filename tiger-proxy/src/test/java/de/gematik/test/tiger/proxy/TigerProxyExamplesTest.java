@@ -30,16 +30,18 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.junit.jupiter.MockServerExtension;
 
 @RequiredArgsConstructor
 @ResetTigerConfiguration
+@ExtendWith(MockServerExtension.class)
 public class TigerProxyExamplesTest {
 
-    private static ClientAndServer mockServerClient = new ClientAndServer();
-
     @BeforeAll
-    public static void beforeEachLifecyleMethod() {
+    public static void beforeEachLifecyleMethod(MockServerClient mockServerClient) {
         mockServerClient.when(request()
                 .withPath("/foo"))
             .respond(httpRequest ->
@@ -54,13 +56,8 @@ public class TigerProxyExamplesTest {
                 ))));
     }
 
-    @AfterAll
-    public static void stopMockServer() {
-        mockServerClient.stop();
-    }
-
     @Test
-    void directTest() {
+    void directTest(MockServerClient mockServerClient) {
         final HttpResponse<String> response = Unirest.get("http://localhost:" + mockServerClient.getPort() + "/foo")
             .asString();
 
@@ -69,7 +66,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void simpleTigerProxyTest() throws Exception {
+    void simpleTigerProxyTest(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .build())) {
             final UnirestInstance unirestInstance = Unirest.spawnInstance();
@@ -83,7 +80,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void rbelPath_getBody() throws Exception {
+    void rbelPath_getBody(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
             UnirestInstance unirestInstance = Unirest.spawnInstance()) {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -98,7 +95,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void json_demoWithExtendedRbelPath() throws Exception {
+    void json_demoWithExtendedRbelPath(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
             UnirestInstance unirestInstance = Unirest.spawnInstance()) {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -114,7 +111,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void jsonInXml_longerRbelPathSucceeding() throws Exception {
+    void jsonInXml_longerRbelPathSucceeding(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
             UnirestInstance unirestInstance = Unirest.spawnInstance()) {
             unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -131,7 +128,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void forwardProxyRoute_sendMessage() throws Exception {
+    void forwardProxyRoute_sendMessage(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://norealserver")
@@ -150,7 +147,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void forwardProxyRoute_waitForMessageSent() throws Exception {
+    void forwardProxyRoute_waitForMessageSent(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://norealserver")
@@ -168,7 +165,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void reverseProxyRoute_waitForMessageSent() throws Exception {
+    void reverseProxyRoute_waitForMessageSent(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -185,7 +182,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void reverseProxyDeepRoute_waitForMessageSent() throws Exception {
+    void reverseProxyDeepRoute_waitForMessageSent(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/wuff")
@@ -202,7 +199,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void reverseProxyWithTls_waitForMessageSent() throws Exception {
+    void reverseProxyWithTls_waitForMessageSent(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
@@ -221,7 +218,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void forwardProxyWithTls_waitForMessageSent() throws Exception {
+    void forwardProxyWithTls_waitForMessageSent(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://blub")
@@ -245,7 +242,7 @@ public class TigerProxyExamplesTest {
 
     @Test
     @Disabled("Doesnt work on some JVMs (Brainpool restrictions)")
-    void forwardProxyWithTlsAndCustomCa_waitForMessageSent() throws Exception {
+    void forwardProxyWithTlsAndCustomCa_waitForMessageSent(MockServerClient mockServerClient) {
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://blub")
@@ -269,7 +266,7 @@ public class TigerProxyExamplesTest {
 
     @Test
     @Disabled
-    void twoProxiesWithTrafficForwarding_shouldShowTraffic() throws Exception {
+    void twoProxiesWithTrafficForwarding_shouldShowTraffic() {
         // standalone-application starten!
         // webui öffnen
 
@@ -284,7 +281,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void modificationForReturnValue() throws Exception {
+    void modificationForReturnValue(MockServerClient mockServerClient) {
         RbelOptions.activateJexlDebugging();
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
@@ -319,7 +316,7 @@ public class TigerProxyExamplesTest {
     }
 
     @Test
-    void tslSuiteEnforcement() throws Exception {
+    void tslSuiteEnforcement(MockServerClient mockServerClient) {
         final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
 
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()

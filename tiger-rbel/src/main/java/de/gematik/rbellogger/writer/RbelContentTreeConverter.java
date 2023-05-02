@@ -6,16 +6,14 @@ package de.gematik.rbellogger.writer;
 
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.exceptions.RbelContentTreeConversionException;
 import de.gematik.rbellogger.writer.tree.*;
 import de.gematik.test.tiger.common.config.*;
-import de.gematik.test.tiger.common.util.ImmutableDequeFacade;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
 
 @AllArgsConstructor
 public class RbelContentTreeConverter {
@@ -114,7 +112,7 @@ public class RbelContentTreeConverter {
         String loopStatement = findLoopStatement(input);
         final MapContext context = new MapContext(TigerGlobalConfiguration.instantiateConfigurationBean(Map.class)
             .orElseThrow());
-        new JexlBuilder().create()
+        new JexlBuilder().permissions(JexlPermissions.UNRESTRICTED).create()
             .createScript("t = " + loopStatement.split(":")[1]).execute(context);
         final List<RbelContentTreeNode> resultList = new ArrayList<>();
         for (Object iterate : ((Collection) context.get("t"))) {

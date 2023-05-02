@@ -1,12 +1,12 @@
 # Changelog Tiger Testplattform
 
 -------
-* **Serenity BDD 3.6.20**
+* **Serenity BDD 3.6.23**
 * Cucumber 7.11.0
 * RestAssured 5.2.0
 * Selenium 4.8.0
 * Appium 8.3.0
-* Spring Boot 2.7.5
+* **Spring Boot 3.0.1**
 * Logback 1.2.11
 
 # Release 2.0.0
@@ -18,7 +18,9 @@
 
 ## Features
 
-* Upgraded Serenity BDD to latest 3.6.20
+* Upgraded Serenity BDD to latest 3.6.X
+* Upgraded Spring Boot to latest 3.0.X
+* Upgraded to Java 17
 * Added first version of FAQ.md
 * TGR-867: ExternalUrl server uses source URL as default health check URL if not set
 * TGR-872: Added glue code to wait for non-paired messages (optional excluding existing messages)

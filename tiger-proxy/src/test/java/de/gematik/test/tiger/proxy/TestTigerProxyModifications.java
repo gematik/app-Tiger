@@ -32,7 +32,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()
@@ -62,7 +62,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
                     .build(),
                 RbelModificationDescription.builder()
                     .condition("isResponse")
-                    .targetElement("$.header.Matched-Stub-Id")
+                    .targetElement("$.header.Some-Header-Field")
                     .replaceWith("modified value")
                     .build()
             ))
@@ -77,7 +77,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.path"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("/foobar");
-        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Matched-Stub-Id"))
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Some-Header-Field"))
             .get().extracting(RbelElement::getRawStringContent)
             .isEqualTo("modified value");
         assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Content-Length"))
@@ -92,7 +92,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()
@@ -124,7 +124,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()
@@ -149,7 +149,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -172,7 +172,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -196,7 +196,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()
@@ -212,11 +212,12 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
         proxyRest.get("http://backend/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
-        assertThat(getLastRequest().getQueryParams())
-            .containsOnlyKeys("foo", "schmoo");
-        assertThat(getLastRequest().getQueryParams().get("foo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getEntries())
+            .extracting("name")
+            .containsOnly("foo", "schmoo");
+        assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
             .containsExactly("bar3", "bar2");
-        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo"))
             .containsExactly(specialCaseParameter);
     }
 
@@ -225,7 +226,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()
@@ -240,11 +241,12 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
-        assertThat(getLastRequest().getQueryParams())
-            .containsOnlyKeys("foo", "schmoo");
-        assertThat(getLastRequest().getQueryParams().get("foo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getEntries())
+            .extracting("name")
+            .containsOnly("foo", "schmoo");
+        assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
             .containsExactly("bar3", "bar2");
-        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo"))
             .containsExactly("loo");
     }
 
@@ -253,7 +255,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()
@@ -276,7 +278,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()
@@ -299,7 +301,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .modifications(List.of(
                 RbelModificationDescription.builder()

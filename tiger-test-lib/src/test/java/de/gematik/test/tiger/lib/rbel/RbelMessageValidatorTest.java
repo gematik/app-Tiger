@@ -11,7 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -40,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.org.webcompere.systemstubs.ThrowingRunnable;
 
 @Slf4j
 class RbelMessageValidatorTest {
@@ -410,16 +410,16 @@ class RbelMessageValidatorTest {
         });
     }
 
-    private void executeWithSecureShutdown(Statement test) {
+    private void executeWithSecureShutdown(ThrowingRunnable test) {
         executeWithSecureShutdown(test, () -> {
         });
     }
 
-    private void executeWithSecureShutdown(Statement test, Runnable cleanup) {
+    private void executeWithSecureShutdown(ThrowingRunnable test, Runnable cleanup) {
         try {
-            test.execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            test.run();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
         } finally {
             TigerDirector.getTigerTestEnvMgr().shutDown();
             cleanup.run();

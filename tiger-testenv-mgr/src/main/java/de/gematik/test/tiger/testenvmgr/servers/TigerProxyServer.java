@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -14,7 +15,10 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
@@ -24,7 +28,6 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.util.SocketUtils;
 
 @TigerServerType("tigerProxy")
 public class TigerProxyServer extends AbstractExternalTigerServer {
@@ -43,7 +46,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             getConfiguration().setTigerProxyCfg(new TigerProxyConfiguration());
         }
         if (getConfiguration().getTigerProxyCfg().getAdminPort() <= 0) {
-            getConfiguration().getTigerProxyCfg().setAdminPort(SocketUtils.findAvailableTcpPort());
+            getConfiguration().getTigerProxyCfg().setAdminPort(findFreePort());
         }
         if (getConfiguration().getTigerProxyCfg().getProxyPort() == null
             || getConfiguration().getTigerProxyCfg().getProxyPort() <= 0) {

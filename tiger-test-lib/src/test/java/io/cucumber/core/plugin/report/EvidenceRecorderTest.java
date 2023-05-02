@@ -1,7 +1,6 @@
 package io.cucumber.core.plugin.report;
 
-
-import static io.cucumber.core.plugin.report.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -116,8 +115,10 @@ class EvidenceRecorderTest {
     var result = underTest.getCurrentStep();
 
     // Assert
-    org.assertj.core.api.Assertions.assertThat(result)
-        .hasValueSatisfying(step -> assertThat(step)
-            .hasName("Hundekuchen"));
+    assertThat(result)
+        .get()
+        .isInstanceOf(EvidenceReport.Step.class)
+        .extracting("name")
+        .isEqualTo("Hundekuchen");
   }
 }

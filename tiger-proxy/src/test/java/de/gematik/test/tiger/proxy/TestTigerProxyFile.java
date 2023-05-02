@@ -136,7 +136,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .fileSaveInfo(TigerFileSaveInfo.builder()
                 .writeToFile(true)

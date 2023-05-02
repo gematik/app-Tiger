@@ -4,13 +4,11 @@
 
 package de.gematik.test.tiger.lib;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
-import com.github.stefanbirkner.systemlambda.Statement;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
@@ -34,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import uk.org.webcompere.systemstubs.ThrowingRunnable;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @ExtendWith(OutputCaptureExtension.class)
 class TestTigerDirector {
@@ -145,7 +145,7 @@ class TestTigerDirector {
     @Test
     void testDirectorFalsePathToYaml() {
         final Path nonExistingPath = Paths.get("non", "existing", "file.yaml");
-        withEnvironmentVariable("TIGER_TESTENV_CFGFILE", nonExistingPath.toString()).execute(() -> {
+        new EnvironmentVariables("TIGER_TESTENV_CFGFILE", nonExistingPath.toString()).execute(() -> {
             assertThatThrownBy(TigerDirector::start)
                 .isInstanceOf(TigerConfigurationException.class)
                 .hasMessageContaining(nonExistingPath.toString());
@@ -171,7 +171,7 @@ class TestTigerDirector {
 
     @Test
     void checkComplexKeyOverriding() throws Exception {
-        final Configuration config = withEnvironmentVariable(
+        final Configuration config = new EnvironmentVariables(
             "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
             .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/idpError.yaml")
             .execute(() -> {
@@ -188,7 +188,7 @@ class TestTigerDirector {
 
     @Test
     void testPauseExecutionViaConsole() throws Exception {
-        withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
+        new EnvironmentVariables("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
             TigerDirector.start();
             assertThatThrownBy(TigerDirector::pauseExecution).isInstanceOf(TigerTestEnvException.class);
             assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi()).isFalse();
@@ -198,7 +198,9 @@ class TestTigerDirector {
     @Test
     void testPauseExecutionViaWorkflowUI() {
         executeWithSecureShutdown(() -> {
-            withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
+            new EnvironmentVariables("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")
+                .and("fds", "fds")
+                .execute(() -> {
                 TigerDirector.start();
                 EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
                     TigerBuildPropertiesService.class));
@@ -217,7 +219,7 @@ class TestTigerDirector {
 
     @Test
     void testQuitTestRunViaConsole() throws Exception {
-        withEnvironmentVariable("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
+        new EnvironmentVariables("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml").execute(() -> {
             TigerDirector.start();
             TigerDirector.waitForAcknowledgedQuit();
             assertThat(TigerDirector.getTigerTestEnvMgr().isShuttingDown()).isTrue();
@@ -241,16 +243,16 @@ class TestTigerDirector {
         await().atMost(3000, TimeUnit.MILLISECONDS).until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi() && TigerDirector.getTigerTestEnvMgr().isShutDown());
     }
 
-    private void executeWithSecureShutdown(Statement test) {
+    private void executeWithSecureShutdown(ThrowingRunnable test) {
         executeWithSecureShutdown(test, () -> {
         });
     }
 
-    private void executeWithSecureShutdown(Statement test, Runnable cleanup) {
+    private void executeWithSecureShutdown(ThrowingRunnable test, Runnable cleanup) {
         try {
-            test.execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            test.run();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
         } finally {
             TigerDirector.getTigerTestEnvMgr().shutDown();
             cleanup.run();

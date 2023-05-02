@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.lib.serenityRest;
 
-import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 

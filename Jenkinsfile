@@ -19,6 +19,11 @@ pipeline {
     }
 
     stages {
+        stage('Initialize') {
+            steps {
+                useJdk('OPENJDK17')
+            }
+        }
 
         stage('gitCreateBranch') {
             when { branch BRANCH }

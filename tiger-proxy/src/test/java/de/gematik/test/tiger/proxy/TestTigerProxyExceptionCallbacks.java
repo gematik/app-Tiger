@@ -32,7 +32,7 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
         ReflectionTestUtils.setField(tigerProxy, "mockServerToRbelConverter",
@@ -53,7 +53,7 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
         ReflectionTestUtils.setField(tigerProxy, "mockServerToRbelConverter",
@@ -74,7 +74,7 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
         ReflectionTestUtils.setField(tigerProxy, "mockServerToRbelConverter",
@@ -95,7 +95,7 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
         ReflectionTestUtils.setField(tigerProxy, "mockServerToRbelConverter",

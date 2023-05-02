@@ -7,7 +7,6 @@ package de.gematik.rbellogger.data;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -16,13 +15,11 @@ import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.List;
-
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;

@@ -24,7 +24,6 @@ import org.mockserver.client.MockServerClient;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
-import org.springframework.util.SocketUtils;
 
 @Slf4j
 @Getter
@@ -43,7 +42,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     @BeforeAll
     public static void startServer() throws IOException {
         log.info("Booting MockServer...");
-        mockServer = new MockServer(SocketUtils.findAvailableTcpPort());
+        mockServer = new MockServer();
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
         final File winstoneFile = new File("target/winstone.jar");

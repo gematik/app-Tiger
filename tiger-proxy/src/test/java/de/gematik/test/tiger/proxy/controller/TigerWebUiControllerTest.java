@@ -4,15 +4,12 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -27,42 +24,41 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.model.HttpResponse;
+import org.mockserver.netty.MockServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "tigerProxy.skipDisplayWhenMessageLargerThanKb = 1")
 @ResetTigerConfiguration
+@ExtendWith(MockServerExtension.class)
 public class TigerWebUiControllerTest {
 
-    public static WireMockServer fakeBackendServer;
     @Autowired
     private TigerProxy tigerProxy;
     @LocalServerPort
     private int adminPort;
+    private static int fakeBackendServerPort;
 
     @BeforeAll
-    public static void setupBackendServer() {
-        fakeBackendServer = new WireMockServer(
-            new WireMockConfiguration()
-                .dynamicPort());
-        fakeBackendServer.start();
+    public static void setupBackendServer(MockServerClient fakeBackendServerClient) {
+        fakeBackendServerPort = fakeBackendServerClient.getPort();
+        log.info("Started Backend-Server on ports {}", fakeBackendServerPort);
 
-        log.info("Started Backend-Server on ports {}", fakeBackendServer.port());
-
-        fakeBackendServer.stubFor(get(urlPathEqualTo("/foobar"))
-            .willReturn(aResponse()
-                .withStatus(666)
-                .withBody("{\"foo\":\"bar\"}")));
+        fakeBackendServerClient.when(request()
+                .withMethod("GET")
+                .withPath("/foobar.*"))
+            .respond(response()
+                .withStatusCode(666)
+                .withBody("{\"foo\":\"bar\"}"));
 
         RestAssured.proxy = null;
-    }
-
-    @AfterAll
-    public static void closeDownTigerProxy() {
-        fakeBackendServer.stop();
     }
 
     @BeforeEach
@@ -71,7 +67,7 @@ public class TigerWebUiControllerTest {
             val proxyRest = Unirest.spawnInstance();
             proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
 
-            proxyRest.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asJson();
+            proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
         }
     }
 
@@ -167,7 +163,7 @@ public class TigerWebUiControllerTest {
             .path("metaMsgList[1].timestamp");
 
         assertThat(OffsetDateTime.parse(timestamp)).isEqualTo(tigerProxy.getRbelMessagesList().get(1)
-                .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toOffsetDateTime());
+            .getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime().toOffsetDateTime());
     }
 
     @Test
@@ -220,7 +216,7 @@ public class TigerWebUiControllerTest {
         val proxyRest = Unirest.spawnInstance();
         proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
         final String longString = RandomStringUtils.randomAlphanumeric(2_000);
-        proxyRest.post("http://localhost:" + fakeBackendServer.port() + "/foobar")
+        proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar")
             .body("{'randomStringForLulz':'" + longString + "'}")
             .asString();
         await()

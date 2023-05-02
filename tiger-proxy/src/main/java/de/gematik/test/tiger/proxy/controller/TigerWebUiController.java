@@ -19,6 +19,8 @@ import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -33,8 +35,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +88,6 @@ public class TigerWebUiController implements ApplicationContextAware {
     public final SimpMessagingTemplate template;
     private final TigerBuildPropertiesService buildProperties;
 
-
     private static final String WS_NEWMESSAGES = "/topic/ws";
 
     @PostConstruct
@@ -104,7 +103,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext appContext) throws BeansException {
+    public void setApplicationContext(final ApplicationContext appContext) throws BeansException {
         this.applicationContext = appContext;
     }
 

@@ -38,7 +38,7 @@
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>5.8.2</version>
+            <version>${version.junit5}}</version>
         </dependency>
         -->
         <!-- needed for the JUnit driver class @CucumberOptions annotation -->

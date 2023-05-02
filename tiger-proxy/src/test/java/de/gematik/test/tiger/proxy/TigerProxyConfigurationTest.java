@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.data.config.tigerProxy.ForwardProxyInfo;
@@ -25,6 +24,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @ExtendWith(OutputCaptureExtension.class)
 @TestInstance(Lifecycle.PER_CLASS)
@@ -48,9 +48,9 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @SneakyThrows
     @ParameterizedTest
     @CsvSource(value = {"http://localhost:80", "http://localhost"})
-    public void httpProxyWithoutAuthAsEnvVar_shouldBeSet(String httpProxyWithoutAuthEnv,
+    void httpProxyWithoutAuthAsEnvVar_shouldBeSet(String httpProxyWithoutAuthEnv,
         CapturedOutput capturedOutput) {
-        withEnvironmentVariable("http_proxy", httpProxyWithoutAuthEnv)
+        new EnvironmentVariables("http_proxy", httpProxyWithoutAuthEnv)
             .and("https_proxy", null)
             .execute(() -> {
                 spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -70,8 +70,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @SneakyThrows
     @ParameterizedTest
     @CsvSource(value = {"http://username:password@localhost:80", "http://username:password@localhost"})
-    public void httpProxyWithAuthAsEnvVar_shouldBeSet(String httpProxyWithAuthEnv, CapturedOutput capturedOutput) {
-        withEnvironmentVariable("http_proxy", httpProxyWithAuthEnv)
+    void httpProxyWithAuthAsEnvVar_shouldBeSet(String httpProxyWithAuthEnv, CapturedOutput capturedOutput) {
+        new EnvironmentVariables("http_proxy", httpProxyWithAuthEnv)
             .and("https_proxy", null)
             .execute(() -> {
                 spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -94,8 +94,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @SneakyThrows
     @ParameterizedTest
     @CsvSource(value = {"localhost", "http://username@localhost:80", "http://password@localhost:80"})
-    public void httpProxyWithMissingParamsAsEnvVar_shouldNotBeSet(String httpProxyEnvWithoutType) {
-        withEnvironmentVariable("http_proxy", httpProxyEnvWithoutType)
+    void httpProxyWithMissingParamsAsEnvVar_shouldNotBeSet(String httpProxyEnvWithoutType) {
+        new EnvironmentVariables("http_proxy", httpProxyEnvWithoutType)
             .and("https_proxy", null)
             .execute(() -> {
                 assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
@@ -111,7 +111,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @ParameterizedTest
     @CsvSource(value = {"localhost, 80", "localhost, null"},
         nullValues = {"null"})
-    public void httpProxyWithoutAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
+    void httpProxyWithoutAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
         CapturedOutput capturedOutput) {
         System.setProperty("http.proxyHost", proxyHost);
         setOrClearProperty("http.proxyPort", proxyPort);
@@ -136,7 +136,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         "localhost, 80, username, password",
         "localhost, null, username, password"},
         nullValues = {"null"})
-    public void httpProxyWithAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
+    void httpProxyWithAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
         String proxyUser, String proxyPassword, CapturedOutput capturedOutput) {
         System.setProperty("http.proxyHost", proxyHost);
         setOrClearProperty("http.proxyPort", proxyPort);
@@ -165,11 +165,10 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         "locahost, 80, username, null"
     },
         nullValues = {"null"})
-    public void httpProxyUsingSystemPropertiesMissingAuth_shouldNotBeSet(
+    void httpProxyUsingSystemPropertiesMissingAuth_shouldNotBeSet(
         String proxyHost, String proxyPort, String proxyUser, String proxyPassword
     ) {
-        withEnvironmentVariable("http_proxy", null)
-            .and("https_proxy", null)
+        new EnvironmentVariables("http_proxy", null)
             .execute(() -> {
                 setOrClearProperty("http.proxyHost", proxyHost);
                 setOrClearProperty("http.proxyPort", proxyPort);
@@ -191,10 +190,10 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         "null, 80, username, password",
     },
         nullValues = {"null"})
-    public void httpProxyUsingSystemPropertiesMissingHost_shouldBeEmpty(
+    void httpProxyUsingSystemPropertiesMissingHost_shouldBeEmpty(
         String proxyHost, String proxyPort, String proxyUser, String proxyPassword
     ) {
-        withEnvironmentVariable("http_proxy", null)
+        new EnvironmentVariables("http_proxy", null)
             .and("https_proxy", null)
             .execute(() -> {
                 setOrClearProperty("http.proxyHost", proxyHost);
@@ -213,9 +212,9 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @SneakyThrows
     @ParameterizedTest
     @CsvSource(value = {"https://localhost:443", "https://localhost"})
-    public void httpsProxyWithoutAuthAsEnvVar_shouldBeSet(String httpsProxyWithoutAuthEnv,
+    void httpsProxyWithoutAuthAsEnvVar_shouldBeSet(String httpsProxyWithoutAuthEnv,
         CapturedOutput capturedOutput) {
-        withEnvironmentVariable("https_proxy", httpsProxyWithoutAuthEnv)
+        new EnvironmentVariables("https_proxy", httpsProxyWithoutAuthEnv)
             .and("http_proxy", null)
             .execute(() -> {
                 spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -235,8 +234,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @SneakyThrows
     @ParameterizedTest
     @CsvSource(value = {"https://username:password@localhost:443", "https://username:password@localhost"})
-    public void httpsProxyWithAuthAsEnvVar_shouldBeSet(String httpsProxyWithAuthEnv, CapturedOutput capturedOutput) {
-        withEnvironmentVariable("https_proxy", httpsProxyWithAuthEnv)
+    void httpsProxyWithAuthAsEnvVar_shouldBeSet(String httpsProxyWithAuthEnv, CapturedOutput capturedOutput) {
+        new EnvironmentVariables("https_proxy", httpsProxyWithAuthEnv)
             .and("http_proxy", null)
             .execute(() -> {
                 spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -259,8 +258,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @SneakyThrows
     @ParameterizedTest
     @CsvSource(value = {"localhost", "https://username@localhost:443", "https://password@localhost:443"})
-    public void httpsProxyWithMissingParamsAsEnvVar_shouldNotBeSet(String httpsProxyEnvWithoutType) {
-        withEnvironmentVariable("https_proxy", httpsProxyEnvWithoutType)
+    void httpsProxyWithMissingParamsAsEnvVar_shouldNotBeSet(String httpsProxyEnvWithoutType) {
+        new EnvironmentVariables("https_proxy", httpsProxyEnvWithoutType)
             .and("http_proxy", null)
             .execute(() -> {
                 assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
@@ -276,7 +275,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @ParameterizedTest
     @CsvSource(value = {"localhost, 443", "localhost, null"},
         nullValues = {"null"})
-    public void httpsProxyWithoutAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
+    void httpsProxyWithoutAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
         CapturedOutput capturedOutput) {
         System.setProperty("https.proxyHost", proxyHost);
         setOrClearProperty("https.proxyPort", proxyPort);
@@ -299,7 +298,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @ParameterizedTest
     @CsvSource(value = {"localhost, 443, username, password", "localhost, null, username, password"},
         nullValues = {"null"})
-    public void httpsProxyWithAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
+    void httpsProxyWithAuthUsingSystemProperties_shouldBeSet(String proxyHost, String proxyPort,
         String proxyUser, String proxyPassword, CapturedOutput capturedOutput) {
         System.setProperty("https.proxyHost", proxyHost);
         setOrClearProperty("https.proxyPort", proxyPort);
@@ -328,10 +327,10 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         "locahost, 443, username, null"
     },
         nullValues = {"null"})
-    public void httpsProxyUsingSystemPropertiesMissingAuth_shouldNotBeSet(
+    void httpsProxyUsingSystemPropertiesMissingAuth_shouldNotBeSet(
         String proxyHost, String proxyPort, String proxyUser, String proxyPassword
     ) {
-        withEnvironmentVariable("https_proxy", null)
+        new EnvironmentVariables("https_proxy", null)
             .and("http_proxy", null)
             .execute(() -> {
                 setOrClearProperty("https.proxyHost", proxyHost);
@@ -354,10 +353,10 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         "null, 443, username, password",
     },
         nullValues = {"null"})
-    public void httpsProxyUsingSystemPropertiesMissingHost_shouldBeEmpty(
+    void httpsProxyUsingSystemPropertiesMissingHost_shouldBeEmpty(
         String proxyHost, String proxyPort, String proxyUser, String proxyPassword
     ) {
-        withEnvironmentVariable("https_proxy", null)
+        new EnvironmentVariables("https_proxy", null)
             .and("http_proxy", null)
             .execute(() -> {
                 setOrClearProperty("https.proxyHost", proxyHost);
@@ -375,7 +374,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void httpProxyWithParameters_shouldBeSet(CapturedOutput capturedOutput) {
+    void httpProxyWithParameters_shouldBeSet(CapturedOutput capturedOutput) {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder()
                 .type(TigerProxyType.HTTP)
@@ -397,7 +396,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void httpsProxyWithParameters_shouldBeSet(CapturedOutput capturedOutput) {
+    void httpsProxyWithParameters_shouldBeSet(CapturedOutput capturedOutput) {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder()
                 .type(TigerProxyType.HTTPS)
@@ -419,7 +418,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void httpProxyWithParametersWithoutPort_shouldBeSet(CapturedOutput capturedOutput) {
+    void httpProxyWithParametersWithoutPort_shouldBeSet(CapturedOutput capturedOutput) {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder()
                 .type(TigerProxyType.HTTP)
@@ -440,7 +439,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void httpsProxyWithParametersWithoutPort_shouldBeSet(CapturedOutput capturedOutput) {
+    void httpsProxyWithParametersWithoutPort_shouldBeSet(CapturedOutput capturedOutput) {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder()
                 .type(TigerProxyType.HTTPS)
@@ -461,7 +460,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void httpProxyWithParametersWithoutUsernamePasswordPort_shouldBeSet(CapturedOutput capturedOutput) {
+    void httpProxyWithParametersWithoutUsernamePasswordPort_shouldBeSet(CapturedOutput capturedOutput) {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder()
                 .type(TigerProxyType.HTTP)
@@ -478,7 +477,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void httpsProxyWithParametersWithoutUsernamePasswordPort_shouldBeSet(CapturedOutput capturedOutput) {
+    void httpsProxyWithParametersWithoutUsernamePasswordPort_shouldBeSet(CapturedOutput capturedOutput) {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder()
                 .type(TigerProxyType.HTTPS)
@@ -495,8 +494,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void systemProxyNothingSet_shouldBeEmpty() {
-        withEnvironmentVariable("https_proxy", null)
+    void systemProxyNothingSet_shouldBeEmpty() {
+        new EnvironmentVariables("https_proxy", null)
             .and("http_proxy", null)
             .execute(() -> {
                 assertThat(ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
@@ -510,8 +509,8 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     @SneakyThrows
     @ParameterizedTest
     @CsvSource(value = {"abcd://localhost:443"})
-    public void proxyAsEnvVarWithMiscellaneousProtocol_shouldNotBeSet(String httpsProxyEnvWithoutType) {
-        withEnvironmentVariable("https_proxy", httpsProxyEnvWithoutType)
+    void proxyAsEnvVarWithMiscellaneousProtocol_shouldNotBeSet(String httpsProxyEnvWithoutType) {
+        new EnvironmentVariables("https_proxy", httpsProxyEnvWithoutType)
             .and("http_proxy", null)
             .execute(() -> {
                 assertThatThrownBy(() -> ProxyConfigurationConverter.createMockServerProxyConfiguration(TigerProxyConfiguration.builder()
@@ -525,7 +524,7 @@ public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @Test
-    public void emptyProxy_shouldNotBeSet(CapturedOutput capturedOutput) {
+    void emptyProxy_shouldNotBeSet(CapturedOutput capturedOutput) {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder()
                 .build())

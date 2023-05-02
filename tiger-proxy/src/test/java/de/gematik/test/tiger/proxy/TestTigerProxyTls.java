@@ -46,16 +46,14 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
-import org.apache.hc.client5.http.ssl.TrustAllStrategy;
-import org.apache.hc.core5.ssl.SSLContexts;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.api.StringAssert;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -74,7 +72,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .tls(TigerTlsConfiguration.builder()
                 .domainName("muahaha")
@@ -113,7 +111,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -131,7 +129,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://authn.aktor.epa.telematik-test")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .tls(TigerTlsConfiguration.builder()
                 .serverIdentity(new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
@@ -173,7 +171,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .tls(TigerTlsConfiguration.builder()
                 .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"))
@@ -206,7 +204,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .tls(TigerTlsConfiguration.builder()
                 .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/customCa.p12;00"))
@@ -231,7 +229,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("https://localhost:" + fakeBackendServer.httpsPort())
+                .to("https://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -253,7 +251,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build())
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -266,6 +264,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     }
 
     @Test
+    @Disabled("Waiting for the next mockserver release (>5.15.0). See TGR-898")
     void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException {
         final TigerConfigurationPkiIdentity clientIdentity = new TigerConfigurationPkiIdentity(
             "src/test/resources/rsaStoreWithChain.jks;gematik");
@@ -273,7 +272,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxy secondProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -320,7 +319,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("https://localhost:" + fakeBackendServer.httpsPort())
+                .to("https://localhost:" + fakeBackendServerPort)
                 .build()))
             .tls(TigerTlsConfiguration.builder()
                 .serverTlsProtocols(Stream.of(serverTlsSuites.split(","))
@@ -354,11 +353,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     }
 
     @Test
+    @Disabled("Waiting for the next mockserver release (>5.15.0)")
     void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("https://localhost:" + fakeBackendServer.httpsPort())
+                .to("https://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -405,11 +405,11 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .proxyRoutes(List.of(TigerRoute.builder()
                     // aktor-gateway.gematik.de ist der DN des obigen zertifikats
                     .from("https://authn.aktor.epa.telematik-test")
-                    .to("http://localhost:" + fakeBackendServer.port())
+                    .to("http://localhost:" + fakeBackendServerPort)
                     .build(),
                 TigerRoute.builder()
                     .from("https://falsche-url")
-                    .to("http://localhost:" + fakeBackendServer.port())
+                    .to("http://localhost:" + fakeBackendServerPort)
                     .build()))
             .build());
 
@@ -458,7 +458,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         new UnirestInstance(new Config()
             .sslContext(ctx)
             .proxy("localhost", tigerProxy.getProxyPort()))
-            .get("https://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+            .get("https://localhost:" + fakeBackendServerPort + "/foobar").asString();
 
         assertThat(ctx.getClientSessionContext()
             .getSession(ctx.getClientSessionContext().getIds().nextElement())
@@ -471,7 +471,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -492,7 +492,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             spawnTigerProxyWith(TigerProxyConfiguration.builder()
                 .proxyRoutes(List.of(TigerRoute.builder()
                     .from("https://backend")
-                    .to("http://localhost:" + fakeBackendServer.port())
+                    .to("http://localhost:" + fakeBackendServerPort)
                     .build()))
                 .build());
 
@@ -511,7 +511,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -536,7 +536,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             spawnTigerProxyWith(TigerProxyConfiguration.builder()
                 .proxyRoutes(List.of(TigerRoute.builder()
                     .from("https://backend")
-                    .to("http://localhost:" + fakeBackendServer.port())
+                    .to("http://localhost:" + fakeBackendServerPort)
                     .build()))
                 .build());
 
@@ -559,7 +559,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("https://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -580,7 +580,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             spawnTigerProxyWith(TigerProxyConfiguration.builder()
                 .proxyRoutes(List.of(TigerRoute.builder()
                     .from("https://backend")
-                    .to("http://localhost:" + fakeBackendServer.port())
+                    .to("http://localhost:" + fakeBackendServerPort)
                     .build()))
                 .build());
 
@@ -601,7 +601,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 

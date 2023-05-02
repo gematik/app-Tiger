@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
 
 @Slf4j
 public class TigerJexlExecutor {
@@ -52,6 +53,9 @@ public class TigerJexlExecutor {
 
             return Optional.ofNullable(expression.evaluate(mapContext));
         } catch (RuntimeException e) {
+            if (e instanceof JexlException && (e.getCause() instanceof JexlArithmetic.NullOperand)) {
+                return Optional.empty();
+            }
             if (e instanceof JexlException && !(e.getCause() instanceof NoSuchElementException)) {
                 throw e;
             }
@@ -86,10 +90,12 @@ public class TigerJexlExecutor {
             return JEXL_EXPRESSION_CACHE.get(hashCode);
         }
 
-        final JexlEngine jexlEngine = new JexlBuilder()
+        JexlBuilder jexlBuilder = new JexlBuilder()
             .namespaces(NAMESPACE_MAP)
-            .strict(true)
-            .create();
+            .permissions(JexlPermissions.UNRESTRICTED)
+            .strict(true);
+        jexlBuilder.options().setStrictArithmetic(false);
+        final JexlEngine jexlEngine = jexlBuilder.create();
         final JexlExpression expression = jexlEngine.createExpression(jexlExpression);
         JEXL_EXPRESSION_CACHE.put(hashCode, expression);
         return expression;

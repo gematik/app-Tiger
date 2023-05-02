@@ -8,7 +8,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.TestEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

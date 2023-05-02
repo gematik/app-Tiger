@@ -27,17 +27,7 @@
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-rbel</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
             <artifactId>tiger-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -52,7 +42,17 @@
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-rbel</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-test-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -5,10 +5,11 @@
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import static org.awaitility.Awaitility.await;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.*;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.WebSocketContainer;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,17 +17,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.websocket.ContainerProvider;
-import javax.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
@@ -50,7 +47,7 @@ class UpdatePushControllerTest {
 
     @Test
     @Disabled("Failed auf dem Jenkins, lokal läuft er grün. Am ende der timebox keine lösung, master grün, gogo")
-    public void displayMessage_shouldPushToClient() throws ExecutionException, InterruptedException {
+    void displayMessage_shouldPushToClient() throws ExecutionException, InterruptedException {
         AtomicReference<String> receivedMessage = new AtomicReference<>("");
 
         connectToSocketUsingHandler(new StompSessionHandlerAdapter() {

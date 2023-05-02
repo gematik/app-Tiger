@@ -4,22 +4,14 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
-import ch.qos.logback.classic.Level;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.matching.RequestPattern;
-import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.RbelOptions;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -28,54 +20,57 @@ import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.netty.MockServer;
 
 @Slf4j
+
 public abstract class AbstractTigerProxyTest {
 
-    public static WireMockServer fakeBackendServer;
+    public static MockServer fakeBackendServer;
+    public static int fakeBackendServerPort = 0;
     public static byte[] binaryMessageContent = new byte[100];
+    public static MockServerClient fakeBackendServerClient;
     public TigerProxy tigerProxy;
     public UnirestInstance proxyRest;
 
     @BeforeAll
     public static void setupBackendServer() {
-        fakeBackendServer = new WireMockServer(
-            new WireMockConfiguration()
-                .dynamicPort()
-                .dynamicHttpsPort());
-        fakeBackendServer.start();
+        fakeBackendServer = new MockServer(TigerGlobalConfiguration
+            .readIntegerOptional("free.ports.199").orElse(0));
 
-        log.info("Started Backend-Server on ports {} and {} (https)", fakeBackendServer.port(),
-            fakeBackendServer.httpsPort());
+        log.info("Started Backend-Server on port {} (http & https)", fakeBackendServer.getLocalPort());
+        fakeBackendServerPort = fakeBackendServer.getLocalPort();
 
-        fakeBackendServer.stubFor(get(urlPathEqualTo("/foobar"))
-            .willReturn(aResponse()
-                .withStatus(666)
-                .withStatusMessage("EVIL")
+        fakeBackendServerClient = new MockServerClient("localhost", fakeBackendServer.getLocalPort());
+        fakeBackendServerClient.when(request().withPath("/foobar.*")
+                .withMethod("GET"))
+            .respond(response()
+                .withStatusCode(666)
+                .withReasonPhrase("EVIL")
                 .withHeader("foo", "bar1", "bar2")
-                .withBody("{\"foo\":\"bar\"}")));
-        fakeBackendServer.stubFor(get(urlPathEqualTo("/deep/foobar"))
-            .willReturn(aResponse()
-                .withStatus(777)
-                .withStatusMessage("DEEPEREVIL")
+                .withHeader("Some-Header-Field", "complicated-value §$%&/((=)(/(/&$()=§$§")
+                .withBody("{\"foo\":\"bar\"}"));
+        fakeBackendServerClient.when(request().withPath("/deep/foobar.*")
+            .withMethod("GET"))
+            .respond(response()
+                .withStatusCode(777)
+                .withReasonPhrase("DEEPEREVIL")
                 .withHeader("foo", "bar1", "bar2")
-                .withBody("{\"foo\":\"bar\"}")));
+                .withBody("{\"foo\":\"bar\"}"));
 
         binaryMessageContent = Arrays.concatenate(
             "This is a meaningless string which will be binary content. And some more test chars: "
                 .getBytes(StandardCharsets.UTF_8),
             RandomUtils.nextBytes(100));
-        fakeBackendServer.stubFor(post(urlPathEqualTo("/foobar"))
-            .willReturn(aResponse()
-                .withBody(binaryMessageContent)));
+        fakeBackendServerClient.when(request().withPath("/foobar.*")
+            .withMethod("POST"))
+            .respond(response()
+                .withBody(binaryMessageContent));
 
         RbelOptions.activateJexlDebugging();
-    }
-
-    @AfterAll
-    public static void stopWiremock() {
-        fakeBackendServer.stop();
     }
 
     @AfterEach
@@ -104,12 +99,11 @@ public abstract class AbstractTigerProxyTest {
     }
 
 
-    public LoggedRequest getLastRequest() {
-        final List<LoggedRequest> loggedRequests = fakeBackendServer.findRequestsMatching(RequestPattern.everything())
-            .getRequests();
-        if (loggedRequests.isEmpty()) {
+    public HttpRequest getLastRequest() {
+        final HttpRequest[] loggedRequests = fakeBackendServerClient.retrieveRecordedRequests(request());
+        if (loggedRequests.length == 0) {
             fail("No requests were logged!");
         }
-        return loggedRequests.get(loggedRequests.size() - 1);
+        return loggedRequests[loggedRequests.length - 1];
     }
 }

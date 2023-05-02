@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy.data;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -18,7 +19,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.SocketAddress;
 import org.mockserver.netty.MockServer;
 
@@ -31,7 +34,8 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
 
     @BeforeAll
     public static void setupForwardProxy() {
-        final MockServer forwardProxyServer = new MockServer();
+        final MockServer forwardProxyServer = new MockServer(TigerGlobalConfiguration
+            .readIntegerOptional("free.ports.198").orElse(0));
 
         forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
         log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
@@ -40,7 +44,7 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
             .forward(
                 req -> forwardOverriddenRequest(
                     req.withSocketAddress(
-                        "localhost", fakeBackendServer.port(), SocketAddress.Scheme.HTTP
+                        "localhost", fakeBackendServerClient.getPort(), SocketAddress.Scheme.HTTP
                     ))
                     .getRequestOverride());
     }
@@ -55,7 +59,7 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
