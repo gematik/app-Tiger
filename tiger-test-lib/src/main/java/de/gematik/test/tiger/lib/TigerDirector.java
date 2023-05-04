@@ -26,16 +26,14 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.controller.TestExecutionController;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -79,6 +77,7 @@ public class TigerDirector {
             showTigerBanner();
             readConfiguration();
             registerRestAssuredFilter();
+            applyLoggingLevels();
             applyTestLibConfig();
         } catch (RuntimeException rte) {
             throw new TigerConfigurationException("Unable to read/process configuration - " + rte.getMessage(), rte);
@@ -94,6 +93,15 @@ public class TigerDirector {
         }
 
         initialized = true;
+    }
+
+    private static void applyLoggingLevels() {
+        TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
+            .forEach(TigerServerLogManager::setLoggingLevel);
+        // setLoggingLevel is sufficient for almost all cases. SpringBoot applications are a special case -
+        // SpringBoot resets the levels during startup.
+        // So When using SpringBootApplicationBuilder the respective properties have to be passed in manually!
+        // except of course for the main methods of the SpringBottApplication classes as there we expect to use application.yaml
     }
 
     private static boolean shutdownHookRegistered = false;
@@ -125,7 +133,7 @@ public class TigerDirector {
                         RbelAnsiColors.GREEN_BOLD));
                 if (tigerTestEnvMgr != null) {
                     tigerTestEnvMgr.receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                        .bannerMessage("Test run finished, press QUIT")
+                        .bannerMessage("Test run finished, press SHUTDOWN")
                         .bannerColor("green")
                         .bannerType(BannerType.TESTRUN_ENDED)
                         .build());
@@ -195,9 +203,13 @@ public class TigerDirector {
 
     private static synchronized void startTestEnvMgr() {
         log.info("\n" + Banner.toBannerStr("STARTING TESTENV MGR...", RbelAnsiColors.BLUE_BOLD.toString()));
+
+        Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
+        properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault());
+
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(Map.of("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault()))
+            .properties(properties)
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)
@@ -254,10 +266,10 @@ public class TigerDirector {
                         "SETTING TIGER PROXY http://localhost:" + proxy.getProxyPort()
                             + "...", RbelAnsiColors.BLUE_BOLD));
                     System.setProperty("http.proxyHost", "localhost");
-                    System.setProperty("http.proxyPort", "" + proxy.getProxyPort());
+                    System.setProperty("http.proxyPort", String.valueOf(proxy.getProxyPort()));
                     System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
                     System.setProperty("https.proxyHost", "localhost");
-                    System.setProperty("https.proxyPort", "" + proxy.getProxyPort());
+                    System.setProperty("https.proxyPort", String.valueOf(proxy.getProxyPort()));
                     System.setProperty("java.net.useSystemProxies", "true");
                     SerenityRestUtils.setupSerenityRest(proxy.getProxyPort());
                 });

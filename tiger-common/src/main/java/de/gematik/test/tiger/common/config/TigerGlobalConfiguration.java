@@ -194,6 +194,11 @@ public class TigerGlobalConfiguration {
         return globalConfigurationLoader.readMap(baseKeys);
     }
 
+    public static Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.readMapWithCaseSensitiveKeys(baseKeys);
+    }
+
     public static List<AbstractTigerConfigurationSource> listSources() {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.listSources();

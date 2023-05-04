@@ -21,6 +21,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.AllArgsConstructor;
@@ -421,7 +422,16 @@ public class TigerConfigurationLoader {
             .filter(entry -> entry.getKey().isBelow(reference))
             .collect(Collectors.toMap(
                 entry -> entry.getKey().subtractFromBeginning(reference).downsampleKey(),
-                e -> e.getValue()));
+                Entry::getValue));
+    }
+
+    public Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
+        var reference = new TigerConfigurationKey(baseKeys);
+        return retrieveMap().entrySet().stream()
+            .filter(entry -> entry.getKey().isBelow(reference))
+            .collect(Collectors.toMap(
+                entry -> entry.getKey().subtractFromBeginning(reference).downsampleKeyCaseSensitive(),
+                Entry::getValue));
     }
 
     public List<AbstractTigerConfigurationSource> listSources() {

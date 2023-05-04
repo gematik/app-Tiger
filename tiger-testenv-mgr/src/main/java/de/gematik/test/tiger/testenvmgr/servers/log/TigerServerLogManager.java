@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers.log;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -13,9 +14,11 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.io.File;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Slf4j
 public class TigerServerLogManager  {
 
     private static final String DEFAULT_LOGFILE_LOCATION = "./target/serverLogs/";
@@ -25,6 +28,12 @@ public class TigerServerLogManager  {
     public static void addAppenders(AbstractTigerServer server) {
         ch.qos.logback.classic.Logger logbackLogger = ((ch.qos.logback.classic.Logger)server.getLog());
         createAndAddAppenders(server, logbackLogger);
+    }
+
+    public static void setLoggingLevel(String loggerName, String levelString) {
+        log.debug("Changing loglevel for '{}' to ({})", loggerName, levelString);
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(loggerName);
+        logger.setLevel(ch.qos.logback.classic.Level.toLevel(levelString.toUpperCase(), Level.INFO));
     }
 
     private static void createAndAddAppenders(AbstractTigerServer server, ch.qos.logback.classic.Logger log) {

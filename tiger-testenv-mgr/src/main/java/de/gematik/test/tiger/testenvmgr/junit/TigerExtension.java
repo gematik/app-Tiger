@@ -110,9 +110,11 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
         log.debug("Initializing configuration with {}", additionalProperties);
         TigerGlobalConfiguration.initializeWithCliProperties(additionalProperties);
 
+        Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
+        properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValue().orElse(0));
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(Map.of("server.port", TESTENV_MGR_RESERVED_PORT.getValue().orElse(0)))
+            .properties(properties)
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .initializers()

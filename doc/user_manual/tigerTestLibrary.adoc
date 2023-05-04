@@ -46,6 +46,16 @@ lib:
 # if you have the local Tiger Proxy deactivated you will NOT be able to
 # validate / log any traffic data from test requests / responses.
 localProxyActive: true
+
+# section to allow adapting the logging levels of packages/class loggers similar to spring boot
+logging:
+  level:
+    # activate tracing for a specific class
+    de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr: TRACE
+    # activate tracing for all classes and subpackages of a package
+    de.gematik.test.tiger.proxy: TRACE
+    # activate tracing for the local Tiger Proxy. This logger has a special name due to its importance in the tiger test framework
+    localTigerProxy: TRACE
 ----
 
 [#_cucumber_hooks]

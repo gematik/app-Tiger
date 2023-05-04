@@ -104,7 +104,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
             .map(testEnvMgr::replaceSysPropsInString)
             .forEach(environmentProperties::add);
 
-        if (configuration.getUrlMappings() != null) {
+        if (configuration.getUrlMappings() != null && testEnvMgr.getLocalTigerProxyOptional().isPresent()) {
             statusMessage("Adding routes to local tiger proxy for server " + getServerId() + "...");
             configuration.getUrlMappings().forEach(mapping -> {
                 if (StringUtils.isBlank(mapping) || !mapping.contains("-->") || mapping.split(" --> ", 2).length != 2) {

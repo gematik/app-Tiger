@@ -51,7 +51,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -756,8 +755,11 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost",
                 "localhost|view-localhost"));
 
-        checkClientAddresses(hostnameList, hostnameList);
+        // make sure both messages have been parsed successfully
+        await().pollInterval(200, TimeUnit.MILLISECONDS).atMost(20, TimeUnit.SECONDS)
+            .until(() -> extractHostnames(RbelTcpIpMessageFacet::getReceiver).toList().size() == 2);
 
+        checkClientAddresses(hostnameList, hostnameList);
         checkPortsAreCorrect();
     }
 

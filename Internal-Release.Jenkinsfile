@@ -34,6 +34,7 @@ pipeline {
             steps {
                 checkVersion(NEW_VERSION) // Eingabe erfolgt über Benutzerinteraktion beim Start des Jobs
                 gitSetIdentity()
+                useJdk('OPENJDK17')
             }
         }
 

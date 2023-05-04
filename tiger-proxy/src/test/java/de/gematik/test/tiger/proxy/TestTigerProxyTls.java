@@ -264,7 +264,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     }
 
     @Test
-    @Disabled("Waiting for the next mockserver release (>5.15.0). See TGR-898")
+    @Disabled("Waiting for the next mockserver release (>5.15.0). See TGR-898, TGR-815")
     void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException {
         final TigerConfigurationPkiIdentity clientIdentity = new TigerConfigurationPkiIdentity(
             "src/test/resources/rsaStoreWithChain.jks;gematik");

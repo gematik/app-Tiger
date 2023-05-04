@@ -20,7 +20,7 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.Banner.Mode;
@@ -88,11 +88,13 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             return;
         }
 
+        Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
+        properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
         log.info("Actually performing startup of tiger-proxy {}", getServerId());
         statusMessage("Starting Tiger Proxy " + getServerId() + " at " + tigerProxyConfiguration.getAdminPort() + "...");
         applicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(new HashMap<>(TigerSerializationUtil.toMap(standaloneCfg)))
+            .properties(properties)
             .sources(TigerProxyApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)

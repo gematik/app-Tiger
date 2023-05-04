@@ -26,6 +26,9 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
 
     @Override
     public void assertThatConfigurationIsCorrect() {
+        if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
+            getConfiguration().setHealthcheckUrl(getConfiguration().getSource().get(0));
+        }
         super.assertThatConfigurationIsCorrect();
 
         assertCfgPropertySet(getConfiguration(), "source");
@@ -56,8 +59,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
 
     @Override
     Optional<String> getHealthcheckUrl() {
-        if (getConfiguration().getExternalJarOptions() == null
-            || StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
+        if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
             return Optional.of(getConfiguration().getSource().get(0));
         } else {
             return Optional.ofNullable(getConfiguration().getHealthcheckUrl());

@@ -30,24 +30,23 @@
         <version.gson>2.10.1</version.gson>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jackson>2.14.2</version.jackson>
-        <version.javaparser>3.25.2</version.javaparser>
+        <version.javaparser>3.25.3</version.javaparser>
         <version.json>20230227</version.json>
+        <version.json-unit>2.37.0</version.json-unit>
         <version.junit4>4.13.2</version.junit4>
-        <!-- spring boot test uses 5.8.2 and causes issues when running woth 5.9.2,
-         should be resolved when upgrading to spring boot 3 -->
-        <version.junit5>5.8.2</version.junit5>
+        <version.junit5>5.9.3</version.junit5>
         <version.logback>1.4.7</version.logback>
         <version.lombok>1.18.24</version.lombok>
         <version.maven>3.9.1</version.maven>
         <version.maven.failsafe>3.0.0</version.maven.failsafe>
         <version.maven.surefire>3.0.0</version.maven.surefire>
-        <version.maven-plugin-tools>3.8.1</version.maven-plugin-tools>
+        <version.maven-plugin-tools>3.8.2</version.maven-plugin-tools>
         <version.mockserver>5.15.0</version.mockserver>
         <version.serenity.core>3.6.23</version.serenity.core>
         <version.serenity.maven.plugin>3.6.23</version.serenity.maven.plugin>
         <version.slf4j>2.0.7</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
-        <version.spring-boot>3.0.5</version.spring-boot>
+        <version.spring-boot>3.0.6</version.spring-boot>
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.2</version.unirest>
 
@@ -58,9 +57,9 @@
         <!-- see src/main/resources/templates/adminui.html -->
         <version.webjars-locator-core>0.52</version.webjars-locator-core>
         <version.bootstrap>5.1.3</version.bootstrap>
-        <version.jquery>3.6.3</version.jquery>
+        <version.jquery>3.6.4</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>
-        <version.font-awesome>6.3.0</version.font-awesome>
+        <version.font-awesome>6.4.0</version.font-awesome>
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
         <version.highlightjs>11.5.0</version.highlightjs>
@@ -502,7 +501,7 @@
                 <plugin>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <groupId>org.jacoco</groupId>
-                    <version>0.8.8</version>
+                    <version>0.8.10</version>
                     <executions>
                         <execution>
                             <id>default-prepare-agent</id>

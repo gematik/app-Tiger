@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -207,6 +208,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
             LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
         }
+        properties.putAll(getConfiguredLoggingLevels());
+
         localTigerProxyApplicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(properties)
@@ -222,6 +225,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         LOCAL_PROXY_ADMIN_PORT.putValue(proxy.getAdminPort());
 
         return proxy;
+    }
+
+    public static Map<String, Object> getConfiguredLoggingLevels() {
+        return TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
+            .entrySet().stream()
+            .collect(Collectors.toMap(entry -> "logging.level." + entry.getKey(), Entry::getValue));
     }
 
     public void publishNewStatusUpdate(TigerServerStatusUpdate update) {

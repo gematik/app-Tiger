@@ -1,3 +1,5 @@
+localProxyActive: false
+
 tigerProxy:
 
 servers:
@@ -5,7 +7,8 @@ servers:
     hostname: testExternalUrl_withPkiKeys
     template: idp-ref
     type: externalUrl
-    startupTimeoutSec: 1
+    startupTimeoutSec: 10
+    healthcheckUrl: https://idp-test.app.ti-dienste.de/.well-known/openid-configuration
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
     active: true

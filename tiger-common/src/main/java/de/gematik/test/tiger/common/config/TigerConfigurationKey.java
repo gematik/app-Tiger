@@ -73,6 +73,12 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
             .collect(Collectors.joining("."));
     }
 
+    public String downsampleKeyCaseSensitive() {
+        return stream()
+            .map(TigerConfigurationKeyString::asString)
+            .collect(Collectors.joining("."));
+    }
+
     public boolean isBelow(TigerConfigurationKey reference) {
         if (reference == null || reference.size() >= size()) {
             return false;

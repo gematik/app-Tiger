@@ -26,6 +26,7 @@ pipeline {
         stage('Initialise') {
             steps {
                 setProperties([notifyTeams(TEAMS_URL)])
+                useJdk('OPENJDK17')
             }
         }
 

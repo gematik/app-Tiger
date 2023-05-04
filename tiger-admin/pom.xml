@@ -31,7 +31,7 @@
         <version.asciidoctorj.diagram>2.2.3</version.asciidoctorj.diagram>
         <version.selenium>4.4.0</version.selenium>
 
-        <version.jsonschema>4.31.0</version.jsonschema>
+        <version.jsonschema>4.31.1</version.jsonschema>
         <version.junit-platform>1.9.1</version.junit-platform>
     </properties>
 
@@ -371,7 +371,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>update-project-version-in-manual</id>
