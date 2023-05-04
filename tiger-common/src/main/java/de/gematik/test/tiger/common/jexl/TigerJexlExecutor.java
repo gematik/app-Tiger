@@ -29,13 +29,19 @@ public class TigerJexlExecutor {
     }
 
     public boolean matchesAsJexlExpression(Object element, String jexlExpression, Optional<String> key) {
-        final boolean result = evaluateJexlExpression(element, jexlExpression, key)
+        return matchesAsJexlExpression(jexlExpression, new TigerJexlContext()
+            .withCurrentElement(element)
+            .withKey(key.orElse(null)));
+    }
+
+    public boolean matchesAsJexlExpression(String jexlExpression, TigerJexlContext context) {
+        final boolean result = evaluateJexlExpression(jexlExpression, context)
             .filter(Boolean.class::isInstance)
             .map(Boolean.class::cast)
             .orElse(false);
 
         if (result && ACTIVATE_JEXL_DEBUGGING) {
-            printDebugMessage(element, jexlExpression);
+            printDebugMessage(context.getCurrentElement(), jexlExpression);
         }
 
         return result;
@@ -46,12 +52,23 @@ public class TigerJexlExecutor {
     }
 
     public Optional<Object> evaluateJexlExpression(Object element, String jexlExpression, Optional<String> key) {
-        try {
-            final MapContext mapContext = new MapContext(buildJexlMapContext(element, key));
-            NAMESPACE_MAP.forEach(mapContext::set);
-            final JexlExpression expression = buildExpression(jexlExpression, element, mapContext);
+        final TigerJexlContext mapContext = new TigerJexlContext(buildJexlMapContext(element, key))
+            .withCurrentElement(element)
+            .withRootElement(element)
+            .withKey(key.orElse(null));
+        NAMESPACE_MAP.forEach(mapContext::set);
+        return evaluateJexlExpression(jexlExpression, mapContext);
+    }
 
-            return Optional.ofNullable(expression.evaluate(mapContext));
+    public Optional<Object> evaluateJexlExpression(String jexlExpression, TigerJexlContext context) {
+        try {
+            context.putAll(buildJexlMapContext(
+                context.getCurrentElement(),
+                Optional.ofNullable(context.getKey())
+            ));
+            final JexlExpression expression = buildExpression(jexlExpression, context);
+
+            return Optional.ofNullable(expression.evaluate(context));
         } catch (RuntimeException e) {
             if (e instanceof JexlException && (e.getCause() instanceof JexlArithmetic.NullOperand)) {
                 return Optional.empty();
@@ -84,7 +101,7 @@ public class TigerJexlExecutor {
         return element.toString();
     }
 
-    protected JexlExpression buildExpression(String jexlExpression, Object element, MapContext mapContext) {
+    protected JexlExpression buildExpression(String jexlExpression, TigerJexlContext mapContext) {
         final int hashCode = jexlExpression.hashCode();
         if (JEXL_EXPRESSION_CACHE.containsKey(hashCode)) {
             return JEXL_EXPRESSION_CACHE.get(hashCode);

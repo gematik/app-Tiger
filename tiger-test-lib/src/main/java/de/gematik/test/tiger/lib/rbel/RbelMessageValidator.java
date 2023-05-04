@@ -465,7 +465,7 @@ public class RbelMessageValidator {
                 .readTrafficFromTgrFile(filePath);
             readElements.forEach(LocalProxyRbelMessageListener.rbelMessageListener::triggerNewReceivedMessage);
         } else {
-            throw new TigerTestEnvException("No local proxy active, can't read from tgr file {}", filePath);
+            throw new TigerTestEnvException("No local proxy active, can't read from tgr file '" + filePath + "'");
         }
     }
 

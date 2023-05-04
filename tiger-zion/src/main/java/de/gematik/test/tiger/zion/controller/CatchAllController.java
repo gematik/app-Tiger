@@ -8,6 +8,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelWriter;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.TigerMockResponseDescription;
@@ -214,7 +215,9 @@ public class CatchAllController implements WebMvcConfigurer {
 
     private boolean doesItMatch(List<String> requestCriterions, RbelElement requestRbelMessage) {
         return requestCriterions.stream()
-            .filter(criterion -> !TigerJexlExecutor.INSTANCE.matchesAsJexlExpression(requestRbelMessage, criterion))
+            .filter(criterion -> !TigerJexlExecutor.INSTANCE.matchesAsJexlExpression(criterion, new TigerJexlContext()
+                    .withCurrentElement(requestRbelMessage)
+                    .withRootElement(requestRbelMessage)))
             .findAny().isEmpty();
     }
 

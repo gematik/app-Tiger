@@ -13,7 +13,8 @@
 
 ## Bugfixes
 
-* TGR-769 Serenity reports show examples now with a collapse icon clearly indicating whether its folded or unfolded
+* TGR-769: Serenity reports show examples now with a collapse icon clearly indicating whether its folded or unfolded
+* TGR-887: Jexl-Selectors in RbelPath-Expressions now differentiate between the current (@.) and the root ($.) element.
 * TGR-893: Saving of HTML-Traffic in Webui refactored, HTML rendering has moved from frontend to backend
 
 ## Features

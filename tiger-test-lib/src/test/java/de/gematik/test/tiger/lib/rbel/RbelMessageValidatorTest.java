@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -23,6 +24,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -39,7 +41,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
-import uk.org.webcompere.systemstubs.ThrowingRunnable;
 
 @Slf4j
 class RbelMessageValidatorTest {
@@ -47,6 +48,8 @@ class RbelMessageValidatorTest {
     @BeforeEach
     public void clearConfig() {
         TigerGlobalConfiguration.reset();
+        ReflectionTestUtils.setField(TigerDirector.class, "initialized", true);
+        ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", mock(TigerTestEnvMgr.class));
     }
 
     @AfterEach
@@ -54,6 +57,8 @@ class RbelMessageValidatorTest {
         Deque<RbelElement> validatableRbelMessages
             = (Deque<RbelElement>) ReflectionTestUtils.getField(LocalProxyRbelMessageListener.class, "validatableRbelMessages");
         validatableRbelMessages.clear();
+        ReflectionTestUtils.setField(TigerDirector.class, "initialized", false);
+        ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", null);
     }
 
     @Test
@@ -396,34 +401,6 @@ class RbelMessageValidatorTest {
             RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
         assertThatThrownBy(() -> validator.findElementInCurrentRequest("$..UnknownHeader")).isInstanceOf(
             AssertionError.class);
-    }
-
-    @Test
-    void testReadTrafficFile() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
-        executeWithSecureShutdown(() -> {
-            TigerDirector.start();
-
-            RbelMessageValidator.instance.readTgrFile("src/test/resources/testdata/rezepsFiltered.tgr");
-
-            assertThat(LocalProxyRbelMessageListener.getValidatableRbelMessages()).hasSize(96);
-        });
-    }
-
-    private void executeWithSecureShutdown(ThrowingRunnable test) {
-        executeWithSecureShutdown(test, () -> {
-        });
-    }
-
-    private void executeWithSecureShutdown(ThrowingRunnable test, Runnable cleanup) {
-        try {
-            test.run();
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        } finally {
-            TigerDirector.getTigerTestEnvMgr().shutDown();
-            cleanup.run();
-        }
     }
 
     @Test

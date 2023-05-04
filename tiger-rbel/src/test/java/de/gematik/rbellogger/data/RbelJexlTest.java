@@ -144,7 +144,7 @@ class RbelJexlTest {
 
     @Test
     void testRbelEscaping() {
-        assertThat(jexlExecutor.matchesAsJexlExpression(response, "$.body.header =~ '.*discSig.*'"))
+        assertThat(jexlExecutor.matchesAsJexlExpression(response, "$.body.header=~'.*discSig.*'"))
             .isTrue();
     }
 
