@@ -35,7 +35,7 @@ pipeline {
                 expression { params.INTERNAL == 'YES' }
             }
             steps {
-                build job: 'Tiger-Internal-Release',
+                build job: 'Tiger-TIGER-Internal-Release',
                 parameters: [
                     string(name: 'NEW_VERSION', value: String.valueOf("${NEW_VERSION}")),
                     string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
@@ -48,7 +48,7 @@ pipeline {
                 expression { params.GITHUB == 'YES' }
             }
             steps {
-               build job: 'Tiger-GitHub-Release',
+               build job: 'Tiger-TIGER-GitHub-Release',
                parameters: [
                     string(name: 'TAGNAME', value: String.valueOf("R${RELEASE_VERSION}")),
                     string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
@@ -63,7 +63,7 @@ pipeline {
                 expression { params.MAVENCENTRAL == 'YES' }
             }
             steps {
-                build job: 'Tiger-Maven-Central-Release'
+                build job: 'Tiger-TIGER-Maven-Central-Release'
             }
         }
     }
