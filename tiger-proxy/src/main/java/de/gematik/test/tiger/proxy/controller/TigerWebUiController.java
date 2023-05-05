@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import static j2html.TagCreator.*;
 import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
@@ -21,20 +20,6 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +41,23 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static j2html.TagCreator.*;
 
 @Data
 @RequiredArgsConstructor
@@ -159,7 +161,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         String navbar;
 
         if (embedded) {
-            navbar = createNavbar(tigerProxy, "margin-bottom: 2em;", "margin-inline: auto;");
+            navbar = createNavbar(tigerProxy, "margin-bottom: 3.5em;", "margin-inline: auto;");
         } else {
             navbar = createNavbar(tigerProxy, "", "");
         }

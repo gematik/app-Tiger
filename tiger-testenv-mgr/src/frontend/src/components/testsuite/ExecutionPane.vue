@@ -88,7 +88,7 @@
           <i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i>
         </a>
       </h2>
-      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}/?embedded=true`"/>
+      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100" :src="`${localProxyWebUiUrl}?embedded=true`"/>
       <div v-else class="w-100 no-connection-local-proxy serverstatus-stopped">
         <i class="fas fa-project-diagram left"></i>
         No connection to local proxy.
