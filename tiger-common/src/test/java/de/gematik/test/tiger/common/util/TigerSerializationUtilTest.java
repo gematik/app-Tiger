@@ -13,10 +13,10 @@ import static de.gematik.test.tiger.common.util.TigerSerializationUtil.toMap;
 import static de.gematik.test.tiger.common.util.TigerSerializationUtil.yamlToJsonObject;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TigerSerializationUtilTest {
+class TigerSerializationUtilTest {
 
     @Test
-    public void yamlToJsonObjectNestedTest() {
+    void yamlToJsonObjectNestedTest() {
         final JSONObject jsonObject = yamlToJsonObject("foo:\n" +
             "  bar: someString\n" +
             "  list:\n" +
@@ -43,7 +43,7 @@ public class TigerSerializationUtilTest {
     }
 
     @Test
-    public void yamlToMapTest() {
+    void yamlToMapTest() {
         assertThat(toMap(DummyBean.builder()
             .integer(42)
             .string("stringValue")

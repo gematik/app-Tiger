@@ -28,6 +28,7 @@
 * TGR-888: ${hostname} added as a configuration property
 * TGR-890: Workflow Ui now has a quit button in the left sidebar to abort the currently active test execution
 * TGR-890: Workflow Ui now has a pause button in the left sidebar to pause test execution. Please be aware that timeouts (e.g. while waiting for a rbel message to appear are not affected by the pause mode, thus using pause on these steps will cause a timeout and potentially subsequent test failure).
+* TGR-901: New server-type "zion" added. Supports adding and configuring zion-Servers directly in a tiger.yaml
 * TGR-730: support changing log level similar to spring boot by specifying package or class name and level in tiger.yaml under logging.level
 ```yaml
 servers:

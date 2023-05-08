@@ -14,6 +14,7 @@ import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.net.*;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,13 +27,15 @@ import org.awaitility.core.ConditionTimeoutException;
 
 public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
 
-    /** Container to store exceptions while performing startup of server, useful if you start external processes
-     * and want to monitor them in a separate thread...
+    /**
+     * Container to store exceptions while performing startup of server, useful if you start external processes and want to monitor them in a separate
+     * thread...
+     *
      * @see de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer
      */
     protected final AtomicReference<Throwable> startupException = new AtomicReference<>();
 
-    AbstractExternalTigerServer(String hostname, String serverId, CfgServer configuration,
+    public AbstractExternalTigerServer(String hostname, String serverId, CfgServer configuration,
         TigerTestEnvMgr tigerTestEnvMgr) {
         super(hostname, serverId, tigerTestEnvMgr, configuration);
     }
@@ -94,7 +97,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         try {
             checkUrlOrThrowException(url);
             printServerUpMessage();
-            setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() +" up & healthy");
+            setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy");
         } catch (ConnectException | SocketTimeoutException cex) {
             if (!quiet) {
                 log.info("No connection to {} of {}...", url, getServerId());
@@ -133,7 +136,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
                 .equals(httpConnection.getResponseCode())) {
                 throw new TigerEnvironmentStartupException(
                     "Return code for server '%s' does not match: %nExpected %d but got %d",
-                    getServerId(),  getConfiguration().getHealthcheckReturnCode(), httpConnection.getResponseCode());
+                    getServerId(), getConfiguration().getHealthcheckReturnCode(), httpConnection.getResponseCode());
             }
         }
     }
@@ -155,7 +158,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() +" up & healthy (default timeout)");
+        setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy (default timeout)");
     }
 
     URL buildHealthcheckUrl() {
@@ -165,12 +168,12 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
             );
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(
-                "Could not build healthcheck URL from '" + getConfiguration().getHealthcheckUrl()
+                "Could not build healthcheck URL from '" + getHealthcheckUrl()
                     + "'!", e);
         }
     }
 
-    Optional<String> getHealthcheckUrl() {
+    public Optional<String> getHealthcheckUrl() {
         return Optional.ofNullable(getConfiguration().getHealthcheckUrl());
     }
 
@@ -178,7 +181,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     public String getDestinationUrl(String fallbackProtocol) {
         try {
             final URIBuilder uriBuilder = new URIBuilder(getHealthcheckUrl().orElseThrow(
-                    () -> new TigerTestEnvException("No Healthcheck Url is set for server " + getServerId()))
+                () -> new TigerTestEnvException("No Healthcheck Url is set for server " + getServerId()))
             ).setPath("");
             if (StringUtils.isNotEmpty(fallbackProtocol)) {
                 uriBuilder.setScheme(fallbackProtocol);
@@ -190,9 +193,11 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     }
 
     boolean isHealthCheckNone() {
-        return getConfiguration().getHealthcheckUrl() == null ||
-            getConfiguration().getHealthcheckUrl().isEmpty() ||
-            getConfiguration().getHealthcheckUrl().equals("NONE");
+        return !getHealthcheckUrl()
+            .filter(Objects::nonNull)
+            .filter(StringUtils::isNotEmpty)
+            .filter(s -> !s.equals("NONE"))
+            .isPresent();
     }
 
     protected void applyEnvPropertiesToProcess(ProcessBuilder processBuilder) {

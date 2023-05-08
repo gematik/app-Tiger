@@ -142,7 +142,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     }
 
     @Override
-    Optional<String> getHealthcheckUrl() {
+    public Optional<String> getHealthcheckUrl() {
         return Optional.of("http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getAdminPort());
     }
 

@@ -58,7 +58,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     }
 
     @Override
-    Optional<String> getHealthcheckUrl() {
+    public Optional<String> getHealthcheckUrl() {
         if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
             return Optional.of(getConfiguration().getSource().get(0));
         } else {

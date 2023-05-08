@@ -71,16 +71,9 @@
         <!-- tiger -->
         <dependency>
             <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-rbel</artifactId>
+            <artifactId>tiger-testenv-mgr</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>de.gematik.idp</groupId>
-            <artifactId>idp-client</artifactId>
-            <version>21.0.8</version>
-            <scope>test</scope>
-        </dependency>-->
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-utils</artifactId>

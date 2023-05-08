@@ -17,7 +17,7 @@ public class CfgTemplate {
 
     private String templateName;
     @JsonDeserialize(using = TigerServerTypeImpl.class)
-    @JsonSerialize(using = TigerServerTypeSerlializer.class)
+    @JsonSerialize(using = TigerServerTypeSerializer.class)
     private TigerServerType type;
     private List<String> source = new ArrayList<>();
     private String version;

@@ -23,7 +23,9 @@ public class KeyManagerFunctions {
     public void initJexl() {
         TigerJexlExecutor.INSTANCE = new RbelJexlExecutor();
         TigerJexlExecutor.registerAdditionalNamespace("keyMgr", this);
-        TigerGlobalConfiguration.putValue("zion.port", environment.getProperty("local.server.port"));
+        if (environment.getProperty("local.server.port") != null) {
+            TigerGlobalConfiguration.putValue("zion.port", environment.getProperty("local.server.port"));
+        }
     }
 
     public String b64Certificate(String name) {

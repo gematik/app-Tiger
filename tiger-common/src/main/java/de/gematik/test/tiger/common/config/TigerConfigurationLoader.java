@@ -439,10 +439,16 @@ public class TigerConfigurationLoader {
     }
 
     public void putValue(String key, String value) {
+        if (value == null) {
+            throw new TigerConfigurationException("Trying to store null-value. Only non-values are allowed!");
+        }
         putValue(key, value, SourceType.RUNTIME_EXPORT);
     }
 
     public void putValue(String key, Object value) {
+        if (value == null) {
+            throw new TigerConfigurationException("Trying to store null-value. Only non-values are allowed!");
+        }
         if (value instanceof String) {
             putValue(key, (String) value);
         } else {

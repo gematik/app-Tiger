@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.common.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,6 +26,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,9 +37,12 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 public class TigerConfigurationTest {
 
     @BeforeEach
+    @AfterEach
     void setup() {
         System.clearProperty("NESTEDBEAN_BAR");
         System.clearProperty("NESTEDBEAN_FOO");
+        System.clearProperty("nestedbean.inner.bar");
+        System.clearProperty("string");
         TigerGlobalConfiguration.reset();
     }
 
@@ -636,6 +641,14 @@ public class TigerConfigurationTest {
     @Test
     void testGetEnvAsStringPathOk() {
         assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next())).isNotBlank();
+    }
+
+    @Test
+    void setNullValue_ShouldFail() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.putValue("my.key", null))
+            .isInstanceOf(TigerConfigurationException.class);
+        assertThatThrownBy(() -> TigerGlobalConfiguration.putValue("my.key", (Integer) null))
+            .isInstanceOf(TigerConfigurationException.class);
     }
 
     @Test
