@@ -90,6 +90,7 @@ public class TigerDirector {
             setDefaultProxyToLocalTigerProxy();
         } catch (RuntimeException e) {
             quit(true);
+            throw e;
         }
 
         initialized = true;
