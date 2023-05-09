@@ -25,6 +25,7 @@
 * Added first version of FAQ.md
 * TGR-867: ExternalUrl server uses source URL as default health check URL if not set
 * TGR-872: Added glue code to wait for non-paired messages (optional excluding existing messages)
+* TGR-866: Glue-Code to change TLS-certificates for local TigerProxy during test execution
 * TGR-888: ${hostname} added as a configuration property
 * TGR-890: Workflow Ui now has a quit button in the left sidebar to abort the currently active test execution
 * TGR-890: Workflow Ui now has a pause button in the left sidebar to pause test execution. Please be aware that timeouts (e.g. while waiting for a rbel message to appear are not affected by the pause mode, thus using pause on these steps will cause a timeout and potentially subsequent test failure).

@@ -85,6 +85,7 @@ public abstract class AbstractTigerProxyTest {
     public void spawnTigerProxyWith(TigerProxyConfiguration configuration) {
         System.setProperty("java.util.logging.config.file", "SKIP_MOCKSERVER_LOG_INIT!");
         configuration.setProxyLogLevel("ERROR");
+        configuration.setName("Primary Tiger Proxy");
         tigerProxy = new TigerProxy(configuration);
 
         proxyRest = Unirest.spawnInstance();

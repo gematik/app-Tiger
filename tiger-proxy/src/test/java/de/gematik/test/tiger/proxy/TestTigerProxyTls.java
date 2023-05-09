@@ -274,6 +274,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .from("/")
                 .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
+            .name("secondProxy")
             .build());
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
@@ -638,5 +639,36 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
         assertThat(checkCounter)
             .hasValueGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    void changeCertificateDuringRuntime_shouldBeUsedDuringHandshake() throws UnirestException {
+        final TigerProxyConfiguration cfg = TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("https://backend")
+                .to("http://localhost:" + fakeBackendServerPort)
+                .build()))
+            .build();
+        spawnTigerProxyWith(cfg);
+
+        // initial get (force certificate to be used)
+        proxyRest.get("https://backend/foobar").asJson();
+
+        // change certificate
+        cfg.getTls().setServerRootCa(new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"));
+        tigerProxy.restartMockserver();
+
+        // should use new certificate
+        assertThatThrownBy(() -> proxyRest.get("https://backend/foobar").asJson())
+            .isInstanceOf(RuntimeException.class);
+        var newRestClient = Unirest.spawnInstance();
+        newRestClient.config()
+            .proxy("localhost", tigerProxy.getProxyPort())
+            .sslContext(tigerProxy.buildSslContext());
+
+        final HttpResponse<JsonNode> response = newRestClient.get("https://backend/foobar").asJson();
+
+        assertThat(response.getStatus()).isEqualTo(666);
+        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
     }
 }
