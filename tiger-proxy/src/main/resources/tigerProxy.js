@@ -711,7 +711,7 @@ function addQueryBtn(reqEl) {
   let msgUuid = getAll("a", titleDiv)[0].getAttribute("name");
 
   let queryBtn = document.createElement('a');
-  queryBtn.innerHTML = '<i class="fas fa-user-secret mx-2"></i>';
+  queryBtn.innerHTML = '<span class="is-size-7 fw-bold">Inspect</span>';
   queryBtn.setAttribute("class", "btn modal-button float-end mx-3");
   queryBtn.setAttribute("data-bs-target", "#jexlQueryModal");
   queryBtn.setAttribute("data-bs-toggle", "modal");
