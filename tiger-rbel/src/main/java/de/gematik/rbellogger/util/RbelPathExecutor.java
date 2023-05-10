@@ -147,7 +147,7 @@ public class RbelPathExecutor {
 
     private List<RbelElement> findChildNodesByJexlExpression(final RbelElement element, final String jexl) {
         RbelJexlExecutor executor = new RbelJexlExecutor();
-        return element.getChildNodesWithKey().stream()
+        return element.getChildNodesWithKey().stream().parallel()
             .filter(candidate ->
                 executor.matchesAsJexlExpression(jexl, new TigerJexlContext()
                     .withKey(candidate.getKey())

@@ -13,7 +13,6 @@ import org.apache.commons.jexl3.introspection.JexlPermissions;
 @Slf4j
 public class TigerJexlExecutor {
 
-    private static final Map<Integer, JexlExpression> JEXL_EXPRESSION_CACHE = new HashMap<>();
     public static final Deque<Object> ELEMENT_STACK = new ConcurrentLinkedDeque<>();
     public static boolean ACTIVATE_JEXL_DEBUGGING = false;
     public static TigerJexlExecutor INSTANCE = new TigerJexlExecutor();
@@ -102,11 +101,6 @@ public class TigerJexlExecutor {
     }
 
     protected JexlExpression buildExpression(String jexlExpression, TigerJexlContext mapContext) {
-        final int hashCode = jexlExpression.hashCode();
-        if (JEXL_EXPRESSION_CACHE.containsKey(hashCode)) {
-            return JEXL_EXPRESSION_CACHE.get(hashCode);
-        }
-
         JexlBuilder jexlBuilder = new JexlBuilder()
             .namespaces(NAMESPACE_MAP)
             .permissions(JexlPermissions.UNRESTRICTED)
@@ -114,7 +108,6 @@ public class TigerJexlExecutor {
         jexlBuilder.options().setStrictArithmetic(false);
         final JexlEngine jexlEngine = jexlBuilder.create();
         final JexlExpression expression = jexlEngine.createExpression(jexlExpression);
-        JEXL_EXPRESSION_CACHE.put(hashCode, expression);
         return expression;
     }
 

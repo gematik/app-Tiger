@@ -77,7 +77,7 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
             .filter(p -> CharMatcher.ascii().matchesAllOf(p.getValue()))
             .collect(Collectors.toList());
         for (var pair : replacedPaths) {
-            final String id = RandomStringUtils.randomAlphabetic(20); //NOSONAR
+            final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); //NOSONAR
             mapContext.put(id, pair.getValue());
             jexlExpression = jexlExpression.replace(pair.getKey(), id);
         }
