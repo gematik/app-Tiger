@@ -4,11 +4,13 @@
 
 package de.gematik.test.tiger.lib;
 
-import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
-import java.net.URI;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import kong.unirest.Unirest;
+import kong.unirest.UnirestException;
+import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
+import net.serenitybdd.core.Serenity;
 import net.serenitybdd.rest.SerenityRest;
 import org.junit.jupiter.api.Test;
 
@@ -16,15 +18,28 @@ import org.junit.jupiter.api.Test;
 class TestSerenityRestSetup {
 
     @Test
-    void useNonExistentProxy_ExceptionMessageShouldContainRequestInformation() {
-        SerenityRestUtils.setupSerenityRest(1234);
+    void trustStoreIsSet_ShouldBeValidRequestToHTTPS() {
+        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/trustStoreTest.yaml");
 
-        final String proxy = "http://localhost:" + findFreePort();
-        final String serverUrl = "http://localhost:5342/foobar";
-        assertThatThrownBy(() -> SerenityRest
-            .with().proxy(proxy)
-            .get(new URI(serverUrl)))
-            .hasMessageContaining(proxy)
-            .hasMessageContaining("GET " + serverUrl);
+        try {
+            Serenity.throwExceptionsImmediately();
+            TigerDirector.start();
+            assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
+            UnirestInstance unirestInstance = Unirest.spawnInstance();
+            unirestInstance.config()
+                .proxy("localhost", TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getProxyPort());
+            try {
+                unirestInstance.get("https://blub").asString();
+            } catch (UnirestException ex) {
+                ex.printStackTrace();
+            }
+            assertThat(SerenityRest
+                .with().get("https://blub").getStatusCode()).isEqualTo(200);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw new RuntimeException(t);
+        } finally {
+            TigerDirector.getTigerTestEnvMgr().shutDown();
+        }
     }
 }

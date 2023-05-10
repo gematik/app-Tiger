@@ -258,6 +258,9 @@ public class TigerDirector {
         TigerProxyConfiguration tpCfg = tigerTestEnvMgr.getConfiguration().getTigerProxy();
         // set proxy to local tiger proxy for test suites
         if (tigerTestEnvMgr.isLocalTigerProxyActive()) {
+            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy -> {
+                SerenityRestUtils.setupSerenityRest(proxy);
+            });
             if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") != null) {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     RbelAnsiColors.RED_BOLD));
@@ -272,7 +275,6 @@ public class TigerDirector {
                     System.setProperty("https.proxyHost", "localhost");
                     System.setProperty("https.proxyPort", String.valueOf(proxy.getProxyPort()));
                     System.setProperty("java.net.useSystemProxies", "true");
-                    SerenityRestUtils.setupSerenityRest(proxy.getProxyPort());
                 });
             }
         } else {

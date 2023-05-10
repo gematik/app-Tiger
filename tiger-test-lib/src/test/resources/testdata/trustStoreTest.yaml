@@ -1,0 +1,8 @@
+tigerProxy:
+  adminPort: ${free.port.0}
+  tls:
+    alternativeNames:
+      - blub
+  proxyRoutes:
+      - from: https://blub
+        to: http://localhost:${free.port.0}
