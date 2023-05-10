@@ -4,18 +4,28 @@
 
 package de.gematik.test.tiger.lib;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestException;
-import kong.unirest.UnirestInstance;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import net.serenitybdd.rest.SerenityRest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
 class TestSerenityRestSetup {
+
+    @BeforeEach
+    void init() {
+        TigerDirector.testUninitialize();
+    }
+
+    @AfterEach
+    void clearProperties() {
+        System.clearProperty("TIGER_TESTENV_CFGFILE");
+        TigerGlobalConfiguration.reset();
+    }
 
     @Test
     void trustStoreIsSet_ShouldBeValidRequestToHTTPS() {
@@ -25,19 +35,8 @@ class TestSerenityRestSetup {
             Serenity.throwExceptionsImmediately();
             TigerDirector.start();
             assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
-            UnirestInstance unirestInstance = Unirest.spawnInstance();
-            unirestInstance.config()
-                .proxy("localhost", TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getProxyPort());
-            try {
-                unirestInstance.get("https://blub").asString();
-            } catch (UnirestException ex) {
-                ex.printStackTrace();
-            }
             assertThat(SerenityRest
-                .with().get("https://blub").getStatusCode()).isEqualTo(200);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw new RuntimeException(t);
+                .with().get("https://blub/webui").getStatusCode()).isEqualTo(200);
         } finally {
             TigerDirector.getTigerTestEnvMgr().shutDown();
         }
