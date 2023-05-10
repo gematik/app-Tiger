@@ -396,6 +396,8 @@ Is `null` if not present
 
 Additionally you can always reference the current element (via @.) or the root element (via $.) in any JEXL-expression. Lets explain this using an example.
 
+For more detailed information on JEXL expressions please refer to xref:tigerUserInterfaces.adoc#_jexl_expression_detail[Detailed JEXL-expressions].
+
 Consider the following rbel tree:
 
 image::media/tiger-proxy-nested-array-tree.png[title="Nested RBel tree with array"]

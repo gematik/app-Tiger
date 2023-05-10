@@ -57,7 +57,7 @@ The displayed buttons can trigger the following actions:
 * *Quit* … allows you to quit the Tiger Proxy instance
 
 
-[#_jexl_expression]
+[#_jexl_expression_detail]
 === Explanation of JEXL Expressions
 
 In the xref:tigerTestLibrary.adoc#_workflow_ui[Workflow UI] and in the xref:_web_ui[WebUI] you can inspect the requests and response messages.
@@ -97,13 +97,8 @@ Therefore the following operators could be used.
 |Empty| The unary empty operator behaves like the corresponding function empty().
 |size| The unary size operator behaves like the corresponding function size().
 |===
-Important to know is that when you use a RbelPath expression you have to make sure to add spaces before and after the operator.
 
-image::media/jexlspacesright.png[width=50%,title="Keep in mind to add spaces before and after the operator when using RbelPath "]
-
-If spaces are forgotten, the conition will return "false".
-
-image::media/jexlspaceswrong.png[width=50%,title="The condition will be false when spaces are forgotten "]
+image::media/jexlspacesright.png[width=50%,title="Rbel Path Expression"]
 
 ==== Access on Array, Lists and Maps
 
