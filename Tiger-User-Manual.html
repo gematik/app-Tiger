@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 1.3.2-SNAPSHOT - 2023-03-30</span>
+<span id="revdate">Version 2.0.0-SNAPSHOT - 2023-05-11</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -284,8 +284,9 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_tiger_test_lib_configuration">5.1. Tiger test lib configuration</a></li>
 <li><a href="#_cucumber_hooks">5.2. Cucumber and Hooks</a></li>
 <li><a href="#_using_the_cucumber_tiger_validation_steps">5.3. Using the Cucumber Tiger validation steps</a></li>
-<li><a href="#_using_tiger_test_lib_helper_classes">5.4. Using Tiger test lib helper classes</a></li>
-<li><a href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.5. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
+<li><a href="#_using_the_http_client_steps">5.4. Using the HTTP client steps</a></li>
+<li><a href="#_using_tiger_test_lib_helper_classes">5.5. Using Tiger test lib helper classes</a></li>
+<li><a href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.6. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -305,12 +306,16 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_admin_ui">7.1. Admin UI</a></li>
 <li><a href="#_workflow_ui_2">7.2. Workflow UI</a></li>
 <li><a href="#_web_ui">7.3. Standalone Tiger Proxy UI (WebUI)</a></li>
+<li><a href="#_jexl_expression_detail">7.4. Explanation of JEXL Expressions</a></li>
 </ul>
 </li>
 <li><a href="#_links_to_test_relevant_topics">8. Links to test relevant topics</a></li>
-<li><a href="#_faqs">9. FAQs</a>
+<li><a href="#_frequently_asked_questions">9. Frequently asked questions</a>
 <ul class="sectlevel2">
-<li><a href="#_docker_container_creation_fails">9.1. docker container creation fails</a></li>
+<li><a href="#_maven">9.1. Maven</a></li>
+<li><a href="#_extensions">9.2. Extensions</a></li>
+<li><a href="#_workflow_ui_3">9.3. Workflow UI</a></li>
+<li><a href="#_other_topics">9.4. Other topics</a></li>
 </ul>
 </li>
 </ul>
@@ -690,7 +695,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
         &lt;dependency&gt;
             &lt;groupId&gt;org.junit.vintage&lt;/groupId&gt;
             &lt;artifactId&gt;junit-vintage-engine&lt;/artifactId&gt;
-            &lt;version&gt;5.8.2&lt;/version&gt;
+            &lt;version&gt;${version.junit5}}&lt;/version&gt;
         &lt;/dependency&gt;
         --&gt;</span>
         <span class="comment">&lt;!-- needed for the JUnit driver class @CucumberOptions annotation --&gt;</span>
@@ -1272,8 +1277,31 @@ To choose a different test environmental configuration file you may set the envi
 If none of these files exist it will fail the start-up.</p>
 </div>
 <div class="paragraph">
-<p>If the environment variable is not set, then the test environment manager first checks for a file named <code>tiger-${COMPUTERNAME}.yaml</code>, and if this also does not exist, it searches for a file named <code>tiger.yaml</code>.<br>
+<p>If the environment variable is not set it searches for files named <code>tiger.yaml</code> or <code>tiger.yml</code>.<br>
 If none of these files exist it will fail the start-up.</p>
+</div>
+<div class="paragraph">
+<p>It then loads further yaml-files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>tiger-${hostname}.yaml</code> and <code>tiger-${hostname}.yml</code> are read and give the possibility to make computer-dependent configuration. The hostname is the of your own computer in the network (on Windows-machines typically the computername).</p>
+</li>
+<li>
+<p>The list given under <code>tiger.additionalYamls</code> is read. Each list-entry has two properties:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>filename</code> pointing to the file to be read. This can be relative to the tiger.yaml (primary) or relative to the working-directory (secondary). Keep in mind that placeholders can be used in the filename!</p>
+</li>
+<li>
+<p><code>baseKey</code>, an optional attribute, which gives you the chance to prefix every property from the given file with this key (keep in mind that the <code>tiger.yaml</code> has a baseKey of <code>tiger</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>In the start-up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.</p>
@@ -1352,7 +1380,7 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
   <span class="key">source</span>:
     - <span class="string"><span class="content">source entry 1</span></span>
     - <span class="string"><span class="content">source entry 2</span></span>
-  <span class="comment"># used by all node types</span>
+  <span class="comment"># used by all node types, for external URL this property is OPTIONAl and fallback is the source URL</span>
   <span class="key">healthcheckUrl</span>: <span class="string"><span class="content">string</span></span>
   <span class="comment"># OPTIONAL only declare the server healthy once the specified return code</span>
   <span class="comment"># is given</span>
@@ -1450,7 +1478,7 @@ Their meaning and format are explained in the related section.</p>
 <div class="listingblock">
 <div class="title">Listing 6. Type specific properties</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="yaml">  <span class="comment"># type specific sub structure for external jar, external url and Tiger Proxy nodes</span>
+<pre class="CodeRay highlight"><code data-lang="yaml">  <span class="comment"># type specific sub structure for external jar, Tiger Proxy, docker and helm chart nodes</span>
   <span class="key">externalJarOptions</span>:
     <span class="comment"># used by external jar and Tiger Proxy nodes</span>
     <span class="key">workingDir</span>: <span class="string"><span class="content">string</span></span>
@@ -2924,6 +2952,34 @@ Is <code>null</code> if not present</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>Additionally you can always reference the current element (via @.) or the root element (via $.) in any JEXL-expression. Lets explain this using an example.</p>
+</div>
+<div class="paragraph">
+<p>For more detailed information on JEXL expressions please refer to <a href="#_jexl_expression_detail">Detailed JEXL-expressions</a>.</p>
+</div>
+<div class="paragraph">
+<p>Consider the following rbel tree:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="media/tiger-proxy-nested-array-tree.png" alt="tiger proxy nested array tree">
+</div>
+<div class="title">Figure 9. Nested RBel tree with array</div>
+</div>
+<div class="paragraph">
+<p>At <code>$.body.body.idp_entity</code> we have an array with potentially multiple entries (here there is only one, entry <code>0</code>). We want to select an entry where the <code>iss</code>-claim matches our expectation. We can achieve this with using a nested Rbel-Path inside the JEXL-Expression:</p>
+</div>
+<div class="paragraph">
+<p><code>$.body.body.idp_entity.[?(@.iss.content=='https://idpsek.dev.gematik.solutions')]</code></p>
+</div>
+<div class="paragraph">
+<p>Here the <code>@.</code> references the current element: For each array entry the expression is tested, with <code>@.</code> always referring to the current entry.<br>
+To access elements starting from the root you can use <code>$.</code> like so:</p>
+</div>
+<div class="paragraph">
+<p><code>$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]</code></p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_debugging_rbel_expressions">4.7.2. Debugging Rbel-Expressions</h4>
@@ -3162,7 +3218,17 @@ and activate / deactivate certain features.</p>
 <span class="comment"># flag whether to start the local Tiger Proxy (default) or to omit it completely.</span>
 <span class="comment"># if you have the local Tiger Proxy deactivated you will NOT be able to</span>
 <span class="comment"># validate / log any traffic data from test requests / responses.</span>
-<span class="key">localProxyActive</span>: <span class="string"><span class="content">true</span></span></code></pre>
+<span class="key">localProxyActive</span>: <span class="string"><span class="content">true</span></span>
+
+<span class="comment"># section to allow adapting the logging levels of packages/class loggers similar to spring boot</span>
+<span class="key">logging</span>:
+  <span class="key">level</span>:
+    <span class="comment"># activate tracing for a specific class</span>
+    <span class="key">de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr</span>: <span class="string"><span class="content">TRACE</span></span>
+    <span class="comment"># activate tracing for all classes and subpackages of a package</span>
+    <span class="key">de.gematik.test.tiger.proxy</span>: <span class="string"><span class="content">TRACE</span></span>
+    <span class="comment"># activate tracing for the local Tiger Proxy. This logger has a special name due to its importance in the tiger test framework</span>
+    <span class="key">localTigerProxy</span>: <span class="string"><span class="content">TRACE</span></span></code></pre>
 </div>
 </div>
 </div>
@@ -3172,7 +3238,7 @@ and activate / deactivate certain features.</p>
 <p>As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.</p>
 </div>
 <div class="paragraph">
-<p>That&#8217;s why it is mandatory to use the TigerCucumberRunner, which internally registers the plugin <code>io.cucumber.core.TigerCucumberListener</code> to the plugins list.</p>
+<p>That&#8217;s why it is mandatory to use the TigerCucumberRunner, which internally registers the plugin <code>io.cucumber.core.pluginTigerSerenityReporterPlugin</code> to the plugins list.</p>
 </div>
 <div class="paragraph">
 <p>The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.</p>
@@ -3285,6 +3351,177 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
         &quot;&quot;&quot;</code></pre>
 </div>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_using_the_http_client_steps">5.4. Using the HTTP client steps</h3>
+<div class="paragraph">
+<p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP<br>
+requests, with bodies, default and custom headers.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 16. Tiger response validation steps example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
+
+  Background:
+    Given TGR clear recorded messages
+
+  Scenario: Simple Get Request
+    When TGR send empty GET request to &quot;http://winstone&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;GET&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/?&quot;
+
+  Scenario: Get Request to folder
+    When TGR send empty GET request to &quot;http://winstone/target&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;GET&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+
+  Scenario: PUT Request to folder
+    When TGR send empty PUT request to &quot;http://winstone/target&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+
+  Scenario: PUT Request with body to folder
+    When TGR send PUT request with &quot;{'hello': 'world!'}&quot; to &quot;http://winstone/target&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.body.hello')}&quot; matches &quot;world!&quot;
+
+  Scenario: PUT Request with body from file to folder
+    When TGR send PUT request with &quot;!{file('pom.xml')}&quot; to &quot;http://winstone/target&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}&quot; matches &quot;4.0.0&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;text/plain.*&quot;
+
+  Scenario: DELETE Request without body
+    When TGR send empty DELETE request to &quot;http://winstone/not_a_file&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;DELETE&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/not_a_file\/?&quot;
+
+  Scenario: Request with custom header
+    When TGR send empty GET request to &quot;http://winstone/not_a_file&quot; with headers:
+      | foo    | bar |
+      | schmoo | lar |
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.foo')}&quot; matches &quot;bar&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.schmoo')}&quot; matches &quot;lar&quot;
+
+  Scenario: Request with default header
+    Given TGR set default header &quot;key&quot; to &quot;value&quot;
+    When TGR send empty GET request to &quot;http://winstone/not_a_file&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
+    When TGR send POST request with &quot;hello world&quot; to &quot;http://winstone/not_a_file&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.body')}&quot; matches &quot;hello world&quot;
+
+  Scenario: Request with custom and default header
+    Given TGR set default header &quot;key&quot; to &quot;value&quot;
+    When TGR send empty GET request to &quot;http://winstone/not_a_file&quot; with headers:
+      | foo | bar |
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR print current request as rbel-tree
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.foo')}&quot; matches &quot;bar&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
+
+  Scenario: Request with custom and default header
+    Given TGR set local variable &quot;configured_state_value&quot; to &quot;some_value&quot;
+    Given TGR set local variable &quot;configured_param_name&quot; to &quot;my_cool_param&quot;
+    When TGR send POST request to &quot;http://winstone/not_a_file&quot; with:
+      | ${configured_param_name}   | state                     | redirect_uri        |
+      | client_id                  | ${configured_state_value} | https://my.redirect |
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR print current request as rbel-tree
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.body.state')}&quot; matches &quot;some_value&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.body.my_cool_param')}&quot; matches &quot;client_id&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/x-www-form-urlencoded.*&quot;
+
+  Scenario: Request with custom and default header
+    Given TGR set default header &quot;Content-Type&quot; to &quot;application/json&quot;
+    When TGR send POST request to &quot;http://winstone/not_a_file&quot; with:
+      | ${configured_param_name}   |
+      | client_id                  |
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR print current request as rbel-tree
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/json&quot;
+
+  #@Ignore
+  #Scenario: Request with mutual TLS
+    # Given TGR set default TLS client certificate to &quot;src/test/resources/rsaStoreWithChain.jks;gematik&quot;
+    #When TGR send empty GET request to &quot;https://winstone/not_a_file&quot;
+    #Then TGR find last request to path &quot;.*&quot;
+    #And TGR print current request as rbel-tree
+    #And TGR assert &quot;!{rbel:currentRequestAsString('$.clientTlsCertificateChain.0.subject')}&quot; matches &quot;.*CN=authn.aktor.epa.telematik-test.*&quot;
+
+  Scenario Outline: JEXL Rbel Namespace Test
+    Given TGR show banner &quot;Starting üöäß &lt;txt&gt;...&quot;
+    #And TGR pausiere Testausführung mit Nachricht &quot;Bitte einmal im Kreis drehen&quot;
+    When TGR send empty GET request to &quot;http://winstone&quot;
+    Then TGR find request to path &quot;/&quot;
+    And TGR print current request as rbel-tree
+    Then TGR current response with attribute &quot;$.body.html.head.link.href&quot; matches &quot;!{rbel:currentResponseAsString('$.body.html.head.link.href')}&quot;
+
+    Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
+      | txt   | txt2 | txt3| txt4| txt5|
+      | text2 | 21   |31   |41   |51   |
+      | text2 |22    |32   |42   |52   |
+
+  Scenario: Simple first test
+    Given TGR show banner &quot;text2&quot;
+    #And TGR pausiere Testausführung
+    Given TGR show red banner &quot;Starting Demo...&quot;
+    When TGR send empty GET request to &quot;http://winstone&quot;
+    Then TGR find request to path &quot;/&quot;
+    Then TGR current response with attribute &quot;$.body.html.head.link.href&quot; matches &quot;jetty-dir.css&quot;
+    # Given TGR warte auf Abbruch
+
+  Scenario: Test Find Last Request
+    Given TGR show banner &quot;text1&quot;
+    #And TGR pausiere Testausführung mit Nachricht &quot;Regnet es draußen?&quot; und Meldung im Fehlerfall &quot;Es scheint die Sonne&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
+    Then TGR find last request to path &quot;/classes&quot;
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute &quot;$.header.Location.foobar.value&quot; matches &quot;2&quot;
+
+  Scenario: Test find last request with parameters
+    Given TGR show banner &quot;text1&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=1&amp;xyz=4&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
+    Then TGR find last request to path &quot;/classes&quot; with &quot;$.path.foobar.value&quot; matching &quot;1&quot;
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute &quot;$.header.Location.xyz.value&quot; matches &quot;4&quot;
+    #And TGR current response body matches:
+    #&quot;&quot;&quot;
+    #wdfersdferd
+    #&quot;&quot;&quot;
+    Then TGR current response with attribute &quot;$.header.Location.xyz.value&quot; matches &quot;4&quot;
+
+  Scenario: Test find last request
+    Given TGR show banner &quot;text1&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
+    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=3&quot;
+    Then TGR send empty GET request to &quot;http://winstone/directoryWhichDoesNotExist?other=param&quot;
+    Then TGR find the last request
+    And TGR print current request as rbel-tree
+    And TGR print current response as rbel-tree
+    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;404&quot;
+    Then TGR assert &quot;!{rbel:currentRequestAsString('$.path.other.value')}&quot; matches &quot;param&quot;</code></pre>
+</div>
+</div>
 <div class="sect4">
 <h5 id="_xmlunit_diff_builder">XMLUnit Diff Builder</h5>
 <div class="paragraph">
@@ -3358,7 +3595,7 @@ Please note that checking whether a nested key is optional, is not yet possible 
 <p>It should also be noted, that although JSONChecker can match multilevel JSON objects at a high level, it is not yet possible to access nested attributes out of the box. We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 17. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">  {
     <span class="key"><span class="delimiter">&quot;</span><span class="content">alg</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">dir</span><span class="delimiter">&quot;</span></span>,
@@ -3402,9 +3639,8 @@ Please note that checking whether a nested key is optional, is not yet possible 
 only check for regex matches if they were not equal.</p>
 </div>
 </div>
-</div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_validation_glue_code">5.3.3. Complete set of steps in validation glue code</h4>
+<h4 id="_complete_set_of_steps_in_validation_glue_code">5.4.4. Complete set of steps in validation glue code</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// extracted from module /tiger-test-lib</span>
@@ -3445,6 +3681,28 @@ only check for regex matches if they were not equal.</p>
 */</span>
 <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR lösche den gesetzten HTTP Methodenfilter</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR reset request method filter</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Wait until a message is found in which the given node, specified by a RbelPath-Expression, matches the given value.
+* This method will NOT alter currentRequest/currentResponse!!
+*
+* @param rbelPath rbel path to node/attribute
+* @param value    value to match at given node/attribute
+*/</span>
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR warte auf eine Nachricht, in der Knoten {string} mit {string} übereinstimmt</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR wait for message with node {string} matching {string}</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Wait until a NEW message is found in which the given node, specified by a RbelPath-Expression, matches the given value.
+* NEW in this context means that the step will wait and check only messages which are received after the step has started.
+* Any previously received messages will NOT be checked.
+* Please also note that the currentRequest/currentResponse used by the find / find next steps are not altered by this step.
+*
+* @param rbelPath rbel path to node/attribute
+* @param value    value to match at given node/attribute
+*/</span>
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR warte auf eine neue Nachricht, in der Knoten {string} mit {string} übereinstimmt</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR wait for new message with node {string} matching {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * find the first request where the path equals or matches as regex and memorize it in the {@link #rbelValidator}
@@ -3681,7 +3939,99 @@ only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_exemplaric_scenario_konnektorfarm_eau_validation">5.3.4. Exemplaric scenario Konnektorfarm EAU validation</h4>
+<h4 id="_complete_set_of_steps_in_http_client_glue_code">5.4.5. Complete set of steps in HTTP client glue code</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// extracted from module /tiger-test-lib</span>
+<span class="comment">// /src/test/java/de/gematik/test/tiger/glue/HttpGlueCode.java</span>
+
+<span class="comment">/*
+* Sends an empty request via the selected method. Placeholders in address will be resolved.
+*
+* @param method  HTTP request method (see {@link Method})
+* @param address target address
+* @see TigerGlobalConfiguration#resolvePlaceholders(String)
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send empty {requestType} request to {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} sendet</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string}</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Sends an empty request via the selected method and expands the list of default headers with
+* the headers provided by the caller. Placeholders in address and in the data table will be resolved.
+* Example:
+* &lt;pre&gt;
+*     When TGR send empty GET request to &quot;${myAddress}&quot; with headers:
+*      | name | bob |
+*      | age  | 27  |
+* &lt;/pre&gt;
+* This will add two headers (name and age) with the respective values &quot;bob&quot; and &quot;27&quot; on top of
+* the headers which are used by default.
+*
+* @param method        HTTP request method (see {@link Method})
+* @param address       target address
+* @param customHeaders Markdown table of custom headers and their values
+* @see TigerGlobalConfiguration#resolvePlaceholders(String)
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send empty {requestType} request to {string} with headers:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} und den folgenden Headern sendet:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string} mit folgenden Headern:</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Sends a request containing the provided body via the selected method. Placeholders in the
+* body and in address will be resolved.
+*
+* @param method  HTTP request method (see {@link Method})
+* @param body    to be included in the request
+* @param address target address
+* @see TigerGlobalConfiguration#resolvePlaceholders(String)
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request with {string} to {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} und dem folgenden body {string} sendet</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit Body {string}</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Expands the list of default headers with the provided key-value pair. If the key already
+* exists, then the existing value is overwritten by the new value. Placeholders in the
+* header name and in its value will be resolved.
+*
+* @param header key
+* @param value  to be stored under the given key
+* @see TigerGlobalConfiguration#resolvePlaceholders(String)
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set default header {string} to {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR den default header {string} auf den Wert {string} setzen</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze den default header {string} auf den Wert {string}</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Sends a request via the selected method. The request is expanded by the provided key-value
+* pairs. Placeholders in keys and values will be resolved.
+* Example:
+* &lt;pre&gt;
+*      When Send POST request to &quot;http://my.address.com&quot; with
+*       | ${configured_param_name}   | state                     | redirect_uri        |
+*       | client_id                  | ${configured_state_value} | https://my.redirect |
+* &lt;/pre&gt;
+* &lt;br&gt;
+* &lt;b&gt;NOTE:&lt;/b&gt; This Markdown table must contain exactly 1 row of headers and 1 row of
+* values.
+* &lt;/p&gt;
+*
+* @param method     HTTP request method (see {@link Method})
+* @param address    target address
+* @param parameters to be sent with the request
+* @see RequestSpecification#formParams(Map)
+* @see TigerGlobalConfiguration#resolvePlaceholders(String)
+*/</span>
+<span class="annotation">@SuppressWarnings</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">JavadocLinkAsPlainText</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request to {string} with:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:</span><span class="delimiter">&quot;</span></span>)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_exemplaric_scenario_konnektorfarm_eau_validation">5.4.6. Exemplaric scenario Konnektorfarm EAU validation</h4>
 <div class="paragraph">
 <p>The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable. For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.<br>
 Any message that is forwarded by any of these proxies is forwarded to an aggregating Tiger Proxy which in turn forwards all the received messages to the local Tiger Proxy for assertion via the validation test suite.</p>
@@ -3690,7 +4040,7 @@ Any message that is forwarded by any of these proxies is forwarded to an aggrega
 <div class="content">
 <img src="media/tiger-integration-eau-testenv.svg" alt="tiger integration eau testenv">
 </div>
-<div class="title">Figure 9. Tiger EAU Konnektorfarm test environment</div>
+<div class="title">Figure 10. Tiger EAU Konnektorfarm test environment</div>
 </div>
 <div class="paragraph">
 <p>So after starting the validation test suite (and the test environment), the customer / Primärsystem manufacturer must perform the specified workflow. The test suite meanwhile will wait for a given order of requests/responses matching specified criteria to appear.<br>
@@ -3700,11 +4050,11 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 <div class="content">
 <img src="media/tiger-integration-eau-process.svg" alt="tiger integration eau process">
 </div>
-<div class="title">Figure 10. Tiger EAU Konnektorfarm process</div>
+<div class="title">Figure 11. Tiger EAU Konnektorfarm process</div>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_workflow_ui">5.3.5. Workflow UI</h4>
+<h4 id="_workflow_ui">5.4.7. Workflow UI</h4>
 <div class="paragraph">
 <p>The Workflow UI is one of the new features which are currently introduced to Tiger. If activated via the <code>tiger.yaml</code> configuration file (see <a href="#_tiger_test_lib_configuration">Tiger test lib configuration</a>), the Workflow UI will be opened in the current browser window during the test run.<br>
 If no browser is open at the time a new instance will be launched.</p>
@@ -3713,7 +4063,7 @@ If no browser is open at the time a new instance will be launched.</p>
 <div class="content">
 <img src="media/WorkflowUIStartup.png" alt="WorkflowUIStartup">
 </div>
-<div class="title">Figure 11. Workflow UI</div>
+<div class="title">Figure 12. Workflow UI</div>
 </div>
 <div class="paragraph">
 <p>The image above shows the inital startup of the Workflow UI. The Workflow UI is divided into three sections. When the user clicks on the tigers head on the top left the overview section is shown. It tells the user about the overall status, the name of the features and scenarios and the server status and logs.<br>
@@ -3726,60 +4076,86 @@ The image below shows all three sections of the Workflow UI.</p>
 <div class="content">
 <img src="media/WorkflowUI.png" alt="WorkflowUI">
 </div>
-<div class="title">Figure 12. Workflow UI - all views expanded</div>
+<div class="title">Figure 13. Workflow UI - all views expanded</div>
 </div>
 <div class="paragraph">
 <p>TGR banner step will be displayed at the bottom of the Workflow UI and will stay there till the next banner step replaces the message. This way you can instruct manual testers to follow a specified test workflow.<br>
 This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Current message steps for Workflow UI</div>
+<div class="title">Listing 18. Current message steps for Workflow UI</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// copied from module /tiger-test-lib</span>
 <span class="comment">// /src/test/java/de/gematik/test/tiger/glue/TigerGlue.java</span>
 
-    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze globale Variable {string} auf {string} setzen</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set global variable {string} to {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="comment">/*
+* Sets the given key to the given value in the global configuration store. Variable substitution is performed.
+*
+* @param key   key of the context
+* @param value value for the context entry with given key
+*/</span>
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze globale Variable {string} auf {string} setzen</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set global variable {string} to {string}</span><span class="delimiter">&quot;</span></span>)
 
-    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze lokale Variable {string} auf {string} setzen</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set local variable {string} to {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="comment">/*
+* Sets the given key to the given value in the global configuration store. Variable substitution is performed. This
+* value will only be accessible from this exact thread.
+*
+* @param key   key of the context
+* @param value value for the context entry with given key
+*/</span>
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze lokale Variable {string} auf {string} setzen</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set local variable {string} to {string}</span><span class="delimiter">&quot;</span></span>)
 
-    <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe Variable {string} stimmt überein mit {string}</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR assert variable {string} matches {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="comment">/*
+* asserts that value with given key either equals or matches (regex) the given regex string. Variable substitution
+* is performed. This checks both global and local variables!
+* &lt;p&gt;
+*
+* @param key   key of entry to check
+* @param regex regular expression (or equals string) to compare the value of the entry to
+*/</span>
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe Variable {string} stimmt überein mit {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR assert variable {string} matches {string}</span><span class="delimiter">&quot;</span></span>)
 
-    <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe Variable {string} ist unbekannt</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR assert variable {string} is unknown</span><span class="delimiter">&quot;</span></span>)
-
-    <span class="annotation">@Gegebensei</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige {word} Banner {string}</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Given</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show {word} banner {string}</span><span class="delimiter">&quot;</span></span>)
-
-    <span class="annotation">@Gegebensei</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige {word} Text {string}</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Given</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show {word} text {string}</span><span class="delimiter">&quot;</span></span>)
-
-    <span class="annotation">@Gegebensei</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige Banner {string}</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Given</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show banner {string}</span><span class="delimiter">&quot;</span></span>)
-
-    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung</span><span class="delimiter">&quot;</span></span>)
-
-    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution with message {string}</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung mit Nachricht {string}</span><span class="delimiter">&quot;</span></span>)
-
-    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution with message {string} and message in case of error {string}</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung mit Nachricht {string} und Meldung im Fehlerfall {string}</span><span class="delimiter">&quot;</span></span>)
-
-    <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR wait for user abort</span><span class="delimiter">&quot;</span></span>)
-    <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR warte auf Abbruch</span><span class="delimiter">&quot;</span></span>)</code></pre>
+<span class="comment">/*
+* asserts that value of context entry with given key either equals or matches (regex) the given regex string.
+* Variable substitution is performed.
+* &lt;p&gt;
+* Special values can be used:
+*
+* @param key key of entry to check
+*/</span>
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe Variable {string} ist unbekannt</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR assert variable {string} is unknown</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Gegebensei</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige {word} Banner {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Given</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show {word} banner {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Gegebensei</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige {word} Text {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Given</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show {word} text {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Gegebensei</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige Banner {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Given</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show banner {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR wait for user abort</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR warte auf Abbruch</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution with message {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung mit Nachricht {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pause test run execution with message {string} and message in case of error {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR pausiere Testausführung mit Nachricht {string} und Meldung im Fehlerfall {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show HTML Notification:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige HTML Notification:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR assert {string} matches {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe das {string} mit {string} überein stimmt</span><span class="delimiter">&quot;</span></span>)</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The steps four, five and six allow to pause the validation test suite. Please note, these steps are only modified for the Workflow UI and don&#8217;t work on a regular console (no failure, there is just no pause).<br>
-The last step allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester to perform demo transactions that will be logged and saved to HTML reports but are not validated. The wait for user abort subsequently terminates the test execution.</p>
+<p>The pause steps allow to pause the validation test suite. Please note, these steps are only modified for the Workflow UI and don&#8217;t work on a regular console (no failure, there is just no pause).<br>
+The step "wait for user abort" allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester to perform demo transactions that will be logged and saved to HTML reports but are not validated. This step subsequently terminates the test execution.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_using_tiger_test_lib_helper_classes">5.4. Using Tiger test lib helper classes</h3>
+<h3 id="_using_tiger_test_lib_helper_classes">5.5. Using Tiger test lib helper classes</h3>
 <div class="paragraph">
 <p>If you don&#8217;t want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:</p>
 </div>
@@ -3796,7 +4172,7 @@ All classes listed here are part of the tiger-common module
 </table>
 </div>
 <div class="sect3">
-<h4 id="_banner">5.4.1. Banner</h4>
+<h4 id="_banner">5.5.1. Banner</h4>
 <div class="paragraph">
 <p>If you want to use large ASCII art style log banners you may find this class very helpful.<br>
 Supports ANSI coloring and a set of different fonts. Furthermore, all banner messages are displayed and highlighted in the Workflow UI<br>
@@ -3804,19 +4180,19 @@ For more details please check the code and its usages in the Tiger test framewor
 </div>
 </div>
 <div class="sect3">
-<h4 id="_tigerserializationutil">5.4.2. TigerSerializationUtil</h4>
+<h4 id="_tigerserializationutil">5.5.2. TigerSerializationUtil</h4>
 <div class="paragraph">
 <p>This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps. If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described <a href="#_tiger_configuration">in detail here</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_tigerpkiidentityloader_tigerpkiidentity">5.4.3. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
+<h4 id="_tigerpkiidentityloader_tigerpkiidentity">5.5.3. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
 <div class="paragraph">
 <p>The loader class allows to easily instantiate PKI identities from given files. For more details on the format and the supported file types please check <a href="#_configuring_pki_identities_in_tiger_proxys_tls_section">this section in the test environment chapter</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_performing_rest_calls_with_tiger">5.4.4. Performing REST calls with Tiger</h4>
+<h4 id="_performing_rest_calls_with_tiger">5.5.4. Performing REST calls with Tiger</h4>
 <div class="paragraph">
 <p>Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the <code>SerenityRest</code> helper class, you will get detailed information about each call inside the test report.<br>
 The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.</p>
@@ -3837,7 +4213,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 </div>
 </div>
 <div class="sect2">
-<h3 id="_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.5. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
+<h3 id="_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.6. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
 <div class="paragraph">
 <p>Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requriements maintained in Polarion we have a Tiger sub project that syncrhonizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.</p>
 </div>
@@ -3864,6 +4240,9 @@ The Tiger test library configuration also provides a flag to add curl command de
 </li>
 <li>
 <p>@AF-ID:xxx - a link to a defined requirement (Anwendungsfall) in Polarion, where 'xxx' matches the custom field "cfAfId"</p>
+</li>
+<li>
+<p>@AK-ID:xxx - a link to a defined requirement (Akzeptanzkriterium) in Polarion, where 'xxx' matches the work item id</p>
 </li>
 <li>
 <p>@PRIO:n - priority number (1-4), default is '1'</p>
@@ -3905,7 +4284,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <div class="content">
 <img src="media/tiger-configuration-global.svg" alt="tiger configuration global">
 </div>
-<div class="title">Figure 13. The TigerGlobalConfiguration with inlets and outlets</div>
+<div class="title">Figure 14. The TigerGlobalConfiguration with inlets and outlets</div>
 </div>
 <div class="paragraph">
 <p>This allows a vastly simplified retrieval and configuration of nearly all aspects of the system. It is therefore recommended reusing this system for your own testsuite as well.</p>
@@ -3993,7 +4372,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>You could achieve this by exporting the URL (<code>servers.myServer.exports</code>) and referencing it in an argument which is passed into server "B" (<code>serverAUrl=${serverA.url}</code>. The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Configuring using placeholders and exports</div>
+<div class="title">Listing 19. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">servers</span>:
   <span class="key">serverAInternet</span>:
@@ -4067,7 +4446,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 20. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -4090,7 +4469,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>In the above example let&#8217;s say you only want to customize the port. This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 21. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -4115,7 +4494,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. The testsuite</div>
+<div class="title">Listing 22. The testsuite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="Gherkin">    TGR current response with attribute &quot;$.body.ReplyStructure.Header.Sender.url&quot; matches &quot;http://127.0.0.1:${backend.server.port}&quot;</code></pre>
 </div>
@@ -4300,7 +4679,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <div class="content">
 <img src="media/TigerProxyBottomNavBar.png" alt="TigerProxyBottomNavBar">
 </div>
-<div class="title">Figure 14. Tiger Proxy bottom menu bar </div>
+<div class="title">Figure 15. Tiger Proxy bottom menu bar </div>
 </div>
 <div class="paragraph">
 <p>The displayed buttons can trigger the following actions:</p>
@@ -4338,6 +4717,169 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <p><strong>Quit</strong> … allows you to quit the Tiger Proxy instance</p>
 </li>
 </ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jexl_expression_detail">7.4. Explanation of JEXL Expressions</h3>
+<div class="paragraph">
+<p>In the <a href="#_workflow_ui">Workflow UI</a> and in the <a href="#_web_ui">WebUI</a> you can inspect the requests and response messages.<br>
+For that you can use RbelPath and/or JEXL expressions. This section should give you a brief review on the JEXL expressions.</p>
+</div>
+<div class="paragraph">
+<p>Important to know is that an JEXL expression is usually a "condition1 operator condition2" expression which is compared.<br>
+Therefore the following operators could be used.</p>
+</div>
+<div class="sect3">
+<h4 id="_operators">7.4.1. Operators</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col>
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Operator</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">and | &amp;&amp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cond1 <em>and</em> cond2  and cond1 <em>&amp;&amp;</em> cond2 are equivalent</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">or | ||</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cond1 <em>or</em> cond2  and cond1 || cond2 are equivalent</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">not | !</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The ! operator can be used as well as the word <em>not</em>, e.g. !cond1 and not cond1 are equivalent</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">==</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Equality, e.g. cond1 == cond2<br>
+<br>
+         <em>null</em> is only ever equal to null, that means when you compare null to a non-null value, the result is false.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">!=</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inequality</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Greater than</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Less than</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt;=</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Greater than or equal</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&#8656;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Less than ot equal</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">=~</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In or match, can be used to check that a string matches a regular expression.<br>
+      For example "abcdef" =~ "abc.* returns true. It also checks whether any collection, set or map contains a value or not;<br>
+      in that case, it behaves as an "in" operator. "a" =~ ["a","b","c","d","e",f"] returns true.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">!~</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not in or not-match, can be used to check that a string does not match a regular expression.<br>
+      For example "abcdef" !~ "abc.* returns false. It also checks whether any collection, set or map does not contain a value.<br>
+     "a" !~ ["a","b","c","d","e",f"] returns false.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">=^</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">startsWith, for example "abcdef" =^ "abc" returns true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">!^</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">startsNotWith, "abcdef" !^ "abc" returns false</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">=$</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">endsWith, for example "abcdef" =$ "def" returns true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">!$</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">endsNotWith, for example "abcdef" !$ "def" returns false</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Empty</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The unary empty operator behaves like the corresponding function empty().</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">size</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The unary size operator behaves like the corresponding function size().</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock">
+<div class="content">
+<img src="media/jexlspacesright.png" alt="jexlspacesright" width="50%">
+</div>
+<div class="title">Figure 16. Rbel Path Expression</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_access_on_array_lists_and_maps">7.4.2. Access on Array, Lists and Maps</h4>
+<div class="paragraph">
+<p>To access maps in JEXL/RbelPath the point notations is used. In case of lists use the number of the list entry you want to access, starting with 0, 1, 2 and so on.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="media/accessarray.png" alt="accessarray" width="50%">
+</div>
+<div class="title">Figure 17. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_access_jexl_contexts">7.4.3. Access JEXL contexts</h4>
+<div class="paragraph">
+<p>There are predefined JEXL contexts which can be used for the query, for example <code>isRequest</code>, <code>isResponse</code>, <code>charset</code>, <code>content</code> or also more<br>
+complex contexts like <code>response.statuscode</code>, <code>request.url</code>, <code>message.method</code> etc.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="media/accessjexlcontext.png" alt="accessjexlcontext" width="50%">
+</div>
+<div class="title">Figure 18. Use single quotes when using JEXL contexts with a hyphen. </div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_more_examples">7.4.4. More Examples</h4>
+<div class="paragraph">
+<p><code>message.headers.'content-length'.0 == "0"</code>  &#8594; Use single quotes when using JEXL contexts with a hyphen.</p>
+</div>
+<div class="paragraph">
+<p><code>@.body.0.name.content =^ "Jasmin"</code> &#8594; check whether the content starts with "Jasmin"</p>
+</div>
+<div class="paragraph">
+<p><code>$.body.recordId == "X12349035"</code>   &#8594; checks for the recordId of a decrypted EPA-VAU-message</p>
+</div>
+<div class="paragraph">
+<p><code>$.header.Content-Type == "application/json"</code>  &#8594; check if the message is a JSON-message</p>
+</div>
+<div class="paragraph">
+<p><code>request.method == "GET"</code> &#8594; check if request is da GET request</p>
+</div>
+<div class="paragraph">
+<p><code>charset =~ "UTF-.*"</code> &#8594; check the charset with a regex</p>
+</div>
+<div class="paragraph">
+<p><code>empty(response.url)==true</code> oder auch <code>empty(response.url)</code> &#8594; url is not set</p>
+</div>
+<div class="paragraph">
+<p><code>$.body.recordId == "Y243631459" &amp;&amp; charset == "UTF-8"</code> &#8594; combines the two criterions</p>
+</div>
+<div class="paragraph">
+<p>For further help on JEXL please check out the offical website (<a href="https://commons.apache.org/proper/commons-jexl" class="bare">https://commons.apache.org/proper/commons-jexl</a>).</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -4428,10 +4970,142 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_faqs">9. FAQs</h2>
+<h2 id="_frequently_asked_questions">9. Frequently asked questions</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_docker_container_creation_fails">9.1. docker container creation fails</h3>
+<h3 id="_maven">9.1. Maven</h3>
+<div class="sect3">
+<h4 id="_fm01_welches_serenity_benutzen_wir_aktuell">9.1.1. FM01 Welches Serenity benutzen wir aktuell</h4>
+<div class="paragraph">
+<p>Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_fm02_bei_der_nutzung_von_maven_werden_keine_tests_ausgeführt">9.1.2. FM02 Bei der Nutzung von maven, werden keine Tests ausgeführt</h4>
+<div class="paragraph">
+<p>Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird. Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>org.junit.vintage<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>junit-vintage-engine<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>${version.junit5}<span class="tag">&lt;/version&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_fm03_beim_ausführen_von_tests_im_tiger_bricht_der_testlauf_mit_einem_java_lang_nosuchmethoderror_ab">9.1.3. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
+<div class="paragraph">
+<p>Genauer geht es um folgenden Fehler:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="exception">Exception</span> in thread <span class="string"><span class="delimiter">&quot;</span><span class="content">main</span><span class="delimiter">&quot;</span></span> java.lang.NoSuchMethodError: <span class="string"><span class="delimiter">'</span><span class="content">java.util.Set org.json.JSONObject.keySet()</span><span class="delimiter">'</span></span></code></pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Der Grund hierfür ist ein Dependency Konflikt und kann durch eine Exklusion in der tiger-test-lib dependency aufgelöst werden:</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;exclusion&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>com.vaadin.external.google<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>android-json<span class="tag">&lt;/artifactId&gt;</span>
+<span class="tag">&lt;/exclusion&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_fm04_ich_sehe_keine_log_ausgabe_lediglich_am_anfang_stehen_warnungen_über_veraltete_versionen">9.1.4. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
+<div class="paragraph">
+<p>Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.<br>
+Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!  </p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_fm05_wenn_ich_in_meinem_projekt_spring_boot_und_tiger_mit_selenium_nutzen_will_gibt_es_versionskonflikte_bei_selenium">9.1.5. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
+<div class="paragraph">
+<p>Spring Boot liefert eine veraltete Version von Selenium aus. Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_extensions">9.2. Extensions</h3>
+<div class="sect3">
+<h4 id="_fe01_wenn_ich_in_der_tiger_yaml_ein_docker_image_starten_will_so_schlägt_der_startup_des_testenvironmentmanagers_fehl">9.2.1. FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.</h4>
+<div class="paragraph">
+<p>Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als dependency hinzugefügt hast.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>de.gematik<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>tiger-cloud-extension<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>x.y.z<span class="tag">&lt;/version&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_fe02_wenn_ich_die_tiger_cloud_extensions_nutze_schlägt_der_healthcheck_bei_docker_servertypen_in_der_gematik_sw_factory_fehl">9.2.2. FE02 Wenn ich die tiger-cloud-extensions nutze schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
+<div class="paragraph">
+<p>Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.<br>
+Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>stage('Test') {
+    environment {
+        TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+    }
+    steps {
+        mavenVerify(POM_PATH)
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_workflow_ui_3">9.3. Workflow UI</h3>
+<div class="sect3">
+<h4 id="_fw01_in_der_workflow_ui_sind_die_szenarios_doppelt_aufgeführt_und_werden_auch_zeitgleich_aktualisiert_es_scheint_als_ob_sie_parallel_ablaufen">9.3.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
+<div class="paragraph">
+<p>Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird. Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird. Durch den manuellen Eintrag laufen also dann zwei Listener, welche die Szenarien dann auch doppelt an die Workflow UI kommunizieren &#8230;&#8203;<br>
+Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfiguration des tiger-maven-plugins überprüfen, bzw. die generierten Treiberklassen bezüglich zusätzlicher Plugins in den CucumberOptions checken.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_fw02_nachdem_ich_auf_shutdown_in_der_workflow_ui_gedrückt_habe_kann_ich_die_nachrichten_in_der_rbellog_details_pane_nicht_mehr_ansehen">9.3.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
+<div class="paragraph">
+<p>Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden. Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist. Das Navigieren in der RbelLog Details Pane benötigt aber das Backend und klappt daher zum jetzigen Zeitpunkt nicht mehr. Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_other_topics">9.4. Other topics</h3>
+<div class="sect3">
+<h4 id="_fo01_how_can_i_change_the_logging_levels_of_loggers_used_by_tiger">9.4.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
+<div class="paragraph">
+<p>Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level. </p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">logging</span>:
+  <span class="key">level</span>:
+    <span class="key">de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr</span>: <span class="string"><span class="content">TRACE</span></span>
+    <span class="key">de.gematik.test.tiger.lib.TigerDirector</span>: <span class="string"><span class="content">TRACE</span></span>
+    <span class="key">de.gematik.test.tiger.proxy</span>: <span class="string"><span class="content">TRACE</span></span>
+    <span class="key">localTigerProxy</span>: <span class="string"><span class="content">TRACE</span></span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_fo02_docker_container_creation_fails">9.4.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
 <p>Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
@@ -4455,9 +5129,10 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 </div>
 </div>
 </div>
+</div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-03-30 12:29:52 UTC
+Last updated 2023-05-11 06:21:39 UTC
 </div>
 </div>
 </body>
