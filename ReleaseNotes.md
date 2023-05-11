@@ -7,7 +7,22 @@
 * Selenium 4.8.0
 * Appium 8.3.0
 * **Spring Boot 3.0.6**
-* Logback 1.2.11
+* Logback 1.4.7
+
+# Release 2.0.1
+
+## Breaking changes
+
+* TGR-909: all **Gherkin / Feature parser code has been removed** from Tiger as Polarion Toolbox (its only usage) has been refactored to use the Cucumber internal Gherkin parser. If you based your code on the self written parser, check POTO to see how to replace the parsing code in the ```polarion-toolbox-client/src/main/java/de/gematik/polarion/toolbox/worker/FeatureFileParser.java``` source file.
+
+-------
+* **Serenity BDD 3.6.23**
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* **Spring Boot 3.0.6**
+* Logback 1.4.7
 
 # Release 2.0.0
 
