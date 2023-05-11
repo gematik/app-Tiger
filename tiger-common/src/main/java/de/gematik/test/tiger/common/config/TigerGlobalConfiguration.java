@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 import lombok.Getter;
@@ -56,6 +57,7 @@ public class TigerGlobalConfiguration {
     public static synchronized void reset() {
         globalConfigurationLoader.reset();
         initialized = false;
+        requireTigerYaml = false;
     }
 
     public static void initialize() {
@@ -79,14 +81,23 @@ public class TigerGlobalConfiguration {
         }
 
         addFreePortVariables();
-        readYamlFiles();
+        addHostnameVariable();
+        readMainYamlFile();
+        readHostYamlFile();
 
         readAdditionalYamlFiles();
     }
 
+    private static void addHostnameVariable() {
+        globalConfigurationLoader.putValue("hostname", getComputerName(), SourceType.DEFAULTS);
+        globalConfigurationLoader.putValue("canonicalHostname", getHostname().getCanonicalHostName(), SourceType.DEFAULTS);
+        globalConfigurationLoader.putValue("fullHostname", getHostname().getHostName(), SourceType.DEFAULTS);
+    }
+
     private static void addFreePortVariables() {
         List<ServerSocket> sockets = new ArrayList<>();
-        for (TigerTypedConfigurationKey<Integer> key : List.of(TESTENV_MGR_RESERVED_PORT, LOCALPROXY_ADMIN_RESERVED_PORT)) {
+        for (TigerTypedConfigurationKey<Integer> key : List.of(TESTENV_MGR_RESERVED_PORT,
+            LOCALPROXY_ADMIN_RESERVED_PORT)) {
             try {
                 final ServerSocket serverSocket = new ServerSocket(0);
                 key.putValue(serverSocket.getLocalPort());
@@ -195,6 +206,11 @@ public class TigerGlobalConfiguration {
         return globalConfigurationLoader.readMap(baseKeys);
     }
 
+    public static Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.readMapWithCaseSensitiveKeys(baseKeys);
+    }
+
     public static List<AbstractTigerConfigurationSource> listSources() {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.listSources();
@@ -251,18 +267,20 @@ public class TigerGlobalConfiguration {
             .map(Integer::parseInt);
     }
 
-    private static void readYamlFiles() {
-        TIGER_YAML_VALUE.getValue()
-            .ifPresent(s -> {
-                log.info("Reading configuration from tiger.yaml property as string");
-                globalConfigurationLoader.readFromYaml(s, SourceType.TEST_YAML, TIGER_BASEKEY);
-            });
+    private static void readMainYamlFile() {
+        final Optional<String> tigerYamlValue = TIGER_YAML_VALUE.getValue();
+        if (tigerYamlValue.isPresent()) {
+            log.info("Reading configuration from tiger.yaml property as string");
+            globalConfigurationLoader.readFromYaml(tigerYamlValue.get(), SourceType.TEST_YAML, TIGER_BASEKEY);
+            return;
+        }
 
         final Optional<File> customCfgFile = TIGER_TESTENV_CFGFILE_LOCATION.getValue()
             .map(File::new);
+
         if (customCfgFile.isPresent()) {
             if (customCfgFile.get().exists()) {
-                readYamlFile(customCfgFile.get(), Optional.of(TIGER_BASEKEY));
+                readYamlFile(customCfgFile.get(), Optional.of(TIGER_BASEKEY), SourceType.MAIN_YAML);
                 return;
             } else {
                 throw new TigerConfigurationException("Could not find configuration-file '"
@@ -270,32 +288,15 @@ public class TigerGlobalConfiguration {
             }
         }
 
-        String computerName = getComputerName();
-
-        final Optional<File> cfgFile = Stream.of(
+        final Optional<File> mainCfgFile = Stream.of(
                 TIGER_TESTENV_CFGFILE_LOCATION.getValue().orElse(null),
-                "tiger-" + computerName + ".yaml", "tiger-" + computerName + ".yml",
                 "tiger.yaml", "tiger.yml")
             .filter(Objects::nonNull)
             .map(File::new)
             .filter(File::exists)
             .findFirst();
-        if (cfgFile.isPresent()) {
-            readYamlFile(cfgFile.get(), Optional.of(TIGER_BASEKEY));
-            return;
-        }
-
-        final Optional<File> oldCfgFile = Stream.of(
-                TIGER_TESTENV_CFGFILE_LOCATION.getValue().orElse(null),
-                "tiger-testenv-" + computerName + ".yaml", "tiger-testenv-" + computerName + ".yml",
-                "tiger-testenv.yaml", "tiger-testenv.yml")
-            .filter(Objects::nonNull)
-            .map(File::new)
-            .filter(File::exists)
-            .findFirst();
-        if (oldCfgFile.isPresent()) {
-            log.warn("Older file format detected! Will be deprecated in upcoming versions. Please use tiger.yaml!");
-            readYamlFile(oldCfgFile.get(), Optional.of(TIGER_BASEKEY));
+        if (mainCfgFile.isPresent()) {
+            readYamlFile(mainCfgFile.get(), Optional.of(TIGER_BASEKEY), SourceType.MAIN_YAML);
             return;
         }
 
@@ -304,38 +305,72 @@ public class TigerGlobalConfiguration {
         }
     }
 
+    private static void readHostYamlFile() {
+        String computerName = getComputerName();
+
+        Stream.of(
+                "tiger-" + computerName + ".yaml", "tiger-" + computerName + ".yml")
+            .map(File::new)
+            .filter(File::exists)
+            .findFirst()
+            .ifPresent(hostCfgFile -> readYamlFile(hostCfgFile, Optional.of(TIGER_BASEKEY), SourceType.HOST_YAML));
+    }
+
     private static void readAdditionalYamlFiles() {
         final List<AdditionalYamlProperty> additionalYamls = globalConfigurationLoader.instantiateConfigurationBean(
             new TypeReference<>() {
             }, TIGER_BASEKEY, "additionalYamls");
 
         for (AdditionalYamlProperty additionalYaml : additionalYamls) {
-            readYamlFile(Optional.ofNullable(additionalYaml.getFilename())
-                    .filter(Objects::nonNull)
-                    .map(TigerGlobalConfiguration::resolvePlaceholders)
-                    .map(File::new)
-                    .filter(File::exists)
-                    .orElseThrow(() -> new TigerConfigurationException(
-                        "Unable to locate file from configuration " + additionalYaml)),
-                Optional.ofNullable(additionalYaml.getBaseKey()));
+            File additionalYamlFile = findAdditionalYamlFile(
+                TigerGlobalConfiguration.resolvePlaceholders(additionalYaml.getFilename()));
+            readYamlFile(additionalYamlFile, Optional.ofNullable(additionalYaml.getBaseKey()), SourceType.ADDITIONAL_YAML);
         }
     }
 
-    private static String getComputerName() {
+    private static File findAdditionalYamlFile(String additionalYaml) {
+        Optional<Path> configFileLocation = TIGER_TESTENV_CFGFILE_LOCATION.getValue()
+            .map(Path::of);
+
+        if (configFileLocation.isPresent()) {
+            final File yamlRelativeToTigerYaml
+                = configFileLocation.get().resolveSibling(additionalYaml).toFile();
+            if (yamlRelativeToTigerYaml.exists()) {
+                return yamlRelativeToTigerYaml;
+            }
+        }
+
+        Path currentDirectory = Path.of(".");
+        final File yamlRelativeToWorkingDirectory
+            = currentDirectory.resolveSibling(additionalYaml).toFile();
+        if (yamlRelativeToWorkingDirectory.exists()) {
+            return yamlRelativeToWorkingDirectory;
+        }
+
+        throw new TigerConfigurationException(
+            "The file " + additionalYaml + " relative to parent folder of tiger.yaml " +
+                configFileLocation + " or current working directory " + currentDirectory + " not found.");
+    }
+
+    static String getComputerName() {
+        return getHostname().getHostName().split("\\.")[0];
+    }
+
+    private static InetAddress getHostname() {
         try {
-            return InetAddress.getLocalHost().getHostName();
+            return InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
-            return InetAddress.getLoopbackAddress().getHostName();
+            return InetAddress.getLoopbackAddress();
         }
     }
 
-    private static void readYamlFile(File file, Optional<String> baseKey) {
+    private static void readYamlFile(File file, Optional<String> baseKey, SourceType sourceType) {
         try {
             log.info("Reading configuration from file '{}'", file.getAbsolutePath());
             if (baseKey.isPresent()) {
-                readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), baseKey.get());
+                readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), sourceType, baseKey.get());
             } else {
-                readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8));
+                readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), sourceType);
             }
         } catch (IOException | RuntimeException e) {
             throw new TigerConfigurationException(

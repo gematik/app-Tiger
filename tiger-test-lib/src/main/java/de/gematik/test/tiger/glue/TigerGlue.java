@@ -130,7 +130,7 @@ public class TigerGlue {
     @When("TGR wait for user abort")
     @Wenn("TGR warte auf Abbruch")
     public void tgrWaitForUserAbort() {
-        TigerDirector.waitForQuit();
+        TigerDirector.waitForAcknowledgedQuit();
     }
 
     @When("TGR pause test run execution")
@@ -156,19 +156,20 @@ public class TigerGlue {
     @Wenn("TGR zeige HTML Notification:")
     public void tgrShowHtmlNotification(String message) {
         // TODO merge this with TigerDirector.pauseExecution
+        final String bannerMessage = TigerGlobalConfiguration.resolvePlaceholders(message);
         if (TigerDirector.getLibConfig().isActivateWorkflowUi()) {
             TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
-                .bannerMessage(message)
+                .bannerMessage(bannerMessage)
                 .bannerColor("green")
                 .bannerType(BannerType.STEP_WAIT)
                 .bannerIsHtml(true)
                 .build());
             await().pollInterval(1, TimeUnit.SECONDS)
                 .atMost(TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedContinueTestRun());
-            TigerDirector.getTigerTestEnvMgr().resetUserInput();
+                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi());
+            TigerDirector.getTigerTestEnvMgr().resetConfirmationFromWorkflowUi();
         } else {
-            log.warn("Workflow UI is not active! Can't display message '{}'", message);
+            log.warn("Workflow UI is not active! Can't display message '{}'", bannerMessage);
         }
     }
 

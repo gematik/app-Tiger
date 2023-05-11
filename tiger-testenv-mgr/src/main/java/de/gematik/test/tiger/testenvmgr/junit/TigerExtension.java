@@ -22,6 +22,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,12 +52,9 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
     public void afterTestExecution(ExtensionContext context) {
         if (tigerTestEnvMgr != null) {
             log.info("After test execution - tearing down context");
-            if (!SKIP_ENVIRONMENT_SETUP.getValueOrDefault()) {
-                log.info("Stopping Test-Env");
-                tigerTestEnvMgr.shutDown();
-            }
-            envMgrApplicationContext.close();
             TigerGlobalConfiguration.reset();
+            envMgrApplicationContext.close();
+            tigerTestEnvMgr.shutDown();
             tigerTestEnvMgr = null;
         }
     }
@@ -99,7 +97,9 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
     }
 
     private void buildNewTigerTestEnvMgr(ExtensionContext extensionContext) {
-        log.info("TigerTest entering setup");
+        log.info("TigerTest entering setup for test {}:{}",
+            extensionContext.getTestClass().map(Class::getSimpleName).orElse("<CLASS>"),
+            extensionContext.getTestMethod().map(Method::getName).orElse("<METHOD>"));
         TigerGlobalConfiguration.reset();
         final TigerTest tigerAnnotation = findTigerAnnotation(extensionContext);
         Map<String, String> additionalProperties = new HashMap<>();
@@ -122,9 +122,11 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
         log.debug("Initializing configuration with {}", additionalProperties);
         TigerGlobalConfiguration.initializeWithCliProperties(additionalProperties);
 
+        Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
+        properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValue().orElse(0));
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(Map.of("server.port", TESTENV_MGR_RESERVED_PORT.getValue().orElse(0)))
+            .properties(properties)
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
             .initializers()

@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
@@ -40,13 +39,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
@@ -58,7 +58,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 
 @Data
-public abstract class AbstractTigerProxy implements ITigerProxy {
+public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
 
     public static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
     public static final RbelMessagePostProcessor pairingPostProcessor = (el, conv, json) -> {
@@ -86,6 +86,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private final TigerProxyConfiguration tigerProxyConfiguration;
     private RbelLogger rbelLogger;
     private RbelFileWriter rbelFileWriter;
+    @Getter
     private Optional<String> name;
     @Getter
     protected final org.slf4j.Logger log;
@@ -93,6 +94,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     private final ExecutorService trafficParserExecutor = Executors.newSingleThreadExecutor();
     private AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
     private AtomicReference<RuntimeException> fileParsingException = new AtomicReference<>();
+    private boolean isShuttingDown = false;
 
     public AbstractTigerProxy(TigerProxyConfiguration configuration) {
         this(configuration, null);
@@ -265,20 +267,34 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
     }
 
     protected void waitForRemoteTigerProxyToBeOnline(String url) {
-        await()
-            .atMost(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 20L, TimeUnit.SECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until(() -> {
-                try {
-                    log.debug("Waiting for tiger-proxy at '{}' to be online...", url);
-                    Unirest.get(url)
-                        .connectTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
-                        .asEmpty();
-                    return true;
-                } catch (RuntimeException e) {
-                    return false;
-                }
-            });
+        LocalDateTime pollingStart = LocalDateTime.now();
+        while (!isShuttingDown && !isGivenTigerProxyHealthy(url)) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                log.debug("InterruptedException while waiting for remote-proxy '{}' to be healthy", url);
+                Thread.currentThread().interrupt();
+            }
+            if (pollingStart.plus(getTigerProxyConfiguration().getConnectionTimeoutInSeconds(), ChronoUnit.SECONDS)
+                .isBefore(LocalDateTime.now())) {
+                throw new TigerProxyStartupException("Timeout while waiting for remote-proxy '" + url + "' to be healthy");
+            }
+        }
+        if (isShuttingDown) {
+            log.warn("Aborting waitForRemoteTigerProxyToBeOnline at '{}'", url);
+        }
+    }
+
+    private boolean isGivenTigerProxyHealthy(String url) {
+        try {
+            log.debug("Waiting for tiger-proxy at '{}' to be online...", url);
+            Unirest.get(url)
+                .connectTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
+                .asEmpty();
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     public String proxyName() {
@@ -291,7 +307,6 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
         getRbelLogger().getRbelConverter().clearAllMessages();
     }
 
-
     public Boolean isFileParsed() {
         if (fileParsingException.get() != null) {
             throw fileParsingException.get();
@@ -301,5 +316,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy {
 
     public Deque<RbelElement> getRbelMessages() {
         return getRbelLogger().getMessageHistory();
+    }
+
+    @Override
+    public void close() {
+        isShuttingDown = true;
+        trafficParserExecutor.shutdown();
     }
 }

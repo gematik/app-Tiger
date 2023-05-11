@@ -16,6 +16,7 @@
 
 package io.cucumber.core.plugin.report;
 
+import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
@@ -47,16 +48,17 @@ import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -69,13 +71,15 @@ public class SerenityReporterCallbacks {
     private static RuntimeException tigerStartupFailedException;
 
     @Getter
+    @Setter
+    private static boolean pauseMode;
+
+    @Getter
     private int currentScenarioDataVariantIndex = -1;
 
     private int currentStepIndex = -1;
 
     private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|üß ]*)(Banner|banner|text|Text) \"(.*)\""); // NOSONAR
-
-    private String bulmaModalJsScript = null;
 
     /**
      * number of passed scenarios / scenario data variants.
@@ -118,21 +122,26 @@ public class SerenityReporterCallbacks {
             }
             showTigerVersion();
             initializeTiger();
+            shouldAbortTestExecution();
         }
     }
 
 
     private void showTigerVersion() {
+        log.info(Ansi.colorize("Starting Tiger version " + getTigerVersionString(), RbelAnsiColors.GREEN_BRIGHT));
+    }
+
+    private String getTigerVersionString() {
         try {
             Properties p = new Properties();
             p.load(SerenityReporterCallbacks.class.getResourceAsStream("/build.properties"));
             String version = p.getProperty("tiger.version");
-            if (!version.equals("${project.version}")) {
-                log.info(Ansi.colorize("Starting Tiger version " + version + "-" + p.getProperty("tiger.build.timestamp"),
-                    RbelAnsiColors.GREEN_BRIGHT));
+            if (version.equals("${project.version}")) {
+                version = "UNKNOWN";
             }
+            return version + "-" + p.getProperty("tiger.build.timestamp");
         } catch (RuntimeException | IOException ignored) {
-            log.info(Ansi.colorize("Starting UNKNOWN Tiger version", RbelAnsiColors.RED_BRIGHT));
+            return "UNKNOWN";
         }
     }
 
@@ -154,6 +163,7 @@ public class SerenityReporterCallbacks {
     // test case start
     //
     public void handleTestCaseStarted(Event ignoredEvent, ScenarioContextDelegate context) /* NOSONAR */ {
+        shouldAbortTestExecution();
 
         // TGR
         if (context.isAScenarioOutline()) {
@@ -193,7 +203,7 @@ public class SerenityReporterCallbacks {
         log.info("Scenario location {}", scenario.getLocation());
         Map<String, String> variantDataMap = context.isAScenarioOutline() ?
             context.getTable().currentRow().toStringMap() : null;
-        log.info("Current row for scenario variant {} {}", currentScenarioDataVariantIndex,
+        log.debug("Current row for scenario variant {} {}", currentScenarioDataVariantIndex,
             variantDataMap);
         TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(TigerStatusUpdate.builder()
             .featureMap(
@@ -285,6 +295,9 @@ public class SerenityReporterCallbacks {
     // test step start
     //
     public void handleTestStepStarted(Event event, ScenarioContextDelegate context) {
+        shouldWaitIfInPauseMode();
+        shouldAbortTestExecution();
+
         TestStepStarted tssEvent = ((TestStepStarted) event);
 
         if (!(tssEvent.getTestStep() instanceof HookTestStep)
@@ -329,6 +342,8 @@ public class SerenityReporterCallbacks {
     // test step end
     //
     public void handleTestStepFinished(Event event, ScenarioContextDelegate context) {
+        if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) return;
+
         TestStepFinished tsfEvent = ((TestStepFinished) event);
 
         if (!(tsfEvent.getTestStep() instanceof HookTestStep)) {
@@ -368,10 +383,9 @@ public class SerenityReporterCallbacks {
         Scenario scenario = context.getCurrentScenarioDefinition();
         PickleStepTestStep pickleTestStep = (PickleStepTestStep) event;
 
-
         TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
 
-        String featureName = featureFrom(context.currentFeaturePath()).map(Feature::getName).orElse( "?");
+        String featureName = featureFrom(context.currentFeaturePath()).map(Feature::getName).orElse("?");
         List<MessageMetaDataDto> stepMessagesMetaDataList = new ArrayList<>(LocalProxyRbelMessageListener.getStepRbelMessages()).stream()
             .map(MessageMetaDataDto::createFrom)
             .collect(Collectors.toList());
@@ -412,6 +426,8 @@ public class SerenityReporterCallbacks {
     // test case end
     //
     public void handleTestCaseFinished(Event event, ScenarioContextDelegate context) {
+        if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) return;
+
         currentStepIndex = -1;
         TestCaseFinished tscEvent = ((TestCaseFinished) event);
         String scenarioStatus = tscEvent.getResult().getStatus().toString();
@@ -502,18 +518,17 @@ public class SerenityReporterCallbacks {
                     "Unable to create folder '" + folder.getAbsolutePath() + "'");
             }
             var rbelRenderer = new RbelHtmlRenderer();
+            rbelRenderer.setTitle(scenarioName);
             rbelRenderer.setSubTitle(
-                "<p><b>" + scenarioName + "</b>&nbsp&nbsp;"
-                    + (currentScenarioDataVariantIndex != -1 ?
-                    "<button class=\"js-modal-trigger\" data-target=\"modal-data-variant\">Variant " + (
+                "<p>" + (currentScenarioDataVariantIndex != -1 ?
+                    "<button class=\"js-modal-trigger\" data-bs-target=\"modal-data-variant\">Variant " + (
                         currentScenarioDataVariantIndex + 1) + "</button>" :
                     "")
                     + "</p><p><i>" + scenarioUri + "</i></p>");
+            rbelRenderer.setVersionInfo(getTigerVersionString());
+
             String html = rbelRenderer.doRender(LocalProxyRbelMessageListener.getMessages());
 
-            if (currentScenarioDataVariantIndex != -1) {
-                loadBulma();
-            }
             String name = getFileNameFor("rbel", scenarioName, currentScenarioDataVariantIndex);
             final File logFile = Paths.get(TARGET_DIR, "rbellogs", name).toFile();
             FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
@@ -526,18 +541,6 @@ public class SerenityReporterCallbacks {
                 logFile.getAbsolutePath());
         } catch (final Exception e) {
             log.error("Unable to create/save rbel log for scenario " + scenarioName, e);
-        }
-    }
-
-    private void loadBulma() throws IOException {
-        if (bulmaModalJsScript == null) {
-            try {
-                bulmaModalJsScript = IOUtils.toString(
-                    getClass().getResourceAsStream("/js/bulma-modal.js"),
-                    StandardCharsets.UTF_8);
-            } catch (NullPointerException npe) {
-                log.error("Unable to locate bulma-modal.js in class path!");
-            }
         }
     }
 
@@ -589,6 +592,23 @@ public class SerenityReporterCallbacks {
             result = result.replace(tokenMap[i], tokenMap[i + 1]);
         }
         return result;
+    }
+
+    private void shouldAbortTestExecution() {
+      if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+        // Fail.fail()
+        throw new AssertionError("Aborted test execution on user request");
+      }
+    }
+
+    private void shouldWaitIfInPauseMode() {
+        if (isPauseMode()) {
+            log.info("Test run is paused, via Workflow Ui pause button...");
+            await().pollDelay(500, TimeUnit.MILLISECONDS)
+                .atMost(TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
+                .until(() -> !isPauseMode() || TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution());
+            log.info("Test run commencing...");
+        }
     }
 
 }

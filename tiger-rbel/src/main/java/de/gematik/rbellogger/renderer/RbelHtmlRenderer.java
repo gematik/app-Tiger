@@ -49,16 +49,11 @@ public class RbelHtmlRenderer {
     @Setter
     private int maximumEntitySizeInBytes = 4 * 1024 * 1024;
     @Setter
-    private String title = "RBelLogger";
+    private String title = "Tiger Proxy Log";
     @Setter
-    private String subTitle = "<p>The [R]everse [B]ridle [E]vent [L]ogger pays tribute to the fact "
-        + "that many agile projects' specifications, alas somewhat complete, "
-        + "lack specificality. Using PoCs most of the time does not resolve this as the code is not "
-        + "well enough documented and communication between nodes is not observable or "
-        + "logged in a well enough readable manner.</p> "
-        + "<p>This is where the RBeL Logger comes into play.</p> "
-        + "<p>Attaching it to a network, RestAssured or Wiremock interface or instructing it to read from a recorded PCAP file, "
-        + "produces this shiny communication log supporting Plain HTTP, JSON, JWT and even JWE!</p>";
+    private String subTitle = "";
+    @Setter
+    private String versionInfo = "";
 
     public RbelHtmlRenderer(final RbelValueShader rbelValueShader) {
         this.rbelValueShader = rbelValueShader;
@@ -74,7 +69,7 @@ public class RbelHtmlRenderer {
 
     public static String render(final Collection<RbelElement> elements, final RbelValueShader valueShader) {
         return new RbelHtmlRenderer(valueShader)
-            .performRendering(elements);
+            .performRendering(elements, false);
     }
 
     public static ContainerTag collapsibleCard(final ContainerTag title, final ContainerTag body, String classes, String spaces, String contentClasses) {
@@ -99,32 +94,35 @@ public class RbelHtmlRenderer {
                                                         final RbelHtmlRenderingToolkit renderingToolkit) {
         final String id = "dialog" + RandomStringUtils.randomAlphanumeric(20);//NOSONAR
         return span().with(
-            a().withClass("button modal-button modal-button-details is-pulled-right mx-3")
-                .attr("data-target", id)
+            a().withClass("btn modal-button modal-button-details float-end mx-3")
+                .attr("data-bs-target", "#"+id)
+                .attr("data-bs-toggle", "modal")
                 .with(span().withClass("icon is-small").with(
                     i().withClass("fas fa-align-left")
                 )),
             div().withClass("modal")
-                .withId(id)
+                .withId(id).attr("role", "dialog")
                 .with(
-                    div().withClass("modal-background"),
-                    div().withClass("modal-content").with(
-                        article().withClass("message").with(
-                            div().withClass("message-header").with(
-                                div().withStyle("display: inline-flex;").with(p("Raw content of " + el.findNodePath()).withStyle("align-self: center;"),
-                                button().withClass("copyToClipboard-button").attr("data-target", "text-" + id).with(
+                    div().withClass("modal-dialog").with(
+                        div().withClass("modal-background"),
+                        div().withClass("modal-content").attr("role", "document")
+                            .attr("style", "width: 900px;").with(
+                            div().withClass("modal-header bg-dark").with(
+                                div().withStyle("display: inline-flex;").with(p("Raw content of " + el.findNodePath()).withStyle("align-self: center;color:#ffff;").withClass("modal-title"),
+                                button().withClass("btn btn-sm copyToClipboard-button").attr("data-target", "text-" + id).with(
                                     i().withClass("fa fa-clipboard")
                                 )),
-                                button().withClass("delete").attr("aria-label", "delete")
-                            ),
-                            div().withClass("message-body")
-                                .with(pre(printRawContentOfElement(el, renderingToolkit)).withId("text-"+id)
-                                    .withStyle("white-space: pre-wrap;word-wrap: break-word;"))
+                                button().withClass("btn btn-close btn-close-white")
+                                        .attr("data-bs-dismiss", "modal")
+                                            .attr("aria-label", "Close")),
+                            article().withClass("message").with(
+                                div().withClass("message-body")
+                                    .with(pre(printRawContentOfElement(el, renderingToolkit)).withId("text-"+id)
+                                        .withStyle("white-space: pre-wrap;word-wrap: break-word;"))
+                            )
                         )
-                    ),
-                    button().withClass("modal-close is-large")
-                        .attr("aria-label", "close")
                 )
+            )
         );
     }
 
@@ -153,14 +151,13 @@ public class RbelHtmlRenderer {
     }
 
     public String doRender(final Collection<RbelElement> elements) {
-        return performRendering(elements);
+        return performRendering(elements, false);
     }
 
     @SneakyThrows
-    private String performRendering(final Collection<RbelElement> elements) {
+    private String performRendering(final Collection<RbelElement> elements, boolean localRessources) {
         RbelHtmlRenderingToolkit renderingToolkit = new RbelHtmlRenderingToolkit(this);
-
-        return renderingToolkit.renderDocument(new ArrayList(elements));
+        return renderingToolkit.renderDocument(new ArrayList<>(elements), localRessources);
     }
 
     public Optional<ContainerTag> convert(final RbelElement element, final Optional<String> key,
@@ -184,7 +181,7 @@ public class RbelHtmlRenderer {
         }
     }
 
-    public String getEmptyPage() {
-        return performRendering(List.of());
+    public String getEmptyPage(boolean localRessources) {
+        return performRendering(List.of(), localRessources);
     }
 }

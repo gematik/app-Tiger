@@ -16,12 +16,10 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.time.LocalDateTime;
@@ -33,7 +31,9 @@ import lombok.RequiredArgsConstructor;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.junit.jupiter.MockServerExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
@@ -48,7 +48,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  *     <li>that calls via proxy populate the rbel message list</li>
  *     <li>that if tiger proxy is non-responsive the status turns to DOWN and the failed request timestamp is set</li>
  * </ul>
- *</p>
+ * </p>
  * <p><b>Attention</b> The negative test method stops the mockserver client of the Tiger Proxy which can not be restarted.
  * Thus, the @Order annotation must be used to ensure any new  test method is run before the NOK test method.
  * </p>
@@ -65,7 +65,7 @@ import org.springframework.test.util.ReflectionTestUtils;
     "management.health.livenessstate.enabled=true",
     "management.health.readinessstate.enabled=true"
 })
-@WireMockTest
+@ExtendWith(MockServerExtension.class)
 @RequiredArgsConstructor
 @ResetTigerConfiguration
 class TigerProxyHealthEndpointTest {
@@ -81,7 +81,7 @@ class TigerProxyHealthEndpointTest {
     ServletWebServerApplicationContext context;
 
     @BeforeEach
-    public void beforeEachLifecyleMethod(WireMockRuntimeInfo wmRuntimeInfo) {
+    public void beforeEachLifecyleMethod(MockServerClient client) {
         tigerProxy.getRoutes()
             .stream()
             .filter(route -> !route.getFrom().contains("tiger"))
@@ -89,14 +89,14 @@ class TigerProxyHealthEndpointTest {
 
         tigerProxy.addRoute(TigerRoute.builder()
             .from("http://myserv.er")
-            .to("http://localhost:" + wmRuntimeInfo.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build());
 
-        wmRuntimeInfo.getWireMock().register(get("/foo")
-            .willReturn(aResponse()
-                .withBody("bar")));
-
-        //int backendServerPort = wmRuntimeInfo.getHttpPort();
+        client.when(request()
+                .withMethod("GET")
+                .withPath("/foo"))
+            .respond(response()
+                .withBody("bar"));
 
         unirestInstance = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getProxyPort()));

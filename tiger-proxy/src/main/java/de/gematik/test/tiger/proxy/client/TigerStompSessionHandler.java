@@ -19,7 +19,9 @@ package de.gematik.test.tiger.proxy.client;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.simp.stomp.*;
 
 @RequiredArgsConstructor
@@ -57,6 +59,11 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
     @Override
     public void handleTransportError(StompSession session, Throwable exception) {
         if (exception instanceof ConnectionLostException) {
+            if (remoteProxyClient.isShuttingDown()) {
+                log.warn("Remote client lost connection to url {} in session {} (isConnected = {}). Client in shutdown, skipping reconnect!",
+                    remoteProxyClient.getRemoteProxyUrl(), session.getSessionId(), session.isConnected());
+                return;
+            }
             log.warn("Remote client lost connection to url {} in session {} (isConnected = {}). Reconnecting...",
                 remoteProxyClient.getRemoteProxyUrl(), session.getSessionId(), session.isConnected());
             remoteProxyClient.connectToRemoteUrl( this,

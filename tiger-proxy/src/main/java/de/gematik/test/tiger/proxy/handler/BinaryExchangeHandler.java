@@ -51,10 +51,10 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
     public void onProxy(BinaryMessage binaryRequest, CompletableFuture<BinaryMessage> binaryResponseFuture,
         SocketAddress serverAddress, SocketAddress clientAddress) {
         try {
-            log.info("Finalizing binary exchange...");
+            log.trace("Finalizing binary exchange...");
             var convertedRequest = convertBinaryMessageOrPushToBuffer(binaryRequest, clientAddress, serverAddress);
-            log.info("converted request, now waiting on response...");
             boolean shouldWaitForResponse = shouldWaitForResponse(convertedRequest);
+            log.trace("Converted request, waiting on response: {}", shouldWaitForResponse);
             if (!shouldWaitForResponse) {
                 convertedRequest.ifPresent(msg -> {
                     msg.addFacet(new TigerNonPairedMessageFacet());
@@ -119,7 +119,7 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
             .transmissionTime(message.getTimestamp().atZone(ZoneId.systemDefault()))
             .build());
         rbelMessageOptional.get().addFacet(new RbelBinaryFacet());
-        log.info("Finalized binary exchange {}",
+        log.debug("Finalized binary exchange {}",
             rbelMessageOptional
                 .flatMap(msg -> msg.getFacet(RbelTcpIpMessageFacet.class))
                 .map(RbelTcpIpMessageFacet::getSenderHostname)

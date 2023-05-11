@@ -84,21 +84,7 @@ include::tigerUserInterfaces.adoc[]
 * FIRST principle for Unit tests
 ** http://agileinaflash.blogspot.com/2009/02/first.html[AgileOtters Blog]
 
-
-== FAQs
-
-
-### docker container creation fails
-Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.
-```
-docker system prune
-```
-Last resort:
-```
-netcfg -d
-```
-and restart docker
-
+include::../../FAQ.md[leveloffset=+1]
 
 
 // TODO TGR-316== Glossar

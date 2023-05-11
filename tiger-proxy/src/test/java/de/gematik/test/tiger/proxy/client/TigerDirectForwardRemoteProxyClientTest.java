@@ -146,6 +146,7 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
                         TigerProxyConfiguration.builder()
                             .proxyLogLevel("WARN")
                             .build()));
+                    tigerRemoteProxyClient.get().connect();
                     await()
                         .until(tigerRemoteProxyClient.get()::isConnected);
                     return tigerProxy;

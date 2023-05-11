@@ -1,0 +1,6 @@
+additionalYamls:
+  - filename: additionalYaml.yaml
+    baseKey: notCurrentDir
+
+  - filename: foo/bar/additionalYaml.yaml
+    baseKey: notCurrentDir.nested

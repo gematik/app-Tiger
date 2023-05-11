@@ -50,6 +50,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,6 +68,7 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
@@ -95,16 +97,13 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     private final DownloadManager downloadManager = new DownloadManager();
     private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
-    private boolean userAcknowledgedShutdown = false;
-    private boolean userAcknowledgedContinueTestRun = false;
-    private boolean userAcknowledgedFailingTestRun = false;
-    private boolean isShuttingDown = false;
+    private boolean userAcknowledgedOnWorkflowUi = false;
+    private boolean shouldAbortTestExecution = false;
 
-    @Getter
+    private boolean isShuttingDown = false;
     private boolean isShutDown = false;
 
     @Setter
-    @Getter
     private boolean workflowUiSentFetch = false;
     private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
 
@@ -200,7 +199,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     private TigerProxy startLocalTigerProxy(Configuration configuration) {
         log.info("\n" + Banner.toBannerStr("STARTING LOCAL PROXY...", RbelAnsiColors.BLUE_BOLD.toString()));
 
-        final TigerProxy localTigerProxy;
+        final TigerProxy proxy;
         if (configuration.getTigerProxy() == null) {
             configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
         }
@@ -221,6 +220,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
             LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
         }
+        properties.putAll(getConfiguredLoggingLevels());
+
         localTigerProxyApplicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(properties)
@@ -230,12 +231,18 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             .initializers()
             .run();
 
-        localTigerProxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
+        proxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
 
-        LOCAL_PROXY_PROXY_PORT.putValue(localTigerProxy.getProxyPort());
-        LOCAL_PROXY_ADMIN_PORT.putValue(localTigerProxy.getAdminPort());
+        LOCAL_PROXY_PROXY_PORT.putValue(proxy.getProxyPort());
+        LOCAL_PROXY_ADMIN_PORT.putValue(proxy.getAdminPort());
 
-        return localTigerProxy;
+        return proxy;
+    }
+
+    public static Map<String, Object> getConfiguredLoggingLevels() {
+        return TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
+            .entrySet().stream()
+            .collect(Collectors.toMap(entry -> "logging.level." + entry.getKey(), Entry::getValue));
     }
 
     public void publishNewStatusUpdate(TigerServerStatusUpdate update) {
@@ -474,7 +481,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
         if (localTigerProxy != null) {
             log.info(Ansi.colorize("Shutting down local tiger proxy...", RbelAnsiColors.RED_BOLD));
-            localTigerProxy.shutdown();
+            localTigerProxy.close();
         }
         if (localTigerProxyApplicationContext != null) {
             localTigerProxyApplicationContext.close();
@@ -554,21 +561,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         logListeners.add(listener);
     }
 
-    public void receivedUserAcknowledgementForShutdown() {
-        userAcknowledgedShutdown = true;
+    public void receivedConfirmationFromWorkflowUi() {
+        userAcknowledgedOnWorkflowUi = true;
     }
 
-    public void receivedResumeTestRunExecution() {
-        userAcknowledgedContinueTestRun = true;
-    }
-
-    public void receivedCancelTestRunExecution() {
-        userAcknowledgedFailingTestRun = true;
-    }
-
-    public void resetUserInput() {
-        userAcknowledgedContinueTestRun = false;
-        userAcknowledgedFailingTestRun = false;
+    public void resetConfirmationFromWorkflowUi() {
+        userAcknowledgedOnWorkflowUi = false;
     }
 
     @Override
@@ -580,4 +578,11 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     public void close() throws Exception {
         shutDown();
     }
+
+    public void abortTestExecution() {
+        shouldAbortTestExecution = true;
+    }
+
+    @Setter
+    public ConfigurableApplicationContext context;
 }

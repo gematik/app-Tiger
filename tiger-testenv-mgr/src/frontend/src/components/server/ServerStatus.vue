@@ -16,10 +16,10 @@
 
 <template>
   <div class="container">
-    <div v-if="serverStatusData.size === 0" class="alert alert-light" style="height:200px;width:100%;">
+    <div v-if="serverStatusData.size === 0" class="alert alert-light engraved w-100 p-3">
       <i class="fa-solid fa-spinner left"></i> Waiting for updates...
     </div>
-    <div v-else class="alert alert-light">
+    <div v-else class="server-status-box alert alert-light engraved">
       <div v-for="server in sortedServerList(serverStatusData)">
         <ServerCard :server="server"/>
       </div>
@@ -37,4 +37,8 @@ defineProps<{
 }>();
 </script>
 
-<style scoped></style>
+<style scoped>
+.server-status-box {
+    color: var(--gem-primary-400);
+}
+</style>

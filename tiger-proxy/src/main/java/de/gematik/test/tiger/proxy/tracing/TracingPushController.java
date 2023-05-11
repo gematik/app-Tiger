@@ -20,15 +20,14 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
 import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
+import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -95,7 +94,7 @@ public class TracingPushController {
             final RbelHostname receiver = RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
                 .orElse(null);
 
-            log.info("{}Propagating new non-paired message (ID: {})", tigerProxy.proxyName(), msg.getUuid());
+            log.trace("{}Propagating new non-paired message (ID: {})", tigerProxy.proxyName(), msg.getUuid());
 
             template.convertAndSend(TigerRemoteProxyClient.WS_TRACING,
                 TigerTracingDto.builder()
@@ -157,25 +156,25 @@ public class TracingPushController {
         );
     }
 
-    private void mapRbelMessageAndSent(RbelElement rbelHttpMessage) {
-        if (rbelHttpMessage == null) {
+    private void mapRbelMessageAndSent(RbelElement rbelMessage) {
+        if (rbelMessage == null) {
             return;
         }
 
-        final int numberOfParts = rbelHttpMessage.getRawContent().length / MAX_MESSAGE_SIZE + 1;
+        final int numberOfParts = rbelMessage.getRawContent().length / MAX_MESSAGE_SIZE + 1;
         for (int i = 0; i < numberOfParts; i++) {
             byte[] partContent = Arrays.copyOfRange(
-                rbelHttpMessage.getRawContent(),
+                rbelMessage.getRawContent(),
                 i * MAX_MESSAGE_SIZE,
-                Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelHttpMessage.getRawContent().length)
+                Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelMessage.getRawContent().length)
             );
 
-            log.trace("Sending part {} of {} for UUID {}...", i, numberOfParts, rbelHttpMessage.getUuid());
+            log.trace("Sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
             template.convertAndSend(TigerRemoteProxyClient.WS_DATA,
                 TracingMessagePart.builder()
                     .data(partContent)
                     .index(i)
-                    .uuid(rbelHttpMessage.getUuid())
+                    .uuid(rbelMessage.getUuid())
                     .numberOfMessages(numberOfParts)
                     .build());
         }

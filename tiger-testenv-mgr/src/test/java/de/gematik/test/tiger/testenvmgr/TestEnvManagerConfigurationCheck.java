@@ -24,11 +24,14 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.Map;
+import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -39,7 +42,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 @Slf4j
 @Getter
 @TestInstance(Lifecycle.PER_CLASS)
-class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
+class TestEnvManagerConfigurationCheck {
+
+    @BeforeEach
+    public void resetConfig() {
+        TigerGlobalConfiguration.reset();
+    }
 
     // -----------------------------------------------------------------------------------------------------------------
     //
@@ -54,9 +62,8 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
         "testExternalJar,source",
         "testExternalUrl,type",
         "testExternalUrl,source"})
-    // TODO add tests for helm charts
     void testCheckCfgPropertiesMissingParamMandatoryProps_NOK(String cfgFile, String prop) {
-        createTestEnvMgrSafelyAndExecute(
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(
             "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFile + ".yaml",
             envMgr -> {
                 CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
@@ -105,14 +112,16 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
             .getRootCause()
             .hasMessageContaining("The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
     }
+
     @Test
     void testCheckDeprecatedKey_serverPort_NOK() {
         assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
             .getRootCause()
-            .hasMessageContaining("The key ('serverPort') in yaml file should not be used anymore, use 'adminPort' instead!");
-   }
+            .hasMessageContaining(
+                "The key ('serverPort') in yaml file should not be used anymore, use 'adminPort' instead!");
+    }
 
     @Test
     void testCheckDeprecatedKey_proxyCfg_NOK() {
@@ -129,7 +138,8 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
             .getRootCause()
-            .hasMessageContaining("The key ('tiger.servers.*.externalJarOptions.healthcheck') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
+            .hasMessageContaining(
+                "The key ('tiger.servers.*.externalJarOptions.healthcheck') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
     }
 
     @Test
@@ -138,7 +148,8 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
             .hasRootCauseInstanceOf(TigerConfigurationException.class)
             .getRootCause()
-            .hasMessageContaining("The key ('tiger.servers.*.externalJarOptions.healthcheckurl') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
+            .hasMessageContaining(
+                "The key ('tiger.servers.*.externalJarOptions.healthcheckurl') in yaml file should not be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
     }
 
     @Test
@@ -220,9 +231,8 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_missingCertificate.yaml"));
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
     }
 
     @Test
@@ -231,9 +241,8 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_emptyCertificate.yaml"));
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
     }
 
     @Test
@@ -249,9 +258,8 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
             "tiger");
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("The urlMappings configuration 'https://bla' is not correct. Please check your .yaml-file.");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("The urlMappings configuration 'https://bla' is not correct. Please check your .yaml-file.");
     }
 
     @Test
@@ -267,29 +275,10 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
             "tiger");
 
         final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(() -> {
-            envMgr.setUpEnvironment();
-        }).withMessage("The urlMappings configuration 'https://bla -->' is not correct. Please check your .yaml-file.");
+        assertThatExceptionOfType(TigerConfigurationException.class).isThrownBy(envMgr::setUpEnvironment)
+            .withMessage("The urlMappings configuration 'https://bla -->' is not correct. Please check your .yaml-file.");
     }
 
-    @Test
-    @TigerTest(tigerYaml =
-        "additionalYamls:\n"
-            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml\n"
-            + "    baseKey: tiger\n")
-    void readAdditionalYamlFiles(UnirestInstance unirestInstance) {
-        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
-            .isTrue();
-    }
-
-    @Test
-    @TigerTest(tigerYaml =
-        "additionalYamls:\n"
-            + "  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml\n")
-    void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
-        assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess())
-            .isTrue();
-    }
 
     @Test
     @TigerTest(tigerYaml =
@@ -312,6 +301,84 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
     void readAdditionalYamlFilesWithPlaceholdersInName() {
         assertThat(TigerGlobalConfiguration.readString("baseKey.someKey"))
             .isEqualTo("someValue");
+    }
+
+    @Test
+    void readAdditionalYamlFileFromParentFolder() {
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/additionalAndTigerYamlCurrentDir/tiger.yaml"));
+
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            assertThat(TigerGlobalConfiguration.readString("external.someNotNested.notNestedKey"))
+                .isEqualTo("andValueToKey");
+        });
+    }
+
+    @Test
+    void readAdditionalYamlFileFromParentNestedFolder() {
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/additionalAndTigerYamlCurrentDir/tiger.yaml"));
+
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            assertThat(TigerGlobalConfiguration.readString("nested.someNested.nestedKey"))
+                .isEqualTo("nestedValue");
+        });
+    }
+
+    @Test
+    void readAdditionalYamlFileFromNotCurrentDir() {
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "../tiger-test-lib/src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
+
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            assertThat(TigerGlobalConfiguration.readString("notCurrentDir.someNotCurrentDir.notCurrentDirKeys"))
+                .isEqualTo("andNotCurrentDirValues");
+        });
+    }
+
+    @Test
+    void readAdditionalYamlFileFromNotCurrentDirNested() {
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "../tiger-test-lib/src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
+
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            assertThat(TigerGlobalConfiguration.readString("notCurrentDir.nested.someNotCurrentDirNested.notCurrentDirKeysNested"))
+                .isEqualTo("notCurrentDirNestedValues");
+        });
+    }
+
+    @Test
+    void readAdditionalYamlFileFromCurrentDir() {
+        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+            "src/test/resources/tiger.yaml"));
+
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            assertThat(TigerGlobalConfiguration.readString("sameFolder.just.key"))
+                .isEqualTo("andValues");
+        });
+    }
+
+    @Test
+    void readAdditionalYamlFileFromCurrentDirNoTigerYamlSet() {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            assertThat(TigerGlobalConfiguration.readString("rootFolder.someNested.nestedKey"))
+                .isEqualTo("nestedValue");
+        });
+    }
+
+    @Test
+    void readAdditionalYamlFileFromCurrentDirNoTigerYamlSetNested() {
+        AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(envMgr -> {
+            envMgr.setUpEnvironment();
+            assertThat(TigerGlobalConfiguration.readString("rootFolderNested.someNotNested.notNestedKey"))
+                .isEqualTo("andValueToKey");
+        });
     }
 
     @Test
@@ -357,5 +424,20 @@ class TestEnvManagerConfigurationCheck extends AbstractTestTigerTestEnvMgr {
     void testDelayedEvaluation(TigerTestEnvMgr envMgr) {
         assertThat(envMgr.getServers().get("tigerServer2").getConfiguration().getTigerProxyCfg().getAdminPort())
             .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
+    }
+
+    @Test
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  google:\n"
+        + "    type: externalUrl\n"
+        + "    source:\n"
+        + "      - https://www.google.com\n"
+        + "localProxyActive: true\n")
+    void testExtUrlServer_healthCheckUrlDefaultsToSource(TigerTestEnvMgr envMgr) {
+        assertThat(envMgr.getServers().get("google").getStatus()).isEqualTo(TigerServerStatus.RUNNING);
+        final UnirestInstance instance = Unirest.spawnInstance();
+        instance.config().proxy("127.0.0.1", envMgr.getLocalTigerProxyOrFail().getProxyPort());
+        assertThat(instance.get("http://google").asString().getStatus()).isEqualTo(200);
+        instance.close();
     }
 }

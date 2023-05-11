@@ -31,13 +31,20 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     @Builder
     public ExternalUrlServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+        if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
+            getConfiguration().setHealthcheckUrl(getConfiguration().getSource().get(0));
+        }
     }
 
     @Override
     public void assertThatConfigurationIsCorrect() {
+        if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
+            getConfiguration().setHealthcheckUrl(getConfiguration().getSource().get(0));
+        }
         super.assertThatConfigurationIsCorrect();
 
         assertCfgPropertySet(getConfiguration(), "source");
+
     }
 
     @Override
@@ -63,9 +70,8 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     }
 
     @Override
-    Optional<String> getHealthcheckUrl() {
-        if (getConfiguration().getExternalJarOptions() == null
-            || StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
+    public Optional<String> getHealthcheckUrl() {
+        if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
             return Optional.of(getConfiguration().getSource().get(0));
         } else {
             return Optional.ofNullable(getConfiguration().getHealthcheckUrl());

@@ -16,8 +16,8 @@
 
 package de.gematik.test.tiger.common.config;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -38,24 +38,29 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 public class TigerConfigurationTest {
 
     @BeforeEach
+    @AfterEach
     void setup() {
         System.clearProperty("NESTEDBEAN_BAR");
         System.clearProperty("NESTEDBEAN_FOO");
+        System.clearProperty("nestedbean.inner.bar");
+        System.clearProperty("string");
         TigerGlobalConfiguration.reset();
     }
 
     @Test
     void fillObjectShouldWork() throws Exception {
-        withEnvironmentVariable("string", "stringValue")
+        new EnvironmentVariables("string", "stringValue")
             .and("integer", "1234")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -69,7 +74,7 @@ public class TigerConfigurationTest {
 
     @Test
     void fillNestedObjectShouldWork() throws Exception {
-        withEnvironmentVariable("string", "stringValue")
+        new EnvironmentVariables("string", "stringValue")
             .and("integer", "1234")
             .and("nestedBean.foo", "schmar")
             .and("nestedBean.bar", "420")
@@ -88,7 +93,7 @@ public class TigerConfigurationTest {
 
     @Test
     void fillNestedObjectSnakeCaseShouldWork() throws Exception {
-        withEnvironmentVariable("string", "stringValue")
+        new EnvironmentVariables("string", "stringValue")
             .and("integer", "1234")
             .and("NESTEDBEAN_FOO", "schmar")
             .and("nestedBean.bar", "420")
@@ -109,7 +114,7 @@ public class TigerConfigurationTest {
     void systemEnvAndSystemPropertiesMixed() throws Exception {
         System.setProperty("string", "stringValue");
         System.setProperty("NESTEDBEAN_BAR", "420");
-        withEnvironmentVariable("string", "wrongValue")
+        new EnvironmentVariables("string", "wrongValue")
             .and("integer", "1234")
             .and("NESTEDBEAN_FOO", "schmar")
             .execute(() -> {
@@ -127,7 +132,7 @@ public class TigerConfigurationTest {
 
     @Test
     void injectIntoRecursiveStructure() throws Exception {
-        withEnvironmentVariable("NESTEDBEAN_BAR", "4")
+        new EnvironmentVariables("NESTEDBEAN_BAR", "4")
             .and("nestedbean.inner.bar", "42")
             .and("nestedbean.inner.inner.bar", "420")
             .and("NESTEDBEAN_FOO", "outer")
@@ -150,7 +155,7 @@ public class TigerConfigurationTest {
     void injectIntoRecursiveWithMixedSourcesStructure() throws Exception {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
-        withEnvironmentVariable("string", "wrongValue")
+        new EnvironmentVariables("string", "wrongValue")
             .and("NESTEDBEAN_FOO", "outer")
             .and("NESTEDBEAN_INNER_FOO", "medium")
             .execute(() -> {
@@ -168,7 +173,7 @@ public class TigerConfigurationTest {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
         System.setProperty("nestedbean.inner.inner.bar", "420");
-        withEnvironmentVariable("string", "wrongValue")
+        new EnvironmentVariables("string", "wrongValue")
             .and("NESTEDBEAN_FOO", "outer")
             .and("NESTEDBEAN_INNER_FOO", "medium")
             .and("NESTEDBEAN_INNER_INNER_FOO", "inner")
@@ -190,7 +195,7 @@ public class TigerConfigurationTest {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
         System.setProperty("nestedbean.inner.inner.bar", "420");
-        withEnvironmentVariable("string", "wrongValue")
+        new EnvironmentVariables("string", "wrongValue")
             .and("NESTEDBEAN_INNER_INNER_FOO", "inner")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -217,7 +222,7 @@ public class TigerConfigurationTest {
         System.setProperty("NESTEDBEAN_BAR", "4");
         System.setProperty("nestedbean.inner.bar", "42");
         System.setProperty("nestedbean.inner.inner.bar", "420");
-        withEnvironmentVariable("string", "wrongValue")
+        new EnvironmentVariables("string", "wrongValue")
             .and("NESTEDBEAN_FOO", "outer")
             .and("NESTEDBEAN_INNER_FOO", "medium")
             .and("BOOLEAN_WITH1", "1")
@@ -256,7 +261,7 @@ public class TigerConfigurationTest {
 
     @Test
     void arrayMixedFromSources() throws Exception {
-        withEnvironmentVariable("string", "wrongValue")
+        new EnvironmentVariables("string", "wrongValue")
             .and("nestedBean.array.1.foo", "foo1")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -275,7 +280,7 @@ public class TigerConfigurationTest {
 
     @Test
     void map_keyShouldBeKeptWithCorrectCase() throws Exception {
-        withEnvironmentVariable("MAP_SNAKECASE", "snakeFoo")
+        new EnvironmentVariables("MAP_SNAKECASE", "snakeFoo")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
                 TigerGlobalConfiguration.readFromYaml(
@@ -293,7 +298,7 @@ public class TigerConfigurationTest {
     @Test
     void overwriteWithEmptyValue_shouldWork() throws Exception {
         System.setProperty("NESTEDBEAN_FOO", "");
-        withEnvironmentVariable("NESTEDBEAN_FOO", "nonEmptyValue")
+        new EnvironmentVariables("NESTEDBEAN_FOO", "nonEmptyValue")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
                 var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class)
@@ -353,7 +358,7 @@ public class TigerConfigurationTest {
     @SneakyThrows
     @Test
     void overwriteTemplateListFromYamlAndEnv_shouldReplaceNotMerge() {
-        withEnvironmentVariable("nestedBean.array.0.inner.array.0.foo", "envEntry0")
+        new EnvironmentVariables("nestedBean.array.0.inner.array.0.foo", "envEntry0")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
                 TigerGlobalConfiguration.readFromYaml(
@@ -380,7 +385,7 @@ public class TigerConfigurationTest {
     @SneakyThrows
     @Test
     void addTemplateInEnv_shouldNotReplaceYamlEntries() {
-        withEnvironmentVariable("nestedBean.array.0.inner.array.0.foo", "envEntry0")
+        new EnvironmentVariables("nestedBean.array.0.inner.array.0.foo", "envEntry0")
             .and("nestedBean.array.0.template", "templateWithList")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -407,7 +412,7 @@ public class TigerConfigurationTest {
     @SneakyThrows
     @Test
     void applyTemplateInEnv_shouldSuccesfullyReplaceTemplateList() {
-        withEnvironmentVariable("nestedBean.array.0.inner.array.0.foo", "envEntry0")
+        new EnvironmentVariables("nestedBean.array.0.inner.array.0.foo", "envEntry0")
             .and("nestedBean.array.0.template", "templateWithList")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -472,7 +477,7 @@ public class TigerConfigurationTest {
     @SneakyThrows
     @Test
     void replacePlaceholdersInValuesDuringReadIn() {
-        withEnvironmentVariable("myEnvVar", "valueToBeAsserted")
+        new EnvironmentVariables("myEnvVar", "valueToBeAsserted")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
                 TigerGlobalConfiguration.readFromYaml(
@@ -600,7 +605,7 @@ public class TigerConfigurationTest {
 
     @Test
     void readValueWithPlaceholder() throws Exception {
-        withEnvironmentVariable("give.me.foo", "foo")
+        new EnvironmentVariables("give.me.foo", "foo")
             .and("foo.int", "1234")
             .execute(() -> {
                 TigerGlobalConfiguration.reset();
@@ -648,6 +653,14 @@ public class TigerConfigurationTest {
     @Test
     void testGetEnvAsStringPathOk() {
         assertThat(TigerGlobalConfiguration.readString(System.getenv().keySet().iterator().next())).isNotBlank();
+    }
+
+    @Test
+    void setNullValue_ShouldFail() {
+        assertThatThrownBy(() -> TigerGlobalConfiguration.putValue("my.key", null))
+            .isInstanceOf(TigerConfigurationException.class);
+        assertThatThrownBy(() -> TigerGlobalConfiguration.putValue("my.key", (Integer) null))
+            .isInstanceOf(TigerConfigurationException.class);
     }
 
     @Test
@@ -763,6 +776,14 @@ public class TigerConfigurationTest {
         assertThat(map).containsAllEntriesOf(Map.of(
             "key.select.akey", "aValue",
             "key.select.bkey", "bValue"));
+    }
+
+    @SneakyThrows
+    @Test
+    void hostnamePropertyShouldBePresent() {
+        TigerGlobalConfiguration.reset();
+        assertThat(TigerGlobalConfiguration.readString("hostname"))
+            .isEqualTo(TigerGlobalConfiguration.getComputerName());
     }
 
     @Data

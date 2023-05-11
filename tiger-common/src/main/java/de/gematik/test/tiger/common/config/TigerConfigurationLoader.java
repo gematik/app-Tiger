@@ -33,6 +33,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.AllArgsConstructor;
@@ -197,7 +198,7 @@ public class TigerConfigurationLoader {
     }
 
     public void readFromYaml(String yamlSource, String... baseKeys) {
-        readFromYaml(yamlSource, SourceType.YAML, baseKeys);
+        readFromYaml(yamlSource, SourceType.ADDITIONAL_YAML, baseKeys);
     }
 
     public void readFromYaml(String yamlSource, SourceType sourceType, String... baseKeys) {
@@ -433,7 +434,16 @@ public class TigerConfigurationLoader {
             .filter(entry -> entry.getKey().isBelow(reference))
             .collect(Collectors.toMap(
                 entry -> entry.getKey().subtractFromBeginning(reference).downsampleKey(),
-                e -> e.getValue()));
+                Entry::getValue));
+    }
+
+    public Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
+        var reference = new TigerConfigurationKey(baseKeys);
+        return retrieveMap().entrySet().stream()
+            .filter(entry -> entry.getKey().isBelow(reference))
+            .collect(Collectors.toMap(
+                entry -> entry.getKey().subtractFromBeginning(reference).downsampleKeyCaseSensitive(),
+                Entry::getValue));
     }
 
     public List<AbstractTigerConfigurationSource> listSources() {
@@ -441,10 +451,16 @@ public class TigerConfigurationLoader {
     }
 
     public void putValue(String key, String value) {
+        if (value == null) {
+            throw new TigerConfigurationException("Trying to store null-value. Only non-values are allowed!");
+        }
         putValue(key, value, SourceType.RUNTIME_EXPORT);
     }
 
     public void putValue(String key, Object value) {
+        if (value == null) {
+            throw new TigerConfigurationException("Trying to store null-value. Only non-values are allowed!");
+        }
         if (value instanceof String) {
             putValue(key, (String) value);
         } else {

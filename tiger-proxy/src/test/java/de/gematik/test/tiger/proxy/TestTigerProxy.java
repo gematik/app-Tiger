@@ -16,14 +16,12 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
@@ -38,6 +36,7 @@ import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -64,7 +63,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jws.JsonWebSignature;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -73,7 +71,6 @@ import org.mockserver.client.MockServerClient;
 import org.mockserver.model.MediaType;
 import org.mockserver.model.SocketAddress;
 import org.mockserver.netty.MockServer;
-import org.springframework.util.SocketUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -88,7 +85,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             return;
         }
 
-        final MockServer forwardProxyServer = new MockServer();
+        final MockServer forwardProxyServer = new MockServer(TigerGlobalConfiguration
+            .readIntegerOptional("free.ports.197").orElse(0));
 
         forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
         log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
@@ -97,7 +95,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .forward(
                 req -> forwardOverriddenRequest(
                     req.withSocketAddress(
-                        "localhost", fakeBackendServer.port(), SocketAddress.Scheme.HTTP
+                        "localhost", fakeBackendServerPort, SocketAddress.Scheme.HTTP
                     ))
                     .getRequestOverride());
     }
@@ -107,7 +105,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -131,7 +129,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -152,7 +150,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
-            .isEqualTo("localhost:" + fakeBackendServer.port());
+            .isEqualTo("localhost:" + fakeBackendServerPort);
     }
 
     @Test
@@ -160,7 +158,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -191,7 +189,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .rewriteHostHeader(true)
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -212,7 +210,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .rewriteHostHeader(true)
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://foo.bar")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -231,7 +229,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -242,12 +240,12 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .findElement("$.receiver")
             .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
             .map(Object::toString)).get()
-            .isEqualTo("localhost:" + fakeBackendServer.port());
+            .isEqualTo("localhost:" + fakeBackendServerPort);
         assertThat(tigerProxy.getRbelMessagesList().get(1)
             .findElement("$.sender")
             .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
             .map(Object::toString)).get()
-            .isEqualTo("localhost:" + fakeBackendServer.port());
+            .isEqualTo("localhost:" + fakeBackendServerPort);
     }
 
     @Test
@@ -256,7 +254,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .tls(TigerTlsConfiguration.builder()
                 .domainName("muahaha")
@@ -297,7 +295,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://foo.bar")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -326,7 +324,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
         final HttpResponse<JsonNode> response = proxyRest.get(
-                "http://localhost:" + fakeBackendServer.port() + "/foobar")
+                "http://localhost:" + fakeBackendServerPort + "/foobar")
             .asJson();
         awaitMessagesInTiger(2);
 
@@ -342,14 +340,14 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
         assertThatThrownBy(() ->
             tigerProxy.addRoute(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .isInstanceOf(TigerProxyConfigurationException.class);
     }
@@ -359,14 +357,16 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
-        fakeBackendServer.stubFor(get(urlEqualTo("/binary"))
-            .willReturn(aResponse()
+        fakeBackendServerClient.when(request()
+                .withMethod("GET")
+                .withPath("/binary"))
+            .respond(response()
                 .withHeader("content-type", MediaType.APPLICATION_OCTET_STREAM.toString())
-                .withBody("Hallo".getBytes())));
+                .withBody("Hallo".getBytes()));
 
         proxyRest.get("http://backend/binary").asBytes();
         awaitMessagesInTiger(2);
@@ -382,7 +382,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -400,7 +400,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -420,7 +420,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/notAServer")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -444,7 +444,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -463,7 +463,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .fileSaveInfo(TigerFileSaveInfo.builder()
                 .writeToFile(true)
@@ -491,7 +491,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .build())
             .build());
 
-        proxyRest.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+        proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString();
 
         await()
             .atMost(2, TimeUnit.SECONDS)
@@ -500,16 +500,18 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     @Test
     void basicAuthenticationRequiredAndConfigured_ShouldWork() {
-        fakeBackendServer.stubFor(get(urlEqualTo("/authenticatedPath"))
-            .withBasicAuth("user", "password")
-            .willReturn(aResponse()
-                .withStatus(777)
-                .withBody("{\"foo\":\"bar\"}")));
+        fakeBackendServerClient.when(request()
+            .withMethod("GET")
+            .withPath("/authenticatedPath")
+            .withHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("user:password".getBytes(StandardCharsets.UTF_8))))
+            .respond(response()
+                .withStatusCode(777)
+                .withBody("{\"foo\":\"bar\"}"));
 
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backendWithBasicAuth")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .basicAuth(new TigerBasicAuthConfiguration("user", "password"))
                 .build()))
             .build());
@@ -566,7 +568,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port() + "/deep")
+                .to("http://localhost:" + fakeBackendServerPort + "/deep")
                 .build()))
             .build());
 
@@ -578,7 +580,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
-            .isEqualTo("localhost:" + fakeBackendServer.port());
+            .isEqualTo("localhost:" + fakeBackendServerPort);
     }
 
     @Test
@@ -586,7 +588,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port() + "/foobar")
+                .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                 .build()))
             .build());
 
@@ -598,7 +600,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessagesList().get(0)
             .findElement("$.header.Host")
             .get().getRawStringContent())
-            .isEqualTo("localhost:" + fakeBackendServer.port());
+            .isEqualTo("localhost:" + fakeBackendServerPort);
     }
 
     @SneakyThrows
@@ -617,7 +619,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port() + "/foobar")
+                .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                 .build()))
             .build());
 
@@ -636,7 +638,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port() + "/deep")
+                .to("http://localhost:" + fakeBackendServerPort + "/deep")
                 .build()))
             .build());
 
@@ -656,17 +658,18 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
         proxyRest.get("http://backend/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
-        assertThat(getLastRequest().getQueryParams())
-            .containsOnlyKeys("foo", "schmoo");
-        assertThat(getLastRequest().getQueryParams().get("foo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getEntries())
+            .extracting("name")
+            .containsOnly("foo", "schmoo");
+        assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
             .containsExactly("bar1", "bar2");
-        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo"))
             .containsExactly("");
     }
 
@@ -675,17 +678,18 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
-        assertThat(getLastRequest().getQueryParams())
-            .containsOnlyKeys("foo", "schmoo");
-        assertThat(getLastRequest().getQueryParams().get("foo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getEntries())
+            .extracting("name")
+            .containsOnly("foo", "schmoo");
+        assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
             .containsExactly("bar1", "bar2");
-        assertThat(getLastRequest().getQueryParams().get("schmoo").values())
+        assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo"))
             .containsExactly("");
     }
 
@@ -694,7 +698,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -725,7 +729,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -752,19 +756,22 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-        unirestInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+        unirestInstance.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString();
 
         final UnirestInstance secondInstance = Unirest.spawnInstance();
         secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-        secondInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+        secondInstance.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString();
 
         final List<String> hostnameList = new ArrayList<>();
         hostnameList.addAll(
             Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost",
                 "localhost|view-localhost"));
 
-        checkClientAddresses(hostnameList, hostnameList);
+        // make sure both messages have been parsed successfully
+        await().pollInterval(200, TimeUnit.MILLISECONDS).atMost(20, TimeUnit.SECONDS)
+            .until(() -> extractHostnames(RbelTcpIpMessageFacet::getReceiver).toList().size() == 2);
 
+        checkClientAddresses(hostnameList, hostnameList);
         checkPortsAreCorrect();
     }
 
@@ -778,7 +785,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     @Test
     void checkGetNotSetTigerProxyPort_ShouldThrowTigerConfigurationException() {
         TigerGlobalConfiguration.reset();
-        int availableTcpPort = SocketUtils.findAvailableTcpPort();
+        int availableTcpPort = TigerGlobalConfiguration.readIntegerOptional("free.port.100").orElseThrow();
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyPort(availableTcpPort)
             .build());
@@ -792,7 +799,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -812,7 +819,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -833,7 +840,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
         final UnirestInstance unirestInstance = Unirest.spawnInstance();
         unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-        unirestInstance.get("http://localhost:" + fakeBackendServer.port() + "/foobar").asString();
+        unirestInstance.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString();
         awaitMessagesInTiger(2);
 
         assertThat(tigerProxy.getRbelMessagesList().get(0)
@@ -850,7 +857,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .rbelBufferSizeInMb(0)
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://backend")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
 
@@ -868,7 +875,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .skipParsingWhenMessageLargerThanKb(1)
             .build());
@@ -887,7 +894,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .build());
         AtomicBoolean messageWasReceivedInTheClient = new AtomicBoolean(false);
@@ -920,7 +927,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("/")
-                .to("http://localhost:" + fakeBackendServer.port())
+                .to("http://localhost:" + fakeBackendServerPort)
                 .build()))
             .parsingShouldBlockCommunication(true)
             .build());

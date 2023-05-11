@@ -16,8 +16,9 @@
 
 package de.gematik.test.tiger.testenvmgr.servers.log;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErrNormalized;
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrNormalized;
+import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemOutNormalized;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
@@ -27,12 +28,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
 
 @Slf4j
 class TigerServerLogManagerTest {
 
+    @SystemStub
+    private SystemErr systemErr;
+
     @Test
-    public void testCheckAddAppenders_OK() throws Exception {
+    void testCheckAddAppenders_OK() throws Exception {
         String logMessage = "This is a test log!";
         String logFile = "target/serverLogs/test.log";
         String serverID = "ExternalJar-001";
@@ -56,7 +62,7 @@ class TigerServerLogManagerTest {
         } else {
             Assertions.fail("Folder is invalid! " + folder.getAbsolutePath());
         }
-        assertThat(text).contains(logMessage);
         assertThat(dummyLog.getName()).isEqualTo("TgrSrv-" +serverID);
+        assertThat(text).contains(logMessage);
     }
 }

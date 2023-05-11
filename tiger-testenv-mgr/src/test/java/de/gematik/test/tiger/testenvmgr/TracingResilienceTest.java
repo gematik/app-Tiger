@@ -203,7 +203,7 @@ class TracingResilienceTest {
     private void randomlyCrashAggregatingProxy() {
         if (aggregatingProxyContext != null && RandomUtils.nextInt(0, 30) < 1) {
             log.info("Stopping aggregating proxy...");
-            aggregatingProxyContext.getBean(TigerProxy.class).shutdown();
+            aggregatingProxyContext.getBean(TigerProxy.class).close();
             aggregatingProxyContext.stop();
             aggregatingProxyContext.close();
             aggregatingProxyContext = null;

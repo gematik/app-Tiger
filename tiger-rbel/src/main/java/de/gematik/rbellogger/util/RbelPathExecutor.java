@@ -23,6 +23,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelNestedFacet;
 import de.gematik.rbellogger.exceptions.RbelPathException;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class RbelPathExecutor {
 
     public List<RbelElement> execute() {
         if (!rbelPath.startsWith("$")) {
-            throw new RbelPathException("RbelPath expressions always start with $. (got '"+rbelPath+"')");
+            throw new RbelPathException("RbelPath expressions always start with $. (got '" + rbelPath + "')");
         }
         final List<String> keys = List.of(rbelPath.substring(2).split("\\.(?![^\\(]*\\))"));
         List<RbelElement> candidates = List.of(rbelElement);
@@ -77,8 +78,8 @@ public class RbelPathExecutor {
                 log.warn("No more candidate-nodes in RbelPath execution! Last batch of candidates had {} elements: \n {}",
                     lastIterationCandidates.size(),
                     lastIterationCandidates.stream()
-                    .map(el -> el.printTreeStructure(Integer.MAX_VALUE, true))
-                    .collect(Collectors.joining("\n")));
+                        .map(el -> el.printTreeStructure(Integer.MAX_VALUE, true))
+                        .collect(Collectors.joining("\n")));
             }
         }
 
@@ -158,9 +159,12 @@ public class RbelPathExecutor {
 
     private List<RbelElement> findChildNodesByJexlExpression(final RbelElement element, final String jexl) {
         RbelJexlExecutor executor = new RbelJexlExecutor();
-        return element.getChildNodesWithKey().stream()
+        return element.getChildNodesWithKey().stream().parallel()
             .filter(candidate ->
-                executor.matchesAsJexlExpression(candidate.getValue(), jexl, Optional.of(candidate.getKey())))
+                executor.matchesAsJexlExpression(jexl, new TigerJexlContext()
+                    .withKey(candidate.getKey())
+                    .withCurrentElement(candidate.getValue())
+                    .withRootElement(this.rbelElement)))
             .map(Map.Entry::getValue)
             .collect(Collectors.toList());
     }

@@ -18,7 +18,10 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addSomeMessagesToTigerTestHooks;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -44,5 +47,28 @@ public class InlineJexlTest {
     void resolveTestStrings(String resolve, String shouldMatch) {
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(resolve))
             .matches(shouldMatch);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'!{rbel:lastResponse11111111AsString()}'",
+        "'!{rbel:lastResponse().isResponse}'",
+        "'!{rbel:lastResponse(),,,isResponse}'",
+    })
+    void resolveTestStringsFailures(String resolve) {
+        TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = true;
+        assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(resolve))
+            .isInstanceOfAny(JexlException.class, RuntimeException.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'!{rbel:lastResponse(),isResponse'",
+        "'!{rbel:getValueAtLocationAsString(rbel:lastResponse(), \"$.#%.id_token..wasDecryptable\")}'",
+        "'!{rbel:getValueAtLocationAsString(rbel:lastResponse(), \"$..id_token[1]..wasDecryptable\")}'",
+    })
+    void resolveTestStringsFailuresSilently(String resolve) {
+        TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = true;
+        assertThat(TigerGlobalConfiguration.resolvePlaceholders(resolve)).isEqualTo(resolve);
     }
 }

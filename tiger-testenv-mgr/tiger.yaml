@@ -1,0 +1,6 @@
+additionalYamls:
+  - filename: src/test/resources/additionalAndTigerYamlCurrentDir/foo/bar/additionalYaml.yaml
+    baseKey: rootFolder
+
+  - filename: src/test/resources/additionalAndTigerYamlCurrentDir/additionalYaml.yaml
+    baseKey: rootFolderNested

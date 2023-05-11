@@ -16,10 +16,15 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.test.tiger.common.jexl.TigerJexlContext.CURRENT_ELEMENT_MARKER;
+import static de.gematik.test.tiger.common.jexl.TigerJexlContext.ROOT_ELEMENT_MARKER;
+import com.google.common.base.CharMatcher;
+import de.gematik.rbellogger.converter.RbelValueShader.JexlMessage;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -28,7 +33,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlExpression;
-import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -64,35 +69,40 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
     }
 
     @Override
-    public JexlExpression buildExpression(String jexlExpression, Object element, MapContext mapContext) {
-        return super.buildExpression(evaluateRbelPathExpressions(jexlExpression, element, mapContext),
-            element, mapContext);
+    public JexlExpression buildExpression(String jexlExpression, TigerJexlContext mapContext) {
+        return super.buildExpression(evaluateRbelPathExpressions(jexlExpression, mapContext), mapContext);
     }
 
-    private String evaluateRbelPathExpressions(String jexlExpression, Object element, MapContext mapContext) {
-        if (!(element instanceof RbelElement)
-            || !jexlExpression.contains("$.")) {
-            return jexlExpression;
+    private String evaluateRbelPathExpressions(String jexlExpression, TigerJexlContext mapContext) {
+        final List<Pair<String, String>> replacedPaths = Arrays.stream(jexlExpression.split(" |(==)|(=~)|(<=)|(!~)|(=\\^)|(!\\^)|(=$)|(!$)"))
+            .filter(str -> (str.startsWith("$.") || str.startsWith("@.")) && str.length() > 2)
+            .map(path -> {
+                if (path.startsWith("$.")) {
+                    return Pair.of(path, extractPathAndConvertToString(mapContext.getRootElement(), path));
+                } else if (path.startsWith("@.")) {
+                    return Pair.of(path, extractPathAndConvertToString(mapContext.getCurrentElement(), path.replaceFirst("@\\.", "\\$.")));
+                } else {
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
+            .filter(p -> CharMatcher.ascii().matchesAllOf(p.getValue()))
+            .collect(Collectors.toList());
+        for (var pair : replacedPaths) {
+            final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); //NOSONAR
+            mapContext.put(id, pair.getValue());
+            jexlExpression = jexlExpression.replace(pair.getKey(), id);
         }
-        String rbelPath = Arrays.stream(jexlExpression.split(" "))
-            .filter(str -> str.startsWith("$.")
-                && str.length() > 2)
-            .findAny().orElseThrow();
-        final String rbelEvaluationResult = extractPathAndConvertToString((RbelElement) element, rbelPath);
-        mapContext.set("rbelEvaluationResult", rbelEvaluationResult);
-        return jexlExpression.replace(rbelPath, "rbelEvaluationResult");
+        return jexlExpression;
     }
 
-    private static String extractPathAndConvertToString(RbelElement source, String rbelPath) {
-        final Optional<RbelElement> target = source.findElement(rbelPath);
-        if (target.isPresent()) {
-            if (target.get().getRawContent() != null) {
-                return target.get().getRawStringContent();
-            } else if (target.get().hasFacet(RbelValueFacet.class)) {
-                return target.get().getFacetOrFail(RbelValueFacet.class).getValue().toString();
-            }
-        }
-        return "";
+    private static String extractPathAndConvertToString(Object source, String rbelPath) {
+        return Optional.ofNullable(source)
+            .filter(RbelElement.class::isInstance)
+            .map(RbelElement.class::cast)
+            .flatMap(s -> s.findElement(rbelPath))
+            .map(RbelJexlExecutor::forceStringConvert)
+            .orElse("");
     }
 
     public Map<String, Object> buildJexlMapContext(Object element, Optional<String> key) {
@@ -183,7 +193,12 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
                         getMaxedOutContentOfElement(
                             entry.getValue().getFacetOrFail(RbelNestedFacet.class).getNestedElement()));
                 } else if (entry.getValue().hasFacet(RbelValueFacet.class)) {
-                    result.put(key, getMaxedOutContentOfElement(entry.getValue().getFacetOrFail(RbelValueFacet.class).getValue().toString()));
+                    final Object value = entry.getValue().getFacetOrFail(RbelValueFacet.class).getValue();
+                    if (value != null) {
+                        result.put(key, getMaxedOutContentOfElement(value.toString()));
+                    } else {
+                        result.put(key, null);
+                    }
                 } else if (!entry.getValue().getChildNodes().isEmpty()) {
                     result.put(key, buildPositionDescriptor(entry.getValue()));
                 } else {
@@ -320,5 +335,17 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
         public final Map<String, List<String>> headers;
         public final String bodyAsString;
         public final RbelElement body;
+    }
+
+    private static String forceStringConvert(RbelElement obj) {
+        if (obj.getFirst("content").isPresent()) {
+            return obj.getFirst("content").map(RbelJexlExecutor::forceStringConvert).orElse("");
+        } else if (obj.hasFacet(RbelValueFacet.class)) {
+            return obj.getFacetOrFail(RbelValueFacet.class).getValue().toString();
+        } else if (obj.getRawContent() != null) {
+            return obj.getRawStringContent();
+        } else {
+            return "";
+        }
     }
 }

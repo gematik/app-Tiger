@@ -1,6 +1,53 @@
 # Changelog Tiger Testplattform
 
 -------
+* **Serenity BDD 3.6.23**
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* **Spring Boot 3.0.6**
+* Logback 1.2.11
+
+# Release 2.0.0
+
+## Bugfixes
+
+* TGR-769: Serenity reports show examples now with a collapse icon clearly indicating whether its folded or unfolded
+* TGR-887: Jexl-Selectors in RbelPath-Expressions now differentiate between the current (@.) and the root ($.) element.
+* TGR-893: Saving of HTML-Traffic in Webui refactored, HTML rendering has moved from frontend to backend
+
+## Features
+
+* Upgraded Serenity BDD to latest 3.6.X
+* Upgraded Spring Boot to latest 3.0.X
+* Upgraded to Java 17
+* Added first version of FAQ.md
+* TGR-867: ExternalUrl server uses source URL as default health check URL if not set
+* TGR-872: Added glue code to wait for non-paired messages (optional excluding existing messages)
+* TGR-866: Glue-Code to change TLS-certificates for local TigerProxy during test execution
+* TGR-888: ${hostname} added as a configuration property
+* TGR-890: Workflow Ui now has a quit button in the left sidebar to abort the currently active test execution
+* TGR-890: Workflow Ui now has a pause button in the left sidebar to pause test execution. Please be aware that timeouts (e.g. while waiting for a rbel message to appear are not affected by the pause mode, thus using pause on these steps will cause a timeout and potentially subsequent test failure).
+* TGR-901: New server-type "zion" added. Supports adding and configuring zion-Servers directly in a tiger.yaml
+* TGR-730: support changing log level similar to spring boot by specifying package or class name and level in tiger.yaml under logging.level
+```yaml
+servers:
+  server1:
+    ......
+logging:
+  level:
+    de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr: TRACE
+    de.gematik.test.tiger.lib.TigerDirector: TRACE
+    de.gematik.test.tiger.proxy: TRACE
+    localTigerProxy: TRACE
+```
+
+## Breaking changes
+
+* tiger-<hostname>.yaml is now read additionally to the tiger.yaml, no longer instead of! Migration should be seamless unless you have both a tiger- and a tiger-<hostname>.yaml. In that case manual migration of the properties is required, depending on whether you want them as a default on all machines (tiger.yaml) or simply as a host-specific configuration (tiger-<hostname>.yaml).
+
+-------
 * Serenity BDD 3.3.10
 * Cucumber 7.4.1
 * RestAssured 5.2.0
@@ -24,8 +71,6 @@
 * TGR-864: all params except for the HTTP method of steps from the http client extension are now resolving ${} expressions
 * Made timeout for execution pause in workflow ui configurable via property tiger.lib.pauseExecutionTimeoutSeconds
 * On quit the background of the sidebar of the workflow ui is now colored coral red to indicate that no backend server functionality is available anymore (reload page, backend calls on the rbel log details pane, access to the proxy webui page)
-
-## Breaking changes
 
 -------
 

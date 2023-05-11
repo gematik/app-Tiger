@@ -25,6 +25,8 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.WebSocketContainer;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -35,8 +37,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
-import javax.websocket.ContainerProvider;
-import javax.websocket.WebSocketContainer;
 import kong.unirest.GenericType;
 import kong.unirest.Unirest;
 import lombok.Getter;
@@ -63,6 +63,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     @Getter
     private final String remoteProxyUrl;
     private final WebSocketStompClient tigerProxyStompClient;
+
     @Getter
     private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
     @Getter
@@ -77,6 +78,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     private final AtomicReference<StompSession> stompSession = new AtomicReference<>();
     @Getter
     private final AtomicReference<String> lastMessageUuid = new AtomicReference<>();
+    private SockJsClient webSocketClient;
+    private StandardWebSocketClient wsClient;
+    private int connectionTimeoutInSeconds;
 
     public TigerRemoteProxyClient(String remoteProxyUrl) {
         this(remoteProxyUrl, new TigerProxyConfiguration(), null);
@@ -102,15 +106,20 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
         messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
 
-        tigerProxyStompClient = new WebSocketStompClient(
-            new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient(container)))));
+        wsClient = new StandardWebSocketClient(container);
+        webSocketClient = new SockJsClient(List.of(new WebSocketTransport(wsClient)));
+        tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
         tigerProxyStompClient.setMessageConverter(messageConverter);
         tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
         tigerStompSessionHandler = new TigerStompSessionHandler(this);
-        connectToRemoteUrl(tigerStompSessionHandler,
-            configuration.getConnectionTimeoutInSeconds(),
-            getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
         maximumPartialMessageAge = Duration.ofSeconds(configuration.getMaximumPartialMessageAgeInSeconds());
+        connectionTimeoutInSeconds = configuration.getConnectionTimeoutInSeconds();
+    }
+
+    public void connect() {
+        connectToRemoteUrl(tigerStompSessionHandler,
+            connectionTimeoutInSeconds,
+            getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
     }
 
     private String getTracingWebSocketUrl(String remoteProxyUrl) {
@@ -123,6 +132,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
     void connectToRemoteUrl(TigerStompSessionHandler tigerStompSessionHandler,
         int connectionTimeoutInSeconds, boolean downloadTraffic) {
+        if (isShuttingDown()) {
+            return;
+        }
         waitForRemoteTigerProxyToBeOnline(remoteProxyUrl);
         final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
         final ListenableFuture<StompSession> connectFuture
@@ -276,16 +288,15 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             Optional.empty());
     }
 
-    public void unsubscribe() {
+    @Override
+    public void close() {
+        super.close();
+        log.debug("Stopping websocket client with remote URL '{}'", remoteProxyUrl);
         if (stompSession.get() != null && stompSession.get().isConnected()) {
             stompSession.get().disconnect();
         }
         tigerProxyStompClient.stop();
-    }
-
-    @Override
-    public void close() {
-        unsubscribe();
+        webSocketClient.stop();
     }
 
     void receiveNewMessagePart(TracingMessagePart tracingMessagePart) {
@@ -374,6 +385,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
 
     public boolean isConnected() {
-        return stompSession.get().isConnected();
+        return Optional.ofNullable(stompSession)
+            .map(AtomicReference::get)
+            .filter(Objects::nonNull)
+            .map(StompSession::isConnected)
+            .orElse(false);
     }
 }

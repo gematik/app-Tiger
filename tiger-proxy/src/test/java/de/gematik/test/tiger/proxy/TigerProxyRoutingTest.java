@@ -16,12 +16,10 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
@@ -34,14 +32,17 @@ import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.junit.jupiter.MockServerExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@WireMockTest
 @RequiredArgsConstructor
 @ResetTigerConfiguration
-public class TigerProxyRoutingTest {
+@ExtendWith(MockServerExtension.class)
+class TigerProxyRoutingTest {
 
     private UnirestInstance unirestInstance;
     @Autowired
@@ -49,7 +50,7 @@ public class TigerProxyRoutingTest {
     private int backendServerPort;
 
     @BeforeEach
-    public void beforeEachLifecyleMethod(WireMockRuntimeInfo wmRuntimeInfo) {
+    public void beforeEachLifecyleMethod(MockServerClient client) {
         tigerProxy.getRoutes()
             .stream()
             .filter(route -> !route.getFrom().contains("tiger"))
@@ -57,14 +58,16 @@ public class TigerProxyRoutingTest {
 
         tigerProxy.addRoute(TigerRoute.builder()
             .from("http://myserv.er")
-            .to("http://localhost:" + wmRuntimeInfo.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build());
 
-        wmRuntimeInfo.getWireMock().register(get("/foo")
-            .willReturn(aResponse()
-                .withBody("bar")));
+        client.when(request()
+                .withMethod("GET")
+                .withPath("/foo"))
+            .respond(response()
+                .withBody("bar"));
 
-        backendServerPort = wmRuntimeInfo.getHttpPort();
+        backendServerPort = client.getPort();
 
         unirestInstance = new UnirestInstance(
             new Config().proxy("localhost", tigerProxy.getProxyPort()));
@@ -77,13 +80,13 @@ public class TigerProxyRoutingTest {
     }
 
     @Test
-    public void shouldHonorConfiguredRoutes() {
+    void shouldHonorConfiguredRoutes() {
         assertThat(unirestInstance.get("http://myserv.er/foo").asString().getBody())
             .isEqualTo("bar");
     }
 
     @Test
-    public void addRoute_shouldWork() {
+    void addRoute_shouldWork() {
         unirestInstance.put("http://tiger.proxy/route")
             .header("Content-Type", "application/json")
             .body("{\"from\":\"http://anderer.server\","
@@ -96,7 +99,7 @@ public class TigerProxyRoutingTest {
     }
 
     @Test
-    public void deleteRoute_shouldWork() {
+    void deleteRoute_shouldWork() {
         assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
             .isEqualTo(404);
 
@@ -119,7 +122,7 @@ public class TigerProxyRoutingTest {
     }
 
     @Test
-    public void getRoutes_shouldGiveAllRoutes() {
+    void getRoutes_shouldGiveAllRoutes() {
         final HttpResponse<List<TigerRouteDto>> tigerRoutesResponse = unirestInstance.get("http://tiger.proxy/route")
             .asObject(new GenericType<>() {
             });

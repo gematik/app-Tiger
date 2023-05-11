@@ -20,7 +20,7 @@ group SystemLambda.catchSystemExit() {
         }
     fork again
       :sleep(600);
-      #lightgreen:envStatusController.getConfirmQuit()
+      #lightgreen:envStatusController.getConfirmShutdown()
 
       //sets the user acknowledgemnet flag//;
       :sleep(600);

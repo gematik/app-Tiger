@@ -116,7 +116,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
             .map(testEnvMgr::replaceSysPropsInString)
             .forEach(environmentProperties::add);
 
-        if (configuration.getUrlMappings() != null) {
+        if (configuration.getUrlMappings() != null && testEnvMgr.getLocalTigerProxyOptional().isPresent()) {
             statusMessage("Adding routes to local tiger proxy for server " + getServerId() + "...");
             configuration.getUrlMappings().forEach(mapping -> {
                 if (StringUtils.isBlank(mapping) || !mapping.contains("-->") || mapping.split(" --> ", 2).length != 2) {
@@ -162,7 +162,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
     private void reloadConfiguration() {
         try {
-            this.configuration = TigerGlobalConfiguration.instantiateConfigurationBeanStrict(CfgServer.class,
+            this.configuration = TigerGlobalConfiguration.instantiateConfigurationBeanStrict(getConfigurationBeanClass(),
                     "tiger", "servers", getServerId())
                 .orElseThrow(
                     () -> new TigerEnvironmentStartupException("Could not reload configuration for server with id %s", getServerId()));
@@ -170,6 +170,10 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         } catch (TigerConfigurationException e) {
             log.warn("Could not reload configuration for server {}", getServerId(), e);
         }
+    }
+
+    public Class<? extends CfgServer> getConfigurationBeanClass() {
+        return CfgServer.class;
     }
 
     private void loadPkiForProxy() {
@@ -360,7 +364,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         }
     }
 
-    void publishNewStatusUpdate(TigerServerStatusUpdate update) {
+    public void publishNewStatusUpdate(TigerServerStatusUpdate update) {
         update.setType(getServerTypeToken());
         tigerTestEnvMgr.publishStatusUpdateToListeners(TigerStatusUpdate.builder()
                         .serverUpdate(new LinkedHashMap<>(Map.of(serverId, update)))

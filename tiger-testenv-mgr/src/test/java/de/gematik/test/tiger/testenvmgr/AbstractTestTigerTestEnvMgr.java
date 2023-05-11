@@ -54,7 +54,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     @BeforeAll
     public static void startServer() throws IOException {
         log.info("Booting MockServer...");
-        mockServer = new MockServer(TigerGlobalConfiguration.readIntegerOptional("free.port.200").orElseThrow());
+        mockServer = new MockServer();
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
         final File winstoneFile = new File("target/winstone.jar");
@@ -70,7 +70,6 @@ public abstract class AbstractTestTigerTestEnvMgr {
                 .withBody(winstoneBytes))[0];
 
         System.setProperty("mockserver.port", Integer.toString(mockServer.getLocalPort()));
-        TigerGlobalConfiguration.reset();
     }
 
     @AfterEach
@@ -84,7 +83,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     //
     // -----------------------------------------------------------------------------------------------------------------
 
-    public void createTestEnvMgrSafelyAndExecute(String configurationFilePath,
+    public static void createTestEnvMgrSafelyAndExecute(String configurationFilePath,
         ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
         TigerTestEnvMgr envMgr = null;
         try {
@@ -107,7 +106,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer, String configurationFilePath) {
         createTestEnvMgrSafelyAndExecute(configurationFilePath, testEnvMgrConsumer);
     }
-    public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
+    public static void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
         createTestEnvMgrSafelyAndExecute("", testEnvMgrConsumer);
     }
 

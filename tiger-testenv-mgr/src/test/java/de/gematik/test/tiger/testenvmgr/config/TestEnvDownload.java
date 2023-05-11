@@ -22,7 +22,6 @@ import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
@@ -44,13 +43,12 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.model.Delay;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
-import org.springframework.util.SocketUtils;
 
 @Slf4j
 @ResetTigerConfiguration
 class TestEnvDownload {
     private static final Path DOWNLOAD_FOLDER_PATH = Path.of("target", "jarDownloadTest");
-    private static final Integer MOCKSERVER_PORT = SocketUtils.findAvailableTcpPorts(1).first();
+    private static Integer MOCKSERVER_PORT;
 
     private static MockServer mockServer;
     private static MockServerClient mockServerClient;
@@ -81,7 +79,8 @@ class TestEnvDownload {
         log.info("Booting MockServer...");
         // this is necessary to actually find the downloads later on in the mockserver event log
         ConfigurationProperties.maxLogEntries(10);
-        mockServer = new MockServer(MOCKSERVER_PORT);
+        mockServer = new MockServer();
+        MOCKSERVER_PORT = mockServer.getLocalPort();
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
         final File winstoneFile = new File("target/winstone.jar");
@@ -113,7 +112,7 @@ class TestEnvDownload {
 
     @SneakyThrows
     @Test
-    public void multipleParallelDownload_shouldNotInterfere() {
+    void multipleParallelDownload_shouldNotInterfere() {
         loadConfigurationWithJarsLoadedFromUrls(
             "http://localhost:" + mockServer.getLocalPort() + "/tiger/download",
             "http://localhost:" + mockServer.getLocalPort() + "/download");
@@ -129,7 +128,7 @@ class TestEnvDownload {
 
     @SneakyThrows
     @Test
-    public void reboot_shouldNotRetriggerDownload() {
+    void reboot_shouldNotRetriggerDownload() {
         var initialNumberOfDownloads = getNumberOfDownloads();
 
         loadConfigurationWithJarsLoadedFromUrls("http://localhost:" + mockServer.getLocalPort() + "/download");
@@ -143,7 +142,7 @@ class TestEnvDownload {
 
     @SneakyThrows
     @Test
-    public void twoIdenticalJars_onlyOneDownloadShouldBeTriggered() {
+    void twoIdenticalJars_onlyOneDownloadShouldBeTriggered() {
         int initialNumberOfDownloads = getNumberOfDownloads();
 
         loadConfigurationWithJarsLoadedFromUrls(
@@ -158,7 +157,7 @@ class TestEnvDownload {
 
     @SneakyThrows
     @Test
-    public void failingStartupAfterSuccessfulDownload_shouldRetryOnNextBoot() {
+    void failingStartupAfterSuccessfulDownload_shouldRetryOnNextBoot() {
         final Expectation failingExpectation = mockServerClient.when(request()
                 .withPath("/failDownload"))
             .respond(req -> HttpResponse.response()
@@ -195,7 +194,6 @@ class TestEnvDownload {
     }
 
     private void loadConfigurationWithJarsLoadedFromUrls(String... jarDownloadUrl) {
-        final Iterator<Integer> availableTcpPorts = SocketUtils.findAvailableTcpPorts(jarDownloadUrl.length).iterator();
         System.clearProperty("TIGER_TESTENV_CFGFILE");
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.initialize();
@@ -203,21 +201,20 @@ class TestEnvDownload {
             "   cfgfile: src/test/resources/tiger-testenv.yaml\n" +
             "servers:\n";
         for (int i = 0; i < jarDownloadUrl.length; i++) {
-            final Integer port = availableTcpPorts.next();
             yamlSource += "  externalJarServer" + i + ":\n" +
                 "    type: externalJar\n" +
                 "    startupTimeoutSec: 50\n" +
                 "    source:\n" +
                 "      - " + jarDownloadUrl[i] + "\n" +
-                "    healthcheckUrl: http://127.0.0.1:" + port + "\n" +
+                "    healthcheckUrl: http://127.0.0.1:${free.port."+ (10+i) +"}\n" +
                 "    externalJarOptions:\n" +
                 "      workingDir: \"target/jarDownloadTest\"\n" +
                 "      startupTimeoutSec: 30\n" +
                 "      arguments:\n";
             if (jarDownloadUrl[i].contains("tiger")) {
-                yamlSource += "        - \"--server.port=" + port + "\"\n";
+                yamlSource += "        - \"--server.port=${free.port."+ (10+i) +"}\"\n";
             } else {
-                yamlSource += "        - \"--httpPort=" + port + "\"\n" +
+                yamlSource += "        - \"--httpPort=${free.port."+ (10+i) +"}\"\n" +
                     "        - \"--webroot=.\"\n";
             }
         }

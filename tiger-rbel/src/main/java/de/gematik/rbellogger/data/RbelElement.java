@@ -151,10 +151,6 @@ public class RbelElement {
         }
     }
 
-    public boolean isStructuralHelperElement() {
-        return false;
-    }
-
     public String findNodePath() {
         LinkedList<Optional<String>> keyList = new LinkedList<>();
         final AtomicReference<RbelElement> ptr = new AtomicReference(this);

@@ -24,7 +24,9 @@ import lombok.Getter;
 public enum SourceType {
 
     DEFAULTS(110),
-    YAML(100),
+    MAIN_YAML(105),
+    HOST_YAML(100),
+    ADDITIONAL_YAML(95),
     TEST_YAML(90),
     ENV(80),
     PROPERTIES(70),

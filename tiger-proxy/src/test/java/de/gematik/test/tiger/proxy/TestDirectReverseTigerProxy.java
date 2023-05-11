@@ -122,7 +122,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
         spawnTigerProxyWith(TigerProxyConfiguration.builder()
             .directReverseProxy(DirectReverseProxyInfo.builder()
                 .hostname("localhost")
-                .port(fakeBackendServer.port())
+                .port(fakeBackendServerPort)
                 .build())
             .build());
 
@@ -141,7 +141,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
         final TigerProxyConfiguration proxyConfiguration = TigerProxyConfiguration.builder()
             .directReverseProxy(DirectReverseProxyInfo.builder()
                 .hostname("localhost")
-                .port(fakeBackendServer.port())
+                .port(fakeBackendServerPort)
                 .build())
             .forwardToProxy(ForwardProxyInfo.builder()
                 .hostname("localhost")

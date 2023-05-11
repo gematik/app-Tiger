@@ -18,11 +18,13 @@ package de.gematik.test.tiger.proxy.client;
 
 import java.lang.reflect.Type;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 
 @RequiredArgsConstructor
+@Slf4j
 class TracingStompHandler implements StompFrameHandler {
 
     private final TigerRemoteProxyClient remoteProxyClient;
@@ -34,8 +36,16 @@ class TracingStompHandler implements StompFrameHandler {
 
     @Override
     public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
+        if (log.isTraceEnabled()) {
+            log.trace("Received new frame of type {} in proxy {}",
+                frameContent.getClass().getSimpleName(), remoteProxyClient.getName().orElse("<>"));
+        }
         if (frameContent instanceof TigerTracingDto) {
             final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
+            if (log.isDebugEnabled()) {
+                log.debug("Received TigerTracingDto with request-uuid {} and response-uuid {} (proxy {})",
+                    tigerTracingDto.getRequestUuid(), tigerTracingDto.getResponseUuid(), remoteProxyClient.getName().orElse("<>"));
+            }
             if (StringUtils.isEmpty(tigerTracingDto.getResponseUuid())) {
                 registerNewIsolaniMessage(tigerTracingDto);
             } else {

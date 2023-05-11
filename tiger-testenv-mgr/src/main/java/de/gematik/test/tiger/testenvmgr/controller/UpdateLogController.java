@@ -20,7 +20,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.TigerServerLogDto;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogUpdate;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -42,7 +42,9 @@ public class UpdateLogController implements TigerServerLogListener {
 
     @Override
     public void receiveServerLogUpdate(TigerServerLogUpdate update) {
-        log.trace("Propagating tiger server log update {}", update);
-        template.convertAndSend("/topic/serverLog", TigerServerLogDto.createFrom(update));
+        if (tigerTestEnvMgr.isWorkflowUiSentFetch() && !tigerTestEnvMgr.isShouldAbortTestExecution()) {
+            log.trace("Propagating tiger server log update {}", update);
+            template.convertAndSend("/topic/serverLog", TigerServerLogDto.createFrom(update));
+        }
     }
 }

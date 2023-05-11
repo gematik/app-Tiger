@@ -3,4 +3,5 @@ servers:
     type: externalUrl
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+    healthcheckUrl: https://idp-test.app.ti-dienste.de/.well-known/openid-configuration
     startupTimeoutSec: 1

@@ -47,4 +47,8 @@ public class TigerConfigurationKeyString {
     public String asLowerCase() {
         return value.toLowerCase();
     }
+
+    public String asString() {
+        return value;
+    }
 }

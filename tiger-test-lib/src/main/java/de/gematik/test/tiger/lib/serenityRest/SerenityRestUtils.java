@@ -16,15 +16,17 @@
 
 package de.gematik.test.tiger.lib.serenityRest;
 
-import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SerenityRestUtils {
 
-    public static void setupSerenityRest(int localTigerProxyProxyPort) {
-        RestAssured.proxy("localhost", localTigerProxyProxyPort);
+    public static void setupSerenityRest(TigerProxy localTigerProxyProxy) {
+        RestAssured.proxy("localhost", localTigerProxyProxy.getProxyPort());
+
+        RestAssured.trustStore(localTigerProxyProxy.buildTruststore());
 
         RestAssured.filters((requestSpec, responseSpec, ctx) -> {
             try {

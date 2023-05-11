@@ -161,7 +161,6 @@ public abstract class AbstractNonHttpTest {
         } finally {
             if (tigerProxy != null) {
                 tigerProxy.close();
-                tigerProxy.shutdown();
             }
         }
     }

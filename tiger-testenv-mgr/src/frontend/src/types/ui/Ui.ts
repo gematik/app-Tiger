@@ -23,10 +23,14 @@ export default class Ui {
   private iframe: HTMLIFrameElement | undefined;
   private readonly mouseMoveListener: (ev: MouseEvent) => void;
   private readonly mouseUpListener: (ev: MouseEvent) => void;
+  private static baseUrl: string;
+  private showQuittingTestrun : boolean = false;
 
-  constructor() {
+
+  constructor(baseUrl: string) {
     this.mouseMoveListener = ev => this.mouseMoveHandler(ev);
     this.mouseUpListener = ev => this.mouseUpHandler();
+    Ui.baseUrl = baseUrl;
   }
 
   public init() {
@@ -38,26 +42,6 @@ export default class Ui {
       this.rbelLogDetailsPane = document.getElementById('rbellog_details_pane') as HTMLElement;
     }
   }
-
-  public static toggleLeftSideBar(open: number) {
-    const sidebar: HTMLDivElement = document.getElementById("sidebar-left") as HTMLDivElement;
-    const mainContent: HTMLDivElement = document.getElementById("main-content") as HTMLDivElement;
-    const classes: string = sidebar.getAttribute("class") as string;
-    const mainClasses: string = mainContent.getAttribute("class") as string;
-
-    // TODO update right sidebar
-    document.getElementById("execution_table")?.style.removeProperty('width');
-    document.getElementById("workflow-messages")?.style.removeProperty('width');
-
-    if (open === 0) {
-      sidebar.setAttribute("class", classes.replace("col-md-3", "sidebar-collapsed"))
-      mainContent.setAttribute("class", mainClasses.replace("col-md-9", "col-md-11"))
-    } else {
-      sidebar.setAttribute("class", classes.replace("sidebar-collapsed", "col-md-3"))
-      mainContent.setAttribute("class", mainClasses.replace("col-md-11", "col-md-9"))
-    }
-  }
-
 
   public toggleRightSideBar(event: MouseEvent) {
     this.init();
@@ -99,7 +83,8 @@ export default class Ui {
     }
     // firefox does not navigate to the uuid if the iframe is hidden :(
     (window?.document?.getElementById("rbellog-details-iframe") as HTMLIFrameElement)
-      .contentWindow?.postMessage(rbelMessageUuid + "," + rbelMessageSequenceNumber, "*")
+      .contentWindow?.postMessage(rbelMessageUuid + "," + rbelMessageSequenceNumber, "*");
+    return false;
   }
 
   public resizeMouseX = -1;

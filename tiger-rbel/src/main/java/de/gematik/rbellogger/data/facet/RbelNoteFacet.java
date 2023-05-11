@@ -17,7 +17,6 @@
 package de.gematik.rbellogger.data.facet;
 
 import de.gematik.rbellogger.data.RbelMultiMap;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,7 +41,7 @@ public class RbelNoteFacet implements RbelFacet {
 
     @RequiredArgsConstructor
     public enum NoteStyling {
-        INFO("has-text-info"),
+        INFO("text-info"),
         WARN("has-text-warning"),
         ERROR("has-text-danger");
 

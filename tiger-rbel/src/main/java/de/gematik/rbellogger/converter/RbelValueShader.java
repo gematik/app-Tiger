@@ -35,7 +35,13 @@ public class RbelValueShader {
 
     public Optional<String> shadeValue(final Object element, final Optional<String> key) {
         return jexlShadingMap.stream()
-            .filter(entry -> rbelJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), key))
+            .filter(entry -> {
+                try {
+                    return rbelJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), key);
+                } catch (RuntimeException ignored) {
+                    return false;
+                }
+            })
             .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
             .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
             .findFirst();
@@ -43,7 +49,13 @@ public class RbelValueShader {
 
     public void addNote(final RbelElement element) {
         jexlNoteMap.stream()
-            .filter(entry -> rbelJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), element.findKeyInParentElement()))
+            .filter(entry -> {
+                try {
+                    return rbelJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), element.findKeyInParentElement());
+                } catch (RuntimeException ignored) {
+                    return false;
+                }
+            })
             .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
             .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
             .map(note -> new RbelNoteFacet(note, RbelNoteFacet.NoteStyling.INFO))

@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.File;
@@ -24,11 +23,12 @@ import java.nio.charset.StandardCharsets;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 public class TemplateConfigurationTest {
     @Test
     public void testTemplateApplication() throws Exception {
-        withEnvironmentVariable("TIGER_SERVERS_ERP_TEMPLATE", "erzpt-fd-ref")
+        new EnvironmentVariables("TIGER_SERVERS_ERP_TEMPLATE", "erzpt-fd-ref")
             .execute(() -> {
                 final String templatesYaml = FileUtils.readFileToString(
                     new File("src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml"));

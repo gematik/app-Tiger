@@ -158,7 +158,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
                 response = Unirest.get("http://127.0.0.1:" + TigerGlobalConfiguration.readString("free.port.4") + "/webui")
                     .asString();
                 if (response.isSuccess()) {
-                    assertThat(response.getBody()).contains("RBelLogger").contains("Proxy port");
+                    assertThat(response.getBody()).contains("Tiger Proxy Log").contains("Proxy port");
                     return true;
                 } else {
                     log.warn("Proxy port returns status {}", response.getStatus());

@@ -14,42 +14,38 @@
   ~ limitations under the License.
   -->
 
-<div class="modal" id="routeModalDialog">
+<div class="modal" id="routeModalDialog" role="dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-background"></div>
-    <div class="modal-content">
-      <article class="message">
-        <div class="message-header"><h2>Route Management</h2><button class="delete" aria-label="delete"></button></div>
-        <div class="message-body">
+    <div class="modal-content" role="document" style="background-color:#ffff;">
+        <div class="modal-header bg-dark">
+          <h2 class="modal-title" style="color:#ffff;">Route Management</h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
           <div class="routeListDiv box">
-            <p align="center" class="mt-5 mb-5"><i class="fas fa-spinner"></i> Loading...</p>
+            <div class="spinner-border" role="status">
+              <span>Loading...</span>
+            </div>
           </div>
-          <div class="addnewRouteDiv">
-            <div class="field is-horizontal">
-              <div class="field-label is-normal">
-                <label class="label">From:</label>
-              </div>
-              <div class="field-body">
-                <div class="control">
-                  <input class="input" size="60" type="text" id="addNewRouteFromField" placeholder="Incoming scheme://host:port">
-                </div>
+          <div class="addnewRouteDiv box">
+            <div class="row mb-3">
+              <label for="addNewRouteFromField" class="col-sm-2 col-form-label">From:</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="addNewRouteFromField" placeholder="Incoming scheme://host:port">
               </div>
             </div>
-            <div class="field is-horizontal">
-              <div class="field-label is-normal">
-                <label class="label">To:</label>
-              </div>
-              <div class="field-body">
-                <div class="control">
-                  <input class="input" size="60" type="text" id="addNewRouteToField" placeholder="Redirect to scheme://host:port">
-                </div>
+            <div class="row mb-3">
+              <label for="addNewRouteToField" class="col-sm-2 col-form-label">To:</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="addNewRouteToField" placeholder="Redirect scheme://host:port">
               </div>
             </div>
           </div>
-          <div class="control buttons is-right">
-            <button class="button mt-3 is-success" id="addNewRouteBtn">Add new route</button>
+          <div class="modal-footer">
+            <button class="btn btn-success mt-3" id="addNewRouteBtn" type="button">Add new route</button>
           </div>
         </div>
-      </article>
     </div>
-    <button class="modal-close is-large" aria-label="close"></button>
+  </div>
 </div>

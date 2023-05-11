@@ -99,17 +99,18 @@ public class RbelMessageValidator {
         return new UnmodifiableList<>(new ArrayList<>(LocalProxyRbelMessageListener.getValidatableRbelMessages()));
     }
 
-    public void clearRBelMessages() {
+    public void clearRbelMessages() {
         LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
     }
 
     public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
         final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
-        currentRequest = findRequestByDescription(requestParameter);
+        currentRequest = findMessageByDescription(requestParameter);
         try {
             await("Waiting for matching response").atMost(waitsec, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until(() -> getRbelMessages().stream()
+                .until(() -> TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution() ||
+                    getRbelMessages().stream()
                     .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
                     .filter(
                         resp -> resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()
@@ -117,28 +118,46 @@ public class RbelMessageValidator {
                     .peek(rbelElement -> currentResponse = rbelElement)
                     .findAny()
                     .isPresent());
+            if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+                throw new AssertionError("User aborted test run");
+            }
         } catch (final ConditionTimeoutException cte) {
             log.error("Missing response message to filtered request!\n\n{}", currentRequest.getRawStringContent());
             throw new TigerLibraryException("Missing response message to filtered request!", cte);
         }
     }
 
-    protected RbelElement findRequestByDescription(final RequestParameter requestParameter) {
+    public RbelElement waitForMessageToBePresent(final RequestParameter requestParameter) {
+        return findMessageByDescription(requestParameter);
+    }
+
+    protected RbelElement findMessageByDescription(final RequestParameter requestParameter) {
         final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
+
+        Optional<RbelElement> initialElement = getInitialElement(requestParameter);
 
         final AtomicReference<RbelElement> candidate = new AtomicReference<>();
         try {
             await("Waiting for matching request").atMost(waitsec, TimeUnit.SECONDS)
                 .pollDelay(0, TimeUnit.SECONDS).pollInterval(400, TimeUnit.MILLISECONDS)
                 .until(() -> {
-                    final Optional<RbelElement> found = filterRequests(requestParameter);
+                    if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+                        return true;
+                    }
+                    final Optional<RbelElement> found = filterRequests(requestParameter, initialElement);
                     found.ifPresent(candidate::set);
                     return found.isPresent();
                 });
+                if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+                    throw new AssertionError("User aborted test run");
+                }
         } catch (final ConditionTimeoutException cte) {
-            log.error("Didn't find any matching request!");
+            log.error("Didn't find any matching messages!");
             printAllPathsOfMessages(getRbelMessages());
-            if (requestParameter.getRbelPath() == null) {
+            if (requestParameter.getPath() == null) {
+                throw new AssertionError(
+                    "No request with matching rbelPath '" + requestParameter.getRbelPath() + "' found in messages");
+            } else if (requestParameter.getRbelPath() == null) {
                 throw new AssertionError(
                     "No request with path '" + requestParameter.getPath() + "' found in messages");
             } else {
@@ -152,21 +171,33 @@ public class RbelMessageValidator {
         return candidate.get();
     }
 
-    protected Optional<RbelElement> filterRequests(final RequestParameter requestParameter) {
-
-        List<RbelElement> msgs = getRbelMessages();
+    private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
         if (requestParameter.isStartFromLastRequest()) {
-            final RbelElement prevRequest = getCurrentRequest();
+            return LocalProxyRbelMessageListener.getValidatableRbelMessages().stream()
+                .dropWhile(msg -> msg != currentRequest)
+                .skip(1)
+                .findFirst();
+        } else if (requestParameter.isRequireNewMessage() && !LocalProxyRbelMessageListener.getValidatableRbelMessages().isEmpty()) {
+            return Optional.ofNullable(LocalProxyRbelMessageListener.getValidatableRbelMessages().getLast());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    protected Optional<RbelElement> filterRequests(final RequestParameter requestParameter, Optional<RbelElement> startFromMessageExclusively) {
+        List<RbelElement> msgs = getRbelMessages();
+        if (startFromMessageExclusively.isPresent()) {
             int idx = -1;
             for (var i = 0; i < msgs.size(); i++) {
-                if (msgs.get(i) == prevRequest) {
+                if (msgs.get(i) == startFromMessageExclusively.get()) {
                     idx = i;
                     break;
                 }
             }
-            msgs = new ArrayList<>(msgs.subList(idx + 2, msgs.size()));
+            if (idx > 0) {
+                msgs = new ArrayList<>(msgs.subList(idx + 1, msgs.size()));
+            }
         }
-
         final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
         final String methodFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method", "");
 
@@ -228,6 +259,9 @@ public class RbelMessageValidator {
     }
 
     public boolean doesPathOfMessageMatch(final RbelElement req, final String path) {
+        if (path == null) {
+            return true;
+        }
         try {
             final URI uri = new URI(req.getFacet(RbelHttpRequestFacet.class)
                 .map(RbelHttpRequestFacet::getPath)
@@ -246,11 +280,14 @@ public class RbelMessageValidator {
         }
     }
 
-    public boolean doesHostMatch(final RbelElement req, final String hostFilter) {
+    public static boolean doesHostMatch(final RbelElement req, final String hostFilter) {
         try {
-            final String host = req.getFacetOrFail(RbelHttpMessageFacet.class)
-                .getHeader().getFacetOrFail(RbelHttpHeaderFacet.class)
-                .get("Host").getRawStringContent();
+            final String host = req.getFacet(RbelHttpMessageFacet.class)
+                .map(RbelHttpMessageFacet::getHeader)
+                .flatMap(el -> el.getFacet(RbelHttpHeaderFacet.class))
+                .map(el -> el.get("Host"))
+                .map(RbelElement::getRawStringContent)
+                .orElse("");
             return StringUtils.equals(host, hostFilter) || host.matches(hostFilter);
         } catch (final RuntimeException rte) {
             log.error("Probable error while parsing regex!", rte);
@@ -260,8 +297,11 @@ public class RbelMessageValidator {
 
     public boolean doesMethodMatch(final RbelElement req, final String method) {
         try {
-            final String reqMethod = req.getFacetOrFail(RbelHttpRequestFacet.class).getMethod().getRawStringContent()
-                .toUpperCase();
+            final String reqMethod = req.getFacet(RbelHttpRequestFacet.class)
+                .map(RbelHttpRequestFacet::getMethod)
+                .map(RbelElement::getRawStringContent)
+                .map(String::toUpperCase)
+                .orElse("");
             return method.equals(reqMethod) || method.matches(reqMethod);
         } catch (final RuntimeException rte) {
             log.error("Probable error while parsing regex!", rte);
@@ -437,7 +477,7 @@ public class RbelMessageValidator {
                 .readTrafficFromTgrFile(filePath);
             readElements.forEach(LocalProxyRbelMessageListener.rbelMessageListener::triggerNewReceivedMessage);
         } else {
-            throw new TigerTestEnvException("No local proxy active, can't read from tgr file {}", filePath);
+            throw new TigerTestEnvException("No local proxy active, can't read from tgr file '" + filePath + "'");
         }
     }
 
@@ -505,7 +545,7 @@ public class RbelMessageValidator {
                 .flatMap(el -> el.getFacet(RbelValueFacet.class))
                 .map(RbelValueFacet::getValue)
                 .map(Object::toString)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new NoSuchElementException("Unable to find a matching element for '" + rbelPath + "'"));
         }
     }
 }

@@ -394,6 +394,23 @@ Is `null` if not present
 * `type` is a string containing the class-name of `element` (eg `RbelJsonElement`).
 * `content` is a string describing the content of `element`. The actual representation depends heavily on the type of `element`.
 
+Additionally you can always reference the current element (via @.) or the root element (via $.) in any JEXL-expression. Lets explain this using an example.
+
+For more detailed information on JEXL expressions please refer to xref:tigerUserInterfaces.adoc#_jexl_expression_detail[Detailed JEXL-expressions].
+
+Consider the following rbel tree:
+
+image::media/tiger-proxy-nested-array-tree.png[title="Nested RBel tree with array"]
+
+At `$.body.body.idp_entity` we have an array with potentially multiple entries (here there is only one, entry `0`). We want to select an entry where the `iss`-claim matches our expectation. We can achieve this with using a nested Rbel-Path inside the JEXL-Expression:
+
+`$.body.body.idp_entity.[?(@.iss.content=='https://idpsek.dev.gematik.solutions')]`
+
+Here the `@.` references the current element: For each array entry the expression is tested, with `@.` always referring to the current entry.
+To access elements starting from the root you can use `$.` like so:
+
+`$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]`
+
 ==== Debugging Rbel-Expressions
 
 To help users create RbelPath-Expressions there is a Debug-Functionality which produces log message designed to help. These can be activated by `RbelOptions.activateRbelPathDebugging();`. Please note that this is strictly intended for development purposes and will flood the log with quite a lot of messages. Act accordingly!

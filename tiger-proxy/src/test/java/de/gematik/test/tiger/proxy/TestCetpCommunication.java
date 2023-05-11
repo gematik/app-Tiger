@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 @ResetTigerConfiguration
-class TestCetpCommunication extends AbstractNonHttpTest{
+class TestCetpCommunication extends AbstractNonHttpTest {
 
     private byte[] message;
 

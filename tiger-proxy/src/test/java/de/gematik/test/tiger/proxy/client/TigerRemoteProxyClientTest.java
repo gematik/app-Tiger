@@ -16,23 +16,18 @@
 
 package de.gematik.test.tiger.proxy.client;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -62,17 +57,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.junit.jupiter.MockServerExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(SpringExtension.class)
-@WireMockTest
+@ExtendWith(MockServerExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(
     properties = "tigerProxy.activateRbelParsing: false")
@@ -122,26 +119,33 @@ class TigerRemoteProxyClientTest {
     }
 
     @BeforeEach
-    public void setup(WireMockRuntimeInfo remoteServer) {
+    public void setup(MockServerClient client) {
         if (tigerRemoteProxyClient == null) {
             log.info("Setup remote client... {}", tigerProxy);
             tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + springServerPort,
                 TigerProxyConfiguration.builder()
                     .proxyLogLevel("WARN")
                     .build());
+            tigerRemoteProxyClient.connect();
 
             unirestInstance = new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));
         }
 
-        remoteServer.getWireMock().register(get("/foo")
-            .willReturn(aResponse()
-                .withBody("bar")));
-        remoteServer.getWireMock().register(post("/foo")
-            .willReturn(aResponse()
-                .withBody("bar")));
-        remoteServer.getWireMock().register(get("/")
-            .willReturn(aResponse()
-                .withBody("emptyPath!!!")));
+        client.when(request()
+                .withMethod("GET")
+                .withPath("/foo"))
+            .respond(response()
+                .withBody("bar"));
+        client.when(request()
+                .withMethod("POST")
+                .withPath("/foo"))
+            .respond(response()
+                .withBody("bar"));
+        client.when(request()
+                .withMethod("GET")
+                .withPath("/"))
+            .respond(response()
+                .withBody("emptyPath!!!"));
         log.info("Configuring routes...");
         tigerRemoteProxyClient.clearAllMessages();
         tigerRemoteProxyClient.clearAllRoutes();
@@ -149,13 +153,8 @@ class TigerRemoteProxyClientTest {
         tigerProxy.clearAllMessages();
         tigerProxy.addRoute(TigerRoute.builder()
             .from("http://myserv.er")
-            .to("http://localhost:" + remoteServer.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build());
-    }
-
-    @AfterAll
-    public void tearDown(WireMockRuntimeInfo remoteServer) {
-        tigerRemoteProxyClient.close();
     }
 
     @Test
@@ -182,10 +181,12 @@ class TigerRemoteProxyClientTest {
     }
 
     @Test
-    void rawBytesInMessage_shouldSurviveReconstruction(WireMockRuntimeInfo wmRuntimeInfo) {
-        wmRuntimeInfo.getWireMock().register(post(urlEqualTo("/binary"))
-            .willReturn(aResponse()
-                .withBody(DigestUtils.sha256("helloResponse"))));
+    void rawBytesInMessage_shouldSurviveReconstruction(MockServerClient client) {
+        client.when(request()
+                .withMethod("POST")
+                .withPath("/binary"))
+            .respond(response()
+                .withBody(DigestUtils.sha256("helloResponse")));
 
         unirestInstance.post("http://myserv.er/binary")
             .body(DigestUtils.sha256("helloRequest"))
@@ -238,23 +239,23 @@ class TigerRemoteProxyClientTest {
         "https://foo, http://foo"
     })
     void addTwoCompetingRoutes_secondOneShouldFail(String firstRoute, String secondRoute,
-        WireMockRuntimeInfo remoteServer) {
+        MockServerClient client) {
         tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from(firstRoute)
-            .to("http://localhost:" + remoteServer.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build());
 
         assertThatThrownBy(() -> tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from(secondRoute)
-            .to("http://localhost:" + remoteServer.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build())).isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void addAndDeleteRoute_shouldWork(WireMockRuntimeInfo remoteServer) {
+    void addAndDeleteRoute_shouldWork(MockServerClient client) {
         final String routeId = tigerRemoteProxyClient.addRoute(TigerRoute.builder()
             .from("http://new.server")
-            .to("http://localhost:" + remoteServer.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build()).getId();
 
         assertThat(unirestInstance.post("http://new.server/foo")
@@ -271,19 +272,19 @@ class TigerRemoteProxyClientTest {
     }
 
     @Test
-    void listRoutes(WireMockRuntimeInfo remoteServer) {
+    void listRoutes(MockServerClient client) {
         final List<TigerRoute> routes = tigerRemoteProxyClient.getRoutes();
 
         assertThat(routes)
             .extracting("from", "to", "disableRbelLogging")
-            .contains(tuple("http://myserv.er", "http://localhost:" + remoteServer.getHttpPort(), false));
+            .contains(tuple("http://myserv.er", "http://localhost:" + client.getPort(), false));
     }
 
     @Test
-    void reverseProxyRoute_checkRemoteTransmission(WireMockRuntimeInfo remoteServer) {
+    void reverseProxyRoute_checkRemoteTransmission(MockServerClient client) {
         tigerProxy.addRoute(TigerRoute.builder()
             .from("/blub")
-            .to("http://localhost:" + remoteServer.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build());
 
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
@@ -300,10 +301,10 @@ class TigerRemoteProxyClientTest {
     }
 
     @Test
-    void reverseProxyRootRoute_checkRemoteTransmission(WireMockRuntimeInfo remoteServer) {
+    void reverseProxyRootRoute_checkRemoteTransmission(MockServerClient client) {
         tigerProxy.addRoute(TigerRoute.builder()
             .from("/")
-            .to("http://localhost:" + remoteServer.getHttpPort())
+            .to("http://localhost:" + client.getPort())
             .build());
 
         AtomicInteger listenerCallCounter = new AtomicInteger(0);
@@ -342,7 +343,8 @@ class TigerRemoteProxyClientTest {
         "request.url =$ 'faa'",
         "response.statusCode == '404'"
     })
-    @Disabled("deactivated due to buildserver problems") // TODO TGR-794
+    @Disabled("deactivated due to buildserver problems")
+        // TODO TGR-794
     void downstreamTigerProxyWithFilterCriterion_shouldOnlyShowMatchingMessages(String filterCriterion) {
         var filteredTigerProxy = new TigerProxy(
             TigerProxyConfiguration.builder()
@@ -418,6 +420,7 @@ class TigerRemoteProxyClientTest {
             TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(true)
                 .build())) {
+            newlyConnectedRemoteClient.connect();
 
             await()
                 .atMost(2, TimeUnit.SECONDS)
@@ -446,6 +449,7 @@ class TigerRemoteProxyClientTest {
                     .downloadInitialTrafficFromEndpoints(true)
                     .build(),
                 masterTigerProxy)) {
+                newlyConnectedRemoteClient.connect();
 
                 await()
                     .atMost(2, TimeUnit.SECONDS)
@@ -471,6 +475,7 @@ class TigerRemoteProxyClientTest {
             TigerProxyConfiguration.builder()
                 .downloadInitialTrafficFromEndpoints(true)
                 .build())) {
+            newlyConnectedRemoteClient.connect();
 
             log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
 
@@ -569,7 +574,7 @@ class TigerRemoteProxyClientTest {
     @SneakyThrows
     private void addRequestResponsePair(RbelConverter rbelConverter) {
         rbelConverter.parseMessage(request, null, null, Optional.empty());
-        rbelConverter.parseMessage(response,null, null, Optional.empty());
+        rbelConverter.parseMessage(response, null, null, Optional.empty());
     }
 
     private void addMessagePart(String responseUuid, int index, int numberOfMessages) {

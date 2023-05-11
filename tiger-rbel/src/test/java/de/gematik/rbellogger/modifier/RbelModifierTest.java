@@ -236,7 +236,7 @@ class RbelModifierTest extends AbstractModifierTest {
         rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
             .targetElement("$.method")
             .replaceWith("POST")
-            .condition("$.method == POST")
+            .condition("$.method == 'POST'")
             .build());
 
         final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);

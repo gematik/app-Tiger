@@ -8,8 +8,15 @@ To choose a different test environmental configuration file you may set the envi
 The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from `tiger.yaml`.
 If none of these files exist it will fail the start-up.
 
-If the environment variable is not set, then the test environment manager first checks for a file named `tiger-${COMPUTERNAME}.yaml`, and if this also does not exist, it searches for a file named `tiger.yaml`.
+If the environment variable is not set it searches for files named `tiger.yaml` or `tiger.yml`.
 If none of these files exist it will fail the start-up.
+
+It then loads further yaml-files:
+
+*  `tiger-${hostname}.yaml` and `tiger-${hostname}.yml` are read and give the possibility to make computer-dependent configuration. The hostname is the of your own computer in the network (on Windows-machines typically the computername).
+* The list given under `tiger.additionalYamls` is read. Each list-entry has two properties:
+** `filename` pointing to the file to be read. This can be relative to the tiger.yaml (primary) or relative to the working-directory (secondary). Keep in mind that placeholders can be used in the filename!
+** `baseKey`, an optional attribute, which gives you the chance to prefix every property from the given file with this key (keep in mind that the `tiger.yaml` has a baseKey of `tiger`)
 
 In the start-up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
 
@@ -63,7 +70,7 @@ serverKey_xxx:
   source:
     - source entry 1
     - source entry 2
-  # used by all node types
+  # used by all node types, for external URL this property is OPTIONAl and fallback is the source URL
   healthcheckUrl: string
   # OPTIONAL only declare the server healthy once the specified return code
   # is given
@@ -157,7 +164,7 @@ Their meaning and format are explained in the related section.
 
 [source,yaml,title="Type specific properties"]
 ----
-  # type specific sub structure for external jar, external url and Tiger Proxy nodes
+  # type specific sub structure for external jar, Tiger Proxy, docker and helm chart nodes
   externalJarOptions:
     # used by external jar and Tiger Proxy nodes
     workingDir: string

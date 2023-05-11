@@ -23,25 +23,55 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import com.github.stefanbirkner.systemlambda.Statement;
+import static org.mockito.Mockito.mock;
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.Deque;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 class RbelMessageValidatorTest {
+
+    @BeforeEach
+    public void clearConfig() {
+        TigerGlobalConfiguration.reset();
+        ReflectionTestUtils.setField(TigerDirector.class, "initialized", true);
+        ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", mock(TigerTestEnvMgr.class));
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        Deque<RbelElement> validatableRbelMessages
+            = (Deque<RbelElement>) ReflectionTestUtils.getField(LocalProxyRbelMessageListener.class, "validatableRbelMessages");
+        validatableRbelMessages.clear();
+        ReflectionTestUtils.setField(TigerDirector.class, "initialized", false);
+        ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", null);
+    }
 
     @Test
     void testPathEqualsWithRelativePath_OK() {
@@ -261,9 +291,11 @@ class RbelMessageValidatorTest {
         addTwoRequestsToTigerTestHooks();
         RbelMessageValidator validator = RbelMessageValidator.instance;
         validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
+
         validator.filterRequestsAndStoreInContext(
             RequestParameter.builder().path(".*").startFromLastRequest(true).build());
         RbelElement request = validator.currentRequest;
+
         assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
     }
 
@@ -384,35 +416,6 @@ class RbelMessageValidatorTest {
     }
 
     @Test
-    void testReadTrafficFile() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
-        executeWithSecureShutdown(() -> {
-            TigerDirector.start();
-
-            RbelMessageValidator.instance.readTgrFile("src/test/resources/testdata/rezepsFiltered.tgr");
-
-            assertThat(LocalProxyRbelMessageListener.getValidatableRbelMessages()).hasSize(100);
-        });
-
-    }
-
-    private void executeWithSecureShutdown(Statement test) {
-        executeWithSecureShutdown(test, () -> {
-        });
-    }
-
-    private void executeWithSecureShutdown(Statement test, Runnable cleanup) {
-        try {
-            test.execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            TigerDirector.getTigerTestEnvMgr().shutDown();
-            cleanup.run();
-        }
-    }
-
-    @Test
     void testValidatorAllowsToMatchNodesBeingBooleanRbelValues_True() {
         // parse in signature cert
         final String keyMessage = readCurlFromFileWithCorrectedLineBreaks
@@ -462,16 +465,61 @@ class RbelMessageValidatorTest {
         validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", true);
         validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", false);
         validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "false");
-        assertThatThrownBy(() -> {
-            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false",
-                false);
-        }).isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> {
-            validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true",
-                true);
-        }).isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> {
-            validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true");
-        }).isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "false", false))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> validator.assertAttributeOfCurrentResponseMatches("$.body.challenge.content.signature.isValid", "true", true))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true"))
+            .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void testThatWaitForNonPairedMessageToBePresentFindsTargetMessage() throws ExecutionException, InterruptedException {
+        final RequestParameter messageParameters = RequestParameter.builder()
+            .rbelPath("$..Topic.text")
+            .value("CT/CONNECTED")
+            .build();
+        CompletableFuture<RbelElement> waitForMessageFuture = CompletableFuture.supplyAsync(() -> RbelMessageValidator.instance.waitForMessageToBePresent(messageParameters));
+
+        readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
+
+        waitForMessageFuture.get();
+        RbelElementAssertion.assertThat(RbelMessageValidator.instance.findMessageByDescription(messageParameters))
+            .extractChildWithPath("$..Topic.text")
+            .hasStringContentEqualTo("CT/CONNECTED");
+    }
+
+    @Test
+    void testWaitingForNewNonPairedMessage() throws ExecutionException, InterruptedException {
+        readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
+        final RequestParameter messageParameters = RequestParameter.builder()
+            .rbelPath("$..Topic.text")
+            .value("CT/CONNECTED")
+            .requireNewMessage(true)
+            .build();
+        CompletableFuture<RbelElement> waitForMessageFuture = CompletableFuture.supplyAsync(
+            () -> RbelMessageValidator.instance.waitForMessageToBePresent(messageParameters));
+
+        assertThatThrownBy(() -> waitForMessageFuture.get(500, TimeUnit.MILLISECONDS))
+            .isInstanceOf(TimeoutException.class);
+
+        readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
+
+        RbelElementAssertion.assertThat(waitForMessageFuture.get())
+            .extractChildWithPath("$..Topic.text")
+            .hasStringContentEqualTo("CT/CONNECTED");
+    }
+
+    private static void readTgrFileAndStoreForRbelMessageValidator(String rbelFile) {
+        var rbelLogger = RbelLogger.build(new RbelConfiguration()
+            .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+            .addCapturer(RbelFileReaderCapturer.builder()
+                .rbelFile(rbelFile)
+                .build())
+        );
+        rbelLogger.getRbelCapturer().initialize();
+        Deque<RbelElement> validatableRbelMessages
+            = (Deque<RbelElement>) ReflectionTestUtils.getField(LocalProxyRbelMessageListener.class, "validatableRbelMessages");
+        validatableRbelMessages.addAll(rbelLogger.getMessageHistory());
     }
 }
