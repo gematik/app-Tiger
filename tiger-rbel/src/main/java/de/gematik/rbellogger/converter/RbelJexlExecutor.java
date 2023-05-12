@@ -4,17 +4,19 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.test.tiger.common.jexl.TigerJexlContext.CURRENT_ELEMENT_MARKER;
-import static de.gematik.test.tiger.common.jexl.TigerJexlContext.ROOT_ELEMENT_MARKER;
 import com.google.common.base.CharMatcher;
-import de.gematik.rbellogger.converter.RbelValueShader.JexlMessage;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -256,7 +258,12 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
             .url(element.getFacet(RbelHttpRequestFacet.class)
                 .map(RbelHttpRequestFacet::getPath).map(RbelElement::getRawStringContent)
                 .orElse(null))
-            .bodyAsString(bodyOptional.map(RbelElement::getRawStringContent).orElse(null))
+            .path(element.getFacet(RbelHttpRequestFacet.class)
+                .map(RbelHttpRequestFacet::getPath).map(RbelElement::getRawStringContent)
+                .flatMap(this::convertToUrl).map(URI::getPath)
+                .orElse(null))
+            .bodyAsString(bodyOptional.map(RbelElement::getRawStringContent)
+                .orElse(null))
             .body(bodyOptional.orElse(null))
             .statusCode(element.getFacet(RbelHttpResponseFacet.class)
                 .map(RbelHttpResponseFacet::getResponseCode)
@@ -273,6 +280,14 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
                     Collectors.mapping(e -> e.getValue().getRawStringContent(), Collectors.toList()))))
             .build();
+    }
+
+    private Optional<URI> convertToUrl(String rawUrl) {
+        try {
+            return Optional.of(new URI(rawUrl));
+        } catch (URISyntaxException e) {
+            return Optional.empty();
+        }
     }
 
     private Optional<RbelElement> findMessage(Object element) {
@@ -317,6 +332,7 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
 
         public final String method;
         public final String url;
+        public final String path;
         public final String statusCode;
         public final boolean request;
         public final boolean response;

@@ -64,7 +64,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
                     .hasSize(2);
             },
             TigerFileSaveInfo.builder()
-                .readFilter("message.url =$ 'faabor'"),
+                .readFilter("message.path == '/faabor'"),
             () -> {
                 proxyRest.get("http://backend/foobar").asJson();
                 proxyRest.get("http://backend/faabor").asJson();

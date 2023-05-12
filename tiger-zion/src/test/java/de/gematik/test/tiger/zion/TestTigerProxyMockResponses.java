@@ -4,6 +4,10 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.assertj.core.api.Assertions.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.gematik.idp.IdpConstants;
+import de.gematik.idp.client.IdpClient;
+import de.gematik.idp.crypto.model.PkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.TigerMockResponseDescription;
@@ -14,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import kong.unirest.Empty;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
@@ -120,6 +125,66 @@ class TestTigerProxyMockResponses {
     }
 
     @Test
+    void testRbelPathCriterions() {
+        configuration.setMockResponses(Map.of("backend_foobar",
+            TigerMockResponse.builder()
+                .requestCriterions(List.of(
+                    "$.path.username.value=='someUsername'"))
+                .response(TigerMockResponseDescription.builder()
+                    .statusCode(666)
+                    .build())
+                .build()));
+
+        final HttpResponse<Empty> response = Unirest.get("http://localhost:" + port
+            + "/userJsonPath?username=someUsername").asEmpty();
+        assertThat(response.getStatus())
+            .isEqualTo(666);
+    }
+
+    @Test
+    void testConfigurationAssignments() {
+        configuration.setMockResponses(Map.of("backend_foobar",
+            TigerMockResponse.builder()
+                .requestCriterions(List.of(
+                        "message.method == 'GET'"))
+                .assignments(Map.of("foo.bar.variable", "$.path.username.value"))
+                .response(TigerMockResponseDescription.builder()
+                    .statusCode(666)
+                    .body("{\"authorizedUser\": \"${foo.bar.variable}\"}\n")
+                    .build())
+                .build()));
+
+        final HttpResponse<JsonNode> response = Unirest.get("http://localhost:" + port
+            + "/userJsonPath?username=someUsername").asJson();
+        assertThat(response.getBody().getObject().getString("authorizedUser"))
+            .isEqualTo("someUsername");
+    }
+
+    @Test
+    void testIdpClient() {
+        configuration.setMockResponses(Map.of(
+            "discovery_document", discoveryDocumentMockResponse(),
+            "key_endpoints", keyEndpoints(),
+            "sign_response", signResponse(),
+            "sign_response_post", signResponsePost(),
+            "token", tokenEndpoint()));
+
+        final IdpClient idpClient = IdpClient.builder()
+            .clientId("eRezeptApp")
+            .discoveryDocumentUrl("http://localhost:" + port + IdpConstants.DISCOVERY_DOCUMENT_ENDPOINT)
+            .redirectUrl("http://redirect.gematik.de/erezept")
+            .build();
+        final TigerPkiIdentity clientIdentity = new TigerPkiIdentity("src/test/resources/egk_identity.p12;00");
+
+        idpClient.initialize();
+        idpClient.login(PkiIdentity.builder()
+            .certificate(clientIdentity.getCertificate())
+            .privateKey(clientIdentity.getPrivateKey())
+            .build());
+    }
+
+
+    @Test
     void testSpyFunctionalityWithJwt() throws IOException {
         try (MockServer mockServer = new MockServer();
             MockServerClient mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort())) {
@@ -147,30 +212,6 @@ class TestTigerProxyMockResponses {
                     + "  \"iat\": 1516239022\n"
                     + "}");
         }
-    }
-
-    @Test
-    void testIdpClient() {
-        configuration.setMockResponses(Map.of(
-            "discovery_document", discoveryDocumentMockResponse(),
-            "key_endpoints", keyEndpoints(),
-            "sign_response", signResponse(),
-            "sign_response_post", signResponsePost(),
-            "token", tokenEndpoint()));
-
-        //TODO reactivate after Java 17 migration
-//        final IdpClient idpClient = IdpClient.builder()
-//            .clientId("eRezeptApp")
-//            .discoveryDocumentUrl("http://localhost:" + port + IdpConstants.DISCOVERY_DOCUMENT_ENDPOINT)
-//            .redirectUrl("http://redirect.gematik.de/erezept")
-//            .build();
-//        final TigerPkiIdentity clientIdentity = new TigerPkiIdentity("src/test/resources/egk_identity.p12;00");
-//
-//        idpClient.initialize();
-//        idpClient.login(PkiIdentity.builder()
-//            .certificate(clientIdentity.getCertificate())
-//            .privateKey(clientIdentity.getPrivateKey())
-//            .build());
     }
 
     private TigerMockResponse tokenEndpoint() {

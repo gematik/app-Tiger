@@ -8,6 +8,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelWriter;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
@@ -38,6 +39,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
@@ -60,6 +63,7 @@ public class CatchAllController implements WebMvcConfigurer {
     private final RbelWriter rbelWriter;
     private final ZionConfiguration configuration;
     private final ObjectMapper objectMapper;
+    private final ServletWebServerApplicationContext webServerAppCtxt;
 
     @SneakyThrows
     @PostConstruct
@@ -84,7 +88,7 @@ public class CatchAllController implements WebMvcConfigurer {
     @RequestMapping(value = "**",
         consumes = {"*/*", "application/*"}, produces = "*/*",
         method = {GET, POST, HEAD, OPTIONS, PUT, PATCH, DELETE, TRACE}) // NOSONAR
-    public ResponseEntity<byte[]> getAnythingelse(RequestEntity<byte[]> request, HttpServletRequest servletRequest) {
+    public ResponseEntity<byte[]> masterResponder(RequestEntity<byte[]> request, HttpServletRequest servletRequest) {
         log.info("Got new request {} {}", request.getMethod(), request.getUrl());
 
         byte[] rawMessage = buildRawMessageApproximate(request);
@@ -100,16 +104,18 @@ public class CatchAllController implements WebMvcConfigurer {
             .parseMessage(rawMessage, client, server, Optional.of(ZonedDateTime.now()));
 
         TigerJexlExecutor.ELEMENT_STACK.push(requestRbelMessage);
-        final ResponseEntity responseEntity = configuration.getMockResponses().values().stream()
-            .filter(entry -> doesItMatch(entry.getRequestCriterions(), requestRbelMessage))
-            .findAny()
-            .map(this::renderResponse)
-            .map(el -> parseResponseWithRbelLogger(client, server, el))
-            .or(() -> spyWithRemoteServer(request, client, server))
-            .orElseThrow(() -> {
-                log.warn("Could not match request \n{}", requestRbelMessage.printTreeStructure());
-                return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No suitable return value found");
-            });
+        final ResponseEntity responseEntity = TigerGlobalConfiguration.localScope()
+            .withValue("zion.port", String.valueOf(webServerAppCtxt.getWebServer().getPort()))
+            .retrieve(() -> configuration.getMockResponses().values().stream()
+                        .filter(entry -> doesItMatch(entry.getRequestCriterions(), requestRbelMessage))
+                        .findAny()
+                        .map(this::renderResponse)
+                        .map(el -> parseResponseWithRbelLogger(client, server, el))
+                        .or(() -> spyWithRemoteServer(request, client, server))
+                        .orElseThrow(() -> {
+                            log.warn("Could not match request \n{}", requestRbelMessage.printTreeStructure());
+                            return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No suitable return value found");
+                        }));
 
         TigerJexlExecutor.ELEMENT_STACK.removeFirstOccurrence(requestRbelMessage);
         return responseEntity;
@@ -179,6 +185,8 @@ public class CatchAllController implements WebMvcConfigurer {
     }
 
     private ResponseEntity<byte[]> renderResponse(TigerMockResponse response) {
+        doAssignments(response);
+
         final BodyBuilder responseBuilder = ResponseEntity
             .status(response.getResponse().getStatusCode());
 
@@ -188,6 +196,25 @@ public class CatchAllController implements WebMvcConfigurer {
 
         return responseBuilder
             .body(renderResponseBody(response));
+    }
+
+    private void doAssignments(TigerMockResponse response) {
+        if (response.getAssignments() == null || response.getAssignments().isEmpty()) {
+            return;
+        }
+
+        for (Entry<String, String> entry : response.getAssignments().entrySet()) {
+            final Object currentElementRaw = TigerJexlExecutor.ELEMENT_STACK.getFirst();
+            if (currentElementRaw instanceof RbelElement currentElement) {
+                currentElement.findElement(entry.getValue())
+                    .map(RbelElement::getRawStringContent)
+                    .map(TigerGlobalConfiguration::resolvePlaceholders)
+                    .ifPresent(value ->
+                        TigerGlobalConfiguration.putValue(
+                            TigerGlobalConfiguration.resolvePlaceholders(entry.getKey()),
+                            value));
+            }
+        }
     }
 
     private byte[] renderResponseBody(TigerMockResponse response) {
@@ -216,8 +243,8 @@ public class CatchAllController implements WebMvcConfigurer {
     private boolean doesItMatch(List<String> requestCriterions, RbelElement requestRbelMessage) {
         return requestCriterions.stream()
             .filter(criterion -> !TigerJexlExecutor.INSTANCE.matchesAsJexlExpression(criterion, new TigerJexlContext()
-                    .withCurrentElement(requestRbelMessage)
-                    .withRootElement(requestRbelMessage)))
+                .withCurrentElement(requestRbelMessage)
+                .withRootElement(requestRbelMessage)))
             .findAny().isEmpty();
     }
 

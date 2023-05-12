@@ -19,4 +19,5 @@ public class TigerMockResponse {
 
     private List<String> requestCriterions;
     private TigerMockResponseDescription response;
+    private Map<String, String> assignments;
 }
