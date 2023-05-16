@@ -4,23 +4,12 @@
 
 package de.gematik.rbellogger.renderer;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static j2html.TagCreator.*;
 import com.google.gson.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import j2html.TagCreator;
 import j2html.tags.*;
 import j2html.tags.specialized.DivTag;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,6 +25,19 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static j2html.TagCreator.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -270,7 +272,7 @@ public class RbelHtmlRenderingToolkit {
                         : "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"),
                     link2CSS(localRessources ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css" : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/stackoverflow-dark.min.css"),
                     link2CSS(localRessources ? "../webjars/font-awesome/css/all.min.css"
-                        : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css"),
+                        : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"),
                     link().withRel("icon").withType("image/png").withHref(logoBase64Str),
                     tag("style").with(
                         new UnescapedText(IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))
