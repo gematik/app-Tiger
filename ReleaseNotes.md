@@ -15,6 +15,11 @@
 
 * TGR-909: all **Gherkin / Feature parser code has been removed** from Tiger as Polarion Toolbox (its only usage) has been refactored to use the Cucumber internal Gherkin parser. If you based your code on the self written parser, check POTO to see how to replace the parsing code in the ```polarion-toolbox-client/src/main/java/de/gematik/polarion/toolbox/worker/FeatureFileParser.java``` source file.
 
+## Bugfixes
+
+* TGR-911: Since 2.0.0 the rbel log files included font awesome v5.4 whereas tiger proxy generated HTML including font awesome 6.4. This caused icons to be not displayed or being displayed as invalid icons.
+
+
 -------
 * **Serenity BDD 3.6.23**
 * Cucumber 7.11.0
