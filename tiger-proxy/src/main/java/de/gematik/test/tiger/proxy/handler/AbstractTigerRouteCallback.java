@@ -179,7 +179,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                 .convertRequest(req, extractProtocolAndHostForRequest(req));
             //TODO TGR-651 null ersetzen durch echten wert
             final RbelElement response = getTigerProxy().getMockServerToRbelConverter()
-                .convertResponse(resp, extractProtocolAndHostForRequest(req), null);
+                .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getRemoteAddress());
             Optional.ofNullable(getRequestTimingMap().get(req.getLogCorrelationId()))
                 .ifPresent(requestTime -> addTimingFacet(request, requestTime));
             addTimingFacet(response, ZonedDateTime.now());

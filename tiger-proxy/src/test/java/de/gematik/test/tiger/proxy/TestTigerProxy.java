@@ -65,6 +65,8 @@ import org.mockserver.netty.MockServer;
 @ResetTigerConfiguration
 class TestTigerProxy extends AbstractTigerProxyTest {
 
+    // AKR: we need the 'localhost|view-localhost' because of mockserver for all checkClientAddresses-tests.
+    private static final String LOCALHOST_REGEX = "localhost|view-localhost|127\\.0\\.0\\.1";
     public MockServerClient forwardProxy;
 
     @BeforeEach
@@ -489,9 +491,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     @Test
     void basicAuthenticationRequiredAndConfigured_ShouldWork() {
         fakeBackendServerClient.when(request()
-            .withMethod("GET")
-            .withPath("/authenticatedPath")
-            .withHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("user:password".getBytes(StandardCharsets.UTF_8))))
+                .withMethod("GET")
+                .withPath("/authenticatedPath")
+                .withHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("user:password".getBytes(StandardCharsets.UTF_8))))
             .respond(response()
                 .withStatusCode(777)
                 .withBody("{\"foo\":\"bar\"}"));
@@ -700,16 +702,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
         awaitMessagesInTiger(4);
 
-        final List<String> hostnameSenderList = new ArrayList<>();
-        hostnameSenderList.addAll(
-            Arrays.asList("localhost|view-localhost", "backend", "localhost|view-localhost", "backend"));
-
-        final List<String> hostnameReceiverList = new ArrayList<>();
-        hostnameReceiverList.addAll(
-            Arrays.asList("backend", "localhost|view-localhost", "backend", "localhost|view-localhost"));
-
-        checkClientAddresses(hostnameSenderList, hostnameReceiverList);
-        checkPortsAreCorrect();
+        checkMessageAddresses(LOCALHOST_REGEX, "backend");
+        checkMessagePorts();
     }
 
     @Test
@@ -727,15 +721,10 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         final UnirestInstance secondInstance = Unirest.spawnInstance();
         secondInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-        final List<String> hostnameList = new ArrayList<>();
-        hostnameList.addAll(
-            Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost",
-                "localhost|view-localhost"));
         awaitMessagesInTiger(4);
 
-        checkClientAddresses(hostnameList, hostnameList);
-
-        checkPortsAreCorrect();
+        checkMessageAddresses(LOCALHOST_REGEX, LOCALHOST_REGEX);
+        checkMessagePorts();
     }
 
     @Test
@@ -750,17 +739,12 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
         secondInstance.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString();
 
-        final List<String> hostnameList = new ArrayList<>();
-        hostnameList.addAll(
-            Arrays.asList("localhost|view-localhost", "localhost|view-localhost", "localhost|view-localhost",
-                "localhost|view-localhost"));
-
         // make sure both messages have been parsed successfully
         await().pollInterval(200, TimeUnit.MILLISECONDS).atMost(20, TimeUnit.SECONDS)
-            .until(() -> extractHostnames(RbelTcpIpMessageFacet::getReceiver).toList().size() == 2);
+            .until(() -> extractHostnames(RbelTcpIpMessageFacet::getReceiver).toList().size() == 4);
 
-        checkClientAddresses(hostnameList, hostnameList);
-        checkPortsAreCorrect();
+        checkMessageAddresses(LOCALHOST_REGEX, LOCALHOST_REGEX);
+        checkMessagePorts();
     }
 
     @Test
@@ -923,7 +907,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         AtomicBoolean messageParsingHasStarted = new AtomicBoolean(false);
 
         final RbelConverterPlugin blockConversionUntilCommunicationIsComplete = (el, conv) -> {
-            log.info("Entering wait with "+el.getRawStringContent());
+            log.info("Entering wait with " + el.getRawStringContent());
             messageParsingHasStarted.set(true);
             await()
                 .atMost(20, TimeUnit.SECONDS)
@@ -952,40 +936,39 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .until(asyncMessage::isDone);
     }
 
-    // AKR: we need the 'localhost|view-localhost' because of mockserver for all checkClientAddresses-tests.
-    private void checkClientAddresses(final List<String> hostnameSenderList, final List<String> hostnameReceiverList) {
-        log.info("hostnames: {} and {}, matching to {} and {}",
-            extractHostnames(RbelTcpIpMessageFacet::getSender).collect(Collectors.toUnmodifiableList()),
-            extractHostnames(RbelTcpIpMessageFacet::getReceiver).collect(Collectors.toUnmodifiableList()),
-            hostnameSenderList, hostnameReceiverList);
-        for (int i = 0; i < hostnameSenderList.size(); i += 2) {
-            final int index = i;
-            //TODO TGR-651 wieder reaktivieren
-            //
-//            assertThat(extractHostnames(RbelTcpIpMessageFacet::getSender))
-//                .matches(value -> value.get(index / 2).matches(hostnameSenderList.get(index)));
-            assertThat(extractHostnames(RbelTcpIpMessageFacet::getReceiver))
-                .matches(value -> value.get(index / 2).matches(hostnameReceiverList.get(index)));
+    private void checkMessageAddresses(final String clientRegex, final String serverRegex) {
+        final List<String> extractedReceiverHostnames = extractHostnames(RbelTcpIpMessageFacet::getReceiver).collect(Collectors.toList());
+        final List<String> extractedSenderHostnames = extractHostnames(RbelTcpIpMessageFacet::getSender).toList();
+        log.info("hostnames: {} and {} (sender and receiver), matching to {} and {}",
+            extractedSenderHostnames,
+            extractedReceiverHostnames,
+            clientRegex, serverRegex);
+        for (int i = 0; i < extractedSenderHostnames.size(); i++) {
+            String senderRegex = i % 2 == 0 ? clientRegex : serverRegex;
+            String receiverRegex = i % 2 == 0 ? serverRegex : clientRegex;
+            assertThat(extractedSenderHostnames.get(i))
+                .matches(senderRegex);
+            assertThat(extractedReceiverHostnames.get(i))
+                .matches(receiverRegex);
         }
     }
 
-    private void checkPortsAreCorrect() {
+    private void checkMessagePorts() {
         assertThat(tigerProxy.getRbelMessagesList().get(1).getFacetOrFail(RbelTcpIpMessageFacet.class)
             .getSenderHostname().getPort())
+            .isPositive()
             .isEqualTo(tigerProxy.getRbelMessagesList().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname().getPort());
-/* TODO TGR-651 as we have no more client adress method in mock, we are not able to get the client port from where the request originated
-   so for now we use the local adress which is equal to the proxy port :(
-       assertThat(tigerProxy.getRbelMessagesList().get(2).getFacetOrFail(RbelTcpIpMessageFacet.class)
+        assertThat(tigerProxy.getRbelMessagesList().get(2).getFacetOrFail(RbelTcpIpMessageFacet.class)
             .getSenderHostname().getPort())
+            .isPositive()
             .isEqualTo(tigerProxy.getRbelMessagesList().get(3).getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname().getPort());
         assertThat(tigerProxy.getRbelMessagesList().get(0).getFacetOrFail(RbelTcpIpMessageFacet.class)
             .getSenderHostname().getPort())
+            .isPositive()
             .isNotEqualTo(tigerProxy.getRbelMessagesList().get(2).getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname().getPort());
- */
-
     }
 
     @NotNull
