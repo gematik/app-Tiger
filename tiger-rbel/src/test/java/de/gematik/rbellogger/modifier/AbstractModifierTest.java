@@ -28,7 +28,6 @@ public abstract class AbstractModifierTest {
 
     @BeforeEach
     public void initRbelLogger() {
-        RbelOptions.activateJexlDebugging();
         if (rbelLogger == null) {
             rbelLogger = RbelLogger.build(
                 new RbelConfiguration().addInitializer(RBEL_KEY_FOLDER_INITIALIZER));

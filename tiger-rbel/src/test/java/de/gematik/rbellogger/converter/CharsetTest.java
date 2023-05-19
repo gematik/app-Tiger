@@ -9,6 +9,8 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -20,10 +22,11 @@ import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineB
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CharsetTest {
+class CharsetTest {
+
 
     @Test
-    public void readIsoEncodedMessage_shouldRecognizeEncodingAndGiveCorrectContent() throws IOException {
+    void readIsoEncodedMessage_shouldRecognizeEncodingAndGiveCorrectContent() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/isoEncodedMessage.curl", ISO_8859_1);
 
@@ -38,7 +41,7 @@ public class CharsetTest {
     }
 
     @Test
-    public void readJson() throws IOException {
+    void readJson() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/jsonMessage.curl", ISO_8859_1);
 
@@ -54,7 +57,7 @@ public class CharsetTest {
     }
 
     @Test
-    public void readXml() throws IOException {
+    void readXml() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/xmlMessage.curl", ISO_8859_1);
 
@@ -70,7 +73,7 @@ public class CharsetTest {
     }
 
     @Test
-    public void readAsn1() throws IOException {
+    void readAsn1() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/certificate.curl");
 
@@ -86,7 +89,7 @@ public class CharsetTest {
     }
 
     @Test
-    public void modifyJson() throws IOException {
+    void modifyJson() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/jsonMessage.curl", ISO_8859_1);
 
@@ -109,7 +112,7 @@ public class CharsetTest {
     }
 
     @Test
-    public void verifyJexlMapHasCharset() throws IOException {
+    void verifyJexlMapHasCharset() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/xmlMessage.curl", ISO_8859_1);
 
@@ -133,7 +136,7 @@ public class CharsetTest {
         "'ich mag am liebsten unicode, unicode, unicode', UTF-16",
         "latin1 dance party, ISO-8859-1"
     })
-    public void parseDefunctCharsetAndExpectCorrectResults(String charsetString, String expectedResult) throws IOException {
+    void parseDefunctCharsetAndExpectCorrectResults(String charsetString, String expectedResult) throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/jsonMessage.curl")
             .replaceFirst("application/json; charset=latin1", charsetString);

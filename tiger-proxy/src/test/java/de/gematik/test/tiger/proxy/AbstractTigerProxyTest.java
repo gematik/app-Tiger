@@ -69,8 +69,6 @@ public abstract class AbstractTigerProxyTest {
             .withMethod("POST"))
             .respond(response()
                 .withBody(binaryMessageContent));
-
-        RbelOptions.activateJexlDebugging();
     }
 
     @AfterEach

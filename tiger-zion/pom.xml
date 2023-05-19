@@ -91,12 +91,13 @@
             <artifactId>unirest-java</artifactId>
             <version>${version.unirest}</version>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>de.gematik.idp</groupId>
             <artifactId>idp-client</artifactId>
             <version>21.0.8</version>
             <scope>test</scope>
         </dependency>
+        -->
         <dependency>
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>

@@ -10,6 +10,7 @@ import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_P
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -18,6 +19,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -64,8 +66,13 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 @Getter
 public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean, AutoCloseable {
 
+    static {
+        TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
+    }
+
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
+    private static final String SERVER_PORT = "server.port";
     private final Configuration configuration;
     private final Map<String, Object> environmentVariables;
     private TigerProxy localTigerProxy;
@@ -209,14 +216,14 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
         }
         properties.putAll(getConfiguredLoggingLevels());
+        log.info("Starting with port {}", properties.get(SERVER_PORT));
 
         localTigerProxyApplicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(properties)
             .sources(TigerProxyApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)
-            .initializers()
+            .properties(properties)
             .run();
 
         proxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);

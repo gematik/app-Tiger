@@ -11,12 +11,9 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -33,7 +30,9 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
 
     static {
         TokenSubstituteHelper.REPLACER_ORDER.addFirst(
-            Pair.of('?', (str, source) -> Optional.ofNullable(ELEMENT_STACK.peek())
+            Pair.of('?', (str, source, ctx) -> ctx
+                .map(TigerJexlContext::getCurrentElement)
+                .filter(Objects::nonNull)
                 .filter(RbelElement.class::isInstance)
                 .map(RbelElement.class::cast)
                 .flatMap(el -> el.findElement(str))
@@ -44,7 +43,7 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
 
     private static final int MAXIMUM_JEXL_ELEMENT_SIZE = 16_000;
 
-    public boolean matchAsTextExpression(Object element, String textExpression) {
+    public static boolean matchAsTextExpression(Object element, String textExpression) {
         try {
             final boolean textMatchResult = ((RbelElement) element).getRawStringContent().contains(textExpression);
             final boolean regexMatchResult = Pattern.compile(textExpression).matcher(((RbelElement) element).getRawStringContent()).find();

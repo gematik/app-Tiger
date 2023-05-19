@@ -12,6 +12,7 @@ import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;

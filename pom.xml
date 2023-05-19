@@ -145,10 +145,10 @@
         <module>tiger-proxy</module>
         <module>tiger-standalone-proxy</module>
         <module>tiger-testenv-mgr</module>
+        <module>tiger-zion</module>
         <module>tiger-test-lib</module>
         <module>tiger-admin</module>
         <module>tiger-maven-plugin</module>
-        <module>tiger-zion</module>
     </modules>
 
     <profiles>

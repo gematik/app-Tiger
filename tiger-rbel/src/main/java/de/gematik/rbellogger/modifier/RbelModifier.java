@@ -9,6 +9,7 @@ import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -82,8 +83,7 @@ public class RbelModifier {
         if (StringUtils.isEmpty(modification.getCondition())) {
             return true;
         }
-        RbelJexlExecutor executor = new RbelJexlExecutor();
-        return executor.matchesAsJexlExpression(message, modification.getCondition(), Optional.empty());
+        return TigerJexlExecutor.matchesAsJexlExpression(message, modification.getCondition());
     }
 
     private byte[] applyModification(RbelModificationDescription modification, RbelElement targetElement) {

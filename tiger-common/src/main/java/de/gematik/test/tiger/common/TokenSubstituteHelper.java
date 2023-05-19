@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.common;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.Deque;
 import java.util.Optional;
@@ -20,12 +21,16 @@ public final class TokenSubstituteHelper {
     private static final int MAXIMUM_NUMBER_OF_REPLACEMENTS = 1_000;
 
     static {
-        REPLACER_ORDER.add(Pair.of('$', (str, source) -> source.readStringOptional(str)));
-        REPLACER_ORDER.add(Pair.of('!', (str, source) -> TigerJexlExecutor.INSTANCE.evaluateJexlExpression(str, Optional.empty())
+        REPLACER_ORDER.add(Pair.of('$', (str, source, ctx) -> source.readStringOptional(str)));
+        REPLACER_ORDER.add(Pair.of('!', (str, source, ctx) -> TigerJexlExecutor.evaluateJexlExpression(str, ctx.orElseGet(TigerJexlContext::new))
             .map(Object::toString)));
     }
 
     public static String substitute(String value, TigerConfigurationLoader source) {
+        return substitute(value, source, Optional.empty());
+    }
+
+    public static String substitute(String value, TigerConfigurationLoader source, Optional<TigerJexlContext> context) {
         String result = value;
         boolean keepOnReplacing = true;
         int iterationsLeft = MAXIMUM_NUMBER_OF_REPLACEMENTS;
@@ -35,7 +40,8 @@ public final class TokenSubstituteHelper {
                 final Optional<String> replacedOptional = replacePlaceholderWithGivenIntro(result,
                     replacer.getKey(),
                     replacer.getValue(),
-                    source);
+                    source,
+                    context);
                 if (replacedOptional.isPresent()) {
                     result = replacedOptional.get();
                     keepOnReplacing = true;
@@ -50,7 +56,7 @@ public final class TokenSubstituteHelper {
     }
 
     private static Optional<String> replacePlaceholderWithGivenIntro(final String str, char intro,
-        ReplacerFunction placeholderResolver, TigerConfigurationLoader source) {
+        ReplacerFunction placeholderResolver, TigerConfigurationLoader source, Optional<TigerJexlContext> context) {
         final String tokenStr = intro + "{";
         int varIdx = str.indexOf(tokenStr);
         while (varIdx != -1) {
@@ -59,7 +65,7 @@ public final class TokenSubstituteHelper {
                 return Optional.empty();
             }
             final String placeholderString = str.substring(varIdx + tokenStr.length(), endVar);
-            final Optional<String> valueOptional = placeholderResolver.replace(placeholderString, source);
+            final Optional<String> valueOptional = placeholderResolver.replace(placeholderString, source, context);
             if (valueOptional.isPresent()) {
                 return Optional.of(str.substring(0, varIdx) + valueOptional.get() + str.substring(endVar + 1));
             } else {
@@ -71,6 +77,6 @@ public final class TokenSubstituteHelper {
 
     public interface ReplacerFunction {
 
-        Optional<String> replace(String input, TigerConfigurationLoader source);
+        Optional<String> replace(String input, TigerConfigurationLoader source, Optional<TigerJexlContext> context);
     }
 }

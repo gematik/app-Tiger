@@ -7,6 +7,7 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJwtFacet;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import org.junit.jupiter.api.Test;
 
 class RbelJwtWriterTests {
@@ -57,7 +58,7 @@ class RbelJwtWriterTests {
 
     private RbelElement serializeElement(RbelElement input) {
         return rbelConverter.convertElement(
-            new RbelWriter(rbelConverter).serialize(input),
+            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()),
             null);
     }
 }

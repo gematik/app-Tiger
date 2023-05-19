@@ -108,7 +108,6 @@ class PcapCaptureTest {
     @SneakyThrows
     @Test
     void readPcapFile_shouldParseMessages() {
-        RbelOptions.activateJexlDebugging();
         final RbelFileReaderCapturer fileReaderCapturer = RbelFileReaderCapturer.builder()
             .rbelFile("src/test/resources/deregisterPairing.tgr")
             .build();

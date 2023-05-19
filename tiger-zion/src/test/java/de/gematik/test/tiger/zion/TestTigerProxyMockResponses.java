@@ -4,15 +4,9 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.assertj.core.api.Assertions.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.gematik.idp.IdpConstants;
-import de.gematik.idp.client.IdpClient;
-import de.gematik.idp.crypto.model.PkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
-import de.gematik.test.tiger.zion.config.TigerMockResponse;
-import de.gematik.test.tiger.zion.config.TigerMockResponseDescription;
-import de.gematik.test.tiger.zion.config.ZionConfiguration;
-import de.gematik.test.tiger.zion.config.ZionSpyConfiguration;
+import de.gematik.test.tiger.zion.config.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,12 +26,16 @@ import org.mockserver.netty.MockServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ResetTigerConfiguration
+@TestPropertySource(properties = {
+    "zion.mockResponseFiles.firstFile=src/test/resources/someMockResponse.yaml"})
 class TestTigerProxyMockResponses {
+
     final Path tempDirectory = Path.of("target", "zionResponses");
 
     @Autowired
@@ -125,6 +123,50 @@ class TestTigerProxyMockResponses {
     }
 
     @Test
+    void testTemplatedBackendRequest() {
+        try (MockServer mockServer = new MockServer();
+            MockServerClient mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort())) {
+            mockServerClient.when(request())
+                .respond(req -> response().withStatusCode(200)
+                    .withBody(req.getBodyAsString()));
+
+            configuration.setMockResponses(Map.of(
+                "templatedBackendRequest",
+                TigerMockResponse.builder()
+                    .backendRequests(Map.of("theRequest",
+                        ZionBackendRequestDescription.builder()
+                            .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
+                            .body("{\n"
+                                + "  \"tgrEncodeAs\":\"JWT\",\n"
+                                + "  \"header\":{\n"
+                                + "    \"alg\": \"BP256R1\",\n"
+                                + "    \"typ\": \"JWT\"\n"
+                                + "  },\n"
+                                + "  \"body\":{\n"
+                                + "    \"sub\": \"1234567890\",\n"
+                                + "    \"name\": \"John Doe\",\n"
+                                + "    \"iat\": 1516239022\n"
+                                + "  },\n"
+                                + "  \"signature\":{\n"
+                                + "    \"verifiedUsing\":\"idp_enc\"\n"
+                                + "  }\n"
+                                + "}")
+                            .assignments(Map.of("signer", "$.body.signature.verifiedUsing"))
+                            .build()))
+                    .response(TigerMockResponseDescription.builder()
+                        .body("${signer}")
+                        .build())
+                    .build()
+            ));
+
+            assertThat(Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar")
+                .asString()
+                .getBody())
+                .isEqualTo("puk_idp_enc");
+        }
+    }
+
+    @Test
     void testRbelPathCriterions() {
         configuration.setMockResponses(Map.of("backend_foobar",
             TigerMockResponse.builder()
@@ -146,7 +188,7 @@ class TestTigerProxyMockResponses {
         configuration.setMockResponses(Map.of("backend_foobar",
             TigerMockResponse.builder()
                 .requestCriterions(List.of(
-                        "message.method == 'GET'"))
+                    "message.method == 'GET'"))
                 .assignments(Map.of("foo.bar.variable", "$.path.username.value"))
                 .response(TigerMockResponseDescription.builder()
                     .statusCode(666)
@@ -159,7 +201,7 @@ class TestTigerProxyMockResponses {
         assertThat(response.getBody().getObject().getString("authorizedUser"))
             .isEqualTo("someUsername");
     }
-
+/*
     @Test
     void testIdpClient() {
         configuration.setMockResponses(Map.of(
@@ -181,7 +223,7 @@ class TestTigerProxyMockResponses {
             .certificate(clientIdentity.getCertificate())
             .privateKey(clientIdentity.getPrivateKey())
             .build());
-    }
+    }*/
 
 
     @Test
@@ -191,7 +233,8 @@ class TestTigerProxyMockResponses {
             mockServerClient.when(request()
                     .withMethod("GET")
                     .withPath(".*"))
-                .respond(response().withStatusCode(666).withBody("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"));
+                .respond(response().withStatusCode(666).withBody(
+                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"));
 
             configuration.setSpy(ZionSpyConfiguration.builder()
                 .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")

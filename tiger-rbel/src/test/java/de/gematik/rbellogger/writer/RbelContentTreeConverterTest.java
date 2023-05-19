@@ -11,6 +11,7 @@ import ch.qos.logback.classic.Logger;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.SneakyThrows;
@@ -29,7 +30,7 @@ class RbelContentTreeConverterTest {
         final RbelElement input = rbelConverter.convertElement(xmlInput, null);
 
         RbelWriter writer = new RbelWriter(rbelConverter);
-        final String output = new String(writer.serialize(input));
+        final String output = new String(writer.serialize(input, new TigerJexlContext()));
         System.out.println(output);
         XmlAssert.assertThat(output)
             .and(new String(xmlInput))
@@ -46,7 +47,7 @@ class RbelContentTreeConverterTest {
             + "    <notToBeRendered tgrIf=\"10 == 5\">NOOOO!</notToBeRendered>\n"
             + "</rootNode>", null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input)))
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
             .and("<?xml version=\"1.0\"?>\n"
                 + "<rootNode>\n"
                 + "    <toBeRendered>yes!</toBeRendered>\n"
@@ -63,7 +64,7 @@ class RbelContentTreeConverterTest {
             + "    <repeatedTag tgrFor=\"number : 1..3\">entry</repeatedTag>\n"
             + "</rootNode>", null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input)))
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
             .and("<?xml version=\"1.0\"?>\n"
                 + "<rootNode>\n"
                 + "    <repeatedTag>entry</repeatedTag>\n"
@@ -82,7 +83,7 @@ class RbelContentTreeConverterTest {
             + "    <repeatedTag tgrFor=\"number : 5..7\">entry number ${number}</repeatedTag>\n"
             + "</rootNode>", null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input)))
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
             .and("<?xml version=\"1.0\"?>\n"
                 + "<rootNode>\n"
                 + "    <repeatedTag>entry number 5</repeatedTag>\n"
@@ -104,7 +105,7 @@ class RbelContentTreeConverterTest {
             + "  }\n"
             + "}", null);
 
-        final String result = new String(new RbelWriter(rbelConverter).serialize(input));
+        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
         assertThat(result).isEqualTo("http://bluzb/fdsa?foo=bar");
     }
 
@@ -113,7 +114,7 @@ class RbelContentTreeConverterTest {
     void writeJson() {
         final RbelElement input = rbelConverter.convertElement("{'foo':'bar'}".getBytes(), null);
 
-        final String result = new String(new RbelWriter(rbelConverter).serialize(input));
+        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
         System.out.println(result);
         assertThatJson(result).isEqualTo("{'foo':'bar'}");
     }
@@ -124,7 +125,7 @@ class RbelContentTreeConverterTest {
         final String inputJson = "{\"foo\":[\"bar1\",\"bar2\"]}";
         final RbelElement input = rbelConverter.convertElement(inputJson.getBytes(), null);
 
-        final String result = new String(new RbelWriter(rbelConverter).serialize(input));
+        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
         System.out.println(result);
         assertThatJson(result).isEqualTo(inputJson);
     }
@@ -137,7 +138,7 @@ class RbelContentTreeConverterTest {
             + "    <toBeRendered tgrIf=\"1 != 5\">{\"foo\": \"bar\"}</toBeRendered>\n"
             + "</rootNode>", null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input)))
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
             .and("<?xml version=\"1.0\"?>\n"
                 + "<rootNode>\n"
                 + "    <toBeRendered>{\"foo\": \"bar\"}</toBeRendered>\n"
@@ -170,7 +171,7 @@ class RbelContentTreeConverterTest {
         TigerGlobalConfiguration.putValue("persons.1.name", "dieter");
         TigerGlobalConfiguration.putValue("persons.1.age", "42");
 
-        final String output = new String(new RbelWriter(rbelConverter).serialize(input));
+        final String output = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
         System.out.println("\n\n\n" + output);
 
         XmlAssert.assertThat(output)
@@ -209,7 +210,7 @@ class RbelContentTreeConverterTest {
             + "    <toBeRendered tgrFor=\"number : 1..3\"><foo tgrEncodeAs=\"json\">${number}</foo></toBeRendered>\n"
             + "</rootNode>", null);
 
-        final String output = new String(new RbelWriter(rbelConverter).serialize(input));
+        final String output = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
         System.out.println(output);
         XmlAssert.assertThat(output)
             .and("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"

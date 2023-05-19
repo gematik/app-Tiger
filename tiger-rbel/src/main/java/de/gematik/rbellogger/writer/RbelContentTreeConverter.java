@@ -9,6 +9,8 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.exceptions.RbelContentTreeConversionException;
 import de.gematik.rbellogger.writer.tree.*;
 import de.gematik.test.tiger.common.config.*;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.jexl3.JexlBuilder;
@@ -28,11 +30,12 @@ public class RbelContentTreeConverter {
         new RbelJwtElementToNodeConverter()
     );
     private final RbelElement input;
-    private RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
+    private final TigerJexlContext jexlContext;
     private Set<String> transitiveTypes = Set.of("xml", "json");
 
-    public RbelContentTreeConverter(RbelElement input) {
+    public RbelContentTreeConverter(RbelElement input, TigerJexlContext jexlContext) {
         this.input = input;
+        this.jexlContext = jexlContext;
     }
 
     public RbelContentTreeNode convertToContentTree() {
@@ -110,8 +113,9 @@ public class RbelContentTreeConverter {
 
     private List<RbelContentTreeNode> executeTgrForLoop(RbelElement input, String key, TigerConfigurationLoader conversionContext) {
         String loopStatement = findLoopStatement(input);
-        final MapContext context = new MapContext(TigerGlobalConfiguration.instantiateConfigurationBean(Map.class)
-            .orElseThrow());
+        final TigerJexlContext context = new TigerJexlContext();
+        context.putAll(jexlContext);
+        context.putAll(TigerGlobalConfiguration.instantiateConfigurationBean(Map.class).orElseThrow());
         new JexlBuilder().permissions(JexlPermissions.UNRESTRICTED).create()
             .createScript("t = " + loopStatement.split(":")[1]).execute(context);
         final List<RbelContentTreeNode> resultList = new ArrayList<>();
@@ -149,7 +153,7 @@ public class RbelContentTreeConverter {
     private boolean evaluateTgrIfCondition(RbelElement input) {
         return input.getFirst(TGR_IF)
             // TODO handle invalid jexls! (currently false, should lead to exception!!!)
-            .map(condition -> jexlExecutor.matchesAsJexlExpression(input, condition.getRawStringContent()))
+            .map(condition -> TigerJexlExecutor.matchesAsJexlExpression(input, condition.getRawStringContent()))
             .orElse(true);
     }
 
@@ -158,9 +162,13 @@ public class RbelContentTreeConverter {
             .filter(entry -> entry.shouldConvert(input))
             .findFirst()
             .map(converter -> converter.convert(input, conversionContext, this))
-            .orElseGet(() -> RbelElementWrapperContentTreeNode.constructFromRbelElement(input, conversionContext));
+            .orElseGet(() -> RbelElementWrapperContentTreeNode.constructFromRbelElement(input, conversionContext, jexlContext));
         result.setCharset(input.getElementCharset());
         result.setKey(key);
         return List.of(result);
+    }
+
+    public TigerJexlContext getJexlContext() {
+        return jexlContext;
     }
 }
