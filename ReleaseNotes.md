@@ -21,6 +21,11 @@
 * TGR-911: Since 2.0.0 the rbel log files included font awesome v5.4 whereas tiger proxy generated HTML including font awesome 6.4. This caused icons to be not displayed or being displayed as invalid icons.
 * TGR-651: Sender (Client) addresses for messages are now again included in parsed messages of the Tiger Proxy.
 
+## Features
+
+* TGR-869: When multiple properties in either System-Properties or Environment-Variables map to the same value and differ in value the startup will 
+be aborted with an exception pointing to the conflicting values. This is done to follow the "fail fast" philosophy and give the user the chance
+to resolve the conflict instead of choosing an arbitrary value automatically.
 
 -------
 * **Serenity BDD 3.6.23**

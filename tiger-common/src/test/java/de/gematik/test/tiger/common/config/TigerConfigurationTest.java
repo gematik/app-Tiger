@@ -6,6 +6,7 @@ package de.gematik.test.tiger.common.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -26,6 +27,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -772,6 +774,56 @@ public class TigerConfigurationTest {
         TigerGlobalConfiguration.reset();
         assertThat(TigerGlobalConfiguration.readString("hostname"))
             .isEqualTo(TigerGlobalConfiguration.getComputerName());
+    }
+
+    @SneakyThrows
+    @Test
+    void duplicateSystemPropertyKeys_shouldLeadToStartupError() {
+        try {
+            System.setProperty("foobar", "123");
+            System.setProperty("FOOBAR", "312");
+            TigerGlobalConfiguration.reset();
+            assertThatThrownBy(() -> TigerGlobalConfiguration.readString("foobar"))
+                .isInstanceOf(TigerConfigurationException.class);
+        } finally {
+            System.clearProperty("foobar");
+            System.clearProperty("FOOBAR");
+        }
+    }
+
+    @SneakyThrows
+    @Test
+    void duplicateSystemPropertyKeysWithSameValue_shouldProceed() {
+        try {
+            System.setProperty("foobar", "123");
+            System.setProperty("FOOBAR", "123");
+            TigerGlobalConfiguration.reset();
+            assertThat(TigerGlobalConfiguration.readString("foobar"))
+                .isEqualTo("123");
+        } finally {
+            System.clearProperty("foobar");
+            System.clearProperty("FOOBAR");
+        }
+    }
+
+    @SneakyThrows
+    @Test
+    void duplicateEnvironmentVariableKeys_shouldLeadToStartupError() {
+        TigerGlobalConfiguration.reset();
+        withEnvironmentVariable("foobar", "123")
+            .and("FOOBAR", "312")
+            .execute(() -> assertThatThrownBy(() -> TigerGlobalConfiguration.readString("foobar"))
+                    .isInstanceOf(TigerConfigurationException.class));
+    }
+
+    @SneakyThrows
+    @Test
+    void duplicateEnvironmentVariableKeysWithSameValue_shouldProceed() {
+        TigerGlobalConfiguration.reset();
+        withEnvironmentVariable("foobar", "123")
+            .and("FOOBAR", "123")
+            .execute(() -> assertThat(TigerGlobalConfiguration.readString("foobar"))
+                    .isEqualTo("123"));
     }
 
     @Data
