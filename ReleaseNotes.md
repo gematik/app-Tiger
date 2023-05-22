@@ -1,12 +1,12 @@
 # Changelog Tiger Testplattform
 
 -------
-* **Serenity BDD 3.6.23**
+* Serenity BDD 3.6.23
 * Cucumber 7.11.0
 * RestAssured 5.2.0
 * Selenium 4.8.0
 * Appium 8.3.0
-* **Spring Boot 3.0.6**
+* Spring Boot 3.0.6
 * Logback 1.4.7
 
 # Release 2.0.1
@@ -14,6 +14,7 @@
 ## Breaking changes
 
 * TGR-909: all **Gherkin / Feature parser code has been removed** from Tiger as Polarion Toolbox (its only usage) has been refactored to use the Cucumber internal Gherkin parser. If you based your code on the self written parser, check POTO to see how to replace the parsing code in the ```polarion-toolbox-client/src/main/java/de/gematik/polarion/toolbox/worker/FeatureFileParser.java``` source file.
+* TGR-864: The order of parameters for the "TGR send {} request to {} with body {}" has been changed (body now comes as the final parameter). This is done to ensure consistency across languages and to always relegate the potentially longest parameter to the last place, improving readability.
 
 ## Bugfixes
 

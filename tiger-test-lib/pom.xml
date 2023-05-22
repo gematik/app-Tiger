@@ -318,9 +318,6 @@
                         <include>**/integrationtest/Test*.java</include>
                     </includes>
                     <skipITs>false</skipITs>
-                    <systemPropertyVariables>
-                        <TIGER_TESTENV_CFGFILE>src/test/resources/testdata/httpclientenv.yaml</TIGER_TESTENV_CFGFILE>
-                    </systemPropertyVariables>
                     <threadCount>16</threadCount>
                     <!-- serenity plugin will check and fail after integration test -->
                     <testFailureIgnore>true</testFailureIgnore>

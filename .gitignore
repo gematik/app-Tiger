@@ -13,3 +13,6 @@ tiger-testenv-mgr/WinstoneHTTPServer
 /tiger-testenv-mgr/src/frontend/node/
 /doc/user_manual/tiger_user_manual.adoc
 /doc/user_manual/RbelValidatorGlueCommentsOnly.java
+doc/user_manual/HttpGlueCodeCommentsOnly.java
+doc/user_manual/HttpGlueCodeTest.feature
+doc/user_manual/TigerGlueCommentsOnly.java

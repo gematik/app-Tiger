@@ -1,10 +1,6 @@
 package de.gematik.test.tiger.glue;
 
-import static de.gematik.test.tiger.proxy.TigerProxy.CA_CERT_ALIAS;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.ParameterType;
 import io.cucumber.java.en.Then;
@@ -13,8 +9,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.Method;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,8 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpGlueCode {
 
     private static RequestSpecification givenDefaultSpec() {
-        return RestAssured
-                .given()
+        final RequestSpecification requestSpecification = RestAssured.given();
+        return requestSpecification
                 .headers(TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader"));
     }
 
@@ -99,10 +93,10 @@ public class HttpGlueCode {
      * @see TigerGlobalConfiguration#resolvePlaceholders(String)
      */
     @SneakyThrows
-    @When("TGR send {requestType} request with {string} to {string}")
+    @When("TGR send {requestType} request to {string} with body {string}")
     @When("TGR eine leere {requestType} Anfrage an {string} und dem folgenden body {string} sendet")
     @Then("TGR sende eine {requestType} Anfrage an {string} mit Body {string}")
-    public void sendRequestWithBody(Method method, String body, String address) {
+    public void sendRequestWithBody(Method method, String address, String body) {
         log.info("Sending {} request with body to {}", method, address);
         givenDefaultSpec()
                 .body(resolve(body))
@@ -160,37 +154,6 @@ public class HttpGlueCode {
         givenDefaultSpec()
                 .formParams(resolveMap(dataAsMaps.get(0)))
                 .request(method, new URI(resolve(address)));
-    }
-
-    //
-    //Note the string format.
-    //
-    //@param pathAndPassword this/is/path;password
-    //
-    @SneakyThrows
-    // @When("TGR set default TLS client certificate to {string}")
-    // todo TGR-864
-    public void setDefaultTls(String pathAndPassword) {
-        TigerPkiIdentity identity = new TigerPkiIdentity(resolve(pathAndPassword));
-        RestAssured.trustStore(buildKeyStore(identity));
-        var path = pathAndPassword.split(";")[0];
-        var password = pathAndPassword.split(";")[1];
-        RestAssured.keyStore(path, password);
-        int proxyPort = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getProxyPort();
-        RestAssured.proxy("winstone", proxyPort); // BUG why winstone as proxy?
-        TlsCertificateGenerator.generateNewCaCertificate();
-    }
-
-    @SneakyThrows
-    private KeyStore buildKeyStore(TigerPkiIdentity serverIdentity) {
-        var keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        keyStore.load(null);
-        keyStore.setCertificateEntry(CA_CERT_ALIAS, serverIdentity.getCertificate());
-        int chainCertCtr = 0;
-        for (final X509Certificate chainCert : serverIdentity.getCertificateChain()) {
-            keyStore.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
-        }
-        return keyStore;
     }
 
     private Map<String,String> resolveMap(Map<String,String> map) {

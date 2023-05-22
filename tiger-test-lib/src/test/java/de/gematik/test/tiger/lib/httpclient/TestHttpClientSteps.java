@@ -81,7 +81,7 @@ public class TestHttpClientSteps {
 
     @Test
     void putRequestWithBodyToFolder() {
-        httpGlueCode.sendRequestWithBody(Method.PUT,"{'hello': 'world!'}","http://winstone/target");
+        httpGlueCode.sendRequestWithBody(Method.PUT,"http://winstone/target","{'hello': 'world!'}");
         rbelValidatorGlueCode. findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}","PUT");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}" ,"\\/target\\/?");
@@ -90,7 +90,7 @@ public class TestHttpClientSteps {
 
     @Test
     void putRequestWithBodyFromFileToFolder() {
-        httpGlueCode.sendRequestWithBody(Method.PUT,"!{file('pom.xml')}","http://winstone/target");
+        httpGlueCode.sendRequestWithBody(Method.PUT,"http://winstone/target","!{file('pom.xml')}");
         rbelValidatorGlueCode. findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}","PUT");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}" ,"\\/target\\/?");
@@ -126,7 +126,7 @@ public class TestHttpClientSteps {
         httpGlueCode.sendEmptyRequest(Method.GET,"http://winstone/target/not_a_file");
         rbelValidatorGlueCode. findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key')}","value");
-        httpGlueCode.sendRequestWithBody(Method.POST, "hello world", "http://winstone/target/not_a_file");
+        httpGlueCode.sendRequestWithBody(Method.POST, "http://winstone/target/not_a_file", "hello world");
         rbelValidatorGlueCode. findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key')}","value");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body')}","hello world");
