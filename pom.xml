@@ -147,7 +147,6 @@
         <module>tiger-testenv-mgr</module>
         <module>tiger-zion</module>
         <module>tiger-test-lib</module>
-        <module>tiger-admin</module>
         <module>tiger-maven-plugin</module>
     </modules>
 

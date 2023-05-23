@@ -48,13 +48,6 @@ For more details please check out the [specification document](doc/specification
 
 ## Using other libraries / source code
 
-Files under the tiger-admin/src/main/resources/static folder were taken from the projects with following licenses:
-* jquery [MIT](http://opensource.org/licenses/MIT)
-* bs5util [MIT](http://opensource.org/licenses/MIT)
-* BsMultiSelect  [Apache License v2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
-* jquery context menu [MIT](http://opensource.org/licenses/MIT)
-* jquery ui positions [MIT](http://opensource.org/licenses/MIT)
-
 Files under the tiger-proxy/src/main/resources/css and webfonts folders were taken from the projects with listed licenses:
 
 * bulma css [MIT](http://opensource.org/licenses/MIT)

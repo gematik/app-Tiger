@@ -9,7 +9,7 @@ def TITLE_TEXT = 'Release'
 def GROUP_ID_PATH = "de/gematik/test"
 def GROUP_ID = "de.gematik.test"
 def ARTIFACT_ID = 'tiger-testenv-mgr'
-def ARTIFACT_IDs = 'tiger,tiger-rbel,tiger-admin,tiger-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib,tiger-integration-example'
+def ARTIFACT_IDs = 'tiger,tiger-rbel,tiger-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib,tiger-integration-example'
 def POM_PATH = 'pom.xml'
 def PACKAGING = "jar"
 
@@ -81,7 +81,6 @@ pipeline {
                 stage('generate resources') {
                     steps {
                         sh "cd doc/user_manual && ./extractCommentsFromRbelValidatorGlue.sh"
-                        sh "cd tiger-admin && mvn generate-resources"
                     }
                 }
                 stage('prepare external release') {

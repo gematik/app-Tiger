@@ -77,15 +77,6 @@ pipeline {
                 rm -rf target/junit-reports-nightly
             """
             showJUnitAsXUnitResult("**/target/*-reports*/TEST-*.xml")
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'tiger-admin/target/site/serenity/**/*', fingerprint: false
-            publishHTML (target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: false,
-                keepAll: true,
-                reportDir: 'tiger-admin/target/site/serenity',
-                reportFiles: 'index.html',
-                reportName: "Admin UI Report"
-            ])
         }
     }
 }
