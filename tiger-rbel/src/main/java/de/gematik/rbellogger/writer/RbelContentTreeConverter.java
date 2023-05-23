@@ -4,7 +4,6 @@
 
 package de.gematik.rbellogger.writer;
 
-import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.exceptions.RbelContentTreeConversionException;
 import de.gematik.rbellogger.writer.tree.*;
@@ -14,7 +13,6 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.jexl3.JexlBuilder;
-import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
 
 @AllArgsConstructor
@@ -27,7 +25,8 @@ public class RbelContentTreeConverter {
     private List<RbelElementToContentTreeNodeConverter> converters = List.of(
         new RbelXmlElementToNodeConverter(),
         new RbelJsonElementToNodeConverter(),
-        new RbelJwtElementToNodeConverter()
+        new RbelJwtElementToNodeConverter(),
+        new RbelBearerTokenElementToNodeConverter()
     );
     private final RbelElement input;
     private final TigerJexlContext jexlContext;

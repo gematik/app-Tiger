@@ -35,7 +35,8 @@ public class RbelWriter {
         RbelContentType.JSON, new RbelJsonSerializer(),
         RbelContentType.JWT, new RbelJwtSerializer(),
         RbelContentType.JWE, new RbelJweSerializer(),
-        RbelContentType.URL, new RbelUrlSerializer());
+        RbelContentType.URL, new RbelUrlSerializer(),
+        RbelContentType.BEARER_TOKEN, new RbelBearerTokenSerializer());
 
     public byte[] serializeWithEnforcedContentType(RbelElement input, RbelContentType enforcedContentType, TigerJexlContext jexlContext) {
         return new RbelWriterInstance(Optional.ofNullable(enforcedContentType), rbelKeyManager, jexlContext)
@@ -48,14 +49,14 @@ public class RbelWriter {
     }
 
     private static void printTreeStructure(RbelContentTreeNode treeRootNode) {
-        if (log.isDebugEnabled() || 1 < 2) {
+        if (log.isDebugEnabled()) {
             GenericPrettyPrinter<RbelContentTreeNode> printer = new GenericPrettyPrinter<>(
                 node -> node.childNodes().isEmpty(),
                 node -> printNodeContent(node),
                 node -> node.childNodes().stream()
             );
             printer.setNodeIntroPrinter(node -> node.getKey() + " (" + node.getType() + ") ");
-            log.info("Serializing the following tree: \n{}", printer.prettyPrint(treeRootNode));
+            log.debug("Serializing the following tree: \n{}", printer.prettyPrint(treeRootNode));
         }
     }
 

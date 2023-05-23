@@ -60,13 +60,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 @Slf4j
 public class TigerDirector {
 
-    public static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
+    @Getter
+    private static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
     private static TigerTestEnvMgr tigerTestEnvMgr;
     private static boolean initialized = false;
 
     @Getter
     private static TigerLibConfig libConfig;
-    public static ConfigurableApplicationContext envMgrApplicationContext;
+    private static ConfigurableApplicationContext envMgrApplicationContext;
 
     public static synchronized void start() {
         if (initialized) {

@@ -409,8 +409,11 @@ public class RbelMessageValidator {
     public RbelElement findElementInCurrentRequest(final String rbelPath) {
         try {
             final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+            if (elems.size() != 1) {
+                log.warn("Could not find elements {} in message\n {}", rbelPath, currentRequest.printTreeStructureWithoutColors());
+            }
             assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
-            assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
+            assertThat(elems).withFailMessage("Expected exactly one match for path '" + rbelPath + "'!").hasSize(1);
             return elems.get(0);
         } catch (final Exception e) {
             throw new AssertionError("Unable to find element in last request for rbel path '" + rbelPath + "'");

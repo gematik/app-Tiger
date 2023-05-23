@@ -28,9 +28,9 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
  */
 public class TestHttpClientSteps {
 
-    HttpGlueCode httpGlueCode = new HttpGlueCode();
-    RBelValidatorGlue rbelValidatorGlueCode = new RBelValidatorGlue();
-    TigerGlue tigerGlue = new TigerGlue();
+    private final HttpGlueCode httpGlueCode = new HttpGlueCode();
+    private final RBelValidatorGlue rbelValidatorGlueCode = new RBelValidatorGlue();
+    private final TigerGlue tigerGlue = new TigerGlue();
 
     @BeforeAll
     public static void resetTiger() {
@@ -40,8 +40,9 @@ public class TestHttpClientSteps {
     @BeforeEach
     public synchronized void clearMessages() {
         if (!TigerDirector.isInitialized()) {
-            System.setProperty("tiger.testenv.cfgfile", "src/test/resources/testdata/httpclientenv.yaml");
+            System.setProperty("tiger.testenv.cfgfile", "tiger.yaml");
             TigerDirector.start();
+            TigerDirector.getLibConfig().getHttpClientConfig().setActivateRbelWriter(true);
         }
         rbelValidatorGlueCode.tgrClearRecordedMessages();
     }
@@ -96,9 +97,15 @@ public class TestHttpClientSteps {
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}","PUT");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}" ,"\\/target\\/?");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}" ,"4.0.0");
-        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.Content-Type')}" ,"text/plain.*");
     }
 
+    @Test
+    void putWithBodyAndSetContentType() {
+        httpGlueCode.setDefaultHeader("Content-Type", "text/plain");
+        httpGlueCode.sendRequestWithBody(Method.PUT, "http://winstone/target", "!{file('pom.xml')}");
+        rbelValidatorGlueCode.findLastRequestToPath(".*");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.Content-Type')}", "text/plain.*");
+    }
 
     @Test
     void deleteRequestWithoutBody() {
@@ -107,6 +114,7 @@ public class TestHttpClientSteps {
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}","DELETE");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}" ,"\\/not_a_file\\/?");
     }
+
     private static final DataTableTypeRegistry registry = new DataTableTypeRegistry(Locale.ENGLISH);
     private static final DataTable.TableConverter tableConverter = new DataTableTypeRegistryTableConverter(registry);
 
@@ -174,5 +182,13 @@ public class TestHttpClientSteps {
         rbelValidatorGlueCode.findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body')}","my_cool_param2=client_id");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.Content-Type')}","application/json");
+    }
+
+    @Test
+    void putRequestWithTemplatedBody() {
+        httpGlueCode.sendRequestWithBody(Method.PUT,"http://winstone/target","{\"tgrEncodeAs\":\"JWT\","
+            + "\"header\":{\"alg\": \"BP256R1\",\"typ\": \"JWT\"},\"body\":{\"foo\":\"bar\"}, \"signature\":{\"verifiedUsing\":\"idpSig\"}}");
+        rbelValidatorGlueCode. findLastRequestToPath(".*");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.signature.verifiedUsing')}" ,"puk_idpSig");
     }
 }

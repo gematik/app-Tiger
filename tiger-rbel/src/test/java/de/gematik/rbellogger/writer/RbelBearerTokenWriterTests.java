@@ -10,7 +10,7 @@ import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import org.junit.jupiter.api.Test;
 
-class RbelJwtWriterTests {
+class RbelBearerTokenWriterTests {
 
     private final RbelLogger logger = RbelLogger.build(new RbelConfiguration()
         .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
@@ -18,7 +18,7 @@ class RbelJwtWriterTests {
 
     @Test
     void testSimpleJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("{\n"
+        final RbelElement input = rbelConverter.convertElement("Bearer {\n"
             + "  \"tgrEncodeAs\":\"JWT\",\n"
             + "  \"header\":{\n"
             + "    \"alg\": \"BP256R1\",\n"
@@ -37,20 +37,7 @@ class RbelJwtWriterTests {
         var output = serializeElement(input);
 
         assertThat(output)
-            .hasFacet(RbelJwtFacet.class)
-            .extractChildWithPath("$.signature.verifiedUsing")
-            .hasValueEqualTo("puk_idpEnc");
-    }
-
-    @Test
-    void roundTripJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0.eyJzdWIiOiAiMTIzNDU2Nzg5MCIsIm5hbWUiOiAiSm9obiBEb2UiLCJpYXQiOiAxNTE2MjM5MDIyfQ.XqVOo3RGw8eBjpDJtw7NVTRW5Io5BTQ9MiW4QVxhy5943glx3TFvkMqCvEtiuQDxpJwsrXMmkmUemBaZr1qzFw", null);
-
-        var output = serializeElement(input);
-
-        assertThat(output)
-            .hasFacet(RbelJwtFacet.class)
-            .extractChildWithPath("$.signature.verifiedUsing")
+            .extractChildWithPath("$.BearerToken.signature.verifiedUsing")
             .hasValueEqualTo("puk_idpEnc");
     }
 
