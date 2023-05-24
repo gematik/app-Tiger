@@ -158,6 +158,12 @@
             <artifactId>wiremock-jre8</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-junit-jupiter</artifactId>
+            <version>${version.mockserver}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -23,6 +23,7 @@
 
 ## Features
 
+* TGR-920: Non-Blocking mode added for the TGR http steps
 * TGR-869: When multiple properties in either System-Properties or Environment-Variables map to the same value and differ in value the startup will 
 be aborted with an exception pointing to the conflicting values. This is done to follow the "fail fast" philosophy and give the user the chance
 to resolve the conflict instead of choosing an arbitrary value automatically.

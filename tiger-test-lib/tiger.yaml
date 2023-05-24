@@ -4,7 +4,7 @@ falseBooleanValue: false
 
 tigerProxy:
   skipTrafficEndpointsSubscription: false
-  # adminPort: 8080
+  proxyPort: ${free.port.3}
   trafficEndpoints:
     - http://localhost:${free.port.2}
   keyFolders:
