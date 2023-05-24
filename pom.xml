@@ -46,7 +46,7 @@
         <version.serenity.maven.plugin>3.6.23</version.serenity.maven.plugin>
         <version.slf4j>2.0.7</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
-        <version.spring-boot>3.0.6</version.spring-boot>
+        <version.spring-boot>3.1.0</version.spring-boot>
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.2</version.unirest>
 
