@@ -19,6 +19,7 @@
 ## Bugfixes
 
 * TGR-911: Since 2.0.0 the rbel log files included font awesome v5.4 whereas tiger proxy generated HTML including font awesome 6.4. This caused icons to be not displayed or being displayed as invalid icons.
+* TGR-922: Waiting for non-paired messages now works correctly
 * TGR-651: Sender (Client) addresses for messages are now again included in parsed messages of the Tiger Proxy.
 
 ## Features
