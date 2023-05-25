@@ -14,8 +14,6 @@
     <description>Compute aggregated test code coverage</description>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 

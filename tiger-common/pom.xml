@@ -12,8 +12,6 @@
     <artifactId>tiger-common</artifactId>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
 

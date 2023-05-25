@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -11,19 +12,25 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class RbelMtomConverterTest {
 
-    private RbelLogger rbelLogger;
+    private static RbelLogger rbelLogger;
 
-    @BeforeEach
+    @BeforeAll
     @SneakyThrows
-    public void init() {
+    public static void init() {
         try (final RbelFileReaderCapturer rbelFileReaderCapturer = getRbelFileReaderCapturer(
         )) {
 
@@ -62,5 +69,21 @@ class RbelMtomConverterTest {
             .map(RbelElement::getRawStringContent)
             .collect(Collectors.toList()))
             .containsExactlyInAnyOrder("http://www.w3.org/2009/xmlenc11#aes256-gcm", "http://www.w3.org/2009/xmlenc11#aes256-gcm");
+    }
+
+    @Test
+    @DisplayName("MTOM XML with data - should be parsed correctly")
+    void mtomXmlWithData_shouldBeParsedCorrectly() throws IOException {
+        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/sneakyMtom.curl");
+
+        final RbelElement convertedMessage = rbelLogger.getRbelConverter()
+            .convertElement(curlMessage.getBytes(), null);
+
+        RbelElementAssertion.assertThat(convertedMessage)
+            .extractChildWithPath("$..Envelope..MandantId.text")
+            .hasStringContentEqualTo("m_raf");
+
+        FileUtils.writeStringToFile(new File("target/mtom.html"), RbelHtmlRenderer.render(List.of(convertedMessage,
+            rbelLogger.getRbelConverter().convertElement(readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/jsonMessage.curl").getBytes(), null))));
     }
 }

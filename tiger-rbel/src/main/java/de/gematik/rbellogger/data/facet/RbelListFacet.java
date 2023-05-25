@@ -12,9 +12,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 @Data
 @Builder(toBuilder = true)
+@RequiredArgsConstructor
 public class RbelListFacet implements RbelFacet {
 
     private final List<RbelElement> childNodes;
@@ -25,5 +27,9 @@ public class RbelListFacet implements RbelFacet {
         AtomicInteger index = new AtomicInteger();
         childNodes.forEach(element -> result.put(String.valueOf(index.getAndIncrement()), element));
         return result;
+    }
+
+    public boolean isEmpty() {
+        return childNodes.isEmpty();
     }
 }

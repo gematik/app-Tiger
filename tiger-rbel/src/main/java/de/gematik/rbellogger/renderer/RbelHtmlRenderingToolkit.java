@@ -185,6 +185,7 @@ public class RbelHtmlRenderingToolkit {
             )
                 .with(
                     IntStream.range(0, (el.getRawContent().length + 15) / 16)
+                        .limit(30)
                         .mapToObj(line ->
                             div(
                                 pre().withStyle(HEX_STYLE)
@@ -303,7 +304,7 @@ public class RbelHtmlRenderingToolkit {
                                     .withClass("created fst-italic is-size-6 float-end me-6"),
                                 div().with(
                                     elements.stream()
-                                        .filter(el -> el.hasFacet(RbelTcpIpMessageFacet.class))
+//                                        .filter(el -> el.hasFacet(RbelTcpIpMessageFacet.class))
                                         .map(this::convertMessage)
                                         .collect(Collectors.toList())
                                 ),
