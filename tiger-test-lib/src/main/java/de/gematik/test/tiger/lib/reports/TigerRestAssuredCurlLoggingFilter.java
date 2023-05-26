@@ -21,8 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TigerRestAssuredCurlLoggingFilter implements Filter {
 
-    private final ByteArrayOutputStream outputStream;
-    private final RequestLoggingFilter requestLoggingFilter;
+    private ByteArrayOutputStream outputStream;
+    private RequestLoggingFilter requestLoggingFilter;
 
     public TigerRestAssuredCurlLoggingFilter() {
         outputStream = new ByteArrayOutputStream();
