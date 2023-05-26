@@ -32,7 +32,7 @@ pipeline {
                        }
                   }
                   catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                      build job: 'Tiger-Integrationtest-Apollo-Testsuite',
+                      build job: 'Tiger-Integrationtest-TIGER-Apollo-Testsuite',
                       parameters: [
                            string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                            string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -49,7 +49,7 @@ pipeline {
                       }
                  }
                  catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                     build job: 'Tiger-Integrationtest-Authenticator',
+                     build job: 'Tiger-Integrationtest-TIGER-Authenticator',
                      parameters: [
                          string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                          string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -67,7 +67,7 @@ pipeline {
                       }
                  }
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                build job: 'Tiger-Integrationtest-EAU',
+                build job: 'Tiger-Integrationtest-TIGER-EAU',
                 parameters: [
                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -85,7 +85,7 @@ pipeline {
                         }
                    }
                   catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                  build job: 'Tiger-Integrationtest-IDP',
+                  build job: 'Tiger-Integrationtest-TIGER-IDP',
                   parameters: [
                        string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                        string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -103,7 +103,7 @@ pipeline {
                         }
                    }
                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                   build job: 'Tiger-Integrationtest-Konnektor-e2e',
+                   build job: 'Tiger-Integrationtest-TIGER-Konnektor-e2e',
                    parameters: [
                        string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                        string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -121,7 +121,7 @@ pipeline {
                         }
                    }
                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                   build job: 'Tiger-Integrationtest-TI-M-Testsuite',
+                   build job: 'Tiger-Integrationtest-TIGER-TI-M-Testsuite',
                    parameters: [
                         string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                         string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -139,7 +139,7 @@ pipeline {
                          }
                     }
                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                   build job: 'Tiger-Integrationtest-TKME',
+                   build job: 'Tiger-Integrationtest-TIGER-TKME',
                    parameters: [
                         string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                         string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -157,7 +157,7 @@ pipeline {
                                   }
                              }
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                            build job: 'Tiger-Integrationtest-Polarion-Toolbox',
+                            build job: 'Tiger-Integrationtest-TIGER-Polarion-Toolbox',
                             parameters: [
                                  string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                                  string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -175,7 +175,7 @@ pipeline {
                                   }
                              }
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                            build job: 'Tiger-Integrationtest-Polarion-Toolbox',
+                            build job: 'Tiger-Integrationtest-TIGER-Cloud-Extension',
                             parameters: [
                                  string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                                  string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -193,7 +193,7 @@ pipeline {
                                   }
                              }
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                            build job: 'Tiger-Integrationtest-PSSIM',
+                            build job: 'Tiger-Integrationtest-TIGER-PSSIM',
                             parameters: [
                                  string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                                  string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
@@ -211,7 +211,7 @@ pipeline {
                       }
                  }
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                build job: 'Tiger-Integrationtest-FHIR',
+                build job: 'Tiger-Integrationtest-TIGER-FHIR',
                 parameters: [
                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
