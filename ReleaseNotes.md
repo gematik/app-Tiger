@@ -27,6 +27,8 @@
 ## Features
 
 * TGR-920: Non-Blocking mode added for the TGR http steps
+* Custom logos can now be defined for your RBel-Logs. Please use the configuration key "tiger.lib.rbelLogoFilePath" to specify a PNG 
+file to be used in your logs.
 * TGR-869: When multiple properties in either System-Properties or Environment-Variables map to the same value and differ in value the startup will 
 be aborted with an exception pointing to the conflicting values. This is done to follow the "fail fast" philosophy and give the user the chance
 to resolve the conflict instead of choosing an arbitrary value automatically.
