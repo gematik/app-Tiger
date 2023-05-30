@@ -5,7 +5,6 @@ def REPO_URL = createGitUrl('git/Testtools/tiger/polariontoolbox')
 def BRANCH = 'master'
 def POM_PATH = 'pom.xml'
 
-
 pipeline {
       options {
           disableConcurrentBuilds()
@@ -48,11 +47,14 @@ pipeline {
               }
           }
 
-          stage('Tests') {
-              steps {
-                  mavenVerify(POM_PATH)
-              }
-          }
+        stage('Tests') {
+            environment {
+                POLARION_CREDENTIALS = credentials('svc_aurora')
+            }
+            steps {
+                mavenVerify(POM_PATH, "-DPolarionPassword=$POLARION_CREDENTIALS_PSW")
+            }
+        }
 
           stage('Commit new Tiger version when needed') {
                         steps {
