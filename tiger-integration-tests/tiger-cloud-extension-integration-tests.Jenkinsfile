@@ -1,11 +1,11 @@
 @Library('gematik-jenkins-shared-library') _
 
-String GCLOUD_SERVICE_ACCOUNT = 'gcp-deployer-devtools-prod-jsonfile'
-String GCLOUD_PROJECT_NAME = 'gematik-all-infra-prod'
-String GCLOUD_CLUSTER_NAME = 'shared-k8s-prod'
+
+String GCLOUD_SERVICE_ACCOUNT = 'gcp-deployer-tiger-dev-jsonfile'
+String GCLOUD_PROJECT_NAME = 'gematik-all-k8s-db-dev'
+String GCLOUD_CLUSTER_NAME = 'shared-k8s-dev'
 String GCLOUD_CLUSTER_REGION = 'europe-west3-a'
 String GEMATIK_NEXUS_CREDENTIALS = 'Nexus'
-
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def REPO_URL = createGitUrl('git/Testtools/tiger/tiger-cloud-extension')
