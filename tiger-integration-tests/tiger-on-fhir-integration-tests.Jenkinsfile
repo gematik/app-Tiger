@@ -20,7 +20,13 @@ pipeline {
           choice(name: 'UPDATE', choices: ['NO', 'YES'], description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll')
       }
 
-      stages {
+    stages {
+        stage('Initialize') {
+            steps {
+                useJdk('OPENJDK17')
+            }
+        }
+
           stage('Checkout') {
               steps {
                   git branch: BRANCH,
