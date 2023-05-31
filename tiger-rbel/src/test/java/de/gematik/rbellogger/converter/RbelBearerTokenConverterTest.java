@@ -19,10 +19,10 @@ import java.nio.charset.StandardCharsets;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RbelBearerTokenConverterTest {
+class RbelBearerTokenConverterTest {
 
     @Test
-    public void shouldFindJwtInBearerHeaderAttributer() throws IOException {
+    void shouldFindJwtInBearerHeaderAttributer() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/bearerToken.curl");
 
@@ -35,7 +35,7 @@ public class RbelBearerTokenConverterTest {
     }
 
     @Test
-    public void shouldRenderBearerToken() throws IOException {
+    void shouldRenderBearerToken() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/bearerToken.curl");
 

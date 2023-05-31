@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
@@ -13,6 +14,7 @@ import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -361,10 +363,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         proxyRest.get("http://backend/binary").asBytes();
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(tigerProxy.getRbelMessagesList().size() - 1)
-            .findRbelPathMembers("$.body").get(0)
-            .getRawContent())
-            .containsExactly("Hallo".getBytes());
+        assertThat(tigerProxy.getRbelMessagesList().get(tigerProxy.getRbelMessagesList().size() - 1))
+            .extractChildWithPath("$.body")
+            .hasStringContentEqualTo("Hallo");
     }
 
     @Test
@@ -379,10 +380,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         proxyRest.get("http://backend/foobar").asString().getBody();
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(1)
-            .findRbelPathMembers("$.body.foo.content")
-            .get(0).getRawStringContent()
-        ).isEqualTo("bar");
+        assertThat(tigerProxy.getRbelMessagesList().get(1))
+            .extractChildWithPath("$.body.foo.content")
+            .hasStringContentEqualTo("bar");
     }
 
     @Test
@@ -421,10 +421,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         awaitMessagesInTiger(2);
 
         assertThat(callCounter.get()).isEqualTo(2);
-        assertThat(tigerProxy.getRbelMessagesList().get(1)
-            .findRbelPathMembers("$.body.foo.content")
-            .get(0).getRawStringContent()
-        ).isEqualTo("bar");
+        assertThat(tigerProxy.getRbelMessagesList().get(1))
+            .extractChildWithPath("$.body.foo.content")
+            .hasStringContentEqualTo("bar");
     }
 
     @Test
@@ -567,10 +566,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo(777);
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(0)
-            .findElement("$.header.Host")
-            .get().getRawStringContent())
-            .isEqualTo("localhost:" + fakeBackendServerPort);
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.header.Host")
+            .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
     }
 
     @Test
@@ -587,10 +585,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo(666);
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(0)
-            .findElement("$.header.Host")
-            .get().getRawStringContent())
-            .isEqualTo("localhost:" + fakeBackendServerPort);
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.header.Host")
+            .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
     }
 
     @SneakyThrows
@@ -617,10 +614,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .asString();
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(0)
-            .findElement("$.path.jws.value.signature.isValid")
-            .get().seekValue(Boolean.class).get())
-            .isTrue();
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.path.jws.value.signature.isValid")
+            .hasValueEqualTo(Boolean.TRUE);
     }
 
     @Test
@@ -637,10 +633,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo(777);
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(0)
-            .findElement("$.header.Host")
-            .get().getRawStringContent())
-            .isEqualTo("localhost:" + tigerProxy.getProxyPort());
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.header.Host")
+            .hasStringContentEqualTo("localhost:" + tigerProxy.getProxyPort());
     }
 
     @Test
@@ -857,8 +852,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .asString();
         awaitMessagesInTiger(2);
 
-        assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body.foobar"))
-            .isEmpty();
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .doesNotContainChildWithPath("$.body.foobar");
     }
 
     @Test

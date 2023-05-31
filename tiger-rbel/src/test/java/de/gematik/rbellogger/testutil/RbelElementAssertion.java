@@ -6,6 +6,7 @@ import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import java.util.ArrayList;
 import java.util.List;
 import org.assertj.core.api.AbstractAssert;
+import org.assertj.core.api.ObjectAssert;
 import org.assertj.core.api.StringAssert;
 
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
@@ -71,5 +72,13 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
                 expected, actualValue);
         }
         return this.myself;
+    }
+
+    public <F extends RbelFacet> ObjectAssert<F> extractFacet(Class<F> facetClass) {
+        if (!actual.hasFacet(facetClass)) {
+            failWithMessage("Expecting element to have facet of type %s, but only found facets %s",
+                facetClass.getSimpleName(), new ArrayList<>(actual.getFacets()));
+        }
+        return new ObjectAssert<>(actual.getFacetOrFail(facetClass));
     }
 }

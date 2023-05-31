@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -14,6 +15,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelJweFacet;
 import de.gematik.rbellogger.data.facet.RbelJwtFacet;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 
@@ -36,12 +38,15 @@ class JweConverterTest {
                 && request.getFacet(RbelHttpRequestFacet.class).get().getMethod().getRawStringContent().equals("POST"))
             .findFirst().get();
 
-        final RbelElement signedChallenge = postChallengeResponse.findRbelPathMembers("$..signed_challenge").get(0);
-        assertThat(signedChallenge.hasFacet(RbelJweFacet.class))
-            .isTrue();
-        assertThat(signedChallenge.getFirst("header").get().hasFacet(RbelJsonFacet.class))
-            .isTrue();
-        assertThat(signedChallenge.getFirst("body").get().hasFacet(RbelJwtFacet.class))
-            .isTrue();
+        assertThat(postChallengeResponse)
+            .extractChildWithPath("$..signed_challenge")
+            .hasFacet(RbelJweFacet.class)
+            .satisfies(
+                el -> assertThat(el)
+                    .extractChildWithPath("$.header")
+                    .hasFacet(RbelJsonFacet.class),
+                el -> assertThat(el)
+                    .extractChildWithPath("$.body")
+                    .hasFacet(RbelJwtFacet.class));
     }
 }

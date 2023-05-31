@@ -9,7 +9,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelRenderingException;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import j2html.TagCreator;
 import j2html.tags.*;
@@ -89,11 +88,11 @@ public class RbelHtmlRenderingToolkit {
         }
     }
 
-    public static List<DomContent> addNotes(final RbelElement el, final String... extraClasses) {
+    public static List<DivTag> addNotes(final RbelElement el, final String... extraClasses) {
         final String className = StringUtils.join(extraClasses, " ");
         return el.getNotes().stream()
             .map(note -> createNote(className, note))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     public static DivTag createNote(String className, RbelNoteFacet note) {

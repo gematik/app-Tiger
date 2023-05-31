@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -16,6 +17,7 @@ import de.gematik.rbellogger.data.facet.RbelAsn1TaggedValueFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.stream.Collectors;
@@ -79,56 +81,44 @@ public class RbelAsn1ConverterTest {
         parseRezepsCapture();
         // check OID
         final RbelElement rbelMessage = rbelLogger.getMessageList().get(58);
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.2.0")
-            .get(0).getFacet(RbelValueFacet.class)
-            .get().getValue())
-            .isEqualTo("1.2.840.10045.4.3.2");
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.2.0")
+            .hasValueEqualTo("1.2.840.10045.4.3.2");
 
         // check X509-Version (Tagged-sequence)
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.0.content")
-            .get(0).getFacet(RbelValueFacet.class)
-            .get().getValue())
-            .isEqualTo(BigInteger.valueOf(2));
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.0.content")
+            .hasValueEqualTo(BigInteger.valueOf(2));
 
         // check OCSP URL
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.7.content.3.1.content.0.1.content.content")
-            .get(0).hasFacet(RbelUriFacet.class))
-            .isTrue();
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.content.content")
+            .hasFacet(RbelUriFacet.class);
 
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.7.content.3.1.content.0")
-            .get(0).getFacet(RbelAsn1Facet.class))
-            .isPresent();
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.7.content.3.1.content.0")
+            .hasFacet(RbelAsn1Facet.class);
 
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.7.content.3.1.content.0")
-            .get(0).getFacet(RbelAsn1Facet.class))
-            .isPresent();
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.7.content.3.1.content.0")
+            .hasFacet(RbelAsn1Facet.class);
 
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.7.content.3.1.content.0.1")
-            .get(0).getFacet(RbelAsn1TaggedValueFacet.class))
-            .isPresent();
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.7.content.3.1.content.0.1")
+            .hasFacet(RbelAsn1TaggedValueFacet.class);
 
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.7.content.3.1.content.0.1.tag")
-            .get(0)
-            .getFacet(RbelValueFacet.class).get().getValue())
-            .isEqualTo(6);
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.tag")
+            .hasValueEqualTo(6);
 
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.0.7.content.3.1.content.0.1.content.content")
-            .get(0).getRawStringContent())
-            .isEqualTo("http://ehca.gematik.de/ocsp/");
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.content.content")
+            .hasStringContentEqualTo("http://ehca.gematik.de/ocsp/");
 
         // Parse y-coordinate of signature (Nested in BitString)
-        assertThat(rbelMessage
-            .findRbelPathMembers("$.body.2.content.1").get(0)
-            .getFacet(RbelValueFacet.class).get().getValue())
-            .isEqualTo(new BigInteger("9528585714247878020400211740123936754253798904841060501006300662224159406199"));
+        assertThat(rbelMessage)
+            .extractChildWithPath("$.body.2.content.1")
+            .hasValueEqualTo(new BigInteger("9528585714247878020400211740123936754253798904841060501006300662224159406199"));
     }
 
 }

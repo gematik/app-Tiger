@@ -59,10 +59,9 @@ class RbelMtomConverterTest {
     @Test
     @DisplayName("MTOM XML - should be parsed correctly")
     void mtomXml_shouldBeParsedCorrectly() {
-        assertThat(rbelLogger.getMessageList().get(34)
-            .findRbelPathMembers("$..Envelope.soap").get(0)
-            .getRawStringContent())
-            .isEqualTo("http://www.w3.org/2003/05/soap-envelope");
+        assertThat(rbelLogger.getMessageList().get(34))
+            .extractChildWithPath("$..Envelope.soap")
+            .hasStringContentEqualTo("http://www.w3.org/2003/05/soap-envelope");
 
         assertThat(rbelLogger.getMessageList().get(34)
             .findRbelPathMembers("$..EncryptionMethod.Algorithm")
@@ -79,8 +78,6 @@ class RbelMtomConverterTest {
 
         final RbelElement convertedMessage = rbelLogger.getRbelConverter()
             .convertElement(curlMessage.getBytes(), null);
-
-        System.out.println(convertedMessage.printTreeStructureWithoutColors());
 
         assertThat(convertedMessage)
             .extractChildWithPath("$..Envelope..MandantId.text")

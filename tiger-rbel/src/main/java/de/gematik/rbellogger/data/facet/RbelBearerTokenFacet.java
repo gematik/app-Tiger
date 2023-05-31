@@ -33,16 +33,15 @@ public class RbelBearerTokenFacet implements RbelFacet {
 
             @Override
             public ContainerTag performRendering(final RbelElement element, final Optional<String> key,
-                                                 final RbelHtmlRenderingToolkit renderingToolkit) {
+                final RbelHtmlRenderingToolkit renderingToolkit) {
                 return div(t1ms("Bearer Token")
                     .with(showContentButtonAndDialog(element, renderingToolkit)))
                     .with(addNotes(element, "mb-5"))
                     .with(ancestorTitle().with(
                         vertParentTitle().with(
-                            childBoxNotifTitle(CLS_BODY))
-                                .with(addNotes(element.getFacetOrFail(RbelBearerTokenFacet.class).getBearerToken()))
+                            childBoxNotifTitle(CLS_BODY)
                                 .with(renderingToolkit.convert(element.getFacetOrFail(RbelBearerTokenFacet.class).getBearerToken(), Optional.empty()))
-                        ));
+                        )));
             }
         });
     }

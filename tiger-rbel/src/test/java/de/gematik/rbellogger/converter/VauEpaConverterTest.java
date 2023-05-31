@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static j2html.TagCreator.div;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
@@ -20,6 +21,7 @@ import de.gematik.rbellogger.key.RbelVauKey;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
 import lombok.SneakyThrows;
@@ -94,11 +96,10 @@ public class VauEpaConverterTest {
 
             rbelFileReaderCapturer.initialize();
 
-            assertThat(epa2Logger.getMessageList().get(24)
-                .findRbelPathMembers(
+            assertThat(epa2Logger.getMessageList().get(24))
+                .extractChildWithPath(
                     "$.body.Data.content.decoded.AuthorizationAssertion.content.decoded.Assertion.Issuer.text")
-                .get(0).getRawStringContent())
-                .isEqualTo("https://aktor-gateway.gematik.de/authz");
+                .hasStringContentEqualTo("https://aktor-gateway.gematik.de/authz");
         }
     }
 
@@ -123,10 +124,9 @@ public class VauEpaConverterTest {
             capturer.initialize();
         }
 
-        assertThat(epa2Logger.getMessageList().get(9)
-            .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()
-            .getRawStringContent())
-            .isEqualTo("urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b");
+        assertThat(epa2Logger.getMessageList().get(9))
+            .extractChildWithPath("$.body.message.reconstructedMessage.Envelope.Header.Action.text")
+            .hasStringContentEqualTo("urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b");
     }
 
     @Test
@@ -144,10 +144,9 @@ public class VauEpaConverterTest {
             capturer.initialize();
         }
 
-        assertThat(epa2Logger.getMessageList().get(5)
-            .findElement("$.body.message.reconstructedMessage.Envelope.Header.Action.text").get()
-            .getRawStringContent())
-            .isEqualTo("urn:ihe:iti:2007:RetrieveDocumentSetResponse");
+        assertThat(epa2Logger.getMessageList().get(5))
+            .extractChildWithPath("$.body.message.reconstructedMessage.Envelope.Header.Action.text")
+            .hasStringContentEqualTo("urn:ihe:iti:2007:RetrieveDocumentSetResponse");
     }
 
     @Test
@@ -155,34 +154,31 @@ public class VauEpaConverterTest {
         assertThat(rbelLogger.getMessageHistory())
             .hasSize(8);
 
-        assertThat(rbelLogger.getMessageHistory().getFirst().findRbelPathMembers("$.body.Data.content.decoded.DataType.content")
-            .get(0).getRawStringContent())
-            .isEqualTo("VAUClientHelloData");
+        assertThat(rbelLogger.getMessageHistory().getFirst())
+            .extractChildWithPath("$.body.Data.content.decoded.DataType.content")
+            .hasStringContentEqualTo("VAUClientHelloData");
     }
 
     @Test
     void vauClientSigFin_shouldDecipherMessageWithCorrectKeyId() {
-        final RbelElement vauMessage = rbelLogger.getMessageList().get(2)
-            .findRbelPathMembers("$.body.FinishedData.content").get(0);
-        assertThat(vauMessage.getFirst("keyId").get().getRawStringContent())
-            .isEqualTo("f787a8db0b2e0d7c418ea20aba6125349871dfe36ab0f60a3d55bf4d1b556023");
+        assertThat(rbelLogger.getMessageList().get(2))
+            .extractChildWithPath("$.body.FinishedData.content.keyId")
+            .hasStringContentEqualTo("f787a8db0b2e0d7c418ea20aba6125349871dfe36ab0f60a3d55bf4d1b556023");
     }
 
     @Test
     void clientPayload_shouldParseEncapsulatedXml() {
-        assertThat(rbelLogger.getMessageList().get(4)
-            .findRbelPathMembers("$.body.message.Envelope.Body.sayHello.arg0.text")
-            .get(0).getRawStringContent())
-            .isEqualTo("hello from integration client");
+        assertThat(rbelLogger.getMessageList().get(4))
+            .extractChildWithPath("$.body.message.Envelope.Body.sayHello.arg0.text")
+            .hasStringContentEqualTo("hello from integration client");
     }
 
     @Test
     void parentKeysForVauKeysShouldBeCorrect() {
-        assertThat(rbelLogger.getMessageList().get(7)
-            .findRbelPathMembers("$.body").get(0)
-            .getFacetOrFail(RbelVauEpaFacet.class)
-            .getKeyUsed())
-            .get()
+        assertThat(rbelLogger.getMessageList().get(7))
+            .extractChildWithPath("$.body")
+            .extractFacet(RbelVauEpaFacet.class)
+            .extracting(facet -> facet.getKeyUsed().get())
             .isInstanceOf(RbelVauKey.class)
             .extracting(key -> ((RbelVauKey) key).getParentKey())
             .extracting(RbelKey::getKeyName)
