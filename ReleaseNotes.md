@@ -21,7 +21,25 @@
 
 * TGR-911: Since 2.0.0 the rbel log files included font awesome v5.4 whereas tiger proxy generated HTML including font awesome 6.4. This caused icons to be not displayed or being displayed as invalid icons.
 * TGR-922: Waiting for non-paired messages now works correctly
-* TGR-841: Non-XML parts in MTOM-Messages are now converted correctly
+* TGR-841: Non-XML parts in MTOM-Messages are now converted correctly. They are stored in conjunction with their respective XPath-Locations. A sample tree is shown here:
+```
+   └──body (------=_Part_2_1927395369.1677073618377\r\nContent...) (RbelMtomFacet)
+   |  ├──contentType (application/xop+xml; charset=utf-8; type="text/xml...) (RbelValueFacet)
+   |  ├──reconstructedMessage (<?xml version="1.0" encoding="UTF-8"?>\n<SOAP-ENV:...) (RbelXmlFacet)
+   |  |  ├──Envelope (<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas....) (RbelXmlFacet)
+   |  |  |  ├──SOAP-ENV (http://schemas.xmlsoap.org/soap/envelope/) (RbelUriFacet)
+   |  |  |  |  └──basicPath (http://schemas.xmlsoap.org/soap/envelope/) (RbelValueFacet)
+   |  |  |  ├──Header (<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xm...) (RbelXmlFacet)
+   |  |  |  |  └──text ()
+   |  |  |  ├──Body (<SOAP-ENV:Body xmlns:SOAP-ENV="http://schemas.xmls...) (RbelXmlFacet)
+   |  |  |  |  ├──SignDocument (<ns4:SignDocument xmlns:ns4="http://ws.gematik.de/...) (RbelXmlFacet)
+   (...)
+   |  └──dataParts (<null>)
+   |     └──0 (<null>) (RbelMtomDataPartFacet)
+   |        ├──xpath (/SOAP-ENV:Envelope/SOAP-ENV:Body/ns4:SignDocument/...) (RbelValueFacet)
+   |        └──content (%PDF-1.6\r\n%????\r\n1361 0 obj\r\n<</Linearized 1...) (RbelBinaryFacet) 
+
+```
 * TGR-651: Sender (Client) addresses for messages are now again included in parsed messages of the Tiger Proxy.
 
 ## Features

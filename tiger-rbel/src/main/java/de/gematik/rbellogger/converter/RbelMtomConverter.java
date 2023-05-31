@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -12,11 +13,11 @@ import de.gematik.rbellogger.util.RbelException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -40,9 +41,11 @@ public class RbelMtomConverter implements RbelConverterPlugin {
 
     @RequiredArgsConstructor
     private class RbelMtomConverterExecutor {
+
         private final RbelElement parentNode;
         private final RbelConverter converter;
         private List<MtomPart> mtomParts;
+        private Map<String, String> dataParts = new HashMap<>();
         private MtomPart rootPart;
 
         public void execute() {
@@ -95,46 +98,53 @@ public class RbelMtomConverter implements RbelConverterPlugin {
                     if (includeNode instanceof Element) {
                         final Optional<String> partId = extractContentIdFromInclude(includeNode)
                             .map(id -> "<" + id + ">");
-                        if (partId.isEmpty()) {
-                            continue;
+                        if (partId.isPresent()) {
+                            final Optional<Node> newNode = partId
+                                .map(mtomMap::get)
+                                .flatMap(this::parseAsXml);
+                            String part = mtomMap.remove(partId.get());
+                            if (newNode.isPresent()) {
+                                List<Node> elepar = includeNode.getParent().content();
+                                elepar.set(elepar.indexOf(includeNode), newNode.get());
+                            } else {
+                                // data part. store separately
+                                dataParts.put(includeNode.getPath(), part);
+                            }
                         }
-                        final Optional<Node> newNode = partId
-                            .map(mtomMap::get)
-                            .flatMap(this::parseAsXml);
-                        if (newNode.isEmpty()) {
-                            continue;
-                        }
-                        mtomMap.remove(partId.get());
-                        List<Node> elepar = includeNode.getParent().content();
-                        elepar.set(elepar.indexOf(includeNode), newNode.get());
                     }
                 }
-                return Optional.of(buildMtomFacet(document.asXML(), mtomMap));
+                return Optional.of(buildMtomFacet(document.asXML()));
             } catch (DocumentException | RbelException e) {
                 return Optional.empty();
             }
         }
 
-        private RbelMtomFacet buildMtomFacet(String reconstructedXml, Map<String, String> remainingMtomParts) {
+        private RbelMtomFacet buildMtomFacet(String reconstructedXml) {
             return new RbelMtomFacet(
                 RbelElement.wrap(parentNode, rootPart.getMessageHeader().get("Content-Type")),
                 converter.convertElement(reconstructedXml, parentNode),
-                createMtomDataPartsElement(remainingMtomParts));
+                createMtomDataPartsElement());
         }
 
-        private @Nullable RbelElement createMtomDataPartsElement(Map<String, String> remainingMtomParts) {
-            if (remainingMtomParts.isEmpty()) {
+        private @Nullable RbelElement createMtomDataPartsElement() {
+            if (dataParts.isEmpty()) {
                 return null;
             }
-            RbelElement dataPartsElement = new RbelElement(new byte[0], parentNode);
-            final RbelListFacet dataListFacet = new RbelListFacet(remainingMtomParts.values().stream()
-                .map(data -> converter.convertElement(data, dataPartsElement))
+            RbelElement dataPartsElement = new RbelElement(null, parentNode);
+            final RbelListFacet dataListFacet = new RbelListFacet(dataParts.entrySet().stream()
+                .map(dataEntry -> buildDataEntry(dataEntry.getValue(), dataEntry.getKey(), dataPartsElement))
                 .toList());
-            dataListFacet.getChildNodes()
-                .forEach(childNode -> childNode.addFacet(new RbelBinaryFacet()));
 
             dataPartsElement.addFacet(dataListFacet);
             return dataPartsElement;
+        }
+
+        private RbelElement buildDataEntry(String content, String xpath, RbelElement parentNode) {
+            final RbelElement result = new RbelElement(null, parentNode);
+            final RbelElement contentElement = converter.convertElement(content, result);
+            contentElement.addFacet(new RbelBinaryFacet());
+            result.addFacet(new RbelMtomDataPartFacet(contentElement, RbelElement.wrap(result, xpath)));
+            return result;
         }
 
         private Optional<Node> parseAsXml(String text) {

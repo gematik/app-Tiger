@@ -7,6 +7,7 @@ package de.gematik.rbellogger.data.facet;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static j2html.TagCreator.div;
+import static j2html.TagCreator.p;
 import static j2html.TagCreator.span;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -72,10 +73,11 @@ public class RbelMtomFacet implements RbelFacet {
                 return mtomFacet.getDataParts().getFacetOrFail(RbelListFacet.class)
                     .getChildNodes().stream()
                     .map(dataNode -> childBoxNotifTitle(CLS_BODY)
-                        .with(t2("Data Part"))
-                        .with(showContentButtonAndDialog(dataNode, renderingToolkit))
-                        .with(addNotes(dataNode))
-                        .with(renderingToolkit.convert(dataNode)))
+                        .with(t2("Data Part "))
+                        .with(p(dataNode.getFacetOrFail(RbelMtomDataPartFacet.class).getXpath().printValue().orElse("<>")))
+                        .with(showContentButtonAndDialog(dataNode.getFacetOrFail(RbelMtomDataPartFacet.class).getContent(), renderingToolkit))
+                        .with(addNotes(dataNode.getFacetOrFail(RbelMtomDataPartFacet.class).getContent()))
+                        .with(renderingToolkit.convert(dataNode.getFacetOrFail(RbelMtomDataPartFacet.class).getContent())))
                     .collect(Collectors.toList());
             }
         });

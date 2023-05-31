@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -74,16 +75,25 @@ class RbelMtomConverterTest {
     @Test
     @DisplayName("MTOM XML with data - should be parsed correctly")
     void mtomXmlWithData_shouldBeParsedCorrectly() throws IOException {
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/sneakyMtom.curl");
+        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/dataMtom.curl");
 
         final RbelElement convertedMessage = rbelLogger.getRbelConverter()
             .convertElement(curlMessage.getBytes(), null);
 
-        RbelElementAssertion.assertThat(convertedMessage)
+        System.out.println(convertedMessage.printTreeStructureWithoutColors());
+
+        assertThat(convertedMessage)
             .extractChildWithPath("$..Envelope..MandantId.text")
             .hasStringContentEqualTo("m_raf");
+        assertThat(convertedMessage)
+            .extractChildWithPath("$.body.dataParts.0.content")
+            .asString().startsWith("%PDF-1.6");
+        assertThat(convertedMessage)
+            .extractChildWithPath("$.body.dataParts.0.xpath")
+            .hasValueEqualTo("/SOAP-ENV:Envelope/SOAP-ENV:Body/ns4:SignDocument/ns4:SignRequest/ns4:Document/ns6:Base64Data/xop:Include");
 
         FileUtils.writeStringToFile(new File("target/mtom.html"), RbelHtmlRenderer.render(List.of(convertedMessage,
-            rbelLogger.getRbelConverter().convertElement(readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/jsonMessage.curl").getBytes(), null))));
+            rbelLogger.getRbelConverter()
+                .convertElement(readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/jsonMessage.curl").getBytes(), null))));
     }
 }
