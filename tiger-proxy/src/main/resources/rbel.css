@@ -571,8 +571,9 @@ article.message {
 }
 
 .tab {
-    text-decoration: underline;
+    text-decoration: none;
     font-size: 1.5rem;
+    margin-right: 1rem;
 }
 .tabs {
     align-items: stretch;
@@ -582,6 +583,9 @@ article.message {
     overflow: hidden;
     overflow-x: auto;
     white-space: nowrap;
+}
+.tabs > .icon {
+    margin-right: 0.5rem;
 }
 .field {
     display: flex;
