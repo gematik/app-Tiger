@@ -364,6 +364,10 @@ and
 
 will both return the same elements (maybe amongst other elements).
 
+To use keys containing spaces, escape them via `['foo bar']`, like so:
+
+`$.body.['foo bar'].key`
+
 [#_jexl_expressions]
 ==== JEXL expressions
 RBeL-Path can be integrated with JEXL-expression, giving a much more powerful and flexible tool to extract certain element. This can be done using the syntax from the following example:

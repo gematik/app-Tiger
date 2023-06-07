@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 @RequiredArgsConstructor
@@ -40,7 +41,10 @@ public class RbelPathExecutor {
         if (!rbelPath.startsWith("$")) {
             throw new RbelPathException("RbelPath expressions always start with $. (got '" + rbelPath + "')");
         }
-        final List<String> keys = List.of(rbelPath.substring(2).split("\\.(?![^\\(]*\\))"));
+        final List<String> keys = List.of(rbelPath.substring(2).trim().split("\\.(?![^\\(]*\\))"));
+        if (keys.stream().anyMatch(s -> s.startsWith(" ") || s.endsWith(" "))) {
+            throw new RbelPathException("Found key with unescaped spaces in rbel-path '" + rbelPath + "'! (If intended, please escape using \"[' b b ']\")");
+        }
         List<RbelElement> candidates = List.of(rbelElement);
         if (ACTIVATE_RBEL_PATH_DEBUGGING) {
             log.info("Executing RBelPath {} into root-element (limited view to {} levels)\n{}",

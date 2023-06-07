@@ -11,8 +11,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
+import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
@@ -31,6 +33,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class RbelPathTest {
 
+    private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
     private RbelElement jwtMessage;
     private RbelElement xmlMessage;
 
@@ -44,7 +47,7 @@ class RbelPathTest {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/" + fileName);
 
-        return RbelLogger.build().getRbelConverter()
+        return RBEL_CONVERTER
             .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
     }
 
@@ -229,5 +232,26 @@ class RbelPathTest {
         assertThat(secondResponse)
             .extractChildWithPath("$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]")
             .hasStringContentEqualTo("{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
+    }
+
+    @Test
+    void trailingSpace_shouldStillWork() {
+        assertThat(jwtMessage)
+            .extractChildWithPath("$.body.body ")
+            .isSameAs(jwtMessage.findElement("$.body.body").get());
+    }
+
+    @Test
+    void unescapedSpaceInKeys_shouldGiveError() {
+        assertThatThrownBy(() -> jwtMessage.findRbelPathMembers("$.body .body"))
+            .isInstanceOf(RbelPathException.class)
+            .hasMessageContaining("$.body .body");
+    }
+
+    @Test
+    void esacpedSpaceInKeys_shouldWorkCorrectly() {
+        assertThat(RBEL_CONVERTER.convertElement("{\"foo bar\":\"value\"}", null))
+            .extractChildWithPath("$.['foo bar']")
+            .hasStringContentEqualTo("value");
     }
 }

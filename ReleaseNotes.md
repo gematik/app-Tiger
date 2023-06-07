@@ -47,6 +47,7 @@
 ## Features
 
 * TGR-920: Non-Blocking mode added for the TGR http steps
+* TGR-934: RbelPath-Expressions are now trimmed before parsing. If you have spaces in keys, escape them like so: `$.body.['foo bar'].key`
 * Custom logos can now be defined for your RBel-Logs. Please use the configuration key "tiger.lib.rbelLogoFilePath" to specify a PNG 
 file to be used in your logs.
 * TGR-931: Local jar-Files can now be found (via the `source`-attribute) relative to the working directory. Wildcards are also supported now. So a source-attribute of `../target/app-*.jar` can now be used.
