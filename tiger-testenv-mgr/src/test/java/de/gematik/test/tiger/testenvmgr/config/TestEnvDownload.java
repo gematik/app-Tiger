@@ -36,7 +36,6 @@ import org.mockserver.netty.MockServer;
 @ResetTigerConfiguration
 class TestEnvDownload {
     private static final Path DOWNLOAD_FOLDER_PATH = Path.of("target", "jarDownloadTest");
-    private static Integer MOCKSERVER_PORT;
 
     private static MockServer mockServer;
     private static MockServerClient mockServerClient;
@@ -58,7 +57,6 @@ class TestEnvDownload {
         }
     }
 
-
     @BeforeEach
     public void startServer() throws IOException {
         if (mockServer != null) {
@@ -68,7 +66,6 @@ class TestEnvDownload {
         // this is necessary to actually find the downloads later on in the mockserver event log
         ConfigurationProperties.maxLogEntries(10);
         mockServer = new MockServer();
-        MOCKSERVER_PORT = mockServer.getLocalPort();
         mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
 
         final File winstoneFile = new File("target/winstone.jar");

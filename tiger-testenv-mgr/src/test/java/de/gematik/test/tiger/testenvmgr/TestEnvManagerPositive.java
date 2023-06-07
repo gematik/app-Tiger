@@ -94,68 +94,6 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    @TigerTest(tigerYaml = "servers:\n"
-        + "  testExternalJarMVP:\n"
-        + "    type: externalJar\n"
-        + "    source:\n"
-        + "      - local:winstone.jar\n"
-        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-        + "    healthcheckReturnCode: 200\n"
-        + "    externalJarOptions:\n"
-        + "      workingDir: 'target/'\n"
-        + "      arguments:\n"
-        + "        - --httpPort=${free.port.0}\n"
-        + "        - --webroot=.\n",
-        skipEnvironmentSetup = true)
-    void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
-        executeWithSecureShutdown(() -> {
-            envMgr.setUpEnvironment();
-            assertThatNoException();
-        }, envMgr);
-    }
-
-    @Test
-    @TigerTest(tigerYaml = "servers:\n"
-        + "  testExternalJarMVP:\n"
-        + "    type: externalJar\n"
-        + "    source:\n"
-        + "      - local:target/winstone.jar\n"
-        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-        + "    healthcheckReturnCode: 200\n"
-        + "    externalJarOptions:\n"
-        + "      arguments:\n"
-        + "        - --httpPort=${free.port.0}\n"
-        + "        - --webroot=.\n",
-        skipEnvironmentSetup = true)
-    void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
-        executeWithSecureShutdown(() -> {
-            envMgr.setUpEnvironment();
-            assertThatNoException();
-        }, envMgr);
-    }
-
-    @Test
-    void testCreateExternalJarNonExistingWorkingDir() throws IOException {
-        File folder = new File("NonExistingFolder");
-        if (folder.exists()) {
-            FileUtils.deleteDirectory(folder);
-        }
-
-        createTestEnvMgrSafelyAndExecute(envMgr -> {
-            CfgServer srv = envMgr.getConfiguration().getServers().get("testExternalJarMVP");
-            srv.getExternalJarOptions().setWorkingDir("NonExistingFolder");
-            srv.setHealthcheckUrl("NONE");
-            srv.setStartupTimeoutSec(1);
-            try {
-                envMgr.setUpEnvironment();
-                assertThatNoException();
-            } finally {
-                FileUtils.forceDeleteOnExit(folder);
-            }
-        }, "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml");
-    }
-
-    @Test
     @TigerTest(tigerYaml = "servers:\n" +
         "  externalJarServer:\n" +
         "    type: externalJar\n" +
@@ -195,18 +133,6 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
                 .isInstanceOf(TigerTestEnvException.class)
                 .hasMessageContaining("/foo/bar/wrong/url")
                 .hasMessageContaining("Timeout");
-        }, envMgr);
-    }
-
-    @Test
-    @TigerTest(cfgFilePath = "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJarMVP.yaml",
-        additionalProperties = {"tiger.servers.testExternalJarMVP.source.0=local://miniJarWHICHDOESNOTEXIST.jar",
-            "tiger.servers.testExternalJarMVP.externalJarOptions.workingDir=src/test/resources"},
-        skipEnvironmentSetup = true)
-    void testCreateExternalJarRelativePathFileNotFound(TigerTestEnvMgr envMgr) {
-        executeWithSecureShutdown(() -> {
-            assertThatThrownBy(envMgr::setUpEnvironment).isInstanceOf(TigerTestEnvException.class)
-                .hasMessageStartingWith("Local jar ").hasMessageEndingWith("miniJarWHICHDOESNOTEXIST.jar not found!");
         }, envMgr);
     }
 

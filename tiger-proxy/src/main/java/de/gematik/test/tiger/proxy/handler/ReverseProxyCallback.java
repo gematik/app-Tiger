@@ -30,7 +30,6 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
         } else {
             port = targetUri.getPort();
         }
-
     }
 
     @Override

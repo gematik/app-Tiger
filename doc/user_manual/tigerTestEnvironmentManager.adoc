@@ -377,6 +377,13 @@ The options list are arguments added immediately after the java executable, whil
 The working directory is the place where the jar file is downloaded to and executed from.
 So if your jar archive expects some configuration files make sure to choose the folder appropriately.
 
+If using the `local:` prefix you can also use wildcards to find any matching jar-files. Tiger will use the following order to try to find a matching file:
+
+- In the working directory a file with the filename contained in the source
+- From the working directory a file with a relative path equal to the source
+- In the working directory a file with a filename matching the source (eg. `app-*.jar`)
+- From the working directory a file with a relative path equal and matching the filename of the source (eg. `../target/app-*.jar`)
+
 [source,shell script]
 ----
 java ${options} -jar externalJar.jar ${arguments}

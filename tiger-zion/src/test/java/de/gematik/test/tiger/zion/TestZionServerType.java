@@ -7,6 +7,7 @@ import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import org.junit.jupiter.api.Test;
 
 @ResetTigerConfiguration
@@ -27,6 +28,29 @@ class TestZionServerType {
     @Test
     void testZionServer() {
         final HttpResponse<JsonNode> response = Unirest.get(TigerGlobalConfiguration.resolvePlaceholders(
+            "http://localhost:${free.port.10}/blubBlab/helloWorld"
+        )).asJson();
+
+        assertThat(response.getStatus())
+            .isEqualTo(222);
+        assertThat(response.getBody().getObject().getString("Hello"))
+            .isEqualTo("World");
+    }
+    @TigerTest(tigerYaml = "servers:\n"
+        + "  zionExternal:\n"
+        + "    type: externalJar\n"
+        + "    healthcheckUrl:\n"
+        + "      http://127.0.0.1:${free.port.10}\n"
+        + "    externalJarOptions:\n"
+        + "      arguments:\n"
+        + "        - --server.port=${free.port.10}\n"
+        + "        - --spring.profiles.active=echoserver\n"
+        + "      workingDir: src/test/resources\n"
+        + "    source:\n"
+        + "      - local:../../../target/tiger-zion-*-executable.jar\n")
+    @Test
+    void testExternalZionServer(UnirestInstance unirest) {
+        final HttpResponse<JsonNode> response = unirest.get(TigerGlobalConfiguration.resolvePlaceholders(
             "http://localhost:${free.port.10}/blubBlab/helloWorld"
         )).asJson();
 

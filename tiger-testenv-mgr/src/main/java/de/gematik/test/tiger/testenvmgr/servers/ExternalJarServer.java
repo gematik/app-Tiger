@@ -97,7 +97,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                 .collect(Collectors.toList()));
         }
         options.add("-jar");
-        options.add(jarFile.getName());
+        options.add(jarFile.getAbsolutePath());
         if (externalJarOptions != null && externalJarOptions.getArguments() != null) {
             options.addAll(externalJarOptions.getArguments());
         }

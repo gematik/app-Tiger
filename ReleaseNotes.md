@@ -16,7 +16,8 @@
 * TGR-924: German BDD steps to set local and global variables were grammatically incorrect and have been fixed. So "TGR setze lokale/globale Variable {string} auf {string} setzen" has been changed to "TGR setze lokale/globale Variable {string} auf {string}"
 * TGR-909: all **Gherkin / Feature parser code has been removed** from Tiger as Polarion Toolbox (its only usage) has been refactored to use the Cucumber internal Gherkin parser. If you based your code on the self written parser, check POTO to see how to replace the parsing code in the ```polarion-toolbox-client/src/main/java/de/gematik/polarion/toolbox/worker/FeatureFileParser.java``` source file.
 * TGR-864: The order of parameters for the "TGR send {} request to {} with body {}" has been changed (body now comes as the final parameter). This is done to ensure consistency across languages and to always relegate the potentially longest parameter to the last place, improving readability.
-* Removed Tiger Admin-UI (Insufficient use)
+* Removed Tiger Admin-UI (Insufficient users)
+* TGR-931: For externalJar-Servers that use local-jars: The actual path now starts immediately after the colon. While `local://blub.jar` was a working solution as well before, now only `local:blub.jar` is accepted (the slashes were discarded before, now everything after the colon is taken the path).
 
 ## Bugfixes
 
@@ -48,6 +49,7 @@
 * TGR-920: Non-Blocking mode added for the TGR http steps
 * Custom logos can now be defined for your RBel-Logs. Please use the configuration key "tiger.lib.rbelLogoFilePath" to specify a PNG 
 file to be used in your logs.
+* TGR-931: Local jar-Files can now be found (via the `source`-attribute) relative to the working directory. Wildcards are also supported now. So a source-attribute of `../target/app-*.jar` can now be used.
 * TGR-869: When multiple properties in either System-Properties or Environment-Variables map to the same value and differ in value the startup will 
 be aborted with an exception pointing to the conflicting values. This is done to follow the "fail fast" philosophy and give the user the chance
 to resolve the conflict instead of choosing an arbitrary value automatically.
