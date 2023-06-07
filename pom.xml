@@ -56,7 +56,7 @@
         <!-- when changing the webjar version here make sure to adapt the web ui links too -->
         <!-- see src/main/resources/templates/adminui.html -->
         <version.webjars-locator-core>0.52</version.webjars-locator-core>
-        <version.bootstrap>5.1.3</version.bootstrap>
+        <version.bootstrap>5.3.0</version.bootstrap>
         <version.jquery>3.6.4</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>
         <version.font-awesome>6.4.0</version.font-awesome>
