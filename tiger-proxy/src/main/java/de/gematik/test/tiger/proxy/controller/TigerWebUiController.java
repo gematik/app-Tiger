@@ -73,7 +73,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String CSS_BTN_DARK = "btn btn-dark";
     private static final String CSS_BTN_OUTLINE_SUCCESS = "btn btn-outline-success";
     private static final String CSS_COLOR_INHERIT = "color:inherit;";
-    private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = "dropdown-toggle" + CSS_BTN_DARK;
+    private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = CSS_BTN_DARK + " dropdown-toggle";
     private static final String CSS_DROPDOWN_ITEM = "dropdown-item";
     private static final String CSS_NAVBAR_ITEM = "navbar-item";
     private static final String CSS_NAVBAR_ITEM_NOT4EMBEDDED = CSS_NAVBAR_ITEM + " not4embedded";

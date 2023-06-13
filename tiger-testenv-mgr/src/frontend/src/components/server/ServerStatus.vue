@@ -8,7 +8,7 @@
       <i class="fa-solid fa-spinner left"></i> Waiting for updates...
     </div>
     <div v-else class="server-status-box alert alert-light engraved">
-      <div v-for="server in sortedServerList(serverStatusData)">
+      <div v-for="(server, index) in sortedServerList(serverStatusData)" :key="index">
         <ServerCard :server="server"/>
       </div>
     </div>

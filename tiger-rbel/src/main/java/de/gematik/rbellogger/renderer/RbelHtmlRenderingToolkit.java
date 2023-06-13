@@ -4,6 +4,8 @@
 
 package de.gematik.rbellogger.renderer;
 
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static j2html.TagCreator.*;
 import com.google.gson.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -14,6 +16,15 @@ import j2html.TagCreator;
 import j2html.tags.*;
 import j2html.tags.specialized.DivTag;
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,19 +41,6 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static j2html.TagCreator.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -270,15 +268,15 @@ public class RbelHtmlRenderingToolkit {
                     script().withSrc(localRessources ? "../webjars/stomp-websocket/stomp.min.js"
                         : "https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"),
                     script().withSrc(localRessources ? "../webjars/jquery/jquery.min.js" : "https://code.jquery.com/jquery-1.12.4.js"),
-                    script().withSrc(localRessources ? "../webjars/bootstrap/js/bootstrap.min.js"
-                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"),
+                    script().withSrc(localRessources ? "../webjars/bootstrap/js/bootstrap.bundle.min.js"
+                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"),
                     script().withSrc(localRessources ? "../webjars/highlightjs/highlight.min.js"
                         : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"),
                     script().withSrc(localRessources ? "../webjars/highlightjs/languages/xml.min.js"
                         : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/languages/xml.min.js"),
 
                     link2CSS(localRessources ? "../webjars/bootstrap/css/bootstrap.min.css"
-                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"),
+                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"),
                     link2CSS(localRessources ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css"
                         : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/stackoverflow-dark.min.css"),
                     link2CSS(localRessources ? "../webjars/font-awesome/css/all.min.css"
