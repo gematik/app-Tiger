@@ -15,10 +15,7 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -62,6 +59,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .build());
 
         TigerProxyConfiguration tigerProxyConfiguration = getConfiguration().getTigerProxyCfg();
+        tigerProxyConfiguration.setStandalone(false);
         CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
         standaloneCfg.setTigerProxy(tigerProxyConfiguration);
         if (tigerProxyConfiguration.getProxyRoutes() == null) {

@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.testenvmgr.env;
 
 import com.google.common.util.concurrent.Monitor;
-import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.exceptions.TigerDownloadManagerException;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
@@ -15,14 +14,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +36,6 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.function.ThrowingFunction;
-import org.springframework.util.function.ThrowingSupplier;
 
 @Slf4j
 public class DownloadManager {
@@ -200,7 +196,7 @@ public class DownloadManager {
         if (StringUtils.isEmpty(value)) {
             return value;
         }
-        final String[] splits = value.split(FileSystems.getDefault().getSeparator());
+        final String[] splits = value.split("/");
         return splits[splits.length - 1];
     }
 
@@ -208,7 +204,7 @@ public class DownloadManager {
         if (StringUtils.isEmpty(value)) {
             return value;
         }
-        final int pathCutoffPosition = value.lastIndexOf(FileSystems.getDefault().getSeparator());
+        final int pathCutoffPosition = value.lastIndexOf("/");
         if (pathCutoffPosition < 0 ) {
             return value;
         } else {

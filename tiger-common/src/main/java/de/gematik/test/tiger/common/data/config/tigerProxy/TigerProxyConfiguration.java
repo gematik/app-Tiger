@@ -78,6 +78,8 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private int trafficDownloadPageSize = 50;
     private String name;
+
+    private boolean isStandalone = true;
     /**
      * Management-port of the Tiger Proxy.
      */

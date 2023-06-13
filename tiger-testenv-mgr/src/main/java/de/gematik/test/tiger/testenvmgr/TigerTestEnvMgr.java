@@ -201,6 +201,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
         proxyConfig.setName(LOCAL_TIGER_PROXY_TYPE);
         proxyConfig.setSkipTrafficEndpointsSubscription(true);
+        proxyConfig.setStandalone(false);
         if (proxyConfig.getProxyRoutes() == null) {
             proxyConfig.setProxyRoutes(List.of());
         }
@@ -227,7 +228,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             .run();
 
         proxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
-
+        
         LOCAL_PROXY_PROXY_PORT.putValue(proxy.getProxyPort());
         LOCAL_PROXY_ADMIN_PORT.putValue(proxy.getAdminPort());
 

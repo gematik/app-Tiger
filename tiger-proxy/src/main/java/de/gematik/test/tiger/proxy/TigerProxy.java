@@ -80,6 +80,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
     private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
     private TigerPkiIdentity generatedRootCa;
+
     /**
      * Tiger Proxy health endpoint performs http get requests towards the local server port of the Tiger Proxy.
      * To filter them out from Rbel logs we add a specific query param (healthEndPointUuid) with this uuid as
