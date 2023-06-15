@@ -119,9 +119,9 @@ export default class ScenarioUpdate implements IScenarioUpdate {
 
   public getLink(featureName: string): string {
     if (this.variantIndex === -1) {
-      return featureName.trim() + "_" + encodeURI(this.description.trim());
+      return encodeURI(featureName.trim() + "_" + this.description.trim());
     } else {
-      return featureName.trim() + "_" + encodeURI(this.description.trim() + "[" + (this.variantIndex+1)+"]");
+      return encodeURI(featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex+1)+"]");
     }
   }
 
