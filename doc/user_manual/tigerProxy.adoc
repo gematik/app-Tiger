@@ -368,6 +368,16 @@ To use keys containing spaces, escape them via `['foo bar']`, like so:
 
 `$.body.['foo bar'].key`
 
+Please note that the keys in the bracket are URL unescaped. So to use special characters please URL encode them (Space is a special case since + and ' ' are allowed, depending on the exact position).
+
+==== Alternate keys
+
+To find alternating values, concatenate them using the pipe symbols, like so:
+`$.body.['foo'|'bar'].key`
+
+This expression will explore both subtrees to try to find the following nodes
+`$.body.foo.key` and `$.body.bar.key`. Please note that only elements that are present are returned. So if only always one of the two elements is present, only a single element will be returned.
+
 [#_jexl_expressions]
 ==== JEXL expressions
 RBeL-Path can be integrated with JEXL-expression, giving a much more powerful and flexible tool to extract certain element. This can be done using the syntax from the following example:

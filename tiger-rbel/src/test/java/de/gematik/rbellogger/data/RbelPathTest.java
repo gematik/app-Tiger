@@ -254,4 +254,27 @@ class RbelPathTest {
             .extractChildWithPath("$.['foo bar']")
             .hasStringContentEqualTo("value");
     }
+
+    @Test
+    void escapedPipeInKeys_shouldFindTarget() {
+        assertThat(RBEL_CONVERTER.convertElement("{\"foo|bar\":\"value\"}", null))
+            .extractChildWithPath("$.['foo%7Cbar']")
+            .hasStringContentEqualTo("value");
+    }
+    @Test
+    void alternateKeys_shouldFindTarget() {
+        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['nbf'|'foobar']"))
+            .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
+        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['foobar'|'nbf']"))
+            .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
+    }
+
+    @Test
+    void alternateKeys_shouldFindMultipleTargets() {
+        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['exp'|'iat'|'nbf']"))
+            .containsExactlyInAnyOrder(
+                jwtMessage.findElement("$.body.body.nbf").get(),
+                jwtMessage.findElement("$.body.body.exp").get(),
+                jwtMessage.findElement("$.body.body.iat").get());
+    }
 }
