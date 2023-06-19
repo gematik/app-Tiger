@@ -12,8 +12,9 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogUpdate;
 public class CustomerAppender extends AppenderBase<ILoggingEvent> {
 
     private final AbstractTigerServer server;
+
     public CustomerAppender(AbstractTigerServer server) {
-       this.server = server;
+        this.server = server;
     }
 
 

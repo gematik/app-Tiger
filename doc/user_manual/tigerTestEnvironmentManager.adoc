@@ -834,18 +834,31 @@ tigerProxy:
 === Standalone mode vs. implicit startup with test suite
 
 If your test environment is very "expensive" to start or if you are developing your test suite scenarios thus starting many test runs in short time, you might want to keep your test environment running and not shut it down after each run.
-To do so, you need to create a customized test environment configuration file (call it tiger-standalone.yaml,
-set the env var TIGER_TESTENV_CFGFILE accordingly) containing all the server nodes needed and
-deactivate the local Tiger Proxy in this configuration file.
-Now download the https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/1.1.0/tiger-testenv-mgr-1.1.0-springboot.jar[tiger test environment jar-with-springboot file v1.1.0] from maven or go to https://repo1.maven.org/maven2/de/gematik/test/tiger-testenv-mgr/[maven index folder] to choose a more recent version.
+To do so, you can simply use the tiger maven plugin to start your test environment in standalone mode.
+
+First prepare a standalone test environment configuration file (call it for example tiger-standalone.yaml) containing all the server nodes needed and with a deactivated the local Tiger Proxy section.
+
+Now set the env var TIGER_TESTENV_CFGFILE or the Java system property tiger.testenv.cfgfile to point to this file.
+
+And add the plugin block to your pom.xml
+
+```xml
+           <plugin>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-maven-plugin</artifactId>
+                <version>${version.tiger}</version>
+            </plugin>
+```
 
 If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}. In the latter case it is not guaranteed that all processes are cleanly shut down. Please check your process list with operating system specific tools.
 
 [source,shell script]
 ----
 export TIGER_TESTENV_CFGFILE=....../tiger-standalone.yaml
-java -jar tiger-testenv-mgr-${VERSION}-springboot.jar
+mvn tiger:setup-testenv
 ----
+
+In case you also need cloud extension server types (docker, helmchart) make sure to add the Tiger cloud extensions as dependency to the **plugin block**.
 
 Now before starting your test suite scenarios you need to
 

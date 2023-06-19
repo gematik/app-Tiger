@@ -8,6 +8,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogUpdate;
+
 import java.util.Optional;
 
 public class CustomerProxyServerAppender extends AppenderBase<ILoggingEvent> {

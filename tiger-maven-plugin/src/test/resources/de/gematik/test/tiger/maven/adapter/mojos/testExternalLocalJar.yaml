@@ -1,0 +1,19 @@
+tigerProxy:
+  forwardToProxy:
+    hostname: $SYSTEM
+
+servers:
+  testExternalJarMVP:
+    hostname: testExternalJarMVP
+    type: externalJar
+    source:
+      - local:winstone.jar
+    startupTimeoutSec: 8
+    healthcheckUrl: http://127.0.0.1:${free.port.0}
+    healthcheckReturnCode: 200
+    externalJarOptions:
+      workingDir: target
+      arguments:
+        - --httpPort=${free.port.0}
+        - --webroot=.
+

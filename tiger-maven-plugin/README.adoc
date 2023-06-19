@@ -79,3 +79,16 @@ Two reports will be generated under target/site/serenity:
 
 * A simple HTML single page report for emailing (serenity-summary.html)
 * A fancy detailed overall report (index.html)
+
+== Start Tiger test environment in stand alone mode
+
+Adding the plugin as shown below will allow you to start a test enviroment in standalone mode by starting mvn as follows: ```mvn tiger:setup-testenv```.
+Please be aware that this is a blocking call, you may specify a timeout configuration property ```autoShutdownAfterSeconds``` with timeout in seconds. To prematurely stop the process either press Ctrl+C in your console or kill it with operating system specific kill commands / tools. In order to customize the tiger yaml to be used either set the environment variable ```TIGER_TESTENV_CFGFILE``` or set the system property ```tiger.testenv.cfgfile```.
+
+```xml
+           <plugin>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-maven-plugin</artifactId>
+                <version>${version.tiger}</version>
+            </plugin>
+```

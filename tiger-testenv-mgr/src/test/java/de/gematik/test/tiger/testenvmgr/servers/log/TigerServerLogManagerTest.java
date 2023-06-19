@@ -4,20 +4,21 @@
 
 package de.gematik.test.tiger.testenvmgr.servers.log;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrNormalized;
-import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemOutNormalized;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
-import java.io.File;
-import java.nio.file.Path;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
+
+import java.io.File;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrNormalized;
 
 @Slf4j
 class TigerServerLogManagerTest {
@@ -38,10 +39,7 @@ class TigerServerLogManagerTest {
         Logger dummyLog = server.getLog();
         String text = tapSystemErrNormalized(() -> System.err.println(logMessage));
         dummyLog.info(logMessage);
-        // TODO We have plenty of log output beneath here, this is cause Jenkins sometimes failes this test (no clue why)
-        // but rather rarely so if it fails these add. info might help to analyze why
-        // remove the outputs if jenkins does not fail anymore
-        log.info("Files inside target: " + String.join(", ", Path.of("target").toFile().list()));
+
         File folder = Path.of("target/serverLogs").toFile();
         log.info("Directory exists: " + (folder.exists() && folder.isDirectory()));
         assertThat(new File(logFile)).content().contains(logMessage);

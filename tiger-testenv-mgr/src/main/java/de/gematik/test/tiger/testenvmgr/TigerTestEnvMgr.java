@@ -4,9 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_PROXY_PORT;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,19 +31,6 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +45,22 @@ import org.springframework.boot.web.servlet.context.ServletWebServerApplicationC
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 
 @Slf4j
 @Getter
@@ -125,7 +125,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
     public void startLocalTigerProxyIfActivated() {
         if (configuration.isLocalProxyActive()) {
-            TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
+            try {
+                TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
+            } catch (NoClassDefFoundError ncde) {
+                log.warn("Unable to detect logback library! Log appender for local proxy status messages not activated");
+            }
+
             localTigerProxy = startLocalTigerProxy(configuration);
             proxyStatusMessage("Local Tiger Proxy URL http://localhost:" +
                 localTigerProxy.getProxyPort(), RbelAnsiColors.BLUE_BOLD);
@@ -133,7 +138,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
                 localTigerProxyApplicationContext.getWebServer().getPort() + "/webui", RbelAnsiColors.BLUE_BOLD);
             environmentVariables.put("PROXYHOST", "host.docker.internal");
             environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
-            TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
+            try {
+                TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
+            } catch (NoClassDefFoundError ncde) {
+                log.warn("Unable to detect logback library! Log appender feature for local Tiger Proxy not activated");
+            }
+
         } else {
             log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));
             localTigerProxy = null;
@@ -245,7 +255,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         publishStatusUpdateToListeners(TigerStatusUpdate.builder()
                         .serverUpdate(new LinkedHashMap<>(Map.of(getLocalTigerProxyOptional()
                             .flatMap(TigerProxy::getName)
-                            .orElse(getLocalTigerProxy().proxyName()), update)))
+                            .orElse(getLocalTigerProxyOrFail().proxyName()), update)))
                         .build(), listeners);
     }
 
@@ -395,7 +405,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
         final List<AbstractTigerServer> initialServersToBoot = servers.values().parallelStream()
             .filter(server -> server.getDependUponList().isEmpty())
-            .collect(Collectors.toList());
+            .toList();
 
         log.info("Booting following server(s): {}",
             initialServersToBoot.stream()
@@ -501,7 +511,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         return servers.values().stream()
             .map(AbstractTigerServer::getRoutes)
             .flatMap(List::stream)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     public Optional<AbstractTigerServer> findServer(String serverName) {

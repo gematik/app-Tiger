@@ -4,10 +4,6 @@
 
 package de.gematik.test.tiger.lib;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SHOW_TIGER_LOGO;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SKIP_ENVIRONMENT_SETUP;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
-import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
@@ -30,12 +26,6 @@ import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
@@ -47,6 +37,19 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
+import static org.awaitility.Awaitility.await;
 
 /**
  * The TigerDirector is the public interface of the high level features of the Tiger test framework.
@@ -97,9 +100,46 @@ public class TigerDirector {
         initialized = true;
     }
 
+    public static synchronized void startStandaloneTestEnvironment() {
+        log.info("Starting Tiger testenvironment in STANDALONE MODE!");
+        if (initialized) {
+            log.info("Tiger Director already started, skipping");
+            return;
+        }
+        try {
+            showTigerBanner();
+            readConfiguration();
+            if (getLibConfig().isActivateWorkflowUi()) {
+                log.warn("Starting WorkflowUI in standalone mode is not supported, deactivating the flag in config");
+                getLibConfig().activateWorkflowUi = false;
+            }
+            applyLoggingLevels();
+            applyTestLibConfig();
+        } catch (RuntimeException rte) {
+            throw new TigerConfigurationException("Unable to read/process configuration - " + rte.getMessage(), rte);
+        }
+        try {
+            // get free port
+            startTestEnvMgr();
+            if (tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
+                log.warn("Starting local Tiger Proxy in standalone mode is not supported, deactivating the flag in config");
+                tigerTestEnvMgr.getConfiguration().setLocalProxyActive(false);
+            }
+            setupTestEnvironent(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
+        } catch (RuntimeException e) {
+            quit(true);
+            throw e;
+        }
+        initialized = true;
+    }
+
     private static void applyLoggingLevels() {
-        TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
-            .forEach(TigerServerLogManager::setLoggingLevel);
+        try {
+            TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
+                    .forEach(TigerServerLogManager::setLoggingLevel);
+        } catch (NoClassDefFoundError ncde) {
+            log.warn("Unable to detect logback library! Setting log level feature not supported");
+        }
         // setLoggingLevel is sufficient for almost all cases. SpringBoot applications are a special case -
         // SpringBoot resets the levels during startup.
         // So When using SpringBootApplicationBuilder the respective properties have to be passed in manually!
@@ -259,9 +299,7 @@ public class TigerDirector {
         TigerProxyConfiguration tpCfg = tigerTestEnvMgr.getConfiguration().getTigerProxy();
         // set proxy to local tiger proxy for test suites
         if (tigerTestEnvMgr.isLocalTigerProxyActive()) {
-            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy -> {
-                SerenityRestUtils.setupSerenityRest(proxy);
-            });
+            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(SerenityRestUtils::setupSerenityRest);
             if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") != null) {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     RbelAnsiColors.RED_BOLD));
@@ -304,7 +342,7 @@ public class TigerDirector {
     }
 
     private final static Pattern showSteps = Pattern.compile(
-        ".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
+        ".*TGR (zeige|show) ([\\w|üß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
 
     private static void assertThatTigerIsInitialized() {
         if (!initialized) {
