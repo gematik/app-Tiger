@@ -81,7 +81,7 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <!-- hardcoded. excluded from serenity because of clash with system-stubs-core -->
-            <version>3.12.4</version>
+            <version>5.4.0</version>
         </dependency>
         <!-- needed for java junit / testng test code parsing -->
         <dependency>

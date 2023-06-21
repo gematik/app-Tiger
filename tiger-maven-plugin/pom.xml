@@ -18,7 +18,7 @@
 
     <properties>
         <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
-        <version.mockito>4.11.0</version.mockito>
+        <version.mockito>5.4.0</version.mockito>
     </properties>
 
     <dependencies>
