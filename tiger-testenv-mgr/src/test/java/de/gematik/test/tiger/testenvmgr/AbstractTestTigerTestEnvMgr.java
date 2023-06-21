@@ -4,14 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -20,10 +13,20 @@ import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockserver.model.HttpRequest.request;
 
 @Slf4j
 @Getter
@@ -61,6 +64,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     }
 
     @AfterEach
+    @BeforeEach
     public void resetConfiguration() {
         TigerGlobalConfiguration.reset();
     }
@@ -86,7 +90,6 @@ public abstract class AbstractTestTigerTestEnvMgr {
         } finally {
             if (envMgr != null) {
                 envMgr.shutDown();
-                TigerGlobalConfiguration.reset();
             }
         }
     }
