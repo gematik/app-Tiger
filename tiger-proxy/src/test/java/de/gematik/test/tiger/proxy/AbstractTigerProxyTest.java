@@ -60,6 +60,11 @@ public abstract class AbstractTigerProxyTest {
                 .withReasonPhrase("DEEPEREVIL")
                 .withHeader("foo", "bar1", "bar2")
                 .withBody("{\"foo\":\"bar\"}"));
+        fakeBackendServerClient.when(request().withPath("/")
+            .withMethod("GET"))
+            .respond(response()
+                .withStatusCode(888)
+                .withBody("{\"home\":\"page\"}"));
 
         binaryMessageContent = Arrays.concatenate(
             "This is a meaningless string which will be binary content. And some more test chars: "

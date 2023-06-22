@@ -57,6 +57,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.MediaType;
 import org.mockserver.model.SocketAddress;
@@ -552,44 +557,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(response.getStatus()).isEqualTo(666);
     }
 
-    @Test
-    void forwardProxyToNestedTarget_ShouldAdressCorrectly() {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServerPort + "/deep")
-                .build()))
-            .build());
-
-        assertThat(proxyRest.get("http://backend/foobar").asString()
-            .getStatus())
-            .isEqualTo(777);
-        awaitMessagesInTiger(2);
-
-        assertThat(tigerProxy.getRbelMessagesList().get(0))
-            .extractChildWithPath("$.header.Host")
-            .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
-    }
-
-    @Test
-    void forwardProxyToNestedTargetWithPlainPath_ShouldAdressCorrectly() {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServerPort + "/foobar")
-                .build()))
-            .build());
-
-        assertThat(proxyRest.get("http://backend").asString()
-            .getStatus())
-            .isEqualTo(666);
-        awaitMessagesInTiger(2);
-
-        assertThat(tigerProxy.getRbelMessagesList().get(0))
-            .extractChildWithPath("$.header.Host")
-            .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
-    }
-
     @SneakyThrows
     @Test
     //gemSpec_Krypt, A_21888
@@ -617,25 +584,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         assertThat(tigerProxy.getRbelMessagesList().get(0))
             .extractChildWithPath("$.path.jws.value.signature.isValid")
             .hasValueEqualTo(Boolean.TRUE);
-    }
-
-    @Test
-    void reverseProxyToNestedTarget_ShouldAdressCorrectly() {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("http://localhost:" + fakeBackendServerPort + "/deep")
-                .build()))
-            .build());
-
-        assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString()
-            .getStatus())
-            .isEqualTo(777);
-        awaitMessagesInTiger(2);
-
-        assertThat(tigerProxy.getRbelMessagesList().get(0))
-            .extractChildWithPath("$.header.Host")
-            .hasStringContentEqualTo("localhost:" + tigerProxy.getProxyPort());
     }
 
     @Test

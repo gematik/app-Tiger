@@ -18,6 +18,7 @@
 * TGR-864: The order of parameters for the "TGR send {} request to {} with body {}" has been changed (body now comes as the final parameter). This is done to ensure consistency across languages and to always relegate the potentially longest parameter to the last place, improving readability.
 * Removed Tiger Admin-UI (Insufficient users)
 * TGR-931: For externalJar-Servers that use local-jars: The actual path now starts immediately after the colon. While `local://blub.jar` was a working solution as well before, now only `local:blub.jar` is accepted (the slashes were discarded before, now everything after the colon is taken the path).
+* TGR-948: Changed the behavior for trailing slashes in tiger proxy routes: When either the target-path or the request-path end in a slash, a slash will be added to the resulting request. This implicitly fixes a bug that lead to doubled slashes in some resulting requests. Caveat: When the request is for a nested target the trailing slash will only be added if it was present in the actual request (as the route-target references another entity in this case)
 
 ## Bugfixes
 

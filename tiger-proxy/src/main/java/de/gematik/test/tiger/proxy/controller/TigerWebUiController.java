@@ -212,13 +212,15 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
                                     .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
-                                    .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU).with(
+                                    .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
+                                    .attr("type", "button")
+                                    .with(
                                         span().withClass("icon is-small").with(
                                             i().withClass("fa-solid fa-toggle-on")
                                         )
                                     ),
                                 div().withClass(DROPDOWN_MENU + " bg-dark")
-                                    .attr("role", "menu")
+                                    .attr("type", "menu")
                                     .with(
                                         div().withClass(CSS_DROPDOWN_ITEM).with(
                                             button().withId("collapsibleMessageHeaderBtn").withClass(CSS_BTN_DARK).with(
@@ -264,10 +266,11 @@ public class TigerWebUiController implements ApplicationContextAware {
                                     .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
+                                    .attr("type", "button")
                                     .with(
                                         span().withText("Page 1").withId("pageNumberDisplay")
                                     ),
-                                div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
+                                div().withClass(DROPDOWN_MENU).attr("type", "menu").with(
                                     div().withClass("dropdown-content").withId("pageSelector").with(
                                         a().withClass(CSS_DROPDOWN_ITEM)
                                             .attr(ATTR_ON_CLICK, "setPageNumber(0)").withText("1")
