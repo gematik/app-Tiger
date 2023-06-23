@@ -27,9 +27,11 @@ import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -39,6 +41,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.jsoup.Jsoup;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class RbelHtmlRendererTest {
@@ -46,6 +49,11 @@ class RbelHtmlRendererTest {
     private static final RbelConverter RBEL_CONVERTER = RbelLogger.build()
         .getRbelConverter();
     private static final RbelHtmlRenderer RENDERER = new RbelHtmlRenderer();
+
+    @BeforeEach
+    void resetConfig() {
+        TigerGlobalConfiguration.reset();
+    }
 
     @Test
     void convertToHtml() throws IOException {
@@ -61,7 +69,7 @@ class RbelHtmlRendererTest {
     }
 
     @Test
-    public void valueShading() throws IOException {
+    void valueShading() throws IOException {
         RENDERER.setRenderAsn1Objects(true);
         RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/jwtMessage.curl");
@@ -102,7 +110,7 @@ class RbelHtmlRendererTest {
     }
 
     @Test
-    public void advancedShading() throws IOException {
+    void advancedShading() throws IOException {
         RENDERER.setRenderAsn1Objects(true);
         RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
@@ -123,7 +131,7 @@ class RbelHtmlRendererTest {
     }
 
     @Test
-    public void onlyServerNameKnown_shouldStillRender() throws IOException {
+    void onlyServerNameKnown_shouldStillRender() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/jwtMessage.curl");
 
@@ -140,7 +148,7 @@ class RbelHtmlRendererTest {
     }
 
     @Test
-    public void shouldContainTimeStamps() throws IOException {
+    void shouldContainTimeStamps() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/jwtMessage.curl");
 
@@ -153,7 +161,7 @@ class RbelHtmlRendererTest {
     }
 
     @Test
-    public void shouldRenderBinaryMessagesDirectly() throws IOException {
+    void shouldRenderBinaryMessagesDirectly() throws IOException {
         final byte[] content = Base64.getDecoder().decode("awAAAUEAAAAADoAoAAAIaQYTABMAEwD/");
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .parseMessage(content,
@@ -171,7 +179,7 @@ class RbelHtmlRendererTest {
     }
 
     @Test
-    public void shouldRenderXmlMessagesDirectly() throws IOException {
+    void shouldRenderXmlMessagesDirectly() throws IOException {
         byte[] xmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/randomXml.xml"));
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .parseMessage(xmlBytes,
@@ -188,7 +196,7 @@ class RbelHtmlRendererTest {
     }
 
     @Test
-    public void shouldRenderHtmlMessagesWithoutError() throws IOException {
+    void shouldRenderHtmlMessagesWithoutError() throws IOException {
         byte[] htmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/sample.html"));
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .parseMessage(htmlBytes,
@@ -201,6 +209,33 @@ class RbelHtmlRendererTest {
 
         assertThat(convertedHtml)
             .contains("\n       &lt;li&gt;LoginCreateToken");
+    }
+
+    @Test
+    void logoFilePathSet_ShouldBeUsed() throws IOException {
+        TigerGlobalConfiguration.putValue("tiger.lib.rbelLogoFilePath", "pom.xml");
+        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
+            ("src/test/resources/sampleMessages/jwtMessage.curl");
+
+        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+
+        final String render = RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+        assertThat(render)
+            .contains("data:image/png;base64," +
+                // pom always starts with '<?xml'. Strip the rest to avoid trailing blank bytes.
+                Base64.getEncoder().encodeToString("<?xml".getBytes(StandardCharsets.UTF_8)).substring(0,6));
+    }
+
+    @Test
+    void logoFilePathNotSet_ShouldDisplayStandardLogo() throws IOException {
+        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
+            ("src/test/resources/sampleMessages/jwtMessage.curl");
+
+        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+
+        final String render = RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+        assertThat(render)
+            .contains("/png;base64,iVBORw0K");
     }
 
     private List<RbelElement> wrapHttpMessage(RbelElement convertedMessage, ZonedDateTime... transmissionTime) {

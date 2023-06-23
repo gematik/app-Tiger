@@ -7,7 +7,8 @@ public enum RbelContentType {
     JSON,
     JWT,
     JWE,
-    URL;
+    URL,
+    BEARER_TOKEN;
 
     public static RbelContentType seekValueFor(String rawValue) {
         String compareValue = rawValue.trim().toUpperCase();

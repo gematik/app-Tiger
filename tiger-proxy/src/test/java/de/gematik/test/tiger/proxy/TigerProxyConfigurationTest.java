@@ -41,7 +41,7 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 @ExtendWith(OutputCaptureExtension.class)
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
-public class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
+class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
 
     @SneakyThrows
     @BeforeEach

@@ -21,7 +21,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -43,14 +42,15 @@ public class MockServerToRbelConverter {
     private final RbelConverter rbelConverter;
 
     public RbelElement convertResponse(HttpResponse response, String serverProtocolAndHost,
-        SocketAddress clientAddress) {
+        String clientAddress) {
         if (log.isTraceEnabled()) {
             log.trace("Converting response {}, headers {}, body {}", response,
                 response.getHeaders(), response.getBodyAsString());
         }
 
         final RbelElement element = rbelConverter.parseMessage(responseToRbelMessage(response),
-            convertUri(serverProtocolAndHost), convertSocketAdress(clientAddress), Optional.of(ZonedDateTime.now()));
+            convertUri(serverProtocolAndHost), RbelHostname.fromString(clientAddress).orElse(null),
+            Optional.of(ZonedDateTime.now()));
 
         if (!element.hasFacet(RbelHttpResponseFacet.class)) {
             element.addFacet(RbelHttpResponseFacet.builder()
@@ -69,9 +69,11 @@ public class MockServerToRbelConverter {
                 request.getHeaders(), request.getBodyAsString());
         }
 
-        //TODO TGR-651 null ersetzen durch echten wert
-        final RbelElement element = rbelConverter.parseMessage(requestToRbelMessage(request),
-            null, convertUri(protocolAndHost), Optional.of(ZonedDateTime.now()));
+        final RbelElement element = rbelConverter.parseMessage(
+            requestToRbelMessage(request),
+            RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
+            convertUri(protocolAndHost),
+            Optional.of(ZonedDateTime.now()));
 
         if (!element.hasFacet(RbelHttpRequestFacet.class)) {
             element.addFacet(RbelHttpRequestFacet.builder()

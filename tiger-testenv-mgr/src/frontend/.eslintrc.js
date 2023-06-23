@@ -18,5 +18,6 @@ module.exports = {
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
     "@typescript-eslint/no-inferrable-types": "off",
     "vue/multi-word-component-names": "off",
+    "no-control-regex": 0,
   },
 };

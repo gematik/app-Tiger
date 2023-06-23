@@ -1,0 +1,42 @@
+trueBooleanValue: true
+falseBooleanValue: false
+
+tigerProxy:
+  skipTrafficEndpointsSubscription: false
+  proxyPort: ${free.port.3}
+  trafficEndpoints:
+    - http://localhost:${free.port.2}
+  keyFolders:
+    - .
+
+servers:
+  winstone:
+    active: "!{not ${tiger.falseBooleanValue}}"
+    hostname: winstone
+    source:
+      - local:target/winstone.jar
+    type: externalJar
+    healthcheckUrl: http://localhost:${free.port.0}
+    externalJarOptions:
+      arguments:
+        - --httpPort=${free.port.0}
+        - --webroot=.
+        - --debug=9
+  remoteTigerProxy:
+    type: tigerProxy
+    tigerProxyCfg:
+      adminPort: ${free.port.2}
+      activateRbelParsing: false
+      rbelBufferSizeInMb: 0
+      proxyPort: ${free.port.1}
+      proxyRoutes:
+        - from: http://winstone
+          to: http://localhost:${free.port.0}
+
+lib:
+  rbelPathDebugging: false
+  activateWorkflowUi: false
+
+additionalYamls:
+  - filename: src/test/resources/testdata/specialEnvironment.yaml
+    baseKey: external

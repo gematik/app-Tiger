@@ -1,26 +1,5 @@
 == Tiger User interfaces
 
-[#_admin_ui]
-=== Admin UI
-
-The Tiger Admin UI is a separate module that can be downloaded from maven
-
-https://repo1.maven.org/maven2/de/gematik/test/tiger-admin
-
-Choose a current version and download the `tiger-admin-x.y.z.jar` to a local folder on your computer.
-
-Run the following command to get the Tiger Admin UI up and running:
-
-[source,shell script]
-----
-java -jar tiger-admin-x.y.z.jar --server.port=8080
-----
-
-Now open your firefox browser and go to http://127.0.0.1:8080.
-
-Voila you are ready to start working with the Tiger Admin UI.
-
-
 === Workflow UI
 
 The Workflow UI is a new feature for a better user experience during the test run of feature file(s).

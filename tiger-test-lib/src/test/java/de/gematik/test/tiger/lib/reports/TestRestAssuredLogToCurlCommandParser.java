@@ -20,68 +20,90 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.assertj.core.api.Assertions.assertThat;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.RestAssured;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import org.apache.commons.io.IOUtils;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.specification.RequestSpecification;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@WireMockTest
-public class TestRestAssuredLogToCurlCommandParser {
+class TestRestAssuredLogToCurlCommandParser {
 
-    @BeforeEach
-    public void setup(WireMockRuntimeInfo remoteServer) {
-        remoteServer.getWireMock().register(get("/foo")
+    private static String httpBaseUrl;
+    private static WireMockServer wireMockServer;
+
+    @BeforeAll
+    public static void setup() {
+        wireMockServer = new WireMockServer(0);
+        wireMockServer.start();
+
+        httpBaseUrl = wireMockServer.baseUrl();
+
+        wireMockServer.stubFor(get("/foo")
             .willReturn(aResponse()
                 .withBody("bor")));
-        remoteServer.getWireMock().register(get("/faa")
+        wireMockServer.stubFor(get("/faa")
             .willReturn(aResponse()
                 .withBody("bar")));
-        remoteServer.getWireMock().register(post("/fuu")
+        wireMockServer.stubFor(post("/fuu")
             .willReturn(aResponse()
                 .withBody("buu")));
-        remoteServer.getWireMock().register(post("/fyy")
+        wireMockServer.stubFor(post("/fyy")
             .willReturn(aResponse()
                 .withBody("byy")));
 
-       TigerDirector.testUninitialize();
+        TigerDirector.testUninitialize();
         TigerDirector.start();
         TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
         TigerDirector.registerRestAssuredFilter();
     }
 
-    @Test
-    public void testMultipleRequestsSplitCorrectly(WireMockRuntimeInfo remoteServer) {
+    @BeforeEach
+    void resetLog() {
+        Object tigerHooksCurlLoggingFilter = ReflectionTestUtils.getField(TigerDirector.class, "curlLoggingFilter");
+        final ByteArrayOutputStream newOutputStream = new ByteArrayOutputStream();
+        ReflectionTestUtils.setField(tigerHooksCurlLoggingFilter, "outputStream", newOutputStream);
+        ReflectionTestUtils.setField(tigerHooksCurlLoggingFilter, "requestLoggingFilter",
+            new RequestLoggingFilter(
+                LogDetail.ALL,
+                true,
+                new PrintStream(newOutputStream),
+                true));
+    }
 
-        RestAssured.with().get(remoteServer.getHttpBaseUrl() + "/foo").andReturn();
-        RestAssured.with().post(remoteServer.getHttpBaseUrl() + "/fuu").andReturn();
-        RestAssured.with().post(remoteServer.getHttpBaseUrl() + "/fyy").andReturn();
-        RestAssured.with().get(remoteServer.getHttpBaseUrl() + "/faa").andReturn();
+    @Test
+    void testMultipleRequestsSplitCorrectly() {
+        RestAssured.with().get(httpBaseUrl + "/foo").andReturn();
+        RestAssured.with().post(httpBaseUrl + "/fuu").andReturn();
+        RestAssured.with().post(httpBaseUrl + "/fyy").andReturn();
+        RestAssured.with().get(httpBaseUrl + "/faa").andReturn();
 
         assertThat(RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(getCurlLog()))
             .hasSize(4);
     }
 
     @Test
-    public void testSingleRequestsSplitCorrectly(WireMockRuntimeInfo remoteServer) {
-        RestAssured.with().get(remoteServer.getHttpBaseUrl() + "/foo").andReturn();
+    void testSingleRequestsSplitCorrectly() {
+        RestAssured.with().get(httpBaseUrl + "/foo").andReturn();
 
         assertThat(RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(getCurlLog()))
             .hasSize(1);
     }
 
     @Test
-    public void testPostToCurl(WireMockRuntimeInfo remoteServer) {
-
-        RestAssured.with().post(remoteServer.getHttpBaseUrl() + "/fuu").
+    void testPostToCurl() {
+        RestAssured.with().post(httpBaseUrl + "/fuu").
             andReturn();
 
         String raLog = getCurlLog();
@@ -90,12 +112,12 @@ public class TestRestAssuredLogToCurlCommandParser {
         assertThat(curlCmd).isEqualTo(
             "curl -v -H \"Accept: */*\" "
                 + "-H \"Content-Type: application/x-www-form-urlencoded; charset=ISO-8859-1\" "
-                + "-X POST \"" + remoteServer.getHttpBaseUrl() + "/fuu\" ");
+                + "-X POST \"" + httpBaseUrl + "/fuu\" ");
     }
 
     @Test
-    public void testGetToCurl(WireMockRuntimeInfo remoteServer) {
-        RestAssured.with().get(remoteServer.getHttpBaseUrl() + "/foo").
+    void testGetToCurl() {
+        RestAssured.with().get(httpBaseUrl + "/foo").
             andReturn();
 
         String raLog = getCurlLog();
@@ -103,7 +125,24 @@ public class TestRestAssuredLogToCurlCommandParser {
         String curlCmd = RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(log);
         assertThat(curlCmd).isEqualTo(
             "curl -v -H \"Accept: */*\" "
-                + "-X GET \"" + remoteServer.getHttpBaseUrl() + "/foo\" ");
+                + "-X GET \"" + httpBaseUrl + "/foo\" ");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'foo\n\rbar',            \"Custom-Header: foobar\"",
+        "'foo\n\rbar\n\rschmar',  \"Custom-Header: foobarschmar\"",
+        "'foo\nbar\nschmar',      \"Custom-Header: foobarschmar\""
+    })
+    void testHeaderWithCrlf(String header, String stringContainedInCurl) {
+        RequestSpecification requestSpec = RestAssured.given();
+
+        requestSpec.header("Custom-Header", header);
+        requestSpec.post(httpBaseUrl + "/fuu");
+
+        String log = RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(getCurlLog()).get(0);
+        String curlCmd = RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(log);
+        assertThat(curlCmd).contains(stringContainedInCurl);
     }
 
     private String getCurlLog() {

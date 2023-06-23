@@ -736,12 +736,19 @@ function addQueryBtn(reqEl) {
 }
 
 function openTab(sender, tabName) {
-  var i, x;
+  var i, x, y;
   x = document.getElementsByClassName("content-tab");
   for (i = 0; i < x.length; i++) {
     x[i].style.display = "none";
   }
   document.getElementById(tabName).style.display = "block";
+
+  y = document.getElementsByClassName("nav-link active");
+  for (i = 0; i < y.length; i++) {
+    y[i].classList.remove("active");
+  }
+
+  document.getElementById(tabName + "-name").classList.add("active");
 }
 
 function copyToFilter() {

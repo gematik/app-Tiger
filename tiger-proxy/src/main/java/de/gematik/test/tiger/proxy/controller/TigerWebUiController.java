@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
+import static j2html.TagCreator.*;
 import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
@@ -32,6 +33,20 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,23 +69,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import static j2html.TagCreator.*;
-
 @Data
 @RequiredArgsConstructor
 @RestController
@@ -87,12 +85,13 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String CSS_BTN_DARK = "btn btn-dark";
     private static final String CSS_BTN_OUTLINE_SUCCESS = "btn btn-outline-success";
     private static final String CSS_COLOR_INHERIT = "color:inherit;";
-    private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = "dropdown-toggle" + CSS_BTN_DARK;
+    private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = CSS_BTN_DARK + " dropdown-toggle";
     private static final String CSS_DROPDOWN_ITEM = "dropdown-item";
     private static final String CSS_NAVBAR_ITEM = "navbar-item";
     private static final String CSS_NAVBAR_ITEM_NOT4EMBEDDED = CSS_NAVBAR_ITEM + " not4embedded";
     private static final String DROPDOWN_MENU = "dropdown-menu";
     private static final String VALUE_MODAL = "modal";
+    private static final String HIDE_QUIT = "display:none;";
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer;
 
@@ -172,10 +171,12 @@ public class TigerWebUiController implements ApplicationContextAware {
 
         String navbar;
 
+        String showQuit = tigerProxy.getTigerProxyConfiguration().isStandalone() ? "" : HIDE_QUIT;
+
         if (embedded) {
-            navbar = createNavbar(tigerProxy, "margin-bottom: 3.5em;", "margin-inline: auto;");
+            navbar = createNavbar(tigerProxy, "margin-bottom: 3.5em;", "margin-inline: auto;", showQuit);
         } else {
-            navbar = createNavbar(tigerProxy, "", "");
+            navbar = createNavbar(tigerProxy, "", "", showQuit);
         }
 
         String configJSSnippetStr = loadResourceToString("/configScript.html")
@@ -199,7 +200,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                 + "</div>";
     }
 
-    private String createNavbar(TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart) {
+    private String createNavbar(TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart, String styleQuit) {
         return nav().withClass("navbar bg-dark fixed-bottom").withStyle(styleNavbar)
             .with(
                 div().withClass("container-fluid").with(
@@ -223,13 +224,15 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
                                     .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
-                                    .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU).with(
+                                    .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
+                                    .attr("type", "button")
+                                    .with(
                                         span().withClass("icon is-small").with(
                                             i().withClass("fa-solid fa-toggle-on")
                                         )
                                     ),
                                 div().withClass(DROPDOWN_MENU + " bg-dark")
-                                    .attr("role", "menu")
+                                    .attr("type", "menu")
                                     .with(
                                         div().withClass(CSS_DROPDOWN_ITEM).with(
                                             button().withId("collapsibleMessageHeaderBtn").withClass(CSS_BTN_DARK).with(
@@ -275,10 +278,11 @@ public class TigerWebUiController implements ApplicationContextAware {
                                     .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
+                                    .attr("type", "button")
                                     .with(
                                         span().withText("Page 1").withId("pageNumberDisplay")
                                     ),
-                                div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
+                                div().withClass(DROPDOWN_MENU).attr("type", "menu").with(
                                     div().withClass("dropdown-content").withId("pageSelector").with(
                                         a().withClass(CSS_DROPDOWN_ITEM)
                                             .attr(ATTR_ON_CLICK, "setPageNumber(0)").withText("1")
@@ -325,7 +329,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                             span("Proxy port "),
                             b(String.valueOf(tigerProxy.getProxyPort())).withClass("ms-3")
                         ),
-                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).withStyle(styleQuit).with(
                             button().withId("quitProxy").withClass("btn btn-outline-danger").with(
                                 i().withClass("fas fa-power-off"),
                                 span("Quit").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)

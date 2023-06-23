@@ -18,8 +18,10 @@ package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import lombok.EqualsAndHashCode;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -30,19 +32,25 @@ import org.mockserver.model.HttpRequest;
 public class ReverseProxyCallback extends AbstractTigerRouteCallback {
 
     private static final String HTTPS_PREFIX = "https://";
-    private final URI targetUri;
+    private final URL targetUrl;
     private final int port;
+    private final boolean addTrailingSlash;
 
-    @SneakyThrows(URISyntaxException.class)
+    @SneakyThrows(MalformedURLException.class)
     public ReverseProxyCallback(TigerProxy tigerProxy, TigerRoute route) {
         super(tigerProxy, route);
-        this.targetUri = new URI(route.getTo());
-        if (targetUri.getPort() < 0) {
+        if (route.getTo().endsWith("/")) {
+            targetUrl = new URL(route.getTo().substring(0, route.getTo().length() - 1));
+            addTrailingSlash = true;
+        } else {
+            targetUrl = new URL(route.getTo());
+            addTrailingSlash = false;
+        }
+        if (targetUrl.getPort() < 0) {
             port = route.getTo().startsWith(HTTPS_PREFIX) ? 443 : 80;
         } else {
-            port = targetUri.getPort();
+            port = targetUrl.getPort();
         }
-
     }
 
     @Override
@@ -51,7 +59,7 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
         final HttpRequest request = cloneRequest(httpRequest)
             .withSocketAddress(
                 getTigerRoute().getTo().startsWith(HTTPS_PREFIX),
-                targetUri.getHost(),
+                targetUrl.getHost(),
                 port
             )
             .withSecure(getTigerRoute().getTo().startsWith(HTTPS_PREFIX))
@@ -60,7 +68,7 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
         if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()) {
             request
                 .removeHeader("Host")
-                .withHeader("Host", targetUri.getHost() + ":" + port);
+                .withHeader("Host", targetUrl.getHost() + ":" + port);
         }
         if (getTigerRoute().getBasicAuth() != null) {
             request.withHeader("Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue());
@@ -70,14 +78,19 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
     }
 
     private String patchPath(String requestPath) {
-        String patchedUrl = requestPath.replaceFirst(targetUri.toString(), "");
+        String patchedUrl = requestPath.replaceFirst(targetUrl.toString(), "");
         if (!getTigerRoute().getFrom().equals("/")) {
             patchedUrl = patchedUrl.substring(getTigerRoute().getFrom().length());
         }
         if (patchedUrl.startsWith("/")) {
-            return targetUri.getPath() + patchedUrl;
+            if (addTrailingSlash && !patchedUrl.endsWith("/") &&
+                (requestPath.equals("/") || requestPath.equals(""))) {
+                return targetUrl.getPath() + patchedUrl + "/";
+            } else {
+                return targetUrl.getPath() + patchedUrl;
+            }
         } else {
-            return targetUri.getPath() + "/" + patchedUrl;
+            return targetUrl.getPath() + "/" + patchedUrl;
         }
     }
 

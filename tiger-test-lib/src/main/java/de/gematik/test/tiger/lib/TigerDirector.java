@@ -45,7 +45,10 @@ import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -72,13 +75,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 @Slf4j
 public class TigerDirector {
 
-    public static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
+    @Getter
+    private static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
     private static TigerTestEnvMgr tigerTestEnvMgr;
     private static boolean initialized = false;
 
     @Getter
     private static TigerLibConfig libConfig;
-    public static ConfigurableApplicationContext envMgrApplicationContext;
+    private static ConfigurableApplicationContext envMgrApplicationContext;
 
     public static synchronized void start() {
         if (initialized) {
@@ -108,9 +112,46 @@ public class TigerDirector {
         initialized = true;
     }
 
+    public static synchronized void startStandaloneTestEnvironment() {
+        log.info("Starting Tiger testenvironment in STANDALONE MODE!");
+        if (initialized) {
+            log.info("Tiger Director already started, skipping");
+            return;
+        }
+        try {
+            showTigerBanner();
+            readConfiguration();
+            if (getLibConfig().isActivateWorkflowUi()) {
+                log.warn("Starting WorkflowUI in standalone mode is not supported, deactivating the flag in config");
+                getLibConfig().activateWorkflowUi = false;
+            }
+            applyLoggingLevels();
+            applyTestLibConfig();
+        } catch (RuntimeException rte) {
+            throw new TigerConfigurationException("Unable to read/process configuration - " + rte.getMessage(), rte);
+        }
+        try {
+            // get free port
+            startTestEnvMgr();
+            if (tigerTestEnvMgr.getConfiguration().isLocalProxyActive()) {
+                log.warn("Starting local Tiger Proxy in standalone mode is not supported, deactivating the flag in config");
+                tigerTestEnvMgr.getConfiguration().setLocalProxyActive(false);
+            }
+            setupTestEnvironent(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
+        } catch (RuntimeException e) {
+            quit(true);
+            throw e;
+        }
+        initialized = true;
+    }
+
     private static void applyLoggingLevels() {
-        TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
-            .forEach(TigerServerLogManager::setLoggingLevel);
+        try {
+            TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
+                    .forEach(TigerServerLogManager::setLoggingLevel);
+        } catch (NoClassDefFoundError ncde) {
+            log.warn("Unable to detect logback library! Setting log level feature not supported");
+        }
         // setLoggingLevel is sufficient for almost all cases. SpringBoot applications are a special case -
         // SpringBoot resets the levels during startup.
         // So When using SpringBootApplicationBuilder the respective properties have to be passed in manually!
@@ -159,8 +200,7 @@ public class TigerDirector {
                     }
                 }
             } else if (tigerTestEnvMgr != null) {
-                tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
-
+                tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
                 System.out.println("TGR Shutting down test env...");
                 tigerTestEnvMgr.shutDown();
             }
@@ -270,9 +310,7 @@ public class TigerDirector {
         TigerProxyConfiguration tpCfg = tigerTestEnvMgr.getConfiguration().getTigerProxy();
         // set proxy to local tiger proxy for test suites
         if (tigerTestEnvMgr.isLocalTigerProxyActive()) {
-            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(proxy -> {
-                SerenityRestUtils.setupSerenityRest(proxy);
-            });
+            tigerTestEnvMgr.getLocalTigerProxyOptional().ifPresent(SerenityRestUtils::setupSerenityRest);
             if (System.getProperty("http.proxyHost") != null || System.getProperty("https.proxyHost") != null) {
                 log.info(Ansi.colorize("SKIPPING TIGER PROXY settings as System Property is set already...",
                     RbelAnsiColors.RED_BOLD));
@@ -315,7 +353,7 @@ public class TigerDirector {
     }
 
     private final static Pattern showSteps = Pattern.compile(
-        ".*TGR (zeige|show) ([\\w|ü|ß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
+        ".*TGR (zeige|show) ([\\w|üß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
 
     private static void assertThatTigerIsInitialized() {
         if (!initialized) {
@@ -411,12 +449,10 @@ public class TigerDirector {
             await().pollInterval(1, TimeUnit.SECONDS)
                 .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
                 .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi());
-            if (tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi()) {
                 tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
-                Fail.fail(errorMessage);
-            } else {
-                tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
-            }
+                if (tigerTestEnvMgr.isUserPressedFailTestExecution()) {
+                    Fail.fail(errorMessage);
+                }
         } else {
             throw new TigerTestEnvException("The step 'TGR pause test run execution with message \"{}\" and "
                 + "message in case of error \"{}\"' is not supported outside the Workflow UI. "

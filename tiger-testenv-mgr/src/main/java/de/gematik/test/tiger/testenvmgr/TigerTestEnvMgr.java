@@ -22,6 +22,7 @@ import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_P
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
@@ -30,6 +31,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -76,8 +78,13 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 @Getter
 public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean, AutoCloseable {
 
+    static {
+        TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
+    }
+
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
+    private static final String SERVER_PORT = "server.port";
     private final Configuration configuration;
     private final Map<String, Object> environmentVariables;
     private TigerProxy localTigerProxy;
@@ -99,6 +106,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
     private boolean userAcknowledgedOnWorkflowUi = false;
     private boolean shouldAbortTestExecution = false;
+    @Getter
+    private boolean userPressedFailTestExecution = false;
 
     private boolean isShuttingDown = false;
     private boolean isShutDown = false;
@@ -130,7 +139,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
     public void startLocalTigerProxyIfActivated() {
         if (configuration.isLocalProxyActive()) {
-            TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
+            try {
+                TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
+            } catch (NoClassDefFoundError ncde) {
+                log.warn("Unable to detect logback library! Log appender for local proxy status messages not activated");
+            }
+
             localTigerProxy = startLocalTigerProxy(configuration);
             proxyStatusMessage("Local Tiger Proxy URL http://localhost:" +
                 localTigerProxy.getProxyPort(), RbelAnsiColors.BLUE_BOLD);
@@ -138,7 +152,12 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
                 localTigerProxyApplicationContext.getWebServer().getPort() + "/webui", RbelAnsiColors.BLUE_BOLD);
             environmentVariables.put("PROXYHOST", "host.docker.internal");
             environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
-            TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
+            try {
+                TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
+            } catch (NoClassDefFoundError ncde) {
+                log.warn("Unable to detect logback library! Log appender feature for local Tiger Proxy not activated");
+            }
+
         } else {
             log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));
             localTigerProxy = null;
@@ -206,6 +225,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
         proxyConfig.setName(LOCAL_TIGER_PROXY_TYPE);
         proxyConfig.setSkipTrafficEndpointsSubscription(true);
+        proxyConfig.setStandalone(false);
         if (proxyConfig.getProxyRoutes() == null) {
             proxyConfig.setProxyRoutes(List.of());
         }
@@ -221,18 +241,18 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
             LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
         }
         properties.putAll(getConfiguredLoggingLevels());
+        log.info("Starting with port {}", properties.get(SERVER_PORT));
 
         localTigerProxyApplicationContext = (ServletWebServerApplicationContext) new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
-            .properties(properties)
             .sources(TigerProxyApplication.class)
             .web(WebApplicationType.SERVLET)
             .registerShutdownHook(false)
-            .initializers()
+            .properties(properties)
             .run();
 
         proxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
-
+        
         LOCAL_PROXY_PROXY_PORT.putValue(proxy.getProxyPort());
         LOCAL_PROXY_ADMIN_PORT.putValue(proxy.getAdminPort());
 
@@ -249,7 +269,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         publishStatusUpdateToListeners(TigerStatusUpdate.builder()
                         .serverUpdate(new LinkedHashMap<>(Map.of(getLocalTigerProxyOptional()
                             .flatMap(TigerProxy::getName)
-                            .orElse(getLocalTigerProxy().proxyName()), update)))
+                            .orElse(getLocalTigerProxyOrFail().proxyName()), update)))
                         .build(), listeners);
     }
 
@@ -399,7 +419,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
         final List<AbstractTigerServer> initialServersToBoot = servers.values().parallelStream()
             .filter(server -> server.getDependUponList().isEmpty())
-            .collect(Collectors.toList());
+            .toList();
 
         log.info("Booting following server(s): {}",
             initialServersToBoot.stream()
@@ -505,7 +525,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         return servers.values().stream()
             .map(AbstractTigerServer::getRoutes)
             .flatMap(List::stream)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     public Optional<AbstractTigerServer> findServer(String serverName) {
@@ -561,7 +581,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         logListeners.add(listener);
     }
 
-    public void receivedConfirmationFromWorkflowUi() {
+    public void receivedConfirmationFromWorkflowUi(boolean executionShouldFail) {
+        userPressedFailTestExecution = executionShouldFail;
         userAcknowledgedOnWorkflowUi = true;
     }
 

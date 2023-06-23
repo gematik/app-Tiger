@@ -21,9 +21,13 @@ import static j2html.TagCreator.*;
 import com.google.gson.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.exceptions.RbelRenderingException;
+import de.gematik.test.tiger.common.config.TigerConfigurationKey;
+import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import j2html.TagCreator;
 import j2html.tags.*;
 import j2html.tags.specialized.DivTag;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -38,6 +42,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -67,6 +72,8 @@ public class RbelHtmlRenderingToolkit {
     @Getter
     private final Map<UUID, JsonNoteEntry> noteTags = new HashMap<>();
     private final RbelHtmlRenderer rbelHtmlRenderer;
+    private static final TigerTypedConfigurationKey<String> logoFilePath = new TigerTypedConfigurationKey<>(
+        new TigerConfigurationKey("tiger", "lib", "rbelLogoFilePath"), String.class);
 
     public static ContainerTag icon(final String iconName) {
         return span().withClass("icon")
@@ -91,11 +98,11 @@ public class RbelHtmlRenderingToolkit {
         }
     }
 
-    public static List<DomContent> addNotes(final RbelElement el, final String... extraClasses) {
+    public static List<DivTag> addNotes(final RbelElement el, final String... extraClasses) {
         final String className = StringUtils.join(extraClasses, " ");
         return el.getNotes().stream()
             .map(note -> createNote(className, note))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     public static DivTag createNote(String className, RbelNoteFacet note) {
@@ -195,6 +202,7 @@ public class RbelHtmlRenderingToolkit {
             )
                 .with(
                     IntStream.range(0, (el.getRawContent().length + 15) / 16)
+                        .limit(30)
                         .mapToObj(line ->
                             div(
                                 pre().withStyle(HEX_STYLE)
@@ -261,7 +269,6 @@ public class RbelHtmlRenderingToolkit {
     }
 
     public String renderDocument(List<RbelElement> elements, boolean localRessources) throws IOException {
-        String logoBase64Str = IOUtils.resourceToString("/tiger-monochrome-64.png.base64", StandardCharsets.UTF_8);
         return TagCreator.document(
             html(
                 head(
@@ -273,17 +280,20 @@ public class RbelHtmlRenderingToolkit {
                     script().withSrc(localRessources ? "../webjars/stomp-websocket/stomp.min.js"
                         : "https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"),
                     script().withSrc(localRessources ? "../webjars/jquery/jquery.min.js" : "https://code.jquery.com/jquery-1.12.4.js"),
-                    script().withSrc(localRessources ? "../webjars/bootstrap/js/bootstrap.min.js"
-                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"),
-                    script().withSrc(localRessources ? "../webjars/highlightjs/highlight.min.js" : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"),
-                    script().withSrc(localRessources ? "../webjars/highlightjs/languages/xml.min.js" : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/languages/xml.min.js"),
+                    script().withSrc(localRessources ? "../webjars/bootstrap/js/bootstrap.bundle.min.js"
+                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"),
+                    script().withSrc(localRessources ? "../webjars/highlightjs/highlight.min.js"
+                        : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"),
+                    script().withSrc(localRessources ? "../webjars/highlightjs/languages/xml.min.js"
+                        : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/languages/xml.min.js"),
 
                     link2CSS(localRessources ? "../webjars/bootstrap/css/bootstrap.min.css"
-                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"),
-                    link2CSS(localRessources ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css" : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/stackoverflow-dark.min.css"),
+                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"),
+                    link2CSS(localRessources ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css"
+                        : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/stackoverflow-dark.min.css"),
                     link2CSS(localRessources ? "../webjars/font-awesome/css/all.min.css"
-                        : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css"),
-                    link().withRel("icon").withType("image/png").withHref(logoBase64Str),
+                        : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"),
+                    link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
                     tag("style").with(
                         new UnescapedText(IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))
                 ),
@@ -293,7 +303,7 @@ public class RbelHtmlRenderingToolkit {
                         section().withClass("main-content").with(
                             section().withClass("row header").with(
                                 div().withClass("col-1 h-100 my-auto logo").with(
-                                    img().withSrc(logoBase64Str)
+                                    img().withSrc(getLogoBase64Str())
                                 ),
                                 div().withClass("col is-size-6")
                                     .with(
@@ -313,7 +323,7 @@ public class RbelHtmlRenderingToolkit {
                                     .withClass("created fst-italic is-size-6 float-end me-6"),
                                 div().with(
                                     elements.stream()
-                                        .filter(el -> el.hasFacet(RbelTcpIpMessageFacet.class))
+//                                        .filter(el -> el.hasFacet(RbelTcpIpMessageFacet.class))
                                         .map(this::convertMessage)
                                         .collect(Collectors.toList())
                                 ),
@@ -330,6 +340,26 @@ public class RbelHtmlRenderingToolkit {
                     elements.stream().map(this::menuTab).collect(Collectors.joining("\n")))
             )
         );
+    }
+
+    private String getLogoBase64Str() {
+        return logoFilePath.getValue()
+            .filter(StringUtils::isNotEmpty)
+            .map(filePath -> {
+                try {
+                    final byte[] bytes = FileUtils.readFileToByteArray(new File(filePath));
+                    return "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
+                } catch (IOException e) {
+                    throw new RbelRenderingException("Could not load file", e);
+                }
+            })
+            .orElseGet(() -> {
+                try {
+                    return IOUtils.resourceToString("/tiger-monochrome-64.png.base64", StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new RbelRenderingException("Could not load file", e);
+                }
+            });
     }
 
     public DomContent convertMessage(RbelElement element) {

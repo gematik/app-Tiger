@@ -22,6 +22,7 @@ import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.GenericPrettyPrinter;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.jexl.InlineJexlToolbox;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -46,27 +47,28 @@ public class RbelWriter {
         RbelContentType.JSON, new RbelJsonSerializer(),
         RbelContentType.JWT, new RbelJwtSerializer(),
         RbelContentType.JWE, new RbelJweSerializer(),
-        RbelContentType.URL, new RbelUrlSerializer());
+        RbelContentType.URL, new RbelUrlSerializer(),
+        RbelContentType.BEARER_TOKEN, new RbelBearerTokenSerializer());
 
-    public byte[] serializeWithEnforcedContentType(RbelElement input, RbelContentType enforcedContentType) {
-        return new RbelWriterInstance(Optional.ofNullable(enforcedContentType), rbelKeyManager)
+    public byte[] serializeWithEnforcedContentType(RbelElement input, RbelContentType enforcedContentType, TigerJexlContext jexlContext) {
+        return new RbelWriterInstance(Optional.ofNullable(enforcedContentType), rbelKeyManager, jexlContext)
             .serialize(input);
     }
 
-    public byte[] serialize(RbelElement input) {
-        return new RbelWriterInstance(Optional.empty(), rbelKeyManager)
+    public byte[] serialize(RbelElement input, TigerJexlContext jexlContext) {
+        return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext)
             .serialize(input);
     }
 
     private static void printTreeStructure(RbelContentTreeNode treeRootNode) {
-        if (log.isDebugEnabled() || 1 < 2) {
+        if (log.isDebugEnabled()) {
             GenericPrettyPrinter<RbelContentTreeNode> printer = new GenericPrettyPrinter<>(
                 node -> node.childNodes().isEmpty(),
                 node -> printNodeContent(node),
                 node -> node.childNodes().stream()
             );
             printer.setNodeIntroPrinter(node -> node.getKey() + " (" + node.getType() + ") ");
-            log.info("Serializing the following tree: \n{}", printer.prettyPrint(treeRootNode));
+            log.debug("Serializing the following tree: \n{}", printer.prettyPrint(treeRootNode));
         }
     }
 
@@ -84,9 +86,11 @@ public class RbelWriter {
         private final Optional<RbelContentType> fixedContentType;
         @Getter
         private final RbelKeyManager rbelKeyManager;
+        private final TigerJexlContext jexlContext;
 
         public byte[] serialize(RbelElement input) {
-            final RbelContentTreeNode treeRootNode = new RbelContentTreeConverter(input).convertToContentTree();
+            final RbelContentTreeNode treeRootNode = new RbelContentTreeConverter(input, jexlContext)
+                .convertToContentTree();
             printTreeStructure(treeRootNode);
             return renderTree(treeRootNode);
         }

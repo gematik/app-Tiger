@@ -17,13 +17,13 @@
 package de.gematik.test.tiger.testenvmgr.env;
 
 import com.google.common.util.concurrent.Monitor;
-import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.exceptions.TigerDownloadManagerException;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,10 +31,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import kong.unirest.Unirest;
 import lombok.Builder;
@@ -42,7 +44,10 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.function.ThrowingFunction;
 
 @Slf4j
 public class DownloadManager {
@@ -164,19 +169,58 @@ public class DownloadManager {
 
     public File downloadJarAndReturnFile(ExternalJarServer externalJarServer, String jarUrl, String workingDir) {
         if (jarUrl.startsWith("local:")) {
-            var jarName = jarUrl.replaceFirst("local:", "").split("/");
-            var jarFile = Paths.get(
-                workingDir,
-                jarName[jarName.length - 1]).toFile();
-            if (!jarFile.exists()) {
-                throw new TigerTestEnvException("Local jar " + jarFile.getAbsolutePath() + " not found!");
-            }
+            final String localJarString = jarUrl.replaceFirst("local:", "");
+            final String jarFileName = getFileNameFromPath(localJarString);
+            ThrowingFunction<Path, Stream<Path>> relativeJarResolver = dir -> Files.find(dir,1,
+                (p, a) -> new WildcardFileFilter(jarFileName).accept(p.toFile()));
+            List<Supplier<Optional<File>>> candidateFileSuppliers = List.of(
+                () -> Optional.of(Paths.get(workingDir, jarFileName).toFile()),
+                () -> Optional.of(Paths.get(workingDir, localJarString).toFile()),
+                () -> Optional.ofNullable(new File(workingDir).listFiles((FilenameFilter) new WildcardFileFilter(jarFileName)))
+                    .filter(ar -> ar.length > 0).map(ar -> ar[0]),
+                () -> Optional.of(getParentFolderFromPath(localJarString))
+                    .map(Path::of)
+                    .map(p -> Path.of(workingDir).resolve(p))
+                    .filter(p -> p.toFile().exists())
+                    .stream()
+                    .flatMap(relativeJarResolver)
+                    .findFirst().map(Path::toFile)
+                    .filter(File::exists)
+            );
+            var jarFile = candidateFileSuppliers.stream()
+                .map(Supplier::get)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(File::exists)
+                .findFirst()
+                .orElseThrow(() -> new TigerTestEnvException("Local jar-file '" + localJarString
+                    + "' with working directory '" + workingDir + "' not found!"));
             externalJarServer.statusMessage(
                 "Starting " + externalJarServer.getServerId() + " from local JAR-File '" + jarFile.getAbsolutePath() + "'");
             return jarFile;
         } else {
             externalJarServer.statusMessage("Downloading " + externalJarServer.getServerId() + " JAR-File from '" + jarUrl + "'...");
             return executeDownload(workingDir, jarUrl, externalJarServer.getServerId());
+        }
+    }
+
+    private static String getFileNameFromPath(String value) {
+        if (StringUtils.isEmpty(value)) {
+            return value;
+        }
+        final String[] splits = value.split("/");
+        return splits[splits.length - 1];
+    }
+
+    private static String getParentFolderFromPath(String value) {
+        if (StringUtils.isEmpty(value)) {
+            return value;
+        }
+        final int pathCutoffPosition = value.lastIndexOf("/");
+        if (pathCutoffPosition < 0 ) {
+            return value;
+        } else {
+            return value.substring(0, pathCutoffPosition);
         }
     }
 

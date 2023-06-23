@@ -17,10 +17,12 @@
 package de.gematik.rbellogger.data;
 
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.util.RbelException;
 import de.gematik.rbellogger.util.RbelPathExecutor;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -36,6 +38,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @Getter
 @Slf4j
 public class RbelElement {
+
+    static {
+        TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
+    }
 
     private final String uuid;
     private final byte[] rawContent;
@@ -335,6 +341,16 @@ public class RbelElement {
             position = position.getParentNode();
         }
         return Optional.empty();
+    }
+
+    public RbelElement findRootElement() {
+        RbelElement result = this;
+        RbelElement newResult = result.getParentNode();
+        while (newResult != null) {
+            result = newResult;
+            newResult = result.getParentNode();
+        }
+        return result;
     }
 
     private static class RbelPathNotUniqueException extends RuntimeException {

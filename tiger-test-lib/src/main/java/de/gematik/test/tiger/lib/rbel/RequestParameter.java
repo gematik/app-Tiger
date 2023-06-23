@@ -31,6 +31,8 @@ public class RequestParameter {
     private final boolean startFromLastRequest;
     private final boolean filterPreviousRequest;
     private final boolean requireNewMessage;
+    @Builder.Default
+    private final boolean requireHttpMessage = true;
 
     public RequestParameter resolvePlaceholders()  {
         if (StringUtils.isNotEmpty(path)) {

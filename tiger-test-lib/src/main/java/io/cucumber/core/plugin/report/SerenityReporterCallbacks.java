@@ -349,8 +349,8 @@ public class SerenityReporterCallbacks {
         if (!(tsfEvent.getTestStep() instanceof HookTestStep)) {
             if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()
                 && TigerDirector.isSerenityAvailable()
-                && TigerDirector.curlLoggingFilter != null) {
-                TigerDirector.curlLoggingFilter.printToReport();
+                && TigerDirector.getCurlLoggingFilter() != null) {
+                TigerDirector.getCurlLoggingFilter().printToReport();
             }
             if (context.getCurrentStep() != null) {
                 informWorkflowUiAboutCurrentStep(tsfEvent.getTestStep(), ((TestStepFinished) event).getResult().getStatus().name(),

@@ -31,6 +31,8 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementAssertion;
+import de.gematik.rbellogger.data.facet.RbelCetpFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
@@ -493,9 +495,10 @@ class RbelMessageValidatorTest {
     void testWaitingForNewNonPairedMessage() throws ExecutionException, InterruptedException {
         readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
         final RequestParameter messageParameters = RequestParameter.builder()
-            .rbelPath("$..Topic.text")
+            .rbelPath("$.body.Event.Topic.text")
             .value("CT/CONNECTED")
             .requireNewMessage(true)
+            .requireHttpMessage(false)
             .build();
         CompletableFuture<RbelElement> waitForMessageFuture = CompletableFuture.supplyAsync(
             () -> RbelMessageValidator.instance.waitForMessageToBePresent(messageParameters));
@@ -506,6 +509,8 @@ class RbelMessageValidatorTest {
         readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
 
         RbelElementAssertion.assertThat(waitForMessageFuture.get())
+            .hasFacet(RbelCetpFacet.class)
+            .doesNotHaveFacet(RbelHttpMessageFacet.class)
             .extractChildWithPath("$..Topic.text")
             .hasStringContentEqualTo("CT/CONNECTED");
     }

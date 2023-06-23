@@ -73,21 +73,6 @@ public class TigerPkiIdentity {
         return this;
     }
 
-    public boolean hasValidChainWithRootCa() {
-        if (getCertificate() == null) {
-            return false;
-        }
-        X509Certificate currentPosition = getCertificate();
-        for (X509Certificate nextCertificate : getCertificateChain()) {
-            if (!currentPosition.getIssuerDN().equals(nextCertificate.getSubjectDN())) {
-                return false;
-            }
-            currentPosition = nextCertificate;
-        }
-
-        return currentPosition.getSubjectDN().equals(currentPosition.getIssuerDN());
-    }
-
     public KeyStore toKeyStoreWithPassword(String password) {
         try {
             final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());

@@ -72,8 +72,8 @@ public class TigerGlobalConfiguration {
         initialized = true;
         globalConfigurationLoader.initialize();
 
-        globalConfigurationLoader.loadSystemProperties();
         globalConfigurationLoader.loadEnvironmentVariables();
+        globalConfigurationLoader.loadSystemProperties();
 
         if (additionalProperties != null) {
             additionalProperties

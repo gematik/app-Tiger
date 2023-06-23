@@ -20,23 +20,26 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.List;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 public class RbelElementWrapperContentTreeNode extends RbelContentTreeNode {
 
-    public static RbelElementWrapperContentTreeNode constructFromRbelElement(RbelElement source, TigerConfigurationLoader conversionContext) {
+    public static RbelElementWrapperContentTreeNode constructFromRbelElement(RbelElement source, TigerConfigurationLoader conversionContext, TigerJexlContext jexlContext) {
         var result = new RbelElementWrapperContentTreeNode();
-        result.setContent(TokenSubstituteHelper.substitute(source.getRawStringContent(), conversionContext)
+        result.setContent(TokenSubstituteHelper.substitute(source.getRawStringContent(), conversionContext, Optional.ofNullable(jexlContext))
             .getBytes());
         return result;
     }
 
-    public static RbelElementWrapperContentTreeNode constructFromValueElement(RbelElement source, TigerConfigurationLoader conversionContext) {
+    public static RbelElementWrapperContentTreeNode constructFromValueElement(RbelElement source, TigerConfigurationLoader conversionContext, TigerJexlContext jexlContext) {
         var result = new RbelElementWrapperContentTreeNode();
-        result.setContent(TokenSubstituteHelper.substitute(source.printValue().orElseGet(source::getRawStringContent), conversionContext)
+        result.setContent(TokenSubstituteHelper.substitute(source.printValue().orElseGet(source::getRawStringContent), conversionContext,
+                Optional.ofNullable(jexlContext))
             .getBytes());
         return result;
     }

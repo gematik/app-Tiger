@@ -18,6 +18,8 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelJexlShadingExpression;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 
 import de.gematik.rbellogger.data.facet.RbelNoteFacet;
@@ -31,13 +33,12 @@ public class RbelValueShader {
 
     private final List<RbelJexlShadingExpression> jexlShadingMap = new ArrayList<>();
     private final List<RbelJexlShadingExpression> jexlNoteMap = new ArrayList<>();
-    private final RbelJexlExecutor rbelJexlExecutor = new RbelJexlExecutor();
 
     public Optional<String> shadeValue(final Object element, final Optional<String> key) {
         return jexlShadingMap.stream()
             .filter(entry -> {
                 try {
-                    return rbelJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), key);
+                    return TigerJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), key);
                 } catch (RuntimeException ignored) {
                     return false;
                 }
@@ -51,7 +52,7 @@ public class RbelValueShader {
         jexlNoteMap.stream()
             .filter(entry -> {
                 try {
-                    return rbelJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), element.findKeyInParentElement());
+                    return TigerJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), element.findKeyInParentElement());
                 } catch (RuntimeException ignored) {
                     return false;
                 }

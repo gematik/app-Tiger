@@ -21,7 +21,6 @@ public class KeyManagerFunctions {
 
     @PostConstruct
     public void initJexl() {
-        TigerJexlExecutor.INSTANCE = new RbelJexlExecutor();
         TigerJexlExecutor.registerAdditionalNamespace("keyMgr", this);
         if (environment.getProperty("local.server.port") != null) {
             TigerGlobalConfiguration.putValue("zion.port", environment.getProperty("local.server.port"));

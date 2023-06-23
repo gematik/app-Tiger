@@ -4,7 +4,6 @@ tigerProxy:
 
 servers:
   testExternalJarMVP:
-    hostname: testExternalJarMVP
     type: externalJar
     source:
       - http://localhost:${mockserver.port}/download

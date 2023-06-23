@@ -18,6 +18,9 @@ package de.gematik.test.tiger.common.jexl;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
@@ -25,27 +28,42 @@ import org.apache.commons.jexl3.introspection.JexlPermissions;
 @Slf4j
 public class TigerJexlExecutor {
 
-    public static final Deque<Object> ELEMENT_STACK = new ConcurrentLinkedDeque<>();
     public static boolean ACTIVATE_JEXL_DEBUGGING = false;
-    public static TigerJexlExecutor INSTANCE = new TigerJexlExecutor();
-
+    public static Supplier<TigerJexlExecutor> executorSupplier = TigerJexlExecutor::new;
     private static final Map<String, Object> NAMESPACE_MAP = new HashMap<>();
 
     static {
         NAMESPACE_MAP.put(null, InlineJexlToolbox.class);
     }
 
-    public boolean matchesAsJexlExpression(Object element, String jexlExpression) {
-        return matchesAsJexlExpression(element, jexlExpression, Optional.empty());
+    public static boolean matchesAsJexlExpression(Object element, String jexlExpression) {
+        return executorSupplier.get()
+            .matchesAsJexlExpressionInternal(element, jexlExpression);
     }
 
-    public boolean matchesAsJexlExpression(Object element, String jexlExpression, Optional<String> key) {
+    public static boolean matchesAsJexlExpression(Object element, String jexlExpression, Optional<String> keyInParentElement) {
+        return matchesAsJexlExpression(jexlExpression,
+            new TigerJexlContext()
+                .withKey(keyInParentElement.orElse(null))
+                .withCurrentElement(element));
+    }
+
+    public static boolean matchesAsJexlExpression(String jexlExpression, TigerJexlContext context) {
+        return executorSupplier.get()
+            .matchesAsJexlExpressionInternal(jexlExpression, context);
+    }
+
+    public static Optional<Object> evaluateJexlExpression(String jexlExpression, TigerJexlContext context) {
+        return executorSupplier.get()
+            .evaluateJexlExpressionInternal(jexlExpression, context);
+    }
+
+    private boolean matchesAsJexlExpressionInternal(Object element, String jexlExpression) {
         return matchesAsJexlExpression(jexlExpression, new TigerJexlContext()
-            .withCurrentElement(element)
-            .withKey(key.orElse(null)));
+            .withCurrentElement(element));
     }
 
-    public boolean matchesAsJexlExpression(String jexlExpression, TigerJexlContext context) {
+    private boolean matchesAsJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
         final boolean result = evaluateJexlExpression(jexlExpression, context)
             .filter(Boolean.class::isInstance)
             .map(Boolean.class::cast)
@@ -58,21 +76,9 @@ public class TigerJexlExecutor {
         return result;
     }
 
-    public Optional<Object> evaluateJexlExpression(String jexlExpression, Optional<String> key) {
-        return evaluateJexlExpression(ELEMENT_STACK.peekFirst(), jexlExpression, key);
-    }
-
-    public Optional<Object> evaluateJexlExpression(Object element, String jexlExpression, Optional<String> key) {
-        final TigerJexlContext mapContext = new TigerJexlContext(buildJexlMapContext(element, key))
-            .withCurrentElement(element)
-            .withRootElement(element)
-            .withKey(key.orElse(null));
-        NAMESPACE_MAP.forEach(mapContext::set);
-        return evaluateJexlExpression(jexlExpression, mapContext);
-    }
-
-    public Optional<Object> evaluateJexlExpression(String jexlExpression, TigerJexlContext context) {
+    private Optional<Object> evaluateJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
         try {
+            NAMESPACE_MAP.forEach(context::set);
             context.putAll(buildJexlMapContext(
                 context.getCurrentElement(),
                 Optional.ofNullable(context.getKey())

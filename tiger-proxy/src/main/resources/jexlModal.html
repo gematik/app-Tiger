@@ -22,16 +22,15 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="tabs">
-            <ul class="jexlstyle">
-              <li class="show tab" onclick="openTab(this,'rbelTab')">
-                <a>
+          <ul class="nav nav-tabs" id="inspectModal" style="justify-content: center;">
+              <li class="nav-item" onclick="openTab(this,'rbelTab')" >
+                <a class="nav-link active" href="#" id="rbelTab-name">
                   <span class="icon is-small"><i class="fas fa-folder-tree"></i></span>
                   <span>RbelPath</span>
                 </a>
               </li>
-              <li class="tab" onclick="openTab(this,'jexlTab')">
-                <a>
+              <li class="nav-item" onclick="openTab(this,'jexlTab')">
+                <a class="nav-link" href="#" id="jexlTab-name">
                   <span class="icon is-small"><i class="fas fa-magnifying-glass"></i></span>
                   <span>JEXL Debugging</span>
                 </a>
@@ -41,7 +40,6 @@
 
           <div class="container section">
             <div id="rbelTab" class="content-tab">
-              <h2 class="is-size-2">RbelPath Debugging</h2>
               <div>
                 <div class="box">
                   <form id="jexlInspectionForm" onSubmit="return false;">
@@ -79,7 +77,6 @@
                     <p>
                       <b>Some examples:</b>
                     </p>
-                    </div>
                     <ul>
                       <li><code class='has-background-dark has-text-danger'>$.body</code>
                         The body of the message
@@ -95,6 +92,7 @@
                         "UTF-")
                       </li>
                     </ul>
+                    </div>
                   </div>
                 <div class="box" id="rbelResult">
                 </div>
@@ -105,7 +103,6 @@
           </div>
 
           <div id="jexlTab" style="display: none" class="content-tab">
-            <h2 class="is-size-2">Jexl Debugging</h2>
             <div>
               <div class="box">
                 <form id="rbelTestForm" onSubmit="return false;">

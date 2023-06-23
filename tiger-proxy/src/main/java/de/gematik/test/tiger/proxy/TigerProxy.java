@@ -36,8 +36,10 @@ import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.annotation.PreDestroy;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -92,6 +94,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
     private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
     private TigerPkiIdentity generatedRootCa;
+
     /**
      * Tiger Proxy health endpoint performs http get requests towards the local server port of the Tiger Proxy.
      * To filter them out from Rbel logs we add a specific query param (healthEndPointUuid) with this uuid as
@@ -365,14 +368,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     @Override
     public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
-        tigerRouteMap.values().stream()
-            .filter(existingRoute ->
-                uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
-                    || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom()))
-            .findAny()
-            .ifPresent(existingRoute -> {
-                throw new TigerProxyRouteConflictException(existingRoute);
-            });
+        assertThatRouteIsUnique(tigerRoute);
 
         log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
         final Expectation[] expectations = buildRouteAndReturnExpectation(tigerRoute);
@@ -389,6 +385,17 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
         log.info("Created route {} with expectation {}", createdTigerRoute, expectations[0]);
         return createdTigerRoute;
+    }
+
+    private void assertThatRouteIsUnique(TigerRoute tigerRoute) {
+        tigerRouteMap.values().stream()
+            .filter(existingRoute ->
+                uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
+                    || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom()))
+            .findAny()
+            .ifPresent(existingRoute -> {
+                throw new TigerProxyRouteConflictException(existingRoute);
+            });
     }
 
     private boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
@@ -418,10 +425,19 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
 
     private Expectation[] buildForwardProxyRoute(final TigerRoute tigerRoute) {
+        final URL url = buildUrlSafe(tigerRoute);
         return mockServerClient.when(request()
-                .withHeader("Host", tigerRoute.getFrom().split("://")[1])
-                .withSecure(tigerRoute.getFrom().startsWith("https://")))
+                .withHeader("Host", url.getAuthority())
+                .withSecure(url.getProtocol().equals("https")))
             .forward(new ForwardProxyCallback(this, tigerRoute));
+    }
+
+    private static URL buildUrlSafe(TigerRoute tigerRoute) {
+        try {
+            return new URL(tigerRoute.getFrom());
+        } catch (MalformedURLException e) {
+            throw new TigerProxyStartupException("Error while building route", e);
+        }
     }
 
     public void addAlternativeName(final String host) {

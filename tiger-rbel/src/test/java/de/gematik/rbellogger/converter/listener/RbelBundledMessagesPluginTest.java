@@ -41,7 +41,6 @@ public class RbelBundledMessagesPluginTest {
 
     @BeforeEach
     public void initRbelLogger() {
-        RbelOptions.activateJexlDebugging();
         if (rbelLogger == null) {
             rbelLogger = RbelLogger.build();
         }

@@ -16,8 +16,6 @@
 
 package de.gematik.test.tiger.glue;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -31,10 +29,14 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @Slf4j
 public class TigerGlue {
@@ -45,7 +47,7 @@ public class TigerGlue {
      * @param key   key of the context
      * @param value value for the context entry with given key
      */
-    @Wenn("TGR setze globale Variable {string} auf {string} setzen")
+    @Wenn("TGR setze globale Variable {string} auf {string}")
     @When("TGR set global variable {string} to {string}")
     public void ctxtISetGlobalVariableTo(final String key, final String value) {
         TigerGlobalConfiguration.putValue(
@@ -60,7 +62,7 @@ public class TigerGlue {
      * @param key   key of the context
      * @param value value for the context entry with given key
      */
-    @Wenn("TGR setze lokale Variable {string} auf {string} setzen")
+    @Wenn("TGR setze lokale Variable {string} auf {string}")
     @When("TGR set local variable {string} to {string}")
     public void ctxtISetLocalVariableTo(final String key, final String value) {
         TigerGlobalConfiguration.putValue(

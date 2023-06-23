@@ -25,10 +25,11 @@ import ch.qos.logback.core.FileAppender;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
-import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
 
 @Slf4j
 public class TigerServerLogManager  {
@@ -38,7 +39,7 @@ public class TigerServerLogManager  {
     private static final String DEFAULT_PATTERN_LAYOUT = "%date %level [%thread] %logger{10} [%file:%line] %msg%n";
 
     public static void addAppenders(AbstractTigerServer server) {
-        ch.qos.logback.classic.Logger logbackLogger = ((ch.qos.logback.classic.Logger)server.getLog());
+        Logger logbackLogger = server.getLog();
         createAndAddAppenders(server, logbackLogger);
     }
 
@@ -48,7 +49,7 @@ public class TigerServerLogManager  {
         logger.setLevel(ch.qos.logback.classic.Level.toLevel(levelString.toUpperCase(), Level.INFO));
     }
 
-    private static void createAndAddAppenders(AbstractTigerServer server, ch.qos.logback.classic.Logger log) {
+    private static void createAndAddAppenders(AbstractTigerServer server, Logger log) {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
         PatternLayoutEncoder patternLayoutEncoder = new PatternLayoutEncoder();
@@ -56,11 +57,11 @@ public class TigerServerLogManager  {
         patternLayoutEncoder.setContext(loggerContext);
         patternLayoutEncoder.start();
 
-        log.addAppender(createFileAppender(server.getServerId(), server.getConfiguration().getLogFile(), loggerContext, patternLayoutEncoder));
-        log.addAppender(createConsoleAppender(loggerContext, patternLayoutEncoder));
-        log.addAppender(createCustomerAppender(server, loggerContext));
+        ((ch.qos.logback.classic.Logger) log).addAppender(createFileAppender(server.getServerId(), server.getConfiguration().getLogFile(), loggerContext, patternLayoutEncoder));
+        ((ch.qos.logback.classic.Logger) log).addAppender(createConsoleAppender(loggerContext, patternLayoutEncoder));
+        ((ch.qos.logback.classic.Logger) log).addAppender(createCustomerAppender(server, loggerContext));
 
-        log.setAdditive(false);
+        ((ch.qos.logback.classic.Logger) log).setAdditive(false);
     }
 
     private static FileAppender<ILoggingEvent> createFileAppender(String serverId, String logFilePath, LoggerContext loggerContext, PatternLayoutEncoder patternLayoutEncoder) {
@@ -74,7 +75,6 @@ public class TigerServerLogManager  {
 
         return fileAppender;
     }
-
     private static ConsoleAppender<ILoggingEvent> createConsoleAppender(LoggerContext loggerContext, PatternLayoutEncoder patternLayoutEncoder) {
         ConsoleAppender<ILoggingEvent> consoleAppender = new ConsoleAppender<>();
         consoleAppender.setEncoder(patternLayoutEncoder);
@@ -83,6 +83,7 @@ public class TigerServerLogManager  {
 
         return consoleAppender;
     }
+
     private static String createFileName(String serverId, String logFilePath) {
         if (logFilePath != null) {
             File file = new File(logFilePath);
@@ -113,11 +114,10 @@ public class TigerServerLogManager  {
     }
 
     public static void addProxyCustomerAppender(TigerTestEnvMgr tigerTestEnvMgr, Logger log) {
-        ch.qos.logback.classic.Logger logbackLoggerLocalProxy = ((ch.qos.logback.classic.Logger)log);
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         CustomerLocalProxyAppender customerAppender = new CustomerLocalProxyAppender(tigerTestEnvMgr);
         customerAppender.setContext(loggerContext);
         customerAppender.start();
-        logbackLoggerLocalProxy.addAppender(customerAppender);
+        ((ch.qos.logback.classic.Logger) log).addAppender(customerAppender);
     }
 }

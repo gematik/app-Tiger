@@ -47,7 +47,6 @@ public class VauModifierTest {
 
     @BeforeEach
     public void initRbelLogger() {
-        RbelOptions.activateJexlDebugging();
         if (rbelLogger == null) {
             rbelLogger = RbelLogger.build(
                 new RbelConfiguration()

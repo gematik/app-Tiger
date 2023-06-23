@@ -1,13 +1,71 @@
 # Changelog Tiger Testplattform
 
 -------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.0.6
+* Logback 1.4.7
+
+# Release 2.0.1
+
+## Breaking changes
+
+* TGR-924: German BDD steps to set local and global variables were grammatically incorrect and have been fixed. So "TGR setze lokale/globale Variable {string} auf {string} setzen" has been changed to "TGR setze lokale/globale Variable {string} auf {string}"
+* TGR-909: all **Gherkin / Feature parser code has been removed** from Tiger as Polarion Toolbox (its only usage) has been refactored to use the Cucumber internal Gherkin parser. If you based your code on the self written parser, check POTO to see how to replace the parsing code in the ```polarion-toolbox-client/src/main/java/de/gematik/polarion/toolbox/worker/FeatureFileParser.java``` source file.
+* TGR-864: The order of parameters for the "TGR send {} request to {} with body {}" has been changed (body now comes as the final parameter). This is done to ensure consistency across languages and to always relegate the potentially longest parameter to the last place, improving readability.
+* Removed Tiger Admin-UI (Insufficient users)
+* TGR-931: For externalJar-Servers that use local-jars: The actual path now starts immediately after the colon. While `local://blub.jar` was a working solution as well before, now only `local:blub.jar` is accepted (the slashes were discarded before, now everything after the colon is taken the path).
+* TGR-948: Changed the behavior for trailing slashes in tiger proxy routes: When either the target-path or the request-path end in a slash, a slash will be added to the resulting request. This implicitly fixes a bug that lead to doubled slashes in some resulting requests. Caveat: When the request is for a nested target the trailing slash will only be added if it was present in the actual request (as the route-target references another entity in this case)
+
+## Bugfixes
+
+* TGR-911: Since 2.0.0 the rbel log files included font awesome v5.4 whereas tiger proxy generated HTML including font awesome 6.4. This caused icons to be not displayed or being displayed as invalid icons.
+* TGR-922: Waiting for non-paired messages now works correctly
+* TGR-841: Non-XML parts in MTOM-Messages are now converted correctly. They are stored in conjunction with their respective XPath-Locations. A sample tree is shown here:
+```
+   └──body (------=_Part_2_1927395369.1677073618377\r\nContent...) (RbelMtomFacet)
+   |  ├──contentType (application/xop+xml; charset=utf-8; type="text/xml...) (RbelValueFacet)
+   |  ├──reconstructedMessage (<?xml version="1.0" encoding="UTF-8"?>\n<SOAP-ENV:...) (RbelXmlFacet)
+   |  |  ├──Envelope (<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas....) (RbelXmlFacet)
+   |  |  |  ├──SOAP-ENV (http://schemas.xmlsoap.org/soap/envelope/) (RbelUriFacet)
+   |  |  |  |  └──basicPath (http://schemas.xmlsoap.org/soap/envelope/) (RbelValueFacet)
+   |  |  |  ├──Header (<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xm...) (RbelXmlFacet)
+   |  |  |  |  └──text ()
+   |  |  |  ├──Body (<SOAP-ENV:Body xmlns:SOAP-ENV="http://schemas.xmls...) (RbelXmlFacet)
+   |  |  |  |  ├──SignDocument (<ns4:SignDocument xmlns:ns4="http://ws.gematik.de/...) (RbelXmlFacet)
+   (...)
+   |  └──dataParts (<null>)
+   |     └──0 (<null>) (RbelMtomDataPartFacet)
+   |        ├──xpath (/SOAP-ENV:Envelope/SOAP-ENV:Body/ns4:SignDocument/...) (RbelValueFacet)
+   |        └──content (%PDF-1.6\r\n%????\r\n1361 0 obj\r\n<</Linearized 1...) (RbelBinaryFacet) 
+
+```
+* TGR-651: Sender (Client) addresses for messages are now again included in parsed messages of the Tiger Proxy.
+
+## Features
+
+* TGR-920: Non-Blocking mode added for the TGR http steps
+* TGR-934: RbelPath-Expressions are now trimmed before parsing. If you have spaces in keys, escape them like so: `$.body.['foo bar'].key`
+* Custom logos can now be defined for your RBel-Logs. Please use the configuration key "tiger.lib.rbelLogoFilePath" to specify a PNG 
+file to be used in your logs.
+* TGR-931: Local jar-Files can now be found (via the `source`-attribute) relative to the working directory. Wildcards are also supported now. So a source-attribute of `../target/app-*.jar` can now be used.
+* TGR-950: To find alternating values, concatenate them using the pipe symbols, like so:
+  `$.body.['foo'|'bar'].key`
+* TGR-869: When multiple properties in either System-Properties or Environment-Variables map to the same value and differ in value the startup will 
+be aborted with an exception pointing to the conflicting values. This is done to follow the "fail fast" philosophy and give the user the chance
+to resolve the conflict instead of choosing an arbitrary value automatically.
+
+-------
 * **Serenity BDD 3.6.23**
 * Cucumber 7.11.0
 * RestAssured 5.2.0
 * Selenium 4.8.0
 * Appium 8.3.0
 * **Spring Boot 3.0.6**
-* Logback 1.2.11
+* Logback 1.4.7
 
 # Release 2.0.0
 
@@ -16,6 +74,7 @@
 * TGR-769: Serenity reports show examples now with a collapse icon clearly indicating whether its folded or unfolded
 * TGR-887: Jexl-Selectors in RbelPath-Expressions now differentiate between the current (@.) and the root ($.) element.
 * TGR-893: Saving of HTML-Traffic in Webui refactored, HTML rendering has moved from frontend to backend
+* TGR-947: Link from Scenario in Sidebar fixed
 
 ## Features
 

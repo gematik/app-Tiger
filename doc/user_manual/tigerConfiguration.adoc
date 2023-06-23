@@ -11,14 +11,18 @@ This allows a vastly simplified retrieval and configuration of nearly all aspect
 
 The following inlets are considered in the TigerGlobalConfiguration (ordered from most to least important, meaning if a property occurs in multiple sources the one at the top is considered first):
 
-* Manually added properties (TigerGlobalConfiguration.putString("foo.bar")). Here there are three sub-distinctions:
-** Global properties
-** Test properties
-** Thread-based properties
+* Exports from ScopedExecutor
+* Thread-local exports
+* Exports done in glue code
+* Exports during runtime (`TigerGlobalConfiguration.putValue()`)
 * Command-line properties
 * System-Properties (System.setProperty)
 * Environment-Variables (export "FOO_BAR" = 42)
-* YAML-Files (`tiger.yaml`)
+* Full-text YAML file (value of `tiger.yaml` configuration key)
+* Additional YAML-Files (`additionalYamls:`)
+* Host YAML-File (`tiger-<hostname>.yaml`)
+* Main YAML-File (`tiger.yaml`)
+* Interne Defaults
 
 === Key-translation
 

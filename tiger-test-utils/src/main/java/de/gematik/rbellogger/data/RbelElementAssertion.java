@@ -31,6 +31,15 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
         return new RbelElementAssertion(kids.get(0));
     }
 
+    public RbelElementAssertion doesNotContainChildWithPath(String rbelPath) {
+        final List<RbelElement> kids = actual.findRbelPathMembers(rbelPath);
+        if (!kids.isEmpty()) {
+            failWithMessage("Expected rbelPath %s to not find any member, but did so in tree %s",
+                rbelPath, actual.printTreeStructureWithoutColors());
+        }
+        return this.myself;
+    }
+
     public RbelElementAssertion hasStringContentEqualTo(String expectedToString) {
         this.objects.assertHasToString(this.info, this.actual.getRawStringContent(), expectedToString);
         return this.myself;
@@ -45,6 +54,10 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
 
     public StringAssert asString() {
         return new StringAssert(actual.getRawStringContent());
+    }
+
+    public ByteArrayAssert getContent() {
+        return new ByteArrayAssert(actual.getRawContent());
     }
 
     public OptionalAssert<String> valueAsString() {

@@ -17,20 +17,27 @@
 package de.gematik.rbellogger.data;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
+import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,6 +45,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class RbelPathTest {
 
+    private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
     private RbelElement jwtMessage;
     private RbelElement xmlMessage;
 
@@ -51,7 +59,7 @@ class RbelPathTest {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/" + fileName);
 
-        return RbelLogger.build().getRbelConverter()
+        return RBEL_CONVERTER
             .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
     }
 
@@ -67,8 +75,8 @@ class RbelPathTest {
 
     @Test
     void simpleRbelPath_shouldFindTarget() {
-        assertThat(jwtMessage.findElement("$.header"))
-            .get()
+        assertThat(jwtMessage)
+            .extractChildWithPath("$.header")
             .isSameAs(jwtMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
 
         assertThat(jwtMessage.findRbelPathMembers("$.body.body.nbf"))
@@ -80,8 +88,8 @@ class RbelPathTest {
 
     @Test
     void rbelPathEndingOnStringValue_shouldReturnNestedValue() {
-        assertThat(jwtMessage.findRbelPathMembers("$.body.body.sso_endpoint")
-            .get(0).getRawStringContent())
+        assertThat(jwtMessage).extractChildWithPath("$.body.body.sso_endpoint")
+            .asString()
             .startsWith("http://");
     }
 
@@ -176,7 +184,7 @@ class RbelPathTest {
         final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
             .parseMessage(challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
 
-        assertThat(convertedMessage.findElement("$.body.challenge.signature").get())
+        Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature").get())
             .isSameAs(convertedMessage.findElement("$.body.challenge.content.signature").get());
     }
 
@@ -217,7 +225,7 @@ class RbelPathTest {
         fileReaderCapturer.initialize();
         final RbelElement secondResponse = logger.getMessageList().get(3);
 
-        RbelElementAssertion.assertThat(secondResponse)
+        assertThat(secondResponse)
             .extractChildWithPath("$.body.body.idp_entity.[?(@.iss.content=='https://idpsek.dev.gematik.solutions')]")
             .hasStringContentEqualTo("{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
     }
@@ -233,8 +241,52 @@ class RbelPathTest {
         fileReaderCapturer.initialize();
         final RbelElement secondResponse = logger.getMessageList().get(3);
 
-        RbelElementAssertion.assertThat(secondResponse)
+        assertThat(secondResponse)
             .extractChildWithPath("$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]")
             .hasStringContentEqualTo("{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
+    }
+
+    @Test
+    void trailingSpace_shouldStillWork() {
+        assertThat(jwtMessage)
+            .extractChildWithPath("$.body.body ")
+            .isSameAs(jwtMessage.findElement("$.body.body").get());
+    }
+
+    @Test
+    void unescapedSpaceInKeys_shouldGiveError() {
+        assertThatThrownBy(() -> jwtMessage.findRbelPathMembers("$.body .body"))
+            .isInstanceOf(RbelPathException.class)
+            .hasMessageContaining("$.body .body");
+    }
+
+    @Test
+    void esacpedSpaceInKeys_shouldWorkCorrectly() {
+        assertThat(RBEL_CONVERTER.convertElement("{\"foo bar\":\"value\"}", null))
+            .extractChildWithPath("$.['foo bar']")
+            .hasStringContentEqualTo("value");
+    }
+
+    @Test
+    void escapedPipeInKeys_shouldFindTarget() {
+        assertThat(RBEL_CONVERTER.convertElement("{\"foo|bar\":\"value\"}", null))
+            .extractChildWithPath("$.['foo%7Cbar']")
+            .hasStringContentEqualTo("value");
+    }
+    @Test
+    void alternateKeys_shouldFindTarget() {
+        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['nbf'|'foobar']"))
+            .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
+        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['foobar'|'nbf']"))
+            .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
+    }
+
+    @Test
+    void alternateKeys_shouldFindMultipleTargets() {
+        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['exp'|'iat'|'nbf']"))
+            .containsExactlyInAnyOrder(
+                jwtMessage.findElement("$.body.body.nbf").get(),
+                jwtMessage.findElement("$.body.body.exp").get(),
+                jwtMessage.findElement("$.body.body.iat").get());
     }
 }

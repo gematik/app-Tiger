@@ -27,6 +27,7 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -125,11 +126,8 @@ public class RbelLoggerTest {
                 new RbelHtmlRenderer()
                         .doRender(rbelLogger.getMessageList()), Charset.defaultCharset());
 
-        assertThat(rbelLogger.getMessageList().get(9)
-                .findRbelPathMembers("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")
-                .get(0)
-                .seekValue())
-                .get()
-                .isEqualTo("IDP symmetricEncryptionKey");
+        RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(9))
+            .extractChildWithPath("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")
+            .hasValueEqualTo("IDP symmetricEncryptionKey");
     }
 }

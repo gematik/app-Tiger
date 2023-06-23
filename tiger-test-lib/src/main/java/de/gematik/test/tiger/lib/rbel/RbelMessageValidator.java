@@ -202,11 +202,11 @@ public class RbelMessageValidator {
         final String methodFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method", "");
 
         final List<RbelElement> candidateMessages = msgs.stream()
-            .filter(el -> el.hasFacet(RbelHttpRequestFacet.class))
+            .filter(el -> !requestParameter.isRequireHttpMessage() || el.hasFacet(RbelHttpRequestFacet.class))
             .filter(req -> doesPathOfMessageMatch(req, requestParameter.getPath()))
             .filter(req -> hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter))
             .filter(req -> methodFilter == null || methodFilter.isEmpty() || doesMethodMatch(req, methodFilter))
-            .collect(Collectors.toList());
+            .toList();
         if (candidateMessages.isEmpty()) {
             return Optional.empty();
         }
@@ -218,9 +218,11 @@ public class RbelMessageValidator {
                     + "Returning " + warnMsg + " message. This may not be deterministic!");
                 printAllPathsOfMessages(candidateMessages);
             }
-            return Optional.of(
-                requestParameter.isFilterPreviousRequest() ? candidateMessages.get(candidateMessages.size() - 1)
-                    : candidateMessages.get(0));
+            if (requestParameter.isFilterPreviousRequest()) {
+                return Optional.of(candidateMessages.get(candidateMessages.size() - 1));
+            } else {
+                return Optional.of(candidateMessages.get(0));
+            }
         }
 
         if (requestParameter.isFilterPreviousRequest()) {
@@ -421,8 +423,11 @@ public class RbelMessageValidator {
     public RbelElement findElementInCurrentRequest(final String rbelPath) {
         try {
             final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+            if (elems.size() != 1) {
+                log.warn("Could not find elements {} in message\n {}", rbelPath, currentRequest.printTreeStructureWithoutColors());
+            }
             assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
-            assertThat(elems).withFailMessage("Expected exactly one match fpr path '" + rbelPath + "'!").hasSize(1);
+            assertThat(elems).withFailMessage("Expected exactly one match for path '" + rbelPath + "'!").hasSize(1);
             return elems.get(0);
         } catch (final Exception e) {
             throw new AssertionError("Unable to find element in last request for rbel path '" + rbelPath + "'");

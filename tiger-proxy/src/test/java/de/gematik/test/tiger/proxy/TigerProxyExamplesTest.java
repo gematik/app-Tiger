@@ -294,7 +294,6 @@ public class TigerProxyExamplesTest {
 
     @Test
     void modificationForReturnValue(MockServerClient mockServerClient) {
-        RbelOptions.activateJexlDebugging();
         try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder()
                 .from("http://blub")

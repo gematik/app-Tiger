@@ -119,6 +119,7 @@ public class RBelValidatorGlue {
             RequestParameter.builder()
                 .rbelPath(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))
                 .value(TigerGlobalConfiguration.resolvePlaceholders(value))
+                .requireHttpMessage(false)
                 .build());
     }
 
@@ -139,6 +140,7 @@ public class RBelValidatorGlue {
                 .rbelPath(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))
                 .value(TigerGlobalConfiguration.resolvePlaceholders(value))
                 .requireNewMessage(true)
+                .requireHttpMessage(false)
                 .build());
     }
 
@@ -237,7 +239,10 @@ public class RBelValidatorGlue {
     @When("TGR find last request to path {string}")
     public void findLastRequestToPath(final String path) {
         rbelValidator.filterRequestsAndStoreInContext(
-            RequestParameter.builder().path(path).filterPreviousRequest(true).build().resolvePlaceholders());
+            RequestParameter.builder()
+                .path(path)
+                .filterPreviousRequest(true)
+                .build().resolvePlaceholders());
     }
 
     /**

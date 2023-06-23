@@ -16,8 +16,10 @@
 
 package de.gematik.test.tiger.integration.example;
 
+import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import io.cucumber.java.en.Then;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class TestTigerIntegrationExample {

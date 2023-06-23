@@ -41,6 +41,9 @@ lib:
     createRbelHtmlReports: true
     # maximum amount of seconds to wait / pause execution via pop up in the workflow ui, default is 5 hours.
     pauseExecutionTimeoutSeconds: 18000
+    # Customize your Rbel-Logs with your own logo. Must be PNG format.
+    # Path should be relative to execution-location
+    rbelLogoFilePath: "myLogo.png"
 
 # flag whether to start the local Tiger Proxy (default) or to omit it completely.
 # if you have the local Tiger Proxy deactivated you will NOT be able to

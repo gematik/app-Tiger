@@ -18,16 +18,20 @@ package de.gematik.rbellogger.util;
 
 import static de.gematik.rbellogger.RbelOptions.ACTIVATE_RBEL_PATH_DEBUGGING;
 import static de.gematik.rbellogger.RbelOptions.RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH;
+import com.google.common.net.UrlEscapers;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelNestedFacet;
 import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 @RequiredArgsConstructor
@@ -52,7 +56,10 @@ public class RbelPathExecutor {
         if (!rbelPath.startsWith("$")) {
             throw new RbelPathException("RbelPath expressions always start with $. (got '" + rbelPath + "')");
         }
-        final List<String> keys = List.of(rbelPath.substring(2).split("\\.(?![^\\(]*\\))"));
+        final List<String> keys = List.of(rbelPath.substring(2).trim().split("\\.(?![^\\(]*\\))"));
+        if (keys.stream().anyMatch(s -> s.startsWith(" ") || s.endsWith(" "))) {
+            throw new RbelPathException("Found key with unescaped spaces in rbel-path '" + rbelPath + "'! (If intended, please escape using \"[' b b ']\")");
+        }
         List<RbelElement> candidates = List.of(rbelElement);
         if (ACTIVATE_RBEL_PATH_DEBUGGING) {
             log.info("Executing RBelPath {} into root-element (limited view to {} levels)\n{}",
@@ -140,7 +147,7 @@ public class RbelPathExecutor {
     private List<? extends RbelElement> executeFunctionalExpression(
         final String functionExpression, final RbelElement element) {
         if (functionExpression.startsWith("'") && functionExpression.endsWith("'")) {
-            return element.getAll(functionExpression.substring(1, functionExpression.length() - 1));
+            return executeNamedSelection(functionExpression, element);
         } else if (functionExpression.equals("*")) {
             return element.getChildNodes();
         } else if (functionExpression.startsWith("?")) {
@@ -155,6 +162,20 @@ public class RbelPathExecutor {
         } else {
             throw new RbelPathException("Unknown function expression encountered: " + functionExpression);
         }
+    }
+
+    private static List<RbelElement> executeNamedSelection(String functionExpression, RbelElement element) {
+        return Stream.of(functionExpression.split("\\|"))
+            .peek(s -> {
+                if (!s.startsWith("'") || !s.endsWith("'")) {
+                    throw new RbelPathException("Requiring all name selector to be surrounded by '. Violated by " + s);
+                }
+            })
+            .map(s -> s.substring(1, s.length() - 1))
+            .map(URLDecoder::decode)
+            .map(element::getAll)
+            .flatMap(List::stream)
+            .toList();
     }
 
     private List<RbelElement> findChildNodesByJexlExpression(final RbelElement element, final String jexl) {

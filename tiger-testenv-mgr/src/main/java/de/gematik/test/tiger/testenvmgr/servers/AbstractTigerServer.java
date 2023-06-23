@@ -34,6 +34,10 @@ import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
@@ -41,9 +45,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.Getter;
-import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
 
 @Getter
 public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
@@ -69,7 +70,11 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         this.tigerTestEnvMgr = tigerTestEnvMgr;
         this.configuration = configuration;
         log = org.slf4j.LoggerFactory.getLogger("TgrSrv-" + serverId);
-        TigerServerLogManager.addAppenders(this);
+        try {
+            TigerServerLogManager.addAppenders(this);
+        } catch (NoClassDefFoundError ncde) {
+            log.warn("Unable to detect logback library! Log appender for server {} not activated", serverId);
+        }
     }
 
     @SuppressWarnings("unused")

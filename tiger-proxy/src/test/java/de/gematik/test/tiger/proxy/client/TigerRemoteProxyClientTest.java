@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
@@ -25,6 +26,7 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
@@ -51,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -197,9 +200,11 @@ class TigerRemoteProxyClientTest {
             .atMost(2, TimeUnit.SECONDS)
             .until(() -> !tigerRemoteProxyClient.getRbelLogger().getMessageHistory().isEmpty());
 
-        assertThat(tigerRemoteProxyClient.getRbelMessagesList().get(0).findRbelPathMembers("$.body").get(0).getRawContent())
+        assertThat(tigerRemoteProxyClient.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.body").getContent()
             .isEqualTo(DigestUtils.sha256("helloRequest"));
-        assertThat(tigerRemoteProxyClient.getRbelMessagesList().get(1).findRbelPathMembers("$.body").get(0).getRawContent())
+        assertThat(tigerRemoteProxyClient.getRbelMessagesList().get(1))
+            .extractChildWithPath("$.body").getContent()
             .isEqualTo(DigestUtils.sha256("helloResponse"));
     }
 

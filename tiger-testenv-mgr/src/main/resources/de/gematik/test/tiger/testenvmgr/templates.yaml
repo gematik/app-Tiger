@@ -228,7 +228,7 @@ templates:
   - templateName: kon-sim
     type: externalJar
     source:
-      - local://konnektor-simulator-2.1.7-SNAPSHOT.jar
+      - local:konnektor-simulator-2.1.7-SNAPSHOT.jar
     startupTimeoutSec: 30
     # options to the java call
     healthcheckUrl: https://127.0.0.1:9106

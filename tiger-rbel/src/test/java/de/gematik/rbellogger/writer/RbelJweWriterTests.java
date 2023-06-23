@@ -9,6 +9,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJweFacet;
 import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.key.RbelKey;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.util.Base64;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,7 @@ class RbelJweWriterTests {
 
     private RbelElement serializeElement(RbelElement input) {
         return rbelConverter.convertElement(
-            new RbelWriter(rbelConverter).serialize(input),
+            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()),
             null);
     }
 }

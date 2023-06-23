@@ -16,6 +16,9 @@
 
 package de.gematik.test.tiger.common.config;
 
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 /**
  * Holds local configuration. You can add values to it, but the configuration will only be active within the `execute`
  * statement. This class is not intended for threading!
@@ -34,7 +37,19 @@ public class TigerScopedExecutor {
 
     public void execute(Runnable runnable) {
         TigerGlobalConfiguration.addConfigurationSource(scopedValueSource);
-        runnable.run();
-        TigerGlobalConfiguration.removeConfigurationSource(scopedValueSource);
+        try {
+            runnable.run();
+        } finally {
+            TigerGlobalConfiguration.removeConfigurationSource(scopedValueSource);
+        }
+    }
+
+    public <T> T retrieve(Supplier<T> supplier) {
+        TigerGlobalConfiguration.addConfigurationSource(scopedValueSource);
+        try {
+            return supplier.get();
+        } finally {
+            TigerGlobalConfiguration.removeConfigurationSource(scopedValueSource);
+        }
     }
 }

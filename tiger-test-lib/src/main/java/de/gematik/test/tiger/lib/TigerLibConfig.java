@@ -41,4 +41,6 @@ public class TigerLibConfig {
     public boolean createRbelHtmlReports = true;
     @Builder.Default
     public long pauseExecutionTimeoutSeconds = 18000L;
+    @Builder.Default
+    public TigerHttpClientConfig httpClientConfig = new TigerHttpClientConfig();
 }

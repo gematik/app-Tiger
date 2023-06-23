@@ -1,4 +1,0 @@
-zion:
-  mockResponseFiles:
-    firstFile: src/test/resources/someMockResponse.yaml
-    secondFile: src/test/resources/getMockResponse.yaml

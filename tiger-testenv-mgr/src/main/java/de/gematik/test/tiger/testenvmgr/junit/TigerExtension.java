@@ -124,12 +124,12 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
 
         Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
         properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValue().orElse(0));
+        log.info("Starting with port {}", properties.get("server.port"));
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(properties)
             .sources(TigerTestEnvMgrApplication.class)
             .web(WebApplicationType.SERVLET)
-            .initializers()
             .run();
 
         tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);

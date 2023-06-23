@@ -118,34 +118,31 @@ public class TigerConfigurationLoader {
     }
 
     /**
-     * Instantiates a bean of the given class. The base-keys denote the point from which the keys are taken.
-     * If values can not be substituted (e.g. ${key.that.does.not.exist}) they are simply returned as a string.
-     * This behaviour is more relaxed towards input errors but might delay failures from startup to runtime.
+     * Instantiates a bean of the given class. The base-keys denote the point from which the keys are taken. If values can not be substituted (e.g.
+     * ${key.that.does.not.exist}) they are simply returned as a string. This behaviour is more relaxed towards input errors but might delay failures from
+     * startup to runtime.
      * <p>
-     * If the base-keys lead to a non-defined (i.e. empty) node in the tree (no values have been read) an empty
-     * optional is returned.
+     * If the base-keys lead to a non-defined (i.e. empty) node in the tree (no values have been read) an empty optional is returned.
      *
      * @param configurationBeanClass The class of the configuration bean
-     * @param baseKeys Where in the configuration tree should the values be taken from?
-     * @return An instance of configurationBeanClass filled with values taken from the configuration tree
+     * @param baseKeys               Where in the configuration tree should the values be taken from?
      * @param <T>
+     * @return An instance of configurationBeanClass filled with values taken from the configuration tree
      */
     public <T> Optional<T> instantiateConfigurationBean(Class<T> configurationBeanClass, String... baseKeys) {
         return instantiateConfigurationBean(configurationBeanClass, objectMapper, baseKeys);
     }
 
     /**
-     * Instantiates a bean of the given class. The base-keys denote the point from which the keys are taken.
-     * If values can not be substituted (e.g. ${key.that.does.not.exist}) an empty value is returned.
-     * This behaviour follows the "fail fast, fail early" approach.
+     * Instantiates a bean of the given class. The base-keys denote the point from which the keys are taken. If values can not be substituted (e.g.
+     * ${key.that.does.not.exist}) an empty value is returned. This behaviour follows the "fail fast, fail early" approach.
      * <p>
-     * If the base-keys lead to a non-defined (i.e. empty) node in the tree (no values have been read) an empty
-     * optional is returned.
+     * If the base-keys lead to a non-defined (i.e. empty) node in the tree (no values have been read) an empty optional is returned.
      *
      * @param configurationBeanClass The class of the configuration bean
-     * @param baseKeys Where in the configuration tree should the values be taken from?
-     * @return An instance of configurationBeanClass filled with values taken from the configuration tree
+     * @param baseKeys               Where in the configuration tree should the values be taken from?
      * @param <T>
+     * @return An instance of configurationBeanClass filled with values taken from the configuration tree
      */
     public <T> Optional<T> instantiateConfigurationBeanStrict(Class<T> configurationBeanClass, String... baseKeys) {
         return instantiateConfigurationBean(configurationBeanClass, strictObjectMapper, baseKeys);
@@ -264,7 +261,8 @@ public class TigerConfigurationLoader {
             .values(System.getenv().entrySet().stream()
                 .collect(Collectors.toMap(
                     entry -> new TigerConfigurationKey(entry.getKey()),
-                    Map.Entry::getValue)))
+                    Map.Entry::getValue,
+                    (e1, e2) -> mapConflictResolver(e1, e2, "environment variables"))))
             .sourceType(SourceType.ENV)
             .build());
     }
@@ -279,9 +277,19 @@ public class TigerConfigurationLoader {
             .values(System.getProperties().entrySet().stream()
                 .collect(Collectors.toMap(
                     entry -> new TigerConfigurationKey(entry.getKey().toString()),
-                    entry -> entry.getValue().toString())))
+                    entry -> entry.getValue().toString(),
+                    (e1, e2) -> mapConflictResolver(e1, e2, "system properties"))))
             .sourceType(SourceType.PROPERTIES)
             .build());
+    }
+
+    private static String mapConflictResolver(String e1, String e2, String propertySourceName) {
+        if (e1.equals(e2)) {
+            return e1;
+        } else {
+            throw new TigerConfigurationException("Found two conflicting " + propertySourceName + " with values '" + e1 + "' and '" + e2
+                + "'. Resolve this conflict manually!");
+        }
     }
 
     public Map<TigerConfigurationKey, String> retrieveMap() {
