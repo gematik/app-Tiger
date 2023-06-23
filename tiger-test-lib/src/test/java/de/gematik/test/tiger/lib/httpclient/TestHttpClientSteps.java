@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.lib.httpclient;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -12,6 +13,7 @@ import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.glue.TigerGlue;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.datatable.DataTableTypeRegistry;
 import io.cucumber.datatable.DataTableTypeRegistryTableConverter;
@@ -28,8 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.model.HttpResponse;
-import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 /**
  * Performs all tests as defined in HttpGlueCodeTest.feature as unit tests so that the coverage of the glue code is also added to sonar. Cucumber does some
@@ -225,5 +225,13 @@ public class TestHttpClientSteps {
             + "\"header\":{\"alg\": \"BP256R1\",\"typ\": \"JWT\"},\"body\":{\"foo\":\"bar\"}, \"signature\":{\"verifiedUsing\":\"idpSig\"}}");
         rbelValidatorGlueCode. findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.signature.verifiedUsing')}" ,"puk_idpSig");
+    }
+
+    @Test
+    void tgrPauseExecutionWithMessageAndErrorMessage() {
+        assertThatThrownBy(() -> {
+            tigerGlue.tgrPauseExecutionWithMessageAndErrorMessage("Test", "Error");
+        }).isInstanceOf(TigerTestEnvException.class)
+            .hasMessageContaining("The step 'TGR pause test run execution with message \"{}\" and message in case of error \"{}\"' is not supported outside the Workflow UI. Please check the manual for more information.");
     }
 }

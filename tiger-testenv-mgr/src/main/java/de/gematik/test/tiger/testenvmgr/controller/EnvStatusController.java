@@ -145,19 +145,19 @@ public class EnvStatusController implements TigerUpdateListener {
     @GetMapping(path = "/confirmShutdown")
     public void getConfirmShutdown() {
         log.trace("Received shutdown confirmation");
-        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
+        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
     }
 
     @GetMapping(path = "/continueExecution")
     public void getConfirmContinueExecution() {
         log.trace("Received confirmation to continue test execution");
-        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
+        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
     }
 
     @GetMapping(path = "/failExecution")
     public void getConfirmToFailExecution() {
         log.trace("Received confirmation for failing test step");
-        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi();
+        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(true);
         TigerStatusUpdate update = TigerStatusUpdate.builder().bannerMessage("Failing test run").bannerType(BannerType.MESSAGE)
             .bannerColor("red").build();
         tigerTestEnvMgr.receiveTestEnvUpdate(update);

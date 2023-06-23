@@ -16,6 +16,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
 
   Scenario: PUT Request to folder
+    Given TGR pausiere Testausführung mit Nachricht "Hier wird Userinput erfragt (erledigt = pass)?" und Meldung im Fehlerfall "Dieser Fehler wird gezeigt wenn User abbricht."
     When TGR send empty PUT request to "http://winstone/target"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"

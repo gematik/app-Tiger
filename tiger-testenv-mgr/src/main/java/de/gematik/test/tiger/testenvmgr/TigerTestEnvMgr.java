@@ -4,6 +4,9 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_PROXY_PORT;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +34,19 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -45,22 +61,6 @@ import org.springframework.boot.web.servlet.context.ServletWebServerApplicationC
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 
 @Slf4j
 @Getter
@@ -94,6 +94,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
 
     private boolean userAcknowledgedOnWorkflowUi = false;
     private boolean shouldAbortTestExecution = false;
+    @Getter
+    private boolean userPressedFailTestExecution = false;
 
     private boolean isShuttingDown = false;
     private boolean isShutDown = false;
@@ -567,7 +569,8 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
         logListeners.add(listener);
     }
 
-    public void receivedConfirmationFromWorkflowUi() {
+    public void receivedConfirmationFromWorkflowUi(boolean executionShouldFail) {
+        userPressedFailTestExecution = executionShouldFail;
         userAcknowledgedOnWorkflowUi = true;
     }
 
