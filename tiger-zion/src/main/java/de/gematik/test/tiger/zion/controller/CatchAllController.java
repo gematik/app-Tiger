@@ -1,6 +1,5 @@
 package de.gematik.test.tiger.zion.controller;
 
-import static org.springframework.web.bind.annotation.RequestMethod.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
@@ -11,13 +10,6 @@ import de.gematik.test.tiger.zion.config.ZionConfiguration;
 import de.gematik.test.tiger.zion.services.ZionRequestExecutor;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.FileInputStream;
-import java.nio.file.Path;
-import java.time.ZonedDateTime;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Path;
+import java.time.ZonedDateTime;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/")

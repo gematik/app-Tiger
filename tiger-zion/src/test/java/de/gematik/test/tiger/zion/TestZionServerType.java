@@ -1,6 +1,5 @@
 package de.gematik.test.tiger.zion;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -8,10 +7,21 @@ import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ResetTigerConfiguration
 class TestZionServerType {
+
+    @BeforeEach
+    @AfterEach
+    public void resetConfig() {
+        TigerGlobalConfiguration.reset();
+    }
+
     @TigerTest(tigerYaml = "servers:\n"
         + "  zionServer:\n"
         + "    type: zion\n"

@@ -1,17 +1,9 @@
 package de.gematik.test.tiger.zion;
 
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
-import static org.assertj.core.api.Assertions.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.zion.config.*;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
 import kong.unirest.Empty;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -28,6 +20,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -49,6 +51,7 @@ class TestTigerProxyMockResponses {
     @SneakyThrows
     @BeforeEach
     public void setupTempDirectory() {
+        TigerGlobalConfiguration.reset();
         Files.createDirectories(tempDirectory);
         Files.list(tempDirectory).forEach(path -> path.toFile().delete());
         mockResponsesBackup = configuration.getMockResponses();
@@ -56,6 +59,7 @@ class TestTigerProxyMockResponses {
 
     @AfterEach
     public void resetMockResponses() {
+        TigerGlobalConfiguration.reset();
         configuration.setMockResponses(mockResponsesBackup);
         configuration.setSpy(null);
     }

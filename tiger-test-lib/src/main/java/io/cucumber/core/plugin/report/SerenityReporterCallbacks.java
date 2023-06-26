@@ -4,7 +4,6 @@
 
 package io.cucumber.core.plugin.report;
 
-import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
@@ -23,24 +22,8 @@ import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.messages.types.Feature;
 import io.cucumber.messages.types.Scenario;
 import io.cucumber.messages.types.Step;
+import io.cucumber.plugin.event.Event;
 import io.cucumber.plugin.event.*;
-import java.awt.Color;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -50,6 +33,27 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static org.awaitility.Awaitility.await;
 
 @Slf4j
 public class SerenityReporterCallbacks {
@@ -289,11 +293,8 @@ public class SerenityReporterCallbacks {
         TestStepStarted tssEvent = ((TestStepStarted) event);
 
         if (!(tssEvent.getTestStep() instanceof HookTestStep)
-            && tssEvent.getTestStep() instanceof PickleStepTestStep) {
-            PickleStepTestStep pickleTestStep = (PickleStepTestStep) tssEvent.getTestStep();
-
+            && tssEvent.getTestStep() instanceof PickleStepTestStep pickleTestStep) {
             informWorkflowUiAboutCurrentStep(pickleTestStep, "EXECUTING", context);
-
         }
 
         if (context.getCurrentStep() != null) {
@@ -422,15 +423,10 @@ public class SerenityReporterCallbacks {
 
         // dump overall status for updates while test is still running
         switch (scenarioStatus) {
-            case "PASSED":
-                scPassed++;
-                break;
-            case "ERROR":
-            case "FAILED":
-                scFailed++;
-                break;
-            default:
-                break;
+            case "PASSED" -> scPassed++;
+            case "ERROR", "FAILED" -> scFailed++;
+            default -> {
+            }
         }
         log.info("------------ STATUS: {} passed {}", scPassed,
             scFailed > 0 ? scFailed + " failed or error" : "");
@@ -450,7 +446,7 @@ public class SerenityReporterCallbacks {
             scenarioContext);
 
         if (evidenceReport.getSteps().stream().anyMatch(step -> !step.getEvidenceEntries().isEmpty())) {
-            Path reportFile = createReportFile(scenarioContext, evidenceReport);
+            Path reportFile = createEvidenceReportFile(scenarioContext, evidenceReport);
 
             if (TigerDirector.isSerenityAvailable()) {
                 (Serenity.recordReportData().asEvidence()
@@ -462,18 +458,18 @@ public class SerenityReporterCallbacks {
     }
 
     @NotNull
-    private Path createReportFile(ScenarioContextDelegate scenarioContext,
-        EvidenceReport evidenceReport)
+    private Path createEvidenceReportFile(ScenarioContextDelegate scenarioContext,
+                                          EvidenceReport evidenceReport)
         throws IOException {
         var renderedReport = evidenceRenderer.render(evidenceReport);
 
         final Path parentDir = getEvidenceDir();
 
-        return Files.write(
+        return Files.writeString(
             parentDir.resolve(
                 getFileNameFor("evidence", scenarioContext.getScenarioName(),
                     currentScenarioDataVariantIndex)),
-            renderedReport.getBytes(StandardCharsets.UTF_8),
+                renderedReport,
             StandardOpenOption.CREATE,
             StandardOpenOption.WRITE,
             StandardOpenOption.TRUNCATE_EXISTING);
@@ -529,7 +525,10 @@ public class SerenityReporterCallbacks {
                 logFile.getAbsolutePath());
         } catch (final Exception e) {
             log.error("Unable to create/save rbel log for scenario " + scenarioName, e);
+        } finally {
+            LocalProxyRbelMessageListener.clearMessages();
         }
+
     }
 
     public String getFileNameFor(String type, String scenarioName, int dataVariantIndex) {
