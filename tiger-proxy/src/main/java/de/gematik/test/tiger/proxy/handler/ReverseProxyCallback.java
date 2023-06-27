@@ -17,28 +17,10 @@ import org.mockserver.model.HttpRequest;
 
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
-public class ReverseProxyCallback extends AbstractTigerRouteCallback {
+public class ReverseProxyCallback extends AbstractRouteProxyCallback {
 
-    private static final String HTTPS_PREFIX = "https://";
-    private final URL targetUrl;
-    private final int port;
-    private final boolean addTrailingSlash;
-
-    @SneakyThrows(MalformedURLException.class)
     public ReverseProxyCallback(TigerProxy tigerProxy, TigerRoute route) {
         super(tigerProxy, route);
-        if (route.getTo().endsWith("/")) {
-            targetUrl = new URL(route.getTo().substring(0, route.getTo().length() - 1));
-            addTrailingSlash = true;
-        } else {
-            targetUrl = new URL(route.getTo());
-            addTrailingSlash = false;
-        }
-        if (targetUrl.getPort() < 0) {
-            port = route.getTo().startsWith(HTTPS_PREFIX) ? 443 : 80;
-        } else {
-            port = targetUrl.getPort();
-        }
     }
 
     @Override
@@ -46,17 +28,17 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
         applyModifications(httpRequest);
         final HttpRequest request = cloneRequest(httpRequest)
             .withSocketAddress(
-                getTigerRoute().getTo().startsWith(HTTPS_PREFIX),
-                targetUrl.getHost(),
-                port
+                getTargetUrl().getProtocol().equals("https"),
+                getTargetUrl().getHost(),
+                getPort()
             )
-            .withSecure(getTigerRoute().getTo().startsWith(HTTPS_PREFIX))
+            .withSecure(getTigerRoute().getTo().startsWith("https"))
             .withPath(patchPath(httpRequest.getPath().getValue()));
 
         if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()) {
             request
                 .removeHeader("Host")
-                .withHeader("Host", targetUrl.getHost() + ":" + port);
+                .withHeader("Host", getTargetUrl().getHost() + ":" + getPort());
         }
         if (getTigerRoute().getBasicAuth() != null) {
             request.withHeader("Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue());
@@ -66,19 +48,34 @@ public class ReverseProxyCallback extends AbstractTigerRouteCallback {
     }
 
     private String patchPath(String requestPath) {
-        String patchedUrl = requestPath.replaceFirst(targetUrl.toString(), "");
+        String patchedUrl = requestPath.replaceFirst(getTargetUrl().toString(), "");
         if (!getTigerRoute().getFrom().equals("/")) {
             patchedUrl = patchedUrl.substring(getTigerRoute().getFrom().length());
         }
         if (patchedUrl.startsWith("/")) {
-            if (addTrailingSlash && !patchedUrl.endsWith("/") &&
+            if (isAddTrailingSlash() && !patchedUrl.endsWith("/") &&
                 (requestPath.equals("/") || requestPath.equals(""))) {
-                return targetUrl.getPath() + patchedUrl + "/";
+                return getTargetUrl().getPath() + patchedUrl + "/";
             } else {
-                return targetUrl.getPath() + patchedUrl;
+                return getTargetUrl().getPath() + patchedUrl;
             }
         } else {
-            return targetUrl.getPath() + "/" + patchedUrl;
+            return getTargetUrl().getPath() + "/" + patchedUrl;
+        }
+    }
+
+    @Override
+    protected String rewriteConcreteLocation(String originalLocation) {
+        try {
+            final URI newUri = new URI(getTargetUrl().getPath())
+                .relativize(new URI(originalLocation));
+            if (newUri.isAbsolute()) {
+                return newUri.toString();
+            } else {
+                return "/" + newUri;
+            }
+        } catch (URISyntaxException e) {
+            return originalLocation;
         }
     }
 

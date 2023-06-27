@@ -70,18 +70,16 @@ import org.mockserver.netty.MockServer;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
-class TestTigerProxyRouting extends AbstractTigerProxyTest {
+class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
 
     @ParameterizedTest
     @MethodSource("nestedAndShallowPathTestCases")
     void forwardProxyToNestedTarget_ShouldAdressCorrectly(String fromPath,
         String requestPath, String actualPath, int expectedReturnCode) {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
+        tigerProxy.addRoute(TigerRoute.builder()
                 .from("http://backend")
                 .to("http://localhost:" + fakeBackendServerPort + fromPath)
-                .build()))
-            .build());
+                .build());
 
         assertThat(proxyRest.get("http://backend" + requestPath).asString().getStatus())
             .isEqualTo(expectedReturnCode);
@@ -100,12 +98,10 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     @MethodSource("nestedAndShallowPathTestCases")
     void reverseProxyToNestedTarget_ShouldAddressCorrectly(String fromPath,
         String requestPath, String actualPath, int expectedReturnCode) {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
+        tigerProxy.addRoute(TigerRoute.builder()
                 .from("/")
                 .to("http://localhost:" + fakeBackendServerPort + fromPath)
-                .build()))
-            .build());
+                .build());
 
         assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + requestPath)
             .asString().getStatus())

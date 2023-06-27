@@ -18,6 +18,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -153,11 +154,30 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     }
 
     public HttpResponse handleResponse(HttpRequest req, HttpResponse resp) {
+        rewriteLocationHeaderIfApplicable(resp);
         applyModifications(resp);
         if (shouldLogTraffic()) {
             parseMessages(req, resp);
         }
         return resp.withBody(resp.getBodyAsRawBytes());
+    }
+
+    private void rewriteLocationHeaderIfApplicable(HttpResponse resp) {
+        if (tigerProxy.getTigerProxyConfiguration().isRewriteLocationHeader()
+            && resp.getStatusCode() / 100 == 3
+            && !resp.getHeader("Location").isEmpty()) {
+            final List<String> locations = resp.getHeader("Location");
+            resp.removeHeader("Location");
+            resp.withHeaders(locations.stream()
+                .map(this::rewriteConcreteLocation)
+                .map(l -> new Header("Location", l))
+                .toList());
+            log.info("Rewriting from {} to {}", locations, resp.getHeader("Location"));
+        }
+    }
+
+    protected String rewriteConcreteLocation(String originalLocation) {
+        return originalLocation;
     }
 
     private void parseMessages(HttpRequest req, HttpResponse resp) {
