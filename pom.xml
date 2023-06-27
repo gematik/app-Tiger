@@ -41,6 +41,7 @@
         <version.maven.failsafe>3.1.2</version.maven.failsafe>
         <version.maven.surefire>3.1.0</version.maven.surefire>
         <version.maven-plugin-tools>3.9.0</version.maven-plugin-tools>
+        <version.mockito>5.4.0</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
         <version.serenity.core>3.6.23</version.serenity.core>
         <version.serenity.maven.plugin>3.8.1</version.serenity.maven.plugin>
@@ -49,7 +50,6 @@
         <version.spring-boot>3.1.0</version.spring-boot>
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.2</version.unirest>
-
         <version.wiremock>2.35.0</version.wiremock>
 
         <!-- frontend -->
@@ -63,7 +63,6 @@
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
         <version.highlightjs>11.5.0</version.highlightjs>
-
 
         <sonar.language>java</sonar.language>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -450,6 +449,18 @@
                 <groupId>uk.org.webcompere</groupId>
                 <artifactId>system-stubs-core</artifactId>
                 <version>${version.system-stubs}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.mockito}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${version.mockito}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Only needed to run tests in a version of IntelliJ IDEA that bundles older versions -->
