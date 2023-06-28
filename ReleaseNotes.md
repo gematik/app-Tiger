@@ -9,6 +9,26 @@
 * Spring Boot 3.0.6
 * Logback 1.4.7
 
+# Release 2.1.2
+
+## Features
+
+* TGR-954: Rewrite for location Headers in case of forwards with routes with nested paths added: 
+```yaml
+tigerProxy:
+  rewriteLocationHeader:  true # default value
+# activates the rewrite. To deactivate set to false
+```
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.0.6
+* Logback 1.4.7
+
 # Release 2.0.1
 
 ## Breaking changes

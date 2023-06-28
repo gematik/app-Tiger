@@ -77,6 +77,16 @@ public abstract class AbstractTigerProxyTest {
             .respond(response()
                 .withStatusCode(888)
                 .withBody("{\"home\":\"page\"}"));
+        fakeBackendServerClient.when(request().withPath("/forward.*")
+                .withMethod("GET"))
+            .respond(response()
+                .withStatusCode(301)
+                .withHeader("Location", "/foobar"));
+        fakeBackendServerClient.when(request().withPath("/deep/forward.*")
+                .withMethod("GET"))
+            .respond(response()
+                .withStatusCode(301)
+                .withHeader("Location", "/deep/foobar"));
 
         binaryMessageContent = Arrays.concatenate(
             "This is a meaningless string which will be binary content. And some more test chars: "

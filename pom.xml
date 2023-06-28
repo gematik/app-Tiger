@@ -6,7 +6,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>2.1.1</version>
+    <version>2.1.2</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -19,7 +19,7 @@
 
         <version.assertj>3.24.2</version.assertj>
         <version.awaitility>4.2.0</version.awaitility>
-        <version.bouncycastle>1.73</version.bouncycastle>
+        <version.bouncycastle>1.74</version.bouncycastle>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-codec>1.15</version.commons-codec>
         <version.commons-io>2.13.0</version.commons-io>
@@ -31,7 +31,7 @@
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jackson>2.14.2</version.jackson>
         <version.javaparser>3.25.3</version.javaparser>
-        <version.json>20230227</version.json>
+        <version.json>20230618</version.json>
         <version.json-unit>2.38.0</version.json-unit>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.9.3</version.junit5>
@@ -55,7 +55,7 @@
         <!-- frontend -->
         <!-- when changing the webjar version here make sure to adapt the web ui links too -->
         <!-- see src/main/resources/templates/adminui.html -->
-        <version.webjars-locator-core>0.52</version.webjars-locator-core>
+        <version.webjars-locator-core>0.53</version.webjars-locator-core>
         <version.bootstrap>5.1.3</version.bootstrap>
         <version.jquery>3.6.4</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>

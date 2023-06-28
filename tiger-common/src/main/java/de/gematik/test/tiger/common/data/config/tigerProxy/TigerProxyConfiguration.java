@@ -80,6 +80,8 @@ public class TigerProxyConfiguration {
     @Builder.Default
     private boolean rewriteHostHeader = false;
     @Builder.Default
+    private boolean rewriteLocationHeader = true;
+    @Builder.Default
     private TrafficEndpointConfiguration trafficEndpointConfiguration = new TrafficEndpointConfiguration();
     @Builder.Default
     private List<RbelModificationDescription> modifications = new ArrayList<>();

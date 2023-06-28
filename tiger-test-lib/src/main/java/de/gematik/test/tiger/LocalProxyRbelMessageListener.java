@@ -18,13 +18,14 @@ package de.gematik.test.tiger;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * This class links the local Tiger Proxy with the glue code / test suite.
@@ -57,6 +58,7 @@ public class LocalProxyRbelMessageListener {
     /**
      * list of messages received from local Tiger Proxy per step, to be forwarded to workflow UI
      */
+    @Getter
     private static final List<RbelElement> stepRbelMessages = new ArrayList<>();
 
     /**
@@ -71,16 +73,12 @@ public class LocalProxyRbelMessageListener {
         }
     };
 
-    static void clearMessages() {
+    public static void clearMessages() {
         rbelMessages.clear();
     }
 
     public static List<RbelElement> getMessages() {
         return Collections.unmodifiableList(rbelMessages);
-    }
-
-    public static List<RbelElement> getStepRbelMessages() {
-        return stepRbelMessages;
     }
 }
 
