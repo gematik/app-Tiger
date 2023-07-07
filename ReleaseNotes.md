@@ -9,6 +9,20 @@
 * Spring Boot 3.0.6
 * Logback 1.4.7
 
+# Release 2.1.3
+
+## Bugfixes
+* Wildcard file filters are now also supported for windows users
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.0.6
+* Logback 1.4.7
+
 # Release 2.1.2
 
 ## Features
@@ -63,7 +77,7 @@ tigerProxy:
    |        └──content (%PDF-1.6\r\n%????\r\n1361 0 obj\r\n<</Linearized 1...) (RbelBinaryFacet) 
 
 ```
-* TGR-651: Sender (Client) addresses for messages are now again included in parsed messages of the Tiger Proxy.
+***** TGR-651: Sender (Client) addresses for messages are now again included in parsed messages of the Tiger Proxy.
 
 ## Features
 

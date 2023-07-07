@@ -159,11 +159,15 @@ public class DownloadManager {
         if (jarUrl.startsWith("local:")) {
             final String localJarString = jarUrl.replaceFirst("local:", "");
             final String jarFileName = getFileNameFromPath(localJarString);
+            Optional<String> jarFileFiltered = Optional.of(jarFileName)
+                .filter(file -> !file.contains("*"));
+            Optional<String> localJarFiltered = Optional.of(localJarString)
+                .filter(file -> !file.contains("*"));
             ThrowingFunction<Path, Stream<Path>> relativeJarResolver = dir -> Files.find(dir,1,
                 (p, a) -> new WildcardFileFilter(jarFileName).accept(p.toFile()));
             List<Supplier<Optional<File>>> candidateFileSuppliers = List.of(
-                () -> Optional.of(Paths.get(workingDir, jarFileName).toFile()),
-                () -> Optional.of(Paths.get(workingDir, localJarString).toFile()),
+                () -> jarFileFiltered.map(filename -> Paths.get(workingDir, filename).toFile()),
+                () -> localJarFiltered.map(filename -> Paths.get(workingDir, filename).toFile()),
                 () -> Optional.ofNullable(new File(workingDir).listFiles((FilenameFilter) new WildcardFileFilter(jarFileName)))
                     .filter(ar -> ar.length > 0).map(ar -> ar[0]),
                 () -> Optional.of(getParentFolderFromPath(localJarString))
