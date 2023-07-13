@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.zion;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -10,8 +11,6 @@ import kong.unirest.UnirestInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @ResetTigerConfiguration
 class TestZionServerType {
@@ -117,8 +116,8 @@ class TestZionServerType {
     @Test
     void testMultipleZionServer() {
         final HttpResponse<JsonNode> response = Unirest.get(TigerGlobalConfiguration.resolvePlaceholders(
-            "http://localhost:${free.port.50}/helloWorld"
-        ))
+                "http://localhost:${free.port.50}/helloWorld"
+            ))
             .header("password", "secret")
             .asJson();
 

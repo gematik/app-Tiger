@@ -43,11 +43,11 @@ public class RbelXmlSerializer implements RbelSerializer {
             return;
         } else if ("text".equals(key) || !treeNode.hasTypeOptional(RbelContentType.XML).orElse(true)) {
             if (!(parentBranch instanceof Document)) {
-                parentBranch.add(new DefaultText(new String(rbelWriter.renderTree(treeNode), treeNode.getCharset())));
+                parentBranch.add(new DefaultText(new String(rbelWriter.renderTree(treeNode).getContent(), treeNode.getCharset())));
             }
             return;
-        } else if (treeNode.attributes().containsKey("isXmlAttribute") && parentBranch instanceof Element) {
-            ((Element) parentBranch).addAttribute(key, new String(rbelWriter.renderTree(treeNode)));
+        } else if (treeNode.attributes().containsKey("isXmlAttribute") && parentBranch instanceof Element element) {
+            element.addAttribute(key, rbelWriter.renderTree(treeNode).getContentAsString());
             return;
         }
 

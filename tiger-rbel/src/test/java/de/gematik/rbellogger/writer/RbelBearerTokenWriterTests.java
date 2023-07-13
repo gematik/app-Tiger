@@ -43,7 +43,7 @@ class RbelBearerTokenWriterTests {
 
     private RbelElement serializeElement(RbelElement input) {
         return rbelConverter.convertElement(
-            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()),
+            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent(),
             null);
     }
 }

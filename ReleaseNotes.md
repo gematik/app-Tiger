@@ -33,6 +33,7 @@ tigerProxy:
   rewriteLocationHeader:  true # default value
 # activates the rewrite. To deactivate set to false
 ```
+* TGR-956: Fixed various minor Zion-Issued with scoping.
 
 -------
 * Serenity BDD 3.6.23

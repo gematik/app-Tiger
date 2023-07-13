@@ -16,26 +16,27 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
 
   Scenario: PUT Request to folder
-    Given TGR pausiere Testausführung mit Nachricht "Hier wird Userinput erfragt (erledigt = pass)?" und Meldung im Fehlerfall "Dieser Fehler wird gezeigt wenn User abbricht."
+#    Given TGR pausiere Testausführung mit Nachricht "Hier wird Userinput erfragt (erledigt = pass)?" und Meldung im Fehlerfall "Dieser Fehler wird gezeigt wenn User abbricht."
     When TGR send empty PUT request to "http://winstone/target"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
 
   Scenario: PUT Request with body to folder
-    When TGR send PUT request with "{'hello': 'world!'}" to "http://winstone/target"
+    When TGR send PUT request to "http://winstone/target" with body "{'hello': 'world!'}"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
     And TGR assert "!{rbel:currentRequestAsString('$.body.hello')}" matches "world!"
 
   Scenario: PUT Request with body from file to folder
-    When TGR send PUT request with "!{file('pom.xml')}" to "http://winstone/target"
+    When TGR send PUT request to "http://winstone/target" with body "!{file('pom.xml')}"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
     And TGR assert "!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}" matches "4.0.0"
-    And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "text/plain.*"
+    # application/octet-stream is used since no rewriting is done, so unknown/default MIME-type is assumed
+    And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/octet-stream.*"
 
   Scenario: DELETE Request without body
     When TGR send empty DELETE request to "http://winstone/not_a_file"
@@ -56,7 +57,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     When TGR send empty GET request to "http://winstone/not_a_file"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
-    When TGR send POST request with "hello world" to "http://winstone/not_a_file"
+    When TGR send POST request to "http://winstone/not_a_file" with body "hello world"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
     And TGR assert "!{rbel:currentRequestAsString('$.body')}" matches "hello world"

@@ -34,7 +34,8 @@ public class RbelJwtSerializer implements RbelSerializer {
 
         jws.setPayloadBytes(rbelWriter.renderTree(
             node.childNode("body")
-                .orElseThrow(() -> new RbelSerializationException("Could not find body-node needed for JWT serialization in node '" + node.getKey() + "'!"))));
+                .orElseThrow(() -> new RbelSerializationException("Could not find body-node needed for JWT serialization in node '" + node.getKey() + "'!")))
+            .getContent());
         jws.setKey(findSignerKey(node.childNode("signature"), rbelWriter));
 
         try {
@@ -69,10 +70,10 @@ public class RbelJwtSerializer implements RbelSerializer {
             .forEach(header -> {
                 if (RbelJsonSerializer.isJsonArray(header)) {
                     jws.setHeader(header.getKey(), header.childNodes().stream()
-                        .map(childNode -> new String(rbelWriter.renderTree(childNode), childNode.getCharset()))
+                        .map(childNode -> new String(rbelWriter.renderTree(childNode).getContent(), childNode.getCharset()))
                         .collect(Collectors.toList()));
                 } else {
-                    jws.setHeader(header.getKey(), new String(rbelWriter.renderTree(header), header.getCharset()));
+                    jws.setHeader(header.getKey(), new String(rbelWriter.renderTree(header).getContent(), header.getCharset()));
                 }
             });
     }

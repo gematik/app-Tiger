@@ -6,6 +6,7 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import com.google.common.collect.Lists;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -189,7 +190,7 @@ public class RbelMessageValidator {
         final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
         final String methodFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method", "");
 
-        final List<RbelElement> candidateMessages = msgs.stream()
+        List<RbelElement> candidateMessages = msgs.stream()
             .filter(el -> !requestParameter.isRequireHttpMessage() || el.hasFacet(RbelHttpRequestFacet.class))
             .filter(req -> doesPathOfMessageMatch(req, requestParameter.getPath()))
             .filter(req -> hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter))
@@ -214,7 +215,7 @@ public class RbelMessageValidator {
         }
 
         if (requestParameter.isFilterPreviousRequest()) {
-            Collections.reverse(candidateMessages);
+            candidateMessages = Lists.reverse(candidateMessages);
         }
 
         for (final RbelElement candidateMessage : candidateMessages) {

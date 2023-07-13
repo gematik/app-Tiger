@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -56,5 +59,17 @@ public class InlineJexlToolbox {
 
     public String base64Decode(String value) {
         return new String(Base64.decodeBase64(value));
+    }
+
+    public long currentTimestamp() {
+        return Instant.now().getEpochSecond();
+    }
+
+    public String currentLocalDateTime() {
+        return LocalDateTime.now().toString();
+    }
+
+    public String currentZonedDateTime() {
+        return ZonedDateTime.now().toString();
     }
 }

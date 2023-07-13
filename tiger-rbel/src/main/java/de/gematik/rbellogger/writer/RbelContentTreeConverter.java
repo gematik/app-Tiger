@@ -4,7 +4,11 @@
 
 package de.gematik.rbellogger.writer;
 
+import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelJsonFacet;
+import de.gematik.rbellogger.data.facet.RbelNestedFacet;
+import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.exceptions.RbelContentTreeConversionException;
 import de.gematik.rbellogger.writer.tree.*;
 import de.gematik.test.tiger.common.config.*;
@@ -12,8 +16,6 @@ import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import lombok.AllArgsConstructor;
-import org.apache.commons.jexl3.JexlBuilder;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 
 @AllArgsConstructor
 public class RbelContentTreeConverter {
@@ -112,11 +114,11 @@ public class RbelContentTreeConverter {
 
     private List<RbelContentTreeNode> executeTgrForLoop(RbelElement input, String key, TigerConfigurationLoader conversionContext) {
         String loopStatement = findLoopStatement(input);
-        final TigerJexlContext context = new TigerJexlContext();
-        context.putAll(jexlContext);
-        context.putAll(TigerGlobalConfiguration.instantiateConfigurationBean(Map.class).orElseThrow());
-        new JexlBuilder().permissions(JexlPermissions.UNRESTRICTED).create()
-            .createScript("t = " + loopStatement.split(":")[1]).execute(context);
+        final TigerJexlContext context = buildNewExpressionEvaluationContext();
+        final RbelJexlExecutor rbelJexlExecutor = new RbelJexlExecutor();
+        final Map<String, Object> jexlMapContext = rbelJexlExecutor.buildJexlMapContext(context.getRootElement(), Optional.ofNullable(key));
+        context.putAll(jexlMapContext);
+        rbelJexlExecutor.buildScript("t = " + loopStatement.split(":")[1]).execute(context);
         final List<RbelContentTreeNode> resultList = new ArrayList<>();
         for (Object iterate : ((Collection) context.get("t"))) {
             BasicTigerConfigurationSource localSource = new BasicTigerConfigurationSource(SourceType.THREAD_CONTEXT, new TigerConfigurationKey(),
@@ -128,6 +130,13 @@ public class RbelContentTreeConverter {
             conversionContext.removeConfigurationSource(localSource);
         }
         return evaluateTgrEncodeAsIfPresent(input, resultList);
+    }
+
+    private TigerJexlContext buildNewExpressionEvaluationContext() {
+        final TigerJexlContext context = new TigerJexlContext();
+        context.putAll(jexlContext);
+        context.putAll(TigerGlobalConfiguration.instantiateConfigurationBean(Map.class).orElseThrow());
+        return context;
     }
 
     private String findLoopStatement(RbelElement input) {
@@ -152,8 +161,28 @@ public class RbelContentTreeConverter {
     private boolean evaluateTgrIfCondition(RbelElement input) {
         return input.getFirst(TGR_IF)
             // TODO handle invalid jexls! (currently false, should lead to exception!!!)
-            .map(condition -> TigerJexlExecutor.matchesAsJexlExpression(input, condition.getRawStringContent()))
+            .flatMap(this::retrieveTextContent)
+            .map(text -> TigerJexlExecutor.matchesAsJexlExpression(text, buildNewExpressionEvaluationContext()))
             .orElse(true);
+    }
+
+    private Optional<String> retrieveTextContent(RbelElement rbelElement) {
+        if (rbelElement.hasFacet(RbelXmlFacet.class)) {
+            return rbelElement.getFacet(RbelXmlFacet.class)
+                .map(RbelXmlFacet::getChildElements)
+                .map(childs -> childs.get("text"))
+                .filter(RbelElement.class::isInstance)
+                .map(RbelElement.class::cast)
+                .map(RbelElement::getRawStringContent);
+        } else if (rbelElement.hasFacet(RbelJsonFacet.class)) {
+            return rbelElement.getFacet(RbelNestedFacet.class)
+                .map(RbelNestedFacet::getNestedElement)
+                .filter(RbelElement.class::isInstance)
+                .map(RbelElement.class::cast)
+                .map(RbelElement::getRawStringContent);
+        } else {
+            return Optional.ofNullable(rbelElement.getRawStringContent());
+        }
     }
 
     private List<RbelContentTreeNode> convertRbelElement(RbelElement input, String key, TigerConfigurationLoader conversionContext) {

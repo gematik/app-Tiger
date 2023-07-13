@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.common.jexl;
 
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Supplier;
@@ -79,7 +80,7 @@ public class TigerJexlExecutor {
                 return Optional.empty();
             }
             if (e instanceof JexlException && !(e.getCause() instanceof NoSuchElementException)) {
-                throw e;
+                throw new TigerJexlException("Error while parsing expression '" + jexlExpression + "'", e);
             }
             log.warn("Error during Jexl-Evaluation.", e);
             return Optional.empty();
@@ -107,14 +108,20 @@ public class TigerJexlExecutor {
     }
 
     protected JexlExpression buildExpression(String jexlExpression, TigerJexlContext mapContext) {
+        return getJexlEngine().createExpression(jexlExpression);
+    }
+
+    private static JexlEngine getJexlEngine() {
         JexlBuilder jexlBuilder = new JexlBuilder()
             .namespaces(NAMESPACE_MAP)
             .permissions(JexlPermissions.UNRESTRICTED)
             .strict(true);
         jexlBuilder.options().setStrictArithmetic(false);
-        final JexlEngine jexlEngine = jexlBuilder.create();
-        final JexlExpression expression = jexlEngine.createExpression(jexlExpression);
-        return expression;
+        return jexlBuilder.create();
+    }
+
+    public JexlScript buildScript(String jexlScript) {
+        return getJexlEngine().createScript(jexlScript);
     }
 
     public static void registerAdditionalNamespace(String namespace, Object value) {

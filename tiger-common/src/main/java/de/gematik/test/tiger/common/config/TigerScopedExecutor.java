@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.common.config;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -13,8 +12,15 @@ import java.util.function.Supplier;
  */
 public class TigerScopedExecutor {
 
-    private BasicTigerConfigurationSource scopedValueSource
-        = new BasicTigerConfigurationSource(SourceType.SCOPE_LOCAL_CONTEXT);
+    final BasicTigerConfigurationSource scopedValueSource;
+
+    public TigerScopedExecutor(BasicTigerConfigurationSource valueSource) {
+        scopedValueSource = valueSource;
+    }
+
+    public TigerScopedExecutor() {
+        scopedValueSource = new BasicTigerConfigurationSource(SourceType.SCOPE_LOCAL_CONTEXT);
+    }
 
     public TigerScopedExecutor withValue(String key, String value) {
         scopedValueSource.putValue(new TigerConfigurationKey(

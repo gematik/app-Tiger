@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.common;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.Deque;
@@ -12,6 +13,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.tuple.Pair;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -21,16 +24,30 @@ public final class TokenSubstituteHelper {
     private static final int MAXIMUM_NUMBER_OF_REPLACEMENTS = 1_000;
 
     static {
-        REPLACER_ORDER.add(Pair.of('$', (str, source, ctx) -> source.readStringOptional(str)));
-        REPLACER_ORDER.add(Pair.of('!', (str, source, ctx) -> TigerJexlExecutor.evaluateJexlExpression(str, ctx.orElseGet(TigerJexlContext::new))
-            .map(Object::toString)));
+        REPLACER_ORDER.add(Pair.of('$', (str, source, ctx) -> Optional.ofNullable(str)
+            .filter(s -> !s.contains("{") && !s.contains("}"))
+            .flatMap(source::readStringOptional)));
+        REPLACER_ORDER.add(Pair.of('!', (str, source, ctx) -> {
+            try {
+                return TigerJexlExecutor.evaluateJexlExpression(str, ctx.orElseGet(TigerJexlContext::new))
+                    .map(Object::toString);
+            } catch (RuntimeException e) {
+                if (e instanceof TigerJexlException
+                    && e.getCause() instanceof JexlException
+                    && e.getCause().getMessage().contains("parsing error in '{'")) {
+                    return Optional.empty();
+                }
+                throw e;
+            }
+        }));
     }
 
     public static String substitute(String value, TigerConfigurationLoader source) {
         return substitute(value, source, Optional.empty());
     }
 
-    public static String substitute(String value, TigerConfigurationLoader source, Optional<TigerJexlContext> context) {
+    public static String substitute(final String value, TigerConfigurationLoader source,
+        @NonNull Optional<TigerJexlContext> context) {
         String result = value;
         boolean keepOnReplacing = true;
         int iterationsLeft = MAXIMUM_NUMBER_OF_REPLACEMENTS;

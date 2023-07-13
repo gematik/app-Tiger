@@ -132,6 +132,7 @@ public class TestHttpClientSteps {
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}","PUT");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}" ,"\\/target\\/?");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}" ,"4.0.0");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.Content-Type')}", "application/xml.*");
     }
 
     @Test

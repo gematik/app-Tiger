@@ -5,9 +5,11 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.writer.RbelContentType;
+import de.gematik.rbellogger.writer.RbelSerializationResult;
 import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerScopedExecutor;
+import de.gematik.test.tiger.common.config.TigerScopedExecutorWithVariable;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
@@ -32,11 +34,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
+import org.springframework.http.*;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -69,7 +71,8 @@ public class ZionRequestExecutor {
             .withValue("zion.port", String.valueOf(localServerPort));
         return tigerScopedExecutor
             .retrieve(() -> findResponseForGivenRequest(requestRbelMessage)
-                .map(this::renderResponse)
+                .map(executorWithResponse -> executorWithResponse.mergeWith(response -> doAssignments(response.getAssignments(), requestRbelMessage)))
+                .map(executorWithVariable -> executorWithVariable.retrieve(this::renderResponse).getVariable())
                 .map(this::parseResponseWithRbelLogger)
                 .or(() -> spyWithRemoteServer(request))
                 .orElseThrow(() -> {
@@ -78,58 +81,74 @@ public class ZionRequestExecutor {
                 }));
     }
 
-    private Optional<TigerMockResponse> findResponseForGivenRequest(RbelElement requestRbelMessage) {
-        return configuration.getMockResponses().values().stream()
+    private Optional<TigerScopedExecutorWithVariable<TigerMockResponse>> findResponseForGivenRequest(RbelElement requestRbelMessage) {
+        for (TigerMockResponse response : configuration.getMockResponses().values().stream()
             .sorted(Comparator.comparing(TigerMockResponse::getImportance).reversed())
-            .peek(resp -> {
-                if (resp.getResponse() != null) {
-                    log.trace("Considering response {} {}", resp.getResponse().getStatusCode(), resp.getResponse().getBody());
-                } else {
-                    log.trace("Considering response without body, nested responses: {}", resp.getNestedResponses().keySet());
-                }
-            })
-            .map(entry -> findMatchingResponse(entry, requestRbelMessage))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .findFirst();
+            .toList()) {
+            if (response.getResponse() != null) {
+                log.trace("Considering response {} {}", response.getResponse().getStatusCode(), response.getResponse().getBody());
+            } else {
+                log.trace("Considering response without body, nested responses: {}", response.getNestedResponses().keySet());
+            }
+            final TigerScopedExecutor scopedExecutor = executeBackendRequestsBeforeDecision(response, doAssignments(response.getAssignments(), requestRbelMessage));
+            final Optional<TigerMockResponse> responseCandidate = scopedExecutor.retrieve(() -> findMatchingResponse(response, requestRbelMessage));
+            // responseCandidate is not necessarily equal to response: nestedResponses!
+            if (responseCandidate.isPresent()) {
+                return Optional.of(new TigerScopedExecutorWithVariable<>(responseCandidate.get(), scopedExecutor));
+            }
+        }
+        return Optional.empty();
     }
 
-
     private ResponseEntity<byte[]> renderResponse(TigerMockResponse response) {
-        doAssignments(response.getAssignments(), requestRbelMessage);
+        final Optional<RbelSerializationResult> serializationResult = renderResponseBody(response);
 
         final BodyBuilder responseBuilder = ResponseEntity
             .status(response.getResponse().getStatusCode());
+        serializationResult.flatMap(RbelSerializationResult::getContentType)
+            .map(RbelContentType::getContentTypeString)
+            .map(MediaType::parseMediaType)
+            .ifPresent(responseBuilder::contentType);
 
-        response.getResponse().getHeaders()
-            .forEach((key, value) -> responseBuilder.header(key, new String(rbelWriter.serialize(
-                rbelLogger.getRbelConverter().convertElement(value, null),
-                new TigerJexlContext().withRootElement(requestRbelMessage)))));
+        for (Entry<String, String> entry : response.getResponse().getHeaders().entrySet()) {
+            final RbelElement convertedElement = rbelLogger.getRbelConverter().convertElement(entry.getValue(), null);
+            final RbelSerializationResult serialized = rbelWriter.serialize(convertedElement, new TigerJexlContext().withRootElement(requestRbelMessage));
+            if (serialized.getContent() != null) {
+                responseBuilder.header(entry.getKey(), serialized.getContentAsString());
+            } else {
+                responseBuilder.header(entry.getKey(), "");
+            }
+        }
 
-        return responseBuilder
-            .body(renderResponseBody(response));
+        return responseBuilder.body(serializationResult.map(RbelSerializationResult::getContent).orElse(null));
     }
 
-    private void doAssignments(Map<String, String> assignments, RbelElement currentElement) {
+    private TigerScopedExecutor doAssignments(Map<String, String> assignments, RbelElement currentElement) {
+        return doAssignments(assignments, currentElement, new TigerScopedExecutor());
+    }
+
+    private TigerScopedExecutor doAssignments(Map<String, String> assignments, RbelElement currentElement, TigerScopedExecutor scopedExecutor) {
         if (assignments == null || assignments.isEmpty()) {
-            return;
+            return new TigerScopedExecutor();
         }
 
-        for (Entry<String, String> entry : assignments.entrySet()) {
-            currentElement.findElement(entry.getValue())
-                .map(RbelElement::getRawStringContent)
-                .map(TigerGlobalConfiguration::resolvePlaceholders)
-                .or(() -> TigerJexlExecutor.evaluateJexlExpression(entry.getValue(), new TigerJexlContext().withRootElement(currentElement))
-                    .map(Object::toString))
-                .ifPresent(value ->
-                    TigerGlobalConfiguration.putValue(
-                        TigerGlobalConfiguration.resolvePlaceholders(entry.getKey()),
-                        value));
-        }
+        scopedExecutor.execute(() -> {
+            for (Entry<String, String> entry : assignments.entrySet()) {
+                final Optional<String> potentialValue = currentElement.findElement(entry.getValue())
+                    .map(RbelElement::getRawStringContent)
+                    .map(TigerGlobalConfiguration::resolvePlaceholders)
+                    .or(() -> TigerJexlExecutor.evaluateJexlExpression(entry.getValue(), new TigerJexlContext().withRootElement(currentElement))
+                        .map(Object::toString));
+                if (potentialValue.isPresent()) {
+                    final String key = TigerGlobalConfiguration.resolvePlaceholders(entry.getKey());
+                    scopedExecutor.withValue(key, potentialValue.get());
+                }
+            }
+        });
+        return scopedExecutor;
     }
 
     private Optional<TigerMockResponse> findMatchingResponse(TigerMockResponse mockResponse, RbelElement requestRbelMessage) {
-        executeBackendRequestsBeforeDecision(mockResponse);
         if (!doesItMatch(mockResponse.getRequestCriterions(), requestRbelMessage)) {
             if (log.isTraceEnabled() && (mockResponse.getResponse() != null)) {
                 log.trace("Discarding response {} {} with criterions {} for message {}",
@@ -159,50 +178,69 @@ public class ZionRequestExecutor {
         if (requestCriterions == null) {
             return true;
         }
+        final TigerJexlContext context = new TigerJexlContext()
+            .withCurrentElement(requestRbelMessage)
+            .withRootElement(requestRbelMessage);
         return requestCriterions.stream()
             .filter(criterion -> !TigerJexlExecutor.matchesAsJexlExpression(
-                TigerGlobalConfiguration.resolvePlaceholders(criterion), new TigerJexlContext()
-                    .withCurrentElement(requestRbelMessage)
-                    .withRootElement(requestRbelMessage)))
+                TigerGlobalConfiguration.resolvePlaceholdersWithContext(criterion, context), context))
             .findAny().isEmpty();
     }
 
-    private void executeBackendRequestsBeforeDecision(TigerMockResponse mockResponse) {
+    private TigerScopedExecutor executeBackendRequestsBeforeDecision(TigerMockResponse mockResponse, TigerScopedExecutor scopedExecutor) {
         if (mockResponse.getBackendRequests() == null) {
-            return;
+            return scopedExecutor;
         }
-        for (ZionBackendRequestDescription requestDescription : mockResponse.getBackendRequests().values()) {
-            final String method = getMethod(requestDescription);
-            final HttpRequestWithBody unirestRequest = Unirest.request(
-                method,
-                TigerGlobalConfiguration.resolvePlaceholders(requestDescription.getUrl()));
-            if (requestDescription.getHeaders() != null) {
-                requestDescription.getHeaders()
-                    .forEach(unirestRequest::header);
-            }
-            final HttpResponse<byte[]> unirestResponse;
-            if (StringUtils.isNotEmpty(requestDescription.getBody())) {
-                final byte[] body = getBody(requestDescription);
-                if (log.isTraceEnabled()) {
-                    log.trace("About to sent {} with body {} to {}",
-                        unirestRequest.getHttpMethod().name(), new String(body),
-                        unirestRequest.getUrl());
+        scopedExecutor.execute(() -> {
+            for (ZionBackendRequestDescription requestDescription : mockResponse.getBackendRequests().values()) {
+                HttpResponse<byte[]> unirestResponse = null;
+                try {
+                    unirestResponse = prepareAndExecuteBackendRequest(requestDescription);
+                } catch (RuntimeException e) {
+                    log.error("Error during backend request", e);
+                    throw e;
                 }
-                unirestResponse = unirestRequest.body(body).asBytes();
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("About to sent {} without body to {}",
-                        unirestRequest.getHttpMethod().name(), unirestRequest.getUrl());
-                }
-                unirestResponse = unirestRequest.asBytes();
-            }
 
-            final RbelElement rbelResponse = rbelLogger.getRbelConverter().convertElement(responseToRawMessage(unirestResponse), null);
-            doAssignments(requestDescription.getAssignments(), rbelResponse);
-        }
+                final RbelElement rbelResponse = rbelLogger.getRbelConverter().convertElement(responseToRawMessage(unirestResponse), null);
+                doAssignments(requestDescription.getAssignments(), rbelResponse, scopedExecutor);
+            }
+        });
+        return scopedExecutor;
     }
 
-    private byte[] getBody(ZionBackendRequestDescription requestDescription) {
+    private HttpResponse<byte[]> prepareAndExecuteBackendRequest(ZionBackendRequestDescription requestDescription) {
+        final String method = getMethod(requestDescription);
+        final HttpRequestWithBody unirestRequest = Unirest.request(
+            method,
+            TigerGlobalConfiguration.resolvePlaceholdersWithContext(
+                requestDescription.getUrl(),
+                new TigerJexlContext().withRootElement(this.requestRbelMessage)));
+        if (requestDescription.getHeaders() != null) {
+            requestDescription.getHeaders()
+                .forEach(unirestRequest::header);
+        }
+        final HttpResponse<byte[]> unirestResponse;
+        if (StringUtils.isNotEmpty(requestDescription.getBody())) {
+            final RbelSerializationResult body = getBody(requestDescription);
+            if (log.isTraceEnabled()) {
+                log.trace("About to sent {} with body {} to {}",
+                    unirestRequest.getHttpMethod().name(), new String(body.getContent()),
+                    unirestRequest.getUrl());
+            }
+            unirestResponse = unirestRequest
+                .body(body.getContent())
+                .asBytes();
+        } else {
+            if (log.isTraceEnabled()) {
+                log.trace("About to sent {} without body to {}",
+                    unirestRequest.getHttpMethod().name(), unirestRequest.getUrl());
+            }
+            unirestResponse = unirestRequest.asBytes();
+        }
+        return unirestResponse;
+    }
+
+    private RbelSerializationResult getBody(ZionBackendRequestDescription requestDescription) {
         final String rawContent = TigerGlobalConfiguration.resolvePlaceholders(requestDescription.getBody());
         final RbelElement input = rbelLogger.getRbelConverter().convertElement(rawContent, null);
         return rbelWriter.serialize(input, new TigerJexlContext().withRootElement(requestRbelMessage));
@@ -266,7 +304,7 @@ public class ZionRequestExecutor {
             .response(TigerMockResponseDescription.builder()
                 .body(responseRbelMessage.getFirst("body")
                     .map(bodyElement -> rbelWriter.serializeWithEnforcedContentType(bodyElement, RbelContentType.JSON, new TigerJexlContext()))
-                    .map(String::new)
+                    .map(RbelSerializationResult::getContentAsString)
                     .orElse(null))
                 .build())
             .build();
@@ -309,7 +347,7 @@ public class ZionRequestExecutor {
         }
     }
 
-    private byte[] renderResponseBody(TigerMockResponse response) {
+    private Optional<RbelSerializationResult> renderResponseBody(TigerMockResponse response) {
         Optional<String> bodyBlueprint = Optional.ofNullable(response.getResponse().getBody())
             .filter(Objects::nonNull)
             .or(() -> Optional.ofNullable(response.getResponse().getBodyFile())
@@ -323,11 +361,11 @@ public class ZionRequestExecutor {
                 })
                 .filter(Objects::nonNull));
         if (bodyBlueprint.isEmpty()) {
-            return null; //NOSONAR
+            return Optional.empty(); //NOSONAR
         }
 
-        return rbelWriter.serialize(
+        return Optional.ofNullable(rbelWriter.serialize(
             rbelLogger.getRbelConverter().convertElement(bodyBlueprint.get(), null),
-            new TigerJexlContext().withRootElement(requestRbelMessage));
+            new TigerJexlContext().withRootElement(requestRbelMessage)));
     }
 }

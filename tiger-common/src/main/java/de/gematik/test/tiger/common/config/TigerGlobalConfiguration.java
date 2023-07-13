@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -247,6 +248,11 @@ public class TigerGlobalConfiguration {
     public static String resolvePlaceholders(String stringToSubstitute) {
         assertGlobalConfigurationIsInitialized();
         return TokenSubstituteHelper.substitute(stringToSubstitute, globalConfigurationLoader);
+    }
+
+    public static String resolvePlaceholdersWithContext(String stringToSubstitute, TigerJexlContext context) {
+        assertGlobalConfigurationIsInitialized();
+        return TokenSubstituteHelper.substitute(stringToSubstitute, globalConfigurationLoader, Optional.ofNullable(context));
     }
 
     public static Optional<Integer> readIntegerOptional(String key) {
