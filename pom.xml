@@ -499,11 +499,11 @@
                     </configuration>
                     <executions>
                         <execution>
-                            <id>serenity-reports</id>
                             <phase>post-integration-test</phase>
                             <goals>
                                 <goal>aggregate</goal>
                                 <goal>reports</goal>
+                                <goal>check</goal>
                             </goals>
                         </execution>
                     </executions>

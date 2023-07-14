@@ -76,7 +76,6 @@ public class RbelWriter {
         public RbelSerializationResult serialize(RbelElement input) {
             final RbelContentTreeNode treeRootNode = new RbelContentTreeConverter(input, jexlContext)
                 .convertToContentTree();
-            printTreeStructure(treeRootNode);
             return renderTree(treeRootNode);
         }
 

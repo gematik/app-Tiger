@@ -13,6 +13,7 @@
 
 ## Bugfixes
 * Wildcard file filters are now also supported for windows users
+* TGR-979: fixing bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Unclear still why. Workaround was to comment the serenity maven plugin in tiger-test-utils. No CLUE why though
 
 -------
 * Serenity BDD 3.6.23

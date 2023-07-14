@@ -13,7 +13,6 @@ import org.junit.runner.RunWith;
     features = {
         "./src/test/resources/features/tiger-test-lib/HttpGlueCodeTest.feature"
     },
-    plugin = {"json:target/cucumber-parallel/2.json"},
     glue = { "de.gematik.test.tiger.glue" },
     tags = "not @Ignore"
 )

@@ -4,7 +4,6 @@
 
 package de.gematik.rbellogger.converter;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -12,11 +11,14 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelSicctEnvelopeFacet;
 import de.gematik.rbellogger.data.sicct.SicctMessageType;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import java.io.File;
-import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class RbelSicctConverterTest {
 
@@ -41,15 +43,11 @@ class RbelSicctConverterTest {
         for (RbelElement msg : rbelLogger.getMessageHistory()) {
             assertThat(msg.hasFacet(RbelSicctEnvelopeFacet.class))
                 .isTrue();
-
-            System.out.println(msg.printTreeStructure());
         }
     }
 
     @Test
     void testForBasicAttributesInSicctEnvelope() {
-        System.out.println(rbelLogger.getMessageHistory().getFirst().printTreeStructure());
-
         assertThat(rbelLogger.getMessageHistory().getFirst().findElement("$.messageType")
             .get().seekValue().get())
             .isEqualTo(SicctMessageType.C_COMMAND);

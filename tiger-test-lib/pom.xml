@@ -319,8 +319,6 @@
                 <version>${version.maven.failsafe}</version>
                 <executions>
                     <execution>
-                        <id>run-tests</id>
-                        <phase>integration-test</phase>
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
@@ -351,17 +349,10 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>serenity-reports</id>
                         <phase>post-integration-test</phase>
                         <goals>
                             <goal>aggregate</goal>
                             <goal>reports</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>serenity-check</id>
-                        <phase>verify</phase>
-                        <goals>
                             <goal>check</goal>
                         </goals>
                     </execution>
