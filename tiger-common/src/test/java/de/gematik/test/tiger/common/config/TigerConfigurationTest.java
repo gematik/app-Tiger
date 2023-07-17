@@ -27,7 +27,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -602,21 +601,6 @@ public class TigerConfigurationTest {
                 assertThat(TigerGlobalConfiguration.readString("${give.me.foo}.int"))
                     .isEqualTo("1234");
             });
-    }
-
-    @Test
-    void localScopedValues() {
-        TigerGlobalConfiguration.reset();
-        assertThat(TigerGlobalConfiguration.readStringOptional("secret.key"))
-            .isEmpty();
-
-        TigerGlobalConfiguration.localScope()
-            .withValue("secret.key", "secretValue")
-            .execute(() -> assertThat(TigerGlobalConfiguration.readString("secret.key"))
-                .isEqualTo("secretValue"));
-
-        assertThat(TigerGlobalConfiguration.readStringOptional("secret.key"))
-            .isEmpty();
     }
 
     @Test

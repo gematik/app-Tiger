@@ -94,8 +94,9 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
             .orElse("");
     }
 
-    public Map<String, Object> buildJexlMapContext(Object element, Optional<String> key) {
-        final Map<String, Object> mapContext = new HashMap<>();
+    @Override
+    public TigerJexlContext buildJexlMapContext(Object element, Optional<String> key) {
+        final TigerJexlContext mapContext = new TigerJexlContext();
         mapContext.putAll(super.buildJexlMapContext(element, key));
         final Optional<RbelElement> parentElement = getParentElement(element);
 
@@ -147,8 +148,7 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
             .map(RbelElement::findNodePath)
             .orElse(null));
 
-        final TreeMap<String, Object> treeMap = new TreeMap<>(mapContext);
-        return new LinkedHashMap<>(treeMap);
+        return mapContext;
     }
 
     @Override

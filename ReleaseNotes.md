@@ -12,8 +12,10 @@
 # Release 2.1.3
 
 ## Bugfixes
+
 * Wildcard file filters are now also supported for windows users
-* TGR-979: fixing bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Unclear still why. Workaround was to comment the serenity maven plugin in tiger-test-utils. No CLUE why though
+* TGR-956: Fixed a bug for correctly handling concurrent requests in Zion
+* TGR-979: fixing bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround was to disable the serenity maven plugin in tiger-test-utils.
 
 -------
 * Serenity BDD 3.6.23
@@ -34,7 +36,6 @@ tigerProxy:
   rewriteLocationHeader:  true # default value
 # activates the rewrite. To deactivate set to false
 ```
-* TGR-956: Fixed various minor Zion-Issued with scoping.
 
 -------
 * Serenity BDD 3.6.23

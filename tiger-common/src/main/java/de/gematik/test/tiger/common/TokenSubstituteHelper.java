@@ -9,6 +9,7 @@ import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.Deque;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import lombok.AccessLevel;
@@ -24,9 +25,17 @@ public final class TokenSubstituteHelper {
     private static final int MAXIMUM_NUMBER_OF_REPLACEMENTS = 1_000;
 
     static {
-        REPLACER_ORDER.add(Pair.of('$', (str, source, ctx) -> Optional.ofNullable(str)
-            .filter(s -> !s.contains("{") && !s.contains("}"))
-            .flatMap(source::readStringOptional)));
+        REPLACER_ORDER.add(Pair.of('$', (str, source, ctx) -> {
+            if (ctx.isPresent() && ctx.get().has(str)) {
+                return ctx.map(c -> c.get(str).toString());
+            }
+            return Optional.ofNullable(str)
+                .filter(s -> !s.contains("{") && !s.contains("}"))
+                .flatMap(source::readStringOptional)
+                .or(() -> ctx.map(context -> context.get(str))
+                    .filter(Objects::nonNull)
+                    .map(Object::toString));
+        }));
         REPLACER_ORDER.add(Pair.of('!', (str, source, ctx) -> {
             try {
                 return TigerJexlExecutor.evaluateJexlExpression(str, ctx.orElseGet(TigerJexlContext::new))

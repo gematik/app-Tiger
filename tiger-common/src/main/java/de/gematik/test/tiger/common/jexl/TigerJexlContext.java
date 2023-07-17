@@ -1,54 +1,96 @@
 package de.gematik.test.tiger.common.jexl;
 
-import java.util.HashMap;
+import de.gematik.test.tiger.common.config.TigerConfigurationKey;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlContext;
 
+/**
+ * Context to be used in a JEXL-evaluation. The keys are of type string, but they are canonicalized in
+ * accordance to the TigerConfigurationKey. The values are objects, which makes this a superset of the TigerGlobalConfiguration.
+ */
 @Slf4j
-public class TigerJexlContext extends HashMap<String, Object> implements JexlContext {
+public class TigerJexlContext extends TreeMap<String, Object> implements JexlContext {
 
     public static final String CURRENT_ELEMENT_MARKER = "currentElement";
     public static final String ROOT_ELEMENT_MARKER = "rootElement";
     public static final String KEY_ELEMENT_MARKER = "key";
 
     public TigerJexlContext(Map<String, Object> initialMap) {
-        super(initialMap);
+        this();
+        putAll(initialMap);
     }
 
     public TigerJexlContext() {
-        super();
+        // necessary to allow null keys
+        super(Comparator.nullsFirst(Comparator.naturalOrder()));
     }
 
+    /**
+     * Clones the context and returns a new copy with the current element set to the given value
+     */
     public TigerJexlContext withCurrentElement(Object o) {
-        put(CURRENT_ELEMENT_MARKER, o);
-        return this;
+        final TigerJexlContext context = new TigerJexlContext(this);
+        context.put(CURRENT_ELEMENT_MARKER, o);
+        return context;
     }
 
+    /**
+     * Clones the context and returns a new copy with the root element set to the given value
+     */
     public TigerJexlContext withRootElement(Object o) {
-        put(ROOT_ELEMENT_MARKER, o);
-        return this;
+        final TigerJexlContext context = new TigerJexlContext(this);
+        context.put(ROOT_ELEMENT_MARKER, o);
+        return context;
     }
 
+    /**
+     * Clones the context and returns a new copy with the key element set to the given value
+     */
     public TigerJexlContext withKey(String key) {
-        put(KEY_ELEMENT_MARKER, key);
-        return this;
+        final TigerJexlContext context = new TigerJexlContext(this);
+        context.put(KEY_ELEMENT_MARKER, key);
+        return context;
     }
 
-    @Override
-    public Object get(String name) {
-        return super.get(name);
+    /**
+     * Clones the context and returns a new copy with the given key/value pair added
+     */
+    public TigerJexlContext with(String key, String value) {
+        final TigerJexlContext context = new TigerJexlContext(this);
+        context.put(key, value);
+        return context;
     }
 
     @Override
     public void set(String name, Object value) {
-        super.put(name, value);
+        put(name, value);
+    }
+
+    @Override
+    public Object put(String name, Object value) {
+        return super.put(canonicalize(name), value);
+    }
+
+    private static String canonicalize(String name) {
+        if (name == null) {
+            return null;
+        }
+        return new TigerConfigurationKey(name).downsampleKey();
     }
 
     @Override
     public boolean has(String name) {
-        return super.containsKey(name);
+        return super.containsKey(canonicalize(name));
+    }
+
+
+    @Override
+    public Object get(String name) {
+        return super.get(canonicalize(name));
     }
 
     public Object getCurrentElement() {
@@ -69,5 +111,9 @@ public class TigerJexlContext extends HashMap<String, Object> implements JexlCon
             }
         }
         return null;
+    }
+
+    public TigerJexlContext cloneContext() {
+        return new TigerJexlContext(this);
     }
 }

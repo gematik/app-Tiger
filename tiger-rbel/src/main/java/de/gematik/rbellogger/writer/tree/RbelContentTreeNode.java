@@ -15,12 +15,9 @@ import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.With;
-import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
 public class RbelContentTreeNode {
-
 
     private final RbelMultiMap<RbelContentTreeNode> childNodes;
     private Map<String, String> attributeMap = new HashMap<>();

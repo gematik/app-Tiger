@@ -114,9 +114,9 @@ class TestZionServerType {
         + "          response:\n"
         + "            statusCode: 400\n")
     @Test
-    void testMultipleZionServer() {
-        final HttpResponse<JsonNode> response = Unirest.get(TigerGlobalConfiguration.resolvePlaceholders(
-                "http://localhost:${free.port.50}/helloWorld"
+    void testMultipleZionServer(UnirestInstance unirest) {
+        final HttpResponse<JsonNode> response = unirest.get(TigerGlobalConfiguration.resolvePlaceholders(
+                "http://mainServer/helloWorld"
             ))
             .header("password", "secret")
             .asJson();

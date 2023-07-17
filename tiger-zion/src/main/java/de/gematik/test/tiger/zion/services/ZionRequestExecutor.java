@@ -8,8 +8,6 @@ import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelSerializationResult;
 import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.TigerScopedExecutor;
-import de.gematik.test.tiger.common.config.TigerScopedExecutorWithVariable;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
@@ -26,7 +24,10 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import kong.unirest.*;
+import kong.unirest.Headers;
+import kong.unirest.HttpRequestWithBody;
+import kong.unirest.HttpResponse;
+import kong.unirest.Unirest;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -37,8 +38,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.http.*;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -46,6 +45,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class ZionRequestExecutor {
 
+    private static final String CONSIDERING_RESPONSE = "Considering response {} {}";
     @NonNull
     private final RbelElement requestRbelMessage;
     @NonNull
@@ -64,44 +64,49 @@ public class ZionRequestExecutor {
     private final RequestEntity<byte[]> request;
     @NonNull
     private final RbelWriter rbelWriter;
-    private TigerScopedExecutor tigerScopedExecutor;
 
     public ResponseEntity<byte[]> execute() {
-        tigerScopedExecutor = TigerGlobalConfiguration.localScope()
-            .withValue("zion.port", String.valueOf(localServerPort));
-        return tigerScopedExecutor
-            .retrieve(() -> findResponseForGivenRequest(requestRbelMessage)
-                .map(executorWithResponse -> executorWithResponse.mergeWith(response -> doAssignments(response.getAssignments(), requestRbelMessage)))
-                .map(executorWithVariable -> executorWithVariable.retrieve(this::renderResponse).getVariable())
-                .map(this::parseResponseWithRbelLogger)
-                .or(() -> spyWithRemoteServer(request))
-                .orElseThrow(() -> {
-                    log.warn("Could not match request \n{}", requestRbelMessage.printTreeStructure());
-                    return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No suitable return value found");
-                }));
+        var mainContext = new TigerJexlContext()
+            .with("zion.port", String.valueOf(localServerPort))
+            .withRootElement(requestRbelMessage);
+        final Optional<Pair<TigerMockResponse, TigerJexlContext>> configuredResponse = findResponseForGivenRequest(requestRbelMessage, mainContext);
+        if (configuredResponse.isPresent()) {
+            TigerMockResponse chosenResponse = configuredResponse.get().getLeft();
+            TigerJexlContext responseContext = configuredResponse.get().getRight();
+            final ResponseEntity<byte[]> responseEntity = renderResponse(chosenResponse, responseContext);
+            return parseResponseWithRbelLogger(responseEntity);
+        } else {
+            return spyWithRemoteServer(request).orElseThrow(() -> {
+                log.warn("Could not match request \n{}", requestRbelMessage.printTreeStructure());
+                return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No suitable return value found");
+            });
+        }
     }
 
-    private Optional<TigerScopedExecutorWithVariable<TigerMockResponse>> findResponseForGivenRequest(RbelElement requestRbelMessage) {
+    private Optional<Pair<TigerMockResponse, TigerJexlContext>> findResponseForGivenRequest(RbelElement requestRbelMessage, TigerJexlContext context) {
         for (TigerMockResponse response : configuration.getMockResponses().values().stream()
             .sorted(Comparator.comparing(TigerMockResponse::getImportance).reversed())
             .toList()) {
             if (response.getResponse() != null) {
-                log.trace("Considering response {} {}", response.getResponse().getStatusCode(), response.getResponse().getBody());
+                log.trace(CONSIDERING_RESPONSE, response.getResponse().getStatusCode(), response.getResponse().getBody());
             } else {
                 log.trace("Considering response without body, nested responses: {}", response.getNestedResponses().keySet());
             }
-            final TigerScopedExecutor scopedExecutor = executeBackendRequestsBeforeDecision(response, doAssignments(response.getAssignments(), requestRbelMessage));
-            final Optional<TigerMockResponse> responseCandidate = scopedExecutor.retrieve(() -> findMatchingResponse(response, requestRbelMessage));
+            final TigerJexlContext localResponseContext = context.cloneContext();
+            doAssignments(response.getAssignments(), requestRbelMessage, localResponseContext);
+            executeBackendRequestsBeforeDecision(response, localResponseContext);
+            final Optional<Pair<TigerMockResponse, TigerJexlContext>> responseCandidate = findMatchingResponse(response, requestRbelMessage,
+                localResponseContext);
             // responseCandidate is not necessarily equal to response: nestedResponses!
             if (responseCandidate.isPresent()) {
-                return Optional.of(new TigerScopedExecutorWithVariable<>(responseCandidate.get(), scopedExecutor));
+                return responseCandidate;
             }
         }
         return Optional.empty();
     }
 
-    private ResponseEntity<byte[]> renderResponse(TigerMockResponse response) {
-        final Optional<RbelSerializationResult> serializationResult = renderResponseBody(response);
+    private ResponseEntity<byte[]> renderResponse(TigerMockResponse response, TigerJexlContext context) {
+        final Optional<RbelSerializationResult> serializationResult = renderResponseBody(response, context);
 
         final BodyBuilder responseBuilder = ResponseEntity
             .status(response.getResponse().getStatusCode());
@@ -123,33 +128,30 @@ public class ZionRequestExecutor {
         return responseBuilder.body(serializationResult.map(RbelSerializationResult::getContent).orElse(null));
     }
 
-    private TigerScopedExecutor doAssignments(Map<String, String> assignments, RbelElement currentElement) {
-        return doAssignments(assignments, currentElement, new TigerScopedExecutor());
-    }
-
-    private TigerScopedExecutor doAssignments(Map<String, String> assignments, RbelElement currentElement, TigerScopedExecutor scopedExecutor) {
+    private void doAssignments(Map<String, String> assignments, RbelElement currentElement, TigerJexlContext jexlContext) {
         if (assignments == null || assignments.isEmpty()) {
-            return new TigerScopedExecutor();
+            return;
         }
+        final TigerJexlContext localResponseContext = jexlContext
+            .withCurrentElement(currentElement)
+            .withRootElement(currentElement);
 
-        scopedExecutor.execute(() -> {
-            for (Entry<String, String> entry : assignments.entrySet()) {
-                final Optional<String> potentialValue = currentElement.findElement(entry.getValue())
-                    .map(RbelElement::getRawStringContent)
-                    .map(TigerGlobalConfiguration::resolvePlaceholders)
-                    .or(() -> TigerJexlExecutor.evaluateJexlExpression(entry.getValue(), new TigerJexlContext().withRootElement(currentElement))
-                        .map(Object::toString));
-                if (potentialValue.isPresent()) {
-                    final String key = TigerGlobalConfiguration.resolvePlaceholders(entry.getKey());
-                    scopedExecutor.withValue(key, potentialValue.get());
-                }
-            }
-        });
-        return scopedExecutor;
+        for (Entry<String, String> entry : assignments.entrySet()) {
+            currentElement.findElement(entry.getValue())
+                .map(el -> el.seekValue(String.class)
+                    .orElseGet(el::getRawStringContent))
+                .map(TigerGlobalConfiguration::resolvePlaceholders)
+                .or(() -> TigerJexlExecutor.evaluateJexlExpression(entry.getValue(), localResponseContext)
+                    .map(Object::toString))
+                .ifPresent(s -> jexlContext.put(TigerGlobalConfiguration.resolvePlaceholders(entry.getKey()), s));
+        }
     }
 
-    private Optional<TigerMockResponse> findMatchingResponse(TigerMockResponse mockResponse, RbelElement requestRbelMessage) {
-        if (!doesItMatch(mockResponse.getRequestCriterions(), requestRbelMessage)) {
+    private Optional<Pair<TigerMockResponse, TigerJexlContext>> findMatchingResponse(TigerMockResponse mockResponse, RbelElement requestRbelMessage,
+        TigerJexlContext context) {
+        if (!doesItMatch(mockResponse.getRequestCriterions(), context
+            .withCurrentElement(requestRbelMessage)
+            .withRootElement(requestRbelMessage))) {
             if (log.isTraceEnabled() && (mockResponse.getResponse() != null)) {
                 log.trace("Discarding response {} {} with criterions {} for message {}",
                     mockResponse.getResponse().getStatusCode(), mockResponse.getResponse().getBody(),
@@ -158,54 +160,50 @@ public class ZionRequestExecutor {
             return Optional.empty();
         }
         if (mockResponse.getResponse() != null) {
-            log.trace("Considering response {} {}", mockResponse.getResponse().getStatusCode(), mockResponse.getResponse().getBody());
-            return Optional.of(mockResponse);
+            log.trace(CONSIDERING_RESPONSE, mockResponse.getResponse().getStatusCode(), mockResponse.getResponse().getBody());
+            return Optional.of(Pair.of(mockResponse, context));
         } else {
             return Optional.ofNullable(mockResponse.getNestedResponses())
                 .map(Map::values)
                 .stream()
                 .flatMap(Collection::stream)
                 .sorted(Comparator.comparing(TigerMockResponse::getImportance).reversed())
-                .map(r -> findMatchingResponse(r, requestRbelMessage))
+                .map(r -> findMatchingResponse(r, requestRbelMessage, context.cloneContext()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .peek(resp -> log.trace("Considering response {} {}", resp.getResponse().getStatusCode(), resp.getResponse().getBody()))
+                .peek(respPair -> log.trace(CONSIDERING_RESPONSE,
+                    respPair.getKey().getResponse().getStatusCode(),
+                    respPair.getKey().getResponse().getBody()))
                 .findFirst();
         }
     }
 
-    private boolean doesItMatch(List<String> requestCriterions, RbelElement requestRbelMessage) {
+    private boolean doesItMatch(List<String> requestCriterions, TigerJexlContext context) {
         if (requestCriterions == null) {
             return true;
         }
-        final TigerJexlContext context = new TigerJexlContext()
-            .withCurrentElement(requestRbelMessage)
-            .withRootElement(requestRbelMessage);
         return requestCriterions.stream()
             .filter(criterion -> !TigerJexlExecutor.matchesAsJexlExpression(
                 TigerGlobalConfiguration.resolvePlaceholdersWithContext(criterion, context), context))
             .findAny().isEmpty();
     }
 
-    private TigerScopedExecutor executeBackendRequestsBeforeDecision(TigerMockResponse mockResponse, TigerScopedExecutor scopedExecutor) {
+    private void executeBackendRequestsBeforeDecision(TigerMockResponse mockResponse, TigerJexlContext jexlContext) {
         if (mockResponse.getBackendRequests() == null) {
-            return scopedExecutor;
+            return;
         }
-        scopedExecutor.execute(() -> {
-            for (ZionBackendRequestDescription requestDescription : mockResponse.getBackendRequests().values()) {
-                HttpResponse<byte[]> unirestResponse = null;
-                try {
-                    unirestResponse = prepareAndExecuteBackendRequest(requestDescription);
-                } catch (RuntimeException e) {
-                    log.error("Error during backend request", e);
-                    throw e;
-                }
+
+        for (ZionBackendRequestDescription requestDescription : mockResponse.getBackendRequests().values()) {
+            try {
+                var unirestResponse = prepareAndExecuteBackendRequest(requestDescription);
 
                 final RbelElement rbelResponse = rbelLogger.getRbelConverter().convertElement(responseToRawMessage(unirestResponse), null);
-                doAssignments(requestDescription.getAssignments(), rbelResponse, scopedExecutor);
+                doAssignments(requestDescription.getAssignments(), rbelResponse, jexlContext);
+            } catch (RuntimeException e) {
+                log.error("Error during backend request '" + requestDescription.getMethod() + " " + requestDescription.getUrl() + "'", e);
+                throw e;
             }
-        });
-        return scopedExecutor;
+        }
     }
 
     private HttpResponse<byte[]> prepareAndExecuteBackendRequest(ZionBackendRequestDescription requestDescription) {
@@ -259,9 +257,9 @@ public class ZionRequestExecutor {
 
     private byte[] responseToRawMessage(HttpResponse<byte[]> response) {
         byte[] httpResponseHeader = ("HTTP/1.1 " + response.getStatus() + " "
-            + (response.getStatusText() != null ? response.getStatusText() : "") + "\r\n"
-            + formatHeaderList(response.getHeaders())
-            + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII);
+                                     + (response.getStatusText() != null ? response.getStatusText() : "") + "\r\n"
+                                     + formatHeaderList(response.getHeaders())
+                                     + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII);
 
         return ArrayUtils.addAll(httpResponseHeader, response.getBody());
     }
@@ -288,7 +286,7 @@ public class ZionRequestExecutor {
         final HttpRequestWithBody unirestRequest = Unirest
             .request(name, targetUri.toString())
             .headers(request.getHeaders().entrySet().stream()
-                .collect(Collectors.toMap(Entry::getKey, header -> header.getValue().stream().collect(Collectors.joining(",")))));
+                .collect(Collectors.toMap(Entry::getKey, header -> String.join(",", header.getValue()))));
         if (request.hasBody()) {
             unirestRequest.body(request.getBody());
         }
@@ -347,7 +345,7 @@ public class ZionRequestExecutor {
         }
     }
 
-    private Optional<RbelSerializationResult> renderResponseBody(TigerMockResponse response) {
+    private Optional<RbelSerializationResult> renderResponseBody(TigerMockResponse response, TigerJexlContext context) {
         Optional<String> bodyBlueprint = Optional.ofNullable(response.getResponse().getBody())
             .filter(Objects::nonNull)
             .or(() -> Optional.ofNullable(response.getResponse().getBodyFile())
@@ -366,6 +364,6 @@ public class ZionRequestExecutor {
 
         return Optional.ofNullable(rbelWriter.serialize(
             rbelLogger.getRbelConverter().convertElement(bodyBlueprint.get(), null),
-            new TigerJexlContext().withRootElement(requestRbelMessage)));
+            context));
     }
 }

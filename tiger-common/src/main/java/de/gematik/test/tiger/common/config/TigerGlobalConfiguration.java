@@ -372,16 +372,6 @@ public class TigerGlobalConfiguration {
         }
     }
 
-    /**
-     * Returns a local scope in which values can be added and code executed. This enables the use of very local values
-     * that can not (or should not) creep over into other parts of your testsuite.
-     *
-     * @return
-     */
-    public static TigerScopedExecutor localScope() {
-        return new TigerScopedExecutor();
-    }
-
     static void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
         globalConfigurationLoader.addConfigurationSource(configurationSource);
     }

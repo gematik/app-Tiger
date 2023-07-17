@@ -5,11 +5,11 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Supplier;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
@@ -65,16 +65,17 @@ public class TigerJexlExecutor {
         return result;
     }
 
-    private Optional<Object> evaluateJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
+    private Optional<Object> evaluateJexlExpressionInternal(final String jexlExpression, final TigerJexlContext externalContext) {
         try {
-            NAMESPACE_MAP.forEach(context::set);
-            context.putAll(buildJexlMapContext(
-                context.getCurrentElement(),
-                Optional.ofNullable(context.getKey())
-            ));
-            final JexlExpression expression = buildExpression(jexlExpression, context);
+            final TigerJexlContext contextMap = buildJexlMapContext(
+                externalContext.getCurrentElement(),
+                Optional.ofNullable(externalContext.getKey())
+            );
+            contextMap.putAll(NAMESPACE_MAP);
+            contextMap.putAll(externalContext);
+            final JexlExpression expression = buildExpression(jexlExpression, contextMap);
 
-            return Optional.ofNullable(expression.evaluate(context));
+            return Optional.ofNullable(expression.evaluate(contextMap));
         } catch (RuntimeException e) {
             if (e instanceof JexlException && (e.getCause() instanceof JexlArithmetic.NullOperand)) {
                 return Optional.empty();
@@ -91,8 +92,8 @@ public class TigerJexlExecutor {
         log.trace("Found match: '{}' matches '{}'", element, jexlExpression);
     }
 
-    protected Map<String, Object> buildJexlMapContext(Object element, Optional<String> key) {
-        final Map<String, Object> mapContext = new HashMap<>();
+    protected TigerJexlContext buildJexlMapContext(Object element, Optional<String> key) {
+        final TigerJexlContext mapContext = new TigerJexlContext();
 
         mapContext.put("element", element);
         if (element != null) {
