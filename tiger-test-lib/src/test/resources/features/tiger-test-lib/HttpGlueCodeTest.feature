@@ -61,7 +61,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
     And TGR assert "!{rbel:currentRequestAsString('$.body')}" matches "hello world"
 
-  Scenario: Request with custom and default header
+  Scenario: Request with custom and default header, check headers
     Given TGR set default header "key" to "value"
     When TGR send empty GET request to "http://winstone/not_a_file" with headers:
       | foo | bar |
@@ -70,7 +70,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
 
-  Scenario: Request with custom and default header
+  Scenario: Request with custom and default header, check body, application type url encoded
     Given TGR set local variable "configured_state_value" to "some_value"
     Given TGR set local variable "configured_param_name" to "my_cool_param"
     When TGR send POST request to "http://winstone/not_a_file" with:
@@ -82,7 +82,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.body.my_cool_param')}" matches "client_id"
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/x-www-form-urlencoded.*"
 
-  Scenario: Request with custom and default header
+  Scenario: Request with custom and default header, check application type json
     Given TGR set default header "Content-Type" to "application/json"
     When TGR send POST request to "http://winstone/not_a_file" with:
       | ${configured_param_name}   |
