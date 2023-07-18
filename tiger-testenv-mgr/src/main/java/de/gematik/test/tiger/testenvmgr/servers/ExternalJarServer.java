@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import static java.time.LocalDateTime.now;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -13,6 +12,9 @@ import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerStreamLogFeeder;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import lombok.Builder;
+import org.slf4j.event.Level;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,9 +23,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import lombok.Builder;
-import org.slf4j.event.Level;
+
+import static java.time.LocalDateTime.now;
 
 @TigerServerType("externalJar")
 public class ExternalJarServer extends AbstractExternalTigerServer {
@@ -56,8 +57,12 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                 if (getConfiguration().getSource().get(0).startsWith(LOCAL)) {
                     final String jarPath = getConfiguration().getSource().get(0).split(LOCAL)[1];
                     folder = Paths.get(jarPath).toAbsolutePath().getParent().toString();
-                    getConfiguration().getSource().add(0,
-                        LOCAL + jarPath.substring(jarPath.lastIndexOf('/')));
+                    if (jarPath.contains("/")) {
+                        getConfiguration().getSource().add(0,
+                                LOCAL + jarPath.substring(jarPath.lastIndexOf('/')));
+                    } else {
+                        getConfiguration().getSource().add(0, LOCAL + jarPath);
+                    }
                     log.info("Defaulting to parent folder '{}' as working directory for server {}", folder, getServerId());
                 } else {
                     folder = Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile()
@@ -94,7 +99,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         if (externalJarOptions != null && externalJarOptions.getOptions() != null) {
             options.addAll(externalJarOptions.getOptions().stream()
                 .map(getTigerTestEnvMgr()::replaceSysPropsInString)
-                .collect(Collectors.toList()));
+                .toList());
         }
         options.add("-jar");
         options.add(jarFile.getAbsolutePath());
@@ -113,8 +118,10 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                     .redirectErrorStream(true);
                 applyEnvPropertiesToProcess(processBuilder);
                 processReference.set(processBuilder.start());
-                new TigerStreamLogFeeder(log, processReference.get().getInputStream(), Level.INFO);
-                new TigerStreamLogFeeder(log, processReference.get().getErrorStream(), Level.ERROR);
+                if (getConfiguration().getExternalJarOptions().isActivateLogs()) {
+                    new TigerStreamLogFeeder(log, processReference.get().getInputStream(), Level.INFO);
+                    new TigerStreamLogFeeder(log, processReference.get().getErrorStream(), Level.ERROR);
+                }
                 statusMessage("Started JAR-File for " + getServerId() + " with PID '" + processReference.get().pid() + "'");
             } catch (Throwable t) {
                 log.error("Failed to start process", t);
