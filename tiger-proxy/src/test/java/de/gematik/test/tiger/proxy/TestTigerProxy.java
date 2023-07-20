@@ -14,7 +14,6 @@ import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -34,7 +33,10 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,11 +59,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.MediaType;
 import org.mockserver.model.SocketAddress;
@@ -926,5 +923,26 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .map(RbelHostnameFacet::toRbelHostname)
             .map(RbelHostname::getHostname)
             .map(Objects::toString);
+    }
+
+    @Test
+    void forwardProxy_queryParamsWithSpaces_shouldNotBeRewritten() {
+        spawnTigerProxyWith(TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder()
+                .from("http://foo.bar")
+                .to("http://localhost:" + fakeBackendServerPort)
+                .build()))
+            .build());
+
+        proxyRest.get("http://foo.bar/foobar?foo=this%20is%20bar")
+            .asString();
+        awaitMessagesInTiger(2);
+
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.path.foo")
+            .hasStringContentEqualTo("foo=this%20is%20bar");
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.path.foo.value")
+            .hasStringContentEqualTo("this is bar");
     }
 }

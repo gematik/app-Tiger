@@ -46,7 +46,8 @@ public class HttpGlueCode {
     private static RbelWriter rbelWriter;
 
     private static RequestSpecification givenDefaultSpec() {
-        final RequestSpecification requestSpecification = RestAssured.given();
+        final RequestSpecification requestSpecification = RestAssured.given()
+            .urlEncodingEnabled(false);
         return requestSpecification
             .headers(TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader"));
     }

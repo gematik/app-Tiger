@@ -135,3 +135,9 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR print current response as rbel-tree
     Then TGR current response with attribute "$.responseCode" matches "404"
     Then TGR assert "!{rbel:currentRequestAsString('$.path.other.value')}" matches "param"
+
+  Scenario: Get Request to folder
+    When TGR send empty GET request to "http://winstone/target?foo=bar%20and%20schmar"
+    Then TGR find last request to path ".*"
+    And TGR print current request as rbel-tree
+    And TGR assert "!{rbel:currentRequestAsString('$.path.foo.value')}" matches "bar and schmar"
