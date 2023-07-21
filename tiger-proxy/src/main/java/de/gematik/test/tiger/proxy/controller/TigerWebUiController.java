@@ -75,8 +75,8 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String CSS_COLOR_INHERIT = "color:inherit;";
     private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = CSS_BTN_DARK + " dropdown-toggle";
     private static final String CSS_DROPDOWN_ITEM = "dropdown-item";
-    private static final String CSS_NAVBAR_ITEM = "navbar-item";
-    private static final String CSS_NAVBAR_ITEM_NOT4EMBEDDED = CSS_NAVBAR_ITEM + " not4embedded";
+    private static final String CSS_NAVBAR_ITEM = "navbar-item test-navbar-item";
+    private static final String CSS_NAVBAR_ITEM_NOT4EMBEDDED = CSS_NAVBAR_ITEM + " not4embedded test-webui-navbar-item-notembedded";
     private static final String DROPDOWN_MENU = "dropdown-menu";
     private static final String VALUE_MODAL = "modal";
     private static final String HIDE_QUIT = "display:none;";
@@ -151,9 +151,9 @@ public class TigerWebUiController implements ApplicationContextAware {
         // hide sidebar
         String targetDiv;
         if (embedded) {
-            targetDiv = "<div class=\"col msglist embeddedlist\">";
+            targetDiv = "<div class=\"col msglist embeddedlist\" id=\"rbelembeddedlist\">";
         } else {
-            targetDiv = "<div class=\"col ms-6 msglist\">";
+            targetDiv = "<div class=\"col ms-6 msglist\" id=\"rbelmsglist\">";
         }
         html = replaceScript(html.replace("<div class=\"col ms-6\">", targetDiv));
 
@@ -189,7 +189,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     private String createNavbar(TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart, String styleQuit) {
-        return nav().withClass("navbar bg-dark fixed-bottom").withStyle(styleNavbar)
+        return nav().withClass("navbar bg-dark fixed-bottom").withId("webui-navbar").withStyle(styleNavbar)
             .with(
                 div().withClass("container-fluid").with(
                     div().withStyle(styleNavbarStart).with(

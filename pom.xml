@@ -147,6 +147,7 @@
         <module>tiger-zion</module>
         <module>tiger-test-lib</module>
         <module>tiger-maven-plugin</module>
+        <module>tiger-uitests</module>
     </modules>
 
     <profiles>

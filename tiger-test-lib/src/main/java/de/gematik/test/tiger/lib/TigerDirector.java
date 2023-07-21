@@ -30,6 +30,9 @@ import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -71,6 +74,8 @@ public class TigerDirector {
     @Getter
     private static TigerLibConfig libConfig;
     private static ConfigurableApplicationContext envMgrApplicationContext;
+
+    private static final String PORTFILE = "../workflowui.port";
 
     public static synchronized void start() {
         if (initialized) {
@@ -194,7 +199,6 @@ public class TigerDirector {
             }
         } finally {
             unregisterRestAssuredFilter();
-
             System.out.println("TGR Destroying spring boot context after testrun...");
             if (envMgrApplicationContext != null) {
                 envMgrApplicationContext.close();
@@ -247,7 +251,7 @@ public class TigerDirector {
 
         Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
         properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault());
-
+        writePortToLocalFile();
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(properties)
@@ -268,6 +272,17 @@ public class TigerDirector {
 
         testExecutionController.setPauseListener(() -> SerenityReporterCallbacks.setPauseMode(!SerenityReporterCallbacks.isPauseMode()));
 
+    }
+
+    private static void writePortToLocalFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PORTFILE))) {
+            writer.write(TESTENV_MGR_RESERVED_PORT.getValueOrDefault().toString());
+            File file = new File(PORTFILE);
+        } catch (IOException ioe) {
+            log.warn(
+                "Trying to write port number to file.",
+                ioe);
+        }
     }
 
     private static synchronized void startWorkflowUi() {

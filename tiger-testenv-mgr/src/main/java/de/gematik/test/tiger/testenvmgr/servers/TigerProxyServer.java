@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -16,15 +15,18 @@ import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandalon
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Optional;
+
+import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
 @TigerServerType("tigerProxy")
 public class TigerProxyServer extends AbstractExternalTigerServer {
@@ -100,7 +102,11 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .run();
 
 
-        TigerServerLogManager.addProxyCustomerAppender(this);
+        try {
+            TigerServerLogManager.addProxyCustomerAppender(this);
+        } catch (NoClassDefFoundError ncde) {
+            log.warn("Unable to detect logback library! Log appender for server {} not activated", getServerId());
+        }
 
         waitForServerUp();
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()

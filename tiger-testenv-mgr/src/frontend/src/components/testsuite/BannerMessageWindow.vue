@@ -4,7 +4,7 @@
 
 <template>
     <div v-if="quitTestrunOngoing && !shutdownTestrunOngoing" id="workflow-messages"
-         class="alert banner-message fade show py-5 text-danger text-center fade show" role="alert">
+         class="alert banner-message fade show py-5 text-danger text-center fade show test-messages-quit" role="alert">
         <i class="btn-banner-close fa-solid fa-xmark" v-on:click="closeWindow"></i>
         <h4 class="pt-3 pb-0">
             <i class="fa-2xl fa-solid fa-power-off pe-3"></i>

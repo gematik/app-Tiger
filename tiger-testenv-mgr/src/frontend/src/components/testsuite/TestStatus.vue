@@ -4,13 +4,13 @@
 
 <template>
   <div class="container">
-    <div class="alert alert-light featurelistbox engraved" :aria-label="`${createStats(featureUpdateMap)}`">
+    <div class="alert alert-light featurelistbox engraved" id="test-sidebar-statusbox" :aria-label="`${createStats(featureUpdateMap)}`">
       <div class="alert-heading featurelist">
-        <div v-if="features.failed > 0" class="pl-3 fw-bold">Features: {{ features.passed }} OK {{ features.failed }} FAIL</div>
-        <div v-else class="pl-3">Features: {{ features.passed }} OK</div>
-        <div v-if="scenarios.failed > 0" class="pl-3 fw-bold">Scenarios: {{ scenarios.passed }} OK {{ scenarios.failed }} FAIL</div>
-        <div v-else class="pl-3">Scenarios: {{ scenarios.passed }} OK</div>
-        <div class="mt-2 small text-muted">Started: {{ started }}</div>
+        <div v-if="features.failed > 0" class="pl-3 fw-bold test-sidebar-status-features">Features: {{ features.passed }} OK {{ features.failed }} FAIL</div>
+        <div v-else class="pl-3 test-sidebar-status-features">Features: {{ features.passed }} OK</div>
+        <div v-if="scenarios.failed > 0" class="pl-3 fw-bold test-sidebar-status-scenarios">Scenarios: {{ scenarios.passed }} OK {{ scenarios.failed }} FAIL</div>
+        <div v-else class="pl-3 test-sidebar-status-scenarios">Scenarios: {{ scenarios.passed }} OK</div>
+        <div class="mt-2 small text-muted" id="test-sidebar-status-started">Started: {{ started }}</div>
       </div>
     </div>
   </div>

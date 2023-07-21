@@ -1,13 +1,13 @@
 <template>
-  <div class="serverbox">
+  <div class="serverbox test-sidebar-serverbox">
     <div class="alert-heading server-name truncate-text">
       <i :class="`${getServerIcon(server.type)} left serverstatus-${server.status.toLowerCase()}`" :title="`${server.status}`"></i>
-      <span>{{ server.name }}</span> <small>({{ server.status }})</small>
+      <span class="test-sidebar-server-name">{{ server.name }}</span> <small class="test-sidebar-server-status">({{ server.status }})</small>
     </div>
-    <div class="serverurl truncate-text" v-if="server.baseUrl">
+    <div class="serverurl truncate-text test-sidebar-server-url" v-if="server.baseUrl">
       {{ server.baseUrl }}
       <a :href="server.baseUrl" :target="server.name">
-        <i class="fa-solid fa-up-right-from-square" alt="pop out server"></i>
+        <i class="fa-solid fa-up-right-from-square test-sidebar-server-url-icon" alt="pop out server"></i>
       </a>
     </div>
     <span v-else></span>
@@ -16,10 +16,10 @@
          aria-expanded="false"
          :aria-controls="`history_${server.name}`">
         {{ server.statusMessage }}
-        <i class="fa-solid fa-angles-down right"></i>
+        <i class="fa-solid fa-angles-down right test-sidebar-server-log-icon"></i>
       </a>
-      <div class="server-history collapse text-primary p-2 pb-0" :id="`history_${server.name}`">
-        <div v-for="(serverstatus,index) in server.statusUpdates" class="pl-3 pr-3 pb-2" :key="index">
+      <div class="server-history collapse text-primary p-2 pb-0 test-sidebar-server-logs" :id="`history_${server.name}`">
+        <div v-for="(serverstatus,index) in server.statusUpdates" class="pl-3 pr-3 pb-2 test-sidebar-server-log" :key="index">
           {{ serverstatus }}
         </div>
       </div>

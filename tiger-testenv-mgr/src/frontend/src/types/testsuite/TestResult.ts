@@ -33,15 +33,15 @@ export function currentOverallTestRunStatus(featureUpdateMap: Map<string, Featur
 export function getTestResultIcon(testResult: string, iconFamily: string): string {
   if (!iconFamily) { iconFamily = "solid"}
   if (testResult === 'PASSED') {
-    return 'fa-circle-check fa-' + iconFamily;
+    return 'test-passed fa-circle-check fa-' + iconFamily;
   } else if (testResult === 'FAILED') {
-    return 'fa-triangle-exclamation fa-solid';
+    return 'fa-triangle-exclamation fa-solid test-failed';
   } else if (testResult === 'SKIPPED') {
-    return 'fa-circle-down fa-' + iconFamily;
+    return 'test-skipped fa-circle-down fa-' + iconFamily;
   } else if (testResult === 'EXECUTING') {
-    return 'fa-solid fa-spinner blue fa-spin'; // there is no regular for spinner
+    return 'fa-solid fa-spinner blue fa-spin test-running'; // there is no regular for spinner
   } else if (testResult === 'PENDING') {
-    return 'fa-solid fa-spinner'; // there is no regular for spinner
+    return 'fa-solid fa-spinner test-pending'; // there is no regular for spinner
   } else {
     return 'fa-circle-question fa-' + iconFamily;
   }
