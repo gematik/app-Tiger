@@ -28,8 +28,8 @@ pipeline {
           choice(name: 'UPDATE', choices: ['NO', 'YES'], description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll')
       }
 
-      stages {
-          stage('Initialise') {
+    stages {
+        stage('Initialise') {
             steps {
                 useJdk("OPENJDK17")
 
@@ -43,67 +43,69 @@ pipeline {
             }
         }
 
-          stage('Checkout') {
-              steps {
-                  git branch: BRANCH,
-                      credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
-                      url: REPO_URL
-              }
-          }
+        stage('Checkout') {
+            steps {
+                git branch: BRANCH,
+                  credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                  url: REPO_URL
+            }
+        }
 
-          stage('Set Tiger version in TI-M') {
-              steps {
-                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
-              }
-          }
+        stage('Set Tiger version in TI-M') {
+            steps {
+                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
+            }
+        }
 
-          stage('Build') {
-              steps {
-                  mavenBuild(POM_PATH,"-Dprofile.ci")
-              }
-          }
+        stage('Build') {
+            steps {
+                mavenBuild(POM_PATH,"-Dprofile.ci")
+            }
+        }
 
-          stage('Tests') {
-              steps {
+        stage('Tests') {
+            steps {
+                withEnv(["TIGER_DOCKER_HOST=$DOCKER_HOST_HOSTNAME"]){
                     mavenVerify("pom.xml", "-Dprofile.ci")
-              }
-          }
+                }
+            }
+        }
 
-          stage('Commit new Tiger version when needed') {
-               steps {
-                   script {
-                        if (params.UPDATE == 'YES') {
-                            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
-                                sh """
-                                    git add -A
-                                    git commit -m "Tiger version updated"
-                                    git push origin ${BRANCH}
+        stage('Commit new Tiger version when needed') {
+            steps {
+                script {
+                    if (params.UPDATE == 'YES') {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                            sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
+                            sh """
+                                git add -A
+                                git commit -m "Tiger version updated"
+                                git push origin ${BRANCH}
 
-                                """
-                            }
+                            """
                         }
-                   }
-               }
-          }
-      }
-
-      post {
-           changed {
-                sendEMailNotification(getTigerEMailList())
-           }
-           success {
-                script {
-                     if (params.UPDATE == 'YES')
-                         sendEMailNotification(getCommunicationsEMailList() + "," + getTigerEMailList())
+                    }
                 }
-           }
+            }
+        }
+    }
 
-           failure {
-                script {
-                     if (params.UPDATE == 'YES')
-                         sendEMailNotification(getCommunicationsEMailList() + "," + getTigerEMailList())
-                }
-           }
-      }
+    post {
+        changed {
+            sendEMailNotification(getTigerEMailList())
+        }
+        success {
+            script {
+                 if (params.UPDATE == 'YES')
+                     sendEMailNotification(getCommunicationsEMailList() + "," + getTigerEMailList())
+            }
+        }
+
+        failure {
+            script {
+                 if (params.UPDATE == 'YES')
+                     sendEMailNotification(getCommunicationsEMailList() + "," + getTigerEMailList())
+            }
+        }
+    }
 }

@@ -1,0 +1,30 @@
+@startuml
+start
+:TTEMgr setUpEnvironment;
+:TTEMgr startServer;
+:AbstractTigerServer start;
+switch (type)
+' ------------------------------------------------------------
+' docker
+case (docker)
+:AbstractTigerServer performStartup;
+:DockerManager startContainer;
+:Container start;
+:DockerManager waitForHealthyStartup;
+while (!Container isHealthy)
+  :wait;
+  if (exception happened) then (yes)
+    :adapt remote docker host;
+    :AbstractTigerServer waitForServerUp;
+    :AbstractExternalTigerServer waitForServiceHalfTime;
+    :AbstractExternalTigerServer updateStatus;
+    :AbstractExternalTigerServer buildHealthcheckUrl;
+    :CfgServer getHealthcheckUrl;
+    :AbstractExternalTigerServer checkUrlOrThrowException;
+  endif
+endwhile
+:Server up;
+endswitch
+
+stop
+@enduml
