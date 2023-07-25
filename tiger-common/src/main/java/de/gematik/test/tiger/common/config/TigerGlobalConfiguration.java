@@ -132,6 +132,11 @@ public class TigerGlobalConfiguration {
             .map(TigerGlobalConfiguration::resolvePlaceholders);
     }
 
+    public static synchronized Optional<String> readStringWithoutResolving(String key) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.readStringOptional(key);
+    }
+
     @SneakyThrows
     public static synchronized <T> Optional<T> instantiateConfigurationBean(Class<T> configurationBeanClass,
         String... baseKeys) {
@@ -262,7 +267,7 @@ public class TigerGlobalConfiguration {
     }
 
     private static void readMainYamlFile() {
-        final Optional<String> tigerYamlValue = TIGER_YAML_VALUE.getValue();
+        final Optional<String> tigerYamlValue = TIGER_YAML_VALUE.getValueWithoutResolving();
         if (tigerYamlValue.isPresent()) {
             log.info("Reading configuration from tiger.yaml property as string");
             globalConfigurationLoader.readFromYaml(tigerYamlValue.get(), SourceType.TEST_YAML, TIGER_BASEKEY);

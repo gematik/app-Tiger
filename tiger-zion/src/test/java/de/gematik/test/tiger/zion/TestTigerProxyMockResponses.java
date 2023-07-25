@@ -71,10 +71,12 @@ class TestTigerProxyMockResponses {
                     "message.url =~ '.*/userJsonPath.*'"))
                 .response(TigerMockResponseDescription.builder()
                     .statusCode(666)
-                    .body("{\n"
-                        + "  \"authorizedUser\": \"!{$.path.username.value}\",\n"
-                        + "  \"someCertificate\": \"!{keyMgr.b64Certificate('puk_idp_enc')}\"\n"
-                        + "}\n")
+                    .body("""
+                        {
+                          "authorizedUser": "!{$.path.username.value}",
+                          "someCertificate": "!{keyMgr.b64Certificate('puk_idp_enc')}"
+                        }
+                        """)
                     .build())
                 .build()));
 
@@ -138,21 +140,23 @@ class TestTigerProxyMockResponses {
                     .backendRequests(Map.of("theRequest",
                         ZionBackendRequestDescription.builder()
                             .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
-                            .body("{\n"
-                                + "  \"tgrEncodeAs\":\"JWT\",\n"
-                                + "  \"header\":{\n"
-                                + "    \"alg\": \"BP256R1\",\n"
-                                + "    \"typ\": \"JWT\"\n"
-                                + "  },\n"
-                                + "  \"body\":{\n"
-                                + "    \"sub\": \"1234567890\",\n"
-                                + "    \"name\": \"John Doe\",\n"
-                                + "    \"iat\": 1516239022\n"
-                                + "  },\n"
-                                + "  \"signature\":{\n"
-                                + "    \"verifiedUsing\":\"idp_enc\"\n"
-                                + "  }\n"
-                                + "}")
+                            .body("""
+                                {
+                                  "tgrEncodeAs":"JWT",
+                                  "header":{
+                                    "alg": "BP256R1",
+                                    "typ": "JWT"
+                                  },
+                                  "body":{
+                                    "sub": "1234567890",
+                                    "name": "John Doe",
+                                    "iat": 1516239022
+                                  },
+                                  "signature":{
+                                    "verifiedUsing":"idp_enc"
+                                  }
+                                }
+                                """)
                             .assignments(Map.of("signer", "$.body.signature.verifiedUsing"))
                             .build()))
                     .response(TigerMockResponseDescription.builder()

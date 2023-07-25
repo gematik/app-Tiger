@@ -51,6 +51,13 @@ public class TigerTypedConfigurationKey<T> {
             .map(this::getInstance);
     }
 
+    @SneakyThrows
+    public Optional<T> getValueWithoutResolving() {
+        return TigerGlobalConfiguration
+            .readStringWithoutResolving(key.downsampleKey())
+            .map(this::getInstance);
+    }
+
     public T getValueOrDefault() {
         return getValue()
             .or(() -> defaultValue)

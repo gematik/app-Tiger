@@ -18,10 +18,12 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class TigerMockResponse {
 
+    @TigerSkipEvaluation
     private List<String> requestCriterions;
     private TigerMockResponseDescription response;
     private Map<String, TigerMockResponse> nestedResponses = new HashMap<>();
     private Map<String, ZionBackendRequestDescription> backendRequests = new HashMap<>();
+    @TigerSkipEvaluation
     private Map<String, String> assignments;
     private int importance = 0;
 }

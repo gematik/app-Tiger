@@ -1,7 +1,6 @@
 package de.gematik.test.tiger.zion;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.TigerMockResponseDescription;
@@ -31,8 +30,6 @@ class TestMeshedSetups {
 
     @Autowired
     private ZionConfiguration configuration;
-    @Autowired
-    private ObjectMapper objectMapper;
     @LocalServerPort
     private int port;
     private Map<String, TigerMockResponse> mockResponsesBackup;

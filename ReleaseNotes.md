@@ -19,6 +19,11 @@
 * TGRFHIR-8: URL-Query parameters are no longer twice URL-encoded when using HTTP Glue Code
 * TGR-999: Scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
 
+## Features
+
+* TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any combination thereof)
+* TGR-976: New annotation `@TigerSkipEvaluation` which skips the evaluation of configuration values.
+
 -------
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0

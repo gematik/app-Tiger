@@ -5,26 +5,27 @@
 package de.gematik.test.tiger.common.config;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.IteratorUtils;
@@ -64,6 +65,8 @@ public class TigerConfigurationLoader {
     }
 
     private void initializeObjectMapper() {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(String.class, new SkipEvaluationDeserializer(this));
         objectMapper = JsonMapper.builder()
             .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -71,6 +74,7 @@ public class TigerConfigurationLoader {
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             .addModule(new JavaTimeModule())
             .addModule(new AllowDelayedPrimitiveResolvementModule(this))
+            .addModule(module)
             .build();
         strictObjectMapper = JsonMapper.builder()
             .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
@@ -78,6 +82,7 @@ public class TigerConfigurationLoader {
             .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             .addModule(new JavaTimeModule())
+            .addModule(module)
             .build();
     }
 
@@ -140,7 +145,7 @@ public class TigerConfigurationLoader {
     private <T> Optional<T> instantiateConfigurationBean(Class<T> configurationBeanClass, ObjectMapper objectMapper, String... baseKeys) {
         initialize();
 
-        TreeNode targetTree = convertToTree();
+        TreeNode targetTree = convertToTreeUnresolved();
         final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
         for (TigerConfigurationKeyString key : configurationKey) {
             if (targetTree.get(key.getValue()) == null) {
@@ -163,7 +168,7 @@ public class TigerConfigurationLoader {
     public <T> T instantiateConfigurationBean(TypeReference<T> configurationBeanType, String... baseKeys) {
         initialize();
 
-        TreeNode targetTree = convertToTree();
+        TreeNode targetTree = convertToTreeUnresolved();
         final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
         for (TigerConfigurationKeyString key : configurationKey) {
             if (targetTree.get(key.getValue()) == null) {
@@ -281,11 +286,17 @@ public class TigerConfigurationLoader {
     }
 
     public Map<TigerConfigurationKey, String> retrieveMap() {
+        final Map<TigerConfigurationKey, String> map = retrieveMapUnresolved();
+        replacePlaceholders(map);
+        return map;
+    }
+
+    public Map<TigerConfigurationKey, String> retrieveMapUnresolved() {
         Map<TigerConfigurationKey, String> loadedAndSortedProperties = new HashMap<>();
 
         for (AbstractTigerConfigurationSource configurationSource : loadedSources.stream()
             .sorted(Comparator.comparing(AbstractTigerConfigurationSource::getSourceType))
-            .collect(Collectors.toList())) {
+            .toList()) {
             loadedAndSortedProperties = configurationSource.applyTemplatesAndAddValuesToMap(
                 loadedTemplates,
                 loadedAndSortedProperties
@@ -297,10 +308,10 @@ public class TigerConfigurationLoader {
         return loadedAndSortedProperties;
     }
 
-    private JsonNode convertToTree() {
+    private JsonNode convertToTreeUnresolved() {
         final ObjectNode result = new ObjectNode(objectMapper.getNodeFactory());
 
-        for (var entry : retrieveMap().entrySet()) {
+        for (var entry : retrieveMapUnresolved().entrySet()) {
             createAndReturnDeepPath(entry.getKey(), result)
                 .put(entry.getKey().get(entry.getKey().size() - 1).getValue(), entry.getValue());
         }
@@ -350,13 +361,12 @@ public class TigerConfigurationLoader {
             .mapToInt(s -> Integer.parseInt(s.toString()))
             .sorted()
             .boxed()
-            .collect(Collectors.toList());
+            .toList();
         int i = 0;
         for (Integer key : keys) {
             if (key != i++) {
                 return false;
             }
-            continue;
         }
         return true;
     }
@@ -523,6 +533,34 @@ public class TigerConfigurationLoader {
         @Override
         public void setupModule(SetupContext setupContext) {
             setupContext.addDeserializationProblemHandler(new ClazzFallbackConverter(tigerConfigurationLoader));
+        }
+
+    }
+
+    @RequiredArgsConstructor
+    @AllArgsConstructor
+    @Slf4j
+    public static class SkipEvaluationDeserializer extends JsonDeserializer<String> implements ContextualDeserializer {
+
+        private final TigerConfigurationLoader configurationLoader;
+        private boolean skipEvaluation;
+        private BeanProperty property;
+
+        @Override
+        public JsonDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
+            this.skipEvaluation = property != null && property.getAnnotation(TigerSkipEvaluation.class) != null;
+            this.property = property;
+            return new SkipEvaluationDeserializer(configurationLoader, skipEvaluation, property);
+        }
+
+        @Override
+        public String deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+            final String valueAsString = jsonParser.getValueAsString();
+            if (skipEvaluation) {
+                return valueAsString;
+            } else {
+                return TokenSubstituteHelper.substitute(valueAsString, configurationLoader);
+            }
         }
     }
 

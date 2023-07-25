@@ -69,50 +69,52 @@ class TestZionServerType {
             .isEqualTo("World");
     }
 
-    @TigerTest(tigerYaml = "servers:\n"
-        + "  mainServer:\n"
-        + "    type: zion\n"
-        + "    zionConfiguration:\n"
-        + "      serverPort: \"${free.port.50}\"\n"
-        + "      mockResponses:\n"
-        + "        passwordCheckResponse:\n"
-        + "          backendRequests:\n"
-        + "            tokenCheck:\n"
-        + "              url: \"http://localhost:${free.port.60}/checkPassword\"\n"
-        + "              body: '?{$.header.password}'\n"
-        + "              assignments:\n"
-        + "                correctPassword: \"$.responseCode == '200'\"\n"
-        + "          requestCriterions:\n"
-        + "            - message.method == 'GET'\n"
-        + "            - message.path == '/helloWorld'\n"
-        + "          nestedResponses:\n"
-        + "            correctPassword:\n"
-        + "              importance: 10\n"
-        + "              requestCriterions:\n"
-        + "                - \"${correctPassword} == 'true'\"\n"
-        + "              response:\n"
-        + "                statusCode: 200\n"
-        + "                body: '{\"Hello\":\"World\"}'\n"
-        + "            wrongPassword:\n"
-        + "              importance: 0\n"
-        + "              response:\n"
-        + "                statusCode: 405\n"
-        + "                body: '{\"Wrong\":\"Password\"}'\n"
-        + "  backendServer:\n"
-        + "    type: zion\n"
-        + "    zionConfiguration:\n"
-        + "      serverPort: \"${free.port.60}\"\n"
-        + "      mockResponses:\n"
-        + "        correctPassword:\n"
-        + "          importance: 10\n"
-        + "          requestCriterions:\n"
-        + "            - \"$.body == 'secret'\"\n"
-        + "          response:\n"
-        + "            statusCode: 200\n"
-        + "        wrongPassword:\n"
-        + "          importance: 0\n"
-        + "          response:\n"
-        + "            statusCode: 400\n")
+    @TigerTest(tigerYaml = """
+        servers:
+          mainServer:
+            type: zion
+            zionConfiguration:
+              serverPort: "${free.port.50}"
+              mockResponses:
+                passwordCheckResponse:
+                  backendRequests:
+                    tokenCheck:
+                      url: "http://localhost:${free.port.60}/checkPassword"
+                      body: '?{$.header.password}'
+                      assignments:
+                        correctPassword: "!{$.responseCode == '200'}"
+                  requestCriterions:
+                    - message.method == 'GET'
+                    - message.path == '/helloWorld'
+                  nestedResponses:
+                    correctPassword:
+                      importance: 10
+                      requestCriterions:
+                        - "${correctPassword} == 'true'"
+                      response:
+                        statusCode: 200
+                        body: '{"Hello":"World"}'
+                    wrongPassword:
+                      importance: 0
+                      response:
+                        statusCode: 405
+                        body: '{"Wrong":"Password"}'
+          backendServer:
+            type: zion
+            zionConfiguration:
+              serverPort: "${free.port.60}"
+              mockResponses:
+                correctPassword:
+                  importance: 10
+                  requestCriterions:
+                    - "$.body == 'secret'"
+                  response:
+                    statusCode: 200
+                wrongPassword:
+                  importance: 0
+                  response:
+                    statusCode: 400
+        """)
     @Test
     void testMultipleZionServer(UnirestInstance unirest) {
         final HttpResponse<JsonNode> response = unirest.get(TigerGlobalConfiguration.resolvePlaceholders(

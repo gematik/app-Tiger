@@ -75,7 +75,12 @@ public class TigerJexlExecutor {
             contextMap.putAll(externalContext);
             final JexlExpression expression = buildExpression(jexlExpression, contextMap);
 
-            return Optional.ofNullable(expression.evaluate(contextMap));
+            final Object result = expression.evaluate(contextMap);
+            if (ACTIVATE_JEXL_DEBUGGING) {
+                log.debug("Evaluated \"{}\" to '{}'", jexlExpression, result);
+            }
+
+            return Optional.ofNullable(result);
         } catch (RuntimeException e) {
             if (e instanceof JexlException && (e.getCause() instanceof JexlArithmetic.NullOperand)) {
                 return Optional.empty();

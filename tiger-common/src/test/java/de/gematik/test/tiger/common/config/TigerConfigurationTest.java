@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
+import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -447,6 +448,34 @@ public class TigerConfigurationTest {
     }
 
     @Test
+    void skipEvaluation_shouldWork() {
+        TigerGlobalConfiguration.reset();
+        final String jexlExpression = "!{'jo'=='ja'}";
+        TigerGlobalConfiguration.readFromYaml("""
+        blub:
+            skipString: "!{'jo'=='ja'}"
+            directString: "!{'jo'=='ja'}"
+            skipList:
+            - "!{'jo'=='ja'}"
+            directList:
+            - "!{'jo'=='ja'}"
+            skipMap:
+                entry: "!{'jo'=='ja'}"
+            directMap:
+                entry: "!{'jo'=='ja'}"
+        """);
+        var bean = TigerGlobalConfiguration.instantiateConfigurationBean(EvaluationSkippingTestClass.class, "blub").get();
+        assertThat(bean.getSkipString()).isEqualTo(jexlExpression);
+        assertThat(bean.getDirectString()).isEqualTo("false");
+
+        assertThat(bean.getSkipList().get(0)).isEqualTo(jexlExpression);
+        assertThat(bean.getDirectList().get(0)).isEqualTo("false");
+
+        assertThat(bean.getSkipMap().get("entry")).isEqualTo(jexlExpression);
+        assertThat(bean.getDirectMap().get("entry")).isEqualTo("false");
+    }
+
+    @Test
     void shouldParseJava8Date() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.readFromYaml("users.blub: 2007-12-24T18:21Z");
@@ -855,5 +884,20 @@ public class TigerConfigurationTest {
         private String password;
         private LocalDate blub;
         private List<String> roles;
+    }
+
+    @Data
+    @Builder
+    public static class EvaluationSkippingTestClass {
+
+        @TigerSkipEvaluation
+        private String skipString;
+        private String directString;
+        @TigerSkipEvaluation
+        private List<String> skipList;
+        private List<String> directList;
+        @TigerSkipEvaluation
+        private Map<String, String> skipMap;
+        private Map<String, String> directMap;
     }
 }

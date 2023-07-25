@@ -137,13 +137,16 @@ public class ZionRequestExecutor {
             .withRootElement(currentElement);
 
         for (Entry<String, String> entry : assignments.entrySet()) {
-            currentElement.findElement(entry.getValue())
+            final String newValue = Optional.of(entry.getValue())
+                .filter(s -> s.startsWith("$."))
+                .flatMap(currentElement::findElement)
                 .map(el -> el.seekValue(String.class)
                     .orElseGet(el::getRawStringContent))
                 .map(TigerGlobalConfiguration::resolvePlaceholders)
-                .or(() -> TigerJexlExecutor.evaluateJexlExpression(entry.getValue(), localResponseContext)
-                    .map(Object::toString))
-                .ifPresent(s -> jexlContext.put(TigerGlobalConfiguration.resolvePlaceholders(entry.getKey()), s));
+                .orElseGet(() -> TigerGlobalConfiguration.resolvePlaceholdersWithContext(entry.getValue(), localResponseContext));
+
+            final String key = TigerGlobalConfiguration.resolvePlaceholdersWithContext(entry.getKey(), localResponseContext);
+            jexlContext.put(key, newValue);
         }
     }
 
