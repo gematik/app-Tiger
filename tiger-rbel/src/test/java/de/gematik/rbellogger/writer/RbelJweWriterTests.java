@@ -7,7 +7,6 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJweFacet;
-import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.util.Base64;
@@ -22,21 +21,22 @@ class RbelJweWriterTests {
 
     @Test
     void testHybridEccEncryption() {
-        final RbelElement input = rbelConverter.convertElement("{\n"
-            + "  \"tgrEncodeAs\": \"JWE\",\n"
-            + "  \"header\": {\n"
-            + "    \"alg\": \"ECDH-ES\",\n"
-            + "    \"enc\": \"A256GCM\",\n"
-            + "    \"cty\": \"NJWT\"\n"
-            + "  },\n"
-            + "  \"body\": {\n"
-            + "    \"some_claim\": \"foobar\",\n"
-            + "    \"other_claim\": \"code\"\n"
-            + "  },\n"
-            + "  \"encryptionInfo\": {\n"
-            + "    \"decryptedUsingKeyWithId\": \"puk_idpEnc\"\n"
-            + "  }\n"
-            + "}", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "tgrEncodeAs": "JWE",
+              "header": {
+                "alg": "ECDH-ES",
+                "enc": "A256GCM"
+              },
+              "body": {
+                "some_claim": "foobar",
+                "other_claim": "code"
+              },
+              "encryptionInfo": {
+                "decryptedUsingKeyWithId": "idpEnc"
+              }
+            }
+            """, null);
 
         var output = serializeElement(input);
 
@@ -54,21 +54,22 @@ class RbelJweWriterTests {
                 .key(new SecretKeySpec(Base64.getDecoder().decode(keyContent), "AES"))
                 .keyName(keyName)
                 .build());
-        final RbelElement input = rbelConverter.convertElement("{\n"
-            + "  \"tgrEncodeAs\": \"JWE\",\n"
-            + "  \"header\": {\n"
-            + "    \"alg\": \"dir\",\n"
-            + "    \"enc\": \"A256GCM\",\n"
-            + "    \"cty\": \"NJWT\"\n"
-            + "  },\n"
-            + "  \"body\": {\n"
-            + "    \"some_claim\": \"foobar\",\n"
-            + "    \"other_claim\": \"code\"\n"
-            + "  },\n"
-            + "  \"encryptionInfo\": {\n"
-            + "    \"decryptedUsingKey\": \"" + keyContent + "\"\n"
-            + "  }\n"
-            + "}", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "tgrEncodeAs": "JWE",
+              "header": {
+                "alg": "dir",
+                "enc": "A256GCM"
+              },
+              "body": {
+                "some_claim": "foobar",
+                "other_claim": "code"
+              },
+              "encryptionInfo": {
+                "decryptedUsingKey": "YVI2Ym5wNDVNb0ZRTWFmU1Y1ZTZkRTg1bG9za2tscjg"
+              }
+            }
+            """, null);
 
         var output = serializeElement(input);
 

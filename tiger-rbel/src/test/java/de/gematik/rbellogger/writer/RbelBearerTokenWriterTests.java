@@ -6,7 +6,6 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import org.junit.jupiter.api.Test;
 
@@ -17,22 +16,53 @@ class RbelBearerTokenWriterTests {
     private RbelConverter rbelConverter = logger.getRbelConverter();
 
     @Test
-    void testSimpleJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("Bearer {\n"
-            + "  \"tgrEncodeAs\":\"JWT\",\n"
-            + "  \"header\":{\n"
-            + "    \"alg\": \"BP256R1\",\n"
-            + "    \"typ\": \"JWT\"\n"
-            + "  },\n"
-            + "  \"body\":{\n"
-            + "    \"sub\": \"1234567890\",\n"
-            + "    \"name\": \"John Doe\",\n"
-            + "    \"iat\": 1516239022\n"
-            + "  },\n"
-            + "  \"signature\":{\n"
-            + "    \"verifiedUsing\":\"idpEnc\"\n"
-            + "  }\n"
-            + "}", null);
+    void testNestedJwtSerialization() {
+        final RbelElement input = rbelConverter.convertElement("""
+            Bearer {
+              "tgrEncodeAs":"JWT",
+              "header":{
+                "alg": "BP256R1",
+                "typ": "JWT"
+              },
+              "body":{
+                "sub": "1234567890",
+                "name": "John Doe",
+                "iat": 1516239022
+              },
+              "signature":{
+                "verifiedUsing":"idpEnc"
+              }
+            }
+            """, null);
+
+        var output = serializeElement(input);
+
+        assertThat(output)
+            .extractChildWithPath("$.BearerToken.signature.verifiedUsing")
+            .hasValueEqualTo("puk_idpEnc");
+    }
+    @Test
+    void testPureJsonSerialization() {
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "tgrEncodeAs": "BEARER_TOKEN",
+              "BearerToken": {
+                "tgrEncodeAs": "JWT",
+                "header": {
+                  "alg": "BP256R1",
+                  "typ": "JWT"
+                },
+                "body": {
+                  "sub": "1234567890",
+                  "name": "John Doe",
+                  "iat": 1516239022
+                },
+                "signature": {
+                  "verifiedUsing": "idpEnc"
+                }
+              }
+            }
+            """, null);
 
         var output = serializeElement(input);
 

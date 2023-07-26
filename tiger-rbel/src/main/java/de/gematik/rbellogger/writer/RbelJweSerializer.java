@@ -8,16 +8,13 @@ import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.security.Key;
-import java.security.Security;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jwe.JsonWebEncryption;
-import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
 
 public class RbelJweSerializer implements RbelSerializer {
@@ -55,7 +52,7 @@ public class RbelJweSerializer implements RbelSerializer {
         return signature.get().childNode("decryptedUsingKeyWithId")
             .map(RbelContentTreeNode::getContentAsString)
             .map(keyName -> rbelWriter.getRbelKeyManager().findKeyByName(keyName)
-                .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("prk_" + keyName))
+                .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("puk_" + keyName))
                 .orElseThrow(() -> new RbelSerializationException("Could not find key named '" + keyName + "'!")))
             .map(RbelKey::getKey)
             .or(() -> signature.get().childNode("decryptedUsingKey")

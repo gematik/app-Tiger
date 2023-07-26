@@ -325,3 +325,136 @@ A JWT consists of three parts: header, body, signature. The given nodes are sear
 
 We then see another mode-switch being done in the `iat`-claim in the body of the JWT: `iat` is the Unix-Timestamp at which the token was issued. For our faked ad-hoc token we of course want to use the current time for this claim. Unfortunately the `iat` claim is a number, which precludes the direct use of a JEXL-expression. To solve this problem make the claim complex, add the `"jsonNonStringPrimitive"` attribute to the resulting node and set the value to the desired value. This also works for floating-point and boolean values.
 
+=== RbelWriter content structures
+
+In this paragraph we'll take a look at the various structures that can be serialized with the RbelWriter, which sits at the core of the Zion-Server. The following examples are kept in JSON (apart from the Bearer token example). Please note that the same result can be achieved from XML (or any other format for that matter).
+
+==== JWT
+[source,json]
+```
+{
+  "tgrEncodeAs": "JWT",
+  "header": {
+    "alg": "BP256R1",
+    "typ": "JWT"
+  },
+  "body": {
+    "claim": "value"
+  },
+  "signature": {
+    "verifiedUsing": "idpEnc"
+  }
+}
+```
+
+The three parts denote the different part of a JWT: The header claims (header), body claims (body) and signature properties (signature). RbelWriter will automatically try to sign the given JWT. For this the key at `$.signature.verifiedUsing` is consulted and a matching key is searched in the tiger key-database. This will be filled at start-time by digging through the root-directory of the application recursively and trying to open all found key-files with various default passwords.
+
+Please note that the header-claims have to match the given key, otherwise the signing operation can't be completed successfully.
+
+==== JWE
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "JWE",
+  "header": {
+    "alg": "ECDH-ES",
+    "enc": "A256GCM"
+  },
+  "body": {
+    "some_claim": "foobar",
+    "other_claim": "code"
+  },
+  "encryptionInfo": {
+    "decryptedUsingKeyWithId": "idpEnc"
+  }
+}
+```
+
+As with the JWT, for the JWE all relevant claims are to be found in the appropriate sections.
+The signature has been replaced by the `encryptionInfo`-section. Here you need to specify the key to be used for the encryption. Here in this example we are using a public/private key-pair (with the same name as before). Again the header claims have to match the key used.
+
+Apart from a public/private key-pair you can also use direct keys to encrypt your JWE. Here is an example:
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "JWE",
+  "header": {
+    "alg": "dir",
+    "enc": "A256GCM"
+  },
+  "body": {
+    "some_claim": "foobar",
+    "other_claim": "code"
+  },
+  "encryptionInfo": {
+    "decryptedUsingKey": "YVI2Ym5wNDVNb0ZRTWFmU1Y1ZTZkRTg1bG9za2tscjg"
+  }
+}
+
+```
+
+As we are using a AES 256 bit key the supplied key has to exactly carry 256 bits, Base64 encoded.
+
+==== URL
+
+To generate a URL you can also use the RbelWriter. Consult the following structure:
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "url",
+  "basicPath": "http://blub/fdsa",
+  "parameters": {
+    "foo": "bar"
+  }
+}
+```
+
+The parameters will be added as query-parameters. This can be rather useful to construct more complex parameters, for example
+a dynamically generated JWT.
+
+==== Bearer Token
+
+A Bearer token can also be serialized directly via RbelWriter. This is very relevant if you want to, for example, generate a JWT on the fly and use it as the Bearer token. The straight-forward way would be to directly write the Bearer token like so:
+
+```
+Bearer {
+  "tgrEncodeAs":"JWT",
+  "header":{
+    "alg": "BP256R1",
+    "typ": "JWT"
+  },
+  "body":{
+    "claim": "value",
+  },
+  "signature":{
+    "verifiedUsing":"idpEnc"
+  }
+}
+```
+
+Here the whole arrangement will be parsed as a Bearer token (Which is essentially the Word `Bearer`, followed by a space and any string). The value of the Bearer token will be parsed as a JSON. When the result is then serialized, the `tgrEncodeAs` is interpreted and the JSON will be written as a Base64-encoded JWT.
+
+The following example will produce the same result. However the overall structure is a JSON, which will be written as a Bearer token (`"tgrEncodeAs": "BEARER_TOKEN"`). The content of the token is taken from the child-node with the name `BearerToken`.
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "BEARER_TOKEN",
+  "BearerToken": {
+    "tgrEncodeAs": "JWT",
+    "header": {
+      "alg": "BP256R1",
+      "typ": "JWT"
+    },
+    "body": {
+      "claim": "value",
+    },
+    "signature": {
+      "verifiedUsing": "idpEnc"
+    }
+  }
+}
+```
