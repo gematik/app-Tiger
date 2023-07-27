@@ -9,7 +9,7 @@ pipeline {
       options {
           disableConcurrentBuilds()
       }
-      agent { label 'k8-maven' }
+      agent { label 'LTU-DEV-Docker-Maven'' }
 
       tools {
           maven 'Default'
