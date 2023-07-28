@@ -4,10 +4,6 @@
 
 package de.gematik.test.tiger.lib.httpclient;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 import de.gematik.test.tiger.glue.HttpGlueCode;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.glue.TigerGlue;
@@ -18,10 +14,6 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.datatable.DataTableTypeRegistry;
 import io.cucumber.datatable.DataTableTypeRegistryTableConverter;
 import io.restassured.http.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,6 +22,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 /**
  * Performs all tests as defined in HttpGlueCodeTest.feature as unit tests so that the coverage of the glue code is also added to sonar. Cucumber does some
@@ -77,6 +79,41 @@ public class TestHttpClientSteps {
     }
 
     @Test
+    void sendComplexPost() {
+        httpGlueCode.sendRequestWithMultiLineBody(Method.POST, "http://winstone",
+                """
+                        { 
+                          "object": { "field": "value" },
+                          "array" : [ "1", 2, { "field2": "value2" } ],
+                          "member" : "test"
+                        }                          
+                        """);
+        rbelValidatorGlueCode.findLastRequestToPath(".*");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}","POST");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.Content-Type')}", "application/json");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.object.field')}", "value");
+        tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "200");
+    }
+
+    //TODO till https://github.com/jenkinsci/winstone/issues/339
+    // is resolved we rely on external httpbin server
+    @Test
+    void sendComplexPut() {
+        httpGlueCode.sendRequestWithMultiLineBody(Method.PUT, "http://httpbin.org/put",
+                """
+                        { 
+                          "object": { "field": "value" },
+                          "array" : [ "1", 2, { "field2": "value2" } ],
+                          "member" : "test"
+                        }                          
+                        """);
+        rbelValidatorGlueCode.findLastRequestToPath(".*");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}","PUT");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.Content-Type')}", "application/json");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.object.field')}", "value");
+        tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "200");
+    }
+    @Test
     void simpleGetRequestNonBlocking(MockServerClient client) {
         AtomicBoolean blockResponse = new AtomicBoolean(true);
         client.when(request()
@@ -108,12 +145,15 @@ public class TestHttpClientSteps {
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/target\\/?");
     }
 
+    // TODO these two methods do not really test anything besides correct construction of the Request
+    // maybe rework with httpbin url as in complex put test method above
     @Test
     void putRequestToFolder() {
         httpGlueCode.sendEmptyRequest(Method.PUT, "http://winstone/target");
         rbelValidatorGlueCode.findLastRequestToPath(".*");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "PUT");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/target\\/?");
+        tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "405");
     }
 
     @Test
@@ -123,6 +163,7 @@ public class TestHttpClientSteps {
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "PUT");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/target\\/?");
         tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.hello')}", "world!");
+        tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "405");
     }
 
     @Test

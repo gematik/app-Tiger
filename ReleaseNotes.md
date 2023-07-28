@@ -18,6 +18,7 @@
 * TGR-979: fixing bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround was to disable the serenity maven plugin in tiger-test-utils
 * TGRFHIR-8: URL-Query parameters are no longer twice URL-encoded when using HTTP Glue Code
 * TGR-999: Scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
+* TGR-1010: Added Http client step to send a request with a multiline body (for more complex json requests)
 
 ## Features
 

@@ -22,6 +22,11 @@ import io.restassured.RestAssured;
 import io.restassured.http.Method;
 import io.restassured.internal.RequestSpecificationImpl;
 import io.restassured.specification.RequestSpecification;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.api.SoftAssertionsProvider.ThrowingRunnable;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -31,10 +36,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.assertj.core.api.SoftAssertionsProvider.ThrowingRunnable;
 
 @Slf4j
 public class HttpGlueCode {
@@ -297,6 +298,41 @@ public class HttpGlueCode {
             givenDefaultSpec()
                 .formParams(resolveMap(dataAsMaps.get(0)))
                 .request(method, new URI(resolveToString(address))));
+    }
+
+
+    /**
+     * Sends a request via the selected method.
+     * For the given request's body placeholders in keys and values will be resolved.
+     * This step is meant to be used for more complex bodys spanning multiple lines.
+     *
+     * Example:
+     * <pre>
+     *      When TGR send POST request to "http://my.address.com" with multiline body:
+     *       """
+     *         {
+     *              "name": "value",
+     *              "object": { "member": "value" },
+     *              "array" : [ 1,2,3,4]
+     *         }
+     *       """
+     * </pre>
+     * <br>
+     * </p>
+     *
+     * @param method     HTTP request method (see {@link Method})
+     * @param address    target address
+     * @param body       body content of the request
+     * @see TigerGlobalConfiguration#resolvePlaceholders(String)
+     */
+    @SuppressWarnings("JavadocLinkAsPlainText")
+    @SneakyThrows
+    @When("TGR send {requestType} request to {string} with multiline body:")
+    @When("TGR eine {requestType} Anfrage an {string} mit den folgenden mehrzeiligen Daten sendet:")
+    @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden mehrzeiligen Daten:")
+    public void sendRequestWithMultiLineBody(Method method, String address, String body) {
+        log.info("Sending complex {} request with body to {}", method, address);
+        executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
     }
 
     /**
