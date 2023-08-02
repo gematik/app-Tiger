@@ -24,6 +24,7 @@
 
 * TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any combination thereof)
 * TGR-976: New annotation `@TigerSkipEvaluation` which skips the evaluation of configuration values.
+* TGR-977: Zion can now match path variables and assigns them to the values given in the request URL. See User Manual section "Tiger Zion > Matching path variables"
 
 -------
 * Serenity BDD 3.6.23
