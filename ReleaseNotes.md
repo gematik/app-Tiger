@@ -11,6 +11,20 @@
 
 # Release 2.1.3
 
+## Breaking changes
+
+* with TGR-1015 we fixed the http client steps sending form data (GET/POST) to be not URL encoded. 
+  * The affected steps are:
+    * @When("TGR send {requestType} request to {string} with:")
+    * @When("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
+    * @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
+  * and 
+    * @When("TGR send {requestType} request to {string} without waiting for the response with:")
+    * @Then("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
+  * Please be aware that validation of the params needs to be handled differently now.
+    * For GET requests you can validate the value of the get request via: $.path.paramname.value which returns the URL decoded value
+    * For POST requests the value is URL encoded in the body, so we can not easily validate it ULR decoded. $.body.paramname will therefore contain the URL encoded value. To ease with validation we have introduced a new JEXL helper function !{rbel:urlEncocded('value')} which will return the URL encoded value of the given string.
+     
 ## Bugfixes
 
 * Wildcard file filters are now also supported for windows users
@@ -19,11 +33,13 @@
 * TGRFHIR-8: URL-Query parameters are no longer twice URL-encoded when using HTTP Glue Code
 * TGR-999: Scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
 * TGR-1010: Added Http client step to send a request with a multiline body (for more complex json requests)
+* TGR-1015: Datatable based param/values of http client GET and POST request steps are now URL encoded per default.
 
 ## Features
 
 * TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any combination thereof)
 * TGR-976: New annotation `@TigerSkipEvaluation` which skips the evaluation of configuration values.
+* TGR-1015: To ease with validation of POST form parameters, we have introduced a new JEXL helper function !{rbel:urlEncocded('value')} which will return the URL encoded value of the given string.
 * TGR-977: Zion can now match path variables and assigns them to the values given in the request URL. See User Manual section "Tiger Zion > Matching path variables"
 
 -------

@@ -110,5 +110,15 @@ image::media/accessjexlcontext.png[width=50%,title="Use single quotes when using
 
 `$.body.recordId == "Y243631459" && charset == "UTF-8"` -> combines the two criterions
 
+==== POST Form / GET parameters
+
+When accessing parameters POST and GET are handled differently.
+POST form data requests contain the data as Url encoded query string in the body of the request. There is no easy way to decode this data generically within Rbel/JEXL. To help you ease the situation for POST we do have a helper JEXL method: ```!{rbel:urlEncoded('value')}```
+To access POST form data you may use ```$.body.paramname``` which will return the URL encoded value.
+
+For GET requests you have two options:
+
+* ```$.path.paramname``` which will return the string "paramaname=URLENCODED_VALUE" or
+* ```$.path.paramname.value``` which will return the URL decoded original value.
 
 For further help on JEXL please check out the offical website (https://commons.apache.org/proper/commons-jexl).

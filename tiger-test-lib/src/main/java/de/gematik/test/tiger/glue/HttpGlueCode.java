@@ -29,6 +29,7 @@ import org.assertj.core.api.SoftAssertionsProvider.ThrowingRunnable;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -181,7 +182,7 @@ public class HttpGlueCode {
     public void sendEmptyRequestWithHeaders(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
         Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader");
-        defaultHeaders.putAll(resolveMap(customHeaders.asMap()));
+        defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
         executeCommandWithContingentWait(() ->
             givenDefaultSpec()
                 .headers(defaultHeaders)
@@ -205,7 +206,7 @@ public class HttpGlueCode {
     public void sendEmptyRequestWithHeadersNonBlocking(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
         Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader");
-        defaultHeaders.putAll(resolveMap(customHeaders.asMap()));
+        defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
         executeCommandInBackground(() ->
             givenDefaultSpec()
                 .headers(defaultHeaders)
@@ -265,7 +266,7 @@ public class HttpGlueCode {
     }
 
     /**
-     * Sends a request via the selected method. The request is expanded by the provided key-value pairs. Placeholders in keys and values will be resolved.
+     * Sends a request via the selected method. The request is expanded by the provided key-value pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded, as this is done by the step.
      * Example:
      * <pre>
      *      When Send POST request to "http://my.address.com" with
@@ -296,7 +297,7 @@ public class HttpGlueCode {
         }
         executeCommandWithContingentWait(() ->
             givenDefaultSpec()
-                .formParams(resolveMap(dataAsMaps.get(0)))
+                .formParams(resolveMap(dataAsMaps.get(0), true))
                 .request(method, new URI(resolveToString(address))));
     }
 
@@ -336,7 +337,9 @@ public class HttpGlueCode {
     }
 
     /**
-     * Sends a request via the selected method. The request is expanded by the provided key-value pairs. Placeholders in keys and values will be resolved.
+     * Sends a request via the selected method. The request is expanded by the provided key-value
+     * pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded,
+     * as this is done by the step.
      * <p>
      * This method is NON-BLOCKING, meaning it will not wait for the response before continuing the test.
      *
@@ -357,7 +360,7 @@ public class HttpGlueCode {
         }
         executeCommandInBackground(() ->
             givenDefaultSpec()
-                .formParams(resolveMap(dataAsMaps.get(0)))
+                .formParams(resolveMap(dataAsMaps.get(0), true))
                 .request(method, new URI(resolveToString(address))));
     }
 
@@ -376,10 +379,11 @@ public class HttpGlueCode {
         TigerGlobalConfiguration.putValue("tiger.httpClient.defaultHeader." + resolveToString(header), resolveToString(value));
     }
 
-    private Map<String, String> resolveMap(Map<String, String> map) {
+    private Map<String, String> resolveMap(Map<String, String> map, boolean encoded) {
         return map.entrySet().stream()
             .collect(Collectors.toMap(
                 entry -> resolveToString(entry.getKey()),
-                entry -> resolveToString(entry.getValue())));
+                entry -> encoded ? URLEncoder.encode(resolveToString(entry.getValue()), StandardCharsets.UTF_8) :
+                        resolveToString(entry.getValue())));
     }
 }
