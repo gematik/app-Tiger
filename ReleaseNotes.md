@@ -39,8 +39,11 @@
 
 * TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any combination thereof)
 * TGR-976: New annotation `@TigerSkipEvaluation` which skips the evaluation of configuration values.
-* TGR-1015: To ease with validation of POST form parameters, we have introduced a new JEXL helper function !{rbel:urlEncocded('value')} which will return the URL encoded value of the given string.
+* TGR-1015: To ease with validation of POST form parameters, we have introduced a new JEXL helper function !{urlEncocded('value')} which will return the URL encoded value of the given string.
 * TGR-977: Zion can now match path variables and assigns them to the values given in the request URL. See User Manual section "Tiger Zion > Matching path variables"
+* TGR-1020: added http client step to clear all default headers. 
+  * @When("TGR clear all default headers")
+  * @When("TGR lösche alle default headers")
 
 -------
 * Serenity BDD 3.6.23

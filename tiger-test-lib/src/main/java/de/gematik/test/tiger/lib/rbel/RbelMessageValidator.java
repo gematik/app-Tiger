@@ -38,8 +38,6 @@ import org.xmlunit.diff.Difference;
 import javax.xml.transform.Source;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -331,19 +329,15 @@ public class RbelMessageValidator {
 
     public void assertAttributeOfCurrentResponseMatchesAs(String rbelPath, ModeType mode, String oracle) {
         switch (mode) {
-            case JSON:
-                new JsonChecker().compareJsonStrings(
+            case JSON -> new JsonChecker().compareJsonStrings(
                     getValueOrContentString(findElementInCurrentResponse(rbelPath)),
                     oracle,
                     false);
-                break;
-            case XML:
+            case XML -> {
                 final RbelElement el = findElementInCurrentResponse(rbelPath);
                 compareXMLStructureOfRbelElement(el, oracle, "");
-                break;
-            default:
-                Assertions.fail("Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
-                break;
+            }
+            default -> Assertions.fail("Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
         }
     }
 
@@ -495,10 +489,6 @@ public class RbelMessageValidator {
 
         public String currentRequestAsString(final String rbelPath) {
             return getValueOrContentString(findElementInCurrentRequest(rbelPath));
-        }
-
-        public String urlEncoded(final String value) {
-            return URLEncoder.encode(value, StandardCharsets.UTF_8);
         }
 
         public String currentRequestAsString() {

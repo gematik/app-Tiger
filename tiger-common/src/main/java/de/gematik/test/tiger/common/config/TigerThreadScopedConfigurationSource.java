@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import lombok.Builder;
-import lombok.Data;
 
 /**
  * Configuration-source which is bound to a certain thread. The configuration will be invisible from outside the thread
@@ -57,13 +55,17 @@ public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigura
     public void putValue(TigerConfigurationKey key, String value) {
         final long threadId = Thread.currentThread().getId();
         synchronized (threadIdToValuesMap) {
-            if (!threadIdToValuesMap.containsKey(threadId)) {
-                threadIdToValuesMap.put(threadId, new ConcurrentHashMap<>());
-            }
+            threadIdToValuesMap.computeIfAbsent(threadId, thid -> new ConcurrentHashMap<>());
+            threadIdToValuesMap.get(threadId).put(key, value);
+        }
+    }
 
-            threadIdToValuesMap
-                .get(threadId)
-                .put(key, value);
+    @Override
+    public void removeValue(TigerConfigurationKey key) {
+        final long threadId = Thread.currentThread().getId();
+        synchronized (threadIdToValuesMap) {
+            threadIdToValuesMap.computeIfAbsent(threadId, thid -> new ConcurrentHashMap<>());
+            threadIdToValuesMap.get(threadId).remove(key);
         }
     }
 }

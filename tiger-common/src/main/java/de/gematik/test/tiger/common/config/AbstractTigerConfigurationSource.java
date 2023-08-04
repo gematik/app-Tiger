@@ -4,9 +4,10 @@
 
 package de.gematik.test.tiger.common.config;
 
+import lombok.Getter;
+
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
 
 /**
  * Base class that stores key/value-pairs from a source.
@@ -34,4 +35,6 @@ public abstract class AbstractTigerConfigurationSource {
     public abstract Map<TigerConfigurationKey, String> getValues();
 
     public abstract void putValue(TigerConfigurationKey key, String value);
+
+    public abstract void removeValue(TigerConfigurationKey key);
 }

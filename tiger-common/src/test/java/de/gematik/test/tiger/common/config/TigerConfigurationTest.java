@@ -4,9 +4,6 @@
 
 package de.gematik.test.tiger.common.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,13 +14,6 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
-import java.io.File;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -35,6 +25,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
 public class TigerConfigurationTest {
 
@@ -587,15 +589,15 @@ public class TigerConfigurationTest {
     @Test
     void readWithTigerConfiguration() {
         TigerGlobalConfiguration.readFromYaml(
-            FileUtils.readFileToString(
-                new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
-            "tiger");
+                FileUtils.readFileToString(
+                        new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
+                "tiger");
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
-            .get()
-            .extracting(TestCfg::getTemplates)
-            .asList()
-            .extracting("templateName")
-            .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
+                .get()
+                .extracting(TestCfg::getTemplates)
+                .asList()
+                .extracting("templateName")
+                .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
     }
 
     @SneakyThrows
@@ -838,6 +840,24 @@ public class TigerConfigurationTest {
             .execute(() -> assertThat(TigerGlobalConfiguration.readString("foobar"))
                     .isEqualTo("123"));
     }
+
+    @SneakyThrows
+    @Test
+    void readWithTigerConfigurationAndRemoveOneValue() {
+        TigerGlobalConfiguration.readFromYaml(
+                FileUtils.readFileToString(
+                        new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
+                "tiger");
+        assertThat(TigerGlobalConfiguration.readString("tiger.templates.0.type")).isEqualTo("docker");
+        TigerGlobalConfiguration.listSources().forEach(source -> source.removeValue(
+                        new TigerConfigurationKey("tiger", "templates", "0", "type")
+                )
+        );
+        assertThatThrownBy(() ->TigerGlobalConfiguration.readString("tiger.templates.0.type"))
+                .isInstanceOf(TigerConfigurationException.class)
+                .hasMessage("Could not find value for 'tiger.templates.0.type'");
+    }
+
 
     @Data
     @Builder

@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import static j2html.TagCreator.*;
 import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
@@ -12,6 +11,7 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
@@ -21,20 +21,6 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +42,23 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static j2html.TagCreator.*;
 
 @Data
 @RequiredArgsConstructor
@@ -80,6 +83,8 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String DROPDOWN_MENU = "dropdown-menu";
     private static final String VALUE_MODAL = "modal";
     private static final String HIDE_QUIT = "display:none;";
+    /** in error responses on http requests, this token causes problems so remove it for better handling on client side */
+    public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer;
 
@@ -374,15 +379,23 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
                 .matchSuccessful(jexlExecutor.matchesAsJexlExpression(targetMessage, query))
                 .messageContext(messageContext).build();
-        } catch (JexlException jexlException) {
+        } catch (JexlException | TigerJexlException jexlException) {
             log.warn("Failed to perform JEXL query '" + query + "'", jexlException);
             String msg = jexlException.getMessage();
-            msg = msg.replaceAll(".*:\\d* ", "");
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
             return JexlQueryResponseDto.builder()
                 .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
                 .errorMessage(msg)
                 .build();
 
+        } catch (RuntimeException rte) {
+            log.warn("Runtime failure while performing JEXL query '" + query + "'", rte);
+            String msg = rte.getMessage();
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
+                    .errorMessage(msg)
+                    .build();
         }
     }
 
@@ -399,13 +412,32 @@ public class TigerWebUiController implements ApplicationContextAware {
             return JexlQueryResponseDto.builder()
                 .build();
         }
-        return JexlQueryResponseDto.builder()
-            .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true))
-            .elements(targetElements.stream()
-                .map(RbelElement::findNodePath)
-                .map(key -> "$." + key)
-                .collect(Collectors.toList()))
-            .build();
+        try {
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true))
+                    .elements(targetElements.stream()
+                            .map(RbelElement::findNodePath)
+                            .map(key -> "$." + key)
+                            .collect(Collectors.toList()))
+                    .build();
+        } catch (JexlException | TigerJexlException jexlException) {
+            log.warn("Failed to perform RBelPath query '" + rbelPath + "'", jexlException);
+            String msg = jexlException.getMessage();
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml("<span>RbelPath is invalid '" + msg + "'</span>")
+                    .errorMessage(msg)
+                    .build();
+
+        } catch (RuntimeException rte) {
+            log.warn("Runtime failure while performing RbelPath query '" + rbelPath + "'", rte);
+            String msg = rte.getMessage();
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml("<span>Error while parsing RbelPath '" + msg + "'</span>")
+                    .errorMessage(msg)
+                    .build();
+        }
     }
 
     private String createRbelTreeForElement(RbelElement targetElement, boolean addJexlResponseLinkCssClass) {
@@ -464,7 +496,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
                 }
             })
-            .collect(Collectors.toList());
+            .toList();
 
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);

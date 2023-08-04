@@ -4,11 +4,12 @@
 
 package de.gematik.test.tiger.common.config;
 
+import lombok.Builder;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.Builder;
 
 /**
  * Stores a map of key/value-pairs.
@@ -54,5 +55,10 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
     @Override
     public void putValue(TigerConfigurationKey key, String value) {
         values.put(key, value);
+    }
+
+    @Override
+    public void removeValue(TigerConfigurationKey key) {
+        values.remove(key);
     }
 }

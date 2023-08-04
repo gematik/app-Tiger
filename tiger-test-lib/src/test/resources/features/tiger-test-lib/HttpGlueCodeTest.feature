@@ -77,7 +77,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
       | client_id                  | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.path.state.value')}" matches "${configured_state_value}"
-    And TGR assert "!{rbel:currentRequestAsString('$.path.state')}" matches "state=!{rbel:urlEncoded('some weird $value§')}"
+    And TGR assert "!{rbel:currentRequestAsString('$.path.state')}" matches "state=!{urlEncoded('some weird $value§')}"
     And TGR assert "!{rbel:currentRequestAsString('$.path.my_cool_param')}" matches "${configured_param_name}=client_id"
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/x-www-form-urlencoded.*"
 
@@ -88,10 +88,10 @@ Feature: HTTP/HTTPS GlueCode Test feature
       | ${configured_param_name}   | state                     | redirect_uri        |
       | client_id                  | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path ".*"
-    And TGR assert "!{rbel:currentRequestAsString('$.body.state')}" matches "!{rbel:urlEncoded('some weird $value§')}"
+    And TGR assert "!{rbel:currentRequestAsString('$.body.state')}" matches "!{urlEncoded('some weird $value§')}"
     And TGR assert "!{rbel:currentRequestAsString('$.body.my_cool_param')}" matches "client_id"
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/x-www-form-urlencoded.*"
-    And TGR assert "!{rbel:currentRequestAsString('$.body.redirect_uri')}" matches "!{rbel:urlEncoded('https://my.redirect')}"
+    And TGR assert "!{rbel:currentRequestAsString('$.body.redirect_uri')}" matches "!{urlEncoded('https://my.redirect')}"
 
   Scenario: Request with custom and default header, check application type json
     Given TGR set default header "Content-Type" to "application/json"

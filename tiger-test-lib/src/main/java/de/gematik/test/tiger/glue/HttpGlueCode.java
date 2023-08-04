@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,9 +42,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class HttpGlueCode {
 
+    public static final String KEY_HTTP_CLIENT = "httpClient";
+    public static final String KEY_TIGER = "tiger";
     private static final TigerTypedConfigurationKey<Boolean> executeBlocking = new TigerTypedConfigurationKey<>(
-        new TigerConfigurationKey("tiger", "httpClient", "executeBlocking"), Boolean.class, false);
+            new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, "executeBlocking"), Boolean.class, false);
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+    public static final String KEY_DEFAULT_HEADER = "defaultHeader";
     private static RbelLogger rbelLogger;
     private static RbelWriter rbelWriter;
 
@@ -51,7 +55,7 @@ public class HttpGlueCode {
         final RequestSpecification requestSpecification = RestAssured.given()
             .urlEncodingEnabled(false);
         return requestSpecification
-            .headers(TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader"));
+                .headers(TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER));
     }
 
     private static String resolveToString(String value) {
@@ -181,7 +185,7 @@ public class HttpGlueCode {
     @Then("TGR sende eine leere {requestType} Anfrage an {string} mit folgenden Headern:")
     public void sendEmptyRequestWithHeaders(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
-        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader");
+        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
         defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
         executeCommandWithContingentWait(() ->
             givenDefaultSpec()
@@ -205,7 +209,7 @@ public class HttpGlueCode {
     @Then("TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Headern:")
     public void sendEmptyRequestWithHeadersNonBlocking(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
-        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader");
+        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
         defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
         executeCommandInBackground(() ->
             givenDefaultSpec()
@@ -266,7 +270,8 @@ public class HttpGlueCode {
     }
 
     /**
-     * Sends a request via the selected method. The request is expanded by the provided key-value pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded, as this is done by the step.
+     * Sends a request via the selected method. The request is expanded by the provided key-value pairs.
+     * Placeholders in keys and values will be resolved. The values must not be URL encoded, as this is done by the step.
      * Example:
      * <pre>
      *      When Send POST request to "http://my.address.com" with
@@ -376,8 +381,26 @@ public class HttpGlueCode {
     @When("TGR den default header {string} auf den Wert {string} setzen")
     @Then("TGR setze den default header {string} auf den Wert {string}")
     public void setDefaultHeader(String header, String value) {
-        TigerGlobalConfiguration.putValue("tiger.httpClient.defaultHeader." + resolveToString(header), resolveToString(value));
+        TigerGlobalConfiguration.putValue(
+                KEY_TIGER + "." + KEY_HTTP_CLIENT + "." + KEY_DEFAULT_HEADER + "." + resolveToString(header),
+                resolveToString(value));
     }
+
+    /**
+     * Clear all default headers set in previous steps.
+     *
+     */
+    @When("TGR clear all default headers")
+    @When("TGR lösche alle default headers")
+    public void clearDefaultHeaders() {
+        TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER).forEach((key, value) -> TigerGlobalConfiguration.listSources().stream()
+                .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
+                .forEach(source -> source.removeValue(
+                        new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER, key)
+                        )
+                )
+        );
+      }
 
     private Map<String, String> resolveMap(Map<String, String> map, boolean encoded) {
         return map.entrySet().stream()
