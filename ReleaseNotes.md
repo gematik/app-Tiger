@@ -6,8 +6,8 @@
 * RestAssured 5.2.0
 * Selenium 4.8.0
 * Appium 8.3.0
-* Spring Boot 3.0.6
-* Logback 1.4.7
+* Spring Boot 3.1.0
+* Logback 1.4.8
 
 # Release 2.1.3
 
@@ -29,21 +29,25 @@
 
 * Wildcard file filters are now also supported for windows users
 * TGR-956: Fixed a bug for correctly handling concurrent requests in Zion
-* TGR-979: fixing bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround was to disable the serenity maven plugin in tiger-test-utils
+* TGR-979: Fixed bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround was to disable the serenity maven plugin in tiger-test-utils
 * TGRFHIR-8: URL-Query parameters are no longer twice URL-encoded when using HTTP Glue Code
-* TGR-999: Scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
-* TGR-1010: Added Http client step to send a request with a multiline body (for more complex json requests)
+* TGR-999: Fixed scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
 * TGR-1015: Datatable based param/values of http client GET and POST request steps are now URL encoded per default.
 
 ## Features
 
 * TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any combination thereof)
 * TGR-976: New annotation `@TigerSkipEvaluation` which skips the evaluation of configuration values.
+* TGR-1010: Added Http client step to send a request with a multiline body (for more complex json requests)
 * TGR-1015: To ease with validation of POST form parameters, we have introduced a new JEXL helper function !{urlEncocded('value')} which will return the URL encoded value of the given string.
 * TGR-977: Zion can now match path variables and assigns them to the values given in the request URL. See User Manual section "Tiger Zion > Matching path variables"
 * TGR-1020: added http client step to clear all default headers. 
   * @When("TGR clear all default headers")
   * @When("TGR lösche alle default headers")
+* TGR-1024: added http client step to allow to specify multiple default headers via key value pairs as doc string
+  * @When("TGR set default headers:")
+  * @Then("TGR setze folgende default headers:")
+  * @When("TGR folgende default headers gesetzt werden:")
 
 -------
 * Serenity BDD 3.6.23

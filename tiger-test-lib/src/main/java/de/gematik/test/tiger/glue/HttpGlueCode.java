@@ -33,10 +33,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -394,6 +391,26 @@ public class HttpGlueCode {
         TigerGlobalConfiguration.putValue(
                 KEY_TIGER + "." + KEY_HTTP_CLIENT + "." + KEY_DEFAULT_HEADER + "." + resolveToString(header),
                 resolveToString(value));
+    }
+
+    /**
+     * Expands the list of default headers with the provided key-value pairs. If the key already exists, then the existing value is overwritten by the new value.
+     * Placeholders in the header names and in their values will be resolved.
+     *
+     * @param docstring multiline doc string, one key value pair per line
+     * @see TigerGlobalConfiguration#resolvePlaceholders(String)
+     */
+    @When("TGR set default headers:")
+    @Then("TGR setze folgende default headers:")
+    @When("TGR folgende default headers gesetzt werden:")
+    public void setDefaultHeaders(String docstring) {
+        Arrays.stream(docstring.split("\n"))
+                .filter(line -> !line.isEmpty())
+                .filter(line -> line.contains("="))
+                .map(line -> List.of(StringUtils.substringBefore(line, "="), StringUtils.substringAfter(line, "=")))
+                .forEach(kvp -> TigerGlobalConfiguration.putValue(
+                        KEY_TIGER + "." + KEY_HTTP_CLIENT + "." + KEY_DEFAULT_HEADER + "." + resolveToString(kvp.get(0)).trim(),
+                        resolveToString(kvp.get(1)).trim()));
     }
 
     /**

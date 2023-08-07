@@ -276,4 +276,18 @@ public class TestHttpClientSteps {
         }).isInstanceOf(TigerTestEnvException.class)
             .hasMessageContaining("The step 'TGR pause test run execution with message \"{}\" and message in case of error \"{}\"' is not supported outside the Workflow UI. Please check the manual for more information.");
     }
+
+
+    @Test
+    void sendRequestWithDefaultHeaders() {
+        httpGlueCode.setDefaultHeaders("key1=valueA\nkey2=valueB\nkey3=value=value\n  spacedkey = value with spaces  ");
+        httpGlueCode.sendEmptyRequest(Method.GET, "http://winstone/target/not_a_file");
+        rbelValidatorGlueCode.findLastRequestToPath(".*");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key1')}", "valueA");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key2')}", "valueB");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key3')}", "value=value");
+        tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.spacedkey')}", "value with spaces");
+    }
+
+
 }
