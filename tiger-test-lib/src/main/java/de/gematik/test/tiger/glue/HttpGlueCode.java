@@ -19,6 +19,7 @@ import io.cucumber.java.ParameterType;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
+import io.restassured.config.RedirectConfig;
 import io.restassured.http.Method;
 import io.restassured.internal.RequestSpecificationImpl;
 import io.restassured.specification.RequestSpecification;
@@ -56,6 +57,15 @@ public class HttpGlueCode {
             .urlEncodingEnabled(false);
         return requestSpecification
                 .headers(TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER));
+    }
+
+    private static void applyRedirectConfig(RedirectConfig newRedirectConfig) {
+        RestAssured.config = RestAssured.config.redirect(newRedirectConfig);
+    }
+
+    private static void resetRedirectConfig()
+    {
+        applyRedirectConfig(new RedirectConfig());
     }
 
     private static String resolveToString(String value) {
@@ -408,5 +418,25 @@ public class HttpGlueCode {
                 entry -> resolveToString(entry.getKey()),
                 entry -> encoded ? URLEncoder.encode(resolveToString(entry.getValue()), StandardCharsets.UTF_8) :
                         resolveToString(entry.getValue())));
+    }
+
+    /**
+     * Modifies the global configuration of the HttpClient to not automatically follow redirects. All following requests
+     * will use the modified configuration.
+     */
+    @When("TGR disable HttpClient followRedirects configuration")
+    public void disableHttpClientFollowRedirects() {
+        RedirectConfig newRedirectConfig = RestAssured.config.getRedirectConfig().followRedirects(false);
+
+        applyRedirectConfig(newRedirectConfig);
+    }
+
+    /**
+     * Resets the global configuration of the HttpClient to its default behaviour of automatically following redirects.
+     */
+    @When("TGR reset HttpClient followRedirects configuration")
+    public void resetHttpClientRedirectConfiguration()
+    {
+        resetRedirectConfig();
     }
 }

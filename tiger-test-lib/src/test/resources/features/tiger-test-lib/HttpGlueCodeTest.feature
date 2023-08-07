@@ -144,3 +144,16 @@ Feature: HTTP/HTTPS GlueCode Test feature
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.path.foo.value')}" matches "bar and schmar"
     And TGR assert "!{rbel:currentRequestAsString('$.path.foo')}" matches "foo=bar%20and%20schmar"
+
+  Scenario: Test deactivate followRedirects
+    When TGR disable HttpClient followRedirects configuration
+    And TGR send empty GET request to "http://winstone/classes?foobar=1"
+    Then TGR find the last request
+    Then TGR current response with attribute "$.responseCode" matches "302"
+    And TGR current response with attribute "$.header.Location" matches "http://localhost:${free.port.0}/classes/?foobar=1"
+    And TGR current response with attribute "$.sender" matches "winstone:80"
+    When TGR reset HttpClient followRedirects configuration
+    And TGR send empty GET request to "http://winstone/classes?foobar=1"
+    Then TGR find the last request
+    Then TGR current response with attribute "$.responseCode" matches "200"
+    And TGR current response with attribute "$.sender" matches "localhost:${free.port.0}"
