@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 2.1.2-SNAPSHOT - 2023-06-28</span>
+<span id="revdate">Version 2.1.3-SNAPSHOT - 2023-08-09</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -308,13 +308,25 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_jexl_expression_detail">7.3. Explanation of JEXL Expressions</a></li>
 </ul>
 </li>
-<li><a href="#_links_to_test_relevant_topics">8. Links to test relevant topics</a></li>
-<li><a href="#_frequently_asked_questions">9. Frequently asked questions</a>
+<li><a href="#_tiger_zion">8. Tiger Zion</a>
 <ul class="sectlevel2">
-<li><a href="#_maven">9.1. Maven</a></li>
-<li><a href="#_extensions">9.2. Extensions</a></li>
-<li><a href="#_workflow_ui_3">9.3. Workflow UI</a></li>
-<li><a href="#_other_topics">9.4. Other topics</a></li>
+<li><a href="#_simple_canned_response">8.1. Simple canned response</a></li>
+<li><a href="#_looping_tgrfor">8.2. Looping (tgrFor)</a></li>
+<li><a href="#_conditional_rendering_tgrif">8.3. Conditional rendering (tgrIf)</a></li>
+<li><a href="#_backend_request">8.4. Backend request</a></li>
+<li><a href="#_nested_response">8.5. Nested response</a></li>
+<li><a href="#_matching_path_variables">8.6. Matching path variables</a></li>
+<li><a href="#_tgrencodeas">8.7. tgrEncodeAs</a></li>
+<li><a href="#_rbelwriter_content_structures">8.8. RbelWriter content structures</a></li>
+</ul>
+</li>
+<li><a href="#_links_to_test_relevant_topics">9. Links to test relevant topics</a></li>
+<li><a href="#_frequently_asked_questions">10. Frequently asked questions</a>
+<ul class="sectlevel2">
+<li><a href="#_maven">10.1. Maven</a></li>
+<li><a href="#_extensions">10.2. Extensions</a></li>
+<li><a href="#_workflow_ui_3">10.3. Workflow UI</a></li>
+<li><a href="#_other_topics">10.4. Other topics</a></li>
 </ul>
 </li>
 </ul>
@@ -1501,6 +1513,8 @@ Their meaning and format are explained in the related section.</p>
     <span class="key">options</span>: <span class="string"><span class="content">[]</span></span>
     <span class="comment"># used by external jar and Tiger Proxy nodes</span>
     <span class="key">arguments</span>: <span class="string"><span class="content">[]</span></span>
+    <span class="comment"># flag whether to forward log output from external jar processes to the workflow UI</span>
+    <span class="key">activateLogs</span>: <span class="string"><span class="content">true</span></span>
 
   <span class="comment"># type specific sub structure for Tiger Proxy nodes</span>
   <span class="key">tigerProxyCfg</span>:
@@ -3455,26 +3469,26 @@ requests, with bodies, default and custom headers.</p>
     And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
 
   Scenario: PUT Request to folder
-    Given TGR pausiere Testausführung mit Nachricht &quot;Hier wird Userinput erfragt (erledigt = pass)?&quot; und Meldung im Fehlerfall &quot;Dieser Fehler wird gezeigt wenn User abbricht.&quot;
     When TGR send empty PUT request to &quot;http://winstone/target&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
 
   Scenario: PUT Request with body to folder
-    When TGR send PUT request with &quot;{'hello': 'world!'}&quot; to &quot;http://winstone/target&quot;
+    When TGR send PUT request to &quot;http://winstone/target&quot; with body &quot;{'hello': 'world!'}&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.body.hello')}&quot; matches &quot;world!&quot;
 
   Scenario: PUT Request with body from file to folder
-    When TGR send PUT request with &quot;!{file('pom.xml')}&quot; to &quot;http://winstone/target&quot;
+    When TGR send PUT request to &quot;http://winstone/target&quot; with body &quot;!{file('pom.xml')}&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}&quot; matches &quot;4.0.0&quot;
-    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;text/plain.*&quot;
+    # application/octet-stream is used since no rewriting is done, so unknown/default MIME-type is assumed
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/octet-stream.*&quot;
 
   Scenario: DELETE Request without body
     When TGR send empty DELETE request to &quot;http://winstone/not_a_file&quot;
@@ -3495,45 +3509,54 @@ requests, with bodies, default and custom headers.</p>
     When TGR send empty GET request to &quot;http://winstone/not_a_file&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
-    When TGR send POST request with &quot;hello world&quot; to &quot;http://winstone/not_a_file&quot;
+    When TGR send POST request to &quot;http://winstone/not_a_file&quot; with body &quot;hello world&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.body')}&quot; matches &quot;hello world&quot;
 
-  Scenario: Request with custom and default header
+  Scenario: Request with custom and default header, check headers
     Given TGR set default header &quot;key&quot; to &quot;value&quot;
     When TGR send empty GET request to &quot;http://winstone/not_a_file&quot; with headers:
       | foo | bar |
     Then TGR find last request to path &quot;.*&quot;
-    And TGR print current request as rbel-tree
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.foo')}&quot; matches &quot;bar&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
 
-  Scenario: Request with custom and default header
-    Given TGR set local variable &quot;configured_state_value&quot; to &quot;some_value&quot;
+  Scenario: Get Request with custom and default header, check body, application type url encoded
+    Given TGR set local variable &quot;configured_state_value&quot; to &quot;some weird $value§&quot;
+    Given TGR set local variable &quot;configured_param_name&quot; to &quot;my_cool_param&quot;
+    When TGR send GET request to &quot;http://winstone/not_a_file&quot; with:
+      | ${configured_param_name}   | state                     | redirect_uri        |
+      | client_id                  | ${configured_state_value} | https://my.redirect |
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path.state.value')}&quot; matches &quot;${configured_state_value}&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path.state')}&quot; matches &quot;state=!{urlEncoded('some weird $value§')}&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path.my_cool_param')}&quot; matches &quot;${configured_param_name}=client_id&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/x-www-form-urlencoded.*&quot;
+
+  Scenario: Post Request with custom and default header, check body, application type url encoded
+    Given TGR set local variable &quot;configured_state_value&quot; to &quot;some weird $value§&quot;
     Given TGR set local variable &quot;configured_param_name&quot; to &quot;my_cool_param&quot;
     When TGR send POST request to &quot;http://winstone/not_a_file&quot; with:
       | ${configured_param_name}   | state                     | redirect_uri        |
       | client_id                  | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path &quot;.*&quot;
-    And TGR print current request as rbel-tree
-    And TGR assert &quot;!{rbel:currentRequestAsString('$.body.state')}&quot; matches &quot;some_value&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.body.state')}&quot; matches &quot;!{urlEncoded('some weird $value§')}&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.body.my_cool_param')}&quot; matches &quot;client_id&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/x-www-form-urlencoded.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.body.redirect_uri')}&quot; matches &quot;!{urlEncoded('https://my.redirect')}&quot;
 
-  Scenario: Request with custom and default header
+  Scenario: Request with custom and default header, check application type json
     Given TGR set default header &quot;Content-Type&quot; to &quot;application/json&quot;
     When TGR send POST request to &quot;http://winstone/not_a_file&quot; with:
       | ${configured_param_name}   |
       | client_id                  |
     Then TGR find last request to path &quot;.*&quot;
-    And TGR print current request as rbel-tree
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/json&quot;
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR send empty GET request to &quot;http://winstone&quot;
     Then TGR find request to path &quot;/&quot;
-    And TGR print current request as rbel-tree
     Then TGR current response with attribute &quot;$.body.html.head.link.href&quot; matches &quot;!{rbel:currentResponseAsString('$.body.html.head.link.href')}&quot;
 
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
@@ -3550,8 +3573,6 @@ requests, with bodies, default and custom headers.</p>
     Given TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
     Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
     Then TGR find last request to path &quot;/classes&quot;
-    And TGR print current request as rbel-tree
-    And TGR print current response as rbel-tree
     Then TGR current response with attribute &quot;$.header.Location.foobar.value&quot; matches &quot;2&quot;
 
   Scenario: Test find last request with parameters
@@ -3559,8 +3580,6 @@ requests, with bodies, default and custom headers.</p>
     Then TGR send empty GET request to &quot;http://winstone/classes?foobar=1&amp;xyz=4&quot;
     Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
     Then TGR find last request to path &quot;/classes&quot; with &quot;$.path.foobar.value&quot; matching &quot;1&quot;
-    And TGR print current request as rbel-tree
-    And TGR print current response as rbel-tree
     Then TGR current response with attribute &quot;$.header.Location.xyz.value&quot; matches &quot;4&quot;
     Then TGR current response with attribute &quot;$.header.Location.xyz.value&quot; matches &quot;4&quot;
 
@@ -3570,10 +3589,27 @@ requests, with bodies, default and custom headers.</p>
     Then TGR send empty GET request to &quot;http://winstone/classes?foobar=3&quot;
     Then TGR send empty GET request to &quot;http://winstone/directoryWhichDoesNotExist?other=param&quot;
     Then TGR find the last request
-    And TGR print current request as rbel-tree
-    And TGR print current response as rbel-tree
     Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;404&quot;
-    Then TGR assert &quot;!{rbel:currentRequestAsString('$.path.other.value')}&quot; matches &quot;param&quot;</code></pre>
+    Then TGR assert &quot;!{rbel:currentRequestAsString('$.path.other.value')}&quot; matches &quot;param&quot;
+
+  Scenario: Get Request to folder and test param is url decoded when access via $.path and ..value is url decoded
+    When TGR send empty GET request to &quot;http://winstone/target?foo=bar%20and%20schmar&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path.foo.value')}&quot; matches &quot;bar and schmar&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path.foo')}&quot; matches &quot;foo=bar%20and%20schmar&quot;
+
+  Scenario: Test deactivate followRedirects
+    When TGR disable HttpClient followRedirects configuration
+    And TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
+    Then TGR find the last request
+    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;302&quot;
+    And TGR current response with attribute &quot;$.header.Location&quot; matches &quot;http://localhost:${free.port.0}/classes/?foobar=1&quot;
+    And TGR current response with attribute &quot;$.sender&quot; matches &quot;winstone:80&quot;
+    When TGR reset HttpClient followRedirects configuration
+    And TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
+    Then TGR find the last request
+    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;200&quot;
+    And TGR current response with attribute &quot;$.sender&quot; matches &quot;localhost:${free.port.0}&quot;</code></pre>
 </div>
 </div>
 <div class="sect4">
@@ -4068,15 +4104,13 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit Body {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* Sends a request containing the provided body via the selected method. Placeholders in the
-* body and in address will be resolved.
+* Sends a request containing the provided body via the selected method. Placeholders in the body and in address will be resolved.
 * &lt;p&gt;
-* This method is NON-BLOCKING, meaning it will not wait for the response before continuing
-* the test.
-
-/*
-* Expands the list of default headers with the provided key-value pair. If the key already exists, then the existing value is overwritten by the new value.
-* Placeholders in the header name and in its value will be resolved.
+* This method is NON-BLOCKING, meaning it will not wait for the response before continuing the test. ======= givenDefaultSpec() .body(resolve(body))
+* .request(method, new URI(resolveToString(address))); }
+* &lt;p&gt;
+* /** Expands the list of default headers with the provided key-value pair. If the key already exists, then the existing value is overwritten by the new
+* value. Placeholders in the header name and in its value will be resolved. &gt;&gt;&gt;&gt;&gt;&gt;&gt; master
 *
 * @param method  HTTP request method (see {@link Method})
 * @param body    to be included in the request
@@ -4087,7 +4121,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit Body {string} ohne auf Antwort zu warten</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* Sends a request via the selected method. The request is expanded by the provided key-value pairs. Placeholders in keys and values will be resolved.
+* Sends a request via the selected method. The request is expanded by the provided key-value pairs.
+* Placeholders in keys and values will be resolved. The values must not be URL encoded, as this is done by the step.
 * Example:
 * &lt;pre&gt;
 *      When Send POST request to &quot;http://my.address.com&quot; with
@@ -4111,11 +4146,40 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
+* Sends a request via the selected method.
+* For the given request's body placeholders in keys and values will be resolved.
+* This step is meant to be used for more complex bodys spanning multiple lines.
+*
+* Example:
+* &lt;pre&gt;
+*      When TGR send POST request to &quot;http://my.address.com&quot; with multiline body:
+*       &quot;&quot;&quot;
+*         {
+*              &quot;name&quot;: &quot;value&quot;,
+*              &quot;object&quot;: { &quot;member&quot;: &quot;value&quot; },
+*              &quot;array&quot; : [ 1,2,3,4]
+*         }
+*       &quot;&quot;&quot;
+* &lt;/pre&gt;
+* &lt;br&gt;
+* &lt;/p&gt;
+*
+* @param method     HTTP request method (see {@link Method})
+* @param address    target address
+* @param body       body content of the request
+* @see TigerGlobalConfiguration#resolvePlaceholders(String)
+*/</span>
+<span class="annotation">@SuppressWarnings</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">JavadocLinkAsPlainText</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request to {string} with multiline body:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine {requestType} Anfrage an {string} mit den folgenden mehrzeiligen Daten sendet:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit folgenden mehrzeiligen Daten:</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
 * Sends a request via the selected method. The request is expanded by the provided key-value
-* pairs. Placeholders in keys and values will be resolved.
+* pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded,
+* as this is done by the step.
 * &lt;p&gt;
-* This method is NON-BLOCKING, meaning it will not wait for the response before continuing
-* the test.
+* This method is NON-BLOCKING, meaning it will not wait for the response before continuing the test.
 *
 * @param method     HTTP request method (see {@link Method})
 * @param address    target address
@@ -4127,9 +4191,8 @@ only check for regex matches if they were not equal.</p>
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* Expands the list of default headers with the provided key-value pair. If the key already
-* exists, then the existing value is overwritten by the new value. Placeholders in the
-* header name and in its value will be resolved.
+* Expands the list of default headers with the provided key-value pair. If the key already exists, then the existing value is overwritten by the new value.
+* Placeholders in the header name and in its value will be resolved.
 *
 * @param header key
 * @param value  to be stored under the given key
@@ -4137,7 +4200,36 @@ only check for regex matches if they were not equal.</p>
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set default header {string} to {string}</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR den default header {string} auf den Wert {string} setzen</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze den default header {string} auf den Wert {string}</span><span class="delimiter">&quot;</span></span>)</code></pre>
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze den default header {string} auf den Wert {string}</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Expands the list of default headers with the provided key-value pairs. If the key already exists, then the existing value is overwritten by the new value.
+* Placeholders in the header names and in their values will be resolved.
+*
+* @param docstring multiline doc string, one key value pair per line
+* @see TigerGlobalConfiguration#resolvePlaceholders(String)
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set default headers:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze folgende default headers:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR folgende default headers gesetzt werden:</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Clear all default headers set in previous steps.
+*
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR clear all default headers</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR lösche alle default headers</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Modifies the global configuration of the HttpClient to not automatically follow redirects. All following requests
+* will use the modified configuration.
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR disable HttpClient followRedirects configuration</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Resets the global configuration of the HttpClient to its default behaviour of automatically following redirects.
+*/</span>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR reset HttpClient followRedirects configuration</span><span class="delimiter">&quot;</span></span>)</code></pre>
 </div>
 </div>
 </div>
@@ -4256,7 +4348,13 @@ This feature is used in the EAU Konnektorfarm validation test suite to guide the
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR show HTML Notification:</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR zeige HTML Notification:</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR assert {string} matches {string}</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe das {string} mit {string} überein stimmt</span><span class="delimiter">&quot;</span></span>)</code></pre>
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR prüfe das {string} mit {string} überein stimmt</span><span class="delimiter">&quot;</span></span>)
+
+<span class="comment">/*
+* Prints the value of the given variable to the System-out
+*/</span>
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR gebe variable {string} aus</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR print variable {string}</span><span class="delimiter">&quot;</span></span>)</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4821,7 +4919,7 @@ For that you can use RbelPath and/or JEXL expressions. This section should give 
 </div>
 <div class="paragraph">
 <p>Important to know is that an JEXL expression is usually a "condition1 operator condition2" expression which is compared.<br>
-Therefore the following operators could be used.</p>
+Therefor the following operators could be used.</p>
 </div>
 <div class="sect3">
 <h4 id="_operators">7.3.1. Operators</h4>
@@ -4936,7 +5034,8 @@ Therefore the following operators could be used.</p>
 <h4 id="_access_jexl_contexts">7.3.3. Access JEXL contexts</h4>
 <div class="paragraph">
 <p>There are predefined JEXL contexts which can be used for the query, for example <code>isRequest</code>, <code>isResponse</code>, <code>charset</code>, <code>content</code> or also more<br>
-complex contexts like <code>response.statuscode</code>, <code>request.url</code>, <code>message.method</code> etc.</p>
+complex contexts like <code>response.statuscode</code>, <code>request.url</code>, <code>message.method</code> etc.<br>
+For more details check the InlineJexlToolbox</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -4971,6 +5070,29 @@ complex contexts like <code>response.statuscode</code>, <code>request.url</code>
 <div class="paragraph">
 <p><code>$.body.recordId == "Y243631459" &amp;&amp; charset == "UTF-8"</code> &#8594; combines the two criterions</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_post_form_get_parameters">7.3.5. POST Form / GET parameters</h4>
+<div class="paragraph">
+<p>When accessing parameters POST and GET are handled differently.<br>
+POST form data requests contain the data as Url encoded query string in the body of the request.<br>
+There is no easy way to decode this data generically within Rbel/JEXL.<br>
+To help you ease the situation for POST we do have a helper JEXL inline method: <code><code>!{urlEncoded('value')}</code></code><br>
+To access POST form data you may use <code><code>$.body.paramname</code></code> which will return the URL encoded value.</p>
+</div>
+<div class="paragraph">
+<p>For GET requests you have two options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code><code>$.path.paramname</code></code> which will return the string "paramaname=URLENCODED_VALUE" or</p>
+</li>
+<li>
+<p><code><code>$.path.paramname.value</code></code> which will return the URL decoded original value.</p>
+</li>
+</ul>
+</div>
 <div class="paragraph">
 <p>For further help on JEXL please check out the offical website (<a href="https://commons.apache.org/proper/commons-jexl" class="bare">https://commons.apache.org/proper/commons-jexl</a>).</p>
 </div>
@@ -4980,7 +5102,622 @@ complex contexts like <code>response.statuscode</code>, <code>request.url</code>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_links_to_test_relevant_topics">8. Links to test relevant topics</h2>
+<h2 id="_tiger_zion">8. Tiger Zion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Tiger Zion is a server that is highly customizable.<br>
+It serves as a stand-in, an interactive, Zero-Line mock for more complicated servers.</p>
+</div>
+<div class="paragraph">
+<p>It can be stateful, do backend-requests, give conditional answers (allowing for error cases, edge cases).<br>
+It can return JSON, XML, JWT, JWE and many more, nest these formats into each other.<br>
+The underlying templating language supports loops and conditions.<br>
+It can be used both as a standalone server or as a server directly inside of tiger.</p>
+</div>
+<div class="sect2">
+<h3 id="_simple_canned_response">8.1. Simple canned response</h3>
+<div class="paragraph">
+<p>To start lets write a server that has one endpoint: Return a simple JSON.<br>
+We do this as part of a tiger testsuite.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 23. tiger.yaml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
+  <span class="key">zionServer</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">zion</span></span>
+    <span class="key">zionConfiguration</span>:
+      <span class="comment"># define the server port.</span>
+      <span class="comment"># In a real setup you would leave this empty (then a random port will be used)</span>
+      <span class="key">serverPort</span>: <span class="string"><span class="content">8080</span></span>
+      <span class="key">mockResponses</span>:
+      <span class="comment"># a map with all the responses</span>
+        <span class="key">helloWorld</span>:
+        <span class="comment"># the name is arbitrary. It can be used to alter the response later on</span>
+          <span class="key">requestCriterions</span>:
+          <span class="comment"># This is a list of JEXL expressions. Only when all expressions are met is this response considered</span>
+            - <span class="string"><span class="content">message.method == 'GET'</span></span>
+            - <span class="string"><span class="content">message.path == '/helloWorld'</span></span>
+          <span class="key">response</span>:
+            <span class="key">statusCode</span>: <span class="string"><span class="content">200</span></span>
+            <span class="key">body</span>: <span class="string"><span class="content">'{&quot;Hello&quot;:&quot;World&quot;}'</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will give us:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">$ curl localhost:8080/helloWorld
+{&quot;Hello&quot;: &quot;World&quot;}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_looping_tgrfor">8.2. Looping (tgrFor)</h3>
+<div class="paragraph">
+<p>Let&#8217;s now make this a bit more interactive: Return a map of all given HTTP headers.<br>
+And please return it as an XML!</p>
+</div>
+<div class="paragraph">
+<p>Because XMLs are large and get complicated easily we don&#8217;t want to write it directly inside the <code>tiger.yaml</code>.<br>
+So we reference an external file, where we do the heavy lifting:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 24. tiger.yaml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
+  <span class="key">zionServer</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">zion</span></span>
+    <span class="key">zionConfiguration</span>:
+      <span class="key">serverPort</span>: <span class="string"><span class="content">8080</span></span>
+      <span class="key">mockResponses</span>:
+        <span class="key">helloWorld</span>:
+          <span class="key">requestCriterions</span>:
+            - <span class="string"><span class="content">message.method == 'GET'</span></span>
+            - <span class="string"><span class="content">message.path == '/helloWorld'</span></span>
+          <span class="key">response</span>:
+            <span class="key">statusCode</span>: <span class="string"><span class="content">200</span></span>
+            <span class="key">bodyFile</span>: <span class="string"><span class="content">complicatedResponse.xml</span></span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 25. complicatedResponse.xml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
+<span class="tag">&lt;requestDescription&gt;</span>
+    <span class="tag">&lt;headers&gt;</span>
+        <span class="tag">&lt;header&gt;</span>
+            <span class="tag">&lt;tgrFor&gt;</span>header : request.headers.entrySet()<span class="tag">&lt;/tgrFor&gt;</span>
+            ${header}
+        <span class="tag">&lt;/header&gt;</span>
+    <span class="tag">&lt;/headers&gt;</span>
+<span class="tag">&lt;/requestDescription&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Lets try it out:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">$ curl localhost:8080/helloWorld
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+
+&lt;requestDescription&gt;
+  &lt;url&gt;http://localhost:8080/helloWorld&lt;/url&gt;
+  &lt;path&gt;/helloWorld&lt;/path&gt;
+  &lt;headers&gt;
+    &lt;header&gt;host=[localhost:8080]&lt;/header&gt;
+    &lt;header&gt;accept=[*/*]&lt;/header&gt;
+    &lt;header&gt;user-agent=[curl/7.88.1]&lt;/header&gt;
+  &lt;/headers&gt;
+&lt;/requestDescription&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here you see a <code>tgrFor</code> construct. As the name leads on, it is used for<br>
+looped rendering.<br>
+It reside WITHIN the element which needs to be considered, which is a bit different compared to other templating languages.<br>
+It just has to be beneath the element in the logical tree of the document.<br>
+So the <code>tgrFor</code> can be a tag within <code>&lt;header&gt;</code>, but it also could have been an attribute.<br>
+It can also be used in a JSON-fragment: The tgrFor then has to be a field in the object that you want looped.</p>
+</div>
+<div class="paragraph">
+<p>The <code>tgrFor</code> must consist of three parts: The name of the loop-variable (here: <code>header</code>), followed by colon and then the loop expression to be evaluated.<br>
+The loop expression must yield a Java-Collection as a result.<br>
+Some examples:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>1..42</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>{ 'one' , 2, 'more'}</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>{ 'one' : 1}.entrySet()</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The loop-variable will be set for every iteration in the TigerConfiguration.<br>
+So to access it directly, use <code>${myLoopVariable}</code>.<br>
+You can then also combine the loop-variable with JEXL like so:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 26. complicatedResponse.xml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;requestDescription&gt;
+    &lt;headers&gt;
+        &lt;header&gt;
+            &lt;tgrFor&gt;header : {1,2,3}&lt;/tgrFor&gt;
+            ${header} and !{ ${header} + 1}
+        &lt;/header&gt;
+    &lt;/headers&gt;
+&lt;/requestDescription&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will lead to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+
+&lt;requestDescription&gt;
+  &lt;headers&gt;
+    &lt;header&gt;1 and 2&lt;/header&gt;
+    &lt;header&gt;2 and 3&lt;/header&gt;
+    &lt;header&gt;3 and 4&lt;/header&gt;
+  &lt;/headers&gt;
+&lt;/requestDescription&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_conditional_rendering_tgrif">8.3. Conditional rendering (tgrIf)</h3>
+<div class="paragraph">
+<p>To make the presence of elements conditional you can use the <code>tgrIf</code> statement. Consider the following example:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 27. complicatedResponse.xml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
+<span class="tag">&lt;requestDescription&gt;</span>
+    <span class="tag">&lt;checkIf</span> <span class="attribute-name">tgrIf</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1 </span><span class="entity">&amp;lt;</span> <span class="content">5</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">logic</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">still applies</span><span class="delimiter">&quot;</span></span> <span class="tag">/&gt;</span>
+<span class="tag">&lt;/requestDescription&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will give us</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+&lt;requestDescription&gt;
+  &lt;checkIf logic="still applies"&gt;&lt;/checkIf&gt;
+&lt;/requestDescription&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The tgrIf statement just consist of one single JEXL expression.<br>
+The result must be of type boolean. Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree. This can be done via an attribute in XML, but it can also be done using a tag:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 28. complicatedResponse.xml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
+<span class="tag">&lt;requestDescription&gt;</span>
+    <span class="tag">&lt;checkIf</span> <span class="attribute-name">logic</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">still applies</span><span class="delimiter">&quot;</span></span><span class="tag">&gt;</span>
+        <span class="tag">&lt;tgrIf&gt;</span>1 <span class="entity">&amp;lt;</span> 5<span class="tag">&lt;/tgrIf&gt;</span>
+    <span class="tag">&lt;/checkIf&gt;</span>
+<span class="tag">&lt;/requestDescription&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here are some examples for other possible criteria:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$.header.connection == 'Keep-Alive'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will only be true if the matching header is present.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$.header.host =~ 'local.*'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also use the more complex JEXL operators (here <code>=~</code>, comparing using a regex).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_backend_request">8.4. Backend request</h3>
+<div class="paragraph">
+<p>To simulate complex interactions you can execute backend requests.<br>
+The following example should clarify the mechanism:</p>
+</div>
+<div class="paragraph">
+<p>We want measure the length of the response by google to a query:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 29. tiger.yaml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
+  <span class="key">zionServer</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">zion</span></span>
+    <span class="key">zionConfiguration</span>:
+      <span class="key">serverPort</span>: <span class="string"><span class="content">8080</span></span>
+      <span class="key">mockResponses</span>:
+        <span class="key">helloWorld</span>:
+          <span class="key">requestCriterions</span>:
+            - <span class="string"><span class="content">message.method == 'GET'</span></span>
+            - <span class="string"><span class="content">message.path == '/helloWorld'</span></span>
+          <span class="key">backendRequests</span>:
+            <span class="key">tokenCheck</span>:
+              <span class="key">url</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">https://google.com/!{$.path.myParam.value}</span><span class="delimiter">&quot;</span></span>
+<span class="comment"># the method is optional. GET is the default, POST if a body is present</span>
+              <span class="key">method</span>: <span class="string"><span class="content">GET</span></span>
+              <span class="key">assignments</span>:
+                <span class="key">length</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">$.header.Content-Length</span><span class="delimiter">&quot;</span></span>
+          <span class="key">response</span>:
+            <span class="key">statusCode</span>: <span class="string"><span class="content">200</span></span>
+            <span class="key">body</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">{'responseLength':'${length}', 'testedPath':'?{$.path.myParam.value}'}</span><span class="delimiter">&quot;</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To test, we sent:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ curl "localhost:8080/helloWorld?myParam=dsfds"
+{"responseLength": "1566","testedPath": "dsfds"}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The request is sent, the path is taken from the <code>myParam</code> query-parameter of the initial request.<br>
+Afterwards, the value of the <code>Content-Length</code>-Header is stored in the variable named <code>length</code> in the TigerGlobalConfiguration.<br>
+We then sent a response with status-code 200 and json-body.<br>
+Here we first reference the measured <code>length</code> variable from the backend-request and next we return the testedPath, taking the parameter from the initial request.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_nested_response">8.5. Nested response</h3>
+<div class="paragraph">
+<p>To reduce the overhead when simulating conditional responses you can use the <code>nestedResponses</code> mechanism.<br>
+This allows subdividing responses.<br>
+Consider the following example, where we check the password of the calling party (which is given in cleartext in the request header).</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 30. tiger.yaml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
+  <span class="key">zionServer</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">zion</span></span>
+    <span class="key">zionConfiguration</span>:
+      <span class="key">serverPort</span>: <span class="string"><span class="content">8080</span></span>
+      <span class="key">mockResponses</span>:
+        <span class="key">passwordCheckResponse</span>:
+          <span class="key">requestCriterions</span>:
+            - <span class="string"><span class="content">message.method == 'GET'</span></span>
+            - <span class="string"><span class="content">message.path == '/helloWorld'</span></span>
+          <span class="key">nestedResponses</span>:
+            <span class="key">correctPassword</span>:
+              <span class="key">importance</span>: <span class="string"><span class="content">10</span></span>
+              <span class="key">requestCriterions</span>:
+                - <span class="string"><span class="delimiter">&quot;</span><span class="content">'?{$.header.password}' == 'geheim'</span><span class="delimiter">&quot;</span></span>
+              <span class="key">response</span>:
+                <span class="key">statusCode</span>: <span class="string"><span class="content">200</span></span>
+                <span class="key">body</span>: <span class="string"><span class="content">'{&quot;Hello&quot;:&quot;World&quot;}'</span></span>
+            <span class="key">wrongPassword</span>:
+              <span class="key">importance</span>: <span class="string"><span class="content">0</span></span>
+              <span class="key">response</span>:
+                <span class="key">statusCode</span>: <span class="string"><span class="content">405</span></span>
+                <span class="key">body</span>: <span class="string"><span class="content">'{&quot;Wrong&quot;:&quot;The password !{$.header.password} is not correct&quot;}'</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The two answers are both considered.<br>
+Since they are stored in the YAML as a map, the order in the YAML is of no significance.<br>
+Rather you have to specify the importance of a response, with a higher number meaning a higher importance meaning the response will be considered first.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_matching_path_variables">8.6. Matching path variables</h3>
+<div class="paragraph">
+<p>In many REST-Apis it is usual to include variables as part of the resource path. Zion allows to configure a response that will match a path and extract the given variables. The assigned values can then be used in the response or be used in additional matching criteria. Here is an example:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 31. tiger.yaml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
+  <span class="key">zionServer</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">zion</span></span>
+    <span class="key">zionConfiguration</span>:
+      <span class="key">serverPort</span>: <span class="string"><span class="content">8080</span></span>
+      <span class="key">mockResponses</span>:
+        <span class="key">users</span>:
+          <span class="key">request</span>:
+            <span class="key">path</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">/users/{userId}</span><span class="delimiter">&quot;</span></span>
+            <span class="key">method</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">GET</span><span class="delimiter">&quot;</span></span>
+            <span class="key">additionalCriterions</span>:
+              - <span class="string"><span class="delimiter">&quot;</span><span class="content">'${userId}' == '123'</span><span class="delimiter">&quot;</span></span>
+          <span class="key">response</span>:
+            <span class="key">statusCode</span>: <span class="string"><span class="content">200</span></span>
+            <span class="key">body</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">{'id':'${userId}', 'username': 'Tiger'}</span><span class="delimiter">&quot;</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The matching of the response is made with the new configuration entry <code>request</code>.Here we defined the <code>path</code> and <code>method</code> that should match and <code>additionalCriterions</code>.In the path we can see a variable defined with <code>{userId}</code>.</p>
+</div>
+<div class="paragraph">
+<p>When making the following request:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ curl "localhost:8080/users/123"
+{'id':'123', 'username': 'Tiger'}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the variable <code>userId</code> will be matched with the requested url and be assigned the value of <code>"123"</code>. This value can then be used in the <code>additionalCriterions</code> and in the <code>body</code>.</p>
+</div>
+<div class="paragraph">
+<p>The matching of paths using the <code>request</code> configuration can also be made using nested responses. The path to match will combine paths specified in the different levels of the nested response. For example:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 32. tiger.yaml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
+  <span class="key">zionServer</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">zion</span></span>
+    <span class="key">zionConfiguration</span>:
+      <span class="key">serverPort</span>: <span class="string"><span class="content">8080</span></span>
+      <span class="key">mockResponses</span>:
+        <span class="key">users</span>:
+          <span class="key">request</span>:
+            <span class="key">path</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">/users</span><span class="delimiter">&quot;</span></span>
+          <span class="key">nestedResponses</span>:
+            <span class="key">getSpecificUser</span>:
+              <span class="key">request</span>:
+                <span class="key">path</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">/{userId}</span><span class="delimiter">&quot;</span></span>
+                <span class="key">method</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">GET</span><span class="delimiter">&quot;</span></span>
+                <span class="key">additionalCriterions</span>:
+                  - <span class="string"><span class="delimiter">&quot;</span><span class="content">'${userId}' == '123'</span><span class="delimiter">&quot;</span></span>
+              <span class="key">response</span>:
+                <span class="key">statusCode</span>: <span class="string"><span class="content">200</span></span>
+                <span class="key">body</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">{'id':'${userId}', 'username': 'Tiger'}</span><span class="delimiter">&quot;</span></span>
+            <span class="key">addUser</span>:
+              <span class="key">request</span>:
+                <span class="key">method</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">POST</span><span class="delimiter">&quot;</span></span>
+                <span class="key">path</span>: <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>
+              <span class="key">response</span>:
+                <span class="key">statusCode</span>: <span class="string"><span class="content">201</span></span>
+                <span class="key">headers</span>:
+                  <span class="key">Location</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">/users/456</span><span class="delimiter">&quot;</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we have two nested responses in the <code>/users</code> path.One will match GET requests to the path <code>/users/+{userId}+`</code> and the other will match POST-Requests to the path <code>/users</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tgrencodeas">8.7. tgrEncodeAs</h3>
+<div class="paragraph">
+<p>One of the core capabilities of Zion is the ability to switch between media types.<br>
+You can return XML, JSON, JWT and many more types.<br>
+You can also embed one into the other.</p>
+</div>
+<div class="paragraph">
+<p>As an example we want to return a JSON containing a freshly signed JWT (JSON Web Token).<br>
+For this we use the following response body file:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 33. complicatedResponse.json</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>{
+  &quot;myToken&quot;: {
+    &quot;tgrEncodeAs&quot;: &quot;JWT&quot;,
+    &quot;header&quot;: {
+      &quot;alg&quot;: &quot;BP256R1&quot;,
+      &quot;typ&quot;: &quot;JWT&quot;
+    },
+    &quot;body&quot;: {
+      &quot;name&quot;: &quot;Max Power&quot;,
+      &quot;iat&quot;: {
+        &quot;tgrAttributes&quot;: [&quot;jsonNonStringPrimitive&quot;],
+        &quot;value&quot;: &quot;!{currentTimestamp()}&quot;
+      }
+    },
+    &quot;signature&quot;: {
+      &quot;verifiedUsing&quot;: &quot;idpEnc&quot;
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will lead to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>{
+  &quot;myToken&quot;: &quot;eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0.eyJuYW1lIjogIk1heCBQb3dlciIsImlhdCI6IDE2ODg2MzQ5MjR9.aOnFMxSkzvo9fJjnDSFCeX0G5-IP3XFQPZCRyZFBOEyBAgV2Dy3ImEjz_DpFRqSqtkHdkCcV-T_e6aBejN_A2g&quot;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We see the keyword <code>tgrEncodeAs</code> being used here. Currently the following values are supported: <code>XML, JSON, JWT, JWE, URL, BEARER_TOKEN</code>.<br>
+A JWT consists of three parts: header, body, signature. The given nodes are searched and taken. The description of the JWT also could have been done in XML.</p>
+</div>
+<div class="paragraph">
+<p>We then see another mode-switch being done in the <code>iat</code>-claim in the body of the JWT: <code>iat</code> is the Unix-Timestamp at which the token was issued. For our faked ad-hoc token we of course want to use the current time for this claim. Unfortunately the <code>iat</code> claim is a number, which precludes the direct use of a JEXL-expression. To solve this problem make the claim complex, add the <code>"jsonNonStringPrimitive"</code> attribute to the resulting node and set the value to the desired value. This also works for floating-point and boolean values.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rbelwriter_content_structures">8.8. RbelWriter content structures</h3>
+<div class="paragraph">
+<p>In this paragraph we&#8217;ll take a look at the various structures that can be serialized with the RbelWriter, which sits at the core of the Zion-Server. The following examples are kept in JSON (apart from the Bearer token example). Please note that the same result can be achieved from XML (or any other format for that matter).</p>
+</div>
+<div class="sect3">
+<h4 id="_jwt">8.8.1. JWT</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>{
+  &quot;tgrEncodeAs&quot;: &quot;JWT&quot;,
+  &quot;header&quot;: {
+    &quot;alg&quot;: &quot;BP256R1&quot;,
+    &quot;typ&quot;: &quot;JWT&quot;
+  },
+  &quot;body&quot;: {
+    &quot;claim&quot;: &quot;value&quot;
+  },
+  &quot;signature&quot;: {
+    &quot;verifiedUsing&quot;: &quot;idpEnc&quot;
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The three parts denote the different part of a JWT: The header claims (header), body claims (body) and signature properties (signature). RbelWriter will automatically try to sign the given JWT. For this the key at <code>$.signature.verifiedUsing</code> is consulted and a matching key is searched in the tiger key-database. This will be filled at start-time by digging through the root-directory of the application recursively and trying to open all found key-files with various default passwords.</p>
+</div>
+<div class="paragraph">
+<p>Please note that the header-claims have to match the given key, otherwise the signing operation can&#8217;t be completed successfully.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_jwe">8.8.2. JWE</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>{
+  &quot;tgrEncodeAs&quot;: &quot;JWE&quot;,
+  &quot;header&quot;: {
+    &quot;alg&quot;: &quot;ECDH-ES&quot;,
+    &quot;enc&quot;: &quot;A256GCM&quot;
+  },
+  &quot;body&quot;: {
+    &quot;some_claim&quot;: &quot;foobar&quot;,
+    &quot;other_claim&quot;: &quot;code&quot;
+  },
+  &quot;encryptionInfo&quot;: {
+    &quot;decryptedUsingKeyWithId&quot;: &quot;idpEnc&quot;
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As with the JWT, for the JWE all relevant claims are to be found in the appropriate sections.<br>
+The signature has been replaced by the <code>encryptionInfo</code>-section. Here you need to specify the key to be used for the encryption. Here in this example we are using a public/private key-pair (with the same name as before). Again the header claims have to match the key used.</p>
+</div>
+<div class="paragraph">
+<p>Apart from a public/private key-pair you can also use direct keys to encrypt your JWE. Here is an example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>{
+  &quot;tgrEncodeAs&quot;: &quot;JWE&quot;,
+  &quot;header&quot;: {
+    &quot;alg&quot;: &quot;dir&quot;,
+    &quot;enc&quot;: &quot;A256GCM&quot;
+  },
+  &quot;body&quot;: {
+    &quot;some_claim&quot;: &quot;foobar&quot;,
+    &quot;other_claim&quot;: &quot;code&quot;
+  },
+  &quot;encryptionInfo&quot;: {
+    &quot;decryptedUsingKey&quot;: &quot;YVI2Ym5wNDVNb0ZRTWFmU1Y1ZTZkRTg1bG9za2tscjg&quot;
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As we are using a AES 256 bit key the supplied key has to exactly carry 256 bits, Base64 encoded.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_url">8.8.3. URL</h4>
+<div class="paragraph">
+<p>To generate a URL you can also use the RbelWriter. Consult the following structure:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>{
+  &quot;tgrEncodeAs&quot;: &quot;url&quot;,
+  &quot;basicPath&quot;: &quot;http://blub/fdsa&quot;,
+  &quot;parameters&quot;: {
+    &quot;foo&quot;: &quot;bar&quot;
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The parameters will be added as query-parameters. This can be rather useful to construct more complex parameters, for example<br>
+a dynamically generated JWT.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bearer_token">8.8.4. Bearer Token</h4>
+<div class="paragraph">
+<p>A Bearer token can also be serialized directly via RbelWriter. This is very relevant if you want to, for example, generate a JWT on the fly and use it as the Bearer token. The straight-forward way would be to directly write the Bearer token like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>Bearer {
+  &quot;tgrEncodeAs&quot;:&quot;JWT&quot;,
+  &quot;header&quot;:{
+    &quot;alg&quot;: &quot;BP256R1&quot;,
+    &quot;typ&quot;: &quot;JWT&quot;
+  },
+  &quot;body&quot;:{
+    &quot;claim&quot;: &quot;value&quot;,
+  },
+  &quot;signature&quot;:{
+    &quot;verifiedUsing&quot;:&quot;idpEnc&quot;
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here the whole arrangement will be parsed as a Bearer token (Which is essentially the Word <code>Bearer</code>, followed by a space and any string). The value of the Bearer token will be parsed as a JSON. When the result is then serialized, the <code>tgrEncodeAs</code> is interpreted and the JSON will be written as a Base64-encoded JWT.</p>
+</div>
+<div class="paragraph">
+<p>The following example will produce the same result. However the overall structure is a JSON, which will be written as a Bearer token (<code>"tgrEncodeAs": "BEARER_TOKEN"</code>). The content of the token is taken from the child-node with the name <code>BearerToken</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>{
+  &quot;tgrEncodeAs&quot;: &quot;BEARER_TOKEN&quot;,
+  &quot;BearerToken&quot;: {
+    &quot;tgrEncodeAs&quot;: &quot;JWT&quot;,
+    &quot;header&quot;: {
+      &quot;alg&quot;: &quot;BP256R1&quot;,
+      &quot;typ&quot;: &quot;JWT&quot;
+    },
+    &quot;body&quot;: {
+      &quot;claim&quot;: &quot;value&quot;,
+    },
+    &quot;signature&quot;: {
+      &quot;verifiedUsing&quot;: &quot;idpEnc&quot;
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_links_to_test_relevant_topics">9. Links to test relevant topics</h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -5063,18 +5800,18 @@ complex contexts like <code>response.statuscode</code>, <code>request.url</code>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_frequently_asked_questions">9. Frequently asked questions</h2>
+<h2 id="_frequently_asked_questions">10. Frequently asked questions</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_maven">9.1. Maven</h3>
+<h3 id="_maven">10.1. Maven</h3>
 <div class="sect3">
-<h4 id="_fm01_welches_serenity_benutzen_wir_aktuell">9.1.1. FM01 Welches Serenity benutzen wir aktuell</h4>
+<h4 id="_fm01_welches_serenity_benutzen_wir_aktuell">10.1.1. FM01 Welches Serenity benutzen wir aktuell</h4>
 <div class="paragraph">
 <p>Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_fm02_bei_der_nutzung_von_maven_werden_keine_tests_ausgeführt">9.1.2. FM02 Bei der Nutzung von maven, werden keine Tests ausgeführt</h4>
+<h4 id="_fm02_bei_der_nutzung_von_maven_werden_keine_tests_ausgeführt">10.1.2. FM02 Bei der Nutzung von maven, werden keine Tests ausgeführt</h4>
 <div class="paragraph">
 <p>Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird. Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.</p>
 </div>
@@ -5089,7 +5826,7 @@ complex contexts like <code>response.statuscode</code>, <code>request.url</code>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_fm03_beim_ausführen_von_tests_im_tiger_bricht_der_testlauf_mit_einem_java_lang_nosuchmethoderror_ab">9.1.3. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
+<h4 id="_fm03_beim_ausführen_von_tests_im_tiger_bricht_der_testlauf_mit_einem_java_lang_nosuchmethoderror_ab">10.1.3. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
 <div class="paragraph">
 <p>Genauer geht es um folgenden Fehler:</p>
 </div>
@@ -5113,23 +5850,23 @@ complex contexts like <code>response.statuscode</code>, <code>request.url</code>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_fm04_ich_sehe_keine_log_ausgabe_lediglich_am_anfang_stehen_warnungen_über_veraltete_versionen">9.1.4. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
+<h4 id="_fm04_ich_sehe_keine_log_ausgabe_lediglich_am_anfang_stehen_warnungen_über_veraltete_versionen">10.1.4. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
 <div class="paragraph">
 <p>Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.<br>
 Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!  </p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_fm05_wenn_ich_in_meinem_projekt_spring_boot_und_tiger_mit_selenium_nutzen_will_gibt_es_versionskonflikte_bei_selenium">9.1.5. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
+<h4 id="_fm05_wenn_ich_in_meinem_projekt_spring_boot_und_tiger_mit_selenium_nutzen_will_gibt_es_versionskonflikte_bei_selenium">10.1.5. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
 <div class="paragraph">
 <p>Spring Boot liefert eine veraltete Version von Selenium aus. Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_extensions">9.2. Extensions</h3>
+<h3 id="_extensions">10.2. Extensions</h3>
 <div class="sect3">
-<h4 id="_fe01_wenn_ich_in_der_tiger_yaml_ein_docker_image_starten_will_so_schlägt_der_startup_des_testenvironmentmanagers_fehl">9.2.1. FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.</h4>
+<h4 id="_fe01_wenn_ich_in_der_tiger_yaml_ein_docker_image_starten_will_so_schlägt_der_startup_des_testenvironmentmanagers_fehl">10.2.1. FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.</h4>
 <div class="paragraph">
 <p>Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als dependency hinzugefügt hast.</p>
 </div>
@@ -5144,7 +5881,7 @@ Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns
 </div>
 </div>
 <div class="sect3">
-<h4 id="_fe02_wenn_ich_die_tiger_cloud_extensions_nutze_schlägt_der_healthcheck_bei_docker_servertypen_in_der_gematik_sw_factory_fehl">9.2.2. FE02 Wenn ich die tiger-cloud-extensions nutze schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
+<h4 id="_fe02_wenn_ich_die_tiger_cloud_extensions_nutze_schlägt_der_healthcheck_bei_docker_servertypen_in_der_gematik_sw_factory_fehl">10.2.2. FE02 Wenn ich die tiger-cloud-extensions nutze schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
 <div class="paragraph">
 <p>Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.<br>
 Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:</p>
@@ -5164,25 +5901,25 @@ Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOC
 </div>
 </div>
 <div class="sect2">
-<h3 id="_workflow_ui_3">9.3. Workflow UI</h3>
+<h3 id="_workflow_ui_3">10.3. Workflow UI</h3>
 <div class="sect3">
-<h4 id="_fw01_in_der_workflow_ui_sind_die_szenarios_doppelt_aufgeführt_und_werden_auch_zeitgleich_aktualisiert_es_scheint_als_ob_sie_parallel_ablaufen">9.3.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
+<h4 id="_fw01_in_der_workflow_ui_sind_die_szenarios_doppelt_aufgeführt_und_werden_auch_zeitgleich_aktualisiert_es_scheint_als_ob_sie_parallel_ablaufen">10.3.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
 <div class="paragraph">
 <p>Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird. Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird. Durch den manuellen Eintrag laufen also dann zwei Listener, welche die Szenarien dann auch doppelt an die Workflow UI kommunizieren &#8230;&#8203;<br>
 Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfiguration des tiger-maven-plugins überprüfen, bzw. die generierten Treiberklassen bezüglich zusätzlicher Plugins in den CucumberOptions checken.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_fw02_nachdem_ich_auf_shutdown_in_der_workflow_ui_gedrückt_habe_kann_ich_die_nachrichten_in_der_rbellog_details_pane_nicht_mehr_ansehen">9.3.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
+<h4 id="_fw02_nachdem_ich_auf_shutdown_in_der_workflow_ui_gedrückt_habe_kann_ich_die_nachrichten_in_der_rbellog_details_pane_nicht_mehr_ansehen">10.3.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
 <div class="paragraph">
 <p>Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden. Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist. Das Navigieren in der RbelLog Details Pane benötigt aber das Backend und klappt daher zum jetzigen Zeitpunkt nicht mehr. Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_other_topics">9.4. Other topics</h3>
+<h3 id="_other_topics">10.4. Other topics</h3>
 <div class="sect3">
-<h4 id="_fo01_how_can_i_change_the_logging_levels_of_loggers_used_by_tiger">9.4.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
+<h4 id="_fo01_how_can_i_change_the_logging_levels_of_loggers_used_by_tiger">10.4.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
 <div class="paragraph">
 <p>Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level. </p>
 </div>
@@ -5198,7 +5935,7 @@ Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfigura
 </div>
 </div>
 <div class="sect3">
-<h4 id="_fo02_docker_container_creation_fails">9.4.2. FO02 Docker container creation fails</h4>
+<h4 id="_fo02_docker_container_creation_fails">10.4.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
 <p>Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
@@ -5225,7 +5962,7 @@ Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfigura
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-06-28 07:27:47 UTC
+Last updated 2023-08-09 10:17:07 UTC
 </div>
 </div>
 </body>
