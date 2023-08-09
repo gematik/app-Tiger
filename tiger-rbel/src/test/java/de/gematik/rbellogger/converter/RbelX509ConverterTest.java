@@ -16,19 +16,20 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
-import lombok.SneakyThrows;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RbelX509ConverterTest {
 
@@ -36,7 +37,6 @@ public class RbelX509ConverterTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        RbelOptions.activateRbelPathDebugging();
         xmlMessage = RbelLogger.build().getRbelConverter()
             .parseMessage(readCurlFromFileWithCorrectedLineBreaks
                     ("src/test/resources/sampleMessages/xmlMessage.curl").getBytes(), null, null,

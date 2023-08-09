@@ -303,7 +303,7 @@ public class RbelHtmlRenderingToolkit {
                         section().withClass("main-content").with(
                             section().withClass("row header").with(
                                 div().withClass("col-1 h-100 my-auto logo").with(
-                                    img().withSrc(getLogoBase64Str())
+                                    img().withSrc(getLogoBase64Str()).withId("test-tiger-logo")
                                 ),
                                 div().withClass("col is-size-6")
                                     .with(
@@ -315,7 +315,7 @@ public class RbelHtmlRenderingToolkit {
                                     )
                             )
                         ),
-                        section().withClass("row is-fullheight").with(
+                        section().withClass("row is-fullheight").withId("test-rbel-section").with(
                             renderMenu(elements),
                             div().withClass("col ms-6").with(
                                 div("Created " +

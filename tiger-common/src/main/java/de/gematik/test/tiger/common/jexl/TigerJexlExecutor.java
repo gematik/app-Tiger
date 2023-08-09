@@ -16,11 +16,12 @@
 
 package de.gematik.test.tiger.common.jexl;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Supplier;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
@@ -76,22 +77,28 @@ public class TigerJexlExecutor {
         return result;
     }
 
-    private Optional<Object> evaluateJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
+    private Optional<Object> evaluateJexlExpressionInternal(final String jexlExpression, final TigerJexlContext externalContext) {
         try {
-            NAMESPACE_MAP.forEach(context::set);
-            context.putAll(buildJexlMapContext(
-                context.getCurrentElement(),
-                Optional.ofNullable(context.getKey())
-            ));
-            final JexlExpression expression = buildExpression(jexlExpression, context);
+            final TigerJexlContext contextMap = buildJexlMapContext(
+                externalContext.getCurrentElement(),
+                Optional.ofNullable(externalContext.getKey())
+            );
+            contextMap.putAll(NAMESPACE_MAP);
+            contextMap.putAll(externalContext);
+            final JexlExpression expression = buildExpression(jexlExpression, contextMap);
 
-            return Optional.ofNullable(expression.evaluate(context));
+            final Object result = expression.evaluate(contextMap);
+            if (ACTIVATE_JEXL_DEBUGGING) {
+                log.debug("Evaluated \"{}\" to '{}'", jexlExpression, result);
+            }
+
+            return Optional.ofNullable(result);
         } catch (RuntimeException e) {
             if (e instanceof JexlException && (e.getCause() instanceof JexlArithmetic.NullOperand)) {
                 return Optional.empty();
             }
             if (e instanceof JexlException && !(e.getCause() instanceof NoSuchElementException)) {
-                throw e;
+                throw new TigerJexlException("Error while parsing expression '" + jexlExpression + "'", e);
             }
             log.warn("Error during Jexl-Evaluation.", e);
             return Optional.empty();
@@ -102,8 +109,8 @@ public class TigerJexlExecutor {
         log.trace("Found match: '{}' matches '{}'", element, jexlExpression);
     }
 
-    protected Map<String, Object> buildJexlMapContext(Object element, Optional<String> key) {
-        final Map<String, Object> mapContext = new HashMap<>();
+    protected TigerJexlContext buildJexlMapContext(Object element, Optional<String> key) {
+        final TigerJexlContext mapContext = new TigerJexlContext();
 
         mapContext.put("element", element);
         if (element != null) {
@@ -119,14 +126,20 @@ public class TigerJexlExecutor {
     }
 
     protected JexlExpression buildExpression(String jexlExpression, TigerJexlContext mapContext) {
+        return getJexlEngine().createExpression(jexlExpression);
+    }
+
+    private static JexlEngine getJexlEngine() {
         JexlBuilder jexlBuilder = new JexlBuilder()
             .namespaces(NAMESPACE_MAP)
             .permissions(JexlPermissions.UNRESTRICTED)
             .strict(true);
         jexlBuilder.options().setStrictArithmetic(false);
-        final JexlEngine jexlEngine = jexlBuilder.create();
-        final JexlExpression expression = jexlEngine.createExpression(jexlExpression);
-        return expression;
+        return jexlBuilder.create();
+    }
+
+    public JexlScript buildScript(String jexlScript) {
+        return getJexlEngine().createScript(jexlScript);
     }
 
     public static void registerAdditionalNamespace(String namespace, Object value) {

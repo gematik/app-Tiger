@@ -1,0 +1,529 @@
+== Tiger Zion
+
+Tiger Zion is a server that is highly customizable.
+It serves as a stand-in, an interactive, Zero-Line mock for more complicated servers.
+
+It can be stateful, do backend-requests, give conditional answers (allowing for error cases, edge cases).
+It can return JSON, XML, JWT, JWE and many more, nest these formats into each other.
+The underlying templating language supports loops and conditions.
+It can be used both as a standalone server or as a server directly inside of tiger.
+
+=== Simple canned response
+
+To start lets write a server that has one endpoint: Return a simple JSON.
+We do this as part of a tiger testsuite.
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      # define the server port.
+      # In a real setup you would leave this empty (then a random port will be used)
+      serverPort: 8080
+      mockResponses:
+      # a map with all the responses
+        helloWorld:
+        # the name is arbitrary. It can be used to alter the response later on
+          requestCriterions:
+          # This is a list of JEXL expressions. Only when all expressions are met is this response considered
+            - message.method == 'GET'
+            - message.path == '/helloWorld'
+          response:
+            statusCode: 200
+            body: '{"Hello":"World"}'
+----
+
+This will give us:
+
+[source,bash]
+----
+$ curl localhost:8080/helloWorld
+{"Hello": "World"}
+----
+
+=== Looping (tgrFor)
+
+Let's now make this a bit more interactive: Return a map of all given HTTP headers.
+And please return it as an XML!
+
+Because XMLs are large and get complicated easily we don't want to write it directly inside the `tiger.yaml`.
+So we reference an external file, where we do the heavy lifting:
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: 8080
+      mockResponses:
+        helloWorld:
+          requestCriterions:
+            - message.method == 'GET'
+            - message.path == '/helloWorld'
+          response:
+            statusCode: 200
+            bodyFile: complicatedResponse.xml
+----
+
+.complicatedResponse.xml
+[source,xml]
+----
+<?xml version="1.0" encoding="utf-8" ?>
+<requestDescription>
+    <headers>
+        <header>
+            <tgrFor>header : request.headers.entrySet()</tgrFor>
+            ${header}
+        </header>
+    </headers>
+</requestDescription>
+----
+
+Lets try it out:
+
+[source,bash]
+----
+$ curl localhost:8080/helloWorld
+<?xml version="1.0" encoding="UTF-8"?>
+
+<requestDescription>
+  <url>http://localhost:8080/helloWorld</url>
+  <path>/helloWorld</path>
+  <headers>
+    <header>host=[localhost:8080]</header>
+    <header>accept=[*/*]</header>
+    <header>user-agent=[curl/7.88.1]</header>
+  </headers>
+</requestDescription>
+----
+
+Here you see a `tgrFor` construct. As the name leads on, it is used for
+looped rendering.
+It reside WITHIN the element which needs to be considered, which is a bit different compared to other templating languages.
+It just has to be beneath the element in the logical tree of the document.
+So the `tgrFor` can be a tag within `<header>`, but it also could have been an attribute.
+It can also be used in a JSON-fragment: The tgrFor then has to be a field in the object that you want looped.
+
+The `tgrFor` must consist of three parts: The name of the loop-variable (here: `header`), followed by colon and then the loop expression to be evaluated.
+The loop expression must yield a Java-Collection as a result.
+Some examples:
+
+ 1..42
+
+ { 'one' , 2, 'more'}
+
+ { 'one' : 1}.entrySet()
+
+The loop-variable will be set for every iteration in the TigerConfiguration.
+So to access it directly, use `${myLoopVariable}`.
+You can then also combine the loop-variable with JEXL like so:
+
+.complicatedResponse.xml
+[source,xml]
+```
+<?xml version="1.0" encoding="utf-8" ?>
+<requestDescription>
+    <headers>
+        <header>
+            <tgrFor>header : {1,2,3}</tgrFor>
+            ${header} and !{ ${header} + 1}
+        </header>
+    </headers>
+</requestDescription>
+```
+
+will lead to
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+
+<requestDescription>
+  <headers>
+    <header>1 and 2</header>
+    <header>2 and 3</header>
+    <header>3 and 4</header>
+  </headers>
+</requestDescription>
+```
+
+=== Conditional rendering (tgrIf)
+
+To make the presence of elements conditional you can use the `tgrIf` statement. Consider the following example:
+
+.complicatedResponse.xml
+[source,xml]
+----
+<?xml version="1.0" encoding="utf-8" ?>
+<requestDescription>
+    <checkIf tgrIf="1 &lt; 5" logic="still applies" />
+</requestDescription>
+----
+
+This will give us
+
+----
+<?xml version="1.0" encoding="UTF-8"?>
+
+<requestDescription>
+  <checkIf logic="still applies"></checkIf>
+</requestDescription>
+----
+
+The tgrIf statement just consist of one single JEXL expression.
+The result must be of type boolean. Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree. This can be done via an attribute in XML, but it can also be done using a tag:
+
+.complicatedResponse.xml
+[source,xml]
+----
+<?xml version="1.0" encoding="utf-8" ?>
+<requestDescription>
+    <checkIf logic="still applies">
+        <tgrIf>1 &lt; 5</tgrIf>
+    </checkIf>
+</requestDescription>
+----
+
+Here are some examples for other possible criteria:
+
+ $.header.connection == 'Keep-Alive'
+
+This will only be true if the matching header is present.
+
+ $.header.host =~ 'local.*'
+
+You can also use the more complex JEXL operators (here `=~`, comparing using a regex).
+
+=== Backend request
+
+To simulate complex interactions you can execute backend requests.
+The following example should clarify the mechanism:
+
+We want measure the length of the response by google to a query:
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: 8080
+      mockResponses:
+        helloWorld:
+          requestCriterions:
+            - message.method == 'GET'
+            - message.path == '/helloWorld'
+          backendRequests:
+            tokenCheck:
+              url: "https://google.com/!{$.path.myParam.value}"
+# the method is optional. GET is the default, POST if a body is present
+              method: GET
+              assignments:
+                length: "$.header.Content-Length"
+          response:
+            statusCode: 200
+            body: "{'responseLength':'${length}', 'testedPath':'?{$.path.myParam.value}'}"
+----
+
+To test, we sent:
+
+ $ curl "localhost:8080/helloWorld?myParam=dsfds"
+ {"responseLength": "1566","testedPath": "dsfds"}
+
+The request is sent, the path is taken from the `myParam` query-parameter of the initial request.
+Afterwards, the value of the `Content-Length`-Header is stored in the variable named `length` in the TigerGlobalConfiguration.
+We then sent a response with status-code 200 and json-body.
+Here we first reference the measured `length` variable from the backend-request and next we return the testedPath, taking the parameter from the initial request.
+
+=== Nested response
+
+To reduce the overhead when simulating conditional responses you can use the `nestedResponses` mechanism.
+This allows subdividing responses.
+Consider the following example, where we check the password of the calling party (which is given in cleartext in the request header).
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: 8080
+      mockResponses:
+        passwordCheckResponse:
+          requestCriterions:
+            - message.method == 'GET'
+            - message.path == '/helloWorld'
+          nestedResponses:
+            correctPassword:
+              importance: 10
+              requestCriterions:
+                - "'?{$.header.password}' == 'geheim'"
+              response:
+                statusCode: 200
+                body: '{"Hello":"World"}'
+            wrongPassword:
+              importance: 0
+              response:
+                statusCode: 405
+                body: '{"Wrong":"The password !{$.header.password} is not correct"}'
+----
+
+The two answers are both considered.
+Since they are stored in the YAML as a map, the order in the YAML is of no significance.
+Rather you have to specify the importance of a response, with a higher number meaning a higher importance meaning the response will be considered first.
+
+=== Matching path variables
+
+In many REST-Apis it is usual to include variables as part of the resource path. Zion allows to configure a response that will match a path and extract the given variables. The assigned values can then be used in the response or be used in additional matching criteria. Here is an example:
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: 8080
+      mockResponses:
+        users:
+          request:
+            path: "/users/{userId}"
+            method: "GET"
+            additionalCriterions:
+              - "'${userId}' == '123'"
+          response:
+            statusCode: 200
+            body: "{'id':'${userId}', 'username': 'Tiger'}"
+----
+
+The matching of the response is made with the new configuration entry `request`.Here we defined the `path` and `method` that should match and `additionalCriterions`.In the path we can see a variable defined with `+{userId}+`.
+
+When making the following request:
+
+ $ curl "localhost:8080/users/123"
+ {'id':'123', 'username': 'Tiger'}
+
+the variable `userId` will be matched with the requested url and be assigned the value of `"123"`. This value can then be used in the `additionalCriterions` and in the `body`.
+
+The matching of paths using the `request` configuration can also be made using nested responses. The path to match will combine paths specified in the different levels of the nested response. For example:
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: 8080
+      mockResponses:
+        users:
+          request:
+            path: "/users"
+          nestedResponses:
+            getSpecificUser:
+              request:
+                path: "/{userId}"
+                method: "GET"
+                additionalCriterions:
+                  - "'${userId}' == '123'"
+              response:
+                statusCode: 200
+                body: "{'id':'${userId}', 'username': 'Tiger'}"
+            addUser:
+              request:
+                method: "POST"
+                path: ""
+              response:
+                statusCode: 201
+                headers:
+                  Location: "/users/456"
+----
+
+Here we have two nested responses in the `/users` path.One will match GET requests to the path `/users/+{userId}+`` and the other will match POST-Requests to the path `/users`.
+
+=== tgrEncodeAs
+
+One of the core capabilities of Zion is the ability to switch between media types.
+You can return XML, JSON, JWT and many more types.
+You can also embed one into the other.
+
+As an example we want to return a JSON containing a freshly signed JWT (JSON Web Token).
+For this we use the following response body file:
+
+.complicatedResponse.json
+[source,json]
+```
+{
+  "myToken": {
+    "tgrEncodeAs": "JWT",
+    "header": {
+      "alg": "BP256R1",
+      "typ": "JWT"
+    },
+    "body": {
+      "name": "Max Power",
+      "iat": {
+        "tgrAttributes": ["jsonNonStringPrimitive"],
+        "value": "!{currentTimestamp()}"
+      }
+    },
+    "signature": {
+      "verifiedUsing": "idpEnc"
+    }
+  }
+}
+```
+
+will lead to
+
+[source,json]
+```
+{
+  "myToken": "eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0.eyJuYW1lIjogIk1heCBQb3dlciIsImlhdCI6IDE2ODg2MzQ5MjR9.aOnFMxSkzvo9fJjnDSFCeX0G5-IP3XFQPZCRyZFBOEyBAgV2Dy3ImEjz_DpFRqSqtkHdkCcV-T_e6aBejN_A2g"
+}
+```
+
+We see the keyword `tgrEncodeAs` being used here. Currently the following values are supported: `XML, JSON, JWT, JWE, URL, BEARER_TOKEN`.
+A JWT consists of three parts: header, body, signature. The given nodes are searched and taken. The description of the JWT also could have been done in XML.
+
+We then see another mode-switch being done in the `iat`-claim in the body of the JWT: `iat` is the Unix-Timestamp at which the token was issued. For our faked ad-hoc token we of course want to use the current time for this claim. Unfortunately the `iat` claim is a number, which precludes the direct use of a JEXL-expression. To solve this problem make the claim complex, add the `"jsonNonStringPrimitive"` attribute to the resulting node and set the value to the desired value. This also works for floating-point and boolean values.
+
+=== RbelWriter content structures
+
+In this paragraph we'll take a look at the various structures that can be serialized with the RbelWriter, which sits at the core of the Zion-Server. The following examples are kept in JSON (apart from the Bearer token example). Please note that the same result can be achieved from XML (or any other format for that matter).
+
+==== JWT
+[source,json]
+```
+{
+  "tgrEncodeAs": "JWT",
+  "header": {
+    "alg": "BP256R1",
+    "typ": "JWT"
+  },
+  "body": {
+    "claim": "value"
+  },
+  "signature": {
+    "verifiedUsing": "idpEnc"
+  }
+}
+```
+
+The three parts denote the different part of a JWT: The header claims (header), body claims (body) and signature properties (signature). RbelWriter will automatically try to sign the given JWT. For this the key at `$.signature.verifiedUsing` is consulted and a matching key is searched in the tiger key-database. This will be filled at start-time by digging through the root-directory of the application recursively and trying to open all found key-files with various default passwords.
+
+Please note that the header-claims have to match the given key, otherwise the signing operation can't be completed successfully.
+
+==== JWE
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "JWE",
+  "header": {
+    "alg": "ECDH-ES",
+    "enc": "A256GCM"
+  },
+  "body": {
+    "some_claim": "foobar",
+    "other_claim": "code"
+  },
+  "encryptionInfo": {
+    "decryptedUsingKeyWithId": "idpEnc"
+  }
+}
+```
+
+As with the JWT, for the JWE all relevant claims are to be found in the appropriate sections.
+The signature has been replaced by the `encryptionInfo`-section. Here you need to specify the key to be used for the encryption. Here in this example we are using a public/private key-pair (with the same name as before). Again the header claims have to match the key used.
+
+Apart from a public/private key-pair you can also use direct keys to encrypt your JWE. Here is an example:
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "JWE",
+  "header": {
+    "alg": "dir",
+    "enc": "A256GCM"
+  },
+  "body": {
+    "some_claim": "foobar",
+    "other_claim": "code"
+  },
+  "encryptionInfo": {
+    "decryptedUsingKey": "YVI2Ym5wNDVNb0ZRTWFmU1Y1ZTZkRTg1bG9za2tscjg"
+  }
+}
+
+```
+
+As we are using a AES 256 bit key the supplied key has to exactly carry 256 bits, Base64 encoded.
+
+==== URL
+
+To generate a URL you can also use the RbelWriter. Consult the following structure:
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "url",
+  "basicPath": "http://blub/fdsa",
+  "parameters": {
+    "foo": "bar"
+  }
+}
+```
+
+The parameters will be added as query-parameters. This can be rather useful to construct more complex parameters, for example
+a dynamically generated JWT.
+
+==== Bearer Token
+
+A Bearer token can also be serialized directly via RbelWriter. This is very relevant if you want to, for example, generate a JWT on the fly and use it as the Bearer token. The straight-forward way would be to directly write the Bearer token like so:
+
+```
+Bearer {
+  "tgrEncodeAs":"JWT",
+  "header":{
+    "alg": "BP256R1",
+    "typ": "JWT"
+  },
+  "body":{
+    "claim": "value",
+  },
+  "signature":{
+    "verifiedUsing":"idpEnc"
+  }
+}
+```
+
+Here the whole arrangement will be parsed as a Bearer token (Which is essentially the Word `Bearer`, followed by a space and any string). The value of the Bearer token will be parsed as a JSON. When the result is then serialized, the `tgrEncodeAs` is interpreted and the JSON will be written as a Base64-encoded JWT.
+
+The following example will produce the same result. However the overall structure is a JSON, which will be written as a Bearer token (`"tgrEncodeAs": "BEARER_TOKEN"`). The content of the token is taken from the child-node with the name `BearerToken`.
+
+[source,json]
+```
+{
+  "tgrEncodeAs": "BEARER_TOKEN",
+  "BearerToken": {
+    "tgrEncodeAs": "JWT",
+    "header": {
+      "alg": "BP256R1",
+      "typ": "JWT"
+    },
+    "body": {
+      "claim": "value",
+    },
+    "signature": {
+      "verifiedUsing": "idpEnc"
+    }
+  }
+}
+```

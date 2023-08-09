@@ -10,8 +10,10 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.zion.ZionApplication;
 import de.gematik.test.tiger.zion.config.ZionServerConfiguration;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Optional;
+import lombok.SneakyThrows;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -32,6 +34,7 @@ public class ZionServerType extends AbstractExternalTigerServer {
         return Optional.of("http://localhost:" + getServerPort());
     }
 
+    @SneakyThrows
     @Override
     public void performStartup() {
         log.info("Entering pre-startup of Zion-Server {}", getServerId());
@@ -64,9 +67,16 @@ public class ZionServerType extends AbstractExternalTigerServer {
             .run();
 
         waitForServerUp();
+
+        addServerToLocalProxyRouteMap(new URL(getZionServerBaseUrl()));
+
         publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .baseUrl("http://localhost:" + ((ServletWebServerApplicationContext) applicationContext).getWebServer().getPort())
+            .baseUrl(getZionServerBaseUrl())
             .build());
+    }
+
+    private String getZionServerBaseUrl() {
+        return "http://localhost:" + ((ServletWebServerApplicationContext) applicationContext).getWebServer().getPort();
     }
 
     private int getServerPort() {

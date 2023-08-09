@@ -1,14 +1,20 @@
 package de.gematik.rbellogger.writer;
 
 import java.util.stream.Stream;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public enum RbelContentType {
-    XML,
-    JSON,
-    JWT,
-    JWE,
-    URL,
-    BEARER_TOKEN;
+    XML("application/xml"),
+    JSON("application/json"),
+    JWT("application/jwt"),
+    JWE("application/octet-stream"),
+    URL("text/plain"),
+    BEARER_TOKEN("text/plain");
+
+    @Getter
+    final String contentTypeString;
 
     public static RbelContentType seekValueFor(String rawValue) {
         String compareValue = rawValue.trim().toUpperCase();

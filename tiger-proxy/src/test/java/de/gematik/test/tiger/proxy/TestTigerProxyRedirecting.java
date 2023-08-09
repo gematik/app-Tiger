@@ -17,10 +17,8 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
-import java.util.List;
 import java.util.stream.Stream;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
@@ -39,9 +37,9 @@ class TestTigerProxyRedirecting extends AbstractFastTigerProxyTest {
     @MethodSource("nestedAndShallowPathTestCases")
     void forwardProxyWithNestedPath_shouldRewriteLocationHeaderIfConfigured(String toPath, String requestPath, int statusCode) {
         tigerProxy.addRoute(TigerRoute.builder()
-                .from("http://foo.bar")
-                .to("http://localhost:" + fakeBackendServerPort + toPath)
-                .build());
+            .from("http://foo.bar")
+            .to("http://localhost:" + fakeBackendServerPort + toPath)
+            .build());
 
         assertThat(proxyRest.get("http://foo.bar" + requestPath)
             .asString().getStatus())
@@ -52,9 +50,9 @@ class TestTigerProxyRedirecting extends AbstractFastTigerProxyTest {
     @MethodSource("nestedAndShallowPathTestCases")
     void reverseProxyWithNestedPath_shouldRewriteLocationHeaderIfConfigured(String toPath, String requestPath, int statusCode) {
         tigerProxy.addRoute(TigerRoute.builder()
-                .from("/")
-                .to("http://localhost:" + fakeBackendServerPort + toPath)
-                .build());
+            .from("/")
+            .to("http://localhost:" + fakeBackendServerPort + toPath)
+            .build());
 
         assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + requestPath)
             .asString().getStatus())
@@ -63,14 +61,14 @@ class TestTigerProxyRedirecting extends AbstractFastTigerProxyTest {
 
     public static Stream<Arguments> nestedAndShallowPathTestCases() {
         return Stream.of(
-            Arguments.of("/deep","/forward", 777),
-            Arguments.of("/deep","/forward/", 777),
-            Arguments.of("/deep/","/forward", 777),
-            Arguments.of("/deep/","/forward/", 777),
+            Arguments.of("/deep", "/forward", 777),
+            Arguments.of("/deep", "/forward/", 777),
+            Arguments.of("/deep/", "/forward", 777),
+            Arguments.of("/deep/", "/forward/", 777),
 
-            Arguments.of("","/forward", 666),
-            Arguments.of("","/forward/", 666),
-            Arguments.of("/","/forward", 666),
-            Arguments.of("/","/forward/", 666));
+            Arguments.of("", "/forward", 666),
+            Arguments.of("", "/forward/", 666),
+            Arguments.of("/", "/forward", 666),
+            Arguments.of("/", "/forward/", 666));
     }
 }

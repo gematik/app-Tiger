@@ -20,16 +20,16 @@
         <div class="row">
 
             <!-- side bar -->
-            <div :class="`${sideBarCollapsed ? 'sidebar-collapsed' : 'col-md-3'} ${quitTestrunOngoing ? 'sidebar-state-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused' : '')}`"
+            <div :class="`${sideBarCollapsed ? 'sidebar-collapsed test-sidebar-collapsed' : 'col-md-3 test-sidebar-open'} ${quitTestrunOngoing ? 'sidebar-state-quit test-sidebar-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused test-sidebar-paused' : '')}`"
                  id="sidebar-left">
                 <!-- side bar title -->
                 <h3 :class="`sidebar-title ${quitTestrunOngoing ? 'sidebar-state-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused' : '')}`">
                     <img v-on:click="toggleLeftSideBar"
-                         class="navbar-brand" src="img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
-                    <span>Workflow UI</span>
+                         class="navbar-brand" id="test-tiger-logo" src="img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
+                    <span id="test-sidebar-title">Workflow UI</span>
                     <button type="button" v-on:click="toggleLeftSideBar"
                             class="btn btn-sm mt-3 float-end resizer-left-icon">
-                        <i class="fa-lg fa-solid fa-angles-left"></i>
+                        <i class="fa-lg fa-solid fa-angles-left" id="test-sidebar-close-icon"></i>
                     </button>
                 </h3>
                 <!-- interaction buttons -->
@@ -37,39 +37,39 @@
                     <button type="button"
                             :class="`btn btn-sm btn-danger m-1 ${(quitTestrunOngoing ? 'disabled active' : 'enabled')}`"
                             v-on:click="quitTestrun">
-                        <i class="fa-lg fa-solid fa-power-off"></i>
+                        <i class="fa-lg fa-solid fa-power-off" id="test-sidebar-quit-icon"></i>
                     </button>
                     <button type="button"
                             :class="`btn btn-sm m-1 ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'btn-success' : 'btn-warning')} ${(quitTestrunOngoing ? 'disabled' : '')}`"
                             v-on:click="pauseTestrun">
-                        <i :class="`fa-lg fa-solid ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'fa-play' : 'fa-pause')} w-18px`"></i>
+                        <i :class="`fa-lg fa-solid ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'fa-play' : 'fa-pause')} w-18px`" id="test-sidebar-pause-icon"></i>
                     </button>
                 </div>
                 <!-- test run status -->
                 <h4>
                     <i v-on:click="toggleLeftSideBar"
-                       :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`">
+                       :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`" id="test-sidebar-status-icon">
                     </i>
-                    <span>Status</span>
+                    <span id="test-sidebar-status">Status</span>
                 </h4>
                 <TestStatus :featureUpdateMap="featureUpdateMap" :started="started"/>
                 <!-- feature list -->
                 <h4>
-                    <i v-on:click="toggleLeftSideBar" class="fa-lg fa-solid fa-address-card left"></i>
-                    <span>Features</span>
+                    <i v-on:click="toggleLeftSideBar" class="fa-lg fa-solid fa-address-card left" id="test-sidebar-feature-icon"></i>
+                    <span id="test-sidebar-feature">Features</span>
                 </h4>
                 <FeatureList :featureUpdateMap="featureUpdateMap"/>
                 <!-- server status -->
                 <h4>
                     <i v-on:click="toggleLeftSideBar"
-                       :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-xl fa-solid fa-server left`">
+                       :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-xl fa-solid fa-server left`" id="test-sidebar-server-icon">
                     </i>
-                    <span>Servers</span>
+                    <span id="test-sidebar-server">Servers</span>
                 </h4>
                 <ServerStatus :serverStatusData="currentServerStatus"/>
                 <div class="container">
-                    <div class="mt-2 small text-muted ms-2"> Tiger version: {{ version }}</div>
-                    <div class="mt-2 small text-muted ms-2"> Build: {{ build }}</div>
+                    <div class="mt-2 small text-muted ms-2" id="test-sidebar-version"> Tiger version: {{ version }}</div>
+                    <div class="mt-2 small text-muted ms-2" id="test-sidebar-build"> Build: {{ build }}</div>
                 </div>
             </div>
 
@@ -80,12 +80,12 @@
                     <div class="container-fluid">
                         <div class="navbar-nav justify-content-start"></div>
                         <div class="navbar-nav execution-pane-nav justify-content-between">
-                            <a class="btn active execution-pane-buttons" @click="showTab('execution_pane', $event)">Test
+                            <a id="test-execution-pane-tab"  class="btn active execution-pane-buttons" @click="showTab('execution_pane', $event)">Test
                                 execution</a>
-                            <a class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server Logs</a>
+                            <a id="test-server-log-tab" class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server Logs</a>
                         </div>
                         <div class="navbar-nav justify-content-end px-5">
-                            <img alt="gematik logo" class="gematik-logo" src="/img/gematik.svg">
+                            <img alt="gematik logo" class="gematik-logo" id="test-gematik-logo" src="/img/gematik.svg">
                         </div>
                     </div>
                 </nav>
@@ -237,18 +237,15 @@ function debug(message: string) {
 }
 
 function showTab(tabid: string, event: MouseEvent) {
-    event.preventDefault();
-    const buttons = document.getElementsByClassName('execution-pane-buttons');
-    const tabs = document.getElementsByClassName('execution-pane-tabs');
-    for (let i = 0; i < buttons.length; i++) {
-        buttons[i].classList.toggle("active", false);
-        tabs[i].classList.toggle("active", false);
-        tabs[i].classList.toggle("show", false);
-    }
-    document.getElementById(tabid)?.classList.toggle("active", true);
-    document.getElementById(tabid)?.classList.toggle("show", true);
-    (event.target as HTMLElement)?.classList?.toggle("active", true);
-    (event.target as HTMLElement)?.classList.toggle("show", true);
+  event.preventDefault();
+  const buttons = document.getElementsByClassName('execution-pane-buttons');
+  const tabs = document.getElementsByClassName('execution-pane-tabs');
+  for (let i = 0; i < buttons.length; i++) {
+    buttons[i].classList.toggle("active", false);
+    tabs[i].classList.toggle("active", false);
+  }
+  document.getElementById(tabid)?.classList.toggle("active", true);
+  (event.target as HTMLElement)?.classList?.toggle("active", true);
 }
 
 let reloadTimeoutHandle: number;

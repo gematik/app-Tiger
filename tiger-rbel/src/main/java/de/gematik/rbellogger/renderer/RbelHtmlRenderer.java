@@ -75,14 +75,14 @@ public class RbelHtmlRenderer {
     public static ContainerTag collapsibleCard(final ContainerTag title, final ContainerTag body, String classes, String spaces, String contentClasses) {
         return
             div().withClass("container page-break " + spaces).with(
-                div().withClass("card full-width " + classes)
+                div().withClass("card full-width test-card " + classes)
                     .with(
-                        header().withClass("card-header")
+                        header().withClass("card-header test-card-header")
                             .with(
-                                div().withClass("card-header-title card-toggle")
+                                div().withClass("card-header-title test-card-header-title card-toggle")
                                     .with(title)
                             ),
-                        div().withClass("card-content " + contentClasses)
+                        div().withClass("card-content test-card-content " + contentClasses)
                             .with(
                                 div().with(body)
                             )

@@ -16,11 +16,15 @@
 
 package de.gematik.test.tiger.testenvmgr.servers.log;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
+import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -35,6 +39,13 @@ import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrNormalized;
 @Slf4j
 class TigerServerLogManagerTest {
 
+    @BeforeEach
+    @AfterEach
+    void setup() {
+        TigerGlobalConfiguration.reset();
+        Path.of("target", "serverLogs", "test.log").toFile().delete();
+    }
+
     @SystemStub
     private SystemErr systemErr;
 
@@ -44,6 +55,8 @@ class TigerServerLogManagerTest {
         String logFile = "target/serverLogs/test.log";
         String serverID = "ExternalJar-001";
         final CfgServer configuration = new CfgServer();
+        configuration.setExternalJarOptions(new CfgExternalJarOptions());
+        configuration.getExternalJarOptions().setActivateLogs(false);
         configuration.setType(ExternalJarServer.class.getAnnotation(TigerServerType.class));
         configuration.setLogFile(logFile);
         ExternalJarServer server = ExternalJarServer.builder().serverId(serverID).configuration(configuration).build();
@@ -52,15 +65,54 @@ class TigerServerLogManagerTest {
         String text = tapSystemErrNormalized(() -> System.err.println(logMessage));
         dummyLog.info(logMessage);
 
-        File folder = Path.of("target/serverLogs").toFile();
-        log.info("Directory exists: " + (folder.exists() && folder.isDirectory()));
         assertThat(new File(logFile)).content().contains(logMessage);
-        if (folder.list() != null) {
-            log.info("Files inside: " + String.join(", ", folder.list()));
-        } else {
-            Assertions.fail("Folder is invalid! " + folder.getAbsolutePath());
-        }
         assertThat(dummyLog.getName()).isEqualTo("TgrSrv-" +serverID);
         assertThat(text).contains(logMessage);
+    }
+
+
+    @TigerTest(tigerYaml = """
+            localProxyActive: false
+            servers:
+              externalJarServer:
+                type: externalJar
+                source:
+                  - local:winstone.jar
+                healthcheckUrl: http://127.0.0.1:${free.port.0}
+                healthcheckReturnCode: 200
+                logFile: target/serverLogs/test.log
+                externalJarOptions:
+                  workingDir: target
+                  arguments:
+                    - "--httpPort=${free.port.0}"
+                    - "--webroot=."
+            """)
+    @Test
+    void testCheckAddAppendersEnabledLog_OK() throws Exception {
+        assertThat(new File("target/serverLogs/test.log")).content()
+                .contains("Winstone Servlet Engine ");
+    }
+
+    @TigerTest(tigerYaml = """
+            localProxyActive: false
+            servers:
+              externalJarServer:
+                type: externalJar
+                source:
+                  - local:winstone.jar
+                healthcheckUrl: http://127.0.0.1:${free.port.0}
+                healthcheckReturnCode: 200
+                logFile: target/serverLogs/test.log
+                externalJarOptions:
+                  activateLogs: false
+                  workingDir: target
+                  arguments:
+                    - "--httpPort=${free.port.0}"
+                    - "--webroot=."
+            """)
+    @Test
+    void testCheckAddAppendersDisabledLog_OK() throws Exception {
+        assertThat(new File("target/serverLogs/test.log")).content()
+                .doesNotContain("Winstone Servlet Engine ");
     }
 }

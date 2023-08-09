@@ -16,8 +16,7 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import com.google.common.collect.Lists;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -33,19 +32,6 @@ import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-import javax.xml.transform.Source;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +46,23 @@ import org.xmlunit.diff.ComparisonResult;
 import org.xmlunit.diff.ComparisonType;
 import org.xmlunit.diff.Diff;
 import org.xmlunit.diff.Difference;
+
+import javax.xml.transform.Source;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -201,7 +204,7 @@ public class RbelMessageValidator {
         final String hostFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
         final String methodFilter = TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method", "");
 
-        final List<RbelElement> candidateMessages = msgs.stream()
+        List<RbelElement> candidateMessages = msgs.stream()
             .filter(el -> !requestParameter.isRequireHttpMessage() || el.hasFacet(RbelHttpRequestFacet.class))
             .filter(req -> doesPathOfMessageMatch(req, requestParameter.getPath()))
             .filter(req -> hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter))
@@ -226,7 +229,7 @@ public class RbelMessageValidator {
         }
 
         if (requestParameter.isFilterPreviousRequest()) {
-            Collections.reverse(candidateMessages);
+            candidateMessages = Lists.reverse(candidateMessages);
         }
 
         for (final RbelElement candidateMessage : candidateMessages) {
@@ -338,19 +341,15 @@ public class RbelMessageValidator {
 
     public void assertAttributeOfCurrentResponseMatchesAs(String rbelPath, ModeType mode, String oracle) {
         switch (mode) {
-            case JSON:
-                new JsonChecker().compareJsonStrings(
+            case JSON -> new JsonChecker().compareJsonStrings(
                     getValueOrContentString(findElementInCurrentResponse(rbelPath)),
                     oracle,
                     false);
-                break;
-            case XML:
+            case XML -> {
                 final RbelElement el = findElementInCurrentResponse(rbelPath);
                 compareXMLStructureOfRbelElement(el, oracle, "");
-                break;
-            default:
-                Assertions.fail("Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
-                break;
+            }
+            default -> Assertions.fail("Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
         }
     }
 

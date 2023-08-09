@@ -28,7 +28,7 @@ public class RbelBearerTokenSerializer implements RbelSerializer {
         final byte[] bearerTokenContent = rbelWriter.renderTree(
             node.childNode("BearerToken")
                 .orElseThrow(() -> new RbelSerializationException(
-                    "Could not find BearerToken-node needed for BearerToken serialization in node '" + node.getKey() + "'!")));
+                    "Could not find BearerToken-node needed for BearerToken serialization in node '" + node.getKey() + "'!"))).getContent();
 
         return Arrays.concatenate("Bearer ".getBytes(StandardCharsets.UTF_8), bearerTokenContent);
     }

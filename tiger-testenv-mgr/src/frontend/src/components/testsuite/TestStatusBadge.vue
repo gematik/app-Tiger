@@ -15,7 +15,7 @@
   -->
 
 <template>
-  <span :class="`${highlightText ? 'statustext' : ''}`">
+  <span :class="`${highlightText ? 'statustext' : ''}`" >
     <i :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
        :title="`${testStatus}`"
        :id="`${link}`" ></i>
@@ -38,7 +38,7 @@ defineProps<{
 }>();
 
 function getStatusFGAndBGColorClass(status: string): string {
-  return status.toLowerCase() + ' bg-' + status.toLowerCase();
+  return status.toLowerCase() + ' bg-' + status.toLowerCase() + 'test-status-'+ status.toLowerCase();
 }
 
 </script>

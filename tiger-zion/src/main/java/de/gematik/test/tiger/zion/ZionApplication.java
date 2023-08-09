@@ -31,9 +31,12 @@ public class ZionApplication {
 
     @Bean
     public RbelLogger rbelLogger() {
-        return RbelLogger.build(new RbelConfiguration()
+        log.info("Starting rbel build...");
+        final RbelLogger logger = RbelLogger.build(new RbelConfiguration()
             .addPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER)
             .addInitializer(new RbelKeyFolderInitializer(".")));
+        log.info("done with build");
+        return logger;
     }
 
     @Bean

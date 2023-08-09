@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -141,6 +142,11 @@ public class TigerGlobalConfiguration {
         assertGlobalConfigurationIsInitialized();
         return globalConfigurationLoader.readStringOptional(key)
             .map(TigerGlobalConfiguration::resolvePlaceholders);
+    }
+
+    public static synchronized Optional<String> readStringWithoutResolving(String key) {
+        assertGlobalConfigurationIsInitialized();
+        return globalConfigurationLoader.readStringOptional(key);
     }
 
     @SneakyThrows
@@ -261,6 +267,11 @@ public class TigerGlobalConfiguration {
         return TokenSubstituteHelper.substitute(stringToSubstitute, globalConfigurationLoader);
     }
 
+    public static String resolvePlaceholdersWithContext(String stringToSubstitute, TigerJexlContext context) {
+        assertGlobalConfigurationIsInitialized();
+        return TokenSubstituteHelper.substitute(stringToSubstitute, globalConfigurationLoader, Optional.ofNullable(context));
+    }
+
     public static Optional<Integer> readIntegerOptional(String key) {
         assertGlobalConfigurationIsInitialized();
         return readStringOptional(key)
@@ -268,7 +279,7 @@ public class TigerGlobalConfiguration {
     }
 
     private static void readMainYamlFile() {
-        final Optional<String> tigerYamlValue = TIGER_YAML_VALUE.getValue();
+        final Optional<String> tigerYamlValue = TIGER_YAML_VALUE.getValueWithoutResolving();
         if (tigerYamlValue.isPresent()) {
             log.info("Reading configuration from tiger.yaml property as string");
             globalConfigurationLoader.readFromYaml(tigerYamlValue.get(), SourceType.TEST_YAML, TIGER_BASEKEY);
@@ -376,16 +387,6 @@ public class TigerGlobalConfiguration {
             throw new TigerConfigurationException(
                 "Error while reading configuration from file '" + file.getAbsolutePath() + "'", e);
         }
-    }
-
-    /**
-     * Returns a local scope in which values can be added and code executed. This enables the use of very local values
-     * that can not (or should not) creep over into other parts of your testsuite.
-     *
-     * @return
-     */
-    public static TigerScopedExecutor localScope() {
-        return new TigerScopedExecutor();
     }
 
     static void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {

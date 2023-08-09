@@ -51,17 +51,20 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
     }
 
     private List<RbelContentTreeNode> convertNode(RbelElement value, String key, TigerConfigurationLoader context, RbelContentTreeConverter converter) {
+        if (nodeHasTgrAttribute(value, JSON_PRIMITIVE) || nodeHasTgrAttribute(value, JSON_NON_STRING_PRIMITIVE)) {
+            final RbelElement valueElement = value.getFirst("value")
+                .orElseThrow();
+            final List<RbelContentTreeNode> nodes = convertNode(valueElement, key, context, converter);
+            populatePrimitiveNode(valueElement, nodes);
+            if (nodeHasTgrAttribute(value, JSON_NON_STRING_PRIMITIVE)) {
+                nodes.forEach(node -> node.attributes().putIfAbsent(JSON_NON_STRING_PRIMITIVE, "true"));
+            }
+            return nodes;
+        }
         if (value.hasFacet(RbelJsonFacet.class) && value.hasFacet(RbelNestedFacet.class)) {
             final List<RbelContentTreeNode> nodes = convertNode(value.getFacetOrFail(RbelNestedFacet.class).getNestedElement(), key, context,
                 converter);
-            nodes.forEach(node -> node.attributes().put(JSON_PRIMITIVE, "true"));
-            if (!value.getFacet(RbelJsonFacet.class)
-                .map(RbelJsonFacet::getJsonElement)
-                .map(JsonPrimitive.class::cast)
-                .map(JsonPrimitive::isString)
-                .orElse(false)) {
-                nodes.forEach(node -> node.attributes().put(JSON_NON_STRING_PRIMITIVE, "true"));
-            }
+            populatePrimitiveNode(value, nodes);
             return nodes;
         }
         final List<RbelContentTreeNode> result = converter.convertNode(value, key, context);
@@ -71,5 +74,22 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
             result.forEach(node -> node.attributes().put(JSON_ARRAY, "true"));
         }
         return result;
+    }
+
+    private void populatePrimitiveNode(RbelElement valueElement, List<RbelContentTreeNode> nodes) {
+        nodes.forEach(node -> node.attributes().put(JSON_PRIMITIVE, "true"));
+        if (!valueElement.getFacet(RbelJsonFacet.class)
+            .map(RbelJsonFacet::getJsonElement)
+            .map(JsonPrimitive.class::cast)
+            .map(JsonPrimitive::isString)
+            .orElse(false)) {
+            nodes.forEach(node -> node.attributes().put(JSON_NON_STRING_PRIMITIVE, "true"));
+        }
+    }
+
+    private boolean nodeHasTgrAttribute(RbelElement value, String attributeValueToBeChecked) {
+        return value
+            .findElement("$.tgrAttributes.[?(content=='" + attributeValueToBeChecked + "')]")
+            .isPresent();
     }
 }

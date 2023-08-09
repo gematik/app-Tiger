@@ -172,6 +172,8 @@ Their meaning and format are explained in the related section.
     options: []
     # used by external jar and Tiger Proxy nodes
     arguments: []
+    # flag whether to forward log output from external jar processes to the workflow UI
+    activateLogs: true
 
   # type specific sub structure for Tiger Proxy nodes
   tigerProxyCfg:

@@ -44,7 +44,7 @@ public class RbelUrlSerializer implements RbelSerializer {
                 .map(RbelContentTreeNode::childNodes)
                 .stream()
                 .flatMap(Collection::stream)
-                .map(header -> header.getKey() + "=" + new String(rbelWriter.renderTree(header), header.getCharset()))
+                .map(header -> header.getKey() + "=" + new String(rbelWriter.renderTree(header).getContent(), header.getCharset()))
                 .collect(Collectors.joining("&")))
             .filter(s -> !s.isBlank());
     }

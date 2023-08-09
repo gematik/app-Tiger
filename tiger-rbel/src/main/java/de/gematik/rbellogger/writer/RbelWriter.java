@@ -21,16 +21,12 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.GenericPrettyPrinter;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
-import de.gematik.test.tiger.common.jexl.InlineJexlToolbox;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import javax.crypto.spec.OAEPParameterSpec;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class RbelWriter {
@@ -50,12 +46,12 @@ public class RbelWriter {
         RbelContentType.URL, new RbelUrlSerializer(),
         RbelContentType.BEARER_TOKEN, new RbelBearerTokenSerializer());
 
-    public byte[] serializeWithEnforcedContentType(RbelElement input, RbelContentType enforcedContentType, TigerJexlContext jexlContext) {
+    public RbelSerializationResult serializeWithEnforcedContentType(RbelElement input, RbelContentType enforcedContentType, TigerJexlContext jexlContext) {
         return new RbelWriterInstance(Optional.ofNullable(enforcedContentType), rbelKeyManager, jexlContext)
             .serialize(input);
     }
 
-    public byte[] serialize(RbelElement input, TigerJexlContext jexlContext) {
+    public RbelSerializationResult serialize(RbelElement input, TigerJexlContext jexlContext) {
         return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext)
             .serialize(input);
     }
@@ -86,18 +82,18 @@ public class RbelWriter {
         private final Optional<RbelContentType> fixedContentType;
         @Getter
         private final RbelKeyManager rbelKeyManager;
+        @Getter
         private final TigerJexlContext jexlContext;
 
-        public byte[] serialize(RbelElement input) {
+        public RbelSerializationResult serialize(RbelElement input) {
             final RbelContentTreeNode treeRootNode = new RbelContentTreeConverter(input, jexlContext)
                 .convertToContentTree();
-            printTreeStructure(treeRootNode);
             return renderTree(treeRootNode);
         }
 
-        public byte[] renderTree(RbelContentTreeNode treeRootNode) {
+        public RbelSerializationResult renderTree(RbelContentTreeNode treeRootNode) {
             if (treeRootNode.getType() == null) {
-                return treeRootNode.getContent();
+                return RbelSerializationResult.of(treeRootNode);
             }
             final RbelContentType determinedType = determineContentType(treeRootNode);
             treeRootNode.setType(determinedType);
@@ -105,7 +101,9 @@ public class RbelWriter {
             if (rbelSerializer == null) {
                 throw new RbelSerializationException("Could not find serializer for content-type '" + treeRootNode.getType() + "'");
             }
-            return rbelSerializer.render(treeRootNode, this);
+            return RbelSerializationResult.of(
+                rbelSerializer.render(treeRootNode, this),
+                treeRootNode.getType());
         }
 
         private RbelContentType determineContentType(RbelContentTreeNode treeRootNode) {

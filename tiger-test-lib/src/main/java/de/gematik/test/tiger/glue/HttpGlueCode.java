@@ -1,65 +1,81 @@
 package de.gematik.test.tiger.glue;
 
-import de.gematik.test.tiger.common.config.TigerConfigurationKey;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
-import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.lib.exception.TigerHttpGlueCodeException;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.writer.RbelContentType;
+import de.gematik.rbellogger.writer.RbelSerializationResult;
 import de.gematik.rbellogger.writer.RbelWriter;
+import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.exception.TigerHttpGlueCodeException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.ParameterType;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
+import io.restassured.config.RedirectConfig;
 import io.restassured.http.Method;
+import io.restassured.internal.RequestSpecificationImpl;
 import io.restassured.specification.RequestSpecification;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.SoftAssertionsProvider.ThrowingRunnable;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class HttpGlueCode {
 
-
+    public static final String KEY_HTTP_CLIENT = "httpClient";
+    public static final String KEY_TIGER = "tiger";
     private static final TigerTypedConfigurationKey<Boolean> executeBlocking = new TigerTypedConfigurationKey<>(
-        new TigerConfigurationKey("tiger", "httpClient", "executeBlocking"), Boolean.class, false);
+            new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, "executeBlocking"), Boolean.class, false);
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+    public static final String KEY_DEFAULT_HEADER = "defaultHeader";
     private static RbelLogger rbelLogger;
     private static RbelWriter rbelWriter;
 
     private static RequestSpecification givenDefaultSpec() {
-        final RequestSpecification requestSpecification = RestAssured.given();
+        final RequestSpecification requestSpecification = RestAssured.given()
+            .urlEncodingEnabled(false);
         return requestSpecification
-            .headers(TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader"));
+                .headers(TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER));
+    }
+
+    private static void applyRedirectConfig(RedirectConfig newRedirectConfig) {
+        RestAssured.config = RestAssured.config.redirect(newRedirectConfig);
+    }
+
+    private static void resetRedirectConfig()
+    {
+        applyRedirectConfig(new RedirectConfig());
     }
 
     private static String resolveToString(String value) {
-        return new String(resolve(value), DEFAULT_CHARSET);
+        return resolve(value).getContentAsString();
     }
 
-    private static byte[] resolve(String value) {
+    private static RbelSerializationResult resolve(String value) {
         final String resolvedInput = TigerGlobalConfiguration.resolvePlaceholders(value);
         if (TigerDirector.getLibConfig().getHttpClientConfig().isActivateRbelWriter()) {
             final RbelElement input = getRbelConverter().convertElement(resolvedInput, null);
             return getRbelWriter().serialize(input, new TigerJexlContext().withRootElement(input));
         } else {
-            return resolvedInput.getBytes(DEFAULT_CHARSET);
+            return RbelSerializationResult.withUnknownType(resolvedInput.getBytes(DEFAULT_CHARSET));
         }
     }
 
@@ -176,8 +192,8 @@ public class HttpGlueCode {
     @Then("TGR sende eine leere {requestType} Anfrage an {string} mit folgenden Headern:")
     public void sendEmptyRequestWithHeaders(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
-        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader");
-        defaultHeaders.putAll(resolveMap(customHeaders.asMap()));
+        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
+        defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
         executeCommandWithContingentWait(() ->
             givenDefaultSpec()
                 .headers(defaultHeaders)
@@ -200,8 +216,8 @@ public class HttpGlueCode {
     @Then("TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Headern:")
     public void sendEmptyRequestWithHeadersNonBlocking(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
-        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap("tiger", "httpClient", "defaultHeader");
-        defaultHeaders.putAll(resolveMap(customHeaders.asMap()));
+        Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
+        defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
         executeCommandInBackground(() ->
             givenDefaultSpec()
                 .headers(defaultHeaders)
@@ -222,28 +238,17 @@ public class HttpGlueCode {
     @Then("TGR sende eine {requestType} Anfrage an {string} mit Body {string}")
     public void sendRequestWithBody(Method method, String address, String body) {
         log.info("Sending {} request with body to {}", method, address);
-        executeCommandWithContingentWait(() ->
-            givenDefaultSpec()
-                .body(resolve(body))
-                .request(method, new URI(resolveToString(address))));
+        executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
     }
 
     /**
-     * Sends a request containing the provided body via the selected method. Placeholders in the
-     * body and in address will be resolved.
+     * Sends a request containing the provided body via the selected method. Placeholders in the body and in address will be resolved.
      * <p>
-     * This method is NON-BLOCKING, meaning it will not wait for the response before continuing
-     * the test.
-     =======
-     givenDefaultSpec()
-     .body(resolve(body))
-     .request(method, new URI(resolveToString(address)));
-     }
-
-     /**
-     * Expands the list of default headers with the provided key-value pair. If the key already exists, then the existing value is overwritten by the new value.
-     * Placeholders in the header name and in its value will be resolved.
-     >>>>>>> master
+     * This method is NON-BLOCKING, meaning it will not wait for the response before continuing the test. ======= givenDefaultSpec() .body(resolve(body))
+     * .request(method, new URI(resolveToString(address))); }
+     * <p>
+     * /** Expands the list of default headers with the provided key-value pair. If the key already exists, then the existing value is overwritten by the new
+     * value. Placeholders in the header name and in its value will be resolved. >>>>>>> master
      *
      * @param method  HTTP request method (see {@link Method})
      * @param body    to be included in the request
@@ -256,96 +261,199 @@ public class HttpGlueCode {
     @Then("TGR sende eine {requestType} Anfrage an {string} mit Body {string} ohne auf Antwort zu warten")
     public void sendRequestWithBodyNonBlocking(Method method, String address, String body) {
         log.info("Sending {} request with body to {}", method, address);
-        executeCommandInBackground(() ->
+        executeCommandInBackground(() -> sendResolvedBody(method, address, body));
+    }
+
+    private static void sendResolvedBody(Method method, String address, String body) throws URISyntaxException {
+        final RbelSerializationResult resolved = resolve(body);
+        final RequestSpecification requestSpecification = givenDefaultSpec();
+        resolved.getContentType()
+            .map(RbelContentType::getContentTypeString)
+            .filter(o -> StringUtils.isEmpty(((RequestSpecificationImpl) requestSpecification).getContentType()))
+            .ifPresent(requestSpecification::contentType);
+        requestSpecification
+            .body(resolved.getContent())
+            .request(method, new URI(resolveToString(address)));
+    }
+
+    /**
+     * Sends a request via the selected method. The request is expanded by the provided key-value pairs.
+     * Placeholders in keys and values will be resolved. The values must not be URL encoded, as this is done by the step.
+     * Example:
+     * <pre>
+     *      When Send POST request to "http://my.address.com" with
+     *       | ${configured_param_name}   | state                     | redirect_uri        |
+     *       | client_id                  | ${configured_state_value} | https://my.redirect |
+     * </pre>
+     * <br>
+     * <b>NOTE:</b> This Markdown table must contain exactly 1 row of headers and 1 row of
+     * values.
+     * </p>
+     *
+     * @param method     HTTP request method (see {@link Method})
+     * @param address    target address
+     * @param parameters to be sent with the request
+     * @see RequestSpecification#formParams(Map)
+     * @see TigerGlobalConfiguration#resolvePlaceholders(String)
+     */
+    @SuppressWarnings("JavadocLinkAsPlainText")
+    @SneakyThrows
+    @When("TGR send {requestType} request to {string} with:")
+    @When("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
+    @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
+    public void sendRequestWithParams(Method method, String address, DataTable parameters) {
+        List<Map<String, String>> dataAsMaps = parameters.asMaps();
+        if (dataAsMaps.size() != 1) {
+            throw new AssertionError("Expected exactly one entry for data table, "
+                + "got " + dataAsMaps.size());
+        }
+        executeCommandWithContingentWait(() ->
             givenDefaultSpec()
-                .body(resolve(body))
+                .formParams(resolveMap(dataAsMaps.get(0), true))
                 .request(method, new URI(resolveToString(address))));
     }
 
-        /**
-         * Sends a request via the selected method. The request is expanded by the provided key-value pairs. Placeholders in keys and values will be resolved.
-         * Example:
-         * <pre>
-         *      When Send POST request to "http://my.address.com" with
-         *       | ${configured_param_name}   | state                     | redirect_uri        |
-         *       | client_id                  | ${configured_state_value} | https://my.redirect |
-         * </pre>
-         * <br>
-         * <b>NOTE:</b> This Markdown table must contain exactly 1 row of headers and 1 row of
-         * values.
-         * </p>
-         *
-         * @param method     HTTP request method (see {@link Method})
-         * @param address    target address
-         * @param parameters to be sent with the request
-         * @see RequestSpecification#formParams(Map)
-         * @see TigerGlobalConfiguration#resolvePlaceholders(String)
-         */
-        @SuppressWarnings("JavadocLinkAsPlainText")
-        @SneakyThrows
-        @When("TGR send {requestType} request to {string} with:")
-        @When("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
-        @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
-        public void sendRequestWithParams (Method method, String address, DataTable parameters){
-            List<Map<String, String>> dataAsMaps = parameters.asMaps();
-            if (dataAsMaps.size() != 1) {
-                throw new AssertionError("Expected exactly one entry for data table, "
-                    + "got " + dataAsMaps.size());
-            }
-            executeCommandWithContingentWait(() ->
-                givenDefaultSpec()
-                    .formParams(resolveMap(dataAsMaps.get(0)))
-                    .request(method, new URI(resolveToString(address))));
-        }
 
-        /**
-         * Sends a request via the selected method. The request is expanded by the provided key-value
-         * pairs. Placeholders in keys and values will be resolved.
-         * <p>
-         * This method is NON-BLOCKING, meaning it will not wait for the response before continuing
-         * the test.
-         *
-         * @param method     HTTP request method (see {@link Method})
-         * @param address    target address
-         * @param parameters to be sent with the request
-         * @see RequestSpecification#formParams(Map)
-         * @see TigerGlobalConfiguration#resolvePlaceholders(String)
-         */
-        @SneakyThrows
-        @When("TGR send {requestType} request to {string} without waiting for the response with:")
-        @Then("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
-        public void sendRequestWithParamsNonBlocking (Method method, String address, DataTable parameters){
-            List<Map<String, String>> dataAsMaps = parameters.asMaps();
-            if (dataAsMaps.size() != 1) {
-                throw new AssertionError("Expected exactly one entry for data table, "
-                    + "got " + dataAsMaps.size());
-            }
-            executeCommandInBackground(() ->
-                givenDefaultSpec()
-                    .formParams(resolveMap(dataAsMaps.get(0)))
-                    .request(method, new URI(resolveToString(address))));
-        }
-
-        /**
-         * Expands the list of default headers with the provided key-value pair. If the key already
-         * exists, then the existing value is overwritten by the new value. Placeholders in the
-         * header name and in its value will be resolved.
-         *
-         * @param header key
-         * @param value  to be stored under the given key
-         * @see TigerGlobalConfiguration#resolvePlaceholders(String)
-         */
-        @When("TGR set default header {string} to {string}")
-        @When("TGR den default header {string} auf den Wert {string} setzen")
-        @Then("TGR setze den default header {string} auf den Wert {string}")
-        public void setDefaultHeader (String header, String value){
-            TigerGlobalConfiguration.putValue("tiger.httpClient.defaultHeader." + resolveToString(header), resolveToString(value));
-        }
-
-        private Map<String, String> resolveMap (Map < String, String > map){
-            return map.entrySet().stream()
-                .collect(Collectors.toMap(
-                    entry -> resolveToString(entry.getKey()),
-                    entry -> resolveToString(entry.getValue())));
-        }
+    /**
+     * Sends a request via the selected method.
+     * For the given request's body placeholders in keys and values will be resolved.
+     * This step is meant to be used for more complex bodys spanning multiple lines.
+     *
+     * Example:
+     * <pre>
+     *      When TGR send POST request to "http://my.address.com" with multiline body:
+     *       """
+     *         {
+     *              "name": "value",
+     *              "object": { "member": "value" },
+     *              "array" : [ 1,2,3,4]
+     *         }
+     *       """
+     * </pre>
+     * <br>
+     * </p>
+     *
+     * @param method     HTTP request method (see {@link Method})
+     * @param address    target address
+     * @param body       body content of the request
+     * @see TigerGlobalConfiguration#resolvePlaceholders(String)
+     */
+    @SuppressWarnings("JavadocLinkAsPlainText")
+    @SneakyThrows
+    @When("TGR send {requestType} request to {string} with multiline body:")
+    @When("TGR eine {requestType} Anfrage an {string} mit den folgenden mehrzeiligen Daten sendet:")
+    @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden mehrzeiligen Daten:")
+    public void sendRequestWithMultiLineBody(Method method, String address, String body) {
+        log.info("Sending complex {} request with body to {}", method, address);
+        executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
     }
+
+    /**
+     * Sends a request via the selected method. The request is expanded by the provided key-value
+     * pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded,
+     * as this is done by the step.
+     * <p>
+     * This method is NON-BLOCKING, meaning it will not wait for the response before continuing the test.
+     *
+     * @param method     HTTP request method (see {@link Method})
+     * @param address    target address
+     * @param parameters to be sent with the request
+     * @see RequestSpecification#formParams(Map)
+     * @see TigerGlobalConfiguration#resolvePlaceholders(String)
+     */
+    @SneakyThrows
+    @When("TGR send {requestType} request to {string} without waiting for the response with:")
+    @Then("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
+    public void sendRequestWithParamsNonBlocking(Method method, String address, DataTable parameters) {
+        List<Map<String, String>> dataAsMaps = parameters.asMaps();
+        if (dataAsMaps.size() != 1) {
+            throw new AssertionError("Expected exactly one entry for data table, "
+                + "got " + dataAsMaps.size());
+        }
+        executeCommandInBackground(() ->
+            givenDefaultSpec()
+                .formParams(resolveMap(dataAsMaps.get(0), true))
+                .request(method, new URI(resolveToString(address))));
+    }
+
+    /**
+     * Expands the list of default headers with the provided key-value pair. If the key already exists, then the existing value is overwritten by the new value.
+     * Placeholders in the header name and in its value will be resolved.
+     *
+     * @param header key
+     * @param value  to be stored under the given key
+     * @see TigerGlobalConfiguration#resolvePlaceholders(String)
+     */
+    @When("TGR set default header {string} to {string}")
+    @When("TGR den default header {string} auf den Wert {string} setzen")
+    @Then("TGR setze den default header {string} auf den Wert {string}")
+    public void setDefaultHeader(String header, String value) {
+        TigerGlobalConfiguration.putValue(
+                KEY_TIGER + "." + KEY_HTTP_CLIENT + "." + KEY_DEFAULT_HEADER + "." + resolveToString(header),
+                resolveToString(value));
+    }
+
+    /**
+     * Expands the list of default headers with the provided key-value pairs. If the key already exists, then the existing value is overwritten by the new value.
+     * Placeholders in the header names and in their values will be resolved.
+     *
+     * @param docstring multiline doc string, one key value pair per line
+     * @see TigerGlobalConfiguration#resolvePlaceholders(String)
+     */
+    @When("TGR set default headers:")
+    @Then("TGR setze folgende default headers:")
+    @When("TGR folgende default headers gesetzt werden:")
+    public void setDefaultHeaders(String docstring) {
+        Arrays.stream(docstring.split("\n"))
+                .filter(line -> !line.isEmpty())
+                .filter(line -> line.contains("="))
+                .map(line -> List.of(StringUtils.substringBefore(line, "="), StringUtils.substringAfter(line, "=")))
+                .forEach(kvp -> TigerGlobalConfiguration.putValue(
+                        KEY_TIGER + "." + KEY_HTTP_CLIENT + "." + KEY_DEFAULT_HEADER + "." + resolveToString(kvp.get(0)).trim(),
+                        resolveToString(kvp.get(1)).trim()));
+    }
+
+    /**
+     * Clear all default headers set in previous steps.
+     *
+     */
+    @When("TGR clear all default headers")
+    @When("TGR lösche alle default headers")
+    public void clearDefaultHeaders() {
+        TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER).forEach((key, value) -> TigerGlobalConfiguration.listSources().stream()
+                .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
+                .forEach(source -> source.removeValue(
+                        new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER, key)
+                        )
+                )
+        );
+      }
+
+    private Map<String, String> resolveMap(Map<String, String> map, boolean encoded) {
+        return map.entrySet().stream()
+            .collect(Collectors.toMap(
+                entry -> resolveToString(entry.getKey()),
+                entry -> encoded ? URLEncoder.encode(resolveToString(entry.getValue()), StandardCharsets.UTF_8) :
+                        resolveToString(entry.getValue())));
+    }
+
+    /**
+     * Modifies the global configuration of the HttpClient to not automatically follow redirects. All following requests
+     * will use the modified configuration.
+     */
+    @When("TGR disable HttpClient followRedirects configuration")
+    public void disableHttpClientFollowRedirects() {
+        RedirectConfig newRedirectConfig = RestAssured.config.getRedirectConfig().followRedirects(false);
+
+        applyRedirectConfig(newRedirectConfig);
+    }
+
+    /**
+     * Resets the global configuration of the HttpClient to its default behaviour of automatically following redirects.
+     */
+    @When("TGR reset HttpClient followRedirects configuration")
+    public void resetHttpClientRedirectConfiguration()
+    {
+        resetRedirectConfig();
+    }
+}

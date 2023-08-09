@@ -16,10 +16,9 @@
 
 package de.gematik.rbellogger.writer;
 
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -27,8 +26,10 @@ import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.xmlunit.assertj.XmlAssert;
 
 class RbelContentTreeConverterTest {
@@ -42,7 +43,7 @@ class RbelContentTreeConverterTest {
         final RbelElement input = rbelConverter.convertElement(xmlInput, null);
 
         RbelWriter writer = new RbelWriter(rbelConverter);
-        final String output = new String(writer.serialize(input, new TigerJexlContext()));
+        final String output = new String(writer.serialize(input, new TigerJexlContext()).getContent());
         System.out.println(output);
         XmlAssert.assertThat(output)
             .and(new String(xmlInput))
@@ -52,18 +53,44 @@ class RbelContentTreeConverterTest {
 
     @SneakyThrows
     @Test
-    void tgrIfTagInXml_shouldOnlyRenderCorrectNode() {
-        final RbelElement input = rbelConverter.convertElement("<?xml version=\"1.0\"?>\n"
-            + "<rootNode>\n"
-            + "    <toBeRendered tgrIf=\"1 != 5\">yes!</toBeRendered>\n"
-            + "    <notToBeRendered tgrIf=\"10 == 5\">NOOOO!</notToBeRendered>\n"
-            + "</rootNode>", null);
+    void tgrIfAsAsstributeInXml_shouldOnlyRenderCorrectNode() {
+        final RbelElement input = rbelConverter.convertElement("""
+            <?xml version="1.0"?>
+            <rootNode>
+                <toBeRendered tgrIf="1 != 5">yes!</toBeRendered>
+                <notToBeRendered tgrIf="10 == 5">NOOOO!</notToBeRendered>
+            </rootNode>
+            """, null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
-            .and("<?xml version=\"1.0\"?>\n"
-                + "<rootNode>\n"
-                + "    <toBeRendered>yes!</toBeRendered>\n"
-                + "</rootNode>")
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent()))
+            .and("""
+                <?xml version="1.0"?>
+                <rootNode>
+                    <toBeRendered>yes!</toBeRendered>
+                </rootNode>
+                """)
+            .ignoreWhitespace()
+            .areIdentical();
+    }
+
+    @SneakyThrows
+    @Test
+    void tgrIfAsTagInXml_shouldOnlyRenderCorrectNode() {
+        final RbelElement input = rbelConverter.convertElement("""
+            <?xml version="1.0"?>
+            <rootNode>
+                <toBeRendered><tgrIf>1 != 5</tgrIf>yes!</toBeRendered>
+                <notToBeRendered><tgrIf>10 == 5</tgrIf>NOOOO!</notToBeRendered>
+            </rootNode>
+            """, null);
+
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent()))
+            .and("""
+                <?xml version="1.0"?>
+                <rootNode>
+                    <toBeRendered>yes!</toBeRendered>
+                </rootNode>
+                """)
             .ignoreWhitespace()
             .areIdentical();
     }
@@ -71,18 +98,22 @@ class RbelContentTreeConverterTest {
     @SneakyThrows
     @Test
     void tgrForTagInXml_shouldIterateThroughLoop() {
-        final RbelElement input = rbelConverter.convertElement("<?xml version=\"1.0\"?>\n"
-            + "<rootNode>\n"
-            + "    <repeatedTag tgrFor=\"number : 1..3\">entry</repeatedTag>\n"
-            + "</rootNode>", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            <?xml version="1.0"?>
+            <rootNode>
+                <repeatedTag tgrFor="number : 1..3">entry</repeatedTag>
+            </rootNode>
+            """, null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
-            .and("<?xml version=\"1.0\"?>\n"
-                + "<rootNode>\n"
-                + "    <repeatedTag>entry</repeatedTag>\n"
-                + "    <repeatedTag>entry</repeatedTag>\n"
-                + "    <repeatedTag>entry</repeatedTag>\n"
-                + "</rootNode>")
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent()))
+            .and("""
+                <?xml version="1.0"?>
+                <rootNode>
+                    <repeatedTag>entry</repeatedTag>
+                    <repeatedTag>entry</repeatedTag>
+                    <repeatedTag>entry</repeatedTag>
+                </rootNode>
+                """)
             .ignoreWhitespace()
             .areIdentical();
     }
@@ -91,17 +122,19 @@ class RbelContentTreeConverterTest {
     @Test
     void tgrForTagWithContextInXml_shouldIterateThroughLoopAndPrintCounter() {
         final RbelElement input = rbelConverter.convertElement("<?xml version=\"1.0\"?>\n"
-            + "<rootNode>\n"
-            + "    <repeatedTag tgrFor=\"number : 5..7\">entry number ${number}</repeatedTag>\n"
-            + "</rootNode>", null);
+                                                               + "<rootNode>\n"
+                                                               + "    <repeatedTag tgrFor=\"number : 5..7\">entry number ${number}</repeatedTag>\n"
+                                                               + "</rootNode>", null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
-            .and("<?xml version=\"1.0\"?>\n"
-                + "<rootNode>\n"
-                + "    <repeatedTag>entry number 5</repeatedTag>\n"
-                + "    <repeatedTag>entry number 6</repeatedTag>\n"
-                + "    <repeatedTag>entry number 7</repeatedTag>\n"
-                + "</rootNode>")
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent()))
+            .and("""
+                <?xml version="1.0"?>
+                <rootNode>
+                    <repeatedTag>entry number 5</repeatedTag>
+                    <repeatedTag>entry number 6</repeatedTag>
+                    <repeatedTag>entry number 7</repeatedTag>
+                </rootNode>
+                """)
             .ignoreWhitespace()
             .areIdentical();
     }
@@ -109,15 +142,17 @@ class RbelContentTreeConverterTest {
     @SneakyThrows
     @Test
     void writeUrlWithParameters() {
-        final RbelElement input = rbelConverter.convertElement("{\n"
-            + "  \"tgrEncodeAs\": \"url\",\n"
-            + "  \"basicPath\": \"http://bluzb/fdsa\",\n"
-            + "  \"parameters\": {\n"
-            + "    \"foo\": \"bar\"\n"
-            + "  }\n"
-            + "}", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "tgrEncodeAs": "url",
+              "basicPath": "http://bluzb/fdsa",
+              "parameters": {
+                "foo": "bar"
+              }
+            }
+            """, null);
 
-        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
+        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
         assertThat(result).isEqualTo("http://bluzb/fdsa?foo=bar");
     }
 
@@ -126,7 +161,7 @@ class RbelContentTreeConverterTest {
     void writeJson() {
         final RbelElement input = rbelConverter.convertElement("{'foo':'bar'}".getBytes(), null);
 
-        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
+        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
         System.out.println(result);
         assertThatJson(result).isEqualTo("{'foo':'bar'}");
     }
@@ -137,7 +172,7 @@ class RbelContentTreeConverterTest {
         final String inputJson = "{\"foo\":[\"bar1\",\"bar2\"]}";
         final RbelElement input = rbelConverter.convertElement(inputJson.getBytes(), null);
 
-        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
+        final String result = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
         System.out.println(result);
         assertThatJson(result).isEqualTo(inputJson);
     }
@@ -145,16 +180,20 @@ class RbelContentTreeConverterTest {
     @SneakyThrows
     @Test
     void mixJsonInXml() {
-        final RbelElement input = rbelConverter.convertElement("<?xml version=\"1.0\"?>\n"
-            + "<rootNode>\n"
-            + "    <toBeRendered tgrIf=\"1 != 5\">{\"foo\": \"bar\"}</toBeRendered>\n"
-            + "</rootNode>", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            <?xml version="1.0"?>
+            <rootNode>
+                <toBeRendered tgrIf="1 != 5">{"foo": "bar"}</toBeRendered>
+            </rootNode>
+            """, null);
 
-        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext())))
-            .and("<?xml version=\"1.0\"?>\n"
-                + "<rootNode>\n"
-                + "    <toBeRendered>{\"foo\": \"bar\"}</toBeRendered>\n"
-                + "</rootNode>")
+        XmlAssert.assertThat(new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent()))
+            .and("""
+                <?xml version="1.0"?>
+                <rootNode>
+                    <toBeRendered>{"foo": "bar"}</toBeRendered>
+                </rootNode>
+                """)
             .ignoreWhitespace()
             .areIdentical();
     }
@@ -162,54 +201,57 @@ class RbelContentTreeConverterTest {
     @SneakyThrows
     @Test
     void forLoopWithComplexIterable() {
-        final RbelElement input = rbelConverter.convertElement(
-            "<?xml version=\"1.0\"?>\n"
-                + "<body>\n"
-                + "    <blub>\n"
-                + "        <blub>\n"
-                + "            <tgrFor>person : persons</tgrFor>\n"
-                + "            <name>${person.name}</name>\n"
-                + "            <age>${person.age}</age>\n"
-                + "        </blub>\n"
-                + "        <blab tgrFor=\"number : 1..3\">\n"
-                + "            <someInteger>${number}</someInteger>\n"
-                + "        </blab>\n"
-                + "    </blub>\n"
-                + "    <schmub tgrIf=\"1 &lt; 5\" logic=\"still applies\" />\n"
-                + "</body>", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            <?xml version="1.0"?>
+            <body>
+                <blub>
+                    <blub>
+                        <tgrFor>person : persons</tgrFor>
+                        <name>${person.name}</name>
+                        <age>${person.age}</age>
+                    </blub>
+                    <blab tgrFor="number : 1..3">
+                        <someInteger>${number}</someInteger>
+                    </blab>
+                </blub>
+                <schmub tgrIf="1 &lt; 5" logic="still applies" />
+            </body>
+            """, null);
 
         TigerGlobalConfiguration.putValue("persons.0.name", "klaus");
         TigerGlobalConfiguration.putValue("persons.0.age", "52");
         TigerGlobalConfiguration.putValue("persons.1.name", "dieter");
         TigerGlobalConfiguration.putValue("persons.1.age", "42");
 
-        final String output = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
+        final String output = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
         System.out.println("\n\n\n" + output);
 
         XmlAssert.assertThat(output)
-            .and("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "<body> \n"
-                + "  <blub> \n"
-                + "    <blub> \n"
-                + "      <name>klaus</name>  \n"
-                + "      <age>52</age> \n"
-                + "    </blub>\n"
-                + "    <blub> \n"
-                + "      <name>dieter</name>  \n"
-                + "      <age>42</age> \n"
-                + "    </blub>  \n"
-                + "    <blab> \n"
-                + "      <someInteger>1</someInteger> \n"
-                + "    </blab>\n"
-                + "    <blab> \n"
-                + "      <someInteger>2</someInteger> \n"
-                + "    </blab>\n"
-                + "    <blab> \n"
-                + "      <someInteger>3</someInteger> \n"
-                + "    </blab> \n"
-                + "  </blub>  \n"
-                + "  <schmub logic=\"still applies\"></schmub> \n"
-                + "</body>")
+            .and("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <body>\s
+                  <blub>\s
+                    <blub>\s
+                      <name>klaus</name> \s
+                      <age>52</age>\s
+                    </blub>
+                    <blub>\s
+                      <name>dieter</name> \s
+                      <age>42</age>\s
+                    </blub> \s
+                    <blab>\s
+                      <someInteger>1</someInteger>\s
+                    </blab>
+                    <blab>\s
+                      <someInteger>2</someInteger>\s
+                    </blab>
+                    <blab>\s
+                      <someInteger>3</someInteger>\s
+                    </blab>\s
+                  </blub> \s
+                  <schmub logic="still applies"></schmub>\s
+                </body>
+                """)
             .ignoreWhitespace()
             .areSimilar();
     }
@@ -217,22 +259,131 @@ class RbelContentTreeConverterTest {
     @SneakyThrows
     @Test
     void modeSwitchJsonInXml() {
-        final RbelElement input = rbelConverter.convertElement("<?xml version=\"1.0\"?>\n"
-            + "<rootNode>\n"
-            + "    <toBeRendered tgrFor=\"number : 1..3\"><foo tgrEncodeAs=\"json\">${number}</foo></toBeRendered>\n"
-            + "</rootNode>", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            <?xml version="1.0"?>
+            <rootNode>
+                <toBeRendered tgrFor="number : 1..3"><foo tgrEncodeAs="json">${number}</foo></toBeRendered>
+            </rootNode>
+            """, null);
 
-        final String output = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()));
+        final String output = new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
         System.out.println(output);
         XmlAssert.assertThat(output)
-            .and("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "\n"
-                + "<rootNode> \n"
-                + "  <toBeRendered>{\"foo\": \"1\"}</toBeRendered>\n"
-                + "  <toBeRendered>{\"foo\": \"2\"}</toBeRendered>\n"
-                + "  <toBeRendered>{\"foo\": \"3\"}</toBeRendered> \n"
-                + "</rootNode>\n")
+            .and("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                                
+                <rootNode>\s
+                  <toBeRendered>{"foo": "1"}</toBeRendered>
+                  <toBeRendered>{"foo": "2"}</toBeRendered>
+                  <toBeRendered>{"foo": "3"}</toBeRendered>\s
+                </rootNode>
+                """)
             .ignoreWhitespace()
             .areIdentical();
+    }
+
+    @SneakyThrows
+    @Test
+    void tgrIfTagInJson_shouldOnlyRenderCorrectNode() {
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "toBeRendered" : {
+                "tgrIf": "1 != 5",
+                "this": "should appear"
+              },
+              "notToBeRendered" : {
+                "tgrIf": "1 == 5",
+                "this": "should NOT appear"
+              }
+            }
+            """, null);
+
+        JSONAssert.assertEquals("""
+                {
+                  "toBeRendered" : {
+                    "this": "should appear"
+                  }
+                }
+                """,
+            new String(new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent()),
+            false);
+    }
+
+    @SneakyThrows
+    @Test
+    void referenceContextElementInTgrIfExpression_shouldBeFound() {
+        final RbelElement contextElement = rbelConverter.convertElement(
+            readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/getRequest.curl"),
+            null);
+
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "toBeRendered" : {
+                "tgrIf": "$.header.Connection == 'Keep-Alive'",
+                "this": "should appear"
+              }
+            }
+            """, null);
+
+        final String serializedElement = new String(
+            new RbelWriter(rbelConverter)
+                .serialize(input, new TigerJexlContext()
+                    .withRootElement(contextElement))
+                .getContent());
+        JSONAssert.assertEquals("""
+            {
+              "toBeRendered" : {
+                "this": "should appear"
+              }
+            }
+            """, serializedElement, false);
+    }
+
+    @SneakyThrows
+    @Test
+    void explicitlySetNodeToPrimitive_shouldBeHonored() {
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "primitiveValue" : {
+                "tgrAttributes": ["jsonPrimitive"],
+                "value": 12345
+              }
+            }
+            """, null);
+
+        final String serializedElement = new String(
+            new RbelWriter(rbelConverter)
+                .serialize(input, new TigerJexlContext())
+                .getContent());
+        System.out.println(serializedElement);
+        JSONAssert.assertEquals("""
+            {
+              "primitiveValue" : 12345
+            }""", serializedElement, false);
+    }
+
+    @SneakyThrows
+    @ParameterizedTest
+    @CsvSource({"\"12345\", 12345",
+        "\"true\", true",
+        "\"12.345\", 12.345",
+        "\"-54321\", -54321"})
+    void explicitlySetNodeToNonStringPrimitive_shouldBeHonored(String placeholder, String result) {
+        final RbelElement input = rbelConverter
+            .convertElement("{\n" +
+                            "  \"primitiveValue\" : {\n" +
+                            "    \"tgrAttributes\": [\"jsonNonStringPrimitive\"],\n" +
+                            "    \"value\": " + placeholder + "\n" +
+                            "  }\n" +
+                            "}\n", null);
+
+        final String serializedElement = new String(
+            new RbelWriter(rbelConverter)
+                .serialize(input, new TigerJexlContext())
+                .getContent());
+        System.out.println(serializedElement);
+        JSONAssert.assertEquals(
+            "{\"primitiveValue\": " + result + "}",
+            serializedElement, false);
     }
 }

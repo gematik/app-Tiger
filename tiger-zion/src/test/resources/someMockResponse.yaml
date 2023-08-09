@@ -3,8 +3,6 @@ requestCriterions:
   - message.url =~ '.*/specificEndpoint'
 response:
   statusCode: 203
-  headers:
-    content-type: application/json
   body: '{
           "authorizedUser": "?{$.body.body.username.content}"
         }'

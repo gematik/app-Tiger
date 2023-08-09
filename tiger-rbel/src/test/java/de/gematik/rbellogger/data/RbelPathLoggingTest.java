@@ -16,31 +16,23 @@
 
 package de.gematik.rbellogger.data;
 
-import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelOptions;
-import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-import java.io.File;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.slf4j.LoggerFactory;
+
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class RbelPathLoggingTest {
 
@@ -49,6 +41,7 @@ class RbelPathLoggingTest {
 
     @BeforeEach
     public void setUp() throws IOException {
+        // needed to be able to parse the logging stream for corresponding messages expected in test runs
         RbelOptions.activateRbelPathDebugging();
         jwtMessage = extractMessage("rbelPath.curl");
         xmlMessage = extractMessage("xmlMessage.curl");

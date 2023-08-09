@@ -62,7 +62,7 @@ public class RbelJsonSerializer implements RbelSerializer {
             }
             return new String(node.getContent(), node.getCharset());
         } else {
-            return new String(rbelWriter.renderTree(node), node.getCharset());
+            return new String(rbelWriter.renderTree(node).getContent(), node.getCharset());
         }
     }
 

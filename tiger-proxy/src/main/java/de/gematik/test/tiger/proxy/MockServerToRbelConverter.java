@@ -33,7 +33,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Arrays;
-import org.mockserver.model.*;
+import org.mockserver.model.Header;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -83,16 +85,6 @@ public class MockServerToRbelConverter {
         }
 
         return element;
-    }
-
-    private RbelHostname convertSocketAdress(SocketAddress clientAddress) {
-        if (clientAddress == null) {
-            return null;
-        }
-        return RbelHostname.builder()
-            .hostname(clientAddress.getHost())
-            .port(clientAddress.getPort())
-            .build();
     }
 
     private RbelHostname convertUri(String protocolAndHost) {
@@ -155,16 +147,7 @@ public class MockServerToRbelConverter {
 
         if (request.getQueryStringParameters() != null
             && request.getQueryStringParameters().getEntries() != null) {
-            StringJoiner queryParameterJoiner = new StringJoiner("&");
-            for (Parameter param : request.getQueryStringParameters().getEntries()) {
-                for (NottableString value : param.getValues()) {
-                    StringJoiner parameterJoiner = new StringJoiner("=");
-                    parameterJoiner.add(param.getName().toString());
-                    parameterJoiner.add(value.toString());
-                    queryParameterJoiner.add(parameterJoiner.toString());
-                }
-            }
-            pathToQueryJoiner.add(queryParameterJoiner.toString());
+            pathToQueryJoiner.add(request.getQueryStringParameters().getRawParameterString());
         }
 
         return pathToQueryJoiner.toString();

@@ -278,7 +278,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         return Optional.ofNullable(configuration.getStartupTimeoutSec());
     }
 
-    void addServerToLocalProxyRouteMap(URL url) {
+    public void addServerToLocalProxyRouteMap(URL url) {
         addRoute(TigerRoute.builder()
             .from(TigerTestEnvMgr.HTTP + getHostname())
             .to(extractBaseUrl(url))

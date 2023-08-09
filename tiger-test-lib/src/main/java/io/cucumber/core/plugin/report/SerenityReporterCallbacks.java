@@ -172,6 +172,8 @@ public class SerenityReporterCallbacks {
         // TGR
         if (context.isAScenarioOutline()) {
             currentScenarioDataVariantIndex++;
+        } else {
+            currentScenarioDataVariantIndex = -1;
         }
         currentStepIndex = 0;
         Optional<Feature> currentFeature = featureFrom(context.currentFeaturePath());

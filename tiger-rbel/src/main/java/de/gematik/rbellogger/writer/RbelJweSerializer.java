@@ -20,16 +20,13 @@ import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.security.Key;
-import java.security.Security;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jwe.JsonWebEncryption;
-import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
 
 public class RbelJweSerializer implements RbelSerializer {
@@ -50,7 +47,7 @@ public class RbelJweSerializer implements RbelSerializer {
 
         jwe.setPlaintext(rbelWriter.renderTree(
             node.childNode("body")
-                .orElseThrow(() -> new RbelSerializationException("Could not find body-node needed for JWT serialization in node '" + node.getKey() + "'!"))));
+                .orElseThrow(() -> new RbelSerializationException("Could not find body-node needed for JWT serialization in node '" + node.getKey() + "'!"))).getContent());
         jwe.setKey(findSignerKey(node.childNode("encryptionInfo"), rbelWriter));
 
         try {
@@ -67,7 +64,7 @@ public class RbelJweSerializer implements RbelSerializer {
         return signature.get().childNode("decryptedUsingKeyWithId")
             .map(RbelContentTreeNode::getContentAsString)
             .map(keyName -> rbelWriter.getRbelKeyManager().findKeyByName(keyName)
-                .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("prk_" + keyName))
+                .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("puk_" + keyName))
                 .orElseThrow(() -> new RbelSerializationException("Could not find key named '" + keyName + "'!")))
             .map(RbelKey::getKey)
             .or(() -> signature.get().childNode("decryptedUsingKey")
@@ -85,10 +82,10 @@ public class RbelJweSerializer implements RbelSerializer {
             .forEach(header -> {
                 if (RbelJsonSerializer.isJsonArray(header)) {
                     jwe.setHeader(header.getKey(), header.childNodes().stream()
-                        .map(childNode -> new String(rbelWriter.renderTree(childNode), childNode.getCharset()))
+                        .map(childNode -> new String(rbelWriter.renderTree(childNode).getContent(), childNode.getCharset()))
                         .collect(Collectors.toList()));
                 } else {
-                    jwe.setHeader(header.getKey(), new String(rbelWriter.renderTree(header), header.getCharset()));
+                    jwe.setHeader(header.getKey(), new String(rbelWriter.renderTree(header).getContent(), header.getCharset()));
                 }
             });
     }

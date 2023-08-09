@@ -16,9 +16,6 @@
 
 package de.gematik.test.tiger.common.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,18 +25,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
-import java.io.File;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
+import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +37,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
 public class TigerConfigurationTest {
 
@@ -460,6 +462,34 @@ public class TigerConfigurationTest {
     }
 
     @Test
+    void skipEvaluation_shouldWork() {
+        TigerGlobalConfiguration.reset();
+        final String jexlExpression = "!{'jo'=='ja'}";
+        TigerGlobalConfiguration.readFromYaml("""
+        blub:
+            skipString: "!{'jo'=='ja'}"
+            directString: "!{'jo'=='ja'}"
+            skipList:
+            - "!{'jo'=='ja'}"
+            directList:
+            - "!{'jo'=='ja'}"
+            skipMap:
+                entry: "!{'jo'=='ja'}"
+            directMap:
+                entry: "!{'jo'=='ja'}"
+        """);
+        var bean = TigerGlobalConfiguration.instantiateConfigurationBean(EvaluationSkippingTestClass.class, "blub").get();
+        assertThat(bean.getSkipString()).isEqualTo(jexlExpression);
+        assertThat(bean.getDirectString()).isEqualTo("false");
+
+        assertThat(bean.getSkipList().get(0)).isEqualTo(jexlExpression);
+        assertThat(bean.getDirectList().get(0)).isEqualTo("false");
+
+        assertThat(bean.getSkipMap().get("entry")).isEqualTo(jexlExpression);
+        assertThat(bean.getDirectMap().get("entry")).isEqualTo("false");
+    }
+
+    @Test
     void shouldParseJava8Date() {
         TigerGlobalConfiguration.reset();
         TigerGlobalConfiguration.readFromYaml("users.blub: 2007-12-24T18:21Z");
@@ -571,15 +601,15 @@ public class TigerConfigurationTest {
     @Test
     void readWithTigerConfiguration() {
         TigerGlobalConfiguration.readFromYaml(
-            FileUtils.readFileToString(
-                new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
-            "tiger");
+                FileUtils.readFileToString(
+                        new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
+                "tiger");
         assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
-            .get()
-            .extracting(TestCfg::getTemplates)
-            .asList()
-            .extracting("templateName")
-            .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
+                .get()
+                .extracting(TestCfg::getTemplates)
+                .asList()
+                .extracting("templateName")
+                .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
     }
 
     @SneakyThrows
@@ -614,21 +644,6 @@ public class TigerConfigurationTest {
                 assertThat(TigerGlobalConfiguration.readString("${give.me.foo}.int"))
                     .isEqualTo("1234");
             });
-    }
-
-    @Test
-    void localScopedValues() {
-        TigerGlobalConfiguration.reset();
-        assertThat(TigerGlobalConfiguration.readStringOptional("secret.key"))
-            .isEmpty();
-
-        TigerGlobalConfiguration.localScope()
-            .withValue("secret.key", "secretValue")
-            .execute(() -> assertThat(TigerGlobalConfiguration.readString("secret.key"))
-                .isEqualTo("secretValue"));
-
-        assertThat(TigerGlobalConfiguration.readStringOptional("secret.key"))
-            .isEmpty();
     }
 
     @Test
@@ -838,6 +853,24 @@ public class TigerConfigurationTest {
                     .isEqualTo("123"));
     }
 
+    @SneakyThrows
+    @Test
+    void readWithTigerConfigurationAndRemoveOneValue() {
+        TigerGlobalConfiguration.readFromYaml(
+                FileUtils.readFileToString(
+                        new File("../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
+                "tiger");
+        assertThat(TigerGlobalConfiguration.readString("tiger.templates.0.type")).isEqualTo("docker");
+        TigerGlobalConfiguration.listSources().forEach(source -> source.removeValue(
+                        new TigerConfigurationKey("tiger", "templates", "0", "type")
+                )
+        );
+        assertThatThrownBy(() ->TigerGlobalConfiguration.readString("tiger.templates.0.type"))
+                .isInstanceOf(TigerConfigurationException.class)
+                .hasMessage("Could not find value for 'tiger.templates.0.type'");
+    }
+
+
     @Data
     @Builder
     public static class DummyBean {
@@ -883,5 +916,20 @@ public class TigerConfigurationTest {
         private String password;
         private LocalDate blub;
         private List<String> roles;
+    }
+
+    @Data
+    @Builder
+    public static class EvaluationSkippingTestClass {
+
+        @TigerSkipEvaluation
+        private String skipString;
+        private String directString;
+        @TigerSkipEvaluation
+        private List<String> skipList;
+        private List<String> directList;
+        @TigerSkipEvaluation
+        private Map<String, String> skipMap;
+        private Map<String, String> directMap;
     }
 }

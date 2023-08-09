@@ -18,21 +18,23 @@ class RbelJwtWriterTests {
 
     @Test
     void testSimpleJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("{\n"
-            + "  \"tgrEncodeAs\":\"JWT\",\n"
-            + "  \"header\":{\n"
-            + "    \"alg\": \"BP256R1\",\n"
-            + "    \"typ\": \"JWT\"\n"
-            + "  },\n"
-            + "  \"body\":{\n"
-            + "    \"sub\": \"1234567890\",\n"
-            + "    \"name\": \"John Doe\",\n"
-            + "    \"iat\": 1516239022\n"
-            + "  },\n"
-            + "  \"signature\":{\n"
-            + "    \"verifiedUsing\":\"idpEnc\"\n"
-            + "  }\n"
-            + "}", null);
+        final RbelElement input = rbelConverter.convertElement("""
+            {
+              "tgrEncodeAs":"JWT",
+              "header":{
+                "alg": "BP256R1",
+                "typ": "JWT"
+              },
+              "body":{
+                "sub": "1234567890",
+                "name": "John Doe",
+                "iat": 1516239022
+              },
+              "signature":{
+                "verifiedUsing":"puk_idpEnc"
+              }
+            }
+            """, null);
 
         var output = serializeElement(input);
 
@@ -44,7 +46,10 @@ class RbelJwtWriterTests {
 
     @Test
     void roundTripJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0.eyJzdWIiOiAiMTIzNDU2Nzg5MCIsIm5hbWUiOiAiSm9obiBEb2UiLCJpYXQiOiAxNTE2MjM5MDIyfQ.XqVOo3RGw8eBjpDJtw7NVTRW5Io5BTQ9MiW4QVxhy5943glx3TFvkMqCvEtiuQDxpJwsrXMmkmUemBaZr1qzFw", null);
+        final RbelElement input = rbelConverter.convertElement("eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0"
+                                                               + ".eyJzdWIiOiAiMTIzNDU2Nzg5MCIsIm5hbWUiOiAiSm9obiBEb2UiLCJpYXQiOiAxNTE2MjM5MDIyfQ"
+                                                               + ".XqVOo3RGw8eBjpDJtw7NVTRW5Io5BTQ9MiW4QVxhy5943glx3TFvkMqCvEtiuQDxpJwsrXMmkmUemBaZr1qzFw",
+            null);
 
         var output = serializeElement(input);
 
@@ -56,7 +61,7 @@ class RbelJwtWriterTests {
 
     private RbelElement serializeElement(RbelElement input) {
         return rbelConverter.convertElement(
-            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()),
+            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent(),
             null);
     }
 }
