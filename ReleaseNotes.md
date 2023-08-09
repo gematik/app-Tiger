@@ -48,6 +48,14 @@
   * @When("TGR set default headers:")
   * @Then("TGR setze folgende default headers:")
   * @When("TGR folgende default headers gesetzt werden:")
+* TGR-1027: Extend tiger glue code and inline jexl to enable eRp Migration
+  * new step to print out the value of a stored variable 
+    * @Dann("TGR gebe variable {string} aus")
+    * @Then("TGR print variable {string}")
+  * new inline jexl methods:
+    * resolve(string) -> string : resolves all placeholders and jexl expression in string. Very useful in combination with the file() method
+    * randomHex(int size) -> string : produces a random hex string with size characters
+    * currentLocalDate() -> string : produces a string of format YYYY-MM-DD of today
 
 -------
 * Serenity BDD 3.6.23
