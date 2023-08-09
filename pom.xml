@@ -35,7 +35,7 @@
         <version.json-unit>2.38.0</version.json-unit>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.9.3</version.junit5>
-        <version.logback>1.4.8</version.logback>
+        <version.logback>1.4.9</version.logback>
         <version.lombok>1.18.28</version.lombok>
         <version.maven>3.9.2</version.maven>
         <version.maven.failsafe>3.1.2</version.maven.failsafe>
