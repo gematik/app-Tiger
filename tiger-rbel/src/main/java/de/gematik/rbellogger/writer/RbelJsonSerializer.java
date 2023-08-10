@@ -7,9 +7,9 @@ package de.gematik.rbellogger.writer;
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.rbellogger.writer.tree.RbelJsonElementToNodeConverter;
-import java.util.StringJoiner;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+
+import java.util.StringJoiner;
 
 @Slf4j
 public class RbelJsonSerializer implements RbelSerializer {
@@ -20,7 +20,14 @@ public class RbelJsonSerializer implements RbelSerializer {
     }
 
     public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-        if (isPrimitive(node) || !node.hasTypeOptional(RbelContentType.JSON).orElse(true)) {
+        if (isJsonArray(node)) {
+            StringJoiner joiner = new StringJoiner(",");
+            for (RbelContentTreeNode childNode : node.childNodes()) {
+                joiner.add(renderToString(childNode, rbelWriter));
+            }
+            return "[" + joiner + "]";
+
+        } else if (isPrimitive(node) || !node.hasTypeOptional(RbelContentType.JSON).orElse(true)) {
             if (isStringPrimitive(node)) {
                 return "\"" + getStringContentForNode(node, rbelWriter) + "\"";
             } else {
@@ -32,14 +39,8 @@ public class RbelJsonSerializer implements RbelSerializer {
                 joiner.add("\"" + childNode.getKey() + "\": " + renderToString(childNode, rbelWriter));
             }
             return "{" + joiner + "}";
-        } else if (isJsonArray(node)) {
-            StringJoiner joiner = new StringJoiner(",");
-            for (RbelContentTreeNode childNode : node.childNodes()) {
-                joiner.add(renderToString(childNode, rbelWriter));
-            }
-            return "[" + joiner + "]";
         } else {
-            throw new RuntimeException();
+            throw new RbelSerializationException("Failed to serialize the node: " + node);
         }
     }
 

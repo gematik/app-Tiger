@@ -18,6 +18,10 @@
     * subStringBefore(string) -> string
     * subStringAfter(string) -> string
 
+## Bugfixes
+
+* TGR-1028: Fixed bug where the RbelWriter did not serialize an empty json array correctly.
+
 
 -------
 * Serenity BDD 3.6.23
