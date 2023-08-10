@@ -1,4 +1,23 @@
-# Changelog Tiger Testplattform
+# Changelog Tiger Test platform
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.1.0
+* Logback 1.4.8
+
+# Release 2.1.4
+
+## Features
+
+* TGR-1027(2): Extend inline jexl to enable eRp Migration
+    * getValue(string) -> string : returns the value of the given variable name. This is extremely helpful for variables with multiline content, where using ${variable} would break the JEXL parsing
+    * subStringBefore(string) -> string
+    * subStringAfter(string) -> string
+
 
 -------
 * Serenity BDD 3.6.23
