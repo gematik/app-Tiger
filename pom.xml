@@ -38,6 +38,7 @@
         <version.logback>1.4.8</version.logback>
         <version.lombok>1.18.28</version.lombok>
         <version.maven>3.9.2</version.maven>
+        <version.maven-deploy-plugin>3.1.1</version.maven-deploy-plugin>
         <version.maven.failsafe>3.1.2</version.maven.failsafe>
         <version.maven.surefire>3.1.0</version.maven.surefire>
         <version.maven-plugin-tools>3.9.0</version.maven-plugin-tools>
@@ -114,17 +115,6 @@
             <organizationUrl>https://www.gematik.de/</organizationUrl>
         </developer>
     </developers>
-
-    <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <url>${releaseDeploymentRepository}</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <url>${snapshotDeploymentRepository}</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <repositories>
         <repository>
@@ -479,6 +469,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${version.maven-deploy-plugin}</version>
+                </plugin>
                 <plugin>
                     <groupId>net.serenity-bdd.maven.plugins</groupId>
                     <artifactId>serenity-maven-plugin</artifactId>
