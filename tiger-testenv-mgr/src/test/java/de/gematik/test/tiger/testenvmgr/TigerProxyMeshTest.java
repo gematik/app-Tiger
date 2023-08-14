@@ -4,22 +4,25 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.util.concurrent.TimeUnit;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @Slf4j
 @Getter
@@ -28,12 +31,14 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     /**
      * This is a very unfortunate hack: Even after extensive analysis these tests failed on repeated execution on only a handful systems.
-     * To get the tests running stable this is the measure we took.
+     * To get the tests running stable this is the measure we took:
+     *   for the tests where we let the socket timeout we wait at the start and at the end
+     *   of the test method 4 seconds
      * Note: The conditions for the error to occur (repeated restarting of a testenv-mgr with the given setup in the SAME JVM) seems
      * extremely rare and should never happen in production. This is a hack, but a carefully deliberated one.
      */
-    private void waitAtStart() {
-        await().pollDelay(2, TimeUnit.SECONDS).until(() -> true);
+    private void waitShortTime() {
+        await().pollDelay(4, TimeUnit.SECONDS).until(() -> true);
     }
 
     @Test
@@ -68,7 +73,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "      proxiedServer: winstone\n"
         + "      proxyPort: ${free.port.5}\n")
     void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
-        waitAtStart();
+        waitShortTime();
         final String path = "/foobarschmar";
 
         HttpResponse<String> response = Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path).asString();
@@ -128,7 +133,6 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "      proxiedServer: winstone\n"
         + "      proxyPort: ${free.port.17}\n")
     void testWithMultipleUpstreamProxies(TigerTestEnvMgr envMgr) {
-        waitAtStart();
         assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory())
             .isEmpty();
 
@@ -172,7 +176,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "        hostname: localhost\n"
         + "        port: ${free.port.26}\n")
     void testDirectReverseProxyMeshSetup_withoutResponse(TigerTestEnvMgr envMgr) {
-        waitAtStart();
+        waitShortTime();
         try (Socket clientSocket = new Socket("localhost",
             TigerGlobalConfiguration.readIntegerOptional("free.port.25").get());
             ServerSocket serverSocket = new ServerSocket(TigerGlobalConfiguration.readIntegerOptional("free.port.26").get())) {
@@ -188,6 +192,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                 .until(() ->
                     envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size() >= 1);
         }
+        waitShortTime();
     }
 
     @SneakyThrows
@@ -217,7 +222,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         + "        hostname: localhost\n"
         + "        port: ${free.port.36}\n")
     void testDirectReverseProxyMeshSetup_withResponse(TigerTestEnvMgr envMgr) {
-        waitAtStart();
+        waitShortTime();
         try (Socket clientSocket = new Socket("127.0.0.1",
             Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.35}")))) {
             clientSocket.setSoTimeout(1);
@@ -227,5 +232,6 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                 .until(() ->
                     envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size() >= 1);
         }
+        waitShortTime();
     }
 }
