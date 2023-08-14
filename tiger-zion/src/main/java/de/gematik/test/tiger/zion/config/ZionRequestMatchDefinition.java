@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.zion.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
@@ -42,7 +43,9 @@ import static de.gematik.test.tiger.zion.config.ZionRequestMatchDefinition.PathM
 public class ZionRequestMatchDefinition {
     private String path;
     private String method;
-    @Getter(AccessLevel.NONE)
+            @Getter(AccessLevel.NONE) //Set to none so that no getter is generated for it, and the access is made exclusively with extractAdditionalCriteria()
+   @JsonProperty //JsonProperty is here to still be able to serialize the field
+            // since in de.gematik.test.tiger.ZionServerType.performStartup it gets serialized into json before being passed into the ZionApplication.
     @Builder.Default
     private List<String> additionalCriterions = new ArrayList<>();
 

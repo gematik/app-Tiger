@@ -22,6 +22,7 @@
 
 * TGR-1028: Fixed bug where the RbelWriter did not serialize an empty json array correctly.
 * TGR-1029: Fixed bug where rewriting of Location headers on redirects would remove other headers from the response.
+* TGR-1032: Fixed a bug where `additionalCriterions` of a Zion mock response was not correctly serialized into the zion configuration properties.
 
 
 -------
