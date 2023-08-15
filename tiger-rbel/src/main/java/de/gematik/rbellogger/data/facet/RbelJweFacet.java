@@ -4,23 +4,21 @@
 
 package de.gematik.rbellogger.data.facet;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
-import static j2html.TagCreator.div;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-
-import java.util.List;
-import java.util.Optional;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
+
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
+import static j2html.TagCreator.div;
 
 @Data
 @Builder(toBuilder = true)
@@ -37,18 +35,23 @@ public class RbelJweFacet implements RbelFacet {
             @Override
             public ContainerTag performRendering(RbelElement element, Optional<String> key,
                                                  RbelHtmlRenderingToolkit renderingToolkit) {
+                RbelElement jweHeader = element.getFacetOrFail(RbelJweFacet.class).getHeader();
+                RbelElement jweBody = element.getFacetOrFail(RbelJweFacet.class).getBody();
                 return div(t1ms("JWE").with(showContentButtonAndDialog(element, renderingToolkit)))
                     .with(addNotes(element, "mb-5"))
                     .with(ancestorTitle().with(
                             vertParentTitle().with(
                                 childBoxNotifTitle(CLS_HEADER)
-                                    .with(t2("Headers"))
-                                    .with(addNotes(element.getFacetOrFail(RbelJweFacet.class).getHeader()))
-                                    .with(renderingToolkit.convert(element.getFacetOrFail(RbelJweFacet.class).getHeader())),
+                                        .with(t2("Headers")
+                                                .with(showContentButtonAndDialog(jweHeader, renderingToolkit))
+                                                .with(addNotes(jweHeader))
+                                                .with(renderingToolkit.convert(jweHeader))),
                                 childBoxNotifTitle(CLS_BODY)
-                                    .with(t2("Body"))
-                                    .with(addNotes(element.getFacetOrFail(RbelJweFacet.class).getBody()))
-                                    .with(renderingToolkit.convert(element.getFacetOrFail(RbelJweFacet.class).getBody())),
+                                        .with(t2("Body")
+                                                .with(showContentButtonAndDialog(jweBody, renderingToolkit))
+                                                .with(addNotes(jweBody))
+                                        )
+                                        .with(renderingToolkit.convert(jweBody)),
                                 renderingToolkit.convert(element.getFacetOrFail(RbelJweFacet.class).getEncryptionInfo())
                             )
                         )

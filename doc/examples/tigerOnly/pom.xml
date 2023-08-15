@@ -10,20 +10,22 @@
 
     <groupId>de.gematik.test.tiger.examples</groupId>
     <artifactId>TigerTestBDD</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
 
+        <version.junit5>5.9.3</version.junit5>
+        <version.maven.failsafe>3.1.2</version.maven.failsafe>
+        <version.serenity.core>3.3.10</version.serenity.core>
         <!-- please adapt Tiger version property to the most current one obtained from -->
         <!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
-        <version.tiger>1.1.1</version.tiger>
-        <version.serenity.core>3.3.10</version.serenity.core>
+        <version.tiger>2.1.3</version.tiger>
     </properties>
 
     <!-- tag::dependencies[] -->
@@ -34,20 +36,20 @@
             <version>${version.tiger}</version>
         </dependency>
         <!-- Optional if you have JUnit5 dependencies
-        but use JUnit4 for your driver classes
+        but use JUnit4 for your driver classes-->
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>${version.junit5}}</version>
+            <version>${version.junit5}</version>
         </dependency>
-        -->
         <!-- needed for the JUnit driver class @CucumberOptions annotation -->
-        <dependency>
+        <!--<dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-cucumber</artifactId>
             <version>${version.serenity.core}</version>
             <scope>test</scope>
         </dependency>
+        -->
     </dependencies>
     <!-- end::dependencies[] -->
 
