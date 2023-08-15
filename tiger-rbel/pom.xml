@@ -14,8 +14,6 @@
     <properties>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
-
-        <version.snakeyaml>1.33</version.snakeyaml>
     </properties>
 
     <dependencies>
