@@ -42,14 +42,6 @@
             <artifactId>junit-vintage-engine</artifactId>
             <version>${version.junit5}</version>
         </dependency>
-        <!-- needed for the JUnit driver class @CucumberOptions annotation -->
-        <!--<dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber</artifactId>
-            <version>${version.serenity.core}</version>
-            <scope>test</scope>
-        </dependency>
-        -->
     </dependencies>
     <!-- end::dependencies[] -->
 
