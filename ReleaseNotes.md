@@ -17,6 +17,21 @@
     * getValue(string) -> string : returns the value of the given variable name. This is extremely helpful for variables with multiline content, where using ${variable} would break the JEXL parsing
     * subStringBefore(string) -> string
     * subStringAfter(string) -> string
+* TGR-1039: support generation of JUnit5 driver classes by the Tiger maven plugin. For this a new property has been added to the configuration: ```<junit5Driver>true</junit5Driver>``` which will create driver classes based on Junit5. The following additional dependencies are needed for these:
+```xml
+ <dependency>
+    <groupId>org.junit.platform</groupId>
+    <artifactId>junit-platform-suite</artifactId>
+    <version>1.9.2</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-junit-platform-engine</artifactId>
+    <version>7.11.2</version>
+    <scope>test</scope>
+</dependency>
+```
 
 ## Bugfixes
 
