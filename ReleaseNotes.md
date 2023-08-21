@@ -9,7 +9,7 @@
 * Spring Boot 3.1.0
 * Logback 1.4.8
 
-# Release 2.1.4
+# Release 2.1.6
 
 ## Features
 
