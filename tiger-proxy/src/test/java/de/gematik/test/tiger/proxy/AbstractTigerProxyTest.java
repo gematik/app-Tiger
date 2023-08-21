@@ -16,26 +16,25 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
-import de.gematik.rbellogger.RbelOptions;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import java.nio.charset.StandardCharsets;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.bouncycastle.util.Arrays;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.netty.MockServer;
+
+import java.nio.charset.StandardCharsets;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @Slf4j
 
@@ -87,6 +86,12 @@ public abstract class AbstractTigerProxyTest {
             .respond(response()
                 .withStatusCode(301)
                 .withHeader("Location", "/deep/foobar"));
+        fakeBackendServerClient.when(request().withPath("/redirect/withAdditionalHeaders")
+                        .withMethod("GET"))
+                .respond(response()
+                        .withStatusCode(302)
+                        .withHeader("Location", "/redirect/foobar")
+                        .withHeader("additional-header", "test_value"));
 
         binaryMessageContent = Arrays.concatenate(
             "This is a meaningless string which will be binary content. And some more test chars: "

@@ -16,17 +16,9 @@
 
 package de.gematik.test.tiger.maven.usecases;
 
-import static java.util.Collections.emptyList;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import de.gematik.test.tiger.maven.adapter.mojos.GenerateDriverProperties;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.plugin.logging.Log;
@@ -36,6 +28,16 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import static java.util.Collections.emptyList;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
 class DriverGeneratorTest {
@@ -57,6 +59,7 @@ class DriverGeneratorTest {
             .glues(List.of("pck.of.glue1", "glue2.pck"))
             .driverPackage("fancy.pck.of.driver")
             .outputFolder(outputFolder)
+                .gluesCsv("")
             .driverClassName("Mops${ctr}IT")
             .templateFile(customTemplatePath)
             .build();
@@ -100,6 +103,7 @@ class DriverGeneratorTest {
         var props = GenerateDriverProperties.builder()
             .glues(emptyList())
             .outputFolder(outputFolder)
+                .gluesCsv("")
             .driverClassName("Mops${ctr}IT")
             .build();
 

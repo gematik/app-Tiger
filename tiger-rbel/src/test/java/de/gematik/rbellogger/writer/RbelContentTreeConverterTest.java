@@ -16,21 +16,24 @@
 
 package de.gematik.rbellogger.writer;
 
-import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
-import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.xmlunit.assertj.XmlAssert;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class RbelContentTreeConverterTest {
 
@@ -385,5 +388,20 @@ class RbelContentTreeConverterTest {
         JSONAssert.assertEquals(
             "{\"primitiveValue\": " + result + "}",
             serializedElement, false);
+    }
+
+    @Test
+    void testSerializationOfEmptyJsonArray() {
+
+        String jsonWithEmptyArray = """
+                {
+                  "hello": []
+                }
+                """;
+        RbelElement convertedRbelElement = rbelConverter.convertElement(jsonWithEmptyArray, null);
+
+        String serializedJson = new RbelWriter(rbelConverter).serialize(convertedRbelElement, new TigerJexlContext()).getContentAsString();
+
+        JSONAssert.assertEquals(jsonWithEmptyArray, serializedJson, JSONCompareMode.LENIENT);
     }
 }

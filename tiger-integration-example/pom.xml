@@ -9,7 +9,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>2.1.3</version>
+        <version>2.1.6</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -21,14 +21,18 @@
             <artifactId>tiger-test-lib</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- needed for support of junit5  driver classes -->
         <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber</artifactId>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <version>1.9.2</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <version>${version.junit5}</version>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${version.cucumber}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -41,6 +45,35 @@
                 <executions>
                     <execution>
                         <configuration>
+
+                            <!-- mandatory -->
+                            <glues>
+                                <glue>de.gematik.test.tiger.glue</glue>
+                                <!-- add your packages here -->
+                            </glues>
+                            <!-- optional -->
+                            <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
+                            <!-- optional -->
+                            <includes>
+                                <include>**/*.feature</include>
+                            </includes>
+                            <!-- optional -->
+                            <driverPackage>
+                                de.gematik.test.tiger.examples.bdd.drivers
+                            </driverPackage>
+                            <!-- optional -->
+                            <!--suppress UnresolvedMavenProperty -->
+                            <driverClassName>Driver${ctr}IT</driverClassName>
+                            <!-- optional, defaults to the templated located at
+                            /src/main/resources/driverClassTemplate.jtmpl
+                            in the tiger-maven-plugin module.
+                            Use separate template file if you have spring boot apps to test
+                            or need to do some more fancy set up stuff.
+                            -->
+                            <junit5Driver>true</junit5Driver>
+                            <!-- optional -->
+                            <skip>false</skip>
+
                             <!-- Optional Example Configuration which shows all optional properties with its default configuration -->
                             <!--       <skip>false</skip>-->
                             <!--       <featuresDir>${project.basedir}</featuresDir>-->
@@ -101,6 +134,12 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration><skip>true</skip></configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

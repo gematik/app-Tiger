@@ -16,13 +16,14 @@
 
 package de.gematik.test.tiger.maven.adapter.mojos;
 
+import lombok.Builder;
+import lombok.Data;
+import org.apache.maven.plugin.logging.Log;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import lombok.Builder;
-import lombok.Data;
-import org.apache.maven.plugin.logging.Log;
 
 @Builder
 @Data
@@ -32,7 +33,9 @@ public class GenerateDriverProperties {
 
     private final List<String> glues;
     private final String driverClassName;
+    private final String gluesCsv;
     private final Path templateFile;
+    private final boolean junit5Driver;
     private final String driverPackage;
     private Path outputFolder;
     private String featuresRootFolder;

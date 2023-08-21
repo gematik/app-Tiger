@@ -21,6 +21,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -44,6 +45,10 @@ public class InlineJexlToolbox {
 
     public String resolve(String value) {
         return TigerGlobalConfiguration.resolvePlaceholders(value);
+    }
+
+    public String getValue(String variableName) {
+        return TigerGlobalConfiguration.readString(variableName, null);
     }
 
     public String sha256(String value) {
@@ -104,4 +109,12 @@ public class InlineJexlToolbox {
     public String lowerCase(final String value) { return value != null ? value.toLowerCase() : null; }
 
     public String upperCase(final String value) { return value != null ? value.toUpperCase() : null; }
+
+    public String subStringAfter(final String value, final String token) {
+        return value != null && token != null ? StringUtils.substringAfter(value, token) : null;
+    }
+
+    public String subStringBefore(final String value, final String token) {
+        return value != null && token != null ? StringUtils.substringBefore(value, token) : null;
+    }
 }

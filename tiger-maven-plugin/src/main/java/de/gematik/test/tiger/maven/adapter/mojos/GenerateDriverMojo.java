@@ -16,17 +16,8 @@
 
 package de.gematik.test.tiger.maven.adapter.mojos;
 
-import com.google.code.maven_replacer_plugin.file.FileUtils;
 import com.google.code.maven_replacer_plugin.include.FileSelector;
 import de.gematik.test.tiger.maven.usecases.DriverGenerator;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +27,14 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This plugin allows to generate JUnit4 driver classes for Serenity testruns dynamically in the generate-test-sources
@@ -117,6 +116,10 @@ public class GenerateDriverMojo extends AbstractMojo {
     @Parameter
     private File templateFile;
 
+
+    @Parameter
+    private boolean junit5Driver = false;
+
     /**
      * The current project representation.
      */
@@ -144,13 +147,15 @@ public class GenerateDriverMojo extends AbstractMojo {
                 outputFolder.resolve(driverPackage.replace(".", File.separator));
 
             GenerateDriverProperties props = GenerateDriverProperties.builder()
-                .glues(glues)
-                .driverPackage(driverPackage)
-                .driverClassName(driverClassName)
-                .templateFile(templateFile == null ? null : templateFile.toPath())
-                .outputFolder(outputFolder)
-                .featuresRootFolder(featuresDir)
-                .build();
+                    .glues(glues)
+                    .gluesCsv(String.join(",", glues))
+                    .driverPackage(driverPackage)
+                    .driverClassName(driverClassName)
+                    .templateFile(templateFile == null ? null : templateFile.toPath())
+                    .junit5Driver(junit5Driver)
+                    .outputFolder(outputFolder)
+                    .featuresRootFolder(featuresDir)
+                    .build();
 
             props.log(getLog());
 

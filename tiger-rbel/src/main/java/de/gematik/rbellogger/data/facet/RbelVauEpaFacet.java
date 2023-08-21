@@ -51,6 +51,7 @@ public class RbelVauEpaFacet implements RbelFacet {
             @Override
             public ContainerTag performRendering(RbelElement element, Optional<String> key,
                                                  RbelHtmlRenderingToolkit renderingToolkit) {
+                RbelElement vauMessage = element.getFacetOrFail(RbelVauEpaFacet.class).getMessage();
                 return div(t1ms("VAU Encrypted Message (EPA)")
                     .with(showContentButtonAndDialog(element, renderingToolkit)))
                     .with(addNotes(element, "mb-5"))
@@ -75,10 +76,10 @@ public class RbelVauEpaFacet implements RbelFacet {
                                         .map(DomContent.class::cast)
                                         .orElse(span())
                                 ),
-                                childBoxNotifTitle(CLS_BODY).with(t2("Body"))
-                                    .with(addNotes(element.getFacetOrFail(RbelVauEpaFacet.class).getMessage()))
-                                    .with(renderingToolkit
-                                        .convert(element.getFacetOrFail(RbelVauEpaFacet.class).getMessage())),
+                                childBoxNotifTitle(CLS_BODY).with(t2("Body")
+                                                .with(showContentButtonAndDialog(vauMessage, renderingToolkit))
+                                    .with(addNotes(vauMessage)))
+                                    .with(renderingToolkit.convert(vauMessage)),
                                 childBoxNotifTitle(CLS_PKIOK).with(
                                         p()
                                             .withClass(CLS_PKIOK)
