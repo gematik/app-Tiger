@@ -41,39 +41,36 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    @TigerTest(tigerYaml = "tigerProxy:\n"
-        + "  skipTrafficEndpointsSubscription: true\n"
-        + "  trafficEndpoints:\n"
-        + "    - http://localhost:${free.port.2}\n"
-        + "servers:\n"
-        + "  winstone:\n"
-        + "    type: externalJar\n"
-        + "    source:\n"
-        + "      - local:target/winstone.jar\n"
-        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-        + "    externalJarOptions:\n"
-        + "      arguments:\n"
-        + "        - --httpPort=${free.port.0}\n"
-        + "        - --webroot=.\n"
-        + "  aggregatingProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    dependsUpon: reverseProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.2}\n"
-        + "      proxyPort: ${free.port.3}\n"
-        + "      activateRbelParsing: false\n"
-        + "      rbelBufferSizeInMb: 0\n"
-        + "      trafficEndpoints:\n"
-        + "        - http://localhost:${free.port.4}\n"
-        + "  reverseProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.4}\n"
-        + "      proxiedServer: winstone\n"
-        + "      proxyPort: ${free.port.5}\n")
+    @TigerTest(tigerYaml = """
+            tigerProxy:
+              skipTrafficEndpointsSubscription: true
+              trafficEndpoints:
+                - http://localhost:${free.port.2}
+            servers:
+              httpbin:
+                type: httpbin
+                serverPort: ${free.port.0}
+                healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+              aggregatingProxy:
+                type: tigerProxy
+                dependsUpon: reverseProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.2}
+                  proxyPort: ${free.port.3}
+                  activateRbelParsing: false
+                  rbelBufferSizeInMb: 0
+                  trafficEndpoints:
+                    - http://localhost:${free.port.4}
+              reverseProxy:
+                type: tigerProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.4}
+                  proxiedServer: httpbin
+                  proxyPort: ${free.port.5}
+            """)
     void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
         waitShortTime();
-        final String path = "/foobarschmar";
+        final String path = "/status/404";
 
         HttpResponse<String> response = Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path).asString();
         int status = response.getStatus();
@@ -94,45 +91,42 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     }
 
     @Test
-    @TigerTest(tigerYaml = "tigerProxy:\n"
-        + "  skipTrafficEndpointsSubscription: true\n"
-        + "  trafficEndpoints:\n"
-        + "    - http://localhost:${free.port.12}\n"
-        + "\n"
-        + "servers:\n"
-        + "  winstone:\n"
-        + "    type: externalJar\n"
-        + "    source:\n"
-        + "      - local:target/winstone.jar\n"
-        + "    healthcheckUrl: http://127.0.0.1:${free.port.10}\n"
-        + "    externalJarOptions:\n"
-        + "      arguments:\n"
-        + "        - --httpPort=${free.port.10}\n"
-        + "        - --webroot=.\n"
-        + "  aggregatingProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    dependsUpon: reverseProxy1, reverseProxy2\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.12}\n"
-        + "      proxyPort: ${free.port.13}\n"
-        + "      activateRbelParsing: false\n"
-        + "      rbelBufferSizeInMb: 0\n"
-        + "      trafficEndpoints:\n"
-        + "        - http://localhost:${free.port.14}\n"
-        + "        - http://localhost:${free.port.16}\n"
-        + "  reverseProxy1:\n"
-        + "    type: tigerProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.14}\n"
-        + "      proxiedServer: winstone\n"
-        + "      proxyPort: ${free.port.15}\n"
-        + "  reverseProxy2:\n"
-        + "    type: tigerProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.16}\n"
-        + "      proxiedServer: winstone\n"
-        + "      proxyPort: ${free.port.17}\n")
+    @TigerTest(tigerYaml = """
+            tigerProxy:
+              skipTrafficEndpointsSubscription: true
+              trafficEndpoints:
+                - http://localhost:${free.port.12}
+            servers:
+              httpbin:
+                type: httpbin
+                serverPort: ${free.port.0}
+                healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+              aggregatingProxy:
+                type: tigerProxy
+                dependsUpon: reverseProxy1, reverseProxy2
+                tigerProxyCfg:
+                  adminPort: ${free.port.12}
+                  proxyPort: ${free.port.13}
+                  activateRbelParsing: false
+                  rbelBufferSizeInMb: 0
+                  trafficEndpoints:
+                    - http://localhost:${free.port.14}
+                    - http://localhost:${free.port.16}
+              reverseProxy1:
+                type: tigerProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.14}
+                  proxiedServer: httpbin
+                  proxyPort: ${free.port.15}
+              reverseProxy2:
+                type: tigerProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.16}
+                  proxiedServer: httpbin
+                  proxyPort: ${free.port.17}
+            """)
     void testWithMultipleUpstreamProxies(TigerTestEnvMgr envMgr) {
+        waitShortTime();
         assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory())
             .isEmpty();
 
@@ -148,33 +142,36 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         await().atMost(10, TimeUnit.SECONDS)
             .until(() ->
                 envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size() >= 4);
+        waitShortTime();
     }
 
     @SneakyThrows
     @Test
-    @TigerTest(tigerYaml = "tigerProxy:\n"
-        + "  skipTrafficEndpointsSubscription: true\n"
-        + "  trafficEndpoints:\n"
-        + "    - http://localhost:${free.port.22}\n"
-        + "servers:\n"
-        + "  aggregatingProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    dependsUpon: reverseProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.22}\n"
-        + "      proxyPort: ${free.port.23}\n"
-        + "      activateRbelParsing: false\n"
-        + "      rbelBufferSizeInMb: 0\n"
-        + "      trafficEndpoints:\n"
-        + "        - http://localhost:${free.port.24}\n"
-        + "  reverseProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.24}\n"
-        + "      proxyPort: ${free.port.25}\n"
-        + "      directReverseProxy:\n"
-        + "        hostname: localhost\n"
-        + "        port: ${free.port.26}\n")
+    @TigerTest(tigerYaml = """
+            tigerProxy:
+              skipTrafficEndpointsSubscription: true
+              trafficEndpoints:
+                - http://localhost:${free.port.22}
+            servers:
+              aggregatingProxy:
+                type: tigerProxy
+                dependsUpon: reverseProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.22}
+                  proxyPort: ${free.port.23}
+                  activateRbelParsing: false
+                  rbelBufferSizeInMb: 0
+                  trafficEndpoints:
+                    - http://localhost:${free.port.24}
+              reverseProxy:
+                type: tigerProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.24}
+                  proxyPort: ${free.port.25}
+                  directReverseProxy:
+                    hostname: localhost
+                    port: ${free.port.26}
+            """)
     void testDirectReverseProxyMeshSetup_withoutResponse(TigerTestEnvMgr envMgr) {
         waitShortTime();
         try (Socket clientSocket = new Socket("localhost",
@@ -197,30 +194,32 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     @SneakyThrows
     @Test
-    @TigerTest(tigerYaml = "tigerProxy:\n"
-        + "  skipTrafficEndpointsSubscription: true\n"
-        + "  adminPort: ${free.port.36}\n"
-        + "  trafficEndpoints:\n"
-        + "    - http://localhost:${free.port.32}\n"
-        + "servers:\n"
-        + "  aggregatingProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    dependsUpon: reverseProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.32}\n"
-        + "      proxyPort: ${free.port.33}\n"
-        + "      activateRbelParsing: false\n"
-        + "      rbelBufferSizeInMb: 0\n"
-        + "      trafficEndpoints:\n"
-        + "        - http://localhost:${free.port.34}\n"
-        + "  reverseProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.34}\n"
-        + "      proxyPort: ${free.port.35}\n"
-        + "      directReverseProxy:\n"
-        + "        hostname: localhost\n"
-        + "        port: ${free.port.36}\n")
+    @TigerTest(tigerYaml = """
+            tigerProxy:
+              skipTrafficEndpointsSubscription: true
+              adminPort: ${free.port.36}
+              trafficEndpoints:
+                - http://localhost:${free.port.32}
+            servers:
+              aggregatingProxy:
+                type: tigerProxy
+                dependsUpon: reverseProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.32}
+                  proxyPort: ${free.port.33}
+                  activateRbelParsing: false
+                  rbelBufferSizeInMb: 0
+                  trafficEndpoints:
+                    - http://localhost:${free.port.34}
+              reverseProxy:
+                type: tigerProxy
+                tigerProxyCfg:
+                  adminPort: ${free.port.34}
+                  proxyPort: ${free.port.35}
+                  directReverseProxy:
+                    hostname: localhost
+                    port: ${free.port.36}
+            """)
     void testDirectReverseProxyMeshSetup_withResponse(TigerTestEnvMgr envMgr) {
         waitShortTime();
         try (Socket clientSocket = new Socket("127.0.0.1",

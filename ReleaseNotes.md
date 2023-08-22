@@ -9,6 +9,10 @@
 * Spring Boot 3.1.0
 * Logback 1.4.8
 
+# Release 2.1.7
+
+* TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
+
 # Release 2.1.6
 
 ## Features
