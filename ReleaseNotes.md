@@ -11,7 +11,10 @@
 
 # Release 2.1.7
 
+## Features
+* 
 * TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
+* TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI anymore but are still written to console and log files
 
 # Release 2.1.6
 
