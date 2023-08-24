@@ -84,15 +84,16 @@ public class RbelBuilder {
     private static RbelBuilder fromRbel(String name, RbelContentTreeNode content) {
         RbelMultiMap<RbelContentTreeNode> childNodes = new RbelMultiMap<>();
         childNodes.put(name, content);
-        var contentTreeNode = new RbelContentTreeNode(childNodes);
+        var contentTreeNode = new RbelContentTreeNode(childNodes, null);
+        content.setKey(name);
+        contentTreeNode.setCharset(content.getElementCharset());
+        contentTreeNode.setType(content.getType());
         return new RbelBuilder(contentTreeNode);
     }
 
     public RbelContentTreeNode getTreeRootNode() {
         return treeRootNode;
     }
-
-
 
     private static RbelConverter getRbelConverter() {
         assureRbelIsInitialized();

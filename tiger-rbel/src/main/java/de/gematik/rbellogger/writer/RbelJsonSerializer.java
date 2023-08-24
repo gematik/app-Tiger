@@ -22,7 +22,7 @@ public class RbelJsonSerializer implements RbelSerializer {
     public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         if (isJsonArray(node)) {
             StringJoiner joiner = new StringJoiner(",");
-            for (RbelContentTreeNode childNode : node.childNodes()) {
+            for (RbelContentTreeNode childNode : node.getChildNodes()) {
                 joiner.add(renderToString(childNode, rbelWriter));
             }
             return "[" + joiner + "]";
@@ -35,8 +35,8 @@ public class RbelJsonSerializer implements RbelSerializer {
             }
         } else if (isJsonObject(node)) {
             StringJoiner joiner = new StringJoiner(",");
-            for (RbelContentTreeNode childNode : node.childNodes()) {
-                joiner.add("\"" + childNode.getKey() + "\": " + renderToString(childNode, rbelWriter));
+            for (RbelContentTreeNode childNode : node.getChildNodes()) {
+                joiner.add("\"" + childNode.getKey().orElseThrow() + "\": " + renderToString(childNode, rbelWriter));
             }
             return "{" + joiner + "}";
         } else {
@@ -45,13 +45,13 @@ public class RbelJsonSerializer implements RbelSerializer {
     }
 
     private static String getStringContentForNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-        if (node.childNodes().isEmpty()) {
+        if (node.getChildNodes().isEmpty()) {
             if (node.getContent() == null) {
                 return "{}";
             }
-            return new String(node.getContent(), node.getCharset());
+            return new String(node.getContent(), node.getElementCharset());
         } else {
-            return new String(rbelWriter.renderTree(node).getContent(), node.getCharset());
+            return new String(rbelWriter.renderTree(node).getContent(), node.getElementCharset());
         }
     }
 
@@ -69,6 +69,6 @@ public class RbelJsonSerializer implements RbelSerializer {
 
     private boolean isPrimitive(RbelContentTreeNode node) {
         return node.attributes().containsKey(RbelJsonElementToNodeConverter.JSON_PRIMITIVE)
-            || node.childNodes().isEmpty();
+            || node.getChildNodes().isEmpty();
     }
 }
