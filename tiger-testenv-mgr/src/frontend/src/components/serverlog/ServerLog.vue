@@ -20,7 +20,7 @@
             <div class="justify-content-between" id="test-server-log-pane-buttons" style="display: inline-block;" >
               <div class="btn active server-buttons test-server-log-pane-server-all" @click="setServer(selectedServers, '__all__', $event)">Show all logs</div>
               <div v-for="(serverName,logIndex) in logServers" :key="logIndex" style="display: inline-block;">
-                <div :class="`btn server-buttons test-server-log-pane-server-${logIndex}`" @click="setServer(selectedServers, serverName, $event)">{{ serverName }}</div>
+                <div class="btn server-buttons" :id="`test-server-log-pane-server-${serverName}`" @click="setServer(selectedServers, serverName, $event)">{{ serverName }}</div>
               </div>
             </div>
           </div>
@@ -33,7 +33,7 @@
           <td>
             <div class="container-fluid ps-0 pt-2 pb-4">
               <select class="selectpicker" v-model="selectedLoglevel" id="test-server-log-pane-select">
-                <option v-for="(loglevelName,logIndex) in getLogLevel()" :key="logIndex" :value="LogLevel[loglevelName]" :id="`test-server-log-pane-select-${logIndex}`">
+                <option v-for="(loglevelName,logIndex) in getLogLevel()" :key="logIndex" :value="LogLevel[loglevelName]" :id="`test-server-log-pane-select-${loglevelName}`">
                   {{loglevelName}}
                 </option>
               </select>

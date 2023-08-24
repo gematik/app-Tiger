@@ -40,6 +40,8 @@
 </dependency>
 ```
 
+* TGR-990: first mvp of playwright tests for testing the WorkflowUI added
+
 ## Bugfixes
 
 * TGR-1028: Fixed bug where the RbelWriter did not serialize an empty json array correctly.

@@ -18,6 +18,7 @@
         <version.mockserver>5.15.0</version.mockserver>
     </properties>
 
+
     <dependencies>
         <dependency>
             <groupId>de.gematik.test</groupId>
@@ -35,62 +36,40 @@
             <artifactId>xercesImpl</artifactId>
             <version>2.12.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${version.junit5}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-model</artifactId>
+            <version>3.9.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <artifactItems>
-                        <artifactItem>
-                            <groupId>org.jenkins-ci</groupId>
-                            <artifactId>winstone</artifactId>
-                            <version>4.1</version>
-                            <type>jar</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <destFileName>winstone.jar</destFileName>
-                        </artifactItem>
-                    </artifactItems>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${version.maven.failsafe}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <groupId>org.jacoco</groupId>
-            </plugin>
-            <plugin>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-            </plugin>
-        </plugins>
-    </build>
 
     <profiles>
         <profile>
-            <id>setup-testenv</id>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${version.maven.surefire}</version>
+                        <configuration>
+                            <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>start-tiger-dummy</id>
             <build>
                 <plugins>
                     <plugin>
@@ -99,43 +78,93 @@
                         <version>2.1.7-SNAPSHOT</version>
                         <executions>
                             <execution>
-                                <configuration>
-                                    <timeout>60</timeout>
-                                </configuration>
+                                <id>generate-tiger-drivers</id>
                                 <goals>
-                                    <goal>setup-testenv</goal>
+                                    <goal>generate-drivers</goal>
                                 </goals>
+                                <phase>generate-test-sources</phase>
+                                <configuration>
+                                    <!-- mandatory -->
+                                    <glues>
+                                        <glue>de.gematik.test.tiger.glue</glue>
+                                    </glues>
+                                    <!-- optional -->
+                                    <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
-                </plugins>
-                <defaultGoal>initialize</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>run-connection-test</id>
-            <build>
-                <plugins>
+
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${version.maven.failsafe}</version>
+                        <configuration>
+                            <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
+                            <includes>
+                                <!-- adapt to the class names of your driver classes -->
+                                <include>**/Driver*IT.java</include>
+                            </includes>
+                            <testFailureIgnore>true</testFailureIgnore>
+                            <environmentVariables>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright.yaml</TIGER_TESTENV_CFGFILE>
+                            </environmentVariables>
+                        </configuration>
                         <executions>
                             <execution>
                                 <goals>
+                                    <goal>integration-test</goal>
                                     <goal>verify</goal>
                                 </goals>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${version.maven.failsafe}</version>
+                        <version>${version.maven.surefire}</version>
                         <configuration>
-                            <skip>true</skip>
+                            <skipTests>true</skipTests>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>run-playwright-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${version.maven.failsafe}</version>
+                        <configuration>
+                            <excludes>
+                                <!-- adapt to the class names of your driver classes -->
+                                <exclude>**/Driver*IT.java</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <groupId>org.jacoco</groupId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>sonar-maven-plugin</artifactId>
+                        <groupId>org.sonarsource.scanner.maven</groupId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
+
 </project>

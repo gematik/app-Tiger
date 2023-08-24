@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
+import static j2html.TagCreator.*;
 import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
@@ -21,6 +22,20 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,23 +57,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import static j2html.TagCreator.*;
 
 @Data
 @RequiredArgsConstructor
@@ -145,8 +143,8 @@ public class TigerWebUiController implements ApplicationContextAware {
         rbelRenderer.setVersionInfo(buildProperties.tigerVersionAsString());
         rbelRenderer.setTitle("RbelLog für " + tigerProxy.getName().orElse("Tiger Proxy - Port") + ":" + tigerProxy.getProxyPort());
 
-        final ArrayList<RbelElement> rbelMessages = getTigerProxy().getRbelLogger().getMessageHistory().stream()
-            .collect(Collectors.toCollection(ArrayList::new));
+        final ArrayList<RbelElement> rbelMessages = new ArrayList<>(
+            getTigerProxy().getRbelLogger().getMessageHistory());
         return rbelRenderer.doRender(rbelMessages);
     }
 
@@ -293,7 +291,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         span().withId("pageSizeDisplay").withText("Size")
                                     ),
                                 div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
-                                    div().withClass("dropdown-content").with(
+                                    div().withClass("dropdown-content").withId("sizeSelector").with(
                                         a().withClass(CSS_DROPDOWN_ITEM)
                                             .attr(ATTR_ON_CLICK, "setPageSize(10);").withText("10"),
                                         a().withClass(CSS_DROPDOWN_ITEM)
@@ -407,7 +405,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .map(msg -> msg.findRbelPathMembers(rbelPath))
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .toList();
         if (targetElements.isEmpty()) {
             return JexlQueryResponseDto.builder()
                 .build();
@@ -510,12 +508,12 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .uuid(msg.getUuid())
                 .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
                 .build())
-            .collect(Collectors.toList()));
+            .toList());
         result.setMetaMsgList(msgs.stream()
             .dropWhile(messageIsBefore(lastMsgUuid))
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .map(MessageMetaDataDto::createFrom)
-            .collect(Collectors.toList()));
+            .toList());
         result.setPagesAvailable(((msgs.size() - 1) / pageSize) + 1);
         result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
