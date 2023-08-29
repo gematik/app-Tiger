@@ -1,12 +1,13 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.jexl3.JexlContext;
+
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.jexl3.JexlContext;
 
 /**
  * Context to be used in a JEXL-evaluation. The keys are of type string, but they are canonicalized in
@@ -17,6 +18,7 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
 
     public static final String CURRENT_ELEMENT_MARKER = "currentElement";
     public static final String ROOT_ELEMENT_MARKER = "rootElement";
+    public static final String REMAINING_PATH_FROM_REQUEST = "remainingPathToMatch";
     public static final String KEY_ELEMENT_MARKER = "key";
 
     public TigerJexlContext(Map<String, Object> initialMap) {
@@ -93,13 +95,17 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
         return super.get(canonicalize(name));
     }
 
+    public Optional<Object> getOptional(String name) {
+        return Optional.ofNullable(get(name));
+    }
+
     public Object getCurrentElement() {
-        return Optional.ofNullable(get(CURRENT_ELEMENT_MARKER))
+        return getOptional(CURRENT_ELEMENT_MARKER)
             .orElseGet(() -> get(ROOT_ELEMENT_MARKER));
     }
 
     public Object getRootElement() {
-        return Optional.ofNullable(get(ROOT_ELEMENT_MARKER))
+        return getOptional(ROOT_ELEMENT_MARKER)
             .orElseGet(() -> get(CURRENT_ELEMENT_MARKER));
     }
 

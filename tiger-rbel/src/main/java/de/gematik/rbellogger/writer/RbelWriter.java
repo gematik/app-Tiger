@@ -10,6 +10,8 @@ import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.GenericPrettyPrinter;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Getter;
@@ -47,20 +49,20 @@ public class RbelWriter {
     private static void printTreeStructure(RbelContentTreeNode treeRootNode) {
         if (log.isDebugEnabled()) {
             GenericPrettyPrinter<RbelContentTreeNode> printer = new GenericPrettyPrinter<>(
-                node -> node.childNodes().isEmpty(),
+                node -> node.getChildNodes().isEmpty(),
                 node -> printNodeContent(node),
-                node -> node.childNodes().stream()
+                node -> node.getChildNodes().stream()
             );
-            printer.setNodeIntroPrinter(node -> node.getKey() + " (" + node.getType() + ") ");
+            printer.setNodeIntroPrinter(node -> node.getKey().orElse(" _ ") + " (" + node.getType() + ") ");
             log.debug("Serializing the following tree: \n{}", printer.prettyPrint(treeRootNode));
         }
     }
 
     private static String printNodeContent(RbelContentTreeNode node) {
         if (node.getContent() == null) {
-            return node.getKey() + ": <null>";
+            return node.getKey().orElse(" _ ") + ": <null>";
         } else {
-            return node.getKey() + ": " + new String(node.getContent()).trim();
+            return node.getKey().orElse(" _ ") + ": " + new String(node.getContent(), StandardCharsets.UTF_8).trim();
         }
     }
 

@@ -10,20 +10,21 @@
 
     <groupId>de.gematik.test.tiger.examples</groupId>
     <artifactId>TigerTestBDD</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
 
+        <version.junit5>5.9.3</version.junit5>
+        <version.maven.failsafe>3.1.2</version.maven.failsafe>
         <!-- please adapt Tiger version property to the most current one obtained from -->
         <!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
-        <version.tiger>1.1.1</version.tiger>
-        <version.serenity.core>3.3.10</version.serenity.core>
+        <version.tiger>2.1.4-SNAPSHOT</version.tiger>
     </properties>
 
     <!-- tag::dependencies[] -->
@@ -33,21 +34,27 @@
             <artifactId>tiger-test-lib</artifactId>
             <version>${version.tiger}</version>
         </dependency>
+        <!-- for Junit5 Driver classes you need these dependencies -->
+        <!-- needed for support of junit5  driver classes -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <version>1.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>7.11.2</version>
+            <scope>test</scope>
+        </dependency>
         <!-- Optional if you have JUnit5 dependencies
-        but use JUnit4 for your driver classes
+        but use the JUnit4 based template for your driver classes
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>${version.junit5}}</version>
-        </dependency>
-        -->
-        <!-- needed for the JUnit driver class @CucumberOptions annotation -->
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-cucumber</artifactId>
-            <version>${version.serenity.core}</version>
-            <scope>test</scope>
-        </dependency>
+            <version>${version.junit5}</version>
+        </dependency>-->
     </dependencies>
     <!-- end::dependencies[] -->
 
@@ -83,14 +90,16 @@
                             <!--suppress UnresolvedMavenProperty -->
                             <driverClassName>Driver${ctr}IT</driverClassName>
                             <!-- optional, defaults to the templated located at
-                            /src/main/resources/driverClassTemplate.jtmpl
+                            /src/main/resources/driver4ClassTemplate.jtmpl
                             in the tiger-maven-plugin module.
+                            This template will create a junit4 compliant driver class.
                             Use separate template file if you have spring boot apps to test
                             or need to do some more fancy set up stuff.
                             <templateFile>${project.basedir}/..../XXXX.jtmpl</templateFile>
                             -->
                             <!-- optional -->
                             <skip>false</skip>
+                            <junit5Driver>true</junit5Driver>
                         </configuration>
                         <phase>generate-test-sources</phase>
                         <id>generate-tiger-drivers</id>

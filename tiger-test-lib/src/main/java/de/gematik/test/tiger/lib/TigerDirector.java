@@ -30,9 +30,6 @@ import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -75,7 +72,6 @@ public class TigerDirector {
     private static TigerLibConfig libConfig;
     private static ConfigurableApplicationContext envMgrApplicationContext;
 
-    private static final String PORTFILE = "../workflowui.port";
 
     public static synchronized void start() {
         if (initialized) {
@@ -251,7 +247,6 @@ public class TigerDirector {
 
         Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
         properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault());
-        writePortToLocalFile();
         envMgrApplicationContext = new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(properties)
@@ -274,28 +269,26 @@ public class TigerDirector {
 
     }
 
-    private static void writePortToLocalFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PORTFILE))) {
-            writer.write(TESTENV_MGR_RESERVED_PORT.getValueOrDefault().toString());
-            File file = new File(PORTFILE);
-        } catch (IOException ioe) {
-            log.warn(
-                "Trying to write port number to file.",
-                ioe);
-        }
-    }
-
     private static synchronized void startWorkflowUi() {
         if (libConfig.activateWorkflowUi) {
             log.info("\n" + Banner.toBannerStr("STARTING WORKFLOW UI ...", RbelAnsiColors.BLUE_BOLD.toString()));
-            TigerBrowserUtil.openUrlInBrowser("http://localhost:" +
-                TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow(
-                        () -> new TigerEnvironmentStartupException("No free port for test environment manager reserved!"))
-                    .toString(), "Workflow UI");
+            if (libConfig.startBrowser) {
+                TigerBrowserUtil.openUrlInBrowser("http://localhost:" +
+                    TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow(
+                            () -> new TigerEnvironmentStartupException(
+                                "Failed to start browser!"))
+                        .toString(), "Workflow UI");
+            }
             log.info("Waiting for workflow Ui to fetch status...");
             try {
-                await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofSeconds(1))
-                    .until(() -> tigerTestEnvMgr.isWorkflowUiSentFetch());
+                int duration = 10;
+                if (!libConfig.startBrowser) {
+                    log.info("Workflow UI http://localhost:" + TESTENV_MGR_RESERVED_PORT.getValue().get());
+                    duration = 60;
+                }
+                await().atMost(Duration.ofSeconds(duration)).pollInterval(Duration.ofSeconds(1))
+                        .until(() -> tigerTestEnvMgr.isWorkflowUiSentFetch());
+
             } catch (ConditionTimeoutException cte) {
                 libConfig.activateWorkflowUi = false;
                 throw new TigerTestEnvException("No feedback from workflow Ui, aborting!", cte);

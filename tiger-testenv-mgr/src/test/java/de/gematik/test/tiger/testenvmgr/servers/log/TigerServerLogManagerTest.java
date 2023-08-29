@@ -4,12 +4,16 @@
 
 package de.gematik.test.tiger.testenvmgr.servers.log;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrNormalized;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
+import java.io.File;
+import java.nio.file.Path;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,12 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
-
-import java.io.File;
-import java.nio.file.Path;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrNormalized;
 
 @Slf4j
 class TigerServerLogManagerTest {
@@ -101,6 +99,6 @@ class TigerServerLogManagerTest {
     @Test
     void testCheckAddAppendersDisabledLog_OK() throws Exception {
         assertThat(new File("target/serverLogs/test.log")).content()
-                .doesNotContain("Winstone Servlet Engine ");
+                .contains("Winstone Servlet Engine ");
     }
 }

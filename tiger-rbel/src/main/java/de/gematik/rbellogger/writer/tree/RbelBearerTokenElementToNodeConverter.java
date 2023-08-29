@@ -23,7 +23,7 @@ public class RbelBearerTokenElementToNodeConverter implements RbelElementToConte
     public RbelContentTreeNode convert(RbelElement el, TigerConfigurationLoader context, RbelContentTreeConverter converter) {
         final RbelMultiMap<RbelContentTreeNode> map = new RbelMultiMap<RbelContentTreeNode>()
             .with("BearerToken", converter.convertNode(el.getFacetOrFail(RbelBearerTokenFacet.class).getBearerToken(), "BearerToken", context).get(0));
-        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map);
+        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map, el.getRawContent());
         result.setType(context.readStringOptional(ENCODE_AS).map(RbelContentType::seekValueFor).orElse(RbelContentType.BEARER_TOKEN));
         return result;
     }

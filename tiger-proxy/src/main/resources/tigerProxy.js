@@ -756,9 +756,8 @@ function executeJexlQuery() {
 
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4) {
+      const response = JSON.parse(this.responseText);
       if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
-
         shortenStrings(response);
         if (response.messageContext) {
           const map = new Map(Object.entries(response.messageContext));
@@ -796,7 +795,7 @@ function executeJexlQuery() {
       } else {
         jexlInspectionResultDiv.innerHTML = "<b>Error talking to server! </b>"
             + (this.responseText ?
-                ("<code class='bg-dark text-warning'>" + response.errorMessage + "</code>") :
+                ("<code class='bg-dark text-warning'>" + response.error + "</code>") :
                 "");
         jexlInspectionResultDiv.setAttribute("class", "box bg-warning");
       }
@@ -823,14 +822,21 @@ function testRbelExpression() {
             "<h3 class='is-size-4'>Rbel Tree</h3>"
             + "<pre id='shell'>" + response.rbelTreeHtml + "</pre>";
         let rbelResultTree = "<h3 class='is-size-4'>Matching Elements</h3>";
-        response.elements.forEach(key => {
-          rbelResultTree += "<div >" + key + "</div>";
-        });
+        if (response.elements) {
+          response.elements.forEach(key => {
+            rbelResultTree += "<div >" + key + "</div>";
+          });
+        } else {
+          rbelResultTree += "<div>None found</div>";
+        }
         document.getElementById("rbelResult").innerHTML =
             rbelResultTree;
         setAddEventListener();
       } else {
         console.log("ERROR " + this.status + " " + this.responseText);
+        document.getElementById("rbelResult").innerHTML =
+            "<div>" + this.responseText + "</div>";
+        document.getElementById("rbelTestTree").innerHTML = "<div>Invalid query</div>";
       }
     }
   }

@@ -5,7 +5,11 @@
 package de.gematik.test.tiger.maven.usecases;
 
 import de.gematik.test.tiger.maven.adapter.mojos.GenerateDriverProperties;
-import java.io.File;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.plugin.logging.Log;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +20,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.plugin.logging.Log;
 
 public class DriverGenerator {
 
@@ -80,7 +80,8 @@ public class DriverGenerator {
             .replace("${package}", packageLine)
             .replace("${driverClassName}", currentDriverClassName)
             .replace("${feature}", featurePath.replace("\\", "/"))
-            .replace("${glues}", toCommaseparatedQuotedList(props.getGlues()))
+                .replace("${glues}", toCommaseparatedQuotedList(props.getGlues()))
+                .replace("${gluesCsv}", props.getGluesCsv())
             .replace("${tags}", props.getCucumberFilterTags());
     }
 
@@ -96,7 +97,13 @@ public class DriverGenerator {
 
     private String getTemplate() throws IOException {
         if (props.getTemplateFile() == null) {
-            try (final InputStream is = getClass().getResourceAsStream("/driverClassTemplate.jtmpl")) {
+            String driverTemplateResource;
+            if (props.isJunit5Driver()) {
+                driverTemplateResource = "/driver5ClassTemplate.jtmpl";
+            } else {
+                driverTemplateResource = "/driver4ClassTemplate.jtmpl";
+            }
+            try (final InputStream is = getClass().getResourceAsStream(driverTemplateResource)) {
                 if (is == null) {
                     throw new FileNotFoundException("Unable to find template file resource '/driverClassTemplate.jtmpl' in jar!");
                 }

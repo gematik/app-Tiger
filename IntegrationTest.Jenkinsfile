@@ -1,7 +1,8 @@
 @Library('gematik-jenkins-shared-library') _
 
 def JIRA_PROJECT_ID = 'TGR'
-def ARTIFACT_ID = 'tiger'
+// using tiger as artefact id fails as the metadata xml fo tiger is purged randomly on nexus (SWF-247)
+def ARTIFACT_ID = 'tiger-testenv-mgr'
 def GROUP_ID = "de.gematik.test"
 
 
@@ -212,6 +213,23 @@ pipeline {
                  }
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                 build job: 'Tiger-Integrationtest-TIGER-FHIR',
+                parameters: [
+                   string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
+                   string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
+                ]
+                }
+             }
+         }
+          stage('Tiger Manual ExampleIntegrationtest') {
+             steps {
+                 script {
+                      if (!NEW_VERSION?.trim()) {
+                               VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
+                               NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
+                      }
+                 }
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                build job: 'Tiger-Integrationtest-TIGER-Manual-Example',
                 parameters: [
                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),

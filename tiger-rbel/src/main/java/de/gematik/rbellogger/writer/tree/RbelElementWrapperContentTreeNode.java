@@ -9,11 +9,8 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
-import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.List;
 import java.util.Optional;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 
 public class RbelElementWrapperContentTreeNode extends RbelContentTreeNode {
 
@@ -33,11 +30,11 @@ public class RbelElementWrapperContentTreeNode extends RbelContentTreeNode {
     }
 
     private RbelElementWrapperContentTreeNode() {
-        super(new RbelMultiMap<>());
+        super(new RbelMultiMap<> (), null);
     }
 
     @Override
-    public List<RbelContentTreeNode> childNodes() {
+    public List<RbelContentTreeNode> getChildNodes() {
         return List.of();
     }
 

@@ -12,6 +12,7 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
@@ -80,6 +81,8 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String DROPDOWN_MENU = "dropdown-menu";
     private static final String VALUE_MODAL = "modal";
     private static final String HIDE_QUIT = "display:none;";
+    /** in error responses on http requests, this token causes problems so remove it for better handling on client side */
+    public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer;
 
@@ -140,8 +143,8 @@ public class TigerWebUiController implements ApplicationContextAware {
         rbelRenderer.setVersionInfo(buildProperties.tigerVersionAsString());
         rbelRenderer.setTitle("RbelLog für " + tigerProxy.getName().orElse("Tiger Proxy - Port") + ":" + tigerProxy.getProxyPort());
 
-        final ArrayList<RbelElement> rbelMessages = getTigerProxy().getRbelLogger().getMessageHistory().stream()
-            .collect(Collectors.toCollection(ArrayList::new));
+        final ArrayList<RbelElement> rbelMessages = new ArrayList<>(
+            getTigerProxy().getRbelLogger().getMessageHistory());
         return rbelRenderer.doRender(rbelMessages);
     }
 
@@ -288,7 +291,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                         span().withId("pageSizeDisplay").withText("Size")
                                     ),
                                 div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
-                                    div().withClass("dropdown-content").with(
+                                    div().withClass("dropdown-content").withId("sizeSelector").with(
                                         a().withClass(CSS_DROPDOWN_ITEM)
                                             .attr(ATTR_ON_CLICK, "setPageSize(10);").withText("10"),
                                         a().withClass(CSS_DROPDOWN_ITEM)
@@ -374,15 +377,23 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
                 .matchSuccessful(jexlExecutor.matchesAsJexlExpression(targetMessage, query))
                 .messageContext(messageContext).build();
-        } catch (JexlException jexlException) {
+        } catch (JexlException | TigerJexlException jexlException) {
             log.warn("Failed to perform JEXL query '" + query + "'", jexlException);
             String msg = jexlException.getMessage();
-            msg = msg.replaceAll(".*:\\d* ", "");
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
             return JexlQueryResponseDto.builder()
                 .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
                 .errorMessage(msg)
                 .build();
 
+        } catch (RuntimeException rte) {
+            log.warn("Runtime failure while performing JEXL query '" + query + "'", rte);
+            String msg = rte.getMessage();
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
+                    .errorMessage(msg)
+                    .build();
         }
     }
 
@@ -394,18 +405,37 @@ public class TigerWebUiController implements ApplicationContextAware {
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .map(msg -> msg.findRbelPathMembers(rbelPath))
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .toList();
         if (targetElements.isEmpty()) {
             return JexlQueryResponseDto.builder()
                 .build();
         }
-        return JexlQueryResponseDto.builder()
-            .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true))
-            .elements(targetElements.stream()
-                .map(RbelElement::findNodePath)
-                .map(key -> "$." + key)
-                .collect(Collectors.toList()))
-            .build();
+        try {
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true))
+                    .elements(targetElements.stream()
+                            .map(RbelElement::findNodePath)
+                            .map(key -> "$." + key)
+                            .collect(Collectors.toList()))
+                    .build();
+        } catch (JexlException | TigerJexlException jexlException) {
+            log.warn("Failed to perform RBelPath query '" + rbelPath + "'", jexlException);
+            String msg = jexlException.getMessage();
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml("<span>RbelPath is invalid '" + msg + "'</span>")
+                    .errorMessage(msg)
+                    .build();
+
+        } catch (RuntimeException rte) {
+            log.warn("Runtime failure while performing RbelPath query '" + rbelPath + "'", rte);
+            String msg = rte.getMessage();
+            msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+            return JexlQueryResponseDto.builder()
+                    .rbelTreeHtml("<span>Error while parsing RbelPath '" + msg + "'</span>")
+                    .errorMessage(msg)
+                    .build();
+        }
     }
 
     private String createRbelTreeForElement(RbelElement targetElement, boolean addJexlResponseLinkCssClass) {
@@ -464,7 +494,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
                 }
             })
-            .collect(Collectors.toList());
+            .toList();
 
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);
@@ -478,12 +508,12 @@ public class TigerWebUiController implements ApplicationContextAware {
                 .uuid(msg.getUuid())
                 .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
                 .build())
-            .collect(Collectors.toList()));
+            .toList());
         result.setMetaMsgList(msgs.stream()
             .dropWhile(messageIsBefore(lastMsgUuid))
             .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .map(MessageMetaDataDto::createFrom)
-            .collect(Collectors.toList()));
+            .toList());
         result.setPagesAvailable(((msgs.size() - 1) / pageSize) + 1);
         result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",

@@ -6,6 +6,9 @@ package de.gematik.test.tiger.testenvmgr.junit;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SKIP_ENVIRONMENT_SETUP;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
+
+import de.gematik.rbellogger.util.RbelAnsiColors;
+import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
@@ -125,6 +128,6 @@ public class TigerExtension implements BeforeTestExecutionCallback, ParameterRes
             log.info("Starting Test-Env setup");
             tigerTestEnvMgr.setUpEnvironment();
         }
-        log.info("TigerTest initialized, commencing actual test");
+        log.info(Ansi.colorize("TigerTest initialized, commencing actual test " + extensionContext.getDisplayName(), RbelAnsiColors.YELLOW_BOLD));
     }
 }
