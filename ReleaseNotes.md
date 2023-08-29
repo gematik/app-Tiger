@@ -1,4 +1,54 @@
-# Changelog Tiger Testplattform
+# Changelog Tiger Test platform
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.1.0
+* Logback 1.4.8
+
+# Release 2.1.7
+
+## Features
+* 
+* TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
+* TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI anymore but are still written to console and log files
+
+# Release 2.1.6
+
+## Features
+
+* TGR-1027(2): Extend inline jexl to enable eRp Migration
+    * getValue(string) -> string : returns the value of the given variable name. This is extremely helpful for variables with multiline content, where using ${variable} would break the JEXL parsing
+    * subStringBefore(string) -> string
+    * subStringAfter(string) -> string
+* TGR-1039: support generation of JUnit5 driver classes by the Tiger maven plugin. For this a new property has been added to the configuration: ```<junit5Driver>true</junit5Driver>``` which will create driver classes based on Junit5. The following additional dependencies are needed for these:
+```xml
+ <dependency>
+    <groupId>org.junit.platform</groupId>
+    <artifactId>junit-platform-suite</artifactId>
+    <version>1.9.2</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-junit-platform-engine</artifactId>
+    <version>7.11.2</version>
+    <scope>test</scope>
+</dependency>
+```
+
+* TGR-990: first mvp of playwright tests for testing the WorkflowUI added
+
+## Bugfixes
+
+* TGR-1028: Fixed bug where the RbelWriter did not serialize an empty json array correctly.
+* TGR-1029: Fixed bug where rewriting of Location headers on redirects would remove other headers from the response.
+* TGR-1032: Fixed a bug where `additionalCriterions` of a Zion mock response was not correctly serialized into the zion configuration properties.
+* TGR-915: adding missing content popup buttons to JWE/JWT/VAU elements in rbel logs
+* fixed doc example tigerOnly pom.xml so that it runs out of the box
 
 -------
 * Serenity BDD 3.6.23
@@ -48,6 +98,14 @@
   * @When("TGR set default headers:")
   * @Then("TGR setze folgende default headers:")
   * @When("TGR folgende default headers gesetzt werden:")
+* TGR-1027: Extend tiger glue code and inline jexl to enable eRp Migration
+  * new step to print out the value of a stored variable 
+    * @Dann("TGR gebe variable {string} aus")
+    * @Then("TGR print variable {string}")
+  * new inline jexl methods:
+    * resolve(string) -> string : resolves all placeholders and jexl expression in string. Very useful in combination with the file() method
+    * randomHex(int size) -> string : produces a random hex string with size characters
+    * currentLocalDate() -> string : produces a string of format YYYY-MM-DD of today
 
 -------
 * Serenity BDD 3.6.23

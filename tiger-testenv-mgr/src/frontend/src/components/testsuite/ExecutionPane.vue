@@ -55,7 +55,7 @@
                             <table class="table table-borderless">
                                 <tbody>
                                 <tr v-for="(step, index) in scenario[1].steps" :key="index">
-                                    <td :class="`${step[1].status.toLowerCase()} step_status `">
+                                    <td :class="`${step[1].status.toLowerCase()} step_status test-step-status-${step[1].status.toLowerCase()}`">
                                         <i :class="`fa-solid ${getTestResultIcon(step[1].status, 'solid')}`"
                                            :title="`${step[1].status}`"></i>
                                     </td>
@@ -64,7 +64,7 @@
                                         <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
                                             <div v-if="rbelmsg.method" class="rbelmessage">
                                                 <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, rbelmsg.sequenceNumber, $event)"
-                                                   href="#" class="badge rbelDetailsBadge">
+                                                   href="#" class="badge rbelDetailsBadge test-rbel-link">
                                                     {{ rbelmsg.sequenceNumber + 1 }}
                                                 </a>
                                                 <b>{{ rbelmsg.method }} {{

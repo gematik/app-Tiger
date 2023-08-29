@@ -7,7 +7,6 @@ package de.gematik.rbellogger.writer;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
-import java.awt.List;
 import java.security.Key;
 import java.util.Collection;
 import java.util.Optional;
@@ -51,7 +50,7 @@ public class RbelJwtSerializer implements RbelSerializer {
         }
         final RbelContentTreeNode verifiedUsing = signature.get().childNode("verifiedUsing")
             .orElseThrow(() -> new RbelSerializationException("Could not find verifiedUsing-node needed for JWT serialization!"));
-        final String keyName = verifiedUsing.getContentAsString();
+        final String keyName = verifiedUsing.getRawStringContent();
         final RbelKey rbelKey = rbelWriter.getRbelKeyManager().findKeyByName(keyName)
             .filter(RbelKey::isPrivateKey)
             .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("prk_" + keyName))
@@ -64,16 +63,16 @@ public class RbelJwtSerializer implements RbelSerializer {
 
     private void writeHeaderInJws(Optional<RbelContentTreeNode> headers, JsonWebSignature jws, RbelWriterInstance rbelWriter) {
         headers
-            .map(RbelContentTreeNode::childNodes)
+            .map(RbelContentTreeNode::getChildNodes)
             .stream()
             .flatMap(Collection::stream)
             .forEach(header -> {
                 if (RbelJsonSerializer.isJsonArray(header)) {
-                    jws.setHeader(header.getKey(), header.childNodes().stream()
-                        .map(childNode -> new String(rbelWriter.renderTree(childNode).getContent(), childNode.getCharset()))
+                    jws.setHeader(header.getKey().orElseThrow(), header.getChildNodes().stream()
+                        .map(childNode -> new String(rbelWriter.renderTree(childNode).getContent(), childNode.getElementCharset()))
                         .collect(Collectors.toList()));
                 } else {
-                    jws.setHeader(header.getKey(), new String(rbelWriter.renderTree(header).getContent(), header.getCharset()));
+                    jws.setHeader(header.getKey().orElseThrow(), new String(rbelWriter.renderTree(header).getContent(), header.getElementCharset()));
                 }
             });
     }

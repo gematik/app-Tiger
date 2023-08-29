@@ -124,6 +124,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             return;
         }
         waitForRemoteTigerProxyToBeOnline(remoteProxyUrl);
+        if (isShuttingDown()) {
+            return;
+        }
         final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
         final ListenableFuture<StompSession> connectFuture
             = tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);

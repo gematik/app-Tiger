@@ -57,7 +57,12 @@ pipeline {
 
           stage('Tests') {
               steps {
-                   mavenVerify(POM_PATH, '-ntp -Dskip.unittests -Dcucumber.filter.tags="@Approval and not @OpenBug and not @WiP and not @LongRunning"')
+                script {
+                    sh label: 'integrationtest', script: """
+                        export TIGER_TESTENV_CFGFILE=tiger-jenkins.yaml
+                        mvn verify -ntp -Dskip.unittests -Dskip.dockerbuild -Dcucumber.filter.tags="@Approval and not @OpenBug and not @WiP and not @LongRunning"
+                        """
+                 }
               }
           }
       }

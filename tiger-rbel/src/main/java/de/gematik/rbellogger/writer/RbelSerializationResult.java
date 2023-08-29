@@ -36,7 +36,7 @@ public class RbelSerializationResult {
         return RbelSerializationResult.builder()
             .content(treeRootNode.getContent())
             .contentType(treeRootNode.getType())
-            .charset(treeRootNode.getCharset())
+            .charset(treeRootNode.getElementCharset())
             .build();
     }
 

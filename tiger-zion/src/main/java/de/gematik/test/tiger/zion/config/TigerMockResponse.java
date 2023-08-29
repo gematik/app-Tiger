@@ -8,7 +8,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
@@ -29,6 +33,7 @@ public class TigerMockResponse {
     private Map<String, String> assignments = new HashMap<>();
     private int importance = 0;
 
+    @JsonIgnore
     public Optional<ZionRequestMatchDefinition> getRequestOptional() {
         return Optional.ofNullable(request);
     }
