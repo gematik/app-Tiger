@@ -345,7 +345,7 @@ servers:
                   Location: "/users/456"
 ----
 
-Here we have two nested responses in the `/users` path.One will match GET requests to the path `/users/+{userId}+`` and the other will match POST-Requests to the path `/users`.
+Here we have two nested responses in the `/users` path. One will match GET requests to the path `/users/+{userId}+` and the other will match POST-Requests to the path `/users`.
 
 === tgrEncodeAs
 

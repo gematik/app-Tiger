@@ -26,6 +26,8 @@ public class TigerLibConfig {
     @Builder.Default
     public boolean activateWorkflowUi = false;
     @Builder.Default
+    public boolean startBrowser = true;
+    @Builder.Default
     public boolean createRbelHtmlReports = true;
     @Builder.Default
     public long pauseExecutionTimeoutSeconds = 18000L;

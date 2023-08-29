@@ -4,16 +4,33 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import static org.mockserver.model.Header.header;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelListFacet;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
+import de.gematik.rbellogger.data.facet.RbelUriFacet;
+import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
+import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
+import org.mockserver.model.Header;
+import org.mockserver.model.HttpOverrideForwardedRequest;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
+import org.mockserver.model.Parameters;
+import org.mockserver.model.X509Certificate;
+
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.time.ZonedDateTime;
@@ -21,20 +38,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
-import org.apache.commons.lang3.StringUtils;
-import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
-import org.mockserver.model.*;
+
+import static org.mockserver.model.Header.header;
+import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
 @RequiredArgsConstructor
 @Data
 @Slf4j
 public abstract class AbstractTigerRouteCallback implements ExpectationForwardAndResponseCallback {
 
+    public static final String LOCATION_HEADER_KEY = "Location";
     private final TigerProxy tigerProxy;
     private final TigerRoute tigerRoute;
     private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
@@ -163,16 +176,16 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     }
 
     private void rewriteLocationHeaderIfApplicable(HttpResponse resp) {
-        if (tigerProxy.getTigerProxyConfiguration().isRewriteLocationHeader()
+       if (tigerProxy.getTigerProxyConfiguration().isRewriteLocationHeader()
             && resp.getStatusCode() / 100 == 3
-            && !resp.getHeader("Location").isEmpty()) {
-            final List<String> locations = resp.getHeader("Location");
-            resp.removeHeader("Location");
-            resp.withHeaders(locations.stream()
+            && !resp.getHeader(LOCATION_HEADER_KEY).isEmpty()) {
+            final List<String> locations = resp.getHeader(LOCATION_HEADER_KEY);
+            resp.removeHeader(LOCATION_HEADER_KEY);
+            locations.stream()
                 .map(this::rewriteConcreteLocation)
-                .map(l -> new Header("Location", l))
-                .toList());
-            log.info("Rewriting from {} to {}", locations, resp.getHeader("Location"));
+                .map(l -> new Header(LOCATION_HEADER_KEY, l))
+                .forEach(resp::withHeader);
+            log.info("Rewriting from {} to {}", locations, resp.getHeader(LOCATION_HEADER_KEY));
         }
     }
 
@@ -243,7 +256,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             .childNodes(httpRequest.getClientCertificateChain().stream()
                 .map(X509Certificate::getCertificate)
                 .map(cert -> mapToRbelElement(cert, message))
-                .collect(Collectors.toList()))
+                .toList())
             .build());
 
         return Optional.of(

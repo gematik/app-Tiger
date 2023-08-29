@@ -4,13 +4,6 @@
 
 package de.gematik.rbellogger.data.facet;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
-import static j2html.TagCreator.b;
-import static j2html.TagCreator.div;
-import static j2html.TagCreator.p;
-import static j2html.TagCreator.span;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.key.RbelKey;
@@ -18,15 +11,15 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import j2html.tags.DomContent;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.Optional;
+
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
+import static j2html.TagCreator.*;
 
 @Builder(toBuilder = true)
 @Data
@@ -42,6 +35,7 @@ public class RbelVauErpFacet implements RbelFacet {
             @Override
             public ContainerTag performRendering(final RbelElement element, final Optional<String> key,
                                                  final RbelHtmlRenderingToolkit renderingToolkit) {
+                RbelElement vauMessage = element.getFacetOrFail(RbelVauErpFacet.class).getMessage();
                 return div(t1ms("VAU Encrypted Message (E-Rezept)")
                     .with(showContentButtonAndDialog(element, renderingToolkit)))
                     .with(addNotes(element, "mb-5"))
@@ -58,9 +52,10 @@ public class RbelVauErpFacet implements RbelFacet {
                                     .map(DomContent.class::cast)
                                     .orElse(span())
                             ),
-                            childBoxNotifTitle(CLS_BODY).with(t2("Body"))
-                                .with(addNotes(element.getFacetOrFail(RbelVauErpFacet.class).getMessage()))
-                                .with(renderingToolkit.convert(element.getFacetOrFail(RbelVauErpFacet.class).getMessage(), Optional.empty())),
+                                childBoxNotifTitle(CLS_BODY).with(t2("Body")
+                                                .with(showContentButtonAndDialog(vauMessage, renderingToolkit))
+                                                .with(addNotes(vauMessage)))
+                                                .with(renderingToolkit.convert(vauMessage, Optional.empty())),
                             childBoxNotifTitle(CLS_PKIOK).with(
                                     p()
                                         .withClass(CLS_PKIOK)

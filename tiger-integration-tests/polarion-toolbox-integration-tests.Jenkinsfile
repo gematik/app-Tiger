@@ -49,7 +49,7 @@ pipeline {
 
         stage('Tests') {
             environment {
-                POLARION_CREDENTIALS = credentials('svc_aurora')
+                POLARION_CREDENTIALS = credentials('svc_aurora_test')
             }
             steps {
                 mavenVerify(POM_PATH, "-DPolarionPassword=$POLARION_CREDENTIALS_PSW")

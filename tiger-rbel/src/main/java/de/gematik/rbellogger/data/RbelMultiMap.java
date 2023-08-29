@@ -4,12 +4,13 @@
 
 package de.gematik.rbellogger.data;
 
+import lombok.Data;
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Data
 public class RbelMultiMap<T> implements Map<String, T> {

@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.data;
 
+import de.gematik.rbellogger.RbelContent;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.facet.*;
@@ -25,7 +26,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Getter
 @Slf4j
-public class RbelElement {
+public class RbelElement implements RbelContent {
 
     static {
         TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
@@ -58,6 +59,7 @@ public class RbelElement {
         }
         this.rawContent = rawContent;
         this.parentNode = parentNode;
+
         if (charset == null) {
             this.charset = Optional.empty();
         } else {
@@ -69,6 +71,7 @@ public class RbelElement {
             this.size = 0L;
         }
     }
+
 
     public static RbelElement wrap(byte[] rawValue, @NonNull RbelElement parentNode, Object value) {
         return new RbelElement(rawValue, parentNode)
@@ -87,6 +90,7 @@ public class RbelElement {
             .findFirst();
     }
 
+    @Override
     public <T extends RbelFacet> boolean hasFacet(Class<T> clazz) {
         return getFacet(clazz).isPresent();
     }
@@ -98,6 +102,7 @@ public class RbelElement {
         return this;
     }
 
+    @Override
     public List<RbelElement> getChildNodes() {
         return Collections.unmodifiableList(facets).stream()
             .map(RbelFacet::getChildElements)
@@ -108,6 +113,7 @@ public class RbelElement {
             .collect(Collectors.toList());
     }
 
+    @Override
     public RbelMultiMap<RbelElement> getChildNodesWithKey() {
         return Collections.unmodifiableList(facets).stream()
             .map(RbelFacet::getChildElements)
@@ -145,9 +151,11 @@ public class RbelElement {
         }
     }
 
+
+    @Override
     public String findNodePath() {
         LinkedList<Optional<String>> keyList = new LinkedList<>();
-        final AtomicReference<RbelElement> ptr = new AtomicReference(this);
+        final AtomicReference<RbelElement> ptr = new AtomicReference<>(this);
         while (!(ptr.get().getParentNode() == null)) {
             keyList.addFirst(
                 ptr.get().getParentNode().getChildNodesWithKey().stream()
@@ -161,6 +169,7 @@ public class RbelElement {
             .collect(Collectors.joining("."));
     }
 
+    @Override
     public Optional<RbelElement> getFirst(String key) {
         return getChildNodesWithKey().stream()
             .filter(entry -> entry.getKey().equals(key))
@@ -168,6 +177,7 @@ public class RbelElement {
             .findFirst();
     }
 
+    @Override
     public List<RbelElement> getAll(String key) {
         return getChildNodesWithKey().stream()
             .filter(entry -> entry.getKey().equals(key))
@@ -175,6 +185,7 @@ public class RbelElement {
             .collect(Collectors.toList());
     }
 
+    @Override
     public Optional<String> findKeyInParentElement() {
         return Optional.of(this)
             .map(RbelElement::getParentNode)
@@ -186,11 +197,16 @@ public class RbelElement {
             .findFirst();
     }
 
+    @Override
     public List<RbelElement> findRbelPathMembers(String rbelPath) {
         return new RbelPathExecutor(this, rbelPath)
-            .execute();
+                .execute(RbelElement.class)
+                .stream()
+                .map(RbelElement::castToRbelElement)
+                .toList();
     }
 
+    @Override
     @Nullable
     public String getRawStringContent() {
         if (rawContent == null) {
@@ -200,6 +216,7 @@ public class RbelElement {
         }
     }
 
+    @Override
     public Charset getElementCharset() {
         return charset
             .or(() -> Optional.ofNullable(parentNode)
@@ -242,6 +259,7 @@ public class RbelElement {
             .map(clazz::cast);
     }
 
+    @Override
     public Optional<String> getKey() {
         if (parentNode == null) {
             return Optional.empty();
@@ -262,6 +280,7 @@ public class RbelElement {
         }
     }
 
+    @Override
     public Optional<RbelElement> findElement(String rbelPath) {
         final List<RbelElement> resultList = findRbelPathMembers(rbelPath);
         if (resultList.isEmpty()) {
@@ -312,6 +331,7 @@ public class RbelElement {
             .collect(Collectors.toUnmodifiableList());
     }
 
+    @Override
     public RbelElement findMessage() {
         RbelElement position = this;
         while (position.getParentNode() != null) {
@@ -331,6 +351,7 @@ public class RbelElement {
         return Optional.empty();
     }
 
+    @Override
     public RbelElement findRootElement() {
         RbelElement result = this;
         RbelElement newResult = result.getParentNode();
@@ -339,6 +360,15 @@ public class RbelElement {
             newResult = result.getParentNode();
         }
         return result;
+    }
+
+    public static RbelElement castToRbelElement(RbelContent rbelContent) {
+        if(rbelContent instanceof RbelElement asRbelElement) {
+            return asRbelElement;
+        }
+        else {
+            throw new ClassCastException("RbelPath was attempted to illegally be casted to RbelElement.");
+        }
     }
 
     private static class RbelPathNotUniqueException extends RuntimeException {

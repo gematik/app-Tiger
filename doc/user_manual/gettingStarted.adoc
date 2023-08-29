@@ -15,7 +15,7 @@ If you don't have time right now to look through the whole documentation, you ca
 === Requirements
 
 .Operating system requirements
-* Open JDK >= 11
+* Open JDK >= 17
 * Maven >= 3.6
 * IntelliJ >= 2021.2.3
 
