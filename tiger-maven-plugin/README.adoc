@@ -46,8 +46,10 @@ Either empty or of the pattern "package xxx.yyy.zzz;" where xxx.yyy.zzz is repla
 name of the driver class (with the ctr token already being replaced with the incrementing counter value).
     *** ${feature} +
 path to the feature file(s).
-    *** ${glues} +
-comma separated list of glue/hook packages as specified by the glues configuration property.
+*** ${glues} +
+comma separated list of glue/hook packages as specified by the glues configuration property in curly braces.
+*** ${gluesCsv} +
+comma separated list of glue/hook packages without curly braces.
 
 === Manually creating driver classes
 

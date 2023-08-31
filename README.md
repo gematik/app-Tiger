@@ -40,7 +40,7 @@ Every information at one place: check out our Tiger-User-Manual!
 
 ## Product specification draft
 
-For more details please check out the [specification document](doc/specification/tiger_product_definition.md) 
+For more details please check out more Plantuml diagrammes at [specification folder](doc/specification) 
 
 ## Simple example project
 
