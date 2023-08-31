@@ -7,6 +7,19 @@
 * Selenium 4.8.0
 * Appium 8.3.0
 * Spring Boot 3.1.0
+* Logback 1.4.9
+
+# Release 2.1.8
+
+* TGR-1048: Resolved the problems with steps not being found in IntelliJ's Gherkin plugin. Also they were executed, one was not able to look them up with auto complete and if entered manually the step was marked as undefined
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.1.0
 * Logback 1.4.8
 
 # Release 2.1.7
