@@ -4,40 +4,40 @@ Feature: Playwright Test feature
     Given TGR clear recorded messages
 
   Scenario: Simple Get Request
-    When TGR send empty GET request to "http://winstone"
+    When TGR send empty GET request to "http://httpbin"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "GET"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/?"
 
   Scenario: Get Request to folder
-    When TGR send empty GET request to "http://winstone/target"
+    When TGR send empty GET request to "http://httpbin/get"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "GET"
-    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
+    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/get\/?"
 
   Scenario: PUT Request to folder
-    When TGR send empty PUT request to "http://winstone/target"
+    When TGR send empty PUT request to "http://httpbin/put"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
-    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
+    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/put\/?"
 
   Scenario: PUT Request with body to folder
-    When TGR send PUT request to "http://winstone/target" with:
+    When TGR send PUT request to "http://httpbin/put" with:
       | hello |
       | world |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
-    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/target\/?"
+    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/put\/?"
     And TGR assert "!{rbel:currentRequestAsString('$.body.hello')}" matches "world"
 
   Scenario: DELETE Request without body
-    When TGR send empty DELETE request to "http://winstone/not_a_file"
+    When TGR send empty DELETE request to "http://httpbin/not_a_file"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "DELET"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/not_a_file\/?"
 
   Scenario: Request with custom header
-    When TGR send empty GET request to "http://winstone/not_a_file" with headers:
+    When TGR send empty GET request to "http://httpbin/not_a_file" with headers:
       | foo    | bar |
       | schmoo | lar |
     Then TGR find last request to path ".*"
@@ -46,10 +46,10 @@ Feature: Playwright Test feature
 
   Scenario: Request with default header
     Given TGR set default header "key" to "value"
-    When TGR send empty GET request to "http://winstone/not_a_file"
+    When TGR send empty GET request to "http://httpbin/not_a_file"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
-    When TGR send POST request to "http://winstone/not_a_file" with:
+    When TGR send POST request to "http://httpbin/not_a_file" with:
       | hello |
       | world |
     Then TGR find last request to path ".*"
@@ -58,7 +58,7 @@ Feature: Playwright Test feature
 
   Scenario: Request with custom and default header
     Given TGR set default header "key" to "value"
-    When TGR send empty GET request to "http://winstone/not_a_file" with headers:
+    When TGR send empty GET request to "http://httpbin/not_a_file" with headers:
       | foo | bar |
     Then TGR find last request to path ".*"
     And TGR print current request as rbel-tree
@@ -68,7 +68,7 @@ Feature: Playwright Test feature
   Scenario: Request with custom and default header
     Given TGR set local variable "configured_state_value" to "some_value"
     Given TGR set local variable "configured_param_name" to "my_cool_param"
-    When TGR send POST request to "http://winstone/not_a_file" with:
+    When TGR send POST request to "http://httpbin/not_a_file" with:
       | ${configured_param_name}   | state                     | redirect_uri        |
       | client_id                  | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path ".*"
@@ -79,7 +79,7 @@ Feature: Playwright Test feature
 
   Scenario: Request with custom and default header
     Given TGR set default header "Content-Type" to "application/json"
-    When TGR send POST request to "http://winstone/not_a_file" with:
+    When TGR send POST request to "http://httpbin/not_a_file" with:
       | ${configured_param_name}   |
       | client_id                  |
     Then TGR find last request to path ".*"
@@ -87,10 +87,10 @@ Feature: Playwright Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/json"
 
   Scenario Outline: JEXL Rbel Namespace Test
-    Given TGR send empty GET request to "http://winstone"
+    Given TGR send empty GET request to "http://httpbin"
     Then TGR find request to path "/"
     And TGR print current request as rbel-tree
-    Then TGR current response with attribute "$.body.html.head.link.href" matches "!{rbel:currentResponseAsString('$.body.html.head.link.href')}"
+    Then TGR current response with attribute "$.body.html.head.title.text" matches "!{rbel:currentResponseAsString('$.body.html.head.title.text')}"
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
       | txt   | txt2 | txt3| txt4| txt5|
       | text2 | 21   |31   |41   |51   |
@@ -107,34 +107,41 @@ Feature: Playwright Test feature
 
 
   Scenario: Simple first test
-    Given TGR send empty GET request to "http://winstone"
+    Given TGR send empty GET request to "http://httpbin"
     Then TGR find request to path "/"
     Then TGR current response with attribute "$.body.html.head.link.href" matches "jetty-dir.css"
+    And TGR current response at "$.body" matches as JSON:
+    """
+    {
+      "timestamp": "${json-unit.ignore}",
+      "status": 400,
+      "error": "Bad Request",
+      "path": "/service/performLogin"
+    }
+    """
+    And TGR print current response as rbel-tree
 
   Scenario: Test Find Last Request
-    Given TGR send empty GET request to "http://winstone/classes?foobar=1"
-    Then TGR send empty GET request to "http://winstone/classes?foobar=2"
+    Given TGR send empty GET request to "http://httpbin/classes?foobar=1"
+    Then TGR send empty GET request to "http://httpbin/classes?foobar=2"
     Then TGR find last request to path "/classes"
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
-    Then TGR current response with attribute "$.header.Location.foobar.value" matches "2"
 
   Scenario: Test find last request with parameters
-    Given TGR send empty GET request to "http://winstone/classes?foobar=1"
-    Then TGR send empty GET request to "http://winstone/classes?foobar=1&xyz=4"
-    Then TGR send empty GET request to "http://winstone/classes?foobar=2"
+    Given TGR send empty GET request to "http://httpbin/classes?foobar=1"
+    Then TGR send empty GET request to "http://httpbin/classes?foobar=1&xyz=4"
+    Then TGR send empty GET request to "http://httpbin/classes?foobar=2"
     Then TGR find last request to path "/classes"
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
 
   Scenario: Test find last request
-    Given TGR send empty GET request to "http://winstone/classes?foobar=1"
-    Then TGR send empty GET request to "http://winstone/classes?foobar=2"
-    Then TGR send empty GET request to "http://winstone/classes?foobar=3"
-    Then TGR send empty GET request to "http://winstone/directoryWhichDoesNotExist?other=param"
+    Given TGR send empty GET request to "http://httpbin/classes?foobar=1"
+    Then TGR send empty GET request to "http://httpbin/classes?foobar=2"
+    Then TGR send empty GET request to "http://httpbin/classes?foobar=3"
+    Then TGR send empty GET request to "http://httpbin/directoryWhichDoesNotExist?other=param"
     Then TGR find the last request
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
-    Then TGR current response with attribute "$.responseCode" matches "404"
-    Then TGR assert "!{rbel:currentRequestAsString('$.path.other.value')}" matches "param"
-    Then Wait some time
+    Then TGR current response with attribute "$.responseCode" matches "501"

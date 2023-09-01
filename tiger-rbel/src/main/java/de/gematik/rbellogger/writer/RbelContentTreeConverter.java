@@ -96,8 +96,8 @@ public class RbelContentTreeConverter {
             .map(el -> convertRbelElement(el, TGR_ENCODE_AS, conversionContext))
             .stream()
             .flatMap(List::stream)
-            .map(el -> el.childNodes().stream().findFirst().orElse(el))
-            .map(el -> new String(el.getContent(), el.getCharset()))
+            .map(el -> el.getChildNodes().stream().findFirst().orElse(el))
+            .map(el -> new String(el.getContent(), el.getElementCharset()))
             .findFirst();
     }
 

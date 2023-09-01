@@ -36,6 +36,7 @@ The Tiger testenvironment manager currently supports the following list of serve
 * **External URL** is a symbolic node that is actually maintained outside the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.
 * **Tiger Proxy** is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
 * **Helm Chart** is a node that will be added to tiger via a plugin mechanism that starts a helm chart within a kubernetes environment.
+* **httpbin** is a node mainly useful for testing purposes. It starts a https://github.com/gaul/java-httpbin[httpbin] server which provides mock endpoints.
 
 ==== YAML configuration files in a nutshell
 
@@ -585,6 +586,17 @@ tigerProxy_001:
 ----
 
 The configuration of the Tiger Proxy is explained in detail in the section xref:_configuring_the_local_test_suite_tiger_proxy[]
+
+==== httpbin node
+
+The httpbin simply starts a https://github.com/gaul/java-httpbin[httpbin] server. This provides several endpoints against which you can perform all kinds of http requests. The server port on which the server starts can be configured.
+
+[source,yaml,title=httpbin configuration]
+httpbin:
+    type: httpbin
+    serverPort: ${free.port.0}
+    healthcheckUrl: http://localhost:${free.port.0}/status/200
+
 
 === Provided node templates
 

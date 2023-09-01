@@ -278,6 +278,75 @@ The two answers are both considered.
 Since they are stored in the YAML as a map, the order in the YAML is of no significance.
 Rather you have to specify the importance of a response, with a higher number meaning a higher importance meaning the response will be considered first.
 
+=== Matching path variables
+
+In many REST-Apis it is usual to include variables as part of the resource path. Zion allows to configure a response that will match a path and extract the given variables. The assigned values can then be used in the response or be used in additional matching criteria. Here is an example:
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: 8080
+      mockResponses:
+        users:
+          request:
+            path: "/users/{userId}"
+            method: "GET"
+            additionalCriterions:
+              - "'${userId}' == '123'"
+          response:
+            statusCode: 200
+            body: "{'id':'${userId}', 'username': 'Tiger'}"
+----
+
+The matching of the response is made with the new configuration entry `request`.Here we defined the `path` and `method` that should match and `additionalCriterions`.In the path we can see a variable defined with `+{userId}+`.
+
+When making the following request:
+
+ $ curl "localhost:8080/users/123"
+ {'id':'123', 'username': 'Tiger'}
+
+the variable `userId` will be matched with the requested url and be assigned the value of `"123"`. This value can then be used in the `additionalCriterions` and in the `body`.
+
+The matching of paths using the `request` configuration can also be made using nested responses. The path to match will combine paths specified in the different levels of the nested response. For example:
+
+.tiger.yaml
+[source,yaml]
+----
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: 8080
+      mockResponses:
+        users:
+          request:
+            path: "/users"
+          nestedResponses:
+            getSpecificUser:
+              request:
+                path: "/{userId}"
+                method: "GET"
+                additionalCriterions:
+                  - "'${userId}' == '123'"
+              response:
+                statusCode: 200
+                body: "{'id':'${userId}', 'username': 'Tiger'}"
+            addUser:
+              request:
+                method: "POST"
+                path: ""
+              response:
+                statusCode: 201
+                headers:
+                  Location: "/users/456"
+----
+
+Here we have two nested responses in the `/users` path. One will match GET requests to the path `/users/+{userId}+` and the other will match POST-Requests to the path `/users`.
+
 === tgrEncodeAs
 
 One of the core capabilities of Zion is the ability to switch between media types.

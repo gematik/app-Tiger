@@ -38,6 +38,7 @@ public class TigerGlue {
     @Wenn("TGR setze globale Variable {string} auf {string}")
     @When("TGR set global variable {string} to {string}")
     public void ctxtISetGlobalVariableTo(final String key, final String value) {
+        log.debug("Setting global variable {} to '{}'", key, value);
         TigerGlobalConfiguration.putValue(
             TigerGlobalConfiguration.resolvePlaceholders(key),
             TigerGlobalConfiguration.resolvePlaceholders(value));
@@ -53,6 +54,7 @@ public class TigerGlue {
     @Wenn("TGR setze lokale Variable {string} auf {string}")
     @When("TGR set local variable {string} to {string}")
     public void ctxtISetLocalVariableTo(final String key, final String value) {
+        log.debug("Setting local variable {} to '{}'", key, value);
         TigerGlobalConfiguration.putValue(
             TigerGlobalConfiguration.resolvePlaceholders(key),
             TigerGlobalConfiguration.resolvePlaceholders(value),
@@ -172,4 +174,17 @@ public class TigerGlue {
             assertThat(value1).matches(value2);
         }
     }
+
+    /**
+     * Prints the value of the given variable to the System-out
+     */
+    @Dann("TGR gebe variable {string} aus")
+    @Then("TGR print variable {string}")
+    public void printVariable(String key) {
+        final String resolvedKey = TigerGlobalConfiguration.resolvePlaceholders(key);
+        final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(resolvedKey);
+        System.out.println(key + ": '" + optionalValue.orElse("This key is not set!") + "'"); //NOSONAR
+    }
+
+
 }

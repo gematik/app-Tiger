@@ -1,4 +1,4 @@
-# Changelog Tiger Testplattform
+# Changelog Tiger Test platform
 
 -------
 * Serenity BDD 3.6.23
@@ -6,24 +6,119 @@
 * RestAssured 5.2.0
 * Selenium 4.8.0
 * Appium 8.3.0
-* Spring Boot 3.0.6
-* Logback 1.4.7
+* Spring Boot 3.1.0
+* Logback 1.4.9
+
+# Release 2.1.8
+
+* TGR-1048: Resolved the problems with steps not being found in IntelliJ's Gherkin plugin. Also they were executed, one was not able to look them up with auto complete and if entered manually the step was marked as undefined
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.1.0
+* Logback 1.4.8
+
+# Release 2.1.7
+
+## Features
+* 
+* TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
+* TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI anymore but are still written to console and log files
+
+# Release 2.1.6
+
+## Features
+
+* TGR-1027(2): Extend inline jexl to enable eRp Migration
+    * getValue(string) -> string : returns the value of the given variable name. This is extremely helpful for variables with multiline content, where using ${variable} would break the JEXL parsing
+    * subStringBefore(string) -> string
+    * subStringAfter(string) -> string
+* TGR-1039: support generation of JUnit5 driver classes by the Tiger maven plugin. For this a new property has been added to the configuration: ```<junit5Driver>true</junit5Driver>``` which will create driver classes based on Junit5. The following additional dependencies are needed for these:
+```xml
+ <dependency>
+    <groupId>org.junit.platform</groupId>
+    <artifactId>junit-platform-suite</artifactId>
+    <version>1.9.2</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-junit-platform-engine</artifactId>
+    <version>7.11.2</version>
+    <scope>test</scope>
+</dependency>
+```
+
+* TGR-990: first mvp of playwright tests for testing the WorkflowUI added
+
+## Bugfixes
+
+* TGR-1028: Fixed bug where the RbelWriter did not serialize an empty json array correctly.
+* TGR-1029: Fixed bug where rewriting of Location headers on redirects would remove other headers from the response.
+* TGR-1032: Fixed a bug where `additionalCriterions` of a Zion mock response was not correctly serialized into the zion configuration properties.
+* TGR-915: adding missing content popup buttons to JWE/JWT/VAU elements in rbel logs
+* fixed doc example tigerOnly pom.xml so that it runs out of the box
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.1.0
+* Logback 1.4.8
 
 # Release 2.1.3
 
+## Breaking changes
+
+* with TGR-1015 we fixed the http client steps sending form data (GET/POST) to be not URL encoded. 
+  * The affected steps are:
+    * @When("TGR send {requestType} request to {string} with:")
+    * @When("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
+    * @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
+  * and 
+    * @When("TGR send {requestType} request to {string} without waiting for the response with:")
+    * @Then("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
+  * Please be aware that validation of the params needs to be handled differently now.
+    * For GET requests you can validate the value of the get request via: $.path.paramname.value which returns the URL decoded value
+    * For POST requests the value is URL encoded in the body, so we can not easily validate it ULR decoded. $.body.paramname will therefore contain the URL encoded value. To ease with validation we have introduced a new JEXL helper function !{rbel:urlEncocded('value')} which will return the URL encoded value of the given string.
+     
 ## Bugfixes
 
 * Wildcard file filters are now also supported for windows users
 * TGR-956: Fixed a bug for correctly handling concurrent requests in Zion
-* TGR-979: fixing bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround was to disable the serenity maven plugin in tiger-test-utils
+* TGR-979: Fixed bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround was to disable the serenity maven plugin in tiger-test-utils
 * TGRFHIR-8: URL-Query parameters are no longer twice URL-encoded when using HTTP Glue Code
-* TGR-999: Scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
-* TGR-1010: Added Http client step to send a request with a multiline body (for more complex json requests)
+* TGR-999: Fixed scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
+* TGR-1015: Datatable based param/values of http client GET and POST request steps are now URL encoded per default.
 
 ## Features
 
 * TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any combination thereof)
 * TGR-976: New annotation `@TigerSkipEvaluation` which skips the evaluation of configuration values.
+* TGR-1010: Added Http client step to send a request with a multiline body (for more complex json requests)
+* TGR-1015: To ease with validation of POST form parameters, we have introduced a new JEXL helper function !{urlEncocded('value')} which will return the URL encoded value of the given string.
+* TGR-977: Zion can now match path variables and assigns them to the values given in the request URL. See User Manual section "Tiger Zion > Matching path variables"
+* TGR-1020: added http client step to clear all default headers. 
+  * @When("TGR clear all default headers")
+  * @When("TGR lösche alle default headers")
+* TGR-1024: added http client step to allow to specify multiple default headers via key value pairs as doc string
+  * @When("TGR set default headers:")
+  * @Then("TGR setze folgende default headers:")
+  * @When("TGR folgende default headers gesetzt werden:")
+* TGR-1027: Extend tiger glue code and inline jexl to enable eRp Migration
+  * new step to print out the value of a stored variable 
+    * @Dann("TGR gebe variable {string} aus")
+    * @Then("TGR print variable {string}")
+  * new inline jexl methods:
+    * resolve(string) -> string : resolves all placeholders and jexl expression in string. Very useful in combination with the file() method
+    * randomHex(int size) -> string : produces a random hex string with size characters
+    * currentLocalDate() -> string : produces a string of format YYYY-MM-DD of today
 
 -------
 * Serenity BDD 3.6.23
