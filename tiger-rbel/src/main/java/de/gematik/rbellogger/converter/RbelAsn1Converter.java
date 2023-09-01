@@ -6,8 +6,10 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
-import de.gematik.rbellogger.exceptions.RbelAsn1Exception;
 import de.gematik.rbellogger.util.RbelException;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.*;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -16,9 +18,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Base64.Decoder;
-
-import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.asn1.*;
 
 @Slf4j
 public class RbelAsn1Converter implements RbelConverterPlugin {
@@ -95,7 +94,7 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
             parentNode.addFacet(RbelListFacet.builder().childNodes(rbelSequence).build());
         } else if (asn1 instanceof ASN1TaggedObject) {
             final int tagNo = ((ASN1TaggedObject) asn1).getTagNo();
-            final ASN1Primitive nestedObject = ((ASN1TaggedObject) asn1).getObject();
+            final ASN1Primitive nestedObject = ((ASN1TaggedObject) asn1).getLoadedObject();
             RbelElement nestedElement = new RbelElement(nestedObject.getEncoded(), parentNode);
             convertToAsn1Facets(nestedObject, converter, nestedElement);
             parentNode.addFacet(new RbelAsn1TaggedValueFacet(
