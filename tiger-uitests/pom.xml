@@ -28,7 +28,7 @@
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-            <version>1.36.0</version>
+            <version>1.37.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/xerces/xercesImpl -->
         <dependency>
@@ -143,6 +143,11 @@
                                 <!-- adapt to the class names of your driver classes -->
                                 <exclude>**/Driver*IT.java</exclude>
                             </excludes>
+                            <includes>
+                                <include>
+                                    **/workflowui/*.java
+                                </include>
+                            </includes>
                         </configuration>
                         <executions>
                             <execution>

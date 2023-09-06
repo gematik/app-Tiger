@@ -39,7 +39,6 @@ class XDynamicSidebarTests extends AbstractTests {
             () -> assertThat(page.querySelector("#test-sidebar-feature-icon").isVisible()).isTrue(),
             () -> assertThat(page.querySelector("#test-sidebar-server-icon").isVisible()).isTrue()
         );
-
     }
 
     @Test
@@ -79,11 +78,10 @@ class XDynamicSidebarTests extends AbstractTests {
         assertThat(servers).hasSize(3);
         servers.forEach(server -> assertThat(server.textContent()).contains("RUNNING"));
         page.locator("#test-sidebar-server-status .test-sidebar-server-name").all().forEach(server -> assertThat(server.textContent().equals("local_tiger_proxy") || server.textContent().equals("httpbin") || server.textContent().equals("remoteTigerProxy")));
-
     }
     @ParameterizedTest
     @ValueSource(ints = {0, 1})
-    void ServerBoxTigerProxyWebUiStarted(int counter) throws InterruptedException {
+    void ServerBoxTigerProxyWebUiStarted(int counter) {
         page.querySelector("#test-tiger-logo").click();
         Page page1 = page.waitForPopup(() -> page.locator("#sidebar-left .test-sidebar-server-url-icon").nth(counter).click());
         await().atMost(1000, TimeUnit.MILLISECONDS)
@@ -101,6 +99,9 @@ class XDynamicSidebarTests extends AbstractTests {
             () -> assertThat(page.locator(".test-sidebar-server-logs").nth(counter).locator(".test-sidebar-server-log").first().isVisible()).isTrue(),
             () -> assertThat(page.locator(".test-sidebar-server-logs").nth(counter).locator(".test-sidebar-server-log").last().isVisible()).isTrue()
         );
+        if (counter != 0) {
+            assertThat(page.locator(".test-sidebar-server-logs").nth(counter).locator(".test-sidebar-server-log").last().textContent()).contains("READY");
+        }
     }
 
     @ParameterizedTest
@@ -122,7 +123,9 @@ class XDynamicSidebarTests extends AbstractTests {
             () -> assertThat(
                 page.locator(".test-execution-pane-feature-title").locator(".test-failed").count()).isPositive(),
             () -> assertThat(
-                page.locator(".test-execution-pane-scenario-title").locator(".test-failed").count()).isPositive()
+                page.locator(".test-execution-pane-scenario-title").locator(".test-failed").count()).isPositive(),
+            () -> assertThat(
+                page.locator(".test-execution-pane-scenario-title").locator(".test-passed").count()).isPositive()
         );
     }
 

@@ -9,7 +9,7 @@
        :id="`${link}`" ></i>
     {{ text }}
   </span>
-  <span :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill`">
+  <span :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`">
       {{ testStatus }}
     </span>
 </template>

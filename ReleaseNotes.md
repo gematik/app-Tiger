@@ -28,6 +28,7 @@
 * 
 * TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
 * TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI anymore but are still written to console and log files
+* TGR-1044: During the execution of the playwright tests screenshots of the WorkflowUI and the WebUI are taken and stored in the doc/user_manual directory
 
 # Release 2.1.6
 

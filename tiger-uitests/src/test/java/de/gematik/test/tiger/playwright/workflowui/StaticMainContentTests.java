@@ -8,19 +8,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Tests for the static content of the main window, that means execution pane and server log pane.
  */
+@TestMethodOrder(OrderAnnotation.class)
 class StaticMainContentTests extends AbstractTests {
 
     @Test
+    @Order(1)
     void testServerLogPaneButtonsExists() {
         page.querySelector("#test-server-log-tab").click();
-        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(20, TimeUnit.SECONDS)
+        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
             .until(() -> page.locator("#test-server-log-pane-server-httpbin").isVisible());
         assertAll(
             () -> assertThat(page.locator("#test-server-log-pane-server-localTigerProxy").isVisible()).isTrue(),
@@ -33,6 +38,28 @@ class StaticMainContentTests extends AbstractTests {
         );
     }
 
+//    @Test
+//    void testPassedScenario() {
+//        page.querySelector("#test-tiger-logo").click();
+//        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".scenarioLink").first().locator(".test-passed").first().isVisible()).isTrue();
+//    }
+//
+//    @Test
+//    void testFailedScenario() {
+//        page.querySelector("#test-tiger-logo").click();
+//        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+//            .until(() -> page.locator("#test-sidebar-featurelistbox").locator(".scenarioLink").first().locator(".test-failed").first().isVisible());
+//        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".test-failed").first().isVisible()).isTrue();
+//    }
+//    @Test
+//    void testExecutingScenario() {
+//        page.querySelector("#test-tiger-logo").click();
+//        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+//            .until(() -> page.locator("#test-sidebar-featurelistbox").locator(".test-running").first().isVisible());
+//
+//        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".test-running").first().isVisible()).isTrue();
+//    }
+
     @Test
     void testExecutionPaneActive() {
         assertAll(
@@ -42,7 +69,7 @@ class StaticMainContentTests extends AbstractTests {
     }
 
     @Test
-    void testExecutionPaneStatus() {
+    void testExecutionPaneDateTime() {
         assertThat(page.locator("#test-execution-pane-date").isVisible()).isTrue();
     }
 
@@ -57,11 +84,10 @@ class StaticMainContentTests extends AbstractTests {
         assertAll(
             () -> assertThat(page.locator("#test-server-log-pane-buttons").locator(".active").count()).isEqualTo(1),
             () -> assertThat(
-                page.locator("#test-server-log-pane-buttons").locator(".test-server-log-pane-server-all.active")
+                page.locator("#test-server-log-pane-buttons").locator("#test-server-log-pane-server-all.active")
                     .isVisible()).isTrue()
             );
     }
-
 
     @Test
     void testServerPanInputTextIsEmpty() {

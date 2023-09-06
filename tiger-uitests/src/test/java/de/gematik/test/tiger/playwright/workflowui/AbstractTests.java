@@ -6,6 +6,7 @@ package de.gematik.test.tiger.playwright.workflowui;
 
 import static org.awaitility.Awaitility.await;
 import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserType.LaunchOptions;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import java.io.FileInputStream;
@@ -17,9 +18,9 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  * This class reads the workflow ui port out from the log file that mvn creates when executing tiger and the feature
@@ -28,19 +29,22 @@ import org.junit.jupiter.api.BeforeAll;
  *  in the first terminal do (this will start the tiger and workflow ui but without starting the browser):
  *          cd tiger-uitests
  *          rm -f mvn-playwright-log.txt
- *          mvn -P start-tiger-dummy verify | tee mvn-playwright-log.txt
+ *          mvn -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
  *
- *  in the second termin do (this will start the actual playwright tests):
+ *  in the second terminal do (this will start the actual playwright tests):
  *          cd tiger-uitests
- *          mvn -P run-playwright-test verify
+ *          mvn -P run-playwright-test failsafe:integration-test
  *
  * See tiger-uitests-playwright-tests.Jenkinsfile for further information.
  * It also holds the variables used by the playwright tests such as playwright, browser and page.
  */
 @Slf4j
-public class AbstractTests {
+public class AbstractTests implements ExtensionContext.Store.CloseableResource {
 
     static String port;
+    private final static String doc = "doc";
+    private final static String user_manual = "user_manual";
+    private final static String screenshots = "screenshots";
 
     private static void checkPort() {
         if (port != null && !port.isEmpty()) {
@@ -50,7 +54,7 @@ public class AbstractTests {
         await().pollInterval(1, TimeUnit.SECONDS).atMost(60, TimeUnit.SECONDS).until(() -> {
                 if (Files.exists(path)) {
                     FileInputStream fis = new FileInputStream(path.toString());
-                    await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS).until(() ->
+                    await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(30, TimeUnit.SECONDS).until(() ->
                         getPort(fis) != null);
                     return true;
                 } else {
@@ -81,18 +85,21 @@ public class AbstractTests {
     static Browser browser;
     static Page page;
 
+
     @BeforeAll
-    static void launchBrowser() {
+    static synchronized void launchBrowser() {
+        if (playwright != null) {
+            return;
+        }
         checkPort();
         playwright = Playwright.create();
-        browser = playwright.chromium().launch();
+        log.info("Playwright created");
+        browser = playwright.chromium().launch(new LaunchOptions().setHeadless(true));
+        log.info("Browser launched");
         page = browser.newPage();
+        log.info("new page");
         page.navigate("http://localhost:" + port);
-    }
-
-    @AfterAll
-    static void closeBrowser() {
-        playwright.close();
+        log.info("to http://localhost:" + port + " navigated");
     }
 
     @AfterEach
@@ -106,5 +113,33 @@ public class AbstractTests {
         if (page.locator("#test-rbel-logo").isVisible()) {
             page.locator("#test-webui-slider").click();
         }
+    }
+
+    Path getPath(String file) {
+        return Paths.get("..", doc, user_manual, screenshots, file);
+    }
+
+    void screenshot(Page page, String fileName, String attribute, boolean isElement) {
+        if (isElement) {
+            page.evaluate("document.getElementById(\""+ attribute + "\").style.backgroundColor='yellow'");
+        } else {
+            page.evaluate("document.getElementsByClassName(\""+ attribute + "\")[0].style.backgroundColor='yellow'");
+        }
+        page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
+        if (isElement) {
+            page.evaluate("document.getElementById(\""+ attribute + "\").style.removeProperty(\"background-color\")");
+        } else {
+            page.evaluate("document.getElementsByClassName(\""+ attribute + "\")[0].style.removeProperty(\"background-color\")");
+        }
+    }
+
+    void screenshot(Page page, String fileName) {
+        page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
+    }
+
+    @Override
+    public void close() throws Throwable {
+        browser.close();
+        playwright.close();
     }
 }

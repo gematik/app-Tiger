@@ -712,7 +712,7 @@ function addQueryBtn(reqEl) {
 
   let queryBtn = document.createElement('a');
   queryBtn.innerHTML = '<span class="is-size-7 fw-bold">Inspect</span>';
-  queryBtn.setAttribute("class", "btn modal-button float-end mx-3");
+  queryBtn.setAttribute("class", "btn modal-button float-end mx-3 test-btn-inspect");
   queryBtn.setAttribute("data-bs-target", "#jexlQueryModal");
   queryBtn.setAttribute("data-bs-toggle", "modal");
   queryBtn.addEventListener("click", function (e) {
