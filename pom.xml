@@ -526,17 +526,45 @@
                     <version>0.8.10</version>
                     <executions>
                         <execution>
-                            <id>default-prepare-agent</id>
+                            <id>pre-unit-test</id>
                             <goals>
                                 <goal>prepare-agent</goal>
                             </goals>
+                            <configuration>
+                                <destFile>${project.build.directory}/coverage-reports/jacoco.exec</destFile>
+                                <propertyName>surefireJacocoAgent</propertyName>
+                            </configuration>
                         </execution>
                         <execution>
-                            <id>default-report</id>
-                            <phase>verify</phase>
+                            <id>pre-integration-test</id>
+                            <goals>
+                                <goal>prepare-agent-integration</goal>
+                            </goals>
+                            <configuration>
+                                <destFile>${project.build.directory}/coverage-reports/jacoco-it.exec</destFile>
+                                <propertyName>failsafeJacocoAgent</propertyName>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>post-unit-test</id>
+                            <phase>test</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
+                            <configuration>
+                                <dataFile>${project.build.directory}/coverage-reports/jacoco.exec</dataFile>
+                                <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>post-integration-test</id>
+                            <goals>
+                                <goal>report-integration</goal>
+                            </goals>
+                            <configuration>
+                                <dataFile>${project.build.directory}/coverage-reports/jacoco-it.exec</dataFile>
+                                <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -564,7 +592,7 @@
                 <version>${version.maven.surefire}</version>
                 <configuration>
                     <argLine>
-                        ${argLine}
+                        ${surefireJacocoAgent}
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.io=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED
@@ -581,6 +609,21 @@
                     </excludes>
                     <skip>${skipSurefire}</skip>
                 </configuration>
+            </plugin>
+            <plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${version.maven.failsafe}</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>integration-test</goal>
+                        <goal>verify</goal>
+                    </goals>
+                    <configuration>
+                        <argLine>${failsafeJacocoAgent}</argLine>
+                    </configuration>
+                </execution>
+            </executions>
             </plugin>
         </plugins>
     </build>
