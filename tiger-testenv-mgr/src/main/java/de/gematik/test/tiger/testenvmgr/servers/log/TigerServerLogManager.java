@@ -45,10 +45,15 @@ public class TigerServerLogManager  {
         patternLayoutEncoder.setContext(loggerContext);
         patternLayoutEncoder.start();
 
-        ((ch.qos.logback.classic.Logger) log).addAppender(createFileAppender(server.getServerId(), server.getConfiguration().getLogFile(), loggerContext, patternLayoutEncoder));
-        ((ch.qos.logback.classic.Logger) log).addAppender(createConsoleAppender(loggerContext, patternLayoutEncoder));
-        ((ch.qos.logback.classic.Logger) log).addAppender(createCustomerAppender(server, loggerContext));
-
+        if (server.getConfiguration().getExternalJarOptions() == null ||
+            (server.getConfiguration().getExternalJarOptions().isActivateLogs())) {
+            ((ch.qos.logback.classic.Logger) log).addAppender(
+                createFileAppender(server.getServerId(), server.getConfiguration().getLogFile(), loggerContext,
+                    patternLayoutEncoder));
+            ((ch.qos.logback.classic.Logger) log).addAppender(
+                createConsoleAppender(loggerContext, patternLayoutEncoder));
+            ((ch.qos.logback.classic.Logger) log).addAppender(createCustomerAppender(server, loggerContext));
+        }
         ((ch.qos.logback.classic.Logger) log).setAdditive(false);
     }
 

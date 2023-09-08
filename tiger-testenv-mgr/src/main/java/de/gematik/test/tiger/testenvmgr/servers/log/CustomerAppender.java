@@ -24,7 +24,7 @@ public class CustomerAppender extends AppenderBase<ILoggingEvent> {
      */
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
-        if (server.getConfiguration().getExternalJarOptions() == null || server.getConfiguration().getExternalJarOptions().isActivateLogs()) {
+        if (server.getConfiguration().getExternalJarOptions() == null || server.getConfiguration().getExternalJarOptions().isActivateWorkflowLogs()) {
             server.getLogListeners().forEach(listener -> {
                  listener.receiveServerLogUpdate(TigerServerLogUpdate
                     .builder()

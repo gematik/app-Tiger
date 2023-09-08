@@ -16,4 +16,5 @@ public class CfgExternalJarOptions {
     private List<String> options = new ArrayList<>();
     private List<String> arguments = new ArrayList<>();
     private boolean activateLogs = true;
+    private boolean activateWorkflowLogs = true;
 }
