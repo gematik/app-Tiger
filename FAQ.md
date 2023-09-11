@@ -105,3 +105,24 @@ Last resort:
 netcfg -d
 ```
 and restart docker
+
+
+### FO03 Adding alternative names programatically throws SSLException
+
+When using directly the method `de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()` to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:
+
+```
+12:17:48.604 [MockServer-EventLog13] ERROR o.mockserver.log.MockServerEventLog - 58165 exception creating SSL context for serverfailed to set certificate and key
+javax.net.ssl.SSLException: failed to set certificate and key
+```
+
+The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request. Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.
+
+A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name. E.g.:
+
+```
+TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
+proxy.addAlternativeName(host);
+proxy.restartMockserver();
+```
+

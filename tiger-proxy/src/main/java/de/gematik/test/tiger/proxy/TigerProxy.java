@@ -4,8 +4,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
-import static org.mockserver.model.HttpRequest.request;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
@@ -24,24 +22,6 @@ import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.annotation.PreDestroy;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import kong.unirest.Unirest;
 import kong.unirest.apache.ApacheClient;
 import lombok.EqualsAndHashCode;
@@ -67,6 +47,36 @@ import org.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import org.mockserver.socket.tls.NettySslContextFactory;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 import org.springframework.stereotype.Component;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+
+import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
+import static org.mockserver.model.HttpRequest.request;
 
 @Component
 @EqualsAndHashCode(callSuper = true)
@@ -428,6 +438,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         }
     }
 
+    /**
+     * Adds the given host to the list of alternative names in the tiger proxy TLS certificate.
+     * Adding alternative names after an initial request has been handled by the tiger proxy will have no effect,
+     * since the internal mockserver will have already created its SSLContext. If this is required, then a restart of
+     * the internal mockserver is necessary. See {@link #restartMockserver()}
+     *
+     * @param host the host to add as alternative name.
+     */
     public void addAlternativeName(final String host) {
         if (StringUtils.isBlank(host)) {
             return;
