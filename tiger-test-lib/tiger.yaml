@@ -32,3 +32,17 @@ lib:
 additionalYamls:
   - filename: src/test/resources/testdata/specialEnvironment.yaml
     baseKey: external
+
+editorExamples:
+  plainTextExample: just some text
+  xmlExample: | 
+    <example>
+      <content>This is an example XML</content>
+    </example>
+  htmlExample: <p>This is an example HTML line.</p>
+  jsonExample: |
+    {
+      "description": "This is an example JSON",
+      "items": ["item1", "item2", "item3"]
+    }
+

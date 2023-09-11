@@ -292,11 +292,11 @@ For more information about REST testing in Tiger/SerenityBDD please check these 
 
 === Synchronizing BDD scenarios with Polarion test cases (Gematik only)
 
-Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requriements maintained in Polarion we have a Tiger sub project that syncrhonizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.
+Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requirements maintained in Polarion we have a Tiger sub project that synchronizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.
 
 To use this feature the scenarios need a minimal set of mandatory annotations:
 
-* **@TCID:xxx** - an unique test case identifier, where 'xxx' matches the value of the custom field "cfInternalId" in Polarion
+* **@TCID:xxx** - a unique test case identifier, where 'xxx' matches the value of the custom field "cfInternalId" in Polarion
 * **@PRODUKT:p,p,p** - reference to the custom field "cfProductType". You add this annotation above each feature, not each scenario. 'p' is a product, one is mandatory but it can be a list.
 
 And following optional annotations exist:

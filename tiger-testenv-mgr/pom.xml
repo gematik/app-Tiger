@@ -264,7 +264,7 @@
                             <resources>
                                 <resource>
                                     <directory>src/frontend/dist</directory>
-                                    <filtering>true</filtering>
+                                    <filtering>false</filtering>
                                 </resource>
                             </resources>
                         </configuration>
