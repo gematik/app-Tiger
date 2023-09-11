@@ -19,6 +19,7 @@
 
 * TGR-1048: Resolved the problems with steps not being found in IntelliJ's Gherkin plugin. Also they were executed, one was not able to look them up with auto complete and if entered manually the step was marked as undefined
 * TGR-1045: With "activateLogs: false" in externalJarOptions for servers deactivates the logs completely, with "activateWorkflowLogs: false" deactivates sending logs to the workflow UI only
+* TGR-1057: modified the test httpclientenv.yaml so that it uses  the new server type httpbin instead of winstone.
 
 -------
 * Serenity BDD 3.6.23

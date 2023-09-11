@@ -9,18 +9,11 @@ tigerProxy:
     - http://localhost:${free.port.2}
 
 servers:
-  winstone:
+  httpbin:
     active: "!{not ${tiger.falseBooleanValue}}"
-    hostname: winstone
-    source:
-      - local:target/winstone.jar
-    type: externalJar
-    healthcheckUrl: http://localhost:${free.port.0}
-    externalJarOptions:
-      arguments:
-        - --httpPort=${free.port.0}
-        - --webroot=.
-        - --debug=9
+    type: httpbin
+    serverPort: ${free.port.0}
+    healthcheckUrl: http://localhost:${free.port.0}/status/200
   remoteTigerProxy:
     type: tigerProxy
     tigerProxyCfg:
@@ -29,7 +22,7 @@ servers:
       rbelBufferSizeInMb: 0
       proxyPort: ${free.port.1}
       proxyRoutes:
-        - from: http://winstone
+        - from: http://httpbin
           to: http://localhost:${free.port.0}
 
 lib:
