@@ -21,10 +21,10 @@ class RbelBuilderTests {
 
     @Test
     void readRbelFromStringWithNameTest() {
-        RbelBuilder builder = RbelBuilder.fromString("test", jsonTest);
+        RbelBuilder builder = RbelBuilder.fromString(jsonTest);
         Assertions.assertNotNull(builder);
-        Assertions.assertEquals("test", builder.getTreeRootNode().getFirst("test").orElseThrow().getKey().orElseThrow());
-        Assertions.assertEquals("blub", builder.getTreeRootNode().findElement("$.test.blub").orElseThrow().getKey().orElseThrow());
+        Assertions.assertTrue(builder.getTreeRootNode().findElement("$.blub").isPresent());
+        Assertions.assertTrue(builder.getTreeRootNode().findElement("$.blub.foo").isPresent());
     }
 
     @Test
@@ -56,5 +56,22 @@ class RbelBuilderTests {
         String filePath = "src/test/resources/testdata/rbelBuilderTests/blub.jwt";
         RbelBuilder builder = RbelBuilder.fromFile(filePath);
         Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void setObjectAtTest() {
+        RbelBuilder builder = RbelBuilder.fromString(jsonTest);
+        builder.setObjectAt("$.blub.foo", "{ 'some': 'object' }");
+        Assertions.assertEquals("object", builder.getTreeRootNode().findElement("$.blub.foo.some").orElseThrow().getRawStringContent());
+        builder.setObjectAt("$.blub", "{ 'object': 'replaced' }");
+        Assertions.assertEquals("replaced", builder.getTreeRootNode().findElement("$.blub.object").orElseThrow().getRawStringContent());
+        Assertions.assertFalse(builder.getTreeRootNode().findElement("$.blub.foo.some").isPresent());
+    }
+
+    @Test
+    void setValueAtTest() {
+        RbelBuilder builder = RbelBuilder.fromString(jsonTest);
+        builder.setValueAt("$.blub.foo", "some string");
+        Assertions.assertEquals("some string", builder.getTreeRootNode().findElement("$.blub.foo").orElseThrow().getRawStringContent());
     }
 }

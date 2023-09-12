@@ -14,12 +14,13 @@ import lombok.SneakyThrows;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 public class RbelBuilder {
 
     private static RbelLogger rbelLogger;
     private static RbelWriter rbelWriter;
-    private RbelContentTreeNode treeRootNode;
+    private final RbelContentTreeNode treeRootNode;
 
     /**
      * Builder that builds and modifies a RbelContentTreeNode from various sources
@@ -54,18 +55,6 @@ public class RbelBuilder {
     }
 
     /**
-     * Initializes a {@link RbelBuilder}; the first direct child gets its key from the objectName parameter and its content from the content parameter
-     * @param objectName key of direct child
-     * @param content content of direct child; is converted to {@link RbelContentTreeNode}
-     * @return the {@link RbelBuilder}
-     */
-    @SneakyThrows
-    public static RbelBuilder fromString(String objectName, String content) {
-        RbelBuilder contentBuilder = fromString(content);
-        return RbelBuilder.fromRbel(objectName, contentBuilder.getTreeRootNode());
-    }
-
-    /**
      * Initializes an empty {@link RbelBuilder}
      * @return the {@link RbelBuilder}
      */
@@ -73,12 +62,47 @@ public class RbelBuilder {
     public static RbelBuilder fromScratch() {
         return fromString("");
     }
-    
+
+    /**
+     * reads a formatted String and creates a new {@link RbelBuilder} using the content as its treeRootNode
+     * @param content formatted String
+     * @return RbelBuilder
+     */
     @SneakyThrows
-    private static RbelBuilder fromString(String content) {
-        final RbelElement input = getRbelConverter().convertElement(content, null);
-        RbelContentTreeNode treeRootNode = new RbelContentTreeConverter(input, new TigerJexlContext()).convertToContentTree();
+    public static RbelBuilder fromString(String content) {
+        RbelContentTreeNode treeRootNode = getContentTreeNodeFromString(content);
         return new RbelBuilder(treeRootNode);
+    }
+
+    public RbelContentTreeNode getTreeRootNode() {
+        return treeRootNode;
+    }
+
+    /**
+     * Sets the value at a specific path to a new RbelContentTreeNode
+     * @param rbelPath path where RbelContenTreeNode is inserted
+     * @param newValue object as formatted String
+     */
+    public void setObjectAt(String rbelPath, String newValue) {
+        var entry = this.treeRootNode.findElement(rbelPath).orElseThrow();
+        var newContentTreeNode = getContentTreeNodeFromString(newValue);
+        Optional<String> key = entry.getKey();
+        if(key.isPresent()) {
+            entry.getParentNode().setChildNode(key.get(), newContentTreeNode);
+        }
+        else {
+            throw new NullPointerException("The key of the node which is to be changed is not set in its parent node.");
+        }
+    }
+
+    /**
+     * Sets a String value at a given path
+     * @param rbelPath given path
+     * @param newValue new String value
+     */
+    public void setValueAt(String rbelPath, String newValue) {
+        var entry = this.treeRootNode.findElement(rbelPath).orElseThrow();
+        entry.setContent(newValue.getBytes());
     }
 
     private static RbelBuilder fromRbel(String name, RbelContentTreeNode content) {
@@ -91,18 +115,14 @@ public class RbelBuilder {
         return new RbelBuilder(contentTreeNode);
     }
 
-    public RbelContentTreeNode getTreeRootNode() {
-        return treeRootNode;
-    }
-
     private static RbelConverter getRbelConverter() {
         assureRbelIsInitialized();
         return rbelLogger.getRbelConverter();
     }
 
-    private static RbelWriter getRbelWriter() {
-        assureRbelIsInitialized();
-        return rbelWriter;
+    private static RbelContentTreeNode getContentTreeNodeFromString(String content) {
+        final RbelElement input = getRbelConverter().convertElement(content, null);
+        return new RbelContentTreeConverter(input, new TigerJexlContext()).convertToContentTree();
     }
 
     private static void assureRbelIsInitialized() {

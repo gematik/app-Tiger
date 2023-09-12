@@ -53,6 +53,13 @@ public class RbelContentTreeNode implements RbelContent {
         this.childNodes.forEach((k, e) -> e.setParentNode(this));
     }
 
+    public void setChildNode(String key, RbelContentTreeNode newChildNode) {
+        childNodes.remove(key);
+        childNodes.put(key, newChildNode);
+        newChildNode.setParentNode(this);
+        newChildNode.setKey(key);
+    }
+
     public Map<String, String> attributes() {
         return attributeMap;
     }
