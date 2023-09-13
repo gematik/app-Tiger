@@ -14,6 +14,7 @@
 ## Features
 
 * TGR-1041: a new configuration editor in the WorkflowUI allows to view and edit the global tiger configuration during the execution of a test suite.
+* TGR-567: Tiger Proxy UI - when downloading traffic data, it is now possible to download only the data of the current applied filter.
 
 ## Bugfixes
 

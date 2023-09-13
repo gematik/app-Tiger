@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-"strict";
+"use strict";
 
 let lastUuid = "";
 let filterCriterion = "";
@@ -19,6 +19,7 @@ let saveBtn;
 let uploadBtn;
 let quitBtn;
 let importBtn;
+let includeFilterInDownload = false;
 
 let jexlInspectionResultDiv;
 let jexlInspectionContextDiv;
@@ -94,6 +95,18 @@ const menuHtmlTemplateResponse =
     + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
     + "    </div>\n"
     + "  </a></div>";
+
+function createDownloadOptionsQueryString() {
+  if (!includeFilterInDownload) {
+    return "";
+  } else {
+    const downloadOptions = {
+      lastUuid,
+      filterCriterion
+    }
+    return new URLSearchParams(downloadOptions).toString();
+  }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
@@ -181,13 +194,21 @@ document.addEventListener('DOMContentLoaded', function () {
     return (i < 10) ? "0" + i : "" + i;
   }
 
+  document.getElementById("includeFilterInDownloadCheck")
+      .addEventListener('change', e => {
+        includeFilterInDownload = e.currentTarget.checked
+      })
+
   document.getElementById("saveTrafficBtn")
   .addEventListener('click', e => {
     $('#saveModalDialog').modal('hide');
 
     const a = document.createElement('a');
     a.style.display = 'none';
-    a.href = `/webui/trafficLog-${todayAsString()}.tgr`;
+
+    const queryString = createDownloadOptionsQueryString();
+
+    a.href = `/webui/trafficLog-${todayAsString()}.tgr?${queryString}`;
     a.download = `trafficLog-${todayAsString()}.tgr`;
     document.body.appendChild(a);
     a.click();
@@ -208,8 +229,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const offsetMs = now.getTimezoneOffset() * 60 * 1000;
     const dateLocal = new Date(now.getTime() - offsetMs);
 
+    const queryString = createDownloadOptionsQueryString();
+
     a.download = `tiger-report-${todayAsString()}-${dateLocal.toISOString().slice(11, 19).replace(/[^0-9]/g, "")}.html`;
-    a.href = `/webui/`+ a.download;
+    a.href = `/webui/${a.download}?${queryString}`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(a.href);
@@ -1001,11 +1024,11 @@ function setFilterMessage() {
 
 function updateMessageList(json) {
   updatePageSelector(json.pagesAvailable);
-  for (htmlMsg of json.htmlMsgList) {
+  for (let htmlMsg of json.htmlMsgList) {
     addMessageToMainView(htmlMsg);
   }
   let index = 0;
-  for (metaMsg of json.metaMsgList) {
+  for (let metaMsg of json.metaMsgList) {
     addMessageToMenu(metaMsg, index++);
   }
   if (json.metaMsgList.length > 0) {

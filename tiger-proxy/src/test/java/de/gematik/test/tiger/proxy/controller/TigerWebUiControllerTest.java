@@ -4,34 +4,37 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import io.restassured.RestAssured;
-import java.time.OffsetDateTime;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterAll;
+import org.jsoup.Jsoup;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.netty.MockServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
+
+import java.time.OffsetDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -45,6 +48,7 @@ public class TigerWebUiControllerTest {
     @LocalServerPort
     private int adminPort;
     private static int fakeBackendServerPort;
+    private static final int TOTAL_OF_EXCHANGED_MESSAGES = 4;
 
     @BeforeAll
     public static void setupBackendServer(MockServerClient fakeBackendServerClient) {
@@ -58,6 +62,12 @@ public class TigerWebUiControllerTest {
                 .withStatusCode(666)
                 .withBody("{\"foo\":\"bar\"}"));
 
+        fakeBackendServerClient.when(request()
+                .withMethod("POST")
+                .withPath("/foobar.*"))
+                .respond( response().withStatusCode(200)
+                        .withBody(""));
+
         RestAssured.proxy = null;
     }
 
@@ -68,6 +78,8 @@ public class TigerWebUiControllerTest {
             proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
 
             proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
+
+            proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
         }
     }
 
@@ -92,7 +104,7 @@ public class TigerWebUiControllerTest {
         RestAssured.given().get(getWebUiUrl() + "/getMsgAfter")
             .then()
             .statusCode(200)
-            .body("metaMsgList.size()", equalTo(2))
+            .body("metaMsgList.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES))
             .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessagesList().get(0).getUuid()))
             .body("metaMsgList[1].uuid", equalTo(tigerProxy.getRbelMessagesList().get(1).getUuid()));
     }
@@ -103,32 +115,37 @@ public class TigerWebUiControllerTest {
             .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(0).getUuid())
             .then()
             .statusCode(200)
-            .body("metaMsgList.size()", equalTo(1))
+            .body("metaMsgList.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES-1))
             .body("metaMsgList[0].uuid", equalTo(tigerProxy.getRbelMessagesList().get(1).getUuid()));
     }
 
     @Test
     void checkAllTrafficSuppliedWhenDownloadWithoutFilteredUuids() {
         RestAssured.given().get(getWebUiUrl() + "/trafficLog.tgr")
-            .then()
-            .statusCode(200)
-            .body(containsString(tigerProxy.getRbelMessagesList().get(0).getUuid()))
-            .body(containsString(tigerProxy.getRbelMessagesList().get(1).getUuid()));
+                .then()
+                .statusCode(200)
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(0).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(1).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(2).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(3).getUuid())));
     }
 
     @Test
     void checkSuppliedUuidsAreFilteredOutWhenDownloadingTraffic() {
         RestAssured.given()
-            .get(getWebUiUrl() + "/trafficLog.tgr?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(0).getUuid())
-            .then()
-            .statusCode(200)
-            .body(containsString(tigerProxy.getRbelMessagesList().get(1).getUuid()));
+                .get(getWebUiUrl() + "/trafficLog.tgr?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(0).getUuid())
+                .then()
+                .statusCode(200)
+                .body(not(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(0).getUuid()))))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(1).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(2).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(3).getUuid())));
     }
 
     @Test
     void checkNoMsgIsReturnedIfNoneExistsAfterRequested() {
         RestAssured.given()
-            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(1).getUuid())
+            .get(getWebUiUrl() + "/getMsgAfter?lastMsgUuid=" + tigerProxy.getRbelMessagesList().get(TOTAL_OF_EXCHANGED_MESSAGES-1).getUuid())
             .then()
             .statusCode(200)
             .body("metaMsgList.size()", equalTo(0));
@@ -153,7 +170,7 @@ public class TigerWebUiControllerTest {
             .get(getWebUiUrl() + "/getMsgAfter")
             .then()
             .statusCode(200)
-            .body("metaMsgList.size()", equalTo(2))
+            .body("metaMsgList.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES))
             .body("metaMsgList[0].menuInfoString", equalTo("GET /foobar"))
             .body("metaMsgList[1].menuInfoString", equalTo("666"));
 
@@ -197,7 +214,7 @@ public class TigerWebUiControllerTest {
             .get(getWebUiUrl() + "/getMsgAfter?filterCriterion=isRequest")
             .then()
             .statusCode(200)
-            .body("metaMsgList.size()", equalTo(2));
+            .body("metaMsgList.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES));
     }
 
     @Test
@@ -206,7 +223,7 @@ public class TigerWebUiControllerTest {
             .get(getWebUiUrl() + "/getMsgAfter?filterCriterion=isResponse")
             .then()
             .statusCode(200)
-            .body("metaMsgList.size()", equalTo(2));
+            .body("metaMsgList.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES));
     }
 
     @Test
@@ -227,5 +244,73 @@ public class TigerWebUiControllerTest {
         assertThat(body.getObject().getJSONArray("htmlMsgList").getJSONObject(0).getString("html"))
             .contains("foobar")
             .doesNotContain(longString);
+    }
+
+    @Test
+    void downloadTraffic_withoutFilterCriterion(){
+        RestAssured.given()
+                .get(getWebUiUrl()+"/trafficLog12334.tgr")
+                .then()
+                .statusCode(200)
+                .header("available-messages", String.valueOf(TOTAL_OF_EXCHANGED_MESSAGES))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(0).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(1).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(2).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(3).getUuid())));
+
+    }
+
+    @Test
+    void downloadTraffic_withFilterCriterion(){
+        String filterCriterion = "$.method == 'POST'";
+        RestAssured.given()
+                .get(getWebUiUrl()+"/trafficLog12334.tgr?filterCriterion="+filterCriterion)
+                .then()
+                .statusCode(200)
+                .header("available-messages", String.valueOf(2))
+                .body(not(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(0).getUuid()))))
+                .body(not(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(1).getUuid()))))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(2).getUuid())))
+                .body(containsString("\"uuid\":\"%s\"".formatted(tigerProxy.getRbelMessagesList().get(3).getUuid())));
+
+    }
+
+    @Test
+    void downloadHtml_withoutFilterCriterion(){
+        var response = RestAssured.given()
+                .get(getWebUiUrl() + "/tiger-report12345.html");
+
+        response.then()
+                .statusCode(200)
+                .contentType(MediaType.TEXT_HTML_VALUE);
+
+        Elements htmlElements = Jsoup.parse(response.body().asString())
+                .body().select(".msg-card");
+
+        assertThat(htmlElements).size().isEqualTo(TOTAL_OF_EXCHANGED_MESSAGES);
+        assertThat(htmlElements.get(0).html()).contains(tigerProxy.getRbelMessagesList().get(0).getUuid());
+        assertThat(htmlElements.get(1).html()).contains(tigerProxy.getRbelMessagesList().get(1).getUuid());
+        assertThat(htmlElements.get(2).html()).contains(tigerProxy.getRbelMessagesList().get(2).getUuid());
+        assertThat(htmlElements.get(3).html()).contains(tigerProxy.getRbelMessagesList().get(3).getUuid());
+    }
+
+    @Test
+    void downloadHtml_withFilterCriterion(){
+        String filterCriterion = "$.method == 'POST'";
+        var response = RestAssured.given()
+                .get(getWebUiUrl() + "/tiger-report12345.html?filterCriterion="+filterCriterion);
+
+        response.then()
+                .statusCode(200)
+                .contentType(MediaType.TEXT_HTML_VALUE);
+
+        Elements htmlElements = Jsoup.parse(response.body().asString())
+                .body().select(".msg-card");
+
+        assertThat(htmlElements).size().isEqualTo(2);
+        assertThat(htmlElements.html()).doesNotContain(tigerProxy.getRbelMessagesList().get(0).getUuid());
+        assertThat(htmlElements.html()).doesNotContain(tigerProxy.getRbelMessagesList().get(1).getUuid());
+        assertThat(htmlElements.get(0).html()).contains(tigerProxy.getRbelMessagesList().get(2).getUuid());
+        assertThat(htmlElements.get(1).html()).contains(tigerProxy.getRbelMessagesList().get(3).getUuid());
     }
 }

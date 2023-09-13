@@ -26,10 +26,10 @@ The displayed buttons can trigger the following actions:
 
 * *Routes* … allows you to modify the routes configured on this Tiger Proxy
 * *Scroll Lock* … allows you to lock the scroll position. Incoming messages wills till be added to the list at the bottom of the page.
-* *Toggle Button*  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as reponse headers) or all the detailed information of the requests and responses.
+* *Toggle Button*  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses.
 * *Filter*  … allows you to filter the received messages with a RbelPath or a JEXL expression. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").
 * *Reset* … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!
-* *Save* … allows you to save all received messages as a HTML page or as a machine-readable tgr file.
+* *Save* … allows you to save all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.
 * *Page* … allows pagination of the messages.
 * *Size* … changes the size of the messages.
 * *Import* … allows you to import the previously stored traffic file.
