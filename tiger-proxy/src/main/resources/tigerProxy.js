@@ -67,6 +67,9 @@ let stompClient;
 let allMessagesAmount;
 let filteredMessagesAmount;
 
+let formerClickValue = "";
+let formerResultValue = "";
+
 const menuHtmlTemplateRequest =
     "<div class=\"ms-1 is-size-7\">\n"
     + "  <a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\" class=\"mt-3 is-block\">\n"
@@ -831,6 +834,7 @@ function testRbelExpression() {
   toggleHelp(collapsibleRbelBtn, "rbel-help", true);
   const xhttp = new XMLHttpRequest();
   let rbelPath = document.getElementById("rbelExpressionInput").value;
+  formerClickValue = "";
 
   xhttp.open("GET", "/webui/testRbelExpression"
       + "?msgUuid=" + jexlQueryElementUuid
@@ -848,6 +852,7 @@ function testRbelExpression() {
         if (response.elements) {
           response.elements.forEach(key => {
             rbelResultTree += "<div >" + key + "</div>";
+            formerResultValue = key;
           });
         } else {
           rbelResultTree += "<div>None found</div>";
@@ -891,13 +896,22 @@ function copyPathToInputField(event, element) {
     }
     el = el.previousElementSibling;
   }
-  if (oldValue == null || text.startsWith("body.html")) {
+  if (oldValue == null || text.startsWith("body")) {
     document.getElementById("rbelExpressionInput").value = "$." + text;
   } else {
-    const words = oldValue.split('.');
-    oldValue = oldValue.substring(0, oldValue.length - words[words.length - 1].length);
-    document.getElementById("rbelExpressionInput").value = oldValue + text;
+    // check for children
+      if (formerClickValue.length > 0 ) {
+        oldValue = oldValue.substring(0, oldValue.length - formerClickValue.length - 1);
+      } else {
+        const words = oldValue.split('.');
+        oldValue = oldValue.substring(0, oldValue.length - words[words.length - 1].length - 1);
+      }
+      if (!(formerResultValue.endsWith("content"))) {
+        document.getElementById("rbelExpressionInput").value = oldValue + "."
+            + text;
+      }
   }
+  formerClickValue = text;
 }
 
 function shortenStrings(obj) {
