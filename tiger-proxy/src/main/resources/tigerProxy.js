@@ -454,26 +454,24 @@ function showModalImport(e) {
   var input = document.createElement("input");
   input.setAttribute("type", "file");
   input.click(); // opening dialog
-  input.onchange = function () {
+  input.onchange = async function () {
     $('.inProgressDialogText').text('Uploading data to backend...');
     $('#showInProgressDialog').modal('show');
 
-    fetch('/webui/traffic', {
-      method: "POST",
-      body: input.files[0]
-    })
-    .then(function (response) {
+    resetAllReceivedMessages()
+    try {
+      await backendClient.resetMessages();
+      const response = await backendClient.uploadTrafficFile(input.files[0])
       if (!response.ok) {
         $('.inProgressDialogText').text('Error while uploading: ' + response.status + " " + response.statusText);
       } else {
-        pollMessages(false, pageSize, () => {
+        pollMessages(true, pageSize, () => {
           $('#showInProgressDialog').modal('hide');
         });
       }
-      return response;
-    }).catch(reason => {
+    } catch (reason) {
       $('.inProgressDialogText').text('Error while uploading: ' + reason);
-    });
+    }
   };
   e.preventDefault();
   return false;
@@ -620,26 +618,14 @@ function resetAllReceivedMessages() {
   deleteRequestsLists();
 }
 
-function resetMessages() {
+async function resetMessages() {
   resetBtn.disabled = true;
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/webui/resetMsgs", true);
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
-        console.log("removed " + response.numMsgs + " messages...");
-      } else {
-        console.log("ERROR " + this.status + " " + this.responseText);
-      }
-      resetAllReceivedMessages();
-      setTimeout(() => {
-        resetBtn.blur();
-        resetBtn.disabled = false;
-      }, 200);
-    }
-  }
-  xhttp.send();
+  await backendClient.resetMessages();
+  resetAllReceivedMessages();
+  setTimeout(() => {
+    resetBtn.blur();
+    resetBtn.disabled = false;
+  }, 200);
 }
 
 function quitProxy() {
@@ -1214,4 +1200,23 @@ if (window.addEventListener) {
   window.addEventListener("message", messageScrollToReceiver, false);
 } else {
   window.attachEvent("onmessage", messageScrollToReceiver);
+}
+
+// For better code organization, the requests to backend should be made by this object
+const backendClient = {
+  resetMessages: async function(){
+    const response = await fetch("/webui/resetMsgs");
+    if (response.status === 200) {
+      const asJson = await response.json();
+      console.log("removed " + asJson.numMsgs + " messages...");
+    } else {
+      console.log("ERROR " + response.status + " " + response.statusText);
+    }
+  },
+  uploadTrafficFile: async function(fileToUpload){
+    return fetch('/webui/traffic', {
+      method: "POST",
+      body: fileToUpload
+    });
+  }
 }

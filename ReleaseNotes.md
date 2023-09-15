@@ -16,12 +16,14 @@
 * TGR-1041: a new configuration editor in the WorkflowUI allows to view and edit the global tiger configuration during the execution of a test suite.
 * TGR-567: Tiger Proxy UI - when downloading traffic data, it is now possible to download only the data of the current applied filter.
 
+
 ## Bugfixes
 
 * TGR-1048: Resolved the problems with steps not being found in IntelliJ's Gherkin plugin. Also they were executed, one was not able to look them up with auto complete and if entered manually the step was marked as undefined
 * TGR-1045: With "activateLogs: false" in externalJarOptions for servers deactivates the logs completely, with "activateWorkflowLogs: false" deactivates sending logs to the workflow UI only
 * TGR-1057: modified the test httpclientenv.yaml so that it uses  the new server type httpbin instead of winstone.
 * TGR-1058: RbelPath in the Inspect modal on selected element fixed
+* TGR-623: Tiger Proxy UI - when importing a .tgr traffic file, the previously displayed traffic is removed.
 
 -------
 * Serenity BDD 3.6.23
@@ -35,7 +37,7 @@
 # Release 2.1.7
 
 ## Features
-* 
+
 * TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
 * TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI anymore but are still written to console and log files
 * TGR-1044: During the execution of the playwright tests screenshots of the WorkflowUI and the WebUI are taken and stored in the doc/user_manual directory
