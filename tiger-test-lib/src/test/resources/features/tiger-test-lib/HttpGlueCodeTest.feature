@@ -3,6 +3,25 @@ Feature: HTTP/HTTPS GlueCode Test feature
   Background:
     Given TGR clear recorded messages
 
+  Scenario Outline:  Test <color> with <inhalt>
+    And TGR show <color> text "<inhalt>"
+    Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
+      | color | inhalt |
+      | red | Dagmar |
+      | blue | Nils |
+      | green | Tim  |
+      | yellow | Sophie |
+
+  Scenario Outline: Test <color> with <text> again
+    Given TGR show <color> banner "<text>"
+    And TGR clear recorded messages
+    Then TGR clear recorded messages
+    Examples:
+    # Test comment
+      | color | text |
+      | green | foo  |
+      | red   | bar  |
+
   Scenario: Simple Get Request
     When TGR send empty GET request to "http://httpbin/"
     Then TGR find last request to path ".*"

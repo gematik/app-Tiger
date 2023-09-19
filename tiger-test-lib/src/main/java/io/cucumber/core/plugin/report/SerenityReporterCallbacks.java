@@ -68,7 +68,7 @@ public class SerenityReporterCallbacks {
 
     @Getter
     private int currentScenarioDataVariantIndex = -1;
-
+    private String currentScenarioID = "";
     private int currentStepIndex = -1;
 
     private final Pattern showSteps = Pattern.compile(".*TGR (zeige|show) ([\\w|üß ]*)(Banner|banner|text|Text) \"(.*)\""); // NOSONAR
@@ -157,11 +157,19 @@ public class SerenityReporterCallbacks {
     public void handleTestCaseStarted(Event ignoredEvent, ScenarioContextDelegate context) /* NOSONAR */ {
         shouldAbortTestExecution();
 
+        if (currentScenarioID.isEmpty()) {
+            currentScenarioID = context.getCurrentScenarioId();
+        }
+        if (context.getCurrentScenarioId() != null && !context.getCurrentScenarioId().equals(currentScenarioID)) {
+            currentScenarioDataVariantIndex = -1;
+            currentScenarioID = context.getCurrentScenarioId();
+        }
         // TGR
         if (context.isAScenarioOutline()) {
             currentScenarioDataVariantIndex++;
         } else {
             currentScenarioDataVariantIndex = -1;
+            currentScenarioID = context.getCurrentScenarioId();
         }
         currentStepIndex = 0;
         Optional<Feature> currentFeature = featureFrom(context.currentFeaturePath());
@@ -379,7 +387,7 @@ public class SerenityReporterCallbacks {
         String featureName = featureFrom(context.currentFeaturePath()).map(Feature::getName).orElse("?");
         List<MessageMetaDataDto> stepMessagesMetaDataList = new ArrayList<>(LocalProxyRbelMessageListener.getStepRbelMessages()).stream()
             .map(MessageMetaDataDto::createFrom)
-            .collect(Collectors.toList());
+            .toList();
 
         Map<String, String> variantDataMap = context.isAScenarioOutline() ?
             context.getTable().currentRow().toStringMap() : null;

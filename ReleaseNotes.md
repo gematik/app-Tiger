@@ -24,6 +24,7 @@
 * TGR-1057: modified the test httpclientenv.yaml so that it uses  the new server type httpbin instead of winstone.
 * TGR-1058: RbelPath in the Inspect modal on selected element fixed
 * TGR-623: Tiger Proxy UI - when importing a .tgr traffic file, the previously displayed traffic is removed.
+* TGR-1074: Scenario Outlines counter fixed
 
 -------
 * Serenity BDD 3.6.23
