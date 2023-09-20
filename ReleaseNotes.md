@@ -25,6 +25,7 @@
 * TGR-1058: RbelPath in the Inspect modal on selected element fixed
 * TGR-623: Tiger Proxy UI - when importing a .tgr traffic file, the previously displayed traffic is removed.
 * TGR-1074: Scenario Outlines counter fixed
+* TGR-873: Tiger Proxy UI - when the connection with the backend is lost a visible error dialog is shown in the UI to inform the user.
 
 -------
 * Serenity BDD 3.6.23

@@ -1,0 +1,23 @@
+<!--
+  ~ ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
+<div class="modal" id="errorMessagesDialog" role="dialog">
+    <div class="modal-dialog" id="errorMessagesModal">
+      <div class="modal-background"></div>
+        <div class="modal-content" role="document" style="background-color:#ffff;">
+            <div class="modal-header bg-dark">
+                <h5 class="modal-title" style="color:#ffff;">
+                    <i class="fa fa-lg fa-circle-exclamation text-danger"></i>
+                    <span id="errorMessageTitle"></span>
+                </h5>
+                <button type="button" class="btn btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>The Tiger Proxy backend is no longer active.</p>
+                <code id="errorMessageBody"></code>
+            </div>
+        </div>
+    </div>
+</div>
+

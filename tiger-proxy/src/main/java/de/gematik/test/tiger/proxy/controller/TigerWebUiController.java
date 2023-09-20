@@ -206,7 +206,8 @@ public class TigerWebUiController implements ApplicationContextAware {
                 loadResourceToString("/routeModal.html") +
                 loadResourceToString("/filterModal.html") +
                 loadResourceToString("/jexlModal.html") +
-                loadResourceToString("/saveModal.html"))
+                loadResourceToString("/saveModal.html") +
+                loadResourceToString( "/errorMessagesModal.html"))
             .replace("</body>", configJSSnippetStr + "</body>");
     }
 
@@ -362,6 +363,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     private String replaceScript(String html) {
         var jsoup = Jsoup.parse(html);
         final Element script = jsoup.select("script").get(6);
+        script.attr("type", "module");
         script.dataNodes().get(0).replaceWith(
             new DataNode(loadResourceToString("/tigerProxy.js")));
         return jsoup.html();

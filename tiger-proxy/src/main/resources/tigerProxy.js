@@ -4,6 +4,9 @@
 
 "use strict";
 
+import backendClient from '/backendClient.js'
+
+
 let lastUuid = "";
 let filterCriterion = "";
 let rootEl;
@@ -44,7 +47,7 @@ let scrollLock = false;
 let collapseMessageDetails = false;
 let collapseMessageHeaders = false;
 
-let testQuitParam = '';
+let testQuitNoSystemExit = false;
 
 let collapsibleRbelBtn;
 let collapsibleJexlBtn;
@@ -54,7 +57,6 @@ let collapsibleMessageDetailsBtn;
 let collapsibleHeaders;
 let collapsibleMessageHeaderBtn;
 
-let jexlResponseLink;
 let receivers = [];
 let senders = [];
 
@@ -577,34 +579,32 @@ function connectToWebSocket() {
         console.error("Websocket error: " + JSON.stringify(error));
       }
   )
+  socket.onclose = function(event){
+    openErrorModal("Websocket is closed")
+  }
 }
 
-function pollMessages(eraseOldMessages, desiredPageSize, callback) {
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/webui/getMsgAfter"
-      + "?lastMsgUuid=" + (eraseOldMessages ? "" : lastUuid)
-      + "&filterCriterion=" + encodeURIComponent(filterCriterion)
-      + (desiredPageSize ? "&pageSize=" + desiredPageSize : "")
-      + (desiredPageSize ? "&pageNumber=" + pageNumber : ""), true);
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
-        filteredMessagesAmount = response.metaMsgList.length;
-        allMessagesAmount = response.totalMsgCount;
-        if (eraseOldMessages) {
-          resetAllReceivedMessages()
-        }
-        updateMessageList(response);
-      } else {
-        console.log("ERROR " + this.status + " " + this.responseText);
-      }
-      if (callback !== undefined) {
-        callback();
-      }
+async function pollMessages(eraseOldMessages, desiredPageSize, callback) {
+  const response = await backendClient.getMsgAfter(
+      eraseOldMessages ? "" : lastUuid,
+      filterCriterion,
+      desiredPageSize ? desiredPageSize : "",
+      desiredPageSize ? pageNumber : ""
+  )
+  if (response.ok) {
+    const responseBody = await response.json();
+    filteredMessagesAmount = responseBody.metaMsgList.length;
+    allMessagesAmount = responseBody.totalMsgCount;
+    if (eraseOldMessages) {
+      resetAllReceivedMessages()
     }
+    updateMessageList(responseBody);
+  } else {
+    console.log("ERROR " + response.status + " " + response.statusText);
   }
-  xhttp.send();
+  if (callback !== undefined) {
+    callback();
+  }
 }
 
 function resetAllReceivedMessages() {
@@ -628,35 +628,31 @@ async function resetMessages() {
   }, 200);
 }
 
-function quitProxy() {
+async function quitProxy() {
   quitBtn.disabled = true;
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/webui/quit" + testQuitParam, true);
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 0) {
-        alert("Tiger proxy shut down SUCCESSfully!");
-        resetBtn.disabled = true;
-        uploadBtn.disabled = true;
-        btnScrollLock.disabled = true;
-        collapsibleMessageDetailsBtn.disabled = true;
-        collapsibleMessageHeaderBtn.disabled = true;
-        btnOpenRouteModal.disabled = true;
-        btnOpenFilterModal.disabled = true;
-        getAll("input.updates").forEach(function (el) {
-          el.disabled = true;
-        });
-        quitBtn.blur();
-      } else {
-        console.log("ERROR " + this.status + " " + this.responseText);
-        setTimeout(() => {
-          quitBtn.blur();
-          quitBtn.disabled = false;
-        }, 200);
-      }
-    }
+  try {
+  const response = await backendClient.quitProxy();
+    console.log("ERROR " + response.status + " " + response.statusText);
+    setTimeout(() => {
+      quitBtn.blur();
+      quitBtn.disabled = false;
+    }, 200);
   }
-  xhttp.send();
+  catch( error )
+  {
+    alert("Tiger proxy shut down SUCCESSfully!");
+    resetBtn.disabled = true;
+    uploadBtn.disabled = true;
+    btnScrollLock.disabled = true;
+    collapsibleMessageDetailsBtn.disabled = true;
+    collapsibleMessageHeaderBtn.disabled = true;
+    btnOpenRouteModal.disabled = true;
+    btnOpenFilterModal.disabled = true;
+    getAll("input.updates").forEach(function (el) {
+      el.disabled = true;
+    });
+    quitBtn.blur();
+  }
 }
 
 
@@ -694,27 +690,20 @@ function resetFilterCriterion() {
   resetFilterCriterionBtn.removeChild(spinner);
 }
 
-function uploadReport() {
+async function uploadReport() {
   uploadBtn.disabled = true;
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("POST", "/webui/uploadReport", true);
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 0) {
-        alert("Tiger proxy shut down SUCCESSfully!");
-
-        uploadBtn.disabled = false;
-        uploadBtn.blur();
-      } else {
-        console.log("ERROR " + this.status + " " + this.responseText);
-        setTimeout(() => {
-          uploadBtn.blur();
-          uploadBtn.disabled = false;
-        }, 200);
-      }
-    }
+  const response = await backendClient.uploadReport(encodeURIComponent(document.querySelector("html").innerHTML));
+  if (!response.ok) {
+    alert("Tiger proxy shut down SUCCESSfully!");
+    uploadBtn.disabled = false;
+    uploadBtn.blur();
+  } else {
+    console.log("ERROR " + response.status + " " + response.statusText);
+    setTimeout(() => {
+      uploadBtn.blur();
+      uploadBtn.disabled = false;
+    }, 200);
   }
-  xhttp.send(encodeURIComponent(document.querySelector("html").innerHTML));
 }
 
 function addQueryBtn(reqEl) {
@@ -750,6 +739,8 @@ function openTab(sender, tabName) {
 
   document.getElementById(tabName + "-name").classList.add("active");
 }
+//need to expose it so that it can be used directly in the jexlModal.html
+window.openTab = openTab;
 
 function copyToFilter() {
   document.getElementById("setFilterCriterionInput").value
@@ -757,86 +748,70 @@ function copyToFilter() {
   setFilterCriterion();
 }
 
-function executeJexlQuery() {
+async function executeJexlQuery() {
   toggleHelp(collapsibleJexlBtn, "jexl-help", true);
-  const xhttp = new XMLHttpRequest();
   let jexlQuery = document.getElementById("jexlQueryInput").value;
-  xhttp.open("GET", "/webui/testJexlQuery"
-      + "?msgUuid=" + jexlQueryElementUuid
-      + "&query=" + encodeURIComponent(jexlQuery),
-      true);
-
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      const response = JSON.parse(this.responseText);
-      if (this.status === 200) {
-        shortenStrings(response);
-        if (response.messageContext) {
-          const map = new Map(Object.entries(response.messageContext));
-          var html = "<h3 class='is-size-4'>JEXL context</h3>";
-          map.forEach((value, key) => {
-            html += "<prekey id='json_" + encodeURIComponent(key) + "'>" + key + "</prekey>"
-                + "<pre class='paddingLeft' id='json__" + encodeURIComponent(key) + "'>"
-                + JSON.stringify(value, null, 6)
-                + "</pre><br>";
-          });
-          jexlInspectionContextDiv.innerHTML = html;
-        } else {
-          jexlInspectionContextDiv.innerHTML = "<h3 class='is-size-4'>NO JEXL context received</h3>";
-        }
-
-        jexlInspectionContextParentDiv.classList.remove("d-none");
-        jexlInspectionNoContextDiv.classList.add("d-none");
-        if (response.errorMessage) {
-          jexlInspectionResultDiv.innerHTML = "<b>JEXL is invalid: </b>"
-              + "<code class='bg-dark text-warning'>" + response.errorMessage
-              + "</code>";
-          jexlInspectionResultDiv.setAttribute("class", "box bg-danger");
-
-        } else if (response.matchSuccessful) {
-          jexlInspectionResultDiv.innerHTML = "<b>Condition is true: </b>"
-              + "<code class='bg-dark text-warning'>" + jexlQuery
-              + "</code>";
-          jexlInspectionResultDiv.setAttribute("class", "box bg-success");
-        } else {
-          jexlInspectionResultDiv.innerHTML = "<b>Condition is false: </b>"
-              + "<code class='bg-dark text-warning'>" + jexlQuery
-              + "</code>";
-          jexlInspectionResultDiv.setAttribute("class", "box bg-info");
-        }
-      } else {
-        jexlInspectionResultDiv.innerHTML = "<b>Error talking to server! </b>"
-            + (this.responseText ?
-                ("<code class='bg-dark text-warning'>" + response.error + "</code>") :
-                "");
-        jexlInspectionResultDiv.setAttribute("class", "box bg-warning");
-      }
+  const response = await backendClient.testJexlQuery(jexlQueryElementUuid, jexlQuery);
+  if (response.ok) {
+    const responseBody = await response.json();
+    shortenStrings(responseBody);
+    if (responseBody.messageContext) {
+      const map = new Map(Object.entries(responseBody.messageContext));
+      var html = "<h3 class='is-size-4'>JEXL context</h3>";
+      map.forEach((value, key) => {
+        html += "<prekey id='json_" + encodeURIComponent(key) + "'>" + key + "</prekey>"
+            + "<pre class='paddingLeft' id='json__" + encodeURIComponent(key) + "'>"
+            + JSON.stringify(value, null, 6)
+            + "</pre><br>";
+      });
+      jexlInspectionContextDiv.innerHTML = html;
+    } else {
+      jexlInspectionContextDiv.innerHTML = "<h3 class='is-size-4'>NO JEXL context received</h3>";
     }
+
+    jexlInspectionContextParentDiv.classList.remove("d-none");
+    jexlInspectionNoContextDiv.classList.add("d-none");
+    if (responseBody.errorMessage) {
+      jexlInspectionResultDiv.innerHTML = "<b>JEXL is invalid: </b>"
+          + "<code class='bg-dark text-warning'>" + responseBody.errorMessage
+          + "</code>";
+      jexlInspectionResultDiv.setAttribute("class", "box bg-danger");
+
+    } else if (responseBody.matchSuccessful) {
+      jexlInspectionResultDiv.innerHTML = "<b>Condition is true: </b>"
+          + "<code class='bg-dark text-warning'>" + jexlQuery
+          + "</code>";
+      jexlInspectionResultDiv.setAttribute("class", "box bg-success");
+    } else {
+      jexlInspectionResultDiv.innerHTML = "<b>Condition is false: </b>"
+          + "<code class='bg-dark text-warning'>" + jexlQuery
+          + "</code>";
+      jexlInspectionResultDiv.setAttribute("class", "box bg-info");
+    }
+  } else {
+    jexlInspectionResultDiv.innerHTML = "<b>Error talking to server! </b>"
+        + (response.statusText ?
+            ("<code class='bg-dark text-warning'>" + responseBody.error + "</code>") :
+            "");
+    jexlInspectionResultDiv.setAttribute("class", "box bg-warning");
   }
-  xhttp.send();
 }
 
-function testRbelExpression() {
+async function testRbelExpression() {
   toggleHelp(collapsibleRbelBtn, "rbel-help", true);
-  const xhttp = new XMLHttpRequest();
   let rbelPath = document.getElementById("rbelExpressionInput").value;
   formerClickValue = "";
 
-  xhttp.open("GET", "/webui/testRbelExpression"
-      + "?msgUuid=" + jexlQueryElementUuid
-      + "&rbelPath=" + encodeURIComponent(rbelPath),
-      true);
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
+  const response = await backendClient.testRbelExpression(jexlQueryElementUuid, rbelPath);
 
+      if (response.ok) {
+        const responseBody = await response.json();
         document.getElementById("rbelTestTree").innerHTML =
             "<h3 class='is-size-4'>Rbel Tree</h3>"
-            + "<pre id='shell'>" + response.rbelTreeHtml + "</pre>";
+            + "<pre id='shell'>" + responseBody.rbelTreeHtml + "</pre>";
         let rbelResultTree = "<h3 class='is-size-4'>Matching Elements</h3>";
-        if (response.elements) {
-          response.elements.forEach(key => {
+        if (responseBody.elements) {
+          responseBody.elements.forEach(key => {
             rbelResultTree += "<div >" + key + "</div>";
             formerResultValue = key;
           });
@@ -847,14 +822,11 @@ function testRbelExpression() {
             rbelResultTree;
         setAddEventListener();
       } else {
-        console.log("ERROR " + this.status + " " + this.responseText);
+        console.log("ERROR " + response.status + " " + response.statusText);
         document.getElementById("rbelResult").innerHTML =
-            "<div>" + this.responseText + "</div>";
+            "<div>" + response.statusText + "</div>";
         document.getElementById("rbelTestTree").innerHTML = "<div>Invalid query</div>";
       }
-    }
-  }
-  xhttp.send();
 }
 
 function setAddEventListener() {
@@ -1052,24 +1024,18 @@ function getInnerHTMLForRoutes() {
   return divElement;
 }
 
-function getRoutes() {
+async function getRoutes() {
   getAll(".routeListDiv")[0].innerHTML = "";
   getAll(".routeListDiv")[0].append(getInnerHTMLForRoutes());
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "/route", true);
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
-        updateRouteList(response);
-      } else {
-        console.log("ERROR " + this.status + " " + this.responseText);
-        getAll(".routeListDiv")[0].innerHTML = "ERROR " + this.status + " "
-            + this.responseText;
-      }
-    }
+  const response = await backendClient.getRoutes();
+  if (response.ok) {
+    const responseBody = await response.json();
+    updateRouteList(responseBody);
+  } else {
+    console.log("ERROR " + response.status + " " + response.statusText);
+    getAll(".routeListDiv")[0].innerHTML = "ERROR " + response.status + " "
+        + response.statusText;
   }
-  xhttp.send();
 }
 
 function updateRouteList(json) {
@@ -1097,26 +1063,20 @@ function updateRouteList(json) {
   });
 }
 
-function deleteRoute(e) {
+async function deleteRoute(e) {
   const routeid = e.currentTarget.id.substring("route-".length);
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("DELETE", "/route/" + routeid, true);
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status !== 200) {
-        console.log("ERROR " + this.status + " " + this.responseText);
-      }
-      getRoutes();
-    }
+  const response = await backendClient.deleteRoute(routeid);
+  if (!response.ok) {
+    console.log("ERROR " + response.status + " " + response.statusText);
   }
-  xhttp.send();
+  getRoutes();
 }
 
 function updateAddRouteBtnState() {
   btnAddRoute.disabled = !(fieldRouteTo.value && fieldRouteFrom.value);
 }
 
-function addRoute() {
+async function addRoute() {
   try {
     new URL(fieldRouteTo.value);
     new URL(fieldRouteFrom.value);
@@ -1124,23 +1084,18 @@ function addRoute() {
     alert("Invalid URL!");
     return;
   }
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("PUT", "/route", true);
-  xhttp.setRequestHeader('Content-Type', 'application/json')
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status !== 200) {
-        console.log("ERROR " + this.status + " " + this.responseText);
-      }
-      getRoutes();
-    }
+  const response = await backendClient.addRoute({
+    from: fieldRouteFrom.value,
+    to: fieldRouteTo.value
+  })
+  if (!response.ok) {
+    console.log("ERROR " + response.status + " " + response.statusText);
   }
-  xhttp.send("{\"from\":\"" + fieldRouteFrom.value + "\",\n"
-      + "\"to\":\"" + fieldRouteTo.value + "\"}");
+  getRoutes();
 }
 
 function testActivateNoSystemExitOnQuit() {
-  testQuitParam = '?noSystemExit=true';
+  testQuitNoSystemExit = true;
 }
 
 function setPageSize(newSize) {
@@ -1150,6 +1105,8 @@ function setPageSize(newSize) {
       "Size " + newSize;
   pollMessages(true, pageSize);
 }
+//need to expose it so that it can be used directly in html of the size selector
+window.setPageSize = setPageSize;
 
 function setPageNumber(newPageNumber, callback) {
   pageNumber = newPageNumber;
@@ -1157,6 +1114,9 @@ function setPageNumber(newPageNumber, callback) {
       "Page " + (newPageNumber + 1);
   pollMessages(true, pageSize, callback);
 }
+
+//need to expose it to be able to use it directly in the html of page selector
+window.setPageNumber = setPageNumber;
 
 function updatePageSelector(pagesAvailable) {
   let selector = document.getElementById("pageSelector");
@@ -1181,6 +1141,9 @@ function scrollToMessage(uuid, sequenceNumber) {
     scrollMessageIntoView(uuid)
   }
 }
+//need to expose it so that it can be used directly in the message templates
+window.scrollToMessage = scrollToMessage;
+
 
 function scrollMessageIntoView(uuid) {
   if (!uuid) {
@@ -1202,21 +1165,17 @@ if (window.addEventListener) {
   window.attachEvent("onmessage", messageScrollToReceiver);
 }
 
-// For better code organization, the requests to backend should be made by this object
-const backendClient = {
-  resetMessages: async function(){
-    const response = await fetch("/webui/resetMsgs");
-    if (response.status === 200) {
-      const asJson = await response.json();
-      console.log("removed " + asJson.numMsgs + " messages...");
-    } else {
-      console.log("ERROR " + response.status + " " + response.statusText);
-    }
-  },
-  uploadTrafficFile: async function(fileToUpload){
-    return fetch('/webui/traffic', {
-      method: "POST",
-      body: fileToUpload
-    });
-  }
+backendClient.addErrorEventListener( (errorEvent) => {
+  openErrorModal(errorEvent.detail.message);
+})
+
+function openErrorModal(errorMessage){
+  const errorModal = $('#errorMessagesDialog');
+  const title = errorModal.find('#errorMessageTitle');
+  const body = errorModal.find('#errorMessageBody');
+  title.text("Error connecting with the backend")
+  body.text(errorMessage);
+  errorModal.modal('show');
 }
+
+
