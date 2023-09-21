@@ -17,7 +17,7 @@ servers:
       rbelBufferSizeInMb: 0
       proxyPort: ${free.port.1}
       proxyRoutes:
-        - from: http://winstone
+        - from: http://httpbin
           to: http://localhost:${free.port.0}
 
 lib:

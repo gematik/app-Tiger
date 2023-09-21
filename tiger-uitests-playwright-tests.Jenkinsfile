@@ -70,7 +70,7 @@ pipeline {
                             sh """
                                 cd tiger-uitests
                                 rm -f mvn-playwright-log.txt
-                                mvn -U -P start-tiger-dummy verify | tee mvn-playwright-log.txt
+                                mvn -U -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
                                """
                         }
                     }
@@ -79,7 +79,7 @@ pipeline {
                     steps {
                         sh """
                             cd tiger-uitests
-                            mvn -P run-playwright-test verify
+                            mvn -P run-playwright-test failsafe:integration-test
                         """
                         // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
                         sh """

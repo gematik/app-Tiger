@@ -10,18 +10,18 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.microsoft.playwright.Page;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Dynamic tests of the workflow ui, that can only be tested when the feature file has run through at a later time.
  */
-@TestMethodOrder(OrderAnnotation.class)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 class XLaterTests extends AbstractTests {
 
     @Test
-    @Order(7)
-    void testNavbarWithButtonsExists() {
+    void testENavbarWithButtonsExists() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         assertAll(
@@ -51,8 +51,7 @@ class XLaterTests extends AbstractTests {
     }
 
     @Test
-    @Order(1)
-    void testRbelMessagesExists() {
+    void testARbelMessagesExists() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         assertAll(
@@ -66,14 +65,11 @@ class XLaterTests extends AbstractTests {
     }
 
     @Test
-    @Order(6)
-    void testRoutingModal() {
+    void testBRoutingModal() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
 
-        Page externalPage = page.waitForPopup(() -> {
-            page.locator("#test-rbel-webui-url").click();
-        });
+        Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
         await()
             .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
@@ -89,11 +85,35 @@ class XLaterTests extends AbstractTests {
         );
         externalPage.locator("#routingModalButtonClose").click();
         assertThat(externalPage.locator("#routeModalDialog").isVisible()).isFalse();
+        externalPage.close();
     }
 
     @Test
-    @Order(9)
-    void testServers() {
+    void testBExecutionPaneRbelOpenWebUiURLCheckNavBarButtons()  {
+        page.querySelector("#test-execution-pane-tab").click();
+        page.locator("#test-webui-slider").click();
+
+        Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+        assertAll(
+            () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#routeModalBtn").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#scrollLockBtn").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#dropdown-hide-button").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#filterModalBtn").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#resetMsgs").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#saveMsgs").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#dropdown-page-selection").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#dropdown-page-size").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#importMsgs").isVisible()).isTrue()
+        );
+        externalPage.close();
+    }
+
+    @Test
+    void testCServers() {
         page.querySelector("#test-tiger-logo").click();
         assertAll(
             () -> assertThat(page.locator("#test-sidebar-server-status-box").isVisible()).isTrue(),
@@ -104,14 +124,5 @@ class XLaterTests extends AbstractTests {
             () -> assertThat(page.locator("#test-sidebar-server-status-box .test-sidebar-server-url-icon").count()).isEqualTo(2),
             () -> assertThat(page.locator("#test-sidebar-server-status-box .test-sidebar-server-log-icon").count()).isEqualTo(3)
         );
-    }
-
-    @BeforeEach
-    void printInfoStarted(TestInfo testInfo) {
-        System.out.println("started = " + testInfo.getDisplayName());
-    }
-    @AfterEach
-    void printInfoFinished(TestInfo testInfo) {
-        System.out.println("finished = " + testInfo.getDisplayName());
     }
 }

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
@@ -90,8 +91,12 @@ class XDynamicSidebarTests extends AbstractTests {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {0, 1, 2})
-    void ServerBoxLocalTigerProxyLogfiles(int counter) {
+    @CsvSource(delimiter = '|', textBlock = """
+                          | 0 |
+        remoteTigerProxy  | 1 | 
+        httpbin           | 2 | 
+    """)
+    void ServerBoxLocalTigerProxyLogfiles(String servername, int counter) {
         page.querySelector("#test-tiger-logo").click();
         page.locator("#sidebar-left .test-sidebar-server-log-icon").nth(counter).click();
         assertAll(
@@ -99,8 +104,8 @@ class XDynamicSidebarTests extends AbstractTests {
             () -> assertThat(page.locator(".test-sidebar-server-logs").nth(counter).locator(".test-sidebar-server-log").first().isVisible()).isTrue(),
             () -> assertThat(page.locator(".test-sidebar-server-logs").nth(counter).locator(".test-sidebar-server-log").last().isVisible()).isTrue()
         );
-        if (counter != 0) {
-            assertThat(page.locator(".test-sidebar-server-logs").nth(counter).locator(".test-sidebar-server-log").last().textContent()).contains("READY");
+        if (servername != null) {
+            assertThat(page.locator(".test-sidebar-server-logs").nth(counter).locator(".test-sidebar-server-log").last().textContent()).contains( servername + " READY");
         }
     }
 
@@ -118,16 +123,14 @@ class XDynamicSidebarTests extends AbstractTests {
     @Test
     void testExecutionPaneScenariosExists() {
         assertAll(
-            () -> assertThat(page.locator(".test-execution-pane-feature-title").count()).isEqualTo(1),
+            () -> assertThat(page.locator(".test-execution-pane-feature-title").count()).isEqualTo(2),
             () -> assertThat(page.locator(".test-execution-pane-scenario-title").count()).isPositive(),
             () -> assertThat(
-                page.locator(".test-execution-pane-feature-title").locator(".test-failed").count()).isPositive(),
+                page.locator(".test-execution-pane-feature-title").locator("..").locator(".test-failed").count()).isPositive(),
             () -> assertThat(
-                page.locator(".test-execution-pane-scenario-title").locator(".test-failed").count()).isPositive(),
+                page.locator(".test-execution-pane-scenario-title").locator("..").locator(".test-skipped").count()).isPositive(),
             () -> assertThat(
-                page.locator(".test-execution-pane-scenario-title").locator(".test-passed").count()).isPositive()
+                page.locator(".test-execution-pane-scenario-title").locator("..").locator(".test-passed").count()).isPositive()
         );
     }
-
-
 }

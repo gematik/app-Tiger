@@ -34,31 +34,35 @@ class StaticMainContentTests extends AbstractTests {
             () -> assertThat(page.locator(".test-server-log-pane-log-row").count()).isPositive(),
             () -> assertThat(page.locator(".test-server-log-pane-log-1").count()).isPositive(),
             () -> assertThat(page.locator(".test-server-log-pane-log-2").count()).isPositive(),
-            () -> assertThat(page.locator(".test-server-log-pane-log-3").count()).isPositive()
+            () -> assertThat(page.locator(".test-server-log-pane-log-3").count()).isPositive(),
+            () -> assertThat(page.evaluate("document.getElementById('test-server-log-pane-select').options[document.getElementById('test-server-log-pane-select').selectedIndex].text")).isEqualTo("ALL")
         );
     }
 
-//    @Test
-//    void testPassedScenario() {
-//        page.querySelector("#test-tiger-logo").click();
-//        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".scenarioLink").first().locator(".test-passed").first().isVisible()).isTrue();
-//    }
-//
-//    @Test
-//    void testFailedScenario() {
-//        page.querySelector("#test-tiger-logo").click();
-//        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
-//            .until(() -> page.locator("#test-sidebar-featurelistbox").locator(".scenarioLink").first().locator(".test-failed").first().isVisible());
-//        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".test-failed").first().isVisible()).isTrue();
-//    }
-//    @Test
-//    void testExecutingScenario() {
-//        page.querySelector("#test-tiger-logo").click();
-//        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
-//            .until(() -> page.locator("#test-sidebar-featurelistbox").locator(".test-running").first().isVisible());
-//
-//        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".test-running").first().isVisible()).isTrue();
-//    }
+    @Test
+    void testPassedScenario() {
+        page.querySelector("#test-tiger-logo").click();
+        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".scenarioLink").first().locator(".test-passed").first().isVisible()).isTrue();
+    }
+
+    @Test
+    void testExecutingScenario() {
+        page.querySelector("#test-tiger-logo").click();
+        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+            .until(() -> page.locator("#test-sidebar-featurelistbox").locator(".test-pending").first().isVisible());
+
+        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".test-pending").first().isVisible()).isTrue();
+        page.locator("#workflow-messages").locator(".btn-success").first().click();
+    }
+
+    @Test
+    void testFailedScenario() {
+        page.querySelector("#test-tiger-logo").click();
+        await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+            .until(() -> page.locator("#test-sidebar-featurelistbox").locator(".test-failed").first().isVisible());
+
+        assertThat(page.locator("#test-sidebar-featurelistbox").locator(".test-failed").first().isVisible()).isTrue();
+    }
 
     @Test
     void testExecutionPaneActive() {

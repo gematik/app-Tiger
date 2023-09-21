@@ -8,6 +8,9 @@ Feature: Playwright Test feature
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "GET"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/?"
+    And TGR send empty GET request to "http://httpbin/get"
+    Then TGR find last request to path ".*"
+    And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "GET"
 
   Scenario: Get Request to folder
     When TGR send empty GET request to "http://httpbin/get"
@@ -65,7 +68,7 @@ Feature: Playwright Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
 
-  Scenario: Request with custom and default header
+  Scenario: Request with DataTables Test
     Given TGR set local variable "configured_state_value" to "some_value"
     Given TGR set local variable "configured_param_name" to "my_cool_param"
     When TGR send POST request to "http://httpbin/not_a_file" with:
@@ -86,40 +89,26 @@ Feature: Playwright Test feature
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/json"
 
-  Scenario Outline: JEXL Rbel Namespace Test
-    Given TGR send empty GET request to "http://httpbin"
-    Then TGR find request to path "/"
-    And TGR print current request as rbel-tree
-    Then TGR current response with attribute "$.body.html.head.title.text" matches "!{rbel:currentResponseAsString('$.body.html.head.title.text')}"
+  Scenario Outline:  Test <color> with <inhalt>
+    And TGR show <color> text "<inhalt>"
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
-      | txt   | txt2 | txt3| txt4| txt5|
-      | text2 | 21   |31   |41   |51   |
-      | text2 |22    |32   |42   |52   |
-      | text2 |22    |32   |42   |52   |
-      | text3 |22    |32   |42   |52   |
-      | text4 |22    |32   |42   |52   |
-      | text5 |22    |32   |42   |52   |
-      | text6 |22    |32   |42   |52   |
-      | text7 |22    |32   |42   |52   |
-      | text8 |22    |32   |42   |52   |
-      | text9 |22    |32   |42   |52   |
-      | text0 |22    |32   |42   |52   |
+      | color | inhalt |
+      | red | Dagmar |
+      | blue | Nils |
+      | green | Tim  |
+      | yellow | Sophie |
 
+  Scenario Outline: Test <color> with <text> again
+    Given TGR show <color> banner "<text>"
+    And TGR clear recorded messages
+    Then TGR clear recorded messages
+    Examples:
+    # Test comment
+      | color | text |
+      | green | foo  |
+    # Test comment
+      | red   | bar  |
 
-  Scenario: Simple first test
-    Given TGR send empty GET request to "http://httpbin"
-    Then TGR find request to path "/"
-    Then TGR current response with attribute "$.body.html.head.link.href" matches "jetty-dir.css"
-    And TGR current response at "$.body" matches as JSON:
-    """
-    {
-      "timestamp": "${json-unit.ignore}",
-      "status": 400,
-      "error": "Bad Request",
-      "path": "/service/performLogin"
-    }
-    """
-    And TGR print current response as rbel-tree
 
   Scenario: Test Find Last Request
     Given TGR send empty GET request to "http://httpbin/classes?foobar=1"
@@ -145,3 +134,16 @@ Feature: Playwright Test feature
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
     Then TGR current response with attribute "$.responseCode" matches "501"
+
+  Scenario Outline: JEXL Rbel Namespace Test
+    Given TGR send empty GET request to "http://httpbin"
+    Then TGR find request to path "/"
+    And TGR print current request as rbel-tree
+    Then TGR current response with attribute "$.body.html.head.title.text" matches "!{rbel:currentResponseAsString('$.body.html.head.title.text')}"
+    Examples:
+      | txt1  | txt2 | txt3| txt4| txt5|
+      | text1 | 21   |31   |41   |51   |
+      | text2 |22    |32   |42   |52   |
+      | text3 |23    |33   |43   |53   |
+      | text4 |24    |34   |44   |54   |
+      | text5 |25    |35   |45   |55   |

@@ -12,14 +12,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.microsoft.playwright.Download;
 import com.microsoft.playwright.Page;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
 /**
  * Tests for dynamic content of the web ui content, e.g. tests of all buttons, dropdowns, modals.
  */
-@TestMethodOrder(OrderAnnotation.class)
+@Slf4j
+@TestMethodOrder(MethodOrderer.MethodName.class)
 class XYDynamicRbelLogTests extends AbstractTests {
+
     @BeforeEach
     void printInfoStarted(TestInfo testInfo) {
         System.out.println("started = " + testInfo.getDisplayName());
@@ -28,17 +30,16 @@ class XYDynamicRbelLogTests extends AbstractTests {
     void printInfoFinished(TestInfo testInfo) {
         System.out.println("finished = " + testInfo.getDisplayName());
     }
+
     @Test
-    @Order(12)
-    void testExecutionPaneRbelWebUiURLExists() {
+    void testHExecutionPaneRbelWebUiURLExists() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         assertThat(page.locator("#test-rbel-webui-url").isVisible()).isTrue();
     }
 
     @Test
-    @Order(3)
-    void testRbelLogPaneOpensAndCloses() {
+    void testBRbelLogPaneOpensAndCloses() {
         page.locator("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
@@ -47,48 +48,59 @@ class XYDynamicRbelLogTests extends AbstractTests {
     }
 
     @Test
-    @Order(7)
-    void testRbelLogPaneHideDetailsButton() {
+    void testDRbelLogPaneHideDetailsButton() {
         page.locator("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").first().click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20"));
+
         assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar").isVisible()).isTrue();
         page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
         assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").isVisible()).isTrue();
         assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").isVisible()).isTrue();
         page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-card-content.d-none").count()).isEqualTo(4);
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-card-content.d-none").count()).isEqualTo(20);
         page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetails.led-error").isVisible()).isTrue();
         page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").click();
     }
 
     @Test
-    @Order(8)
-    void testRbelLogPaneHideHeaderButton() {
+    void testERbelLogPaneHideHeaderButton() {
         page.locator("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").first().click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20"));
+
         assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar").isVisible()).isTrue();
         page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
         assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").isVisible()).isTrue();
         assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").isVisible()).isTrue();
         page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-msg-header-content.d-none").count()).isEqualTo(4);
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-msg-header-content.d-none").count()).isEqualTo(20);
         assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-msg-body-content.d-none").count()).isZero();
         page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeader.led-error").isVisible()).isTrue();
         page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").click();
     }
 
     @Test
-    @Order(6)
-    void testExecutionPaneRbelOpenWebUiURLCheckNavBarButtons() throws InterruptedException {
+    void testCExecutionPaneRbelOpenWebUiURLCheckNavBarButtons() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
 
         Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
         await()
             .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull(externalPage.locator("#test-tiger-logo")));
+            .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
         assertAll(
             () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#routeModalBtn").isVisible()).isTrue(),
@@ -105,48 +117,48 @@ class XYDynamicRbelLogTests extends AbstractTests {
     }
 
     @Test
-    @Order(9)
     void testFilterModalSetNonsenseFilter() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("$.body");
+        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("$.DOESNOTEXIST");
         page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
         await()
             .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull(page.frameLocator("#rbellog-details-iframe").locator("#requestToContent")));
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe")
+                .locator("#filteredMessage").textContent()).isEqualTo("0 of 52 did match the filter criteria."));
 
         String content = page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
-        boolean value = content.equals("0 of 64 did match the filter criteria.") || content.equals(
-            "Filter didn't match any of the 64 messages.");
-
-        assertAll(
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestToContent").textContent()).contains("no request"),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent").textContent()).contains("no request"),
-            () -> assertThat(value).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-msg-body-content").count()).isZero()
-        );
+        String requestToContent = page.frameLocator("#rbellog-details-iframe").locator("#requestToContent").textContent();
+        String requestFromContent = page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent").textContent();
+        int count = page.frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-msg-body-content").count();
+        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
+        assertAll(
+            () -> assertThat(requestToContent).contains("no request"),
+            () -> assertThat(requestFromContent).contains("no request"),
+            () -> assertThat(content).isEqualTo("0 of 52 did match the filter criteria."),
+            () -> assertThat(count).isZero()
+        );
     }
 
     @Test
-    @Order(10)
-    void testFilterModalSetReceiverFilter() {
+    void testFilterModalSetFilter() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("$.receiver == \"put\"");
+        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("$.body == \"hello=world\"");
         page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
         await()
             .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage")));
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent()).isEqualTo("0 of 64 did match the filter criteria.");
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent()).isEqualTo("4 of 52 did match the filter criteria."));
+        String content = page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
+        assertThat(content).isEqualTo("4 of 52 did match the filter criteria.");
     }
 
     @Test
-    @Order(13)
-    void testSaveModal() {
+    void testGSaveModal() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
@@ -163,8 +175,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
     }
 
     @Test
-    @Order(1)
-    void testSaveModalDownloadHtml() throws InterruptedException {
+    void testASaveModalDownloadHtml() throws InterruptedException {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
@@ -183,8 +194,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
      }
 
     @Test
-    @Order(2)
-    void testSaveModalDownloadTgr() throws InterruptedException {
+    void testASaveModalDownloadTgr() throws InterruptedException {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
@@ -202,35 +212,4 @@ class XYDynamicRbelLogTests extends AbstractTests {
         );
      }
 
-    @Test
-    @Order(5)
-    void testPageButton() throws InterruptedException {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first().textContent()).isEqualTo("1");
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").count()).isEqualTo(4);
-        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").last().click();
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number")));
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first().textContent()).isEqualTo("61");
-    }
-
-    @Test
-    @Order(4)
-    void testSizeButton() throws InterruptedException {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20");
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item").count()).isEqualTo(4);
-        page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item").last().click();
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number")));
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("64");
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item").nth(1).click();
-    }
 }

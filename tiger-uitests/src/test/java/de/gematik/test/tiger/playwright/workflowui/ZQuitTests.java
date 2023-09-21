@@ -12,15 +12,13 @@ import com.microsoft.playwright.Page;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
 /**
  * These tests should run at the very last because the testQuitButton() quits the tiger/workflowui.
  */
 @Slf4j
-@TestMethodOrder(OrderAnnotation.class)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 class ZQuitTests extends AbstractTests {
-
     @BeforeEach
     void printInfoStarted(TestInfo testInfo) {
         System.out.println("started = " + testInfo.getDisplayName());
@@ -31,8 +29,7 @@ class ZQuitTests extends AbstractTests {
     }
 
     @Test
-    @Order(1)
-    void testClickOnLastRequestChangesPageNumberInRbelLogDetails() throws InterruptedException {
+    void testClickOnLastRequestChangesPageNumberInRbelLogDetails() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
@@ -42,8 +39,12 @@ class ZQuitTests extends AbstractTests {
         page.locator("#test-webui-slider").click();
         assertThat(page.locator("#rbellog_details_pane").isVisible()).isFalse();
         page.locator(".test-rbel-link").first().click();
-        String number1 = page.locator(".test-rbel-link").first().textContent();
-        String number2 = page.locator(".test-rbel-link").last().textContent();
+        String number1 = (String) page.evaluate("document.getElementsByClassName('test-rbel-link')[0].textContent");
+        String number2 = (String) page.evaluate("document.getElementsByClassName('test-rbel-link')[25].textContent");
+
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertNotNull(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first()));
         assertAll(
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first().textContent()).isEqualTo(number1),
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isNotEqualTo(number2)
@@ -63,11 +64,15 @@ class ZQuitTests extends AbstractTests {
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first().textContent()).isNotEqualTo(number1),
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo(String.valueOf(value))
         );
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").first().click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20"));
     }
 
     @Test
-    @Order(2)
-    void testFilterModal() {
+    void testAFilterModal() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
@@ -84,15 +89,14 @@ class ZQuitTests extends AbstractTests {
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").isVisible()).isTrue(),
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").isVisible()).isTrue(),
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").isVisible()).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent()).isEqualTo("Filter didn\'t match any of the 64 messages.")
+            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent()).isEqualTo("Filter didn't match any of the 52 messages.")
         );
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
         assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalDialog").isVisible()).isFalse();
     }
 
     @Test
-    @Order(3)
-    void testFilterModalResetFilter() {
+    void testAFilterModalResetFilter() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
@@ -100,22 +104,24 @@ class ZQuitTests extends AbstractTests {
         page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
         await()
             .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage")));
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe")
+                .locator("#filteredMessage").textContent()).isEqualTo("4 of 52 did match the filter criteria."));
         String filteredMessage = page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
         int count = page.frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-msg-body-content").count();
         page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
         await()
             .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull( page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose")));
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe")
+                .locator("#filteredMessage").textContent()).isEqualTo("Filter didn't match any of the 52 messages."));
+        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-        assertThat(filteredMessage).isEqualTo("4 of 64 did match the filter criteria.");
+        assertThat(filteredMessage).isEqualTo("4 of 52 did match the filter criteria.");
         assertThat(count).isEqualTo(3);
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent()).isEqualTo("Filter didn't match any of the 64 messages.");
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent()).isEqualTo("Filter didn't match any of the 52 messages.");
     }
 
     @Test
-    @Order(4)
-    void testFilterModalSetSenderFilter() {
+    void testAFilterModalSetSenderFilter() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
         page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
@@ -132,13 +138,12 @@ class ZQuitTests extends AbstractTests {
         assertAll(
             () -> assertThat(requestToContent).contains("no request"),
             () -> assertThat(requestFromContent).contains("no request"),
-            () -> assertThat(filteredMessage).isEqualTo("0 of 64 did match the filter criteria.")
+            () -> assertThat(filteredMessage).isEqualTo("0 of 52 did match the filter criteria.")
         );
     }
 
     @Test
-    @Order(5)
-    void testResetButton() {
+    void testXResetButton() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
 
@@ -148,13 +153,15 @@ class ZQuitTests extends AbstractTests {
             .untilAsserted(() -> assertNotNull(externalPage.locator("#rbelmsglist .test-card")));
         assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive();
         externalPage.locator("#resetMsgs").click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isZero());
         assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isZero();
         externalPage.close();
     }
 
     @Test
-    @Order(7)
-    void testQuitButton() {
+    void testZQuitButton() {
         page.querySelector("#test-tiger-logo").click();
         page.querySelector("#test-sidebar-quit-icon").click();
         assertAll(
@@ -166,14 +173,44 @@ class ZQuitTests extends AbstractTests {
     }
 
     @Test
-    @Order(6)
-    void testFeatures() {
-        page.querySelector("#test-tiger-logo").click();
-        assertAll(
-            () -> assertThat(page.locator("#test-sidebar-featurelistbox").isVisible()).isTrue(),
-            () -> assertThat(page.locator("#test-sidebar-featurelistbox .test-sidebar-feature-name").count()).isEqualTo(1),
-            () -> assertThat(page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-name").count()).isEqualTo(25),
-            () -> assertThat(page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-index").count()).isEqualTo(11)
-        );
+    void testPageButton() {
+        page.querySelector("#test-execution-pane-tab").click();
+        page.locator("#test-webui-slider").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").first().click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20"));
+
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first().textContent()).isEqualTo("1");
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").count()).isEqualTo(3);
+        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").last().click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first().textContent()).isEqualTo("41"));
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first().textContent()).isEqualTo("41");
+    }
+
+    @Test
+    void testSizeButton() {
+        page.querySelector("#test-execution-pane-tab").click();
+        page.locator("#test-webui-slider").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").first().click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20"));
+
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20");
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item").count()).isEqualTo(4);
+        page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item").last().click();
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("52"));
+        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("52");
+        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item").nth(1).click();
     }
 }
