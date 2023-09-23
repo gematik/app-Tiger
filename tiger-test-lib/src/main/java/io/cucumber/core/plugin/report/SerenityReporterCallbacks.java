@@ -30,6 +30,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -51,7 +52,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.awaitility.Awaitility.await;
 
@@ -157,7 +157,7 @@ public class SerenityReporterCallbacks {
     public void handleTestCaseStarted(Event ignoredEvent, ScenarioContextDelegate context) /* NOSONAR */ {
         shouldAbortTestExecution();
 
-        if (currentScenarioID.isEmpty()) {
+        if (StringUtils.isEmpty(currentScenarioID)) {
             currentScenarioID = context.getCurrentScenarioId();
         }
         if (context.getCurrentScenarioId() != null && !context.getCurrentScenarioId().equals(currentScenarioID)) {
