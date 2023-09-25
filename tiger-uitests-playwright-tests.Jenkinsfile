@@ -51,6 +51,8 @@ pipeline {
             steps {
                 sh """
                   mvn install -DskipTests
+                  cd tiger-uitests
+                  mvn test-compile -P start-tiger-dummy
                 """
             }
         }
@@ -70,7 +72,7 @@ pipeline {
                             sh """
                                 cd tiger-uitests
                                 rm -f mvn-playwright-log.txt
-                                mvn -U -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
+                                mvn --no-transfer-progress -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
                                """
                         }
                     }
@@ -79,7 +81,7 @@ pipeline {
                     steps {
                         sh """
                             cd tiger-uitests
-                            mvn -P run-playwright-test failsafe:integration-test
+                            mvn --no-transfer-progress -P run-playwright-test failsafe:integration-test failsafe:verify
                         """
                         // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
                         sh """

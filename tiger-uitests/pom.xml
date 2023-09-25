@@ -109,6 +109,7 @@
                             <environmentVariables>
                                 <TIGER_TESTENV_CFGFILE>src/test/resources/playwright.yaml</TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
+                            <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
                         </configuration>
                         <executions>
                             <execution>
