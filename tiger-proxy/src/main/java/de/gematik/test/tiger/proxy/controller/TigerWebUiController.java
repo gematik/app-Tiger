@@ -14,7 +14,6 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.data.GetMessagesAfterDto;
 import de.gematik.test.tiger.proxy.data.HtmlMessage;
@@ -30,7 +29,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
@@ -55,28 +53,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static j2html.TagCreator.a;
 import static j2html.TagCreator.b;
@@ -198,17 +182,12 @@ public class TigerWebUiController implements ApplicationContextAware {
             navbar = createNavbar(tigerProxy, "", "", showQuit);
         }
 
-        String configJSSnippetStr = loadResourceToString("/configScript.html")
-            .replace("${ProxyPort}", String.valueOf(tigerProxy.getProxyPort()))
-            .replace("${FilenamePattern}", applicationConfiguration.getFilenamePattern())
-            .replace("${UploadUrl}", applicationConfiguration.getUploadUrl());
         return html.replace("<div id=\"navbardiv\"></div>", navbar +
                 loadResourceToString("/routeModal.html") +
                 loadResourceToString("/filterModal.html") +
                 loadResourceToString("/jexlModal.html") +
                 loadResourceToString("/saveModal.html") +
-                loadResourceToString( "/errorMessagesModal.html"))
-            .replace("</body>", configJSSnippetStr + "</body>");
+                loadResourceToString( "/errorMessagesModal.html"));
     }
 
     private String getVersionStringAsRawHtml() {
@@ -337,12 +316,6 @@ public class TigerWebUiController implements ApplicationContextAware {
                             button().withId("importMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS).with(
                                 i().withClass("far fa-folder-open"),
                                 span("Import").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
-                            )
-                        ),
-                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
-                            button().withId("uploadMsgs").withClass("btn btn-outline-info").with(
-                                i().withClass("far fa-upload"),
-                                span("Upload").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
                         div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
@@ -596,75 +569,6 @@ public class TigerWebUiController implements ApplicationContextAware {
         }
         if (StringUtils.isEmpty(noSystemExit)) {
             System.exit(0);
-        }
-    }
-
-    @PostMapping(value = "/uploadReport")
-    public void uploadReport(@RequestBody String htmlReport) {
-        if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
-            throw new TigerProxyConfigurationException("Upload feature is not configured!");
-        }
-        log.info("Uploading report to {}...", applicationConfiguration.getUploadUrl());
-        performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
-    }
-
-
-    private void performUploadReport(String htmlReport) {
-        // Connect to the web server endpoint
-        String filename = applicationConfiguration.getFilenamePattern()
-            .replace("${DATE}", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")))
-            .replace("${TIME}", LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmssSSS")));
-        String uploadUrl = applicationConfiguration.getUploadUrl() + filename;
-
-        try {
-            URL serverUrl = new URL(uploadUrl);
-            HttpURLConnection urlConnection = (HttpURLConnection) serverUrl.openConnection();
-            String boundaryString = "----TigerProxyReport";
-            urlConnection.setDoOutput(true);
-            urlConnection.setRequestMethod("POST");
-            urlConnection.addRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundaryString);
-            if (applicationConfiguration.getUsername() != null) {
-                String auth = applicationConfiguration.getUsername() + ":"
-                    + applicationConfiguration.getPassword();
-                byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.UTF_8));
-                String authHeaderValue = "Basic " + new String(encodedAuth);
-                urlConnection.setRequestProperty("Authorization", authHeaderValue);
-            }
-            try (OutputStream outputStreamToRequestBody = urlConnection.getOutputStream();
-                BufferedWriter httpRequestBodyWriter =
-                    new BufferedWriter(new OutputStreamWriter(outputStreamToRequestBody))) {
-
-                httpRequestBodyWriter.write("\n--" + boundaryString + "\n");
-                httpRequestBodyWriter.write("Content-Disposition: form-data;"
-                    + "name=\"Tiger proxy report archive\";"
-                    + "filename=\"" + filename + "\""
-                    + "\nContent-Type: application/zip\n\n");
-                httpRequestBodyWriter.flush();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-                    ZipEntry entry = new ZipEntry(filename);
-                    zos.putNextEntry(entry);
-                    zos.write(htmlReport.getBytes(StandardCharsets.UTF_8));
-                    zos.closeEntry();
-                    entry = new ZipEntry("application.cfg");
-                    zos.putNextEntry(entry);
-                    // Todo: was genau soll hier rausgeschrieben werden?
-                    zos.write(tigerProxy.getTigerProxyConfiguration().toString().getBytes(StandardCharsets.UTF_8));
-                    zos.closeEntry();
-                }
-
-                outputStreamToRequestBody.write(baos.toByteArray());
-                outputStreamToRequestBody.flush();
-                baos.close();
-
-                // Mark the end of the multipart http request
-                httpRequestBodyWriter.write("\n--" + boundaryString + "--\n");
-                httpRequestBodyWriter.flush();
-            }
-        } catch (ProtocolException | MalformedURLException e) {
-            throw new TigerProxyConfigurationException("Invalid upload url '" + uploadUrl + "'", e);
-        } catch (IOException e) {
-            throw new TigerRemoteProxyClientException("Failed to upload report to '" + uploadUrl + "'", e);
         }
     }
 

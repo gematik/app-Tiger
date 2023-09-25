@@ -19,7 +19,6 @@ const NO_REQUEST = "no requests";
 
 let resetBtn;
 let saveBtn;
-let uploadBtn;
 let quitBtn;
 let importBtn;
 let includeFilterInDownload = false;
@@ -118,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
   resetBtn = document.getElementById("resetMsgs");
   saveBtn = document.getElementById("saveMsgs");
   importBtn = document.getElementById("importMsgs");
-  uploadBtn = document.getElementById("uploadMsgs");
   quitBtn = document.getElementById("quitProxy");
   jexlInspectionResultDiv = document.getElementById("jexlResult");
   jexlInspectionContextDiv = document.getElementById("jexlContext");
@@ -177,16 +175,12 @@ document.addEventListener('DOMContentLoaded', function () {
   quitBtn.addEventListener('click', quitProxy);
   resetBtn.addEventListener('click', resetMessages);
   document.getElementById("executeJexlQuery")
-  .addEventListener('click', executeJexlQuery)
+      .addEventListener('click', executeJexlQuery);
   document.getElementById("testRbelExpression")
-  .addEventListener('click', testRbelExpression)
+      .addEventListener('click', testRbelExpression);
   document.getElementById("copyToFilter")
-  .addEventListener('click', copyToFilter)
-  if (tigerProxyUploadUrl === "UNDEFINED") {
-    uploadBtn.classList.add("d-none");
-  } else {
-    uploadBtn.addEventListener('click', uploadReport);
-  }
+      .addEventListener('click', copyToFilter);
+
 
   function todayAsString() {
     var now = new Date();
@@ -642,7 +636,6 @@ async function quitProxy() {
   {
     alert("Tiger proxy shut down SUCCESSfully!");
     resetBtn.disabled = true;
-    uploadBtn.disabled = true;
     btnScrollLock.disabled = true;
     collapsibleMessageDetailsBtn.disabled = true;
     collapsibleMessageHeaderBtn.disabled = true;
@@ -690,21 +683,6 @@ function resetFilterCriterion() {
   resetFilterCriterionBtn.removeChild(spinner);
 }
 
-async function uploadReport() {
-  uploadBtn.disabled = true;
-  const response = await backendClient.uploadReport(encodeURIComponent(document.querySelector("html").innerHTML));
-  if (!response.ok) {
-    alert("Tiger proxy shut down SUCCESSfully!");
-    uploadBtn.disabled = false;
-    uploadBtn.blur();
-  } else {
-    console.log("ERROR " + response.status + " " + response.statusText);
-    setTimeout(() => {
-      uploadBtn.blur();
-      uploadBtn.disabled = false;
-    }, 200);
-  }
-}
 
 function addQueryBtn(reqEl) {
   let titleDiv = getAll(".card-header-title", reqEl)[0].childNodes[0];

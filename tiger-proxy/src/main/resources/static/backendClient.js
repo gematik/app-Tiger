@@ -51,13 +51,6 @@ class BackendClient {
         return this.fetchWithHandler("/route");
     }
 
-    async uploadReport(htmlReport){
-        return this.fetch("webui/uploadReport", {
-            method: "POST",
-            body: htmlReport
-        })
-    }
-
     async testJexlQuery(msgUuid, query){
         const baseUrl = "/webui/testJexlQuery?";
         const queryParams = new URLSearchParams({
