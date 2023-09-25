@@ -95,6 +95,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String HIDE_QUIT = "display:none;";
     /** in error responses on http requests, this token causes problems so remove it for better handling on client side */
     public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
+    public static final String DROPDOWN = "dropdown";
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer;
 
@@ -221,7 +222,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-hide-button").withClass("btn-group dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                     .attr("type", "button")
@@ -274,7 +275,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-page-selection").withClass("btn-group dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                     .attr("type", "button")
@@ -292,7 +293,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-page-size").withClass("dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                     .with(
@@ -574,6 +575,6 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     @PostMapping(value = "/traffic")
     public void importTrafficFromFile(@RequestBody String rawTraffic) {
-        tigerProxy.getRbelFileWriter().convertFromRbelFile(rawTraffic);
+        tigerProxy.readTrafficFromString(rawTraffic);
     }
 }

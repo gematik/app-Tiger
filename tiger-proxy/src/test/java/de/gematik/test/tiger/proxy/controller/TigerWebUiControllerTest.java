@@ -4,9 +4,11 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import io.restassured.RestAssured;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
@@ -15,6 +17,7 @@ import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,6 +84,11 @@ public class TigerWebUiControllerTest {
 
             proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
         }
+    }
+
+    @AfterEach
+    public void tearDown(){
+        tigerProxy.clearAllMessages();
     }
 
     public String getWebUiUrl() {
@@ -185,27 +193,24 @@ public class TigerWebUiControllerTest {
 
     @Test
     void simulateTrafficDownloadResetAndUpload() {
-        try {
-            final String downloadedTraffic = RestAssured.given()
+        final String downloadedTraffic = RestAssured.given()
                 .get(getWebUiUrl() + "/trafficLog.tgr")
                 .body().asString();
 
-            RestAssured.given().get(getWebUiUrl() + "/resetMsgs")
+        RestAssured.given().get(getWebUiUrl() + "/resetMsgs")
                 .then()
                 .statusCode(200);
 
-            assertThat(tigerProxy.getRbelMessages()).isEmpty();
+        assertThat(tigerProxy.getRbelMessages()).isEmpty();
 
-            RestAssured
+        RestAssured
                 .with().body(downloadedTraffic)
                 .post(getWebUiUrl() + "/traffic")
                 .then()
                 .statusCode(200);
 
-            assertThat(tigerProxy.getRbelMessages()).hasSize(2);
-        } finally {
-            tigerProxy.clearAllMessages();
-        }
+        assertThat(tigerProxy.getRbelMessages()).hasSize(TOTAL_OF_EXCHANGED_MESSAGES);
+
     }
 
     @Test
@@ -312,5 +317,37 @@ public class TigerWebUiControllerTest {
         assertThat(htmlElements.html()).doesNotContain(tigerProxy.getRbelMessagesList().get(1).getUuid());
         assertThat(htmlElements.get(0).html()).contains(tigerProxy.getRbelMessagesList().get(2).getUuid());
         assertThat(htmlElements.get(1).html()).contains(tigerProxy.getRbelMessagesList().get(3).getUuid());
+    }
+
+    @Test
+    void uploadingTrafficFile_processesPairedMessageUuid() {
+        String filterCriterion = "$.method == 'POST'";
+
+        var trafficFileContent = RestAssured.given()
+                .get(getWebUiUrl() + "/trafficLog12334.tgr?filterCriterion=" + filterCriterion);
+        trafficFileContent.then()
+                .statusCode(200)
+                .header("available-messages", String.valueOf(TOTAL_OF_EXCHANGED_MESSAGES - 2));
+
+        RestAssured.given().get(getWebUiUrl() + "/resetMsgs");
+        assertThat(tigerProxy.getRbelMessages()).isEmpty();
+
+        RestAssured
+                .with().body(trafficFileContent.asString())
+                .post(getWebUiUrl() + "/traffic")
+                .then()
+                .statusCode(200);
+
+        var rbelMessages = tigerProxy.getRbelMessagesList();
+
+        assertThat(rbelMessages).size().isEqualTo(TOTAL_OF_EXCHANGED_MESSAGES - 2);
+        RbelElementAssertion.assertThat(rbelMessages.get(0)).hasFacet(TracingMessagePairFacet.class);
+        RbelElementAssertion.assertThat(rbelMessages.get(1)).hasFacet(TracingMessagePairFacet.class);
+
+        var requestFacet = rbelMessages.get(0).getFacetOrFail(TracingMessagePairFacet.class);
+        var responseFacet = rbelMessages.get(1).getFacetOrFail(TracingMessagePairFacet.class);
+
+        assertThat(requestFacet.getResponse().getUuid()).isEqualTo(rbelMessages.get(1).getUuid());
+        assertThat(responseFacet.getRequest().getUuid()).isEqualTo(rbelMessages.get(0).getUuid());
     }
 }

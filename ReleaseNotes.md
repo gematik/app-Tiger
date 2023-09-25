@@ -30,6 +30,7 @@
 * TGR-623: Tiger Proxy UI - when importing a .tgr traffic file, the previously displayed traffic is removed.
 * TGR-1074: Scenario Outlines counter fixed
 * TGR-873: Tiger Proxy UI - when the connection with the backend is lost a visible error dialog is shown in the UI to inform the user.
+* TGR-1079: Tiger Proxy UI - when importing a .tgr traffic file, the request/response message pairs are correctly identified as such and are displayed together when one of the messages matches the applied filter.
 
 -------
 * Serenity BDD 3.6.23
