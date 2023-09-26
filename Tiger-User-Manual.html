@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 2.1.6-SNAPSHOT - 2023-08-21</span>
+<span id="revdate">Version 2.2.0-SNAPSHOT - 2023-09-26</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -299,6 +299,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_examples">6.6. Examples</a></li>
 <li><a href="#_pre_defined_values">6.7. Pre-Defined values</a></li>
 <li><a href="#_inline_jexl">6.8. Inline JEXL</a></li>
+<li><a href="#_configuration_editor">6.9. Configuration Editor</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_user_interfaces">7. Tiger User interfaces</a>
@@ -1019,7 +1020,11 @@ path to the feature file(s).</p>
 </li>
 <li>
 <p>${glues}<br>
-comma separated list of glue/hook packages as specified by the glues configuration property.</p>
+comma separated list of glue/hook packages as specified by the glues configuration property in curly braces.</p>
+</li>
+<li>
+<p>${gluesCsv}<br>
+comma separated list of glue/hook packages without curly braces.</p>
 </li>
 </ul>
 </div>
@@ -1379,6 +1384,9 @@ use the <a href="#_admin_ui">Tiger Admin UI</a>.</p>
 <li>
 <p><strong>Helm Chart</strong> is a node that will be added to tiger via a plugin mechanism that starts a helm chart within a kubernetes environment.</p>
 </li>
+<li>
+<p><strong>httpbin</strong> is a node mainly useful for testing purposes. It starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server which provides mock endpoints.</p>
+</li>
 </ul>
 </div>
 <div class="sect3">
@@ -1525,6 +1533,8 @@ Their meaning and format are explained in the related section.</p>
     <span class="comment"># used by external jar and Tiger Proxy nodes</span>
     <span class="key">arguments</span>: <span class="string"><span class="content">[]</span></span>
     <span class="comment"># flag whether to forward log output from external jar processes to the workflow UI</span>
+    <span class="key">activateWorkflowLogs</span> : <span class="string"><span class="content">true</span></span>
+    <span class="comment"># flag whether to forward log output from external jar processes to workflow UI and console</span>
     <span class="key">activateLogs</span>: <span class="string"><span class="content">true</span></span>
 
   <span class="comment"># type specific sub structure for Tiger Proxy nodes</span>
@@ -2055,6 +2065,21 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 <div class="paragraph">
 <p>The configuration of the Tiger Proxy is explained in detail in the section <a href="#_configuring_the_local_test_suite_tiger_proxy">Configuring the local test suite Tiger Proxy</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_httpbin_node">3.1.11. httpbin node</h4>
+<div class="paragraph">
+<p>The httpbin simply starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server. This provides several endpoints against which you can perform all kinds of http requests. The server port on which the server starts can be configured.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 15. httpbin configuration</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">httpbin</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">httpbin</span></span>
+    <span class="key">serverPort</span>: <span class="string"><span class="content">${free.port.0}</span></span>
+    <span class="key">healthcheckUrl</span>: <span class="string"><span class="content">http://localhost:${free.port.0}/status/200</span></span></code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -3416,7 +3441,7 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 15. Tiger response validation steps example</div>
+<div class="title">Listing 16. Tiger response validation steps example</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="gherkin">Feature Tiger validation steps
 
@@ -3460,55 +3485,74 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
 requests, with bodies, default and custom headers.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Tiger response validation steps example</div>
+<div class="title">Listing 17. Tiger response validation steps example</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
 
   Background:
     Given TGR clear recorded messages
 
+  Scenario Outline:  Test &lt;color&gt; with &lt;inhalt&gt;
+    And TGR show &lt;color&gt; text &quot;&lt;inhalt&gt;&quot;
+    Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
+      | color | inhalt |
+      | red | Dagmar |
+      | blue | Nils |
+      | green | Tim  |
+      | yellow | Sophie |
+
+  Scenario Outline: Test &lt;color&gt; with &lt;text&gt; again
+    Given TGR show &lt;color&gt; banner &quot;&lt;text&gt;&quot;
+    And TGR clear recorded messages
+    Then TGR clear recorded messages
+    Examples:
+    # Test comment
+      | color | text |
+      | green | foo  |
+      | red   | bar  |
+
   Scenario: Simple Get Request
-    When TGR send empty GET request to &quot;http://winstone&quot;
+    When TGR send empty GET request to &quot;http://httpbin/&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;GET&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/?&quot;
 
   Scenario: Get Request to folder
-    When TGR send empty GET request to &quot;http://winstone/target&quot;
+    When TGR send empty GET request to &quot;http://httpbin/get&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;GET&quot;
-    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/get\/?&quot;
 
   Scenario: PUT Request to folder
-    When TGR send empty PUT request to &quot;http://winstone/target&quot;
+    When TGR send empty PUT request to &quot;http://httpbin/put&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
-    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/put\/?&quot;
 
   Scenario: PUT Request with body to folder
-    When TGR send PUT request to &quot;http://winstone/target&quot; with body &quot;{'hello': 'world!'}&quot;
+    When TGR send PUT request to &quot;http://httpbin/put&quot; with body &quot;{'hello': 'world!'}&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
-    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/put\/?&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.body.hello')}&quot; matches &quot;world!&quot;
 
   Scenario: PUT Request with body from file to folder
-    When TGR send PUT request to &quot;http://winstone/target&quot; with body &quot;!{file('pom.xml')}&quot;
+    When TGR send PUT request to &quot;http://httpbin/put&quot; with body &quot;!{file('pom.xml')}&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;PUT&quot;
-    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/target\/?&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/put\/?&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}&quot; matches &quot;4.0.0&quot;
     # application/octet-stream is used since no rewriting is done, so unknown/default MIME-type is assumed
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/octet-stream.*&quot;
 
   Scenario: DELETE Request without body
-    When TGR send empty DELETE request to &quot;http://winstone/not_a_file&quot;
+    When TGR send empty DELETE request to &quot;http://httpbin/delete&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;DELETE&quot;
-    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/not_a_file\/?&quot;
+    And TGR assert &quot;!{rbel:currentRequestAsString('$.path')}&quot; matches &quot;\/delete\/?&quot;
 
   Scenario: Request with custom header
-    When TGR send empty GET request to &quot;http://winstone/not_a_file&quot; with headers:
+    When TGR send empty GET request to &quot;http://httpbin/get&quot; with headers:
       | foo    | bar |
       | schmoo | lar |
     Then TGR find last request to path &quot;.*&quot;
@@ -3517,17 +3561,17 @@ requests, with bodies, default and custom headers.</p>
 
   Scenario: Request with default header
     Given TGR set default header &quot;key&quot; to &quot;value&quot;
-    When TGR send empty GET request to &quot;http://winstone/not_a_file&quot;
+    When TGR send empty GET request to &quot;http://httpbin/get&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
-    When TGR send POST request to &quot;http://winstone/not_a_file&quot; with body &quot;hello world&quot;
+    When TGR send POST request to &quot;http://httpbin/post&quot; with body &quot;hello world&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.key')}&quot; matches &quot;value&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.body')}&quot; matches &quot;hello world&quot;
 
   Scenario: Request with custom and default header, check headers
     Given TGR set default header &quot;key&quot; to &quot;value&quot;
-    When TGR send empty GET request to &quot;http://winstone/not_a_file&quot; with headers:
+    When TGR send empty GET request to &quot;http://httpbin/get&quot; with headers:
       | foo | bar |
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.foo')}&quot; matches &quot;bar&quot;
@@ -3536,7 +3580,7 @@ requests, with bodies, default and custom headers.</p>
   Scenario: Get Request with custom and default header, check body, application type url encoded
     Given TGR set local variable &quot;configured_state_value&quot; to &quot;some weird $value§&quot;
     Given TGR set local variable &quot;configured_param_name&quot; to &quot;my_cool_param&quot;
-    When TGR send GET request to &quot;http://winstone/not_a_file&quot; with:
+    When TGR send GET request to &quot;http://httpbin/get&quot; with:
       | ${configured_param_name}   | state                     | redirect_uri        |
       | client_id                  | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path &quot;.*&quot;
@@ -3548,7 +3592,7 @@ requests, with bodies, default and custom headers.</p>
   Scenario: Post Request with custom and default header, check body, application type url encoded
     Given TGR set local variable &quot;configured_state_value&quot; to &quot;some weird $value§&quot;
     Given TGR set local variable &quot;configured_param_name&quot; to &quot;my_cool_param&quot;
-    When TGR send POST request to &quot;http://winstone/not_a_file&quot; with:
+    When TGR send POST request to &quot;http://httpbin/post&quot; with:
       | ${configured_param_name}   | state                     | redirect_uri        |
       | client_id                  | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path &quot;.*&quot;
@@ -3559,16 +3603,16 @@ requests, with bodies, default and custom headers.</p>
 
   Scenario: Request with custom and default header, check application type json
     Given TGR set default header &quot;Content-Type&quot; to &quot;application/json&quot;
-    When TGR send POST request to &quot;http://winstone/not_a_file&quot; with:
+    When TGR send POST request to &quot;http://httpbin/post&quot; with:
       | ${configured_param_name}   |
       | client_id                  |
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.header.Content-Type')}&quot; matches &quot;application/json&quot;
 
   Scenario Outline: JEXL Rbel Namespace Test
-    Given TGR send empty GET request to &quot;http://winstone&quot;
-    Then TGR find request to path &quot;/&quot;
-    Then TGR current response with attribute &quot;$.body.html.head.link.href&quot; matches &quot;!{rbel:currentResponseAsString('$.body.html.head.link.href')}&quot;
+    Given TGR send empty GET request to &quot;http://httpbin/html&quot;
+    Then TGR find request to path &quot;/html&quot;
+    Then TGR current response with attribute &quot;$.body.html.body.h1.text&quot; matches &quot;!{rbel:currentResponseAsString('$.body.html.body.h1.text')}&quot;
 
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
       | txt   | txt2 | txt3| txt4| txt5|
@@ -3576,51 +3620,49 @@ requests, with bodies, default and custom headers.</p>
       | text2 |22    |32   |42   |52   |
 
   Scenario: Simple first test
-    Given TGR send empty GET request to &quot;http://winstone&quot;
-    Then TGR find request to path &quot;/&quot;
-    Then TGR current response with attribute &quot;$.body.html.head.link.href&quot; matches &quot;jetty-dir.css&quot;
+    Given TGR send empty GET request to &quot;http://httpbin/html&quot;
+    Then TGR find request to path &quot;/html&quot;
+    Then TGR current response with attribute &quot;$.body.html.body.h1.text&quot; matches &quot;Herman Melville - Moby-Dick&quot;
 
   Scenario: Test Find Last Request
-    Given TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
-    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
-    Then TGR find last request to path &quot;/classes&quot;
-    Then TGR current response with attribute &quot;$.header.Location.foobar.value&quot; matches &quot;2&quot;
+    Given TGR send empty GET request to &quot;http://httpbin/anything?foobar=1&quot;
+    Then TGR send empty GET request to &quot;http://httpbin/anything?foobar=2&quot;
+    Then TGR find last request to path &quot;/anything&quot;
+    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;200&quot;
+    Then TGR current response with attribute &quot;$.body.url.content.foobar.value&quot; matches &quot;2&quot;
 
   Scenario: Test find last request with parameters
-    Given TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
-    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=1&amp;xyz=4&quot;
-    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
-    Then TGR find last request to path &quot;/classes&quot; with &quot;$.path.foobar.value&quot; matching &quot;1&quot;
-    Then TGR current response with attribute &quot;$.header.Location.xyz.value&quot; matches &quot;4&quot;
-    Then TGR current response with attribute &quot;$.header.Location.xyz.value&quot; matches &quot;4&quot;
+    Given TGR send empty GET request to &quot;http://httpbin/anything?foobar=1&quot;
+    Then TGR send empty GET request to &quot;http://httpbin/anything?foobar=1&amp;xyz=4&quot;
+    Then TGR send empty GET request to &quot;http://httpbin/anything?foobar=2&quot;
+    Then TGR find last request to path &quot;/anything&quot; with &quot;$.path.foobar.value&quot; matching &quot;1&quot;
+    Then TGR current response with attribute &quot;$.body.url.content.xyz.value&quot; matches &quot;4&quot;
 
   Scenario: Test find last request
-    Given TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
-    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=2&quot;
-    Then TGR send empty GET request to &quot;http://winstone/classes?foobar=3&quot;
-    Then TGR send empty GET request to &quot;http://winstone/directoryWhichDoesNotExist?other=param&quot;
+    Given TGR send empty GET request to &quot;http://httpbin/anything?foobar=1&quot;
+    Then TGR send empty GET request to &quot;http://httpbin/anything?foobar=2&quot;
+    Then TGR send empty GET request to &quot;http://httpbin/anything?foobar=3&quot;
+    Then TGR send empty GET request to &quot;http://httpbin/status/404?other=param&quot;
     Then TGR find the last request
     Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;404&quot;
     Then TGR assert &quot;!{rbel:currentRequestAsString('$.path.other.value')}&quot; matches &quot;param&quot;
 
   Scenario: Get Request to folder and test param is url decoded when access via $.path and ..value is url decoded
-    When TGR send empty GET request to &quot;http://winstone/target?foo=bar%20and%20schmar&quot;
+    When TGR send empty GET request to &quot;http://httpbin/get?foo=bar%20and%20schmar&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.path.foo.value')}&quot; matches &quot;bar and schmar&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.path.foo')}&quot; matches &quot;foo=bar%20and%20schmar&quot;
 
   Scenario: Test deactivate followRedirects
     When TGR disable HttpClient followRedirects configuration
-    And TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
+    And TGR send empty GET request to &quot;http://httpbin/redirect-to?url=!{urlEncoded('http://httpbin/status/200')}&quot;
     Then TGR find the last request
     Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;302&quot;
-    And TGR current response with attribute &quot;$.header.Location&quot; matches &quot;http://localhost:${free.port.0}/classes/?foobar=1&quot;
-    And TGR current response with attribute &quot;$.sender&quot; matches &quot;winstone:80&quot;
+    And TGR current response with attribute &quot;$.header.Location&quot; matches &quot;http://httpbin/status/200&quot;
     When TGR reset HttpClient followRedirects configuration
-    And TGR send empty GET request to &quot;http://winstone/classes?foobar=1&quot;
+    And TGR send empty GET request to &quot;http://httpbin/redirect-to?url=!{urlEncoded('http://httpbin/status/200')}&quot;
     Then TGR find the last request
-    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;200&quot;
-    And TGR current response with attribute &quot;$.sender&quot; matches &quot;localhost:${free.port.0}&quot;</code></pre>
+    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;200&quot;</code></pre>
 </div>
 </div>
 <div class="sect4">
@@ -3696,7 +3738,7 @@ Please note that checking whether a nested key is optional, is not yet possible 
 <p>It should also be noted, that although JSONChecker can match multilevel JSON objects at a high level, it is not yet possible to access nested attributes out of the box. We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 18. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">  {
     <span class="key"><span class="delimiter">&quot;</span><span class="content">alg</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">dir</span><span class="delimiter">&quot;</span></span>,
@@ -4054,8 +4096,8 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send empty {requestType} request to {string}</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} sendet</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} sendet</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends an empty request via the selected method. Placeholders in address will be resolved.
@@ -4067,7 +4109,7 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send empty {requestType} request to {string} without waiting for the response</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends an empty request via the selected method and expands the list of default headers with the headers provided by the caller. Placeholders in address
@@ -4085,8 +4127,8 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send empty {requestType} request to {string} with headers:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} und den folgenden Headern sendet:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string} mit folgenden Headern:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} und den folgenden Headern sendet:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string} mit folgenden Headern:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends an empty request via the selected method and expands the list of default headers with the headers provided by the caller. Placeholders in address
@@ -4100,7 +4142,7 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send empty {requestType} request to {string} without waiting for the response with headers:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Headern:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Headern:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends a request containing the provided body via the selected method. Placeholders in the body and in address will be resolved.
@@ -4111,8 +4153,8 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request to {string} with body {string}</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} und dem folgenden body {string} sendet</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit Body {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine leere {requestType} Anfrage an {string} und dem folgenden body {string} sendet</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit Body {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends a request containing the provided body via the selected method. Placeholders in the body and in address will be resolved.
@@ -4129,7 +4171,7 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request to {string} with body {string} without waiting for the response</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit Body {string} ohne auf Antwort zu warten</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit Body {string} ohne auf Antwort zu warten</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends a request via the selected method. The request is expanded by the provided key-value pairs.
@@ -4153,8 +4195,8 @@ only check for regex matches if they were not equal.</p>
 */</span>
 <span class="annotation">@SuppressWarnings</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">JavadocLinkAsPlainText</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request to {string} with:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends a request via the selected method.
@@ -4182,8 +4224,8 @@ only check for regex matches if they were not equal.</p>
 */</span>
 <span class="annotation">@SuppressWarnings</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">JavadocLinkAsPlainText</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request to {string} with multiline body:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine {requestType} Anfrage an {string} mit den folgenden mehrzeiligen Daten sendet:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit folgenden mehrzeiligen Daten:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR eine {requestType} Anfrage an {string} mit den folgenden mehrzeiligen Daten sendet:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} mit folgenden mehrzeiligen Daten:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Sends a request via the selected method. The request is expanded by the provided key-value
@@ -4199,7 +4241,7 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR send {requestType} request to {string} without waiting for the response with:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Expands the list of default headers with the provided key-value pair. If the key already exists, then the existing value is overwritten by the new value.
@@ -4210,8 +4252,8 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set default header {string} to {string}</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR den default header {string} auf den Wert {string} setzen</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze den default header {string} auf den Wert {string}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR den default header {string} auf den Wert {string} setzen</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze den default header {string} auf den Wert {string}</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Expands the list of default headers with the provided key-value pairs. If the key already exists, then the existing value is overwritten by the new value.
@@ -4221,26 +4263,28 @@ only check for regex matches if they were not equal.</p>
 * @see TigerGlobalConfiguration#resolvePlaceholders(String)
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR set default headers:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze folgende default headers:</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR folgende default headers gesetzt werden:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR setze folgende default headers:</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR folgende default headers gesetzt werden:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Clear all default headers set in previous steps.
 *
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR clear all default headers</span><span class="delimiter">&quot;</span></span>)
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR lösche alle default headers</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR lösche alle default headers</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Modifies the global configuration of the HttpClient to not automatically follow redirects. All following requests
 * will use the modified configuration.
 */</span>
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR disable HttpClient followRedirects configuration</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR HttpClient followRedirects Konfiguration deaktiviert</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
 * Resets the global configuration of the HttpClient to its default behaviour of automatically following redirects.
 */</span>
-<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR reset HttpClient followRedirects configuration</span><span class="delimiter">&quot;</span></span>)</code></pre>
+<span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR reset HttpClient followRedirects configuration</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Wenn</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR HttpClient followRedirects Konfiguration zurücksetzt</span><span class="delimiter">&quot;</span></span>)</code></pre>
 </div>
 </div>
 </div>
@@ -4297,7 +4341,7 @@ The image below shows all three sections of the Workflow UI.</p>
 This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Current message steps for Workflow UI</div>
+<div class="title">Listing 19. Current message steps for Workflow UI</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// copied from module /tiger-test-lib</span>
 <span class="comment">// /src/test/java/de/gematik/test/tiger/glue/TigerGlue.java</span>
@@ -4435,7 +4479,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <div class="sect2">
 <h3 id="_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.6. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
 <div class="paragraph">
-<p>Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requriements maintained in Polarion we have a Tiger sub project that syncrhonizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.</p>
+<p>Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requirements maintained in Polarion we have a Tiger sub project that synchronizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.</p>
 </div>
 <div class="paragraph">
 <p>To use this feature the scenarios need a minimal set of mandatory annotations:</p>
@@ -4443,7 +4487,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <div class="ulist">
 <ul>
 <li>
-<p><strong>@TCID:xxx</strong> - an unique test case identifier, where 'xxx' matches the value of the custom field "cfInternalId" in Polarion</p>
+<p><strong>@TCID:xxx</strong> - a unique test case identifier, where 'xxx' matches the value of the custom field "cfInternalId" in Polarion</p>
 </li>
 <li>
 <p><strong>@PRODUKT:p,p,p</strong> - reference to the custom field "cfProductType". You add this annotation above each feature, not each scenario. 'p' is a product, one is mandatory but it can be a list.</p>
@@ -4600,7 +4644,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>You could achieve this by exporting the URL (<code>servers.myServer.exports</code>) and referencing it in an argument which is passed into server "B" (<code>serverAUrl=${serverA.url}</code>. The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Configuring using placeholders and exports</div>
+<div class="title">Listing 20. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">servers</span>:
   <span class="key">serverAInternet</span>:
@@ -4674,7 +4718,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 21. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -4697,7 +4741,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p>In the above example let&#8217;s say you only want to customize the port. This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -4722,7 +4766,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. The testsuite</div>
+<div class="title">Listing 23. The testsuite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="Gherkin">    TGR current response with attribute &quot;$.body.ReplyStructure.Header.Sender.url&quot; matches &quot;http://127.0.0.1:${backend.server.port}&quot;</code></pre>
 </div>
@@ -4846,8 +4890,68 @@ You will find two predefined namespaces and also the ability to add your own, al
 <div class="paragraph">
 <p>You can easily register additional namespaces by calling <code>TigerJexlExecutor.registerAdditionalNamespace(&lt;namespace-prefix&gt;, &lt;namespace class or object)</code>.</p>
 </div>
-<div style="page-break-after: always;"></div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_configuration_editor">6.9. Configuration Editor</h3>
+<div class="paragraph">
+<p>The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the <a href="#_workflow_ui">Workflow UI</a> and can be opened by clicking the gears icon in the sidebar (<a href="#editor_start_button">Figure 15</a>).</p>
+</div>
+<div id="editor_start_button" class="imageblock text-center">
+<div class="content">
+<img src="media/configuration_editor_start_button.png" alt="workflow UI with action buttons and gears icon highlighted">
+</div>
+<div class="title">Figure 15. Open the configuration editor by clicking the gears icon in the sidebar.</div>
+</div>
+<div class="paragraph">
+<p>The configuration editor displays a table where you can view the current configuration properties loaded in the Tiger global configuration (<a href="#editor_table">Figure 16</a>). This includes properties from all <a href="#_inlets">inlet sources</a>. If a property is defined multiple times in different sources, only the one with higher importance is displayed.</p>
+</div>
+<div id="editor_table" class="imageblock">
+<div class="content">
+<img src="media/configuration_editor_table.png" alt="view of the configuration editor table showing several properties">
+</div>
+<div class="title">Figure 16. The Tiger global configuration editor</div>
+</div>
+<div class="paragraph">
+<p>The editor allows sorting and filtering each column so that you can easily find a specific property (<a href="#editor_column_filter">Figure 17</a>). Given that the Tiger global configuration includes many environment variables and system properties which are not directly relevant to Tiger, the filtering functionally proves to be especially useful.</p>
+</div>
+<div id="editor_column_filter" class="imageblock">
+<div class="content">
+<img src="media/configuration_editor_example_filter_popup.png" alt="screenshot of Key column displaying a filter popup filtering by the word tiger">
+</div>
+<div class="title">Figure 17. Example of filtering the column key by the text 'tiger'</div>
+</div>
+<div class="paragraph">
+<p>The values of existing configuration properties can be edited by double-clicking the value cells. This opens an input field where you can input a new value (<a href="#cell_editor">Figure 18</a>).</p>
+</div>
+<div id="cell_editor" class="imageblock">
+<div class="content">
+<img src="media/configuration_editor_cell_editor_example.png" alt="cell editor popup showing how to edit a property value">
+</div>
+<div class="title">Figure 18. Double clicking a value cell opens the cell editor.</div>
+</div>
+<div class="paragraph">
+<p>Additionally, you can remove existing configuration properties by clicking the delete button (<a href="#delete_button">Figure 19</a>)</p>
+</div>
+<div id="delete_button" class="imageblock">
+<div class="content">
+<img src="media/configuration_editor_delete_button.png" alt="screenshot of editor table highlighting the delete button">
+</div>
+<div class="title">Figure 19. Clicking the delete button removes the property from the Tiger global configuration.</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Suggestion"></i>
+</td>
+<td class="content">
+Editing or removing configuration properties will not affect already ran tests. If you want to use edited properties in a specific test, then you should pause the test before editing the configuration. In <a href="#_workflow_ui">Workflow UI</a> you can see how to use custom steps to pause the test suite.
+</td>
+</tr>
+</table>
+</div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
@@ -4881,7 +4985,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <div class="content">
 <img src="media/TigerProxyBottomNavBar.png" alt="TigerProxyBottomNavBar">
 </div>
-<div class="title">Figure 15. Tiger Proxy bottom menu bar </div>
+<div class="title">Figure 20. Tiger Proxy bottom menu bar </div>
 </div>
 <div class="paragraph">
 <p>The displayed buttons can trigger the following actions:</p>
@@ -4895,7 +4999,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <p><strong>Scroll Lock</strong> … allows you to lock the scroll position. Incoming messages wills till be added to the list at the bottom of the page.</p>
 </li>
 <li>
-<p><strong>Toggle Button</strong>  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as reponse headers) or all the detailed information of the requests and responses.</p>
+<p><strong>Toggle Button</strong>  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses.</p>
 </li>
 <li>
 <p><strong>Filter</strong>  … allows you to filter the received messages with a RbelPath or a JEXL expression. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").</p>
@@ -4904,7 +5008,7 @@ For more information please refer to the <a href="#_workflow_ui">Workflow UI</a>
 <p><strong>Reset</strong> … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!</p>
 </li>
 <li>
-<p><strong>Save</strong> … allows you to save all received messages as a HTML page or as a machine-readable tgr file.</p>
+<p><strong>Save</strong> … allows you to save all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.</p>
 </li>
 <li>
 <p><strong>Page</strong> … allows pagination of the messages.</p>
@@ -5026,7 +5130,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/jexlspacesright.png" alt="jexlspacesright" width="50%">
 </div>
-<div class="title">Figure 16. Rbel Path Expression</div>
+<div class="title">Figure 21. Rbel Path Expression</div>
 </div>
 </div>
 <div class="sect3">
@@ -5038,7 +5142,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/accessarray.png" alt="accessarray" width="50%">
 </div>
-<div class="title">Figure 17. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
+<div class="title">Figure 22. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
 </div>
 </div>
 <div class="sect3">
@@ -5052,7 +5156,7 @@ For more details check the InlineJexlToolbox</p>
 <div class="content">
 <img src="media/accessjexlcontext.png" alt="accessjexlcontext" width="50%">
 </div>
-<div class="title">Figure 18. Use single quotes when using JEXL contexts with a hyphen. </div>
+<div class="title">Figure 23. Use single quotes when using JEXL contexts with a hyphen. </div>
 </div>
 </div>
 <div class="sect3">
@@ -5132,7 +5236,7 @@ It can be used both as a standalone server or as a server directly inside of tig
 We do this as part of a tiger testsuite.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. tiger.yaml</div>
+<div class="title">Listing 24. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5175,7 +5279,7 @@ And please return it as an XML!</p>
 So we reference an external file, where we do the heavy lifting:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 24. tiger.yaml</div>
+<div class="title">Listing 25. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5193,7 +5297,7 @@ So we reference an external file, where we do the heavy lifting:</p>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 25. complicatedResponse.xml</div>
+<div class="title">Listing 26. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -5259,7 +5363,7 @@ So to access it directly, use <code>${myLoopVariable}</code>.<br>
 You can then also combine the loop-variable with JEXL like so:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 26. complicatedResponse.xml</div>
+<div class="title">Listing 27. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
 &lt;requestDescription&gt;
@@ -5295,7 +5399,7 @@ You can then also combine the loop-variable with JEXL like so:</p>
 <p>To make the presence of elements conditional you can use the <code>tgrIf</code> statement. Consider the following example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 27. complicatedResponse.xml</div>
+<div class="title">Listing 28. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -5320,7 +5424,7 @@ You can then also combine the loop-variable with JEXL like so:</p>
 The result must be of type boolean. Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree. This can be done via an attribute in XML, but it can also be done using a tag:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 28. complicatedResponse.xml</div>
+<div class="title">Listing 29. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -5360,7 +5464,7 @@ The following example should clarify the mechanism:</p>
 <p>We want measure the length of the response by google to a query:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 29. tiger.yaml</div>
+<div class="title">Listing 30. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5408,7 +5512,7 @@ This allows subdividing responses.<br>
 Consider the following example, where we check the password of the calling party (which is given in cleartext in the request header).</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 30. tiger.yaml</div>
+<div class="title">Listing 31. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5447,7 +5551,7 @@ Rather you have to specify the importance of a response, with a higher number me
 <p>In many REST-Apis it is usual to include variables as part of the resource path. Zion allows to configure a response that will match a path and extract the given variables. The assigned values can then be used in the response or be used in additional matching criteria. Here is an example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 31. tiger.yaml</div>
+<div class="title">Listing 32. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5485,7 +5589,7 @@ Rather you have to specify the importance of a response, with a higher number me
 <p>The matching of paths using the <code>request</code> configuration can also be made using nested responses. The path to match will combine paths specified in the different levels of the nested response. For example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 32. tiger.yaml</div>
+<div class="title">Listing 33. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5532,7 +5636,7 @@ You can also embed one into the other.</p>
 For this we use the following response body file:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 33. complicatedResponse.json</div>
+<div class="title">Listing 34. complicatedResponse.json</div>
 <div class="content">
 <pre class="CodeRay highlight"><code>{
   &quot;myToken&quot;: {
@@ -5967,13 +6071,38 @@ Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfigura
 <p>and restart docker</p>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_fo03_adding_alternative_names_programatically_throws_sslexception">10.4.3. FO03 Adding alternative names programatically throws SSLException</h4>
+<div class="paragraph">
+<p>When using directly the method <code>de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()</code> to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>12:17:48.604 [MockServer-EventLog13] ERROR o.mockserver.log.MockServerEventLog - 58165 exception creating SSL context for serverfailed to set certificate and key
+javax.net.ssl.SSLException: failed to set certificate and key</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request. Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.</p>
+</div>
+<div class="paragraph">
+<p>A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name. E.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
+proxy.addAlternativeName(host);
+proxy.restartMockserver();</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-08-21 19:20:01 UTC
+Last updated 2023-09-26 06:18:22 UTC
 </div>
 </div>
 </body>
