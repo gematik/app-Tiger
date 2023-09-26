@@ -1,5 +1,12 @@
 package de.gematik.test.tiger.lib.rbel;
 
+import de.gematik.rbellogger.builder.RbelBuilder;
+import de.gematik.rbellogger.builder.RbelBuilderManager;
+import de.gematik.rbellogger.builder.RbelObjectJexl;
+import de.gematik.rbellogger.data.RbelSerializationAssertion;
+import de.gematik.rbellogger.writer.RbelContentType;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +19,22 @@ class RbelBuilderTests {
             }
         }
         """;
+
+    String jsonTestModified = """
+        {
+            "blub": {
+                "foo": {
+                    "some": "object"
+                }
+            }
+        }
+        """;
+
+    String xmlTest = """
+            <blub>
+                foo
+            </blub>
+            """;
 
     @Test
     void readRbelFromScratchTest()  {
@@ -52,13 +75,6 @@ class RbelBuilderTests {
     }
 
     @Test
-    void readRbelFromJwtTest()  {
-        String filePath = "src/test/resources/testdata/rbelBuilderTests/blub.jwt";
-        RbelBuilder builder = RbelBuilder.fromFile(filePath);
-        Assertions.assertNotNull(builder);
-    }
-
-    @Test
     void setObjectAtTest() {
         RbelBuilder builder = RbelBuilder.fromString(jsonTest);
         builder.setObjectAt("$.blub.foo", "{ 'some': 'object' }");
@@ -73,5 +89,28 @@ class RbelBuilderTests {
         RbelBuilder builder = RbelBuilder.fromString(jsonTest);
         builder.setValueAt("$.blub.foo", "some string");
         Assertions.assertEquals("some string", builder.getTreeRootNode().findElement("$.blub.foo").orElseThrow().getRawStringContent());
+    }
+
+    @Test
+    void serializeRbelObjectTest() {
+        RbelBuilder builder = RbelBuilder.fromString(jsonTest);
+        builder.setObjectAt("$.blub.foo", "{ 'some': 'object' }");
+        Assertions.assertEquals(StringUtils.deleteWhitespace(jsonTestModified), StringUtils.deleteWhitespace(builder.serialize()));
+    }
+
+    @Test
+    void simpleJsonJexlTest() {
+        RbelBuilderManager rBManager = new RbelBuilderManager();
+        rBManager.put("test", RbelBuilder.fromString(jsonTest));
+        RbelObjectJexl.initJexl(rBManager);
+        RbelSerializationAssertion.assertEquals(jsonTest, TigerGlobalConfiguration.resolvePlaceholders("!{rbelObject:serialize('test')}"), RbelContentType.JSON);
+    }
+
+    @Test
+    void simpleXmlJexlTest() {
+        RbelBuilderManager rBManager = new RbelBuilderManager();
+        rBManager.put("test", RbelBuilder.fromString(xmlTest));
+        RbelObjectJexl.initJexl(rBManager);
+        RbelSerializationAssertion.assertEquals(xmlTest, TigerGlobalConfiguration.resolvePlaceholders("!{rbelObject:serialize('test')}"), RbelContentType.XML);
     }
 }

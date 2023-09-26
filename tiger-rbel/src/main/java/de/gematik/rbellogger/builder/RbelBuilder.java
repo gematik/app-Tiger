@@ -1,4 +1,4 @@
-package de.gematik.test.tiger.lib.rbel;
+package de.gematik.rbellogger.builder;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.converter.RbelConverter;
@@ -20,6 +20,7 @@ public class RbelBuilder {
 
     private static RbelLogger rbelLogger;
     private static RbelWriter rbelWriter;
+
     private final RbelContentTreeNode treeRootNode;
 
     /**
@@ -105,6 +106,14 @@ public class RbelBuilder {
         entry.setContent(newValue.getBytes());
     }
 
+    /**
+     * Serializes the treeRootNode into a formatted String
+     * @return the formatted String
+     */
+    public String serialize() {
+        return getRbelWriter().serialize(this.treeRootNode, new TigerJexlContext()).getContentAsString();
+    }
+
     private static RbelBuilder fromRbel(String name, RbelContentTreeNode content) {
         RbelMultiMap<RbelContentTreeNode> childNodes = new RbelMultiMap<>();
         childNodes.put(name, content);
@@ -118,6 +127,11 @@ public class RbelBuilder {
     private static RbelConverter getRbelConverter() {
         assureRbelIsInitialized();
         return rbelLogger.getRbelConverter();
+    }
+
+    private static RbelWriter getRbelWriter() {
+        assureRbelIsInitialized();
+        return rbelWriter;
     }
 
     private static RbelContentTreeNode getContentTreeNodeFromString(String content) {

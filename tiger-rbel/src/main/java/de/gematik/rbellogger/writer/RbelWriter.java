@@ -46,6 +46,11 @@ public class RbelWriter {
             .serialize(input);
     }
 
+    public RbelSerializationResult serialize(RbelContentTreeNode input, TigerJexlContext jexlContext) {
+        return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext)
+                .renderTree(input);
+    }
+
     private static void printTreeStructure(RbelContentTreeNode treeRootNode) {
         if (log.isDebugEnabled()) {
             GenericPrettyPrinter<RbelContentTreeNode> printer = new GenericPrettyPrinter<>(
