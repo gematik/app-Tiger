@@ -24,10 +24,15 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClientException;
 import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
-import de.gematik.test.tiger.proxy.data.*;
+import de.gematik.test.tiger.proxy.data.GetMessagesAfterDto;
+import de.gematik.test.tiger.proxy.data.HtmlMessage;
+import de.gematik.test.tiger.proxy.data.JexlQueryResponseDto;
+import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
+import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
@@ -36,7 +41,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
@@ -52,25 +56,31 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
-import static j2html.TagCreator.*;
+import static j2html.TagCreator.a;
+import static j2html.TagCreator.b;
+import static j2html.TagCreator.button;
+import static j2html.TagCreator.div;
+import static j2html.TagCreator.i;
+import static j2html.TagCreator.nav;
+import static j2html.TagCreator.span;
 
 @Data
 @RequiredArgsConstructor
@@ -97,6 +107,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     private static final String HIDE_QUIT = "display:none;";
     /** in error responses on http requests, this token causes problems so remove it for better handling on client side */
     public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
+    public static final String DROPDOWN = "dropdown";
     private final TigerProxy tigerProxy;
     private final RbelHtmlRenderer renderer;
 
@@ -128,14 +139,12 @@ public class TigerWebUiController implements ApplicationContextAware {
     @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public String downloadTraffic(
         @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
+        @RequestParam(name = "filterCriterion", required = false) final String filterCriterion,
         @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
         HttpServletResponse response) {
         int actualPageSize = pageSize
             .orElse(getApplicationConfiguration().getMaximumTrafficDownloadPageSize());
-        final ArrayList<RbelElement> filteredMessages = getTigerProxy().getRbelLogger().getMessageHistory().stream()
-            .dropWhile(messageIsBefore(lastMsgUuid))
-            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
-            .collect(Collectors.toCollection(ArrayList::new));
+        final List<RbelElement> filteredMessages = loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
         final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
         response.addHeader("available-messages", String.valueOf(filteredMessages.size()));
         response.addHeader("returned-messages", String.valueOf(returnedMessages));
@@ -152,13 +161,15 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
 
     @GetMapping(value = "/tiger-report*.html", produces = MediaType.TEXT_HTML_VALUE)
-    public String downloadHtml() {
+    public String downloadHtml(
+            @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
+            @RequestParam(name = "filterCriterion", required = false) final String filterCriterion
+    ) {
         var rbelRenderer = new RbelHtmlRenderer();
         rbelRenderer.setVersionInfo(buildProperties.tigerVersionAsString());
         rbelRenderer.setTitle("RbelLog für " + tigerProxy.getName().orElse("Tiger Proxy - Port") + ":" + tigerProxy.getProxyPort());
 
-        final ArrayList<RbelElement> rbelMessages = getTigerProxy().getRbelLogger().getMessageHistory().stream()
-            .collect(Collectors.toCollection(ArrayList::new));
+        final List<RbelElement> rbelMessages = loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
         return rbelRenderer.doRender(rbelMessages);
     }
 
@@ -184,16 +195,12 @@ public class TigerWebUiController implements ApplicationContextAware {
             navbar = createNavbar(tigerProxy, "", "", showQuit);
         }
 
-        String configJSSnippetStr = loadResourceToString("/configScript.html")
-            .replace("${ProxyPort}", String.valueOf(tigerProxy.getProxyPort()))
-            .replace("${FilenamePattern}", applicationConfiguration.getFilenamePattern())
-            .replace("${UploadUrl}", applicationConfiguration.getUploadUrl());
         return html.replace("<div id=\"navbardiv\"></div>", navbar +
                 loadResourceToString("/routeModal.html") +
                 loadResourceToString("/filterModal.html") +
                 loadResourceToString("/jexlModal.html") +
-                loadResourceToString("/saveModal.html"))
-            .replace("</body>", configJSSnippetStr + "</body>");
+                loadResourceToString("/saveModal.html") +
+                loadResourceToString( "/errorMessagesModal.html"));
     }
 
     private String getVersionStringAsRawHtml() {
@@ -227,7 +234,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-hide-button").withClass("btn-group dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                     .attr("type", "button")
@@ -280,7 +287,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-page-selection").withClass("btn-group dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                     .attr("type", "button")
@@ -298,14 +305,14 @@ public class TigerWebUiController implements ApplicationContextAware {
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-page-size").withClass("dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                    .attr(ATTR_DATA_BS_TOGGLE, "dropdown")
+                                    .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
                                     .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
                                     .with(
                                         span().withId("pageSizeDisplay").withText("Size")
                                     ),
                                 div().withClass(DROPDOWN_MENU).attr("role", "menu").with(
-                                    div().withClass("dropdown-content").with(
+                                    div().withClass("dropdown-content").withId("sizeSelector").with(
                                         a().withClass(CSS_DROPDOWN_ITEM)
                                             .attr(ATTR_ON_CLICK, "setPageSize(10);").withText("10"),
                                         a().withClass(CSS_DROPDOWN_ITEM)
@@ -322,12 +329,6 @@ public class TigerWebUiController implements ApplicationContextAware {
                             button().withId("importMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS).with(
                                 i().withClass("far fa-folder-open"),
                                 span("Import").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
-                            )
-                        ),
-                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
-                            button().withId("uploadMsgs").withClass("btn btn-outline-info").with(
-                                i().withClass("far fa-upload"),
-                                span("Upload").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
                         div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
@@ -348,6 +349,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     private String replaceScript(String html) {
         var jsoup = Jsoup.parse(html);
         final Element script = jsoup.select("script").get(6);
+        script.attr("type", "module");
         script.dataNodes().get(0).replaceWith(
             new DataNode(loadResourceToString("/tigerProxy.js")));
         return jsoup.html();
@@ -389,7 +391,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         try {
             return JexlQueryResponseDto.builder()
                 .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
-                .matchSuccessful(jexlExecutor.matchesAsJexlExpression(targetMessage, query))
+                .matchSuccessful(TigerJexlExecutor.matchesAsJexlExpression(targetMessage, query))
                 .messageContext(messageContext).build();
         } catch (JexlException | TigerJexlException jexlException) {
             log.warn("Failed to perform JEXL query '" + query + "'", jexlException);
@@ -419,7 +421,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .map(msg -> msg.findRbelPathMembers(rbelPath))
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .toList();
         if (targetElements.isEmpty()) {
             return JexlQueryResponseDto.builder()
                 .build();
@@ -430,7 +432,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                     .elements(targetElements.stream()
                             .map(RbelElement::findNodePath)
                             .map(key -> "$." + key)
-                            .collect(Collectors.toList()))
+                            .toList())
                     .build();
         } catch (JexlException | TigerJexlException jexlException) {
             log.warn("Failed to perform RBelPath query '" + rbelPath + "'", jexlException);
@@ -492,48 +494,49 @@ public class TigerWebUiController implements ApplicationContextAware {
         @RequestParam(defaultValue = "0") final int pageNumber) {
         log.debug("requesting messages since " + lastMsgUuid + " (filtered by . " + filterCriterion + ")");
 
-        var jexlExecutor = new RbelJexlExecutor();
 
-        List<RbelElement> msgs = getTigerProxy().getRbelLogger().getMessageHistory().stream()
-            .filter(msg -> {
-                if (StringUtils.isEmpty(filterCriterion)) {
-                    return true;
-                }
-                if (filterCriterion.startsWith("\"") && filterCriterion.endsWith("\"")) {
-                    final String textFilter = filterCriterion.substring(1, filterCriterion.length() - 1);
-                    return jexlExecutor.matchAsTextExpression(msg, textFilter)
-                        || jexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
-                } else {
-                    return jexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
-                        || jexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
-                }
-            })
-            .toList();
+        List<RbelElement> msgs = loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
 
         var result = new GetMessagesAfterDto();
         result.setLastMsgUuid(lastMsgUuid);
         result.setHtmlMsgList(msgs.stream()
             .skip((long) pageNumber * pageSize)
             .limit(pageSize)
-            .dropWhile(messageIsBefore(lastMsgUuid))
-            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .map(msg -> HtmlMessage.builder()
                 .html(new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
                 .uuid(msg.getUuid())
                 .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
                 .build())
-            .collect(Collectors.toList()));
+            .toList());
         result.setMetaMsgList(msgs.stream()
-            .dropWhile(messageIsBefore(lastMsgUuid))
-            .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
             .map(MessageMetaDataDto::createFrom)
-            .collect(Collectors.toList()));
+            .toList());
         result.setPagesAvailable(((msgs.size() - 1) / pageSize) + 1);
         result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
         log.info("Returning {} messages ({} in menu, {} filtered) of total {}",
             result.getHtmlMsgList().size(), result.getMetaMsgList().size(), msgs.size(),
             tigerProxy.getRbelLogger().getMessageHistory().size());
         return result;
+    }
+
+    private List<RbelElement> loadMessagesMatchingFilter(String lastMsgUuid, String filterCriterion) {
+        return getTigerProxy().getRbelLogger().getMessageHistory().stream()
+                .filter(msg -> {
+                    if (StringUtils.isEmpty(filterCriterion)) {
+                        return true;
+                    }
+                    if (filterCriterion.startsWith("\"") && filterCriterion.endsWith("\"")) {
+                        final String textFilter = filterCriterion.substring(1, filterCriterion.length() - 1);
+                        return RbelJexlExecutor.matchAsTextExpression(msg, textFilter)
+                                || RbelJexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
+                    } else {
+                        return TigerJexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
+                                || TigerJexlExecutor.matchesAsJexlExpression(findPartner(msg), filterCriterion, Optional.empty());
+                    }
+                })
+                .dropWhile(messageIsBefore(lastMsgUuid))
+                .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
+                .toList();
     }
 
     private static Predicate<RbelElement> messageIsBefore(String lastMsgUuid) {
@@ -582,77 +585,8 @@ public class TigerWebUiController implements ApplicationContextAware {
         }
     }
 
-    @PostMapping(value = "/uploadReport")
-    public void uploadReport(@RequestBody String htmlReport) {
-        if (applicationConfiguration.getUploadUrl().equals("UNDEFINED")) {
-            throw new TigerProxyConfigurationException("Upload feature is not configured!");
-        }
-        log.info("Uploading report to {}...", applicationConfiguration.getUploadUrl());
-        performUploadReport(URLDecoder.decode(htmlReport, StandardCharsets.UTF_8));
-    }
-
-
-    private void performUploadReport(String htmlReport) {
-        // Connect to the web server endpoint
-        String filename = applicationConfiguration.getFilenamePattern()
-            .replace("${DATE}", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")))
-            .replace("${TIME}", LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmssSSS")));
-        String uploadUrl = applicationConfiguration.getUploadUrl() + filename;
-
-        try {
-            URL serverUrl = new URL(uploadUrl);
-            HttpURLConnection urlConnection = (HttpURLConnection) serverUrl.openConnection();
-            String boundaryString = "----TigerProxyReport";
-            urlConnection.setDoOutput(true);
-            urlConnection.setRequestMethod("POST");
-            urlConnection.addRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundaryString);
-            if (applicationConfiguration.getUsername() != null) {
-                String auth = applicationConfiguration.getUsername() + ":"
-                    + applicationConfiguration.getPassword();
-                byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.UTF_8));
-                String authHeaderValue = "Basic " + new String(encodedAuth);
-                urlConnection.setRequestProperty("Authorization", authHeaderValue);
-            }
-            try (OutputStream outputStreamToRequestBody = urlConnection.getOutputStream();
-                BufferedWriter httpRequestBodyWriter =
-                    new BufferedWriter(new OutputStreamWriter(outputStreamToRequestBody))) {
-
-                httpRequestBodyWriter.write("\n--" + boundaryString + "\n");
-                httpRequestBodyWriter.write("Content-Disposition: form-data;"
-                    + "name=\"Tiger proxy report archive\";"
-                    + "filename=\"" + filename + "\""
-                    + "\nContent-Type: application/zip\n\n");
-                httpRequestBodyWriter.flush();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-                    ZipEntry entry = new ZipEntry(filename);
-                    zos.putNextEntry(entry);
-                    zos.write(htmlReport.getBytes(StandardCharsets.UTF_8));
-                    zos.closeEntry();
-                    entry = new ZipEntry("application.cfg");
-                    zos.putNextEntry(entry);
-                    // Todo: was genau soll hier rausgeschrieben werden?
-                    zos.write(tigerProxy.getTigerProxyConfiguration().toString().getBytes(StandardCharsets.UTF_8));
-                    zos.closeEntry();
-                }
-
-                outputStreamToRequestBody.write(baos.toByteArray());
-                outputStreamToRequestBody.flush();
-                baos.close();
-
-                // Mark the end of the multipart http request
-                httpRequestBodyWriter.write("\n--" + boundaryString + "--\n");
-                httpRequestBodyWriter.flush();
-            }
-        } catch (ProtocolException | MalformedURLException e) {
-            throw new TigerProxyConfigurationException("Invalid upload url '" + uploadUrl + "'", e);
-        } catch (IOException e) {
-            throw new TigerRemoteProxyClientException("Failed to upload report to '" + uploadUrl + "'", e);
-        }
-    }
-
     @PostMapping(value = "/traffic")
     public void importTrafficFromFile(@RequestBody String rawTraffic) {
-        tigerProxy.getRbelFileWriter().convertFromRbelFile(rawTraffic);
+        tigerProxy.readTrafficFromString(rawTraffic);
     }
 }

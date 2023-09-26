@@ -176,7 +176,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                             .with(headerTitleElements),
                         httpMessageFacet.map(facet -> renderingToolkit.convert(facet.getHeader(), Optional.empty()))
                             .orElse(div()),
-                        CLS_HEADER + " notification", "my-3","msg-header-content")),
+                        CLS_HEADER + " notification", "my-3","msg-header-content test-msg-header-content")),
                     httpMessageFacet.map(RbelHttpMessageFacet::getBody)
                         .map(RbelElement::getRawStringContent)
                         .map(s -> StringUtils.isBlank(s) ?
@@ -184,7 +184,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                             div().with(collapsibleCard(
                                 div().withClass("tile is-child pe-3").with(bodyTitleElements),
                                 renderingToolkit.convert(httpMessageFacet.get().getBody(), Optional.empty()),
-                                CLS_BODY + " notification", "my-3", "msg-body-content")))
+                                CLS_BODY + " notification", "my-3", "msg-body-content test-msg-body-content")))
                         .orElse(div())
                 )));
 

@@ -45,7 +45,7 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
             .flatMap(entry -> convertNode(entry.getValue(), entry.getKey(), context, converter).stream()
                 .map(childNode -> Pair.of(entry.getKey(), childNode)))
             .collect(RbelMultiMap.COLLECTOR);
-        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map);
+        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map, el.getRawContent());
         result.setType(context.readStringOptional(ENCODE_AS).map(RbelContentType::seekValueFor).orElse(RbelContentType.JSON));
         return result;
     }

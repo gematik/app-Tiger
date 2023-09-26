@@ -16,110 +16,137 @@
 
 package de.gematik.test.tiger.common.pki;
 
+import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.TigerPkiIdentityLoaderException;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import de.gematik.test.tiger.common.exceptions.TigerFileSeparatorException;
-import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.TigerPkiIdentityLoaderException;
-import org.junit.jupiter.api.Test;
 
-public class TigerPkiIdentityLoaderTest {
+class TigerPkiIdentityLoaderTest {
 
-    @Test
-    public void loadJks() {
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity("src/test/resources/egk_aut_keystore.jks;gematik"))
+    @ParameterizedTest
+    @CsvSource( textBlock = """
+            src/test/resources/egk_aut_keystore.jks;gematik,    gematik;src/test/resources/egk_aut_keystore.jks,     src/test/resources/egk_aut_keystore.jks;jks
+            src\\test\\resources\\egk_aut_keystore.jks;gematik, gematik;src\\test\\resources\\egk_aut_keystore.jks,  src\\test\\resources\\egk_aut_keystore.jks;jks
+            """
+    )
+    void loadJks(String pathKey, String keyPath, String pathStoreType) {
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(pathKey))
             .isNotNull();
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity("gematik;src/test/resources/egk_aut_keystore.jks"))
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(keyPath))
             .isNotNull();
         assertThatThrownBy(() -> TigerPkiIdentityLoader.loadRbelPkiIdentity("foo;bar;jks"))
             .hasMessageContaining("file");
         assertThatThrownBy(
-            () -> TigerPkiIdentityLoader.loadRbelPkiIdentity("src/test/resources/egk_aut_keystore.jks;jks"))
+            () -> TigerPkiIdentityLoader.loadRbelPkiIdentity(pathStoreType))
             .hasMessageContaining("password");
     }
 
-    @Test
-    public void loadJks_shouldContainChain() {
+    @ParameterizedTest
+    @CsvSource( textBlock = """
+            src/test/resources/egk_aut_keystore.jks;gematik,       src/test/resources/keystore.bks;00
+            src\\test\\resources\\egk_aut_keystore.jks;gematik,    src\\test\\resources\\keystore.bks;00
+            """
+    )
+    void loadJks_shouldContainChain(String keyStoreJks, String keyStoreBks) {
         assertThat(TigerPkiIdentityLoader
-            .loadRbelPkiIdentity("src/test/resources/egk_aut_keystore.jks;gematik")
+            .loadRbelPkiIdentity(keyStoreJks)
             .getCertificateChain())
             .hasSize(1);
         assertThat(TigerPkiIdentityLoader
-            .loadRbelPkiIdentity("src/test/resources/keystore.bks;00")
+            .loadRbelPkiIdentity(keyStoreBks)
             .getCertificateChain())
-            .hasSize(0);
+            .isEmpty();
     }
 
-    @Test
-    public void loadBks() {
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity("src/test/resources/keystore.bks;00"))
+    @ParameterizedTest
+    @CsvSource( textBlock = """
+            src/test/resources/keystore.bks;00,       00;src/test/resources/keystore.bks
+            src\\test\\resources\\keystore.bks;00,       00;src\\test\\resources\\keystore.bks
+            """
+    )
+    void loadBks(String pathKey, String keyPath) {
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(pathKey))
             .isNotNull();
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity("00;src/test/resources/keystore.bks"))
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(keyPath))
             .isNotNull();
         assertThatThrownBy(() -> TigerPkiIdentityLoader.loadRbelPkiIdentity("foo;bar;bks"))
             .hasMessageContaining("file");
     }
 
-    @Test
-    public void loadP12() {
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity("src/test/resources/customCa.p12;00"))
+    @ParameterizedTest
+    @CsvSource( textBlock = """
+            src/test/resources/customCa.p12;00,      00;src/test/resources/customCa.p12
+            src\\test\\resources\\customCa.p12;00,      00;src\\test\\resources\\customCa.p12
+            """
+    )
+    void loadP12(String pathKey, String keyPath) {
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(pathKey))
             .isNotNull();
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity("00;src/test/resources/customCa.p12"))
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(keyPath))
             .isNotNull();
         assertThatThrownBy(() -> TigerPkiIdentityLoader.loadRbelPkiIdentity("foo;bar;p12"))
             .hasMessageContaining("file");
     }
 
-    @Test
-    public void loadCertPemAndPkcs8() {
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+            src/test/resources/rsa/cert.pem;src/test/resources/rsa/key.p8;pkcs8,      pkcs8;src/test/resources/rsa/key.p8;src/test/resources/rsa/cert.pem, src/test/resources/rsa/key.pkcs8;src/test/resources/rsa/cert.pem
+            src\\test\\resources\\rsa\\cert.pem;src\\test\\resources\\rsa\\key.p8;pkcs8,      pkcs8;src\\test\\resources\\rsa\\key.p8;src\\test\\resources\\rsa\\cert.pem, src\\test\\resources\\rsa\\key.pkcs8;src\\test\\resources\\rsa\\cert.pem
+            """
+    )
+    void loadCertPemAndPkcs8(String pemP8Key, String keyp8Pem, String pkcs8Pem) {
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(pemP8Key)).isNotNull();
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(keyp8Pem)).isNotNull();
+        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(pkcs8Pem)).isNotNull();
+    }
+
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+            src/test/resources/rsa_pkcs1/cert.pem;src/test/resources/rsa_pkcs1/key.pem;pkcs1,      pkcs1;src/test/resources/rsa_pkcs1/key.pem;src/test/resources/rsa_pkcs1/cert.pem
+            src\\test\\resources\\rsa_pkcs1\\cert.pem;src\\test\\resources\\rsa_pkcs1\\key.pem;pkcs1,      pkcs1;src\\test\\resources\\rsa_pkcs1\\key.pem;src\\test\\resources\\rsa_pkcs1\\cert.pem
+            """
+    )
+    void loadCertPemAndPkcs1(String certpemKeypemKey, String keyKeypemCertpem) {
         assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(
-            "src/test/resources/rsa/cert.pem;src/test/resources/rsa/key.p8;pkcs8"))
+                certpemKeypemKey))
             .isNotNull();
         assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(
-            "pkcs8;src/test/resources/rsa/key.p8;src/test/resources/rsa/cert.pem"))
-            .isNotNull();
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(
-            "src/test/resources/rsa/key.pkcs8;src/test/resources/rsa/cert.pem"))
+                keyKeypemCertpem))
             .isNotNull();
     }
 
-    @Test
-    public void loadCertPemAndPkcs1() {
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(
-            "src/test/resources/rsa_pkcs1/cert.pem;src/test/resources/rsa_pkcs1/key.pem;pkcs1"))
-            .isNotNull();
-        assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(
-            "pkcs1;src/test/resources/rsa_pkcs1/key.pem;src/test/resources/rsa_pkcs1/cert.pem"))
-            .isNotNull();
-    }
-
-    @Test
-    public void loadChainFromSingleAliasP12() {
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+           src/test/resources/hera.p12;00
+           src\\test\\resources\\hera.p12;00
+            """
+    )
+    void loadChainFromSingleAliasP12(String heraP12) {
         final TigerPkiIdentity identity = TigerPkiIdentityLoader
-            .loadRbelPkiIdentity("src/test/resources/hera.p12;00");
+            .loadRbelPkiIdentity(heraP12);
 
         assertThat(identity.getCertificateChain())
             .hasSize(1);
         assertThat(identity.getCertificateChain().get(0))
             .isNotEqualTo(identity.getCertificate());
-        assertThat(identity.getCertificateChain().get(0).getSubjectDN())
-            .isEqualTo(identity.getCertificateChain().get(0).getIssuerDN());
-        assertThat(identity.getCertificateChain().get(0).getSubjectDN())
-            .isEqualTo(identity.getCertificate().getIssuerDN());
+        assertThat(identity.getCertificateChain().get(0).getSubjectX500Principal())
+            .isEqualTo(identity.getCertificateChain().get(0).getIssuerX500Principal());
+        assertThat(identity.getCertificateChain().get(0).getSubjectX500Principal())
+            .isEqualTo(identity.getCertificate().getIssuerX500Principal());
     }
 
-    @Test
-    public void useBackslashesAsFileSeparator() {
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+           src/test/fdfdxsss/herffssa.p1sddef2;00
+           src\\test\\fdfdxsss\\herffssa.p1sddef2;00
+            """
+    )
+    void loadIncorrectPath(String incorrectPath) {
         assertThatThrownBy(() -> TigerPkiIdentityLoader
-            .loadRbelPkiIdentity("D:\\tiger\\tiger-common\\src\\test\\resources\\customCa.p12"))
-            .isInstanceOf(TigerFileSeparatorException.class)
-            .hasMessageContaining("Please use forward slash (/) as a file separator");
-    }
-
-    @Test
-    public void loadIncorrectPath() {
-        assertThatThrownBy(() -> TigerPkiIdentityLoader
-            .loadRbelPkiIdentity("src/test/fdfdxsss/herffssa.p1sddef2;00"))
+            .loadRbelPkiIdentity(incorrectPath))
             .isInstanceOf(TigerPkiIdentityLoaderException.class)
-            .hasMessageContaining("Unable to determine store-type for input");
+            .hasMessage("Unable to determine store-type for input '%s'!".formatted(incorrectPath));
     }
 }

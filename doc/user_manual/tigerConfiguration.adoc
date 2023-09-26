@@ -7,6 +7,7 @@ image::media/tiger-configuration-global.svg[title="The TigerGlobalConfiguration 
 
 This allows a vastly simplified retrieval and configuration of nearly all aspects of the system. It is therefore recommended reusing this system for your own testsuite as well.
 
+[#_inlets]
 === Inlets
 
 The following inlets are considered in the TigerGlobalConfiguration (ordered from most to least important, meaning if a property occurs in multiple sources the one at the top is considered first):
@@ -217,3 +218,28 @@ This will immediately return the `href`-attribute of the link in question as a s
 ==== Adding custom namespaces
 
 You can easily register additional namespaces by calling `TigerJexlExecutor.registerAdditionalNamespace(<namespace-prefix>, <namespace class or object)`.
+
+
+=== Configuration Editor
+
+The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the xref:tigerTestLibrary.adoc#_workflow_ui[Workflow UI] and can be opened by clicking the gears icon in the sidebar (xref:editor_start_button[xrefstyle=short]).
+
+image::media/configuration_editor_start_button.png[id="editor_start_button",alt="workflow UI with action buttons and gears icon highlighted", title="Open the configuration editor by clicking the gears icon in the sidebar.", align="center"]
+
+The configuration editor displays a table where you can view the current configuration properties loaded in the Tiger global configuration (xref:editor_table[xrefstyle=short]). This includes properties from all xref:_inlets[inlet sources]. If a property is defined multiple times in different sources, only the one with higher importance is displayed.
+
+image::media/configuration_editor_table.png[id="editor_table", alt="view of the configuration editor table showing several properties", title="The Tiger global configuration editor"]
+
+The editor allows sorting and filtering each column so that you can easily find a specific property (xref:editor_column_filter[xrefstyle=short]). Given that the Tiger global configuration includes many environment variables and system properties which are not directly relevant to Tiger, the filtering functionally proves to be especially useful.
+
+image::media/configuration_editor_example_filter_popup.png[id="editor_column_filter", alt="screenshot of Key column displaying a filter popup filtering by the word tiger",title="Example of filtering the column key by the text 'tiger'"]
+
+The values of existing configuration properties can be edited by double-clicking the value cells. This opens an input field where you can input a new value (xref:cell_editor[xrefstyle=short]).
+
+image::media/configuration_editor_cell_editor_example.png[id="cell_editor", alt="cell editor popup showing how to edit a property value", title="Double clicking a value cell opens the cell editor."]
+
+Additionally, you can remove existing configuration properties by clicking the delete button (xref:delete_button[xrefstyle=short])
+
+image::media/configuration_editor_delete_button.png[id="delete_button", alt="screenshot of editor table highlighting the delete button", title="Clicking the delete button removes the property from the Tiger global configuration."]
+
+TIP: Editing or removing configuration properties will not affect already ran tests. If you want to use edited properties in a specific test, then you should pause the test before editing the configuration. In xref:_workflow_ui[Workflow UI] you can see how to use custom steps to pause the test suite.

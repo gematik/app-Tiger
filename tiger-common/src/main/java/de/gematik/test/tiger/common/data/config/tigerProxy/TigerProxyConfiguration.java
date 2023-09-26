@@ -20,12 +20,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
@@ -98,10 +99,6 @@ public class TigerProxyConfiguration {
      * Management-port of the Tiger Proxy.
      */
     private int adminPort;
-    @Builder.Default
-    private String filenamePattern = "tiger-report-${GEMATIKACCOUNT}-${DATE}-${TIME}.zip";
-    @Builder.Default
-    private String uploadUrl = "UNDEFINED";
     private String username;
     private String password;
 

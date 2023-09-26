@@ -17,7 +17,14 @@
 package de.gematik.test.tiger.common.pki;
 
 import de.gematik.rbellogger.util.CryptoLoader;
-import de.gematik.test.tiger.common.exceptions.TigerFileSeparatorException;
+import lombok.Getter;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -27,17 +34,16 @@ import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
-import lombok.Getter;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 public class TigerPkiIdentityLoader {
+
+    private static final String CLASSPATH_PREFIX = "classpath:";
 
     static {
         BouncyCastleJsseProvider bcJsseProv = new BouncyCastleJsseProvider();
@@ -71,7 +77,7 @@ public class TigerPkiIdentityLoader {
                     .map(File::getAbsolutePath),
                 Stream.of(information.split(";")))
             .map(String::trim)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
         final StoreType storeType = extractStoreType(informationSplits)
             .or(() -> guessStoreType(informationSplits))
             .orElseThrow(() -> new TigerPkiIdentityLoaderException("Unable to determine store-type for input '" + information + "'!"));
@@ -86,7 +92,7 @@ public class TigerPkiIdentityLoader {
             .orElseGet(() -> extractFileNames(informationSplits));
         List<String> fileNames = fileNamesAndContent.stream()
             .map(Pair::getLeft)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
         if (fileNamesAndContent.isEmpty()
             || (!storeType.isKeystore() && fileNamesAndContent.size() < 2)) {
@@ -138,7 +144,7 @@ public class TigerPkiIdentityLoader {
             .map(part -> Pair.of(part, loadFileOrResourceData(part)))
             .filter(pair -> pair.getValue().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().get()))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     private static Optional<StoreType> extractStoreType(List<String> informationSplits) {
@@ -190,20 +196,18 @@ public class TigerPkiIdentityLoader {
         if (StringUtils.isEmpty(entityLocation)) {
             throw new IllegalArgumentException("Trying to load data from empty location! (value is '" + entityLocation + "')");
         }
-        if (entityLocation.contains("\\")) {
-            throw new TigerFileSeparatorException("Please use forward slash (/) as a file separator");
-        }
-        if (!entityLocation.startsWith("classpath:") && new File(entityLocation).exists()) {
+        String normalizedEntityLocation = FilenameUtils.separatorsToSystem(entityLocation);
+        if (!entityLocation.startsWith(CLASSPATH_PREFIX) && new File(normalizedEntityLocation).exists()) {
             try {
-                return Optional.ofNullable(FileUtils.readFileToByteArray(new File(entityLocation)));
+                return Optional.ofNullable(FileUtils.readFileToByteArray(new File(normalizedEntityLocation)));
             } catch (IOException e) {
                 return Optional.empty();
             }
         }
-        if (entityLocation.startsWith("classpath:")) {
-            return loadResourceData(entityLocation.replaceFirst("classpath:", ""));
+        if (entityLocation.startsWith(CLASSPATH_PREFIX)) {
+            return loadResourceData(normalizedEntityLocation.replaceFirst(CLASSPATH_PREFIX, ""));
         } else {
-            return loadResourceData(entityLocation);
+            return loadResourceData(normalizedEntityLocation);
         }
     }
 

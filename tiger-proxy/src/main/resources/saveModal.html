@@ -20,19 +20,26 @@
     <div class="modal-content" role="document" style="background-color:#ffff;">
       <div class="modal-header bg-dark">
         <h2 class="modal-title" style="color:#ffff;">Save Traffic Options</h2>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="saveModalButtonClose"></button>
       </div>
       <div class="modal-body">
           <div class="box">
             <p class="mt-4 mb-4">There are two options for saving:</p>
             <p class="mt-4 mb-4"><b>Download HTML</b>: Loads all messages from backend and saves them as HTML. Be aware that a large amount of messages might slow down your browser considerably!</p>
             <p class="mt-4 mb-4"><b>Download Traffic</b>: Saves all messages as a machine-readable tgr-file. You may import such data again via the Import button at the bottom</p>
-            </p>
           </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-success" id="saveHtmlBtn">Download HTML</button>
-        <button class="btn btn-warning" id="saveTrafficBtn">Download Traffic</button>
+        <div>
+          <input class="form-check-input" type="checkbox" value="" id="includeFilterInDownloadCheck">
+          <label class="form-check-label" for="includeFilterInDownloadCheck">
+            Download only filtered data
+          </label>
+        </div>
+        <div>
+          <button class="btn btn-success" id="saveHtmlBtn">Download HTML</button>
+          <button class="btn btn-warning" id="saveTrafficBtn">Download Traffic</button>
+        </div>
       </div>
     </div>
   </div>

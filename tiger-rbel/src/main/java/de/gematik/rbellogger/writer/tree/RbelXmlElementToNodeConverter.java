@@ -24,7 +24,6 @@ import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
-import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -45,7 +44,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
             .flatMap(entry -> convertNode(context, converter, entry).stream()
                 .map(childNode -> Pair.of(entry.getKey(), childNode)))
             .collect(RbelMultiMap.COLLECTOR);
-        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map);
+        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map, el.getRawContent());
         result.setType(context.readStringOptional(ENCODE_AS).map(RbelContentType::seekValueFor).orElse(RbelContentType.XML));
         return result;
     }
@@ -62,20 +61,20 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
             // manage pulling up/down of text-nodes in mode-switches
             if (entry.getValue().hasFacet(RbelXmlFacet.class)) {
                 final List<RbelContentTreeNode> childNodes = new ArrayList<>();
-                for (RbelContentTreeNode childNode : node.childNodes()) {
-                    if (childNode.getType() == null && childNode.getKey().equals("text")
+                for (RbelContentTreeNode childNode : node.getChildNodes()) {
+                    if (childNode.getType() == null && childNode.getKey().orElseThrow().equals("text")
                         && node.getType() != RbelContentType.XML) {
                         node.setContent(childNode.getContent());
                         node.setChildNodes(List.of());
-                        log.trace("pulling up node '{}'", node.getContentAsString());
+                        log.trace("pulling up node '{}'", node.getRawStringContent());
                     } else if (!childNode.hasTypeOptional(RbelContentType.XML).orElse(true)
-                        && !childNode.getKey().equals("text")) {
+                        && !childNode.getKey().orElseThrow().equals("text")) {
                         // wrap in text-node (will be rendered as text inside the xml)
                         RbelContentTreeNode wrapperNode = new RbelStrictOrderContentTreeNode(
-                            new RbelMultiMap<>().with(childNode.getKey(), childNode));
+                            new RbelMultiMap<>().with(childNode.getKey().orElseThrow(), childNode), null);
                         wrapperNode.setType(childNode.getType());
                         wrapperNode.setKey("text");
-                        wrapperNode.setCharset(node.getCharset());
+                        wrapperNode.setCharset(node.getElementCharset());
                         childNodes.add(wrapperNode);
                         log.trace("wrapping node {}", node.getContent());
                     } else {

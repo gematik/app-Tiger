@@ -37,13 +37,36 @@
                     <button type="button"
                             :class="`btn btn-sm btn-danger m-1 ${(quitTestrunOngoing ? 'disabled active' : 'enabled')}`"
                             v-on:click="quitTestrun">
-                        <i class="fa-lg fa-solid fa-power-off" id="test-sidebar-quit-icon"></i>
+                        <i class="fa-lg fa-solid fa-power-off fa-fw" id="test-sidebar-quit-icon"></i>
                     </button>
                     <button type="button"
                             :class="`btn btn-sm m-1 ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'btn-success' : 'btn-warning')} ${(quitTestrunOngoing ? 'disabled' : '')}`"
                             v-on:click="pauseTestrun">
-                        <i :class="`fa-lg fa-solid ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'fa-play' : 'fa-pause')} w-18px`" id="test-sidebar-pause-icon"></i>
+                        <i :class="`fa-lg fa-solid ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'fa-play' : 'fa-pause')} fa-fw`" id="test-sidebar-pause-icon"></i>
                     </button>
+                  <button type="button"
+                          class="btn btn-sm m-1 btn-secondary "
+                          v-on:click="() => configEditorSidePanelIsOpened = true"
+                  >
+                    <i class="fa-lg fa-solid fa-gears fa-fw"></i>
+                  </button>
+
+                  <VueSidePanel v-model="configEditorSidePanelIsOpened"
+                                side="left"
+                                width="85%"
+                  >
+                  <template #header>
+                    <div class="container">
+                      <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor</h1>
+                    </div>
+                  </template>
+                    <template #default>
+                      <div class="container-fluid">
+                        <div class="row"><TigerConfigurationEditor ref="tigerConfigEditor"/></div>
+                      </div>
+                    </template>
+
+                  </VueSidePanel>
                 </div>
                 <!-- test run status -->
                 <h4>
@@ -136,7 +159,6 @@
  *
  * Sounds complicated and YES it is, but its also safe / defensive and reducing the load on the server
  */
-
 import {onMounted, provide, ref, Ref} from "vue";
 import SockJS from "sockjs-client";
 import Stomp, {Client, Frame, Message} from "webstomp-client";
@@ -157,6 +179,10 @@ import BannerType from "@/types/BannerType";
 import TigerServerLogDto from "@/types/TigerServerLogDto";
 import LogLevel from "@/types/LogLevel";
 import mitt, {Emitter} from "mitt";
+import TigerConfigurationEditor from "@/components/global_configuration/TigerConfigurationEditor.vue";
+import 'vue3-side-panel/dist/vue3-side-panel.css';
+import {VueSidePanel} from "vue3-side-panel";
+
 
 let baseURL = process.env.BASE_URL;
 let socket: WebSocket;
@@ -215,6 +241,8 @@ let sideBarCollapsed: Ref<boolean> = ref(true);
 
 const emitter: Emitter<any> = mitt();
 provide("emitter", emitter);
+
+const configEditorSidePanelIsOpened : Ref<boolean> = ref(false);
 
 onMounted(() => {
     ui = ref(new Ui(process.env.BASE_URL));
@@ -556,6 +584,8 @@ function pauseTestrun(ev: MouseEvent) {
         });
     return false;
 }
+
+
 
 </script>
 <style>

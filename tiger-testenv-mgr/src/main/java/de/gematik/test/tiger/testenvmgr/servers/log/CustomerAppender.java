@@ -36,13 +36,15 @@ public class CustomerAppender extends AppenderBase<ILoggingEvent> {
      */
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
-        server.getLogListeners().forEach(listener -> {
-            listener.receiveServerLogUpdate(TigerServerLogUpdate
-                .builder()
-                .logLevel(iLoggingEvent.getLevel().levelStr)
-                .logMessage(iLoggingEvent.getFormattedMessage())
-                .serverName(server.getServerId())
-                .build());
-        });
+        if (server.getConfiguration().getExternalJarOptions() == null || server.getConfiguration().getExternalJarOptions().isActivateWorkflowLogs()) {
+            server.getLogListeners().forEach(listener -> {
+                 listener.receiveServerLogUpdate(TigerServerLogUpdate
+                    .builder()
+                    .logLevel(iLoggingEvent.getLevel().levelStr)
+                    .logMessage(iLoggingEvent.getFormattedMessage())
+                    .serverName(server.getServerId())
+                    .build());
+            });
+        }
     }
 }

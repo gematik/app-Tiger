@@ -16,27 +16,30 @@
 
 package de.gematik.rbellogger.renderer;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static j2html.TagCreator.*;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
+import de.gematik.rbellogger.data.facet.RbelListFacet;
+import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet;
+import de.gematik.rbellogger.data.facet.RbelRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.exceptions.RbelRenderingException;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import j2html.TagCreator;
-import j2html.tags.*;
+import j2html.tags.ContainerTag;
+import j2html.tags.DomContent;
+import j2html.tags.EmptyTag;
+import j2html.tags.Tag;
+import j2html.tags.UnescapedText;
 import j2html.tags.specialized.DivTag;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,6 +56,44 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static j2html.TagCreator.a;
+import static j2html.TagCreator.article;
+import static j2html.TagCreator.b;
+import static j2html.TagCreator.body;
+import static j2html.TagCreator.div;
+import static j2html.TagCreator.h1;
+import static j2html.TagCreator.h2;
+import static j2html.TagCreator.head;
+import static j2html.TagCreator.html;
+import static j2html.TagCreator.i;
+import static j2html.TagCreator.img;
+import static j2html.TagCreator.link;
+import static j2html.TagCreator.meta;
+import static j2html.TagCreator.pre;
+import static j2html.TagCreator.script;
+import static j2html.TagCreator.section;
+import static j2html.TagCreator.span;
+import static j2html.TagCreator.tag;
+import static j2html.TagCreator.title;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -143,7 +184,7 @@ public class RbelHtmlRenderingToolkit {
             return span();
         }
         return span(getElementSequenceNumber(message))
-            .withClass("msg-sequence tag is-info is-light me-3 is-size-4");
+            .withClass("msg-sequence tag is-info is-light me-3 is-size-4 test-message-number");
     }
 
     public ContainerTag convert(final RbelElement element) {

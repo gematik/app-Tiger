@@ -31,7 +31,7 @@ public class RbelUrlSerializer implements RbelSerializer {
 
     public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         final String basicPath = node.childNode("basicPath")
-            .map(RbelContentTreeNode::getContentAsString)
+            .map(RbelContentTreeNode::getRawStringContent)
             .orElse("");
         final Optional<String> queryString = getQueryString(node.childNode("parameters"), rbelWriter);
         return basicPath + queryString
@@ -41,10 +41,10 @@ public class RbelUrlSerializer implements RbelSerializer {
 
     private Optional<String> getQueryString(Optional<RbelContentTreeNode> headers, RbelWriterInstance rbelWriter) {
         return Optional.of(headers
-                .map(RbelContentTreeNode::childNodes)
+                .map(RbelContentTreeNode::getChildNodes)
                 .stream()
                 .flatMap(Collection::stream)
-                .map(header -> header.getKey() + "=" + new String(rbelWriter.renderTree(header).getContent(), header.getCharset()))
+                .map(header -> header.getKey().orElseThrow() + "=" + new String(rbelWriter.renderTree(header).getContent(), header.getElementCharset()))
                 .collect(Collectors.joining("&")))
             .filter(s -> !s.isBlank());
     }

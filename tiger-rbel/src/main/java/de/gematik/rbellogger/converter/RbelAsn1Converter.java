@@ -18,8 +18,10 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
-import de.gematik.rbellogger.exceptions.RbelAsn1Exception;
 import de.gematik.rbellogger.util.RbelException;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.*;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -28,9 +30,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Base64.Decoder;
-
-import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.asn1.*;
 
 @Slf4j
 public class RbelAsn1Converter implements RbelConverterPlugin {
@@ -105,71 +104,55 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
                 rbelSequence.add(newChild);
             }
             parentNode.addFacet(RbelListFacet.builder().childNodes(rbelSequence).build());
-        } else if (asn1 instanceof ASN1TaggedObject) {
-            final int tagNo = ((ASN1TaggedObject) asn1).getTagNo();
-            final ASN1Primitive nestedObject = ((ASN1TaggedObject) asn1).getObject();
+        } else if (asn1 instanceof ASN1TaggedObject asn1TaggedObject) {
+            final int tagNo = asn1TaggedObject.getTagNo();
+            final ASN1Primitive nestedObject = asn1TaggedObject.getBaseObject().toASN1Primitive();
             RbelElement nestedElement = new RbelElement(nestedObject.getEncoded(), parentNode);
             convertToAsn1Facets(nestedObject, converter, nestedElement);
-            parentNode.addFacet(new RbelAsn1TaggedValueFacet(
-                RbelElement.wrap(BigInteger.valueOf(tagNo).toByteArray(), parentNode, tagNo),
-                nestedElement));
-        } else if (asn1 instanceof ASN1Integer) {
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(((ASN1Integer) asn1).getValue())
-                .build());
-        } else if (asn1 instanceof ASN1ObjectIdentifier) {
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(((ASN1ObjectIdentifier) asn1).getId())
-                .build());
-        } else if (asn1 instanceof ASN1OctetString) {
-            final byte[] octets = ((ASN1OctetString) asn1).getOctets();
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(octets)
-                .build());
+            parentNode.addFacet(
+                    new RbelAsn1TaggedValueFacet(
+                            RbelElement.wrap(BigInteger.valueOf(tagNo).toByteArray(), parentNode, tagNo),
+                            nestedElement)
+            );
+        } else if (asn1 instanceof ASN1Integer asn1Integer) {
+            parentNode.addFacet(RbelValueFacet.builder().value(asn1Integer.getValue()).build());
+        } else if (asn1 instanceof ASN1ObjectIdentifier asn1ObjectIdentifier) {
+            parentNode.addFacet(RbelValueFacet.builder().value(asn1ObjectIdentifier.getId()).build());
+        } else if (asn1 instanceof ASN1OctetString asn1OctetString) {
+            final byte[] octets = asn1OctetString.getOctets();
+            parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
             tryToParseEmbededContentAndAddFacetIfPresent(converter, parentNode, octets);
-        } else if (asn1 instanceof ASN1BitString) {
-            final byte[] octets = ((ASN1BitString) asn1).getOctets();
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(octets)
-                .build());
+        } else if (asn1 instanceof ASN1BitString asn1BitString) {
+            final byte[] octets = asn1BitString.getOctets();
+            parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
             tryToParseEmbededContentAndAddFacetIfPresent(converter, parentNode, octets);
-        } else if (asn1 instanceof ASN1String) {
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(((ASN1String) asn1).getString())
-                .build());
+        } else if (asn1 instanceof ASN1String asn1String) {
+            parentNode.addFacet(RbelValueFacet.builder().value(asn1String.getString()).build());
             tryToParseEmbededContentAndAddFacetIfPresent(converter, parentNode,
                 ((ASN1Primitive) asn1).getEncoded());
             addCharsetInformation(parentNode, asn1);
-        } else if (asn1 instanceof ASN1Boolean) {
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(((ASN1Boolean) asn1).isTrue())
-                .build());
+        } else if (asn1 instanceof ASN1Boolean asn1Boolean) {
+            parentNode.addFacet(RbelValueFacet.builder().value(asn1Boolean.isTrue()).build());
         } else if (asn1 instanceof ASN1Null) {
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(null)
-                .build());
-        } else if (asn1 instanceof ASN1UTCTime) {
+            parentNode.addFacet(RbelValueFacet.builder().value(null).build());
+        } else if (asn1 instanceof ASN1UTCTime asn1UTCTime) {
             try {
                 parentNode.addFacet(RbelValueFacet.builder()
-                    .value(ZonedDateTime.ofInstant(
-                        ((ASN1UTCTime) asn1).getAdjustedDate().toInstant(), ZoneId.of("UTC")))
+                    .value(ZonedDateTime.ofInstant(asn1UTCTime.getAdjustedDate().toInstant(), ZoneId.of("UTC")))
                     .build());
             } catch (ParseException e) {
                 throw new RbelException("Error during time-conversion of " + asn1, e);
             }
-        } else if (asn1 instanceof ASN1GeneralizedTime) {
+        } else if (asn1 instanceof ASN1GeneralizedTime asn1GeneralizedTime) {
             try {
                 parentNode.addFacet(RbelValueFacet.builder()
-                    .value(ZonedDateTime.ofInstant(
-                        ((ASN1GeneralizedTime) asn1).getDate().toInstant(), ZoneId.of("UTC")))
+                    .value(ZonedDateTime.ofInstant(asn1GeneralizedTime.getDate().toInstant(), ZoneId.of("UTC")))
                     .build());
             } catch (ParseException e) {
                 throw new RbelException("Error during time-conversion of " + asn1, e);
             }
-        } else if (asn1 instanceof ASN1Enumerated) {
-            parentNode.addFacet(RbelValueFacet.builder()
-                .value(((ASN1Enumerated) asn1).getValue())
-                .build());
+        } else if (asn1 instanceof ASN1Enumerated asn1Enumerated) {
+            parentNode.addFacet(RbelValueFacet.builder().value(asn1Enumerated.getValue()).build());
         } else {
             log.warn("Unable to convert " + asn1.getClass().getSimpleName() + "!");
         }

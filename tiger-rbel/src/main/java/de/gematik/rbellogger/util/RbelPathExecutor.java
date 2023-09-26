@@ -18,7 +18,8 @@ package de.gematik.rbellogger.util;
 
 import static de.gematik.rbellogger.RbelOptions.ACTIVATE_RBEL_PATH_DEBUGGING;
 import static de.gematik.rbellogger.RbelOptions.RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH;
-import com.google.common.net.UrlEscapers;
+
+import de.gematik.rbellogger.RbelContent;
 import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
@@ -31,19 +32,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 @RequiredArgsConstructor
 @Slf4j
 public class RbelPathExecutor {
 
-    private final RbelElement rbelElement;
+    private final RbelContent rbelContent;
     private final String rbelPath;
 
-    private static List<RbelElement> findAllChildsRecursive(final RbelElement element) {
-        final List<? extends RbelElement> childNodes = element.getChildNodes();
-        List<RbelElement> result = new ArrayList<>(childNodes);
+    private static List<RbelContent> findAllChildsRecursive(final RbelContent content) {
+        final List<? extends RbelContent> childNodes = content.getChildNodes();
+        List<RbelContent> result = new ArrayList<>(childNodes);
         childNodes.stream()
             .map(RbelPathExecutor::findAllChildsRecursive)
             .filter(Objects::nonNull)
@@ -52,7 +52,8 @@ public class RbelPathExecutor {
         return result;
     }
 
-    public List<RbelElement> execute() {
+    @SuppressWarnings("unchecked")
+    public <T extends RbelContent> List<T> execute(Class<T> clazz) {
         if (!rbelPath.startsWith("$")) {
             throw new RbelPathException("RbelPath expressions always start with $. (got '" + rbelPath + "')");
         }
@@ -60,11 +61,17 @@ public class RbelPathExecutor {
         if (keys.stream().anyMatch(s -> s.startsWith(" ") || s.endsWith(" "))) {
             throw new RbelPathException("Found key with unescaped spaces in rbel-path '" + rbelPath + "'! (If intended, please escape using \"[' b b ']\")");
         }
-        List<RbelElement> candidates = List.of(rbelElement);
-        if (ACTIVATE_RBEL_PATH_DEBUGGING) {
+
+        if(!(clazz.equals(rbelContent.getClass()) || clazz.isAssignableFrom(rbelContent.getClass()))) {
+            throw new ClassCastException("The provided Class '%s' is not the same of RbelContent of the Path Executor.".formatted(clazz.toString()));
+        }
+
+            List<T> candidates = List.of((T)rbelContent);
+
+        if (ACTIVATE_RBEL_PATH_DEBUGGING && rbelContent instanceof RbelElement asRbelElement) {
             log.info("Executing RBelPath {} into root-element (limited view to {} levels)\n{}",
                 rbelPath, Math.max(RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH, keys.size()),
-                rbelElement.printTreeStructure(Math.max(RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH, keys.size()), false));
+                    asRbelElement.printTreeStructure(Math.max(RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH, keys.size()), false));
         }
         for (String key : keys) {
             if (ACTIVATE_RBEL_PATH_DEBUGGING) {
@@ -73,48 +80,51 @@ public class RbelPathExecutor {
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList()));
             }
-            List<RbelElement> lastIterationCandidates = candidates;
+            List<T> lastIterationCandidates = candidates;
             candidates = candidates.stream()
                 .map(element -> resolveRbelPathElement(key, element))
                 .flatMap(List::stream)
                 .map(this::descendToContentNodeIfAdvised)
                 .flatMap(List::stream)
+                    .map(o -> (T)o)
                 .distinct()
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
             if (candidates.isEmpty() && ACTIVATE_RBEL_PATH_DEBUGGING) {
+                List<RbelElement> asRbelElements = lastIterationCandidates.stream().filter(RbelElement.class::isInstance).map(r -> (RbelElement)r).toList();
                 log.warn("No more candidate-nodes in RbelPath execution! Last batch of candidates had {} elements: \n {}",
-                    lastIterationCandidates.size(),
-                    lastIterationCandidates.stream()
+                        asRbelElements.size(),
+                        asRbelElements.stream()
                         .map(el -> el.printTreeStructure(Integer.MAX_VALUE, true))
                         .collect(Collectors.joining("\n")));
             }
         }
 
-        final List<RbelElement> resultList = candidates.stream()
+        final List<T> resultList = candidates.stream()
             .filter(el -> !(el.hasFacet(RbelJsonFacet.class) && el.hasFacet(RbelNestedFacet.class)))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
         if (ACTIVATE_RBEL_PATH_DEBUGGING) {
             log.info("Returning {} result elements for RbelPath {}", resultList.size(), rbelPath);
         }
         return resultList;
     }
 
-    private List<RbelElement> descendToContentNodeIfAdvised(RbelElement rbelElement) {
-        if (rbelElement.hasFacet(RbelJsonFacet.class)
-            && rbelElement.hasFacet(RbelNestedFacet.class)) {
-            return List.of(rbelElement.getFacet(RbelNestedFacet.class)
-                    .map(RbelNestedFacet::getNestedElement)
-                    .get(),
-                rbelElement);
+    private List<RbelContent> descendToContentNodeIfAdvised(RbelContent rbelContent) {
+        if (rbelContent instanceof RbelElement asRbelElement
+                && rbelContent.hasFacet(RbelJsonFacet.class)
+                && rbelContent.hasFacet(RbelNestedFacet.class)) {
+            return List.of(asRbelElement.getFacet(RbelNestedFacet.class)
+                            .map(RbelNestedFacet::getNestedElement)
+                            .orElseThrow(),
+                    asRbelElement);
         } else {
-            return List.of(rbelElement);
+            return List.of(rbelContent);
         }
     }
 
-    private List<? extends RbelElement> resolveRbelPathElement(final String key, final RbelElement element) {
+    private List<? extends RbelContent> resolveRbelPathElement(final String key, final RbelContent content) {
         final String[] parts = key.split("\\[", 2);
         final String selectorPart = parts[0];
-        List<? extends RbelElement> keySelectionResult = executeNonFunctionalExpression(selectorPart, element);
+        List<? extends RbelContent> keySelectionResult = executeNonFunctionalExpression(selectorPart, content);
         if (parts.length == 1) {
             return keySelectionResult;
         } else {
@@ -134,25 +144,25 @@ public class RbelPathExecutor {
         }
     }
 
-    private List<? extends RbelElement> executeNonFunctionalExpression(String key, RbelElement element) {
+    private List<? extends RbelContent> executeNonFunctionalExpression(String key, RbelContent content) {
         if (key.isEmpty()) {
-            return findAllChildsRecursive(element);
+            return findAllChildsRecursive(content);
         } else if (key.equals("*")) {
-            return element.getChildNodes();
+            return content.getChildNodes();
         } else {
-            return element.getAll(key);
+            return content.getAll(key);
         }
     }
 
-    private List<? extends RbelElement> executeFunctionalExpression(
-        final String functionExpression, final RbelElement element) {
+    private List<? extends RbelContent> executeFunctionalExpression(
+        final String functionExpression, final RbelContent content) {
         if (functionExpression.startsWith("'") && functionExpression.endsWith("'")) {
-            return executeNamedSelection(functionExpression, element);
+            return executeNamedSelection(functionExpression, content);
         } else if (functionExpression.equals("*")) {
-            return element.getChildNodes();
+            return content.getChildNodes();
         } else if (functionExpression.startsWith("?")) {
             if (functionExpression.startsWith("?(") && functionExpression.endsWith(")")) {
-                return findChildNodesByJexlExpression(element,
+                return findChildNodesByJexlExpression(content,
                     functionExpression.substring(2, functionExpression.length() - 1));
             } else {
                 throw new RbelPathException(
@@ -164,7 +174,7 @@ public class RbelPathExecutor {
         }
     }
 
-    private static List<RbelElement> executeNamedSelection(String functionExpression, RbelElement element) {
+    private static List<? extends RbelContent> executeNamedSelection(String functionExpression, RbelContent content) {
         return Stream.of(functionExpression.split("\\|"))
             .peek(s -> {
                 if (!s.startsWith("'") || !s.endsWith("'")) {
@@ -173,19 +183,19 @@ public class RbelPathExecutor {
             })
             .map(s -> s.substring(1, s.length() - 1))
             .map(URLDecoder::decode)
-            .map(element::getAll)
+            .map(content::getAll)
             .flatMap(List::stream)
             .toList();
     }
 
-    private List<RbelElement> findChildNodesByJexlExpression(final RbelElement element, final String jexl) {
+    private List<RbelContent> findChildNodesByJexlExpression(final RbelContent content, final String jexl) {
         RbelJexlExecutor executor = new RbelJexlExecutor();
-        return element.getChildNodesWithKey().stream().parallel()
+        return content.getChildNodesWithKey().stream().parallel()
             .filter(candidate ->
                 executor.matchesAsJexlExpression(jexl, new TigerJexlContext()
                     .withKey(candidate.getKey())
                     .withCurrentElement(candidate.getValue())
-                    .withRootElement(this.rbelElement)))
+                    .withRootElement(this.rbelContent)))
             .map(Map.Entry::getValue)
             .collect(Collectors.toList());
     }

@@ -6,11 +6,11 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>2.1.6</version>
+    <version>2.2.0</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
-    <description>Short project description</description>
+    <description>Tiger is a test platform. For more info check our project at github https://github.com/gematik/app-Tiger</description>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -19,8 +19,8 @@
 
         <version.assertj>3.24.2</version.assertj>
         <version.awaitility>4.2.0</version.awaitility>
-        <version.bouncycastle>1.74</version.bouncycastle>
-        <version.commons-lang3>3.12.0</version.commons-lang3>
+        <version.bouncycastle>1.76</version.bouncycastle>
+        <version.commons-lang3>3.13.0</version.commons-lang3>
         <version.commons-codec>1.15</version.commons-codec>
         <version.commons-io>2.13.0</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>
@@ -30,14 +30,14 @@
         <version.gson>2.10.1</version.gson>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jackson>2.14.2</version.jackson>
-        <version.javaparser>3.25.3</version.javaparser>
+        <version.javaparser>3.25.4</version.javaparser>
         <version.json>20230618</version.json>
         <version.json-unit>2.38.0</version.json-unit>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.9.3</version.junit5>
-        <version.logback>1.4.8</version.logback>
+        <version.logback>1.4.9</version.logback>
         <version.lombok>1.18.28</version.lombok>
-        <version.maven>3.9.2</version.maven>
+        <version.maven>3.9.4</version.maven>
         <version.maven-deploy-plugin>3.1.1</version.maven-deploy-plugin>
         <version.maven.failsafe>3.1.2</version.maven.failsafe>
         <version.maven.surefire>3.1.0</version.maven.surefire>
@@ -244,6 +244,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>11.0.15</version>
+            </dependency>
+            <dependency>
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-core</artifactId>
                 <version>${version.serenity.core}</version>
@@ -357,11 +362,6 @@
                 <version>${version.bouncycastle}</version>
             </dependency>
             <dependency>
-                <groupId>uk.org.webcompere</groupId>
-                <artifactId>system-stubs-core</artifactId>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.sonarsource.java</groupId>
                 <artifactId>sonar-jacoco-listeners</artifactId>
                 <version>${version.sonar-jacoco-listeners}</version>
@@ -413,7 +413,7 @@
             </dependency>
             <dependency>
                 <groupId>com.github.tomakehurst</groupId>
-                <artifactId>wiremock-jre8</artifactId>
+                <artifactId>wiremock-jre8-standalone</artifactId>
                 <version>${version.wiremock}</version>
             </dependency>
             <dependency>
@@ -526,17 +526,45 @@
                     <version>0.8.10</version>
                     <executions>
                         <execution>
-                            <id>default-prepare-agent</id>
+                            <id>pre-unit-test</id>
                             <goals>
                                 <goal>prepare-agent</goal>
                             </goals>
+                            <configuration>
+                                <destFile>${project.build.directory}/coverage-reports/jacoco.exec</destFile>
+                                <propertyName>surefireJacocoAgent</propertyName>
+                            </configuration>
                         </execution>
                         <execution>
-                            <id>default-report</id>
-                            <phase>verify</phase>
+                            <id>pre-integration-test</id>
+                            <goals>
+                                <goal>prepare-agent-integration</goal>
+                            </goals>
+                            <configuration>
+                                <destFile>${project.build.directory}/coverage-reports/jacoco-it.exec</destFile>
+                                <propertyName>failsafeJacocoAgent</propertyName>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>post-unit-test</id>
+                            <phase>test</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
+                            <configuration>
+                                <dataFile>${project.build.directory}/coverage-reports/jacoco.exec</dataFile>
+                                <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>post-integration-test</id>
+                            <goals>
+                                <goal>report-integration</goal>
+                            </goals>
+                            <configuration>
+                                <dataFile>${project.build.directory}/coverage-reports/jacoco-it.exec</dataFile>
+                                <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -553,6 +581,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.10.1</version>
                 <configuration>
+                    <encoding>UTF-8</encoding>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                 </configuration>
@@ -563,7 +592,7 @@
                 <version>${version.maven.surefire}</version>
                 <configuration>
                     <argLine>
-                        ${argLine}
+                        ${surefireJacocoAgent}
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.io=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED
@@ -580,6 +609,21 @@
                     </excludes>
                     <skip>${skipSurefire}</skip>
                 </configuration>
+            </plugin>
+            <plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${version.maven.failsafe}</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>integration-test</goal>
+                        <goal>verify</goal>
+                    </goals>
+                    <configuration>
+                        <argLine>${failsafeJacocoAgent}</argLine>
+                    </configuration>
+                </execution>
+            </executions>
             </plugin>
         </plugins>
     </build>

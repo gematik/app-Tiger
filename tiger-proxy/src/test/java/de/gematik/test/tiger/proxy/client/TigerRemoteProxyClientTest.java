@@ -16,17 +16,8 @@
 
 package de.gematik.test.tiger.proxy.client;
 
-import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.AssertionsForClassTypes.fail;
-import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
@@ -36,14 +27,6 @@ import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
-import java.io.File;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Config;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
@@ -53,8 +36,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -70,6 +55,24 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.AssertionsForClassTypes.fail;
+import static org.awaitility.Awaitility.await;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @ExtendWith(SpringExtension.class)
 @ExtendWith(MockServerExtension.class)
@@ -431,7 +434,7 @@ class TigerRemoteProxyClientTest {
                 .atMost(2, TimeUnit.SECONDS)
                 .until(() -> !newlyConnectedRemoteClient.getRbelMessagesList().isEmpty());
 
-            Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull(),
+            Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull(), Mockito.any(),
                 Mockito.any(), Mockito.any());
 
             assertThat(newlyConnectedRemoteClient.getRbelMessagesList().get(0)
@@ -460,7 +463,7 @@ class TigerRemoteProxyClientTest {
                     .atMost(2, TimeUnit.SECONDS)
                     .until(() -> masterTigerProxy.getRbelMessagesList().size() >= 4);
 
-                Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull(),
+                Mockito.verify(tigerWebUiController).downloadTraffic(Mockito.isNull(), Mockito.any(),
                     Mockito.any(), Mockito.any());
                 assertThat(
                     ((AtomicReference<?>) ReflectionTestUtils.getField(newlyConnectedRemoteClient, "lastMessageUuid"))
@@ -491,9 +494,9 @@ class TigerRemoteProxyClientTest {
         }
 
         Mockito.verify(tigerWebUiController, Mockito.times(1)).downloadTraffic(
-            Mockito.isNull(), Mockito.eq(Optional.of(50)), Mockito.any());
+            Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
         Mockito.verify(tigerWebUiController, Mockito.times(3)).downloadTraffic(
-            Mockito.matches(".*"), Mockito.eq(Optional.of(50)), Mockito.any());
+            Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
     }
 
     @Test

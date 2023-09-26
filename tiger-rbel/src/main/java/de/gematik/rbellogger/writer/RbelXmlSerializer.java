@@ -39,7 +39,7 @@ public class RbelXmlSerializer implements RbelSerializer {
     @SneakyThrows
     public byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
         final Document document = DocumentHelper.createDocument();
-        for (RbelContentTreeNode childNode : treeRootNode.childNodes()) {
+        for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
             addNode(childNode, document, rbelWriter);
         }
         return convertDocumentToString(document);
@@ -49,13 +49,13 @@ public class RbelXmlSerializer implements RbelSerializer {
         if (log.isTraceEnabled()) {
             log.trace("converting xml node '{}'", treeNode.getContent() == null ? "<null>" : new String(treeNode.getContent()));
         }
-        final String key = treeNode.getKey();
+        final String key = treeNode.getKey().orElseThrow();
 
         if (StringUtils.isEmpty(key)) {
             return;
         } else if ("text".equals(key) || !treeNode.hasTypeOptional(RbelContentType.XML).orElse(true)) {
             if (!(parentBranch instanceof Document)) {
-                parentBranch.add(new DefaultText(new String(rbelWriter.renderTree(treeNode).getContent(), treeNode.getCharset())));
+                parentBranch.add(new DefaultText(new String(rbelWriter.renderTree(treeNode).getContent(), treeNode.getElementCharset())));
             }
             return;
         } else if (treeNode.attributes().containsKey("isXmlAttribute") && parentBranch instanceof Element element) {
@@ -64,7 +64,7 @@ public class RbelXmlSerializer implements RbelSerializer {
         }
 
         final Element newElement = parentBranch.addElement(key);
-        for (RbelContentTreeNode childNode : treeNode.childNodes()) {
+        for (RbelContentTreeNode childNode : treeNode.getChildNodes()) {
             addNode(childNode, newElement, rbelWriter);
         }
     }

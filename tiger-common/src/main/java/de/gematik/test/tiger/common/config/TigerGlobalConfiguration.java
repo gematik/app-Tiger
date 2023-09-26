@@ -16,15 +16,18 @@
 
 package de.gematik.test.tiger.common.config;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_TESTENV_CFGFILE_LOCATION;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_YAML_VALUE;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -32,13 +35,20 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
+
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_TESTENV_CFGFILE_LOCATION;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_YAML_VALUE;
 
 /**
  * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end up here and all
@@ -399,5 +409,25 @@ public class TigerGlobalConfiguration {
 
     public static ObjectMapper getObjectMapper() {
         return globalConfigurationLoader.getObjectMapper();
+    }
+
+    public static void deleteFromAllSources(TigerConfigurationKey configurationKey) {
+        globalConfigurationLoader.listSources().forEach(
+                source -> source.removeValue(configurationKey)
+        );
+    }
+
+    public static Map<String, Pair<SourceType, String>> exportConfiguration() {
+        var sources = globalConfigurationLoader.listSources().stream().sorted(
+                Comparator.comparing(AbstractTigerConfigurationSource::getSourceType,
+                                Comparator.comparing(SourceType::getPrecedence))
+                        .reversed());
+
+        Map<String, Pair<SourceType, String>> exportedConfiguration = new HashMap<>();
+
+        sources.sequential()
+                .forEach(s -> s.getValues().forEach((k, v) -> exportedConfiguration.put(k.downsampleKeyCaseSensitive(), Pair.of(s.getSourceType(), v))));
+
+        return Collections.unmodifiableMap(exportedConfiguration);
     }
 }

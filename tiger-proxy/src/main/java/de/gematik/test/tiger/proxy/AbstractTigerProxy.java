@@ -32,6 +32,14 @@ import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
+import kong.unirest.Unirest;
+import lombok.Data;
+import lombok.Getter;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -49,13 +57,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.Nullable;
-import kong.unirest.Unirest;
-import lombok.Data;
-import lombok.Getter;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.LoggerFactory;
 
 @Data
 public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
@@ -77,11 +78,13 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
             }
         }
     };
-    private static final String FIX_VAU_KEY = "-----BEGIN PRIVATE KEY-----\n" +
-        "MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIAeOzpSQT8a/mQDM\n" +
-        "7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx\n" +
-        "9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==\n" +
-        "-----END PRIVATE KEY-----\n";
+    private static final String FIX_VAU_KEY = """
+            -----BEGIN PRIVATE KEY-----
+            MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIAeOzpSQT8a/mQDM
+            7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx
+            9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==
+            -----END PRIVATE KEY-----
+            """;
     private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
     private final TigerProxyConfiguration tigerProxyConfiguration;
     private RbelLogger rbelLogger;
@@ -96,11 +99,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     private AtomicReference<RuntimeException> fileParsingException = new AtomicReference<>();
     private boolean isShuttingDown = false;
 
-    public AbstractTigerProxy(TigerProxyConfiguration configuration) {
+    protected AbstractTigerProxy(TigerProxyConfiguration configuration) {
         this(configuration, null);
     }
 
-    public AbstractTigerProxy(TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
+    protected AbstractTigerProxy(TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
         log = LoggerFactory.getLogger(AbstractTigerProxy.class);
         name = Optional.ofNullable(configuration.getName());
         if (configuration.getTls() == null) {
@@ -151,18 +154,24 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     public synchronized List<RbelElement> readTrafficFromTgrFile(String sourceFile) {
         log.info("Trying to read traffic from file '{}'...", sourceFile);
         try {
+            String rbelFileContent = Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8);
+            List<RbelElement> readElements = readTrafficFromString(rbelFileContent);
+            log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
+            return readElements;
+        } catch (IOException | RuntimeException e) {
+            throw new TigerProxyStartupException("Error while parsing traffic file '" + sourceFile + "'", e);
+        }
+    }
+
+    public synchronized List<RbelElement> readTrafficFromString(String tgrFileContent){
+        try {
             rbelFileWriter.postConversionListener.add(pairingPostProcessor);
             if (getTigerProxyConfiguration().getFileSaveInfo() != null &&
-                StringUtils.isNotEmpty(getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
+                    StringUtils.isNotEmpty(getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
                 rbelFileWriter.postConversionListener.add(new ProxyFileReadingFilter(
-                    getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
+                        getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
             }
-            List<RbelElement> readElmeents = rbelFileWriter.convertFromRbelFile(
-                Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8));
-            log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
-            return readElmeents;
-        } catch (Exception e) {
-            throw new TigerProxyStartupException("Error while parsing traffic file '" + sourceFile + "'", e);
+            return rbelFileWriter.convertFromRbelFile(tgrFileContent);
         } finally {
             rbelFileWriter.postConversionListener.remove(pairingPostProcessor);
         }

@@ -38,7 +38,7 @@ public class RbelJwtElementToNodeConverter implements RbelElementToContentTreeNo
             .with("header", converter.convertNode(el.getFacetOrFail(RbelJwtFacet.class).getHeader(), "header", context).get(0))
             .with("body", converter.convertNode(el.getFacetOrFail(RbelJwtFacet.class).getBody(), "body", context).get(0))
             .with("signature", convertSignature(el.getFacetOrFail(RbelJwtFacet.class).getSignature(), context, converter));
-        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map);
+        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(map, el.getRawContent());
         result.setType(context.readStringOptional(ENCODE_AS).map(RbelContentType::seekValueFor).orElse(RbelContentType.JWT));
         return result;
     }
@@ -50,7 +50,7 @@ public class RbelJwtElementToNodeConverter implements RbelElementToContentTreeNo
                 signature.getFacetOrFail(RbelJwtSignature.class).getVerifiedUsing(),
                 context, converter.getJexlContext()));
         }
-        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(content);
+        final RbelStrictOrderContentTreeNode result = new RbelStrictOrderContentTreeNode(content, signature.getRawContent());
         result.setKey("signature");
         return result;
     }

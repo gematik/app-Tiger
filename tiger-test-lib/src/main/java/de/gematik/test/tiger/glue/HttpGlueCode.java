@@ -16,7 +16,8 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.exception.TigerHttpGlueCodeException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.ParameterType;
-import io.cucumber.java.en.Then;
+import io.cucumber.java.de.Dann;
+import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
 import io.restassured.config.RedirectConfig;
@@ -144,8 +145,8 @@ public class HttpGlueCode {
      */
     @SneakyThrows
     @When("TGR send empty {requestType} request to {string}")
-    @When("TGR eine leere {requestType} Anfrage an {string} sendet")
-    @Then("TGR sende eine leere {requestType} Anfrage an {string}")
+    @Wenn("TGR eine leere {requestType} Anfrage an {string} sendet")
+    @Dann("TGR sende eine leere {requestType} Anfrage an {string}")
     public void sendEmptyRequest(Method method, String address) {
         log.info("Sending empty {} request to {}", method, address);
         executeCommandWithContingentWait(() ->
@@ -164,7 +165,7 @@ public class HttpGlueCode {
      */
     @SneakyThrows
     @When("TGR send empty {requestType} request to {string} without waiting for the response")
-    @Then("TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten")
+    @Dann("TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten")
     public void sendEmptyRequestNonBlocking(Method method, String address) {
         log.info("Sending empty {} request to {}", method, address);
         executeCommandInBackground(() ->
@@ -188,8 +189,8 @@ public class HttpGlueCode {
      */
     @SneakyThrows
     @When("TGR send empty {requestType} request to {string} with headers:")
-    @When("TGR eine leere {requestType} Anfrage an {string} und den folgenden Headern sendet:")
-    @Then("TGR sende eine leere {requestType} Anfrage an {string} mit folgenden Headern:")
+    @Wenn("TGR eine leere {requestType} Anfrage an {string} und den folgenden Headern sendet:")
+    @Dann("TGR sende eine leere {requestType} Anfrage an {string} mit folgenden Headern:")
     public void sendEmptyRequestWithHeaders(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
         Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
@@ -213,7 +214,7 @@ public class HttpGlueCode {
      */
     @SneakyThrows
     @When("TGR send empty {requestType} request to {string} without waiting for the response with headers:")
-    @Then("TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Headern:")
+    @Dann("TGR sende eine leere {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Headern:")
     public void sendEmptyRequestWithHeadersNonBlocking(Method method, String address, DataTable customHeaders) {
         log.info("Sending empty {} request with headers to {}", method, address);
         Map<String, String> defaultHeaders = TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
@@ -234,8 +235,8 @@ public class HttpGlueCode {
      */
     @SneakyThrows
     @When("TGR send {requestType} request to {string} with body {string}")
-    @When("TGR eine leere {requestType} Anfrage an {string} und dem folgenden body {string} sendet")
-    @Then("TGR sende eine {requestType} Anfrage an {string} mit Body {string}")
+    @Wenn("TGR eine leere {requestType} Anfrage an {string} und dem folgenden body {string} sendet")
+    @Dann("TGR sende eine {requestType} Anfrage an {string} mit Body {string}")
     public void sendRequestWithBody(Method method, String address, String body) {
         log.info("Sending {} request with body to {}", method, address);
         executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
@@ -258,7 +259,7 @@ public class HttpGlueCode {
 
     @SneakyThrows
     @When("TGR send {requestType} request to {string} with body {string} without waiting for the response")
-    @Then("TGR sende eine {requestType} Anfrage an {string} mit Body {string} ohne auf Antwort zu warten")
+    @Dann("TGR sende eine {requestType} Anfrage an {string} mit Body {string} ohne auf Antwort zu warten")
     public void sendRequestWithBodyNonBlocking(Method method, String address, String body) {
         log.info("Sending {} request with body to {}", method, address);
         executeCommandInBackground(() -> sendResolvedBody(method, address, body));
@@ -299,8 +300,8 @@ public class HttpGlueCode {
     @SuppressWarnings("JavadocLinkAsPlainText")
     @SneakyThrows
     @When("TGR send {requestType} request to {string} with:")
-    @When("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
-    @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
+    @Wenn("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
+    @Dann("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
     public void sendRequestWithParams(Method method, String address, DataTable parameters) {
         List<Map<String, String>> dataAsMaps = parameters.asMaps();
         if (dataAsMaps.size() != 1) {
@@ -341,8 +342,8 @@ public class HttpGlueCode {
     @SuppressWarnings("JavadocLinkAsPlainText")
     @SneakyThrows
     @When("TGR send {requestType} request to {string} with multiline body:")
-    @When("TGR eine {requestType} Anfrage an {string} mit den folgenden mehrzeiligen Daten sendet:")
-    @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden mehrzeiligen Daten:")
+    @Wenn("TGR eine {requestType} Anfrage an {string} mit den folgenden mehrzeiligen Daten sendet:")
+    @Dann("TGR sende eine {requestType} Anfrage an {string} mit folgenden mehrzeiligen Daten:")
     public void sendRequestWithMultiLineBody(Method method, String address, String body) {
         log.info("Sending complex {} request with body to {}", method, address);
         executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
@@ -363,7 +364,7 @@ public class HttpGlueCode {
      */
     @SneakyThrows
     @When("TGR send {requestType} request to {string} without waiting for the response with:")
-    @Then("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
+    @Dann("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
     public void sendRequestWithParamsNonBlocking(Method method, String address, DataTable parameters) {
         List<Map<String, String>> dataAsMaps = parameters.asMaps();
         if (dataAsMaps.size() != 1) {
@@ -385,8 +386,8 @@ public class HttpGlueCode {
      * @see TigerGlobalConfiguration#resolvePlaceholders(String)
      */
     @When("TGR set default header {string} to {string}")
-    @When("TGR den default header {string} auf den Wert {string} setzen")
-    @Then("TGR setze den default header {string} auf den Wert {string}")
+    @Wenn("TGR den default header {string} auf den Wert {string} setzen")
+    @Dann("TGR setze den default header {string} auf den Wert {string}")
     public void setDefaultHeader(String header, String value) {
         TigerGlobalConfiguration.putValue(
                 KEY_TIGER + "." + KEY_HTTP_CLIENT + "." + KEY_DEFAULT_HEADER + "." + resolveToString(header),
@@ -401,8 +402,8 @@ public class HttpGlueCode {
      * @see TigerGlobalConfiguration#resolvePlaceholders(String)
      */
     @When("TGR set default headers:")
-    @Then("TGR setze folgende default headers:")
-    @When("TGR folgende default headers gesetzt werden:")
+    @Dann("TGR setze folgende default headers:")
+    @Wenn("TGR folgende default headers gesetzt werden:")
     public void setDefaultHeaders(String docstring) {
         Arrays.stream(docstring.split("\n"))
                 .filter(line -> !line.isEmpty())
@@ -418,7 +419,7 @@ public class HttpGlueCode {
      *
      */
     @When("TGR clear all default headers")
-    @When("TGR lösche alle default headers")
+    @Wenn("TGR lösche alle default headers")
     public void clearDefaultHeaders() {
         TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER).forEach((key, value) -> TigerGlobalConfiguration.listSources().stream()
                 .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
@@ -442,6 +443,7 @@ public class HttpGlueCode {
      * will use the modified configuration.
      */
     @When("TGR disable HttpClient followRedirects configuration")
+    @Wenn("TGR HttpClient followRedirects Konfiguration deaktiviert")
     public void disableHttpClientFollowRedirects() {
         RedirectConfig newRedirectConfig = RestAssured.config.getRedirectConfig().followRedirects(false);
 
@@ -452,6 +454,7 @@ public class HttpGlueCode {
      * Resets the global configuration of the HttpClient to its default behaviour of automatically following redirects.
      */
     @When("TGR reset HttpClient followRedirects configuration")
+    @Wenn("TGR HttpClient followRedirects Konfiguration zurücksetzt")
     public void resetHttpClientRedirectConfiguration()
     {
         resetRedirectConfig();

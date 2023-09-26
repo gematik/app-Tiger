@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.glue;
+export default class TigerConfigurationPropertyDto {
+    key: string;
+    value: string;
+    source: string;
 
-import io.cucumber.java.en.Then;
 
-public class TestGlue {
-
-    @Then("Wait some time")
-    public void wait_some_time() {
-        try {
-            Thread.sleep(50000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    constructor(key: string, value: string, source: string) {
+        this.key = key;
+        this.value = value;
+        this.source = source;
     }
 }

@@ -7,6 +7,38 @@
 * Selenium 4.8.0
 * Appium 8.3.0
 * Spring Boot 3.1.0
+* Logback 1.4.9
+
+# Release 2.2.0
+
+## Features
+
+* TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
+* TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI anymore but are still written to console and log files
+* TGR-1044: During the execution of the playwright tests screenshots of the WorkflowUI and the WebUI are taken and stored in the doc/user_manual directory
+* TGR-1041: a new configuration editor in the WorkflowUI allows to view and edit the global tiger configuration during the execution of a test suite.
+* TGR-567: Tiger Proxy UI - when downloading traffic data, it is now possible to download only the data of the current applied filter.
+* TGR-1047: Finalising Playwight tests
+
+
+## Bugfixes
+
+* TGR-1048: Resolved the problems with steps not being found in IntelliJ's Gherkin plugin. Also they were executed, one was not able to look them up with auto complete and if entered manually the step was marked as undefined
+* TGR-1045: With "activateLogs: false" in externalJarOptions for servers deactivates the logs completely, with "activateWorkflowLogs: false" deactivates sending logs to the workflow UI only
+* TGR-1057: modified the test httpclientenv.yaml so that it uses  the new server type httpbin instead of winstone.
+* TGR-1058: RbelPath in the Inspect modal on selected element fixed
+* TGR-623: Tiger Proxy UI - when importing a .tgr traffic file, the previously displayed traffic is removed.
+* TGR-1074: Scenario Outlines counter fixed
+* TGR-873: Tiger Proxy UI - when the connection with the backend is lost a visible error dialog is shown in the UI to inform the user.
+* TGR-1079: Tiger Proxy UI - when importing a .tgr traffic file, the request/response message pairs are correctly identified as such and are displayed together when one of the messages matches the applied filter.
+
+-------
+* Serenity BDD 3.6.23
+* Cucumber 7.11.0
+* RestAssured 5.2.0
+* Selenium 4.8.0
+* Appium 8.3.0
+* Spring Boot 3.1.0
 * Logback 1.4.8
 
 # Release 2.1.6
@@ -32,6 +64,8 @@
     <scope>test</scope>
 </dependency>
 ```
+
+* TGR-990: first mvp of playwright tests for testing the WorkflowUI added
 
 ## Bugfixes
 

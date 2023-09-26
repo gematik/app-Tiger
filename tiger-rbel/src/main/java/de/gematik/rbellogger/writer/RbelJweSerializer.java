@@ -62,13 +62,13 @@ public class RbelJweSerializer implements RbelSerializer {
             throw new RbelSerializationException("Could not find signature-node needed for JWT serialization!");
         }
         return signature.get().childNode("decryptedUsingKeyWithId")
-            .map(RbelContentTreeNode::getContentAsString)
+            .map(RbelContentTreeNode::getRawStringContent)
             .map(keyName -> rbelWriter.getRbelKeyManager().findKeyByName(keyName)
                 .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("puk_" + keyName))
                 .orElseThrow(() -> new RbelSerializationException("Could not find key named '" + keyName + "'!")))
             .map(RbelKey::getKey)
             .or(() -> signature.get().childNode("decryptedUsingKey")
-                .map(RbelContentTreeNode::getContentAsString)
+                .map(RbelContentTreeNode::getRawStringContent)
                 .map(Base64.getUrlDecoder()::decode)
                 .map(keyBytes -> new SecretKeySpec(keyBytes, "AES")))
             .orElseThrow(() -> new RbelSerializationException("Unable to find key!"));
@@ -76,16 +76,16 @@ public class RbelJweSerializer implements RbelSerializer {
 
     private void writeHeaderInJwe(Optional<RbelContentTreeNode> headers, JsonWebEncryption jwe, RbelWriterInstance rbelWriter) {
         headers
-            .map(RbelContentTreeNode::childNodes)
+            .map(RbelContentTreeNode::getChildNodes)
             .stream()
             .flatMap(Collection::stream)
             .forEach(header -> {
                 if (RbelJsonSerializer.isJsonArray(header)) {
-                    jwe.setHeader(header.getKey(), header.childNodes().stream()
-                        .map(childNode -> new String(rbelWriter.renderTree(childNode).getContent(), childNode.getCharset()))
+                    jwe.setHeader(header.getKey().orElseThrow(), header.getChildNodes().stream()
+                        .map(childNode -> new String(rbelWriter.renderTree(childNode).getContent(), childNode.getElementCharset()))
                         .collect(Collectors.toList()));
                 } else {
-                    jwe.setHeader(header.getKey(), new String(rbelWriter.renderTree(header).getContent(), header.getCharset()));
+                    jwe.setHeader(header.getKey().orElseThrow(), new String(rbelWriter.renderTree(header).getContent(), header.getElementCharset()));
                 }
             });
     }
