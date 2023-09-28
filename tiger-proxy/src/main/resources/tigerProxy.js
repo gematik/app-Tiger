@@ -5,6 +5,7 @@
 "use strict";
 
 import backendClient from '/backendClient.js'
+import SenderReceiversFrequencyCounter from '/senderReceiversFrequencyCounter.js'
 
 
 let lastUuid = "";
@@ -56,9 +57,9 @@ let collapsibleMessageDetailsBtn;
 let collapsibleHeaders;
 let collapsibleMessageHeaderBtn;
 
-let receivers = [];
-let senders = [];
+const senderReceiversFreqCounter = new SenderReceiversFrequencyCounter();
 
+const MAX_HOSTS_TO_DISPLAY_IN_FILTER_DROPDOWN = 2;
 let requestFrom = "requestFromContent";
 let requestTo = "requestToContent";
 
@@ -290,24 +291,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
 
-  let selectRequestFromBtn = document.getElementById("requestFromContent");
+  let selectRequestFromDropdown = document.getElementById("requestFromContent");
+  let selectRequestToDropdown = document.getElementById("requestToContent");
 
-  let selectRequestToBtn = document.getElementById("requestToContent");
-  selectRequestToBtn.addEventListener("click", updateSelectContents);
-  selectRequestToBtn.addEventListener('change', function (event) {
+  selectRequestToDropdown.addEventListener("focus", updateSelectContents);
+  selectRequestToDropdown.addEventListener('change', function (event) {
     if (event.target.value !== NO_REQUEST) {
       let filterField = document.getElementById("setFilterCriterionInput");
       filterField.value = "$.receiver == \"" + event.target.value + "\"";
-      selectRequestFromBtn.selectedIndex = 0;
+      selectRequestFromDropdown.selectedIndex = 0;
     }
   });
 
-  selectRequestFromBtn.addEventListener("click", updateSelectContents);
-  selectRequestFromBtn.addEventListener('change', function (event) {
+  selectRequestFromDropdown.addEventListener("focus", updateSelectContents);
+  selectRequestFromDropdown.addEventListener('change', function (event) {
     if (event.target.value !== NO_REQUEST) {
       let filterField = document.getElementById("setFilterCriterionInput");
       filterField.value = "$.sender == \"" + event.target.value + "\"";
-      selectRequestToBtn.selectedIndex = 0;
+      selectRequestToDropdown.selectedIndex = 0;
     }
   });
 
@@ -341,48 +342,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Functions
 function updateSelectContents() {
-  updateSelectContent(requestFrom, senders);
-  updateSelectContent(requestTo, receivers);
+  updateSelectContent(requestFrom);
+  updateSelectContent(requestTo);
 }
 
 function getLabelId(label, id) {
   return label + "_" + id;
 }
 
-function updateSelectContent(label, list) {
-
+function updateSelectContent(label) {
   let select = document.getElementById(label);
-  let contained = false;
+  let check = document.getElementById(`${label}ShowAllCheck`)
 
-  if (list.length === 0) {
-    initSelectContent(label, list);
+  let frequencyMap = senderReceiversFreqCounter.getMapByLabel(label);
+
+  let listToDisplay = check.checked ? Object.keys(frequencyMap)
+      : filterAtLeastN(frequencyMap, MAX_HOSTS_TO_DISPLAY_IN_FILTER_DROPDOWN);
+
+  if (listToDisplay.length === 0) {
+    initSelectContent(label, listToDisplay);
   } else {
-    for (let i = 0; i < list.length; i++) {
-      if (list[i].length > 0) {
-        contained = false;
-        if (select !== null) {
-          Array.from(select.children).forEach(child => {
-            if (child.id === getLabelId(label, list[i])) {
-              contained = true;
-            }
-          });
-        }
-        if (!contained) {
-          let element = document.createElement('option');
-          element.textContent = list[i];
-          element.id = getLabelId(label, list[i]);
-          if (select !== null) {
-            select.appendChild(element);
-          }
-        }
+    clearSelectOptions(select)
+    listToDisplay.forEach(e => {
+      let element = document.createElement('option');
+      element.textContent = e;
+      element.id = getLabelId(label, e);
+      if (select !== null) {
+        select.appendChild(element);
       }
-    }
+    })
   }
 }
 
-function deleteRequestsLists() {
-  senders = [];
-  receivers = [];
+function clearSelectOptions(selectElement){
+  Array.from(selectElement.children).filter( e => !e.id.endsWith("_empty"))
+      .forEach( e => e.remove());
 }
 
 function initSelectContent(label, list) {
@@ -609,13 +603,13 @@ function resetAllReceivedMessages() {
   if (listDiv) {
     listDiv.innerHTML = "";
   }
-  deleteRequestsLists();
 }
 
 async function resetMessages() {
   resetBtn.disabled = true;
   await backendClient.resetMessages();
   resetAllReceivedMessages();
+  senderReceiversFreqCounter.clearAll();
   setTimeout(() => {
     resetBtn.blur();
     resetBtn.disabled = false;
@@ -933,34 +927,17 @@ function addMessageToMenu(msgMetaData, index) {
   document.getElementById("sidebar-menu")
   .appendChild(htmlToElement(menuItem));
 
-  if (msgMetaData.sender != null) {
-    const foundSender = Array.from(senders).find(msg => {
-      return msg === msgMetaData.sender;
-    });
-    if (foundSender == null) {
-      let index = msgMetaData.sender.indexOf(":");
-      if (index >= 0) {
-        let port = msgMetaData.sender.substring(index + 1);
-        if (port < 32768) {
-          senders.push(msgMetaData.sender);
-        }
-      }
+ senderReceiversFreqCounter.addSenderAndReceiver(msgMetaData)
+}
+
+function filterAtLeastN(frequencyMap, atLeastN){
+  const elementsAtLeastNFrequent = []
+  for( const [element, frequency] of Object.entries(frequencyMap)){
+    if( frequency >= atLeastN){
+      elementsAtLeastNFrequent.push(element)
     }
   }
-  if (msgMetaData.recipient != null) {
-    const foundReceiver = Array.from(receivers).find(msg => {
-      return msg === msgMetaData.recipient;
-    });
-    if (foundReceiver == null) {
-      let index = msgMetaData.recipient.indexOf(":");
-      if (index >= 0) {
-        let port = msgMetaData.recipient.substring(index + 1);
-        if (port < 32768) {
-          receivers.push(msgMetaData.recipient);
-        }
-      }
-    }
-  }
+  return elementsAtLeastNFrequent;
 }
 
 function setFilterMessage() {

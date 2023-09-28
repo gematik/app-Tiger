@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 2.2.1
+
+## Bugfixes
+
+* TGR-971: Tiger Proxy UI - when applying filters, the list of senders and receivers is limited to the hosts which send or receive more than two messages. An additional checkbox allows displaying the full list of senders and receivers.
+
 -------
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0

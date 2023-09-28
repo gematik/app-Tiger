@@ -17,7 +17,7 @@
               <div class="col-md-4">
                 <label for="setFilterCriterionInput" class="col-form-label" style="font-weight: bold;">RbelPath filter:</label>
               </div>
-              <div class="col-md-8" style="padding-left: 0;">
+              <div class="col-md-8 ps-0">
                 <input class="form-control rounded-3" type="text" id="setFilterCriterionInput" placeholder="filter criterion">
               </div>
             </div>
@@ -27,11 +27,15 @@
               <div class="col-md-4">
               <label class="col-form-label" for="requestFromContent">Request from:</label>
               </div>
-              <div class="col-md-8" style="padding-left: 0;">
-                <select class="rounded-2" name="requestFrom" id="requestFromContent">
+              <div class="col-md-4 ps-0">
+                <select class="rounded-2 w-100" name="requestFrom" id="requestFromContent">
                   <option id="requestFromContent_empty">no requests</option>
                 </select>
-            </div>
+              </div>
+              <div class="col-md-4">
+                <input class="form-check-input" type="checkbox" id="requestFromContentShowAllCheck">
+                <label class="form-check-label" for="requestFromContentShowAllCheck"> Show all senders</label>
+              </div>
             </div>
           </div>
           <div >
@@ -39,11 +43,15 @@
               <div class="col-md-4">
               <label class="col-form-label" for="requestToContent">Request to:</label>
             </div>
-            <div class="col-md-8" style="padding-left: 0;">
-              <select class="rounded-2" name="requestTo" id="requestToContent" >
+            <div class="col-md-4 ps-0">
+              <select class="rounded-2 w-100" name="requestTo" id="requestToContent" >
                 <option id="requestToContent_empty">no requests</option>
               </select>
             </div>
+              <div class="col-md-4">
+                <input class="form-check-input" type="checkbox" id="requestToContentShowAllCheck">
+                <label class="form-check-label" for="requestToContentShowAllCheck"> Show all receivers</label>
+              </div>
             </div>
           </div>
         </div>
