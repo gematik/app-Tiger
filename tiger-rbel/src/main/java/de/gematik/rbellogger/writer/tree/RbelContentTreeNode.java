@@ -205,7 +205,7 @@ public class RbelContentTreeNode implements RbelContent {
 
     @Override
     public Optional<String> getKey() {
-        return Optional.of(key);
+        return Optional.ofNullable(key);
     }
 
     private static RbelContentTreeNode castToRbelContentTreeNode(RbelContent rbelContent) {

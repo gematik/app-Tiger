@@ -4,6 +4,7 @@
 
 ## Bugfixes
 
+* TGR-1110: Zion - XML-structures with nodes named 'text' can now be correctly serialized
 * TGR-971: Tiger Proxy UI - when applying filters, the list of senders and receivers is limited to the hosts which send or receive more than two messages. An additional checkbox allows displaying the full list of senders and receivers.
 
 -------

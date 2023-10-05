@@ -8,12 +8,16 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import java.io.IOException;
 import lombok.SneakyThrows;
+import org.custommonkey.xmlunit.XMLAssert;
+import org.custommonkey.xmlunit.exceptions.XpathException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
+import org.xml.sax.SAXException;
 import org.xmlunit.assertj.XmlAssert;
 
 import java.nio.file.Files;
@@ -380,7 +384,6 @@ class RbelContentTreeConverterTest {
 
     @Test
     void testSerializationOfEmptyJsonArray() {
-
         String jsonWithEmptyArray = """
                 {
                   "hello": []
@@ -391,5 +394,17 @@ class RbelContentTreeConverterTest {
         String serializedJson = new RbelWriter(rbelConverter).serialize(convertedRbelElement, new TigerJexlContext()).getContentAsString();
 
         JSONAssert.assertEquals(jsonWithEmptyArray, serializedJson, JSONCompareMode.LENIENT);
+    }
+
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+        <name><text value="Susanne Engelchen"/></name>,/name/text/@value
+        <name text="Susanne Engelchen"/>,/name/@text
+        """)
+    void testSerializationOfXmlWithElementsNamedText(String xmlValue, String targetXPath) throws XpathException, IOException, SAXException {
+        RbelElement convertedRbelElement = rbelConverter.convertElement(xmlValue, null);
+        String serializedXml = new RbelWriter(rbelConverter).serialize(convertedRbelElement, new TigerJexlContext()).getContentAsString();
+
+        XMLAssert.assertXpathEvaluatesTo("Susanne Engelchen", targetXPath, serializedXml);
     }
 }
