@@ -887,7 +887,10 @@ function addMessageToMainView(msgHtmlData) {
   }
   addQueryBtn(message);
   message.querySelectorAll('pre.json').forEach(el => {
-    hljs.highlightElement(el);
+    if (el.getAttribute("data-hljs-highlighted") !== "true") {
+      hljs.highlightElement(el);
+      el.setAttribute("data-hljs-highlighted", "true");
+    }
   });
   listDiv.appendChild(message);
   if (!scrollLock) {

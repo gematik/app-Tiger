@@ -2,12 +2,6 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-@media screen and (min-width: 1408px) {
-    .container:not(.is-max-desktop):not(.is-max-widescreen) {
-        max-width: 100% !important;
-    }
-}
-
 .sidebar {
     overflow-x: hidden;
     overflow-y: auto;
