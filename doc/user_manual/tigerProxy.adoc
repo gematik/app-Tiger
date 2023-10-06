@@ -386,6 +386,8 @@ RBeL-Path can be integrated with JEXL-expression, giving a much more powerful an
 
 The expression in the round-brackets is interpreted as JEXL. The available syntax is described in more detail here: https://commons.apache.org/proper/commons-jexl/reference/syntax.html
 
+Please note that these Jexl-Expression can not be nested inside each other deeper then one level (You can write a RbelPath that contains a Jexl-Expression. And this Jexl-Expression can even contain a RbelPath. But the inner RbelPath can not contain another Jexl-Expression).
+
 The variables that can be used are listed below:
 
 * `element` contains the current RBeL-Element

@@ -14,19 +14,26 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+
 @Slf4j
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class RbelJexlExecutor extends TigerJexlExecutor {
+
+    private static final String RBEL_PATH_CHARS = "(\\$\\.|\\w|\\.)+.*";
 
     static {
         TokenSubstituteHelper.REPLACER_ORDER.addFirst(
@@ -46,7 +53,8 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
     public static boolean matchAsTextExpression(Object element, String textExpression) {
         try {
             final boolean textMatchResult = ((RbelElement) element).getRawStringContent().contains(textExpression);
-            final boolean regexMatchResult = Pattern.compile(textExpression).matcher(((RbelElement) element).getRawStringContent()).find();
+            final boolean regexMatchResult = Pattern.compile(textExpression)
+                .matcher(((RbelElement) element).getRawStringContent()).find();
 
             return textMatchResult || regexMatchResult;
         } catch (Exception e) {
@@ -63,35 +71,72 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
     }
 
     private String evaluateRbelPathExpressions(String jexlExpression, TigerJexlContext mapContext) {
-        final List<Pair<String, String>> replacedPaths = Arrays.stream(jexlExpression.split(" |(==)|(=~)|(<=)|(!~)|(=\\^)|(!\\^)|(=$)|(!$)"))
-            .filter(str -> (str.startsWith("$.") || str.startsWith("@.")) && str.length() > 2)
-            .map(path -> {
-                if (path.startsWith("$.")) {
-                    return Pair.of(path, extractPathAndConvertToString(mapContext.getRootElement(), path));
-                } else if (path.startsWith("@.")) {
-                    return Pair.of(path, extractPathAndConvertToString(mapContext.getCurrentElement(), path.replaceFirst("@\\.", "\\$.")));
-                } else {
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .filter(p -> CharMatcher.ascii().matchesAllOf(p.getValue()))
-            .collect(Collectors.toList());
-        for (var pair : replacedPaths) {
+        for (var potentialPath : extractPotentialRbelPaths(jexlExpression)) {
+            if (!(potentialPath.startsWith("$.") || potentialPath.startsWith("@."))) {
+                continue;
+            }
+            final Optional<String> pathResult = extractPathAndConvertToString(
+                potentialPath.startsWith("@.") ? mapContext.getCurrentElement() : mapContext.getRootElement(),
+                potentialPath.startsWith("@.") ? potentialPath.replaceFirst("@\\.", "\\$.") : potentialPath);
+            if (pathResult.isEmpty() || !CharMatcher.ascii().matchesAllOf(pathResult.get())) {
+                continue;
+            }
             final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); //NOSONAR
-            mapContext.put(id, pair.getValue());
-            jexlExpression = jexlExpression.replace(pair.getKey(), id);
+            mapContext.put(id, pathResult.get());
+            jexlExpression = jexlExpression.replace(potentialPath, id);
         }
         return jexlExpression;
     }
 
-    private static String extractPathAndConvertToString(Object source, String rbelPath) {
+    public static List<String> extractPotentialRbelPaths(String jexlExpression) {
+        List<String> rbelPaths = new ArrayList<>();
+        boolean insideRbelPath = false;
+        boolean insideNestedJexlExpression = false;
+        int jexlExpressionStart = -1;
+        int pos = 0;
+        IntPredicate closingJexlBracketIsNext = p -> jexlExpression.startsWith(")]", p);
+        IntPredicate openingJexlBracketIsNext = p -> jexlExpression.startsWith("[?(", p);
+        IntPredicate nextCharIsNotStillRbelPath = p -> !jexlExpression.substring(p).matches(RBEL_PATH_CHARS); //NOSONAR
+        IntPredicate startingRbelPathIsNext = p -> jexlExpression.startsWith("$.", p) || jexlExpression.startsWith("@.", p);
+
+        while (pos < jexlExpression.length()) {
+            if (insideNestedJexlExpression) {
+                if (closingJexlBracketIsNext.test(pos)) {
+                    insideNestedJexlExpression = false;
+                    pos++;
+                }
+            } else if (insideRbelPath) {
+                if (openingJexlBracketIsNext.test(pos)) {
+                    insideNestedJexlExpression = true;
+                    pos += 2;
+                } else if (nextCharIsNotStillRbelPath.test(pos)) {
+                    rbelPaths.add(jexlExpression.substring(jexlExpressionStart, pos));
+                    insideRbelPath = false;
+                }
+            } else {
+                if (startingRbelPathIsNext.test(pos)) {
+                    insideRbelPath = true;
+                    jexlExpressionStart = pos;
+                    pos++;
+                }
+            }
+            pos++;
+        }
+
+        // End of string and rbelPath still going: Add the current rbelPath
+        if (insideRbelPath) {
+            rbelPaths.add(jexlExpression.substring(jexlExpressionStart, pos));
+        }
+
+        return rbelPaths;
+    }
+
+    private static Optional<String> extractPathAndConvertToString(Object source, String rbelPath) {
         return Optional.ofNullable(source)
             .filter(RbelElement.class::isInstance)
             .map(RbelElement.class::cast)
             .flatMap(s -> s.findElement(rbelPath))
-            .map(RbelJexlExecutor::forceStringConvert)
-            .orElse("");
+            .map(RbelJexlExecutor::forceStringConvert);
     }
 
     @Override
@@ -177,7 +222,8 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
         element.getChildNodesWithKey().stream()
             .forEach(entry -> {
                 final String key = buildKey(entry.getKey());
-                if (entry.getValue().hasFacet(RbelJsonFacet.class) && entry.getValue().hasFacet(RbelNestedFacet.class)) {
+                if (entry.getValue().hasFacet(RbelJsonFacet.class) && entry.getValue()
+                    .hasFacet(RbelNestedFacet.class)) {
                     result.put(key,
                         getMaxedOutContentOfElement(
                             entry.getValue().getFacetOrFail(RbelNestedFacet.class).getNestedElement()));
