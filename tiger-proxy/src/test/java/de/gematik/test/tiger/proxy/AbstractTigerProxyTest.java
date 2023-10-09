@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import java.lang.reflect.Method;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,8 @@ import org.apache.commons.lang3.RandomUtils;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.netty.MockServer;
@@ -89,6 +92,13 @@ public abstract class AbstractTigerProxyTest {
             .withMethod("POST"))
             .respond(response()
                 .withBody(binaryMessageContent));
+    }
+
+    @BeforeEach
+    public void logTestName(TestInfo testInfo) {
+        log.info("Now executing test '{}' ({}:{})", testInfo.getDisplayName(),
+            testInfo.getTestClass().map(Class::getName).orElse("<>"),
+            testInfo.getTestMethod().map(Method::getName).orElse("<>"));
     }
 
     @AfterEach
