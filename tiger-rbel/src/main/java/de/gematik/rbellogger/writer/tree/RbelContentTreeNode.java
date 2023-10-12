@@ -5,10 +5,13 @@
 package de.gematik.rbellogger.writer.tree;
 
 import de.gematik.rbellogger.RbelContent;
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-import de.gematik.rbellogger.writer.RbelContentType;
+import de.gematik.rbellogger.writer.*;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,11 +39,31 @@ public class RbelContentTreeNode implements RbelContent {
     private byte[] content;
 
     public RbelContentTreeNode(RbelMultiMap<RbelContentTreeNode> childNodes, byte[] content) {
-        this.setChildNodes(childNodes);
         this.setContent(content);
+        this.setupChildNodes(childNodes);
     }
 
-    public void setChildNodes(List<RbelContentTreeNode> newChildNodes) {
+    public void setChildNodes(RbelMultiMap<RbelContentTreeNode> childNodes) {
+        setupChildNodes(childNodes);
+        updateAncestorContent();
+    }
+
+    public void setChildNodes(List<RbelContentTreeNode> childNodes) {
+        setupChildNodes(childNodes);
+        updateAncestorContent();
+    }
+
+    public void setupChildNodes(RbelMultiMap<RbelContentTreeNode> childNodes) {
+        if(childNodes == null) {
+            this.setChildNodes(new RbelMultiMap<>());
+        }
+        else {
+            this.childNodes = childNodes;
+            this.childNodes.forEach((k, e) -> e.setParentNode(this));
+        }
+    }
+
+    public void setupChildNodes(List<RbelContentTreeNode> newChildNodes) {
         childNodes.clear();
         newChildNodes.forEach(node -> {
             childNodes.put(node.getKey().orElseThrow(), node);
@@ -48,16 +71,30 @@ public class RbelContentTreeNode implements RbelContent {
         });
     }
 
-    public void setChildNodes(RbelMultiMap<RbelContentTreeNode> childNodes) {
-        this.childNodes = childNodes;
-        this.childNodes.forEach((k, e) -> e.setParentNode(this));
-    }
-
     public void setChildNode(String key, RbelContentTreeNode newChildNode) {
         childNodes.remove(key);
         childNodes.put(key, newChildNode);
         newChildNode.setParentNode(this);
         newChildNode.setKey(key);
+        updateAncestorContent();
+    }
+
+    public void addChild(RbelContentTreeNode newChildNode) {
+        if(!isListTypeNode()){
+            throw new IllegalArgumentException("The path specified must lead to an array or a list. Currently only JSON arrays are supported.");
+        }
+
+        int newIndex = 0;
+        String indexAsString = "0";
+        while(childNodes.containsKey(indexAsString)) {
+            newIndex++;
+            indexAsString = Integer.toString(newIndex);
+        }
+
+        childNodes.put(indexAsString, newChildNode);
+        newChildNode.setParentNode(this);
+        newChildNode.setKey(indexAsString);
+        updateAncestorContent();
     }
 
     public Map<String, String> attributes() {
@@ -208,6 +245,68 @@ public class RbelContentTreeNode implements RbelContent {
         return Optional.ofNullable(key);
     }
 
+    private void updateAncestorContent() {
+        updateContent();
+        if(parentNode != null) {
+            parentNode.updateAncestorContent();
+        }
+    }
+
+    private void updateContent() {
+
+        if(type == RbelContentType.XML) {
+
+            var formerParent = this.parentNode;
+            var formerKey = this.getKey();
+
+            var asChildNodes = new RbelMultiMap<RbelContentTreeNode>();
+            asChildNodes.put("root", this);
+            asChildNodes.get("root").setKey("root");
+            var tempRootNode = new RbelContentTreeNode(asChildNodes, new byte[0]);
+            tempRootNode.setType(RbelContentType.XML);
+
+            String serialization = executeSerialisation(tempRootNode, formerParent != null);
+
+            if(formerKey.isPresent()) {
+                serialization = serialization.replaceFirst("root", formerKey.get());
+                serialization = replaceLast(serialization, "root", formerKey.get());
+            }
+            else {
+                serialization = serialization.replaceFirst("<root>", "");
+                serialization = replaceLast(serialization, "</root>", "");
+            }
+
+            RbelElement updatedRbelElement = new RbelElement(serialization.getBytes(), null);
+            var updatedContentTreeNode = new RbelContentTreeConverter(updatedRbelElement, new TigerJexlContext()).convertToContentTree();
+
+            this.content = updatedContentTreeNode.getContent();
+
+            this.setParentNode(formerParent);
+
+            if(formerKey.isPresent()) {
+                this.setKey(formerKey.get());
+                if(formerParent != null) {
+                    formerParent.getChildNodesWithKey().put(formerKey.get(), this);
+                }
+            }
+            else {
+                setKey(null);
+            }
+        }
+        else {
+            String serialization = executeSerialisation(this, parentNode != null);
+
+            RbelElement updatedRbelElement = new RbelElement(serialization.getBytes(), null);
+            var updatedContentTreeNode = new RbelContentTreeConverter(updatedRbelElement, new TigerJexlContext()).convertToContentTree();
+
+            this.content = updatedContentTreeNode.getContent();
+        }
+    }
+
+    private boolean isListTypeNode() {
+        return attributeMap.containsKey(RbelJsonElementToNodeConverter.JSON_ARRAY);
+    }
+
     private static RbelContentTreeNode castToRbelContentTreeNode(RbelContent rbelContent) {
         if(rbelContent instanceof RbelContentTreeNode asRbelContentTreeNode) {
             return asRbelContentTreeNode;
@@ -222,5 +321,31 @@ public class RbelContentTreeNode implements RbelContent {
         public RbelPathNotUniqueException(String s) {
             super(s);
         }
+    }
+
+    private String replaceLast(String stringToModify, String replacedString, String replacement) {
+        var lastIndex = stringToModify.lastIndexOf(replacedString);
+        var firstPart = stringToModify.substring(0, lastIndex);
+        var lastPart = stringToModify.substring(lastIndex + replacedString.length());
+        return firstPart + replacement + lastPart;
+    }
+
+    private String executeSerialisation(RbelContentTreeNode node, boolean parentNodePresent) {
+        RbelSerializationResult serializationResult;
+        if(parentNodePresent) {
+            serializationResult = new RbelWriter(RbelLogger.build().getRbelConverter()).renderNode(node, new TigerJexlContext());
+        }
+        else {
+            serializationResult = new RbelWriter(RbelLogger.build().getRbelConverter()).serialize(node, new TigerJexlContext());
+        }
+
+        if(serializationResult == null) {
+            throw new RbelSerializationException("Error when updating RbelContentTreeNode.");
+        }
+        String serialization = serializationResult.getContentAsString();
+        if(serialization ==  null) {
+            throw new RbelSerializationException("Error when updating RbelContentTreeNode.");
+        }
+        return serialization;
     }
 }

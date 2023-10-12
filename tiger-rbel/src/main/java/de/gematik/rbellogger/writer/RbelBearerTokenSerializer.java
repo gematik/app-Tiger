@@ -20,4 +20,9 @@ public class RbelBearerTokenSerializer implements RbelSerializer {
 
         return Arrays.concatenate("Bearer ".getBytes(StandardCharsets.UTF_8), bearerTokenContent);
     }
+
+    @Override
+    public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+        return render(node, rbelWriter);
+    }
 }

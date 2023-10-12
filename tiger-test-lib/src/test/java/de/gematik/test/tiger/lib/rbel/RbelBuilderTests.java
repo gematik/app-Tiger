@@ -38,7 +38,7 @@ class RbelBuilderTests {
 
     @Test
     void readRbelFromScratchTest()  {
-        RbelBuilder builder = RbelBuilder.fromScratch();
+        RbelBuilder builder = RbelBuilder.fromScratch(RbelContentType.JWT);
         Assertions.assertNotNull(builder);
     }
 
@@ -77,9 +77,9 @@ class RbelBuilderTests {
     @Test
     void setObjectAtTest() {
         RbelBuilder builder = RbelBuilder.fromString(jsonTest);
-        builder.setObjectAt("$.blub.foo", "{ 'some': 'object' }");
+        builder.setValueAt("$.blub.foo", "{ 'some': 'object' }");
         Assertions.assertEquals("object", builder.getTreeRootNode().findElement("$.blub.foo.some").orElseThrow().getRawStringContent());
-        builder.setObjectAt("$.blub", "{ 'object': 'replaced' }");
+        builder.setValueAt("$.blub", "{ 'object': 'replaced' }");
         Assertions.assertEquals("replaced", builder.getTreeRootNode().findElement("$.blub.object").orElseThrow().getRawStringContent());
         Assertions.assertFalse(builder.getTreeRootNode().findElement("$.blub.foo.some").isPresent());
     }
@@ -94,7 +94,7 @@ class RbelBuilderTests {
     @Test
     void serializeRbelObjectTest() {
         RbelBuilder builder = RbelBuilder.fromString(jsonTest);
-        builder.setObjectAt("$.blub.foo", "{ 'some': 'object' }");
+        builder.setValueAt("$.blub.foo", "{ 'some': 'object' }");
         Assertions.assertEquals(StringUtils.deleteWhitespace(jsonTestModified), StringUtils.deleteWhitespace(builder.serialize()));
     }
 
@@ -112,5 +112,51 @@ class RbelBuilderTests {
         rBManager.put("test", RbelBuilder.fromString(xmlTest));
         RbelObjectJexl.initJexl(rBManager);
         RbelSerializationAssertion.assertEquals(xmlTest, TigerGlobalConfiguration.resolvePlaceholders("!{rbelObject:serialize('test')}"), RbelContentType.XML);
+    }
+
+
+    @Test
+    void addEntryTestSuccess() {
+        RbelBuilder builder = RbelBuilder.fromString(jsonTest);
+        String newArray = """
+                        {
+                            "new_array": [
+                              "with",
+                              "some",
+                              "entries"
+                            ]
+                        }
+                """;
+        String expectedAfterAdding = """
+                                {
+            "blub": {
+                "foo":
+                    {
+                        "new_array": [
+                                  "with",
+                                  "some",
+                                  "entries",
+                                  "and",
+                                  "some",
+                                  "more"
+                                ]
+                    }
+            }
+        }
+                        
+                """;
+        String actualSerialized = builder.setValueAt("$.blub.foo", newArray)
+                .addEntryAt("$.blub.foo.new_array", "and")
+                .addEntryAt("$.blub.foo.new_array", "some")
+                .addEntryAt("$.blub.foo.new_array", "more")
+                .serialize();
+        Assertions.assertEquals(StringUtils.deleteWhitespace(expectedAfterAdding), StringUtils.deleteWhitespace(actualSerialized));
+    }
+
+    @Test
+    void addEntryTestNotArrayFailure() {
+        RbelBuilder builder = RbelBuilder.fromString(jsonTest);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.addEntryAt("$.blub.foo", "new_entry"));
+        builder.serialize();
     }
 }

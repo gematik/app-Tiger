@@ -1,0 +1,21 @@
+{
+  "arrays": {
+    "array_one": [
+      "one",
+      "two",
+      "three",
+      "four",
+      {
+        "one": "half",
+        "two": "thirds"
+      }
+    ],
+    "array_two": [
+      "here",
+      "are",
+      "some",
+      "random",
+      "words"
+    ]
+  }
+}

@@ -35,10 +35,10 @@ public class RbelBuilderGlueCode {
      * Creates a new empty Rbel object
      * @param name key of Rbel object
      */
-    @Gegebensei("TGR erstellt ein neues leeres Rbel-Objekt {string}")
-    @Given("TGR creates a new empty Rbel object {string}")
-    public void createFromScratch(String name) {
-        rbelBuilders.put(name, RbelBuilder.fromScratch());
+    @Gegebensei("TGR erstellt ein neues leeres Rbel-Objekt {string} mit Typ {rbelContentType}")
+    @Given("TGR creates a new empty Rbel object {string} of type {rbelContentType}")
+    public void createFromScratch(String name, RbelContentType type) {
+        rbelBuilders.put(name, RbelBuilder.fromScratch(type));
     }
 
     /**
@@ -55,16 +55,16 @@ public class RbelBuilderGlueCode {
     }
 
     /**
-     * Sets an object at a specified path; requires proper formatting with key/value
-     * @param objectName name of object in rbelBuilders
-     * @param rbelPath path which is to be set
-     * @param newObject new object to be set
+     * Adds a new entry to an array or a list of a Rbel object at a specific path
+     * @param objectName name of Rbel object
+     * @param rbelPath path of array/list
+     * @param newEntry new entry
      */
-    @Wenn("TGR setzt Rbel-Objekt {string} an Stelle {string} auf neues Objekt {string}")
-    @When("TGR sets Rbel object {string} at {string} to new object {string}")
-    public void setObjectAt(String objectName, String rbelPath, String newObject) {
+    @Wenn("TGR ergänzt Rbel-Objekt {string} an Stelle {string} um {string}")
+    @When("TGR extends Rbel object {string} at path {string} by a new entry {string}")
+    public void addEntryAt(String objectName, String rbelPath, String newEntry) {
         RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
-        rbelBuilder.setObjectAt(rbelPath, newObject);
+        rbelBuilder.addEntryAt(rbelPath, newEntry);
     }
 
     /**
@@ -102,7 +102,7 @@ public class RbelBuilderGlueCode {
      * @param value string value in enum
      * @return Enum value
      */
-    @ParameterType("XML|JSON|JWE|JWT|BEARER|URL")
+    @ParameterType("XML|JSON|JWE|JWT|BEARER_TOKEN|URL")
     public RbelContentType rbelContentType(String value) {
         return RbelContentType.seekValueFor(value);
     }

@@ -1,0 +1,15 @@
+<blub>
+    <foo>
+<<<<<<< HEAD
+        <bar>
+            <newKey1>newValue1</newKey1>
+            <newKey2>newValue2</newKey2>
+            <newKey3>newValue3</newKey3>
+        </bar>
+=======
+        <key>
+            value
+        </key>
+>>>>>>> rak/TGR-1003
+    </foo>
+</blub>

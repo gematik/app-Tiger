@@ -2,6 +2,14 @@
 
 # Release 2.2.1
 
+## Features
+
+* TGR-1000: RbelBuilder-Class to create Rbel objects from Files and Strings
+* TGR-1001: enable RbelPathExecutor functions for RbelContentTreeNode
+* TGR-1002: Place objects and String values at given paths in Rbel objects using RbelBuilder
+* TGR-1003: Jexl syntax for serialisation of Rbel objects
+* TGR-1004: Expand lists/arrays in Rbel objects
+
 ## Bugfixes
 
 * TGR-1110: Zion - XML-structures with nodes named 'text' can now be correctly serialized
@@ -9,6 +17,7 @@
 * TGR-1108: Allow nested JexlExpression in RbelPaths (up to one level!)
 * TGR-1112: Fixed that log contained a lot of "curl command unable to parse log" lines
 * TGR-1123: Fixed Rbellogs flood browser window with highlight js warnings rendering browser unusable for larger HTML report files 
+
 
 -------
 * Serenity BDD 3.6.23

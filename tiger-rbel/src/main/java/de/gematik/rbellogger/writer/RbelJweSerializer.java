@@ -24,6 +24,11 @@ public class RbelJweSerializer implements RbelSerializer {
         return renderToString(node, rbelWriter).getBytes();
     }
 
+    @Override
+    public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+        return render(node, rbelWriter);
+    }
+
     public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         final JsonWebEncryption jwe = new JsonWebEncryption();
 

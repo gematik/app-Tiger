@@ -55,7 +55,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
                     if (childNode.getType() == null && childNode.getKey().orElseThrow().equals("text")
                         && node.getType() != RbelContentType.XML) {
                         node.setContent(childNode.getContent());
-                        node.setChildNodes(List.of());
+                        node.setupChildNodes(List.of());
                         log.trace("pulling up node '{}'", node.getRawStringContent());
                     } else if (!childNode.hasTypeOptional(RbelContentType.XML).orElse(true)
                         && !childNode.getKey().orElseThrow().equals("text")) {
@@ -71,7 +71,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
                         childNodes.add(childNode);
                     }
                 }
-                node.setChildNodes(childNodes);
+                node.setupChildNodes(childNodes);
             }
             nodes.add(node);
         }

@@ -58,6 +58,9 @@ public class RbelSerializationResult {
     }
 
     public String getContentAsString() {
+        if(getContent() == null) {
+            return null;
+        }
         if (getCharset() != null) {
             return new String(getContent(), getCharset());
         } else {

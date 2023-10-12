@@ -51,6 +51,11 @@ public class RbelWriter {
                 .renderTree(input);
     }
 
+    public RbelSerializationResult renderNode(RbelContentTreeNode input, TigerJexlContext jexlContext) {
+        return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext)
+                .renderNode(input);
+    }
+
     private static void printTreeStructure(RbelContentTreeNode treeRootNode) {
         if (log.isDebugEnabled()) {
             GenericPrettyPrinter<RbelContentTreeNode> printer = new GenericPrettyPrinter<>(
@@ -90,15 +95,30 @@ public class RbelWriter {
             if (treeRootNode.getType() == null) {
                 return RbelSerializationResult.of(treeRootNode);
             }
+            final RbelSerializer rbelSerializer = prepareSerializer(treeRootNode);
+            return RbelSerializationResult.of(
+                rbelSerializer.render(treeRootNode, this),
+                treeRootNode.getType());
+        }
+
+        public RbelSerializationResult renderNode(RbelContentTreeNode treeRootNode) {
+            if (treeRootNode.getType() == null) {
+                return RbelSerializationResult.of(treeRootNode);
+            }
+            final RbelSerializer rbelSerializer = prepareSerializer(treeRootNode);
+            return RbelSerializationResult.of(
+                    rbelSerializer.renderNode(treeRootNode, this),
+                    treeRootNode.getType());
+        }
+
+        private RbelSerializer prepareSerializer(RbelContentTreeNode treeRootNode) {
             final RbelContentType determinedType = determineContentType(treeRootNode);
             treeRootNode.setType(determinedType);
             final RbelSerializer rbelSerializer = serializerMap.get(determinedType);
             if (rbelSerializer == null) {
                 throw new RbelSerializationException("Could not find serializer for content-type '" + treeRootNode.getType() + "'");
             }
-            return RbelSerializationResult.of(
-                rbelSerializer.render(treeRootNode, this),
-                treeRootNode.getType());
+            return rbelSerializer;
         }
 
         private RbelContentType determineContentType(RbelContentTreeNode treeRootNode) {
