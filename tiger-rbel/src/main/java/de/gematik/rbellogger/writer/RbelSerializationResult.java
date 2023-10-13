@@ -25,10 +25,11 @@ public class RbelSerializationResult {
             .build();
     }
 
-    public static RbelSerializationResult of(byte[] content, RbelContentType type) {
+    public static RbelSerializationResult of(byte[] content, RbelContentType type, Charset charset) {
         return RbelSerializationResult.builder()
             .content(content)
             .contentType(type)
+            .charset(charset)
             .build();
     }
 

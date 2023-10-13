@@ -13,6 +13,7 @@ import de.gematik.test.tiger.zion.config.ZionServerConfiguration;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
@@ -23,6 +24,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 @TigerServerType("zion")
 public class ZionServerType extends AbstractExternalTigerServer {
 
+    @Getter
     private ConfigurableApplicationContext applicationContext;
 
     public ZionServerType(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
@@ -82,7 +84,6 @@ public class ZionServerType extends AbstractExternalTigerServer {
     private int getServerPort() {
         return getZionConfiguration().getZionConfiguration().getServerPort();
     }
-
 
     private ZionServerConfiguration getZionConfiguration() {
         final CfgServer configuration = getConfiguration();

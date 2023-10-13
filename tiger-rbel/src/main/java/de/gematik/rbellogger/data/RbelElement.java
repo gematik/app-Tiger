@@ -37,7 +37,6 @@ public class RbelElement implements RbelContent {
     private final transient RbelElement parentNode;
     private final List<RbelFacet> facets = new ArrayList<>();
     @Setter
-    @Getter(AccessLevel.PRIVATE)
     private Optional<Charset> charset;
 
     private final long size;

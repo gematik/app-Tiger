@@ -28,9 +28,13 @@ public class RbelXmlSerializer implements RbelSerializer {
     @SneakyThrows
     public byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
         final Document document = DocumentHelper.createDocument();
+
         for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
             addNode(childNode, document, rbelWriter);
         }
+
+        addEncodingInformationIfMissing(document, treeRootNode);
+
         return convertDocumentToString(document, false);
     }
 
@@ -41,6 +45,12 @@ public class RbelXmlSerializer implements RbelSerializer {
             addNode(childNode, document, rbelWriter);
         }
         return convertDocumentToString(document, true);
+    }
+
+    private void addEncodingInformationIfMissing(Document document, RbelContentTreeNode treeRootNode) {
+        if (StringUtils.isEmpty(document.getXMLEncoding())) {
+            document.setXMLEncoding(treeRootNode.getElementCharset().displayName());
+        }
     }
 
     private void addNode(RbelContentTreeNode treeNode, Branch parentBranch, RbelWriterInstance rbelWriter) {
@@ -76,11 +86,11 @@ public class RbelXmlSerializer implements RbelSerializer {
         }
     }
 
-    private byte[] convertDocumentToString(Document document, boolean suppressDelaration) throws IOException {
+    private byte[] convertDocumentToString(Document document, boolean suppressDeclaration) throws IOException {
         final StringWriter resultWriter = new StringWriter();
 
         OutputFormat format = OutputFormat.createPrettyPrint();
-        format.setSuppressDeclaration(suppressDelaration);
+        format.setSuppressDeclaration(suppressDeclaration);
 
         XMLWriter writer = new XMLWriter(resultWriter, format);
         writer.write(document);

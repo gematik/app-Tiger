@@ -111,8 +111,8 @@ public class ZionRequestExecutor {
 
         final BodyBuilder responseBuilder = ResponseEntity
             .status(response.getResponse().getStatusCode());
-        serializationResult.flatMap(RbelSerializationResult::getContentType)
-            .map(RbelContentType::getContentTypeString)
+        serializationResult.flatMap(RbelSerializationResult::getMediaType)
+            .map(Object::toString)
             .map(MediaType::parseMediaType)
             .ifPresent(responseBuilder::contentType);
 

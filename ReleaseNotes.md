@@ -15,6 +15,7 @@
 * TGR-1110: Zion - XML-structures with nodes named 'text' can now be correctly serialized
 * TGR-971: Tiger Proxy UI - when applying filters, the list of senders and receivers is limited to the hosts which send or receive more than two messages. An additional checkbox allows displaying the full list of senders and receivers.
 * TGR-1108: Allow nested JexlExpression in RbelPaths (up to one level!)
+* TGR-1126: Zion - Honors the encoding information for XML
 * TGR-1112: Fixed that log contained a lot of "curl command unable to parse log" lines
 * TGR-1123: Fixed Rbellogs flood browser window with highlight js warnings rendering browser unusable for larger HTML report files 
 
