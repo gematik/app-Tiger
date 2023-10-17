@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 2.2.0-SNAPSHOT - 2023-09-26</span>
+<span id="revdate">Version 2.2.1-SNAPSHOT - 2023-10-17</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -284,9 +284,10 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_tiger_test_lib_configuration">5.1. Tiger test lib configuration</a></li>
 <li><a href="#_cucumber_hooks">5.2. Cucumber and Hooks</a></li>
 <li><a href="#_using_the_cucumber_tiger_validation_steps">5.3. Using the Cucumber Tiger validation steps</a></li>
-<li><a href="#_using_the_http_client_steps">5.4. Using the HTTP client steps</a></li>
-<li><a href="#_using_tiger_test_lib_helper_classes">5.5. Using Tiger test lib helper classes</a></li>
-<li><a href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.6. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
+<li><a href="#_modifying_rbelobjects_rbelbuilder">5.4. Modifying RbelObjects (RbelBuilder)</a></li>
+<li><a href="#_using_the_http_client_steps">5.5. Using the HTTP client steps</a></li>
+<li><a href="#_using_tiger_test_lib_helper_classes">5.6. Using Tiger test lib helper classes</a></li>
+<li><a href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.7. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -295,11 +296,12 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_key_translation">6.2. Key-translation</a></li>
 <li><a href="#_thread_based_configuration">6.3. Thread-based configuration</a></li>
 <li><a href="#_placeholders">6.4. Placeholders</a></li>
-<li><a href="#_localized_configuration">6.5. Localized configuration</a></li>
-<li><a href="#_examples">6.6. Examples</a></li>
-<li><a href="#_pre_defined_values">6.7. Pre-Defined values</a></li>
-<li><a href="#_inline_jexl">6.8. Inline JEXL</a></li>
-<li><a href="#_configuration_editor">6.9. Configuration Editor</a></li>
+<li><a href="#_fallback_values">6.5. Fallback values</a></li>
+<li><a href="#_localized_configuration">6.6. Localized configuration</a></li>
+<li><a href="#_examples">6.7. Examples</a></li>
+<li><a href="#_pre_defined_values">6.8. Pre-Defined values</a></li>
+<li><a href="#_inline_jexl">6.9. Inline JEXL</a></li>
+<li><a href="#_configuration_editor">6.10. Configuration Editor</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_user_interfaces">7. Tiger User interfaces</a>
@@ -3012,6 +3014,9 @@ For each received traffic data pair (request/response) the Tiger Proxy will push
 <p>The expression in the round-brackets is interpreted as JEXL. The available syntax is described in more detail here: <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html" class="bare">https://commons.apache.org/proper/commons-jexl/reference/syntax.html</a></p>
 </div>
 <div class="paragraph">
+<p>Please note that these Jexl-Expression can not be nested inside each other deeper then one level (You can write a RbelPath that contains a Jexl-Expression. And this Jexl-Expression can even contain a RbelPath. But the inner RbelPath can not contain another Jexl-Expression).</p>
+</div>
+<div class="paragraph">
 <p>The variables that can be used are listed below:</p>
 </div>
 <div class="ulist">
@@ -3479,13 +3484,94 @@ construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up
 </div>
 </div>
 <div class="sect2">
-<h3 id="_using_the_http_client_steps">5.4. Using the HTTP client steps</h3>
+<h3 id="_modifying_rbelobjects_rbelbuilder">5.4. Modifying RbelObjects (RbelBuilder)</h3>
+<div class="sect3">
+<h4 id="_introduction">5.4.1. Introduction</h4>
+<div class="paragraph">
+<p>Tiger supports modifying JSON, XML and several token formats. After loading in an object from a string<br>
+or a file the RbelObject can be modified in multiple ways:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Changing a primitive value at a certain path</p>
+</li>
+<li>
+<p>replacing a primitive node by an object node and vice versa</p>
+</li>
+<li>
+<p>adding new nodes and primitive values as child path of an existing path</p>
+</li>
+<li>
+<p>adding new nodes to an array/list</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>After the adjustments the values of the modified RbelElements can be asserted. The object can be<br>
+serialised back to a string. Jexl Expressions are implemented, as for reading a file or for serializing:<br>
+<code>'!{rbelObject:serialize("myRbelObject")}'</code></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_list_of_all_possible_steps">5.4.2. List of all possible Steps</h4>
+<div class="listingblock">
+<div class="title">Listing 17. Using the Rbel builder steps</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// extracted from module /tiger-test-lib</span>
+<span class="comment">// /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java</span>
+Unresolved directive in tigerTestLibrary.adoc - include::./RbelBuilderGlueCodeCommentsOnly.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_usage_examples">5.4.3. Usage examples</h4>
+<div class="listingblock">
+<div class="title">Listing 18. Tiger Rbel Builder steps example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="gherkin">Feature Tiger validation steps
+
+  Scenario: Example steps
+
+    Given TGR clear recorded messages
+    And TGR filter requests based on host &quot;testnode.example.org&quot;
+    And TGR filter requests based on method &quot;POST&quot;
+    And TGR set request wait timeout to 20 seconds
+    When TGR find request to path &quot;/path/path/blabla&quot; with &quot;$..tag.value.text&quot; matching &quot;abc.*&quot;
+    And TGR find request to path &quot;/path/path/blabla&quot; containing node &quot;$..tag&quot;
+    Then TGR current response with attribute &quot;$..answer.result.text&quot; matches &quot;OK.*&quot;
+    But TGR current response with attribute &quot;$..answer.reason.text&quot; does not match &quot;REQUEST.*&quot;
+    And TGR current response body matches:
+    &quot;&quot;&quot;
+         body content
+        &quot;&quot;&quot;
+    And TGR current response at &quot;$..tag&quot; matches as JSON:
+    &quot;&quot;&quot;
+          {
+            &quot;arr1&quot;: [
+              &quot;asso&quot;, &quot;bsso&quot;
+            ]
+          }
+        &quot;&quot;&quot;
+    And TGR current response at &quot;$..tag&quot; matches as XML:
+    &quot;&quot;&quot;
+          &lt;arr1&gt;
+            &lt;entry index=&quot;1&quot;&gt;asso&lt;/entry&gt;
+            &lt;entry index=&quot;2&quot;&gt;bsso&lt;/entry&gt;
+          &lt;/arr1&gt;
+        &quot;&quot;&quot;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_using_the_http_client_steps">5.5. Using the HTTP client steps</h3>
 <div class="paragraph">
 <p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP<br>
 requests, with bodies, default and custom headers.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Tiger response validation steps example</div>
+<div class="title">Listing 19. Tiger response validation steps example</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
 
@@ -3738,7 +3824,7 @@ Please note that checking whether a nested key is optional, is not yet possible 
 <p>It should also be noted, that although JSONChecker can match multilevel JSON objects at a high level, it is not yet possible to access nested attributes out of the box. We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 20. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">  {
     <span class="key"><span class="delimiter">&quot;</span><span class="content">alg</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">dir</span><span class="delimiter">&quot;</span></span>,
@@ -3783,7 +3869,7 @@ only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_validation_glue_code">5.4.4. Complete set of steps in validation glue code</h4>
+<h4 id="_complete_set_of_steps_in_validation_glue_code">5.5.4. Complete set of steps in validation glue code</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// extracted from module /tiger-test-lib</span>
@@ -4082,7 +4168,7 @@ only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_http_client_glue_code">5.4.5. Complete set of steps in HTTP client glue code</h4>
+<h4 id="_complete_set_of_steps_in_http_client_glue_code">5.5.5. Complete set of steps in HTTP client glue code</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// extracted from module /tiger-test-lib</span>
@@ -4289,7 +4375,7 @@ only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_exemplaric_scenario_konnektorfarm_eau_validation">5.4.6. Exemplaric scenario Konnektorfarm EAU validation</h4>
+<h4 id="_exemplaric_scenario_konnektorfarm_eau_validation">5.5.6. Exemplaric scenario Konnektorfarm EAU validation</h4>
 <div class="paragraph">
 <p>The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable. For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.<br>
 Any message that is forwarded by any of these proxies is forwarded to an aggregating Tiger Proxy which in turn forwards all the received messages to the local Tiger Proxy for assertion via the validation test suite.</p>
@@ -4312,7 +4398,7 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 </div>
 </div>
 <div class="sect3">
-<h4 id="_workflow_ui">5.4.7. Workflow UI</h4>
+<h4 id="_workflow_ui">5.5.7. Workflow UI</h4>
 <div class="paragraph">
 <p>The Workflow UI is one of the new features which are currently introduced to Tiger. If activated via the <code>tiger.yaml</code> configuration file (see <a href="#_tiger_test_lib_configuration">Tiger test lib configuration</a>), the Workflow UI will be opened in the current browser window during the test run.<br>
 If no browser is open at the time a new instance will be launched.</p>
@@ -4341,7 +4427,7 @@ The image below shows all three sections of the Workflow UI.</p>
 This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Current message steps for Workflow UI</div>
+<div class="title">Listing 21. Current message steps for Workflow UI</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// copied from module /tiger-test-lib</span>
 <span class="comment">// /src/test/java/de/gematik/test/tiger/glue/TigerGlue.java</span>
@@ -4419,7 +4505,7 @@ The step "wait for user abort" allows to pause the validation test suite and is 
 </div>
 </div>
 <div class="sect2">
-<h3 id="_using_tiger_test_lib_helper_classes">5.5. Using Tiger test lib helper classes</h3>
+<h3 id="_using_tiger_test_lib_helper_classes">5.6. Using Tiger test lib helper classes</h3>
 <div class="paragraph">
 <p>If you don&#8217;t want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:</p>
 </div>
@@ -4436,7 +4522,7 @@ All classes listed here are part of the tiger-common module
 </table>
 </div>
 <div class="sect3">
-<h4 id="_banner">5.5.1. Banner</h4>
+<h4 id="_banner">5.6.1. Banner</h4>
 <div class="paragraph">
 <p>If you want to use large ASCII art style log banners you may find this class very helpful.<br>
 Supports ANSI coloring and a set of different fonts. Furthermore, all banner messages are displayed and highlighted in the Workflow UI<br>
@@ -4444,19 +4530,19 @@ For more details please check the code and its usages in the Tiger test framewor
 </div>
 </div>
 <div class="sect3">
-<h4 id="_tigerserializationutil">5.5.2. TigerSerializationUtil</h4>
+<h4 id="_tigerserializationutil">5.6.2. TigerSerializationUtil</h4>
 <div class="paragraph">
 <p>This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps. If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described <a href="#_tiger_configuration">in detail here</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_tigerpkiidentityloader_tigerpkiidentity">5.5.3. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
+<h4 id="_tigerpkiidentityloader_tigerpkiidentity">5.6.3. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
 <div class="paragraph">
 <p>The loader class allows to easily instantiate PKI identities from given files. For more details on the format and the supported file types please check <a href="#_configuring_pki_identities_in_tiger_proxys_tls_section">this section in the test environment chapter</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_performing_rest_calls_with_tiger">5.5.4. Performing REST calls with Tiger</h4>
+<h4 id="_performing_rest_calls_with_tiger">5.6.4. Performing REST calls with Tiger</h4>
 <div class="paragraph">
 <p>Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the <code>SerenityRest</code> helper class, you will get detailed information about each call inside the test report.<br>
 The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.</p>
@@ -4477,7 +4563,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 </div>
 </div>
 <div class="sect2">
-<h3 id="_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.6. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
+<h3 id="_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.7. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
 <div class="paragraph">
 <p>Within gematik we maintain test cases via feature files being committed to git repositories. To keep traceability to the requirements maintained in Polarion we have a Tiger sub project that synchronizes test cases in Polarion with the scenarios in our feature files. It is a one way synchronisation, where the master are the feature files.</p>
 </div>
@@ -4615,6 +4701,9 @@ The Tiger test library configuration also provides a flag to add curl command de
 <li>
 <p>Names are compared without considering the case.</p>
 </li>
+<li>
+<p>Keys that contain '{', '}' or '|' are forbidden. To allow a clean startup on systems that have values like this configured the given characters are replaced by '_'.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -4644,7 +4733,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 <p>You could achieve this by exporting the URL (<code>servers.myServer.exports</code>) and referencing it in an argument which is passed into server "B" (<code>serverAUrl=${serverA.url}</code>. The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Configuring using placeholders and exports</div>
+<div class="title">Listing 22. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">servers</span>:
   <span class="key">serverAInternet</span>:
@@ -4690,7 +4779,19 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect2">
-<h3 id="_localized_configuration">6.5. Localized configuration</h3>
+<h3 id="_fallback_values">6.5. Fallback values</h3>
+<div class="paragraph">
+<p>Sometimes a default value is desired when a given key is not set. To define such a value, just use the pipe (|) after the key, like so:</p>
+</div>
+<div class="paragraph">
+<p><code>${foo.bar|orThisValue}</code></p>
+</div>
+<div class="paragraph">
+<p>This will first test for the presence of "foo.bar" as a configuration key. If that key is not found, the fallback value "orThisValue" will be used.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_localized_configuration">6.6. Localized configuration</h3>
 <div class="paragraph">
 <p>Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else. By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice. To give you greater control over scope-behavior use the <code>.localScope()</code>-method:</p>
 </div>
@@ -4708,17 +4809,17 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect2">
-<h3 id="_examples">6.6. Examples</h3>
+<h3 id="_examples">6.7. Examples</h3>
 <div class="paragraph">
 <p>Some examples to clarify:</p>
 </div>
 <div class="sect3">
-<h4 id="_example_1">6.6.1. Example 1</h4>
+<h4 id="_example_1">6.7.1. Example 1</h4>
 <div class="paragraph">
 <p>Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 23. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -4736,12 +4837,12 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect3">
-<h4 id="_example_2">6.6.2. Example 2</h4>
+<h4 id="_example_2">6.7.2. Example 2</h4>
 <div class="paragraph">
 <p>In the above example let&#8217;s say you only want to customize the port. This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 24. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -4759,14 +4860,14 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect3">
-<h4 id="_example_3">6.6.3. Example 3</h4>
+<h4 id="_example_3">6.7.3. Example 3</h4>
 <div class="paragraph">
 <p>Now we want to assert that the reply coming from the server has the correct backend-url in the XML that is returned to the sender.<br>
 To do this we have to reference the configured URL from above, since the value could be different on every execution.<br>
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. The testsuite</div>
+<div class="title">Listing 25. The testsuite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="Gherkin">    TGR current response with attribute &quot;$.body.ReplyStructure.Header.Sender.url&quot; matches &quot;http://127.0.0.1:${backend.server.port}&quot;</code></pre>
 </div>
@@ -4777,7 +4878,7 @@ We can solve this using placeholders:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_pre_defined_values">6.7. Pre-Defined values</h3>
+<h3 id="_pre_defined_values">6.8. Pre-Defined values</h3>
 <div class="paragraph">
 <p>Tiger adds some pre-defined values to make your life easier configuring the environment.<br>
 Currently these are:</p>
@@ -4792,7 +4893,7 @@ This enables side effect free execution of the testsuite.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_inline_jexl">6.8. Inline JEXL</h3>
+<h3 id="_inline_jexl">6.9. Inline JEXL</h3>
 <div class="paragraph">
 <p>In addition to the <code>${foo.bar}</code> syntax allowing the retrieval of configuration values there exists the <code>!{'foo' != 'bar'}</code> syntax allowing the execution of JEXL expressions.<br>
 The JEXL-syntax is described in more depth here: <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html" class="bare">https://commons.apache.org/proper/commons-jexl/reference/syntax.html</a></p>
@@ -4802,7 +4903,7 @@ The JEXL-syntax is described in more depth here: <a href="https://commons.apache
 You will find two predefined namespaces and also the ability to add your own, allowing further customization.</p>
 </div>
 <div class="sect3">
-<h4 id="_the_default_namespace">6.8.1. The default namespace</h4>
+<h4 id="_the_default_namespace">6.9.1. The default namespace</h4>
 <div class="paragraph">
 <p>The default-namespace of the inline JEXL-expression carries the following functions:</p>
 </div>
@@ -4853,7 +4954,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="_the_rbel_namespace">6.8.2. The rbel namespace</h4>
+<h4 id="_the_rbel_namespace">6.9.2. The rbel namespace</h4>
 <div class="paragraph">
 <p>To give you direct access to the messages sent please use the rbel-namespace:</p>
 </div>
@@ -4886,14 +4987,14 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="_adding_custom_namespaces">6.8.3. Adding custom namespaces</h4>
+<h4 id="_adding_custom_namespaces">6.9.3. Adding custom namespaces</h4>
 <div class="paragraph">
 <p>You can easily register additional namespaces by calling <code>TigerJexlExecutor.registerAdditionalNamespace(&lt;namespace-prefix&gt;, &lt;namespace class or object)</code>.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuration_editor">6.9. Configuration Editor</h3>
+<h3 id="_configuration_editor">6.10. Configuration Editor</h3>
 <div class="paragraph">
 <p>The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the <a href="#_workflow_ui">Workflow UI</a> and can be opened by clicking the gears icon in the sidebar (<a href="#editor_start_button">Figure 15</a>).</p>
 </div>
@@ -5236,7 +5337,7 @@ It can be used both as a standalone server or as a server directly inside of tig
 We do this as part of a tiger testsuite.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 24. tiger.yaml</div>
+<div class="title">Listing 26. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5279,7 +5380,7 @@ And please return it as an XML!</p>
 So we reference an external file, where we do the heavy lifting:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 25. tiger.yaml</div>
+<div class="title">Listing 27. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5297,7 +5398,7 @@ So we reference an external file, where we do the heavy lifting:</p>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 26. complicatedResponse.xml</div>
+<div class="title">Listing 28. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -5363,7 +5464,7 @@ So to access it directly, use <code>${myLoopVariable}</code>.<br>
 You can then also combine the loop-variable with JEXL like so:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 27. complicatedResponse.xml</div>
+<div class="title">Listing 29. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
 &lt;requestDescription&gt;
@@ -5399,7 +5500,7 @@ You can then also combine the loop-variable with JEXL like so:</p>
 <p>To make the presence of elements conditional you can use the <code>tgrIf</code> statement. Consider the following example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 28. complicatedResponse.xml</div>
+<div class="title">Listing 30. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -5424,7 +5525,7 @@ You can then also combine the loop-variable with JEXL like so:</p>
 The result must be of type boolean. Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree. This can be done via an attribute in XML, but it can also be done using a tag:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 29. complicatedResponse.xml</div>
+<div class="title">Listing 31. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -5464,7 +5565,7 @@ The following example should clarify the mechanism:</p>
 <p>We want measure the length of the response by google to a query:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 30. tiger.yaml</div>
+<div class="title">Listing 32. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5512,7 +5613,7 @@ This allows subdividing responses.<br>
 Consider the following example, where we check the password of the calling party (which is given in cleartext in the request header).</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 31. tiger.yaml</div>
+<div class="title">Listing 33. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5551,7 +5652,7 @@ Rather you have to specify the importance of a response, with a higher number me
 <p>In many REST-Apis it is usual to include variables as part of the resource path. Zion allows to configure a response that will match a path and extract the given variables. The assigned values can then be used in the response or be used in additional matching criteria. Here is an example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 32. tiger.yaml</div>
+<div class="title">Listing 34. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5589,7 +5690,7 @@ Rather you have to specify the importance of a response, with a higher number me
 <p>The matching of paths using the <code>request</code> configuration can also be made using nested responses. The path to match will combine paths specified in the different levels of the nested response. For example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 33. tiger.yaml</div>
+<div class="title">Listing 35. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -5636,7 +5737,7 @@ You can also embed one into the other.</p>
 For this we use the following response body file:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 34. complicatedResponse.json</div>
+<div class="title">Listing 36. complicatedResponse.json</div>
 <div class="content">
 <pre class="CodeRay highlight"><code>{
   &quot;myToken&quot;: {
@@ -6102,7 +6203,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-09-26 06:18:22 UTC
+Last updated 2023-10-17 18:01:14 UTC
 </div>
 </div>
 </body>
