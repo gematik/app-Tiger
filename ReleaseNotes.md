@@ -19,6 +19,7 @@
 * TGR-1126: Zion - Honors the encoding information for XML
 * TGR-1112: Fixed that log contained a lot of "curl command unable to parse log" lines
 * TGR-1123: Fixed Rbellogs flood browser window with highlight js warnings rendering browser unusable for larger HTML report files 
+* TGR-1141: Fixed bug in Workflow Ui causing received CETP messages to stop displaying further messages. Also improved display of CETP messages (out of line title)
 * All Spinner icons in Workflow UI are now animated
 
 

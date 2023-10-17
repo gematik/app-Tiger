@@ -4,19 +4,21 @@
 
 package de.gematik.rbellogger.renderer;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
-import static j2html.TagCreator.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
+import org.apache.commons.lang3.StringUtils;
+
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
+
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
+import static j2html.TagCreator.*;
 
 public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
@@ -87,6 +89,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         final Optional<RbelHttpMessageFacet> httpMessageFacet = element.getFacet(RbelHttpMessageFacet.class);
         final Optional<RbelHttpRequestFacet> httpRequestFacet = element.getFacet(RbelHttpRequestFacet.class);
         final Optional<RbelHttpResponseFacet> httpResponseFacet = element.getFacet(RbelHttpResponseFacet.class);
+        final Optional<RbelCetpFacet> cetpFacet = element.getFacet(RbelCetpFacet.class);
         final Optional<Boolean> isRequest = determineIsRequest(element);
         //////////////////////////////// TITLE (+path, response-code...) //////////////////////////////////
         List<DomContent> messageTitleElements = new ArrayList<>();
@@ -109,6 +112,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                 httpResponseFacet.map(response ->
                     span(response.getResponseCode().getRawStringContent())
                         .withClass("font-monospace title ms-3")
+                ).orElse(span("")),
+                cetpFacet.map(facet -> span("CETP").withClass("font-monospace title ms-3")
                 ).orElse(span("")),
                 span().with(
                     buildTimingInfo(element), buildAddressInfo(element)

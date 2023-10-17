@@ -865,16 +865,22 @@ function shortenStrings(obj) {
 }
 
 function updateHidingForMessageElement(messageElement) {
-  setCollapsableIcon(
-      messageElement.getElementsByClassName("header-toggle")[0],
-      collapseMessageHeaders);
-  messageElement.getElementsByClassName("msg-header-content")[0].classList
-  .toggle('d-none', collapseMessageHeaders);
-  setCollapsableIcon(
-      messageElement.getElementsByClassName("msg-toggle")[0],
-      collapseMessageDetails);
-  messageElement.getElementsByClassName("msg-content")[0].classList
-  .toggle('d-none', collapseMessageDetails);
+  let elems = messageElement.getElementsByClassName("header-toggle")
+  if (elems.length) {
+    setCollapsableIcon(elems[0], collapseMessageHeaders)
+  }
+  elems = messageElement.getElementsByClassName("msg-header-content")
+  if (elems.length) {
+    elems[0].classList.toggle('d-none', collapseMessageHeaders)
+  }
+  elems = messageElement.getElementsByClassName("msg-toggle")
+  if (elems.length) {
+    setCollapsableIcon(elems[0], collapseMessageDetails)
+  }
+  elems = messageElement.getElementsByClassName("msg-content")
+  if (elems.length) {
+    elems[0].classList.toggle('d-none', collapseMessageDetails)
+  }
 }
 
 function addMessageToMainView(msgHtmlData) {
