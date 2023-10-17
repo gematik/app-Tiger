@@ -19,6 +19,7 @@
 * TGR-1126: Zion - Honors the encoding information for XML
 * TGR-1112: Fixed that log contained a lot of "curl command unable to parse log" lines
 * TGR-1123: Fixed Rbellogs flood browser window with highlight js warnings rendering browser unusable for larger HTML report files 
+* All Spinner icons in Workflow UI are now animated
 
 
 -------

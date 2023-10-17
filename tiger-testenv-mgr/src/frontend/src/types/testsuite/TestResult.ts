@@ -41,7 +41,7 @@ export function getTestResultIcon(testResult: string, iconFamily: string): strin
   } else if (testResult === 'EXECUTING') {
     return 'fa-solid fa-spinner blue fa-spin test-running'; // there is no regular for spinner
   } else if (testResult === 'PENDING') {
-    return 'fa-solid fa-spinner test-pending'; // there is no regular for spinner
+    return 'fa-solid fa-spinner fa-spin test-pending'; // there is no regular for spinner
   } else {
     return 'fa-circle-question fa-' + iconFamily;
   }

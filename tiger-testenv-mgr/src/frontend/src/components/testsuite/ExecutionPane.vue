@@ -11,7 +11,7 @@
             <div class="mt-2 small text-muted text-end" id="test-execution-pane-date">Started: {{ started }}</div>
             <div id="execution_table" class="pt-1">
                 <div v-if="featureUpdateMap.size === 0" class="alert w-100 text-center" style="height: 200px;">
-                    <i class="fa-solid fa-spinner left fa-2x"></i> Waiting for first Feature / Scenario to start...
+                    <i class="fa-solid fa-spinner fa-spin left fa-2x"></i> Waiting for first Feature / Scenario to start...
                 </div>
                 <div v-else class="w-100">
                     <div v-for="(feature, key) in featureUpdateMap" :key="key">
@@ -63,7 +63,7 @@
                                         <div v-html="step[1].description"></div>
                                         <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
                                             <div v-if="rbelmsg.method" class="rbelmessage">
-                                                <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, rbelmsg.sequenceNumber, $event)"
+                                                <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, '' + rbelmsg.sequenceNumber, $event)"
                                                    href="#" class="badge rbelDetailsBadge test-rbel-link">
                                                     {{ rbelmsg.sequenceNumber + 1 }}
                                                 </a>
@@ -94,7 +94,7 @@
                 <img alt="RBel logo" src="img/rbellog.png" class="rbel-logo" id="test-rbel-logo">
                 Rbel Log Details
                 <a v-if="localProxyWebUiUrl" :href="`${localProxyWebUiUrl}`" target="poxywebui" id="test-rbel-webui-url">
-                    <i class="fa-solid fa-up-right-from-square" alt="pop out pane"></i>
+                    <i class="fa-solid fa-up-right-from-square" title="pop out pane"></i>
                 </a>
             </h2>
             <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100"
@@ -105,6 +105,8 @@
             </div>
         </div>
     </div>
+  <!-- to avoid the build chain removing these css class definitions -->
+  <span class="blue step_status step_text d-none"></span>
 </template>
 
 <script setup lang="ts">

@@ -17,7 +17,8 @@ export default defineComponent({
 
 <style lang="css">
 .left, i.fa.left, i.far.left, i.fas.left, i.fa-solid.left {
-  padding-right: 0.5rem;
+  margin-right: 0.5rem;
+  padding-right: 0;
 }
 
 .right, i.fa.right, i.far.right, i.fas.right, i.fa-solid.right {
