@@ -55,7 +55,7 @@ class TestCetpCommunication extends AbstractNonHttpTest {
             socket -> {
                 writeSingleRequestMessage(socket);
                 await().atMost(5, TimeUnit.SECONDS).pollInterval(100, TimeUnit.MILLISECONDS)
-                    .until(() -> getTigerProxy().getRbelMessages().size() >= 1);
+                    .until(() -> !getTigerProxy().getRbelMessages().isEmpty());
                 writeSingleRequestMessage(socket);
             },
             (requestCalls, responseCalls, serverCalled) -> {

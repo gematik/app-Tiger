@@ -16,10 +16,13 @@
 
 package de.gematik.test.tiger.common.config;
 
+import java.util.List;
 import lombok.Data;
 
 @Data
 public class TigerConfigurationKeyString {
+    private final static List<Character> FORBIDDEN_CHARACTERS = List.of('{', '}', '|');
+
     private final String value;
 
     @Override
@@ -41,6 +44,9 @@ public class TigerConfigurationKeyString {
     }
 
     public static TigerConfigurationKeyString wrapAsKey(String value){
+        for (Character c : FORBIDDEN_CHARACTERS) {
+            value = value.replace(c, '_');
+        }
         return new TigerConfigurationKeyString(value);
     }
 

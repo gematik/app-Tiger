@@ -1,48 +1,44 @@
 package de.gematik.test.tiger.glue;
 
-import de.gematik.test.tiger.lib.rbel.RbelBuilder;
+import de.gematik.rbellogger.builder.RbelBuilder;
+import de.gematik.rbellogger.builder.RbelBuilderManager;
+import de.gematik.rbellogger.builder.RbelObjectJexl;
+import de.gematik.rbellogger.data.RbelSerializationAssertion;
+import de.gematik.rbellogger.writer.RbelContentType;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import io.cucumber.java.ParameterType;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
-
-import java.util.HashMap;
+import lombok.SneakyThrows;
 
 import static junit.framework.TestCase.assertEquals;
 
 public class RbelBuilderGlueCode {
 
-    private final HashMap<String, RbelBuilder> rbelBuilders = new HashMap<>();
+    private final RbelBuilderManager rbelBuilders = new RbelBuilderManager();
 
     /**
-     * Creates a new Rbel object with a given key and string content
+     * Creates a new Rbel object with a given key and string content; the string can be a jexl expression
      * @param name key of Rbel object
-     * @param content content of Rbel object
+     * @param content content of Rbel object, or jexl expression resolving to one
      */
     @Gegebensei("TGR erstellt ein neues Rbel-Objekt {string} mit Inhalt {string}")
     @Given("TGR creates a new Rbel object {string} with content {string}")
     public void createFromContent(String name, String content) {
-        rbelBuilders.put(name, RbelBuilder.fromString(content));
+        String resolvedString = TigerGlobalConfiguration.resolvePlaceholders(content);
+        rbelBuilders.put(name, RbelBuilder.fromString(resolvedString));
     }
 
     /**
      * Creates a new empty Rbel object
-     */
-    @Gegebensei("TGR erstellt ein neues leeres Rbel-Objekt {string}")
-    @Given("TGR creates a new empty Rbel object {string}")
-    public void createFromScratch(String name) {
-        rbelBuilders.put(name, RbelBuilder.fromScratch());
-    }
-
-    /**
-     * Creates a new Rbel object with a given key and content from a given file
      * @param name key of Rbel object
-     * @param filePath path to file with content
      */
-    @Gegebensei("TGR erstellt ein neues Rbel-Objekt {string} aus der Datei {string}")
-    @Given("TGR creates a new Rbel object {string} from file {string}")
-    public void createFromFile(String name, String filePath) {
-        rbelBuilders.put(name, RbelBuilder.fromFile(filePath));
+    @Gegebensei("TGR erstellt ein neues leeres Rbel-Objekt {string} mit Typ {rbelContentType}")
+    @Given("TGR creates a new empty Rbel object {string} of type {rbelContentType}")
+    public void createFromScratch(String name, RbelContentType type) {
+        rbelBuilders.put(name, RbelBuilder.fromScratch(type));
     }
 
     /**
@@ -59,16 +55,16 @@ public class RbelBuilderGlueCode {
     }
 
     /**
-     * Sets an object at a specified path; requires proper formatting with key/value
-     * @param objectName name of object in rbelBuilders
-     * @param rbelPath path which is to be set
-     * @param newObject new object to be set
+     * Adds a new entry to an array or a list of a Rbel object at a specific path
+     * @param objectName name of Rbel object
+     * @param rbelPath path of array/list
+     * @param newEntry new entry
      */
-    @Wenn("TGR setzt Rbel-Objekt {string} an Stelle {string} auf neues Objekt {string}")
-    @When("TGR sets Rbel object {string} at {string} to new object {string}")
-    public void setObjectAt(String objectName, String rbelPath, String newObject) {
+    @Wenn("TGR ergänzt Rbel-Objekt {string} an Stelle {string} um {string}")
+    @When("TGR extends Rbel object {string} at path {string} by a new entry {string}")
+    public void addEntryAt(String objectName, String rbelPath, String newEntry) {
         RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
-        rbelBuilder.setObjectAt(rbelPath, newObject);
+        rbelBuilder.addEntryAt(rbelPath, newEntry);
     }
 
     /**
@@ -82,5 +78,32 @@ public class RbelBuilderGlueCode {
     public void assertValueAtEquals(String objectName, String rbelPath, String expectedValue) {
         RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
         assertEquals(expectedValue, rbelBuilder.getTreeRootNode().findElement(rbelPath).orElseThrow().getRawStringContent());
+    }
+
+    /**
+     * Asserts, if 2 Rbel object serializations are equal
+     * @param jexlExpressionActual actual value
+     * @param jexlExpressionExpected expected value
+     * @param contentType type of Rbel object content for comparison
+     */
+    @SneakyThrows
+    @Wenn("TGR prüft, dass {string} gleich {string} mit Typ {rbelContentType} ist")
+    @When("TGR asserts {string} equals {string} of type {rbelContentType}")
+    public void assertJexlOutputEquals(String jexlExpressionActual, String jexlExpressionExpected, RbelContentType contentType) {
+        RbelObjectJexl.initJexl(rbelBuilders);
+        String actualRbelObject = TigerGlobalConfiguration.resolvePlaceholders(jexlExpressionActual);
+        String expectedRbelObject = TigerGlobalConfiguration.resolvePlaceholders(jexlExpressionExpected);
+
+        RbelSerializationAssertion.assertEquals(expectedRbelObject, actualRbelObject, contentType);
+    }
+
+    /**
+     * replaces String values with its enum value in {@link RbelContentType}
+     * @param value string value in enum
+     * @return Enum value
+     */
+    @ParameterType("XML|JSON|JWE|JWT|BEARER_TOKEN|URL")
+    public RbelContentType rbelContentType(String value) {
+        return RbelContentType.seekValueFor(value);
     }
 }

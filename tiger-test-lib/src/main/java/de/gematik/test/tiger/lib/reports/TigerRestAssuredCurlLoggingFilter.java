@@ -24,11 +24,12 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.FilterableRequestSpecification;
 import io.restassured.specification.FilterableResponseSpecification;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TigerRestAssuredCurlLoggingFilter implements Filter {
@@ -46,23 +47,25 @@ public class TigerRestAssuredCurlLoggingFilter implements Filter {
     }
 
     public synchronized void printToReport() {
-        int callCounter = 0;
         String raLog = outputStream.toString(StandardCharsets.UTF_8);
+        outputStream.reset();
+
+        if (raLog.isEmpty()) {
+            return;
+        }
+        int callCounter = 0;
         final List<String> listOfCurlCalls = RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(raLog);
         for (String callLog : listOfCurlCalls) {
             String curlCommand = RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(callLog);
             if (TigerDirector.isSerenityAvailable(true) && !curlCommand.isEmpty()) {
                 String title = "cURL";
                 if (listOfCurlCalls.size() > 1) {
-                    title = title + String.format("%3d", callCounter++);
+                    title += " " + String.format("%3d", callCounter++); // 3 digit zero padded counter string
                 }
-                log.info("cURL command: " + curlCommand);
-                log.debug("RestAssured details:\n" + callLog);
+                log.debug("RestAssured details for cURL command:\n{}", callLog);
                 SerenityReportUtils.addCustomData(title, curlCommand);
             }
         }
-        outputStream.reset();
-
     }
 
     @Override

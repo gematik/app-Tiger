@@ -22,4 +22,6 @@ import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 public interface RbelSerializer {
     byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter);
 
+    byte[] renderNode(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter);
+
 }

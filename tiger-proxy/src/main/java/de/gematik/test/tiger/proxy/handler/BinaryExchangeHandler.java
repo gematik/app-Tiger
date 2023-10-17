@@ -28,6 +28,7 @@ import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -62,11 +63,13 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                 });
             }
             binaryResponseFuture
-                .thenApply(binaryResponse -> convertBinaryMessageOrPushToBuffer(binaryResponse, serverAddress, clientAddress))
+                .thenApply(
+                    binaryResponse -> convertBinaryMessageOrPushToBuffer(binaryResponse, serverAddress, clientAddress))
                 .thenAccept(convertedResponse -> {
                     if (shouldWaitForResponse) {
                         if (convertedResponse.isPresent() && convertedRequest.isPresent()) {
-                            final TracingMessagePairFacet pairFacet = new TracingMessagePairFacet(convertedResponse.get(), convertedRequest.get());
+                            final TracingMessagePairFacet pairFacet = new TracingMessagePairFacet(
+                                convertedResponse.get(), convertedRequest.get());
                             convertedRequest.get().addFacet(pairFacet);
                             convertedResponse.get().addFacet(pairFacet);
                             getTigerProxy().triggerListener(convertedRequest.get());
@@ -86,8 +89,12 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                     }
                 })
                 .exceptionally(t -> {
-                    log.warn("Exception during Direct-Proxy handling:", t);
-                    propagateExceptionMessageSafe(t);
+                    if (isConnectionResetException(t)) {
+                        log.trace("Connection reset:", t);
+                    } else {
+                        log.warn("Exception during Direct-Proxy handling:", t);
+                        propagateExceptionMessageSafe(t);
+                    }
                     return null;
                 });
             log.trace("Returning from BinaryExchangeHandler!");
@@ -96,6 +103,12 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
             propagateExceptionMessageSafe(e);
             throw e;
         }
+    }
+
+    private static boolean isConnectionResetException(Throwable t) {
+        return TigerExceptionUtils.getCauseWithType(t, SocketException.class)
+            .filter(e -> "Connection reset".equals(e.getMessage()))
+            .isPresent();
     }
 
     private boolean shouldWaitForResponse(Optional<RbelElement> convertedRequest) {
@@ -111,7 +124,8 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
         if (message == null) {
             return Optional.empty();
         }
-        Optional<RbelElement> rbelMessageOptional = tryToConvertMessageAndBufferUnusedBytes(message, senderAddress, receiverAddress);
+        Optional<RbelElement> rbelMessageOptional = tryToConvertMessageAndBufferUnusedBytes(message, senderAddress,
+            receiverAddress);
         if (rbelMessageOptional.isEmpty()) {
             return Optional.empty();
         }
@@ -128,9 +142,11 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
         return rbelMessageOptional;
     }
 
-    private Optional<RbelElement> tryToConvertMessageAndBufferUnusedBytes(BinaryMessage message, SocketAddress senderAddress,
+    private Optional<RbelElement> tryToConvertMessageAndBufferUnusedBytes(BinaryMessage message,
+        SocketAddress senderAddress,
         SocketAddress receiverAddress) {
-        final Optional<RbelElement> requestOptional = tryToConvertMessage(message.getBytes(), senderAddress, receiverAddress)
+        final Optional<RbelElement> requestOptional = tryToConvertMessage(message.getBytes(), senderAddress,
+            receiverAddress)
             .or(() -> addBufferToMessage(message, senderAddress, receiverAddress)
                 .flatMap(addedBufferBytes -> tryToConvertMessage(addedBufferBytes, senderAddress, receiverAddress)));
         if (requestOptional.isEmpty()) {
@@ -145,7 +161,8 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
         return requestOptional;
     }
 
-    private Optional<byte[]> addBufferToMessage(BinaryMessage message, SocketAddress senderAddress, SocketAddress receiverAddress) {
+    private Optional<byte[]> addBufferToMessage(BinaryMessage message, SocketAddress senderAddress,
+        SocketAddress receiverAddress) {
         byte[] bufferedBytes = bufferedParts.get(Pair.of(senderAddress, receiverAddress));
         if (bufferedBytes == null) {
             return Optional.empty();
@@ -153,7 +170,8 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
         return Optional.ofNullable(Arrays.concatenate(bufferedBytes, message.getBytes()));
     }
 
-    private Optional<RbelElement> tryToConvertMessage(byte[] messageContent, SocketAddress senderAddress, SocketAddress receiverAddress) {
+    private Optional<RbelElement> tryToConvertMessage(byte[] messageContent, SocketAddress senderAddress,
+        SocketAddress receiverAddress) {
         final RbelElement result = getTigerProxy().getRbelLogger().getRbelConverter()
             .parseMessage(messageContent, toRbelHostname(senderAddress),
                 toRbelHostname(receiverAddress), Optional.empty());

@@ -112,6 +112,42 @@ With the `TGR find next request ...` steps you can validate a complete workflow 
 include::validation-example.feature[]
 --
 
+=== Modifying RbelObjects (RbelBuilder)
+
+==== Introduction
+
+Tiger supports modifying JSON, XML and several token formats. After loading in an object from a string
+or a file the RbelObject can be modified in multiple ways:
+
+* Changing a primitive value at a certain path
+* replacing a primitive node by an object node and vice versa
+* adding new nodes and primitive values as child path of an existing path
+* adding new nodes to an array/list
+
+After the adjustments the values of the modified RbelElements can be asserted. The object can be
+serialised back to a string. Jexl Expressions are implemented, as for reading a file or for serializing:
+`'!{rbelObject:serialize("myRbelObject")}'`
+
+==== List of all possible Steps
+
+.Using the Rbel builder steps
+// use the extractCommentsFromRbelBuilderGlueCode.sh in GitBash (Windows) or bash (Linux, Mac)
+// to extract anew the steps doc from RbelBuilderGlueCode.java
+[source, java]
+----
+// extracted from module /tiger-test-lib
+// /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java
+include::./RbelBuilderGlueCodeCommentsOnly.java[]
+----
+
+==== Usage examples
+
+.Tiger Rbel Builder steps example
+[source,gherkin]
+--
+include::validation-example.feature[]
+--
+
 === Using the HTTP client steps
 
 The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP

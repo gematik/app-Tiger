@@ -33,6 +33,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNodeConverter {
 
+    public static final String IS_XML_ATTRIBUTE = "isXmlAttribute";
+
     @Override
     public boolean shouldConvert(RbelElement target) {
         return target.hasFacet(RbelXmlFacet.class);
@@ -55,7 +57,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
         for (RbelContentTreeNode node : converter.convertNode(entry.getValue(), entry.getKey(), context)) {
             // add attributes
             if (entry.getValue().hasFacet(RbelXmlAttributeFacet.class)) {
-                node.attributes().put("isXmlAttribute", "true");
+                node.attributes().put(IS_XML_ATTRIBUTE, "true");
             }
 
             // manage pulling up/down of text-nodes in mode-switches
@@ -65,7 +67,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
                     if (childNode.getType() == null && childNode.getKey().orElseThrow().equals("text")
                         && node.getType() != RbelContentType.XML) {
                         node.setContent(childNode.getContent());
-                        node.setChildNodes(List.of());
+                        node.setupChildNodes(List.of());
                         log.trace("pulling up node '{}'", node.getRawStringContent());
                     } else if (!childNode.hasTypeOptional(RbelContentType.XML).orElse(true)
                         && !childNode.getKey().orElseThrow().equals("text")) {
@@ -81,7 +83,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
                         childNodes.add(childNode);
                     }
                 }
-                node.setChildNodes(childNodes);
+                node.setupChildNodes(childNodes);
             }
             nodes.add(node);
         }

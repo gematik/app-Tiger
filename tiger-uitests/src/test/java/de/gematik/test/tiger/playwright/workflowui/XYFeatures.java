@@ -80,8 +80,8 @@ class XYFeatures extends AbstractTests {
         Test <blue> with <Nils>                 | 11 | 2 | 
         Test <green> with <Tim>                 | 12 | 3 |
         Test <yellow> with <Sophie>             | 13 | 4 |      
-        Test <green> with <foo> again           | 14 | 5 | 
-        Test <red> with <bar> again             | 15 | 6 |         
+        Test <green> with <foo> again           | 14 | 1 | 
+        Test <red> with <bar> again             | 15 | 2 |         
         Test Find Last Request                  | 16 | 0 | 
         Test find last request with parameters  | 17 | 0 |
         Test find last request                  | 18 | 0 | 

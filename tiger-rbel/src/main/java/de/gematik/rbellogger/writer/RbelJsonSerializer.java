@@ -31,6 +31,11 @@ public class RbelJsonSerializer implements RbelSerializer {
         return renderToString(node, rbelWriter).getBytes();
     }
 
+    @Override
+    public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+        return render(node, rbelWriter);
+    }
+
     public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         if (isJsonArray(node)) {
             StringJoiner joiner = new StringJoiner(",");

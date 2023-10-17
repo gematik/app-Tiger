@@ -33,6 +33,7 @@ To easily convert between the multiple sources the TigerGlobalConfiguration offe
 
 * When the key consists only of letters and underscores then the underscores are converted to points.
 * Names are compared without considering the case.
+* Keys that contain '{', '}' or '|' are forbidden. To allow a clean startup on systems that have values like this configured the given characters are replaced by '_'.
 
 === Thread-based configuration
 
@@ -86,6 +87,14 @@ servers:
 ----
 
 WARNING: Placeholders which can not be resolved will not lead to errors but rather they will simply not be replaced.
+
+=== Fallback values
+
+Sometimes a default value is desired when a given key is not set. To define such a value, just use the pipe (|) after the key, like so:
+
+`${foo.bar|orThisValue}`
+
+This will first test for the presence of "foo.bar" as a configuration key. If that key is not found, the fallback value "orThisValue" will be used.
 
 === Localized configuration
 

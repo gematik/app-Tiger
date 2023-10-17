@@ -48,7 +48,8 @@ public class RbelWriter {
         RbelContentType.URL, new RbelUrlSerializer(),
         RbelContentType.BEARER_TOKEN, new RbelBearerTokenSerializer());
 
-    public RbelSerializationResult serializeWithEnforcedContentType(RbelElement input, RbelContentType enforcedContentType, TigerJexlContext jexlContext) {
+    public RbelSerializationResult serializeWithEnforcedContentType(RbelElement input,
+        RbelContentType enforcedContentType, TigerJexlContext jexlContext) {
         return new RbelWriterInstance(Optional.ofNullable(enforcedContentType), rbelKeyManager, jexlContext)
             .serialize(input);
     }
@@ -56,6 +57,16 @@ public class RbelWriter {
     public RbelSerializationResult serialize(RbelElement input, TigerJexlContext jexlContext) {
         return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext)
             .serialize(input);
+    }
+
+    public RbelSerializationResult serialize(RbelContentTreeNode input, TigerJexlContext jexlContext) {
+        return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext)
+            .renderTree(input);
+    }
+
+    public RbelSerializationResult renderNode(RbelContentTreeNode input, TigerJexlContext jexlContext) {
+        return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext)
+            .renderNode(input);
     }
 
     private static void printTreeStructure(RbelContentTreeNode treeRootNode) {
@@ -97,15 +108,33 @@ public class RbelWriter {
             if (treeRootNode.getType() == null) {
                 return RbelSerializationResult.of(treeRootNode);
             }
+            final RbelSerializer rbelSerializer = prepareSerializer(treeRootNode);
+            return RbelSerializationResult.of(
+                rbelSerializer.render(treeRootNode, this),
+                treeRootNode.getType(),
+                treeRootNode.getElementCharset());
+        }
+
+        public RbelSerializationResult renderNode(RbelContentTreeNode treeRootNode) {
+            if (treeRootNode.getType() == null) {
+                return RbelSerializationResult.of(treeRootNode);
+            }
+            final RbelSerializer rbelSerializer = prepareSerializer(treeRootNode);
+            return RbelSerializationResult.of(
+                rbelSerializer.renderNode(treeRootNode, this),
+                treeRootNode.getType(),
+                treeRootNode.getElementCharset());
+        }
+
+        private RbelSerializer prepareSerializer(RbelContentTreeNode treeRootNode) {
             final RbelContentType determinedType = determineContentType(treeRootNode);
             treeRootNode.setType(determinedType);
             final RbelSerializer rbelSerializer = serializerMap.get(determinedType);
             if (rbelSerializer == null) {
-                throw new RbelSerializationException("Could not find serializer for content-type '" + treeRootNode.getType() + "'");
+                throw new RbelSerializationException(
+                    "Could not find serializer for content-type '" + treeRootNode.getType() + "'");
             }
-            return RbelSerializationResult.of(
-                rbelSerializer.render(treeRootNode, this),
-                treeRootNode.getType());
+            return rbelSerializer;
         }
 
         private RbelContentType determineContentType(RbelContentTreeNode treeRootNode) {

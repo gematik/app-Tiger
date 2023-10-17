@@ -19,7 +19,7 @@ public interface RbelContent {
 
     <T extends RbelContent>RbelMultiMap<T> getChildNodesWithKey();
 
-    <T extends RbelContent>Optional<T> getKey();
+    Optional<String> getKey();
 
     String getRawStringContent();
 
@@ -33,7 +33,7 @@ public interface RbelContent {
 
     <T extends RbelContent> List<T> findRbelPathMembers(String rbelPath);
 
-    <T extends RbelContent>Optional<T> findKeyInParentElement();
+    Optional<String> findKeyInParentElement();
 
     <T extends RbelContent> T findMessage();
 

@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
+import java.net.ConnectException;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +71,15 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
             remoteProxyClient.connectToRemoteUrl( this,
                 remoteProxyClient.getTigerProxyConfiguration().getConnectionTimeoutInSeconds(),
                 true);
+        } else if (TigerExceptionUtils.getCauseWithType(exception, ConnectException.class)
+            .filter(e -> "Connection refused".equals(e.getMessage()))
+            .isPresent()) {
+            if (remoteProxyClient.isShuttingDown()) {
+                log.debug("Connection refused from remote tracing partner. Ignoring since we are in shutdown");
+            } else {
+                log.debug("Connection refused from remote tracing partner! We are not in shutdown");
+                throw new TigerRemoteProxyClientException(exception);
+            }
         } else {
             log.error("handle transport error from url '{}': {}", remoteProxyClient.getRemoteProxyUrl(), exception);
             throw new TigerRemoteProxyClientException(exception);

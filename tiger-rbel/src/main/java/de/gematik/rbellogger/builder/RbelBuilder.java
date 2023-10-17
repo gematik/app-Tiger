@@ -1,10 +1,12 @@
-package de.gematik.test.tiger.lib.rbel;
+package de.gematik.rbellogger.builder;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
+import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -14,12 +16,15 @@ import lombok.SneakyThrows;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 
 public class RbelBuilder {
 
     private static RbelLogger rbelLogger;
     private static RbelWriter rbelWriter;
+
     private final RbelContentTreeNode treeRootNode;
 
     /**
@@ -33,7 +38,7 @@ public class RbelBuilder {
     /**
      * Initializes a {@link RbelBuilder} with an object from a given file
      * @param pathName file path of imported object
-     * @return the {@link RbelBuilder}
+     * @return this
      */
     @SneakyThrows
     public static RbelBuilder fromFile(String pathName) {
@@ -46,7 +51,7 @@ public class RbelBuilder {
      * Initializes a {@link RbelBuilder}; the first direct child gets its key from the objectName parameter and its content from an object from a given file
      * @param pathName file path of imported object
      * @param objectName key of direct child
-     * @return the {@link RbelBuilder}
+     * @return this
      */
     @SneakyThrows
     public static RbelBuilder fromFile(String objectName, String pathName) {
@@ -56,17 +61,20 @@ public class RbelBuilder {
 
     /**
      * Initializes an empty {@link RbelBuilder}
-     * @return the {@link RbelBuilder}
+     * @param type Rbel content type of treeNode
+     * @return this
      */
     @SneakyThrows
-    public static RbelBuilder fromScratch() {
-        return fromString("");
+    public static RbelBuilder fromScratch(RbelContentType type) {
+        RbelContentTreeNode root = new RbelContentTreeNode(null, new byte[0]);
+        root.setType(type);
+        return new RbelBuilder(root);
     }
 
     /**
      * reads a formatted String and creates a new {@link RbelBuilder} using the content as its treeRootNode
      * @param content formatted String
-     * @return RbelBuilder
+     * @return this
      */
     @SneakyThrows
     public static RbelBuilder fromString(String content) {
@@ -79,30 +87,79 @@ public class RbelBuilder {
     }
 
     /**
-     * Sets the value at a specific path to a new RbelContentTreeNode
+     * Sets the value at a specific path to a new RbelContentTreeNode; the path or its parent must exist
      * @param rbelPath path where RbelContenTreeNode is inserted
-     * @param newValue object as formatted String
+     * @param newValue primitive String; or object as formatted String
+     * @throws RbelPathException if path is not a proper Rbel path or if path and its parent do not exist
+     * @return this
      */
-    public void setObjectAt(String rbelPath, String newValue) {
-        var entry = this.treeRootNode.findElement(rbelPath).orElseThrow();
-        var newContentTreeNode = getContentTreeNodeFromString(newValue);
-        Optional<String> key = entry.getKey();
-        if(key.isPresent()) {
-            entry.getParentNode().setChildNode(key.get(), newContentTreeNode);
+    public RbelBuilder setValueAt(String rbelPath, String newValue) {
+        Optional<RbelContentTreeNode> entryOptional = this.treeRootNode.findElement(rbelPath);
+        if(entryOptional.isPresent()) {
+            return setValueAt(entryOptional.get(), newValue);
         }
         else {
-            throw new NullPointerException("The key of the node which is to be changed is not set in its parent node.");
+            ArrayList<String> steps = new ArrayList<>(Arrays.asList(rbelPath.split("\\.")));
+            if(steps.isEmpty() || !steps.contains("$")) {
+                throw new RbelPathException("RbelPath must at least contain '$' and one node");
+            }
+            RbelContentTreeNode parentNode;
+            String newKey = steps.remove(steps.size()-1);
+            if(steps.size() == 1) {
+                parentNode = treeRootNode;
+            }
+            else {
+                String parentPath = String.join(".", steps);
+                Optional<RbelContentTreeNode> parentOptional = this.treeRootNode.findElement(parentPath);
+                if(parentOptional.isEmpty()) {
+                    throw new RbelPathException("Neither the path '%s' nor its parent does exist.".formatted(rbelPath));
+                }
+                parentNode = parentOptional.get();
+            }
+                if(parentNode.getType() == RbelContentType.XML) {
+                    String newXmlValue = String.format("<%s>%s</%s>", newKey, newValue, newKey);
+                    RbelContentTreeNode newXmlNode = getContentTreeNodeFromString(newXmlValue);
+                    parentNode.setChildNode(newKey, newXmlNode.findElement("$.%s".formatted(newKey)).orElseThrow());
+                }
+                else {
+                    RbelContentTreeNode newValueNode = getContentTreeNodeFromString(newValue);
+                    parentNode.setChildNode(newKey, newValueNode);
+                }
+                return this;
         }
     }
 
     /**
-     * Sets a String value at a given path
-     * @param rbelPath given path
-     * @param newValue new String value
+     * Adds a new entry at a list or array at a specific path
+     * @param rbelPath path of array/list
+     * @param newValue value to be added
+     * @return this
      */
-    public void setValueAt(String rbelPath, String newValue) {
-        var entry = this.treeRootNode.findElement(rbelPath).orElseThrow();
-        entry.setContent(newValue.getBytes());
+    public RbelBuilder addEntryAt(String rbelPath, String newValue) {
+        RbelContentTreeNode entry = this.treeRootNode.findElement(rbelPath).orElseThrow();
+
+        RbelContentTreeNode newChild = getContentTreeNodeFromString(newValue);
+        entry.addChild(newChild);
+        return this;
+    }
+
+    private RbelBuilder setValueAt(RbelContentTreeNode entry, String newValue) {
+        RbelContentTreeNode newContentTreeNode = getContentTreeNodeFromString(newValue);
+        Optional<String> key = entry.getKey();
+        if (key.isPresent()) {
+            entry.getParentNode().setChildNode(key.get(), newContentTreeNode);
+        } else {
+            throw new NullPointerException("The key of the node which is to be changed is not set in its parent node.");
+        }
+        return this;
+    }
+
+    /**
+     * Serializes the treeRootNode into a formatted String
+     * @return the formatted String
+     */
+    public String serialize() {
+        return getRbelWriter().serialize(this.treeRootNode, new TigerJexlContext()).getContentAsString();
     }
 
     private static RbelBuilder fromRbel(String name, RbelContentTreeNode content) {
@@ -118,6 +175,11 @@ public class RbelBuilder {
     private static RbelConverter getRbelConverter() {
         assureRbelIsInitialized();
         return rbelLogger.getRbelConverter();
+    }
+
+    private static RbelWriter getRbelWriter() {
+        assureRbelIsInitialized();
+        return rbelWriter;
     }
 
     private static RbelContentTreeNode getContentTreeNodeFromString(String content) {

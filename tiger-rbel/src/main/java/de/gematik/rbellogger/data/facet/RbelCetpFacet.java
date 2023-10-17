@@ -16,24 +16,25 @@
 
 package de.gematik.rbellogger.data.facet;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
-import static j2html.TagCreator.div;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.EqualsAndHashCode;
 
+import java.util.Optional;
+
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
+import static j2html.TagCreator.div;
+
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
-@RequiredArgsConstructor
-public class RbelCetpFacet implements RbelFacet {
+public class RbelCetpFacet extends RbelResponseFacet {
 
     static {
         RbelHtmlRenderer.registerFacetRenderer(new RbelHtmlFacetRenderer() {
@@ -44,8 +45,7 @@ public class RbelCetpFacet implements RbelFacet {
 
             @Override
             public ContainerTag performRendering(RbelElement element, Optional<String> key, RbelHtmlRenderingToolkit renderingToolkit) {
-                return div(t1ms("CETP ")
-                    .with(showContentButtonAndDialog(element, renderingToolkit)))
+                return div()
                     .with(addNotes(element, "mb-5"))
                     .with(ancestorTitle().with(vertParentTitle()
                         .with(childBoxNotifTitle(CLS_HEADER).with(t2("Message Length"))
@@ -62,6 +62,12 @@ public class RbelCetpFacet implements RbelFacet {
 
     private final RbelElement messageLength;
     private final RbelElement body;
+
+    public RbelCetpFacet(RbelElement messageLength, RbelElement body) {
+        super("CETP");
+        this.body = body;
+        this.messageLength = messageLength;
+    }
 
     @Override
     public RbelMultiMap getChildElements() {

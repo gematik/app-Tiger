@@ -22,6 +22,7 @@ import ch.qos.logback.core.read.ListAppender;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelPathExecutor;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -37,19 +38,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RbelPathLoggingTest {
 
     private RbelElement jwtMessage;
-    private RbelElement xmlMessage;
 
     @BeforeEach
     public void setUp() throws IOException {
         // needed to be able to parse the logging stream for corresponding messages expected in test runs
         RbelOptions.activateRbelPathDebugging();
-        jwtMessage = extractMessage("rbelPath.curl");
-        xmlMessage = extractMessage("xmlMessage.curl");
+        jwtMessage = extractMessage();
     }
 
-    private RbelElement extractMessage(String fileName) throws IOException {
+    @AfterAll
+    public static void cleanup() {
+        RbelOptions.deactivateRbelPathDebugging();
+    }
+
+    private RbelElement extractMessage() throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/" + fileName);
+            ("src/test/resources/sampleMessages/rbelPath.curl");
 
         return RbelLogger.build().getRbelConverter()
             .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
@@ -96,7 +100,7 @@ class RbelPathLoggingTest {
         final ListAppender<ILoggingEvent> listAppender = listFollowingLoggingEventsForClass(RbelPathExecutor.class);
         jwtMessage.findRbelPathMembers("$.body.body.acr_values_supported.content");
 
-        listAppender.list.stream()
+        listAppender.list
             .forEach(System.out::println);
 
         assertThat(listAppender.list.stream()

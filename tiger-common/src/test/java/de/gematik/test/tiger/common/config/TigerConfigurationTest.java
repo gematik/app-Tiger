@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
@@ -870,6 +871,25 @@ public class TigerConfigurationTest {
                 .hasMessage("Could not find value for 'tiger.templates.0.type'");
     }
 
+    @ParameterizedTest
+    @CsvSource({
+        "foo|bar, foo_bar",
+        "foo{bar, foo_bar",
+        "{foobar, _foobar",
+        "}foobar, _foobar",
+        "foo}bar, foo_bar",
+        "|foobar, _foobar",
+        "foobar|, foobar_"})
+    void forbiddenCharacters_shouldBeReplaced(String keyOriginal, String keyReplaced) {
+        try {
+            System.setProperty(keyOriginal, "someValue");
+            TigerGlobalConfiguration.reset();
+            assertThat(TigerGlobalConfiguration.readString(keyReplaced))
+                .isEqualTo("someValue");
+        } finally {
+            System.clearProperty(keyOriginal);
+        }
+    }
 
     @Data
     @Builder

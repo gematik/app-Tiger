@@ -29,6 +29,11 @@ public class RbelUrlSerializer implements RbelSerializer {
         return renderToString(node, rbelWriter).getBytes();
     }
 
+    @Override
+    public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+        return render(node, rbelWriter);
+    }
+
     public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
         final String basicPath = node.childNode("basicPath")
             .map(RbelContentTreeNode::getRawStringContent)

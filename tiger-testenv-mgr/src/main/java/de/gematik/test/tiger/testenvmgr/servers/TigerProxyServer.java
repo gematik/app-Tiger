@@ -37,6 +37,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.context.event.ContextStoppedEvent;
 
 import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
@@ -113,7 +114,6 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .initializers()
             .run();
 
-
         try {
             TigerServerLogManager.addProxyCustomerAppender(this);
         } catch (NoClassDefFoundError ncde) {
@@ -131,9 +131,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         log.info("Stopping tiger proxy {}...", getServerId());
         if (applicationContext != null
             && applicationContext.isRunning()) {
-            getTigerProxy().close();
             log.info("Triggering tiger-server shutdown for {}...", getServerId());
-            applicationContext.close();
+            getTigerProxy().close();
+            applicationContext.stop();
             setStatus(TigerServerStatus.STOPPED, "Stopped Tiger Proxy " + getServerId());
         } else {
             log.info("Skipping tiger-server shutdown for {}!", getServerId());

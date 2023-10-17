@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<blub>
+    <foo>
+        <bar>
+            <key1>value1</key1>
+            <key2>value2</key2>
+            <key3>value3</key3>
+        </bar>
+    </foo>
+</blub>

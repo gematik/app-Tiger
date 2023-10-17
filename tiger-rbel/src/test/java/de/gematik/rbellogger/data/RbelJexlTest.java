@@ -31,6 +31,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelJexlTest {
 
@@ -171,9 +174,51 @@ class RbelJexlTest {
     }
 
     @Test
+    void nestedRbelPathsTest() {
+        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response,
+            "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'"))
+            .isTrue();
+    }
+
+    @Test
+    void deeperNestedRbelPathsTest() {
+        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response,
+            "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'"))
+            .isTrue();
+    }
+
+    @Test
     void tokenSubstituteHelperRbelPathExtension() {
         assertThat(TokenSubstituteHelper.substitute("?{$.body.header}", null,
             Optional.of(new TigerJexlContext().withRootElement(response))))
             .contains("discSig");
+    }
+
+    @ParameterizedTest
+    @CsvSource( textBlock = """
+            $..scopes.[?(@.content=='test')] =~ '.*',$..scopes.[?(@.content=='test')]
+            $..scopes.[?(@.content == 'test')] =~ '.*',$..scopes.[?(@.content == 'test')]
+            $..scopes.[?(@.content == 'test')]=~'.*',$..scopes.[?(@.content == 'test')]
+            $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
+           """
+    )
+    void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
+        assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))
+            .contains(firstRbelPath);
+    }
+
+    @ParameterizedTest
+    @CsvSource( textBlock = """
+            content == 'test'
+            content=='test'
+            $content =='test'
+            @content== 'test'
+            $content=='test'
+            @content=='test'
+           """
+    )
+    void testRbelPathExtractorEmptyResults(String jexlExpression) {
+        assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))
+            .isEmpty();
     }
 }

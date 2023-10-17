@@ -1,5 +1,28 @@
 # Changelog Tiger Test platform
 
+# Release 2.2.1
+
+## Features
+
+* TGR-1000: RbelBuilder-Class to create Rbel objects from Files and Strings
+* TGR-747: Fallback values can now be defined for configuration keys: ${foo.bar|orThisValue}
+* TGR-1001: enable RbelPathExecutor functions for RbelContentTreeNode
+* TGR-1002: Place objects and String values at given paths in Rbel objects using RbelBuilder
+* TGR-1003: Jexl syntax for serialisation of Rbel objects
+* TGR-1004: Expand lists/arrays in Rbel objects
+
+## Bugfixes
+
+* TGR-1110: Zion - XML-structures with nodes named 'text' can now be correctly serialized
+* TGR-971: Tiger Proxy UI - when applying filters, the list of senders and receivers is limited to the hosts which send or receive more than two messages. An additional checkbox allows displaying the full list of senders and receivers.
+* TGR-1108: Allow nested JexlExpression in RbelPaths (up to one level!)
+* TGR-1126: Zion - Honors the encoding information for XML
+* TGR-1112: Fixed that log contained a lot of "curl command unable to parse log" lines
+* TGR-1123: Fixed Rbellogs flood browser window with highlight js warnings rendering browser unusable for larger HTML report files 
+* TGR-1141: Fixed bug in Workflow Ui causing received CETP messages to stop displaying further messages. Also improved display of CETP messages (out of line title)
+* All Spinner icons in Workflow UI are now animated
+
+
 -------
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0

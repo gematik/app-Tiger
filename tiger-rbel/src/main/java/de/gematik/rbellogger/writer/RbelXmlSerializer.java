@@ -18,6 +18,7 @@ package de.gematik.rbellogger.writer;
 
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
+import de.gematik.rbellogger.writer.tree.RbelXmlElementToNodeConverter;
 import java.io.IOException;
 import java.io.StringWriter;
 import lombok.AllArgsConstructor;
@@ -39,28 +40,56 @@ public class RbelXmlSerializer implements RbelSerializer {
     @SneakyThrows
     public byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
         final Document document = DocumentHelper.createDocument();
+
         for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
             addNode(childNode, document, rbelWriter);
         }
-        return convertDocumentToString(document);
+
+        addEncodingInformationIfMissing(document, treeRootNode);
+
+        return convertDocumentToString(document, false);
+    }
+
+    @SneakyThrows
+    public byte[] renderNode(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
+        final Document document = DocumentHelper.createDocument();
+        for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
+            addNode(childNode, document, rbelWriter);
+        }
+        return convertDocumentToString(document, true);
+    }
+
+    private void addEncodingInformationIfMissing(Document document, RbelContentTreeNode treeRootNode) {
+        if (StringUtils.isEmpty(document.getXMLEncoding())) {
+            document.setXMLEncoding(treeRootNode.getElementCharset().displayName());
+        }
     }
 
     private void addNode(RbelContentTreeNode treeNode, Branch parentBranch, RbelWriterInstance rbelWriter) {
         if (log.isTraceEnabled()) {
-            log.trace("converting xml node '{}'", treeNode.getContent() == null ? "<null>" : new String(treeNode.getContent()));
+            log.trace("converting xml node '{}'",
+                treeNode.getContent() == null ? "<null>"
+                    : new String(treeNode.getContent(), treeNode.getElementCharset()));
         }
-        final String key = treeNode.getKey().orElseThrow();
+        final String key = treeNode.getKey()
+            .orElseThrow(() -> new RbelSerializationException("Could not find key for " + treeNode));
 
         if (StringUtils.isEmpty(key)) {
             return;
-        } else if ("text".equals(key) || !treeNode.hasTypeOptional(RbelContentType.XML).orElse(true)) {
-            if (!(parentBranch instanceof Document)) {
-                parentBranch.add(new DefaultText(new String(rbelWriter.renderTree(treeNode).getContent(), treeNode.getElementCharset())));
+        } else {
+            final boolean isATextNode = "text".equals(key)
+                && !treeNode.hasTypeOptional(RbelContentType.XML).orElse(false)
+                && !treeNode.attributes().containsKey(RbelXmlElementToNodeConverter.IS_XML_ATTRIBUTE);
+            if (isATextNode) {
+                if (!(parentBranch instanceof Document)) {
+                    parentBranch.add(new DefaultText(
+                        new String(rbelWriter.renderTree(treeNode).getContent(), treeNode.getElementCharset())));
+                }
+                return;
+            } else if (treeNode.attributes().containsKey("isXmlAttribute") && parentBranch instanceof Element element) {
+                element.addAttribute(key, rbelWriter.renderTree(treeNode).getContentAsString());
+                return;
             }
-            return;
-        } else if (treeNode.attributes().containsKey("isXmlAttribute") && parentBranch instanceof Element element) {
-            element.addAttribute(key, rbelWriter.renderTree(treeNode).getContentAsString());
-            return;
         }
 
         final Element newElement = parentBranch.addElement(key);
@@ -69,9 +98,13 @@ public class RbelXmlSerializer implements RbelSerializer {
         }
     }
 
-    private byte[] convertDocumentToString(Document document) throws IOException {
+    private byte[] convertDocumentToString(Document document, boolean suppressDeclaration) throws IOException {
         final StringWriter resultWriter = new StringWriter();
-        XMLWriter writer = new XMLWriter(resultWriter, OutputFormat.createPrettyPrint());
+
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        format.setSuppressDeclaration(suppressDeclaration);
+
+        XMLWriter writer = new XMLWriter(resultWriter, format);
         writer.write(document);
         return resultWriter.toString().getBytes();
     }

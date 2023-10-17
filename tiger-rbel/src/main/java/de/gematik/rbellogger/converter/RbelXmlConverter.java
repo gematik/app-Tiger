@@ -22,9 +22,13 @@ import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.util.RbelException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Optional;
+import javax.print.Doc;
 import lombok.extern.slf4j.Slf4j;
 import org.dom4j.*;
 import org.dom4j.io.SAXReader;
@@ -45,7 +49,9 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         if (content.contains("<") && content.contains(">")) {
             try {
                 InputSource source = buildInputSource(content.trim(), rbel);
-                buildXmlElementForNode(parseXml(source), rbel, context);
+                final Document parsedXml = parseXml(source);
+                buildXmlElementForNode(parsedXml, rbel, context);
+                setCharset(parsedXml, rbel);
                 rbel.addFacet(new RbelRootFacet(rbel.getFacetOrFail(RbelXmlFacet.class)));
             } catch (DocumentException e) {
                 log.trace("Exception while trying to parse XML. Trying as HTML (more lenient SAX parsing)", e);
@@ -62,17 +68,27 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         }
     }
 
-    private Branch parseXml(InputSource source) throws DocumentException {
-        SAXReader reader = new SAXReader();//NOSONAR
+    private void setCharset(Document source, RbelElement rbel) {
+        Optional.ofNullable(source.getXMLEncoding())
+            .map(Charset::forName)
+            .ifPresent(charset -> rbel.setCharset(Optional.of(charset)));
+    }
+
+    private Document parseXml(InputSource source) throws DocumentException {
+        SAXReader reader = new SAXReader(); //NOSONAR
         reader.setMergeAdjacentText(true);
         return reader.read(source);
     }
 
     private InputSource buildInputSource(String text, RbelElement parentElement) {
-        InputSource source = new InputSource(new StringReader(text));
-        source.setEncoding(parentElement.getElementCharset().name());
-        // see https://www.ietf.org/rfc/rfc3023 8.5 and 8.20: We always use the http-encoding.
-        return source;
+        if (parentElement.getCharset().isPresent()) {
+            InputSource source = new InputSource(new StringReader(text));
+            // see https://www.ietf.org/rfc/rfc3023 8.5 and 8.20: We always use the http-encoding.
+            source.setEncoding(parentElement.getElementCharset().name());
+            return source;
+        } else {
+            return new InputSource(new ByteArrayInputStream(parentElement.getRawContent()));
+        }
     }
 
     private void buildXmlElementForNode(Branch branch, RbelElement parentElement, RbelConverter converter) {
