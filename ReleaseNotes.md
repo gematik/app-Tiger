@@ -5,6 +5,7 @@
 ## Features
 
 * TGR-1000: RbelBuilder-Class to create Rbel objects from Files and Strings
+* TGR-747: Fallback values can now be defined for configuration keys: ${foo.bar|orThisValue}
 * TGR-1001: enable RbelPathExecutor functions for RbelContentTreeNode
 * TGR-1002: Place objects and String values at given paths in Rbel objects using RbelBuilder
 * TGR-1003: Jexl syntax for serialisation of Rbel objects

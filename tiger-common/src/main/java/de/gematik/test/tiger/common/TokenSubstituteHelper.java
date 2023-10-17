@@ -29,12 +29,20 @@ public final class TokenSubstituteHelper {
             if (ctx.isPresent() && ctx.get().has(str)) {
                 return ctx.map(c -> c.get(str).toString());
             }
-            return Optional.ofNullable(str)
-                .filter(s -> !s.contains("{") && !s.contains("}"))
-                .flatMap(source::readStringOptional)
+            if (str.contains("{") || str.contains("}")) {
+                return Optional.empty();
+            }
+            Optional<String> fallbackValue = Optional.of(str)
+                .filter(s -> s.contains("|"))
+                .map(s -> s.split("\\|")[1]);
+            Optional<String> key = Optional.of(str)
+                .map(s -> s.split("\\|")[0]);
+            return key
+                .flatMap(s -> source.readStringOptional(s))
                 .or(() -> ctx.map(context -> context.get(str))
                     .filter(Objects::nonNull)
-                    .map(Object::toString));
+                    .map(Object::toString))
+                .or(() -> fallbackValue);
         }));
         REPLACER_ORDER.add(Pair.of('!', (str, source, ctx) -> {
             try {

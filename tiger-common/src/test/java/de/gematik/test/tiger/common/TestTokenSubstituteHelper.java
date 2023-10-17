@@ -51,6 +51,12 @@ class TestTokenSubstituteHelper {
         "!{not ${some.boolean.value}}, false",
         "${non.existing.value}, ${non.existing.value}",
         "!{not !{not ${some.boolean.value}} or !{not ${some.boolean.value}}}, true",
+        // fallback values
+        "${nope|foo}, foo",
+        "${key2|foo}, KEY2VALUE",
+        "${!{'no' + 'pe'}|foo}, foo",
+        "${!{'key' + '2'}|foo}, KEY2VALUE",
+        "${nope|!{'foo'+'bar'}}, foobar"
     })
     void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
