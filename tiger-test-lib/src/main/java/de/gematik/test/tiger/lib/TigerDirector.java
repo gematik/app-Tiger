@@ -4,10 +4,6 @@
 
 package de.gematik.test.tiger.lib;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SHOW_TIGER_LOGO;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.SKIP_ENVIRONMENT_SETUP;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
-import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
@@ -30,15 +26,6 @@ import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
@@ -50,6 +37,19 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
+import static org.awaitility.Awaitility.await;
 
 /**
  * The TigerDirector is the public interface of the high level features of the Tiger test framework.
@@ -158,6 +158,11 @@ public class TigerDirector {
         log.info("Registering shutdown hook...");
         Runtime.getRuntime().addShutdownHook(new Thread(() ->
         {
+            if (tigerTestEnvMgr == null)  {
+                log.info(Ansi.colorize("Finished shutdown (no test environment) OK", RbelAnsiColors.RED_BOLD));
+                return;
+            }
+
             if (!tigerTestEnvMgr.isShuttingDown()) {
                 quit(true);
             }

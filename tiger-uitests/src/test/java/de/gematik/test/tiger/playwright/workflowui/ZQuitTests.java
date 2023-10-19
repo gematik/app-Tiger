@@ -4,14 +4,16 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
+import com.microsoft.playwright.Page;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.*;
+
+import java.util.concurrent.TimeUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import com.microsoft.playwright.Page;
-import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.*;
 
 /**
  * These tests should run at the very last because the testQuitButton() quits the tiger/workflowui.
@@ -164,11 +166,11 @@ class ZQuitTests extends AbstractTests {
     void testZQuitButton() {
         page.querySelector("#test-tiger-logo").click();
         page.querySelector("#test-sidebar-quit-icon").click();
+        await().atMost(5, TimeUnit.SECONDS).until(() -> page.querySelector("#workflow-messages.test-messages-quit") != null);
         assertAll(
             () -> assertThat(page.querySelector("#sidebar-left.test-sidebar-quit").isVisible()).isTrue(),
             () -> assertThat(page.querySelector("#workflow-messages.test-messages-quit").isVisible()).isTrue()
         );
-
         page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath("workflowui_quit.png")));
     }
 

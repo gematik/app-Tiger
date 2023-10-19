@@ -50,9 +50,9 @@ pipeline {
         stage('Build') {
             steps {
                 sh """
-                  mvn install -DskipTests
+                  mvn -ntp install -DskipTests
                   cd tiger-uitests
-                  mvn test-compile -P start-tiger-dummy
+                  mvn -ntp test-compile -P start-tiger-dummy
                 """
             }
         }
