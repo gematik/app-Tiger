@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.rbellogger.data;
+package de.gematik.rbellogger.util;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
@@ -12,35 +12,38 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-class RbelPathTest {
+class RbelPathExecutorTest {
 
     private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
-    private RbelElement jwtMessage;
-    private RbelElement xmlMessage;
+    private static RbelElement jwtMessage;
+    private static RbelElement xmlMessage;
+    private static RbelElement jsonElement;
 
-    @BeforeEach
-    public void setUp() throws IOException {
+    @BeforeAll
+    public static void setUp() throws IOException {
         jwtMessage = extractMessage("rbelPath.curl");
         xmlMessage = extractMessage("xmlMessage.curl");
+        jsonElement = extractMessage("../jexlWorkshop.json");
     }
 
-    private RbelElement extractMessage(String fileName) throws IOException {
+    private static RbelElement extractMessage(String fileName) throws IOException {
         final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
             ("src/test/resources/sampleMessages/" + fileName);
 
@@ -212,7 +215,8 @@ class RbelPathTest {
 
         assertThat(secondResponse)
             .extractChildWithPath("$.body.body.idp_entity.[?(@.iss.content=='https://idpsek.dev.gematik.solutions')]")
-            .hasStringContentEqualTo("{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
+            .hasStringContentEqualTo(
+                "{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
     }
 
     @Test
@@ -228,7 +232,8 @@ class RbelPathTest {
 
         assertThat(secondResponse)
             .extractChildWithPath("$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]")
-            .hasStringContentEqualTo("{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
+            .hasStringContentEqualTo(
+                "{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
     }
 
     @Test
@@ -258,6 +263,7 @@ class RbelPathTest {
             .extractChildWithPath("$.['foo%7Cbar']")
             .hasStringContentEqualTo("value");
     }
+
     @Test
     void alternateKeys_shouldFindTarget() {
         assertThat(jwtMessage.findRbelPathMembers("$.body.body.['nbf'|'foobar']"))
@@ -273,5 +279,17 @@ class RbelPathTest {
                 jwtMessage.findElement("$.body.body.nbf").get(),
                 jwtMessage.findElement("$.body.body.exp").get(),
                 jwtMessage.findElement("$.body.body.iat").get());
+    }
+
+    @SneakyThrows
+    @ParameterizedTest
+    @CsvSource({"$..[?(@.0.id == '5001')], $.topping",
+        "$..[?(@.id == '5001')], $.topping.0",
+        "$..batter.[?(content =~ \".*1001.*\")], $.batters.batter.0",
+    })
+    void recursiveDescentMixedWithJexl(String rbelPath1, String rbelPath2) {
+        assertThat(jsonElement.findRbelPathMembers(rbelPath1))
+            .containsExactlyInAnyOrder(
+                jsonElement.findElement(rbelPath2).get());
     }
 }

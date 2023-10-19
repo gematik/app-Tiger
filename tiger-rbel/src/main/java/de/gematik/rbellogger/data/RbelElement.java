@@ -6,10 +6,10 @@ package de.gematik.rbellogger.data;
 
 import de.gematik.rbellogger.RbelContent;
 import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.util.RbelException;
+import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.nio.charset.Charset;
@@ -19,10 +19,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Getter
 @Slf4j
@@ -50,7 +52,7 @@ public class RbelElement implements RbelContent {
     }
 
     @Builder(toBuilder = true)
-    public RbelElement(@Nullable String uuid, byte[] rawContent, RbelElement parentNode,  Optional<Charset> charset) {
+    public RbelElement(@Nullable String uuid, byte[] rawContent, RbelElement parentNode, Optional<Charset> charset) {
         if (StringUtils.isNotEmpty(uuid)) {
             this.uuid = uuid;
         } else {
@@ -199,10 +201,10 @@ public class RbelElement implements RbelContent {
     @Override
     public List<RbelElement> findRbelPathMembers(String rbelPath) {
         return new RbelPathExecutor(this, rbelPath)
-                .execute(RbelElement.class)
-                .stream()
-                .map(RbelElement::castToRbelElement)
-                .toList();
+            .execute(RbelElement.class)
+            .stream()
+            .map(RbelElement.class::cast)
+            .toList();
     }
 
     @Override
@@ -230,11 +232,13 @@ public class RbelElement implements RbelContent {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-            .append("uuid", uuid)
-            .append("facets", facets)
-            .append("path", findNodePath())
-            .toString();
+        return "[" + getClass().getSimpleName()
+               + "(" + uuid + ")"
+               + " at $." + findNodePath()
+               + " with facets " + facets.stream()
+                   .map(Object::getClass).map(Class::getSimpleName)
+                   .collect(Collectors.joining(","))
+               + "]";
     }
 
     public Optional<Object> seekValue() {
@@ -359,15 +363,6 @@ public class RbelElement implements RbelContent {
             newResult = result.getParentNode();
         }
         return result;
-    }
-
-    public static RbelElement castToRbelElement(RbelContent rbelContent) {
-        if(rbelContent instanceof RbelElement asRbelElement) {
-            return asRbelElement;
-        }
-        else {
-            throw new ClassCastException("RbelPath was attempted to illegally be casted to RbelElement.");
-        }
     }
 
     private static class RbelPathNotUniqueException extends RuntimeException {

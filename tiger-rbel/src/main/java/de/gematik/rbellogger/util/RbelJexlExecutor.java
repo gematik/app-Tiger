@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.rbellogger.converter;
+package de.gematik.rbellogger.util;
 
 import com.google.common.base.CharMatcher;
 import de.gematik.rbellogger.data.RbelElement;
@@ -15,7 +15,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.IntPredicate;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;

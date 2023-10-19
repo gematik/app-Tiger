@@ -2,14 +2,13 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.rbellogger.data;
+package de.gematik.rbellogger.util;
 
 import static de.gematik.rbellogger.TestUtils.localhostWithPort;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.RbelOptions;
-import de.gematik.rbellogger.converter.RbelJexlExecutor;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
@@ -21,9 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
-class RbelJexlTest {
+class RbelJexlExecutorTest {
 
     private RbelElement response;
     private RbelElement request;

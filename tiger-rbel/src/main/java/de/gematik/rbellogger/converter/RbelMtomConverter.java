@@ -4,7 +4,6 @@
 
 package de.gematik.rbellogger.converter;
 
-import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -13,14 +12,12 @@ import de.gematik.rbellogger.util.RbelException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.*;
 
@@ -176,6 +173,7 @@ public class RbelMtomConverter implements RbelConverterPlugin {
                 .filter(mtomPart -> mtomPart.getMessageHeader().size() > 0)
                 .toList();
         }
+
         private Optional<MediaType> getVauContentType(RbelElement rbelElement) {
             return Optional.ofNullable(rbelElement.getParentNode())
                 .flatMap(el -> el.getFirst("additionalHeaders"))

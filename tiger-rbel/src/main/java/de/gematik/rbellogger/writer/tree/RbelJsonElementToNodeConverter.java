@@ -77,7 +77,7 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
 
     private boolean nodeHasTgrAttribute(RbelElement value, String attributeValueToBeChecked) {
         return value
-            .findElement("$.tgrAttributes.[?(content=='" + attributeValueToBeChecked + "')]")
+            .findElement("$.tgrAttributes.[?(content=='\"" + attributeValueToBeChecked + "\"')]")
             .isPresent();
     }
 }

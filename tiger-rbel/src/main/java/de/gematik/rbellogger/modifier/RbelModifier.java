@@ -5,7 +5,6 @@
 package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;

@@ -5,9 +5,9 @@
 package de.gematik.test.tiger.proxy.client;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;

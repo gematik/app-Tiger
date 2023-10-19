@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 2.2.2
+
+## Bugfixes
+
+* TGR-1139: Fixed various minor problems with recursive descent and attributes in RbelPath-expressions
+
+
 # Release 2.2.1
 
 ## Features

@@ -2,28 +2,26 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.rbellogger.data;
+package de.gematik.rbellogger.util;
 
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static org.assertj.core.api.Assertions.assertThat;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelOptions;
-import de.gematik.rbellogger.util.RbelPathExecutor;
+import de.gematik.rbellogger.data.RbelElement;
+import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.util.Comparator;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.time.ZonedDateTime;
-import java.util.Comparator;
-import java.util.Optional;
-
-import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
-import static org.assertj.core.api.Assertions.assertThat;
-
-class RbelPathLoggingTest {
+class RbelPathExecutorLoggingTest {
 
     private RbelElement jwtMessage;
 
@@ -67,7 +65,7 @@ class RbelPathLoggingTest {
         assertThat(listAppender.list.stream()
             .map(ILoggingEvent::getFormattedMessage)
             .filter(str -> str.contains("$.body.header.kid")))
-            .hasSize(2);
+            .hasSize(3);
     }
 
     @Test

@@ -6,8 +6,8 @@ package de.gematik.test.tiger.proxy.client;
 
 import static de.gematik.test.tiger.proxy.AbstractTigerProxy.PAIRED_MESSAGE_UUID;
 import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import java.util.HashMap;
 import java.util.Map;

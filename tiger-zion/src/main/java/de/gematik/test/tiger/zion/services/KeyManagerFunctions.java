@@ -1,7 +1,6 @@
 package de.gematik.test.tiger.zion.services;
 
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelJexlExecutor;
 import de.gematik.rbellogger.key.IdentityBackedRbelKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;

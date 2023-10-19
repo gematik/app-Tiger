@@ -43,9 +43,9 @@ class TestZionServerType {
                            + "            statusCode: 222\n"
                            + "            body: '{\"Hello\":\"World\"}'\n")
     @Test
-    void testZionServer() {
-        final HttpResponse<JsonNode> response = Unirest.get(TigerGlobalConfiguration.resolvePlaceholders(
-            "http://localhost:${free.port.10}/blubBlab/helloWorld"
+    void testZionServer(UnirestInstance unirestInstance) {
+        final HttpResponse<JsonNode> response = unirestInstance.get(TigerGlobalConfiguration.resolvePlaceholders(
+            "http://zionServer/blubBlab/helloWorld"
         )).asJson();
 
         assertThat(response.getStatus())
