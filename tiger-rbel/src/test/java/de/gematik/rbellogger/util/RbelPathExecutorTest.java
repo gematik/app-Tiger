@@ -283,13 +283,16 @@ class RbelPathExecutorTest {
 
     @SneakyThrows
     @ParameterizedTest
-    @CsvSource({"$..[?(@.0.id == '5001')], $.topping",
+    @CsvSource({
+        "$..[?(@.0.id == '5001')], $.topping",
         "$..[?(@.id == '5001')], $.topping.0",
         "$..batter.[?(content =~ \".*1001.*\")], $.batters.batter.0",
+        "$..recipient.[?(@.. == 'FooBar')], $.recipient.1",
+        "$..recipient.[?(not (@.. == 'FooBar'))], $.recipient.*"
     })
     void recursiveDescentMixedWithJexl(String rbelPath1, String rbelPath2) {
         assertThat(jsonElement.findRbelPathMembers(rbelPath1))
-            .containsExactlyInAnyOrder(
-                jsonElement.findElement(rbelPath2).get());
+            .containsExactlyInAnyOrderElementsOf(
+                jsonElement.findRbelPathMembers(rbelPath2));
     }
 }

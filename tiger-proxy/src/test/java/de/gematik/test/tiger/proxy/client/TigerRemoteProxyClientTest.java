@@ -4,6 +4,14 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.AssertionsForClassTypes.fail;
+import static org.awaitility.Awaitility.await;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
@@ -15,6 +23,14 @@ import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
+import java.io.File;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Config;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
@@ -43,24 +59,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.AssertionsForClassTypes.fail;
-import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 @ExtendWith(SpringExtension.class)
 @ExtendWith(MockServerExtension.class)
@@ -168,10 +166,10 @@ class TigerRemoteProxyClientTest {
             .hasSize(2);
         // assert that the messages only have rudimentary information
         // (no parsing did take place on the sending tigerProxy)
-        assertThat(tigerProxy.getRbelMessagesList().get(0).findRbelPathMembers("$..*"))
-            .hasSizeLessThan(5);
-        assertThat(tigerProxy.getRbelMessagesList().get(1).findRbelPathMembers("$..*"))
-            .hasSizeLessThan(5);
+        assertThat(tigerProxy.getRbelMessagesList().get(0).findRbelPathMembers("$.."))
+            .hasSizeLessThan(10);
+        assertThat(tigerProxy.getRbelMessagesList().get(1).findRbelPathMembers("$.."))
+            .hasSizeLessThan(10);
     }
 
     @Test

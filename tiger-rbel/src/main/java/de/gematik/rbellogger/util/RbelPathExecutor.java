@@ -12,6 +12,7 @@ import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelNestedFacet;
 import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.net.URLDecoder;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -202,10 +203,9 @@ public class RbelPathExecutor {
     }
 
     private List<RbelContent> findChildNodesByJexlExpression(final RbelContent content, final String jexl) {
-        RbelJexlExecutor executor = new RbelJexlExecutor();
         return content.getChildNodesWithKey().stream().parallel()
             .filter(candidate ->
-                executor.matchesAsJexlExpression(jexl, new TigerJexlContext()
+                TigerJexlExecutor.matchesAsJexlExpression(jexl, new TigerJexlContext()
                     .withKey(candidate.getKey())
                     .withCurrentElement(candidate.getValue())
                     .withRootElement(this.rbelContent)))

@@ -4,8 +4,7 @@
 
 ## Bugfixes
 
-* TGR-1139: Fixed various minor problems with recursive descent and attributes in RbelPath-expressions
-
+* TGR-1139/TGR-1140: Fixed various minor problems with recursive descent and attributes in RbelPath-expressions
 
 # Release 2.2.1
 

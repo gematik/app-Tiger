@@ -65,26 +65,38 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
     }
 
     @Override
-    public JexlExpression buildExpression(String jexlExpression, TigerJexlContext mapContext) {
-        return super.buildExpression(evaluateRbelPathExpressions(jexlExpression, mapContext), mapContext);
+    public List<JexlExpression> buildExpressions(String jexlExpression, TigerJexlContext mapContext) {
+        return evaluateRbelPathExpressions(jexlExpression, mapContext).stream()
+            .flatMap(replacedPath -> super.buildExpressions(replacedPath, mapContext).stream())
+            .toList();
     }
 
-    private String evaluateRbelPathExpressions(String jexlExpression, TigerJexlContext mapContext) {
+    private List<String> evaluateRbelPathExpressions(String jexlExpression, TigerJexlContext mapContext) {
+        List<String> resultingPaths = List.of(jexlExpression);
         for (var potentialPath : extractPotentialRbelPaths(jexlExpression)) {
             if (!(potentialPath.startsWith("$.") || potentialPath.startsWith("@."))) {
                 continue;
             }
-            final Optional<String> pathResult = extractPathAndConvertToString(
-                potentialPath.startsWith("@.") ? mapContext.getCurrentElement() : mapContext.getRootElement(),
-                potentialPath.startsWith("@.") ? potentialPath.replaceFirst("@\\.", "\\$.") : potentialPath);
-            if (pathResult.isEmpty() || !CharMatcher.ascii().matchesAllOf(pathResult.get())) {
-                continue;
+            List<String> previousIterationPaths = new ArrayList<>(resultingPaths);
+            List<String> newPaths = new ArrayList<>();
+            for(var expression : previousIterationPaths) {
+                final List<String> pathResults = extractPathAndConvertToString(
+                    potentialPath.startsWith("@.") ? mapContext.getCurrentElement() : mapContext.getRootElement(),
+                    potentialPath.startsWith("@.") ? potentialPath.replaceFirst("@\\.", "\\$.") : potentialPath);
+                if (pathResults.isEmpty() || pathResults.stream().anyMatch(s -> !CharMatcher.ascii().matchesAllOf(s))) {
+                    continue;
+                }
+                for (String pathResult : pathResults) {
+                    final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); //NOSONAR
+                    mapContext.put(id, pathResult);
+                    newPaths.add(expression.replace(potentialPath, id));
+                }
             }
-            final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); //NOSONAR
-            mapContext.put(id, pathResult.get());
-            jexlExpression = jexlExpression.replace(potentialPath, id);
+            if (!newPaths.isEmpty()) {
+                resultingPaths = newPaths;
+            }
         }
-        return jexlExpression;
+        return resultingPaths;
     }
 
     public static List<String> extractPotentialRbelPaths(String jexlExpression) {
@@ -96,7 +108,8 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
         IntPredicate closingJexlBracketIsNext = p -> jexlExpression.startsWith(")]", p);
         IntPredicate openingJexlBracketIsNext = p -> jexlExpression.startsWith("[?(", p);
         IntPredicate nextCharIsNotStillRbelPath = p -> !jexlExpression.substring(p).matches(RBEL_PATH_CHARS); //NOSONAR
-        IntPredicate startingRbelPathIsNext = p -> jexlExpression.startsWith("$.", p) || jexlExpression.startsWith("@.", p);
+        IntPredicate startingRbelPathIsNext = p -> jexlExpression.startsWith("$.", p) || jexlExpression.startsWith("@.",
+            p);
 
         while (pos < jexlExpression.length()) {
             if (insideNestedJexlExpression) {
@@ -130,12 +143,14 @@ public class RbelJexlExecutor extends TigerJexlExecutor {
         return rbelPaths;
     }
 
-    private static Optional<String> extractPathAndConvertToString(Object source, String rbelPath) {
+    private static List<String> extractPathAndConvertToString(Object source, String rbelPath) {
         return Optional.ofNullable(source)
             .filter(RbelElement.class::isInstance)
             .map(RbelElement.class::cast)
-            .flatMap(s -> s.findElement(rbelPath))
-            .map(RbelJexlExecutor::forceStringConvert);
+            .map(s -> s.findRbelPathMembers(rbelPath))
+            .orElse(List.of()).stream()
+            .map(RbelJexlExecutor::forceStringConvert)
+            .toList();
     }
 
     @Override

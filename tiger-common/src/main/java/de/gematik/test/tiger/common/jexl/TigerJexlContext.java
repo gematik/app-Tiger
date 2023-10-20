@@ -1,13 +1,12 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.jexl3.JexlContext;
-
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.jexl3.JexlContext;
 
 /**
  * Context to be used in a JEXL-evaluation. The keys are of type string, but they are canonicalized in

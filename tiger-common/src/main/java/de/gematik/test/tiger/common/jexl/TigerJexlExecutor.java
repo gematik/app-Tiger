@@ -5,10 +5,7 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
@@ -43,8 +40,16 @@ public class TigerJexlExecutor {
     }
 
     public static Optional<Object> evaluateJexlExpression(String jexlExpression, TigerJexlContext context) {
-        return executorSupplier.get()
+        final List<Object> resultList = executorSupplier.get()
             .evaluateJexlExpressionInternal(jexlExpression, context);
+        if (resultList.size() > 1) {
+            throw new TigerJexlException("Evaluated '"+jexlExpression+"' and got more then one result. Expected one ore zero results.");
+        }
+        if (resultList.size() == 1) {
+            return Optional.of(resultList.get(0));
+        } else {
+            return Optional.empty();
+        }
     }
 
     private boolean matchesAsJexlExpressionInternal(Object element, String jexlExpression) {
@@ -53,10 +58,11 @@ public class TigerJexlExecutor {
     }
 
     private boolean matchesAsJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
-        final boolean result = evaluateJexlExpression(jexlExpression, context)
+        final boolean result = executorSupplier.get()
+            .evaluateJexlExpressionInternal(jexlExpression, context).stream()
             .filter(Boolean.class::isInstance)
             .map(Boolean.class::cast)
-            .orElse(false);
+            .reduce(Boolean.FALSE, Boolean::logicalOr);
 
         if (result && ACTIVATE_JEXL_DEBUGGING) {
             printDebugMessage(context.getCurrentElement(), jexlExpression);
@@ -65,7 +71,7 @@ public class TigerJexlExecutor {
         return result;
     }
 
-    private Optional<Object> evaluateJexlExpressionInternal(final String jexlExpression, final TigerJexlContext externalContext) {
+    private List<Object> evaluateJexlExpressionInternal(final String jexlExpression, final TigerJexlContext externalContext) {
         try {
             final TigerJexlContext contextMap = buildJexlMapContext(
                 externalContext.getCurrentElement(),
@@ -73,23 +79,24 @@ public class TigerJexlExecutor {
             );
             contextMap.putAll(NAMESPACE_MAP);
             contextMap.putAll(externalContext);
-            final JexlExpression expression = buildExpression(jexlExpression, contextMap);
 
-            final Object result = expression.evaluate(contextMap);
-            if (ACTIVATE_JEXL_DEBUGGING) {
-                log.debug("Evaluated \"{}\" to '{}'", jexlExpression, result);
-            }
-
-            return Optional.ofNullable(result);
+            return buildExpressions(jexlExpression, contextMap).stream()
+                .map(expression -> expression.evaluate(contextMap))
+                .peek(result -> {
+                    if (ACTIVATE_JEXL_DEBUGGING) {
+                        log.debug("Evaluated \"{}\" to '{}'", jexlExpression, result);
+                    }
+                })
+                .toList();
         } catch (RuntimeException e) {
             if (e instanceof JexlException && (e.getCause() instanceof JexlArithmetic.NullOperand)) {
-                return Optional.empty();
+                return List.of();
             }
             if (e instanceof JexlException && !(e.getCause() instanceof NoSuchElementException)) {
                 throw new TigerJexlException("Error while parsing expression '" + jexlExpression + "'", e);
             }
             log.warn("Error during Jexl-Evaluation.", e);
-            return Optional.empty();
+            return List.of();
         }
     }
 
@@ -113,8 +120,8 @@ public class TigerJexlExecutor {
         return element.toString();
     }
 
-    protected JexlExpression buildExpression(String jexlExpression, TigerJexlContext mapContext) {
-        return getJexlEngine().createExpression(jexlExpression);
+    protected List<JexlExpression> buildExpressions(String jexlExpression, TigerJexlContext mapContext) {
+        return List.of(getJexlEngine().createExpression(jexlExpression));
     }
 
     private static JexlEngine getJexlEngine() {

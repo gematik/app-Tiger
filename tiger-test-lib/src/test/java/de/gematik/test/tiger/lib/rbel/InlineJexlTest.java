@@ -8,7 +8,6 @@ import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addSomeMessagesToTig
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,7 +43,6 @@ public class InlineJexlTest {
         "'!{rbel:lastResponse(),,,isResponse}'",
     })
     void resolveTestStringsFailures(String resolve) {
-        TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = true;
         assertThatThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders(resolve))
             .isInstanceOfAny(JexlException.class, RuntimeException.class);
     }
@@ -56,7 +54,6 @@ public class InlineJexlTest {
         "'!{rbel:getValueAtLocationAsString(rbel:lastResponse(), \"$..id_token[1]..wasDecryptable\")}'",
     })
     void resolveTestStringsFailuresSilently(String resolve) {
-        TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = true;
         assertThat(TigerGlobalConfiguration.resolvePlaceholders(resolve)).isEqualTo(resolve);
     }
 }

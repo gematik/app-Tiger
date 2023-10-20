@@ -7,9 +7,11 @@ package de.gematik.rbellogger.util;
 import static de.gematik.rbellogger.TestUtils.localhostWithPort;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.io.IOException;
@@ -36,10 +38,12 @@ class RbelJexlExecutorTest {
         final RbelLogger rbelLogger = RbelLogger.build();
         request = rbelLogger.getRbelConverter()
             .parseMessage(readCurlFromFileWithCorrectedLineBreaks
-                ("src/test/resources/sampleMessages/getRequest.curl").getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+                    ("src/test/resources/sampleMessages/getRequest.curl").getBytes(), null, null,
+                Optional.of(ZonedDateTime.now()));
         response = rbelLogger.getRbelConverter()
             .parseMessage(readCurlFromFileWithCorrectedLineBreaks
-                ("src/test/resources/sampleMessages/rbelPath.curl").getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+                    ("src/test/resources/sampleMessages/rbelPath.curl").getBytes(), null, null,
+                Optional.of(ZonedDateTime.now()));
     }
 
     @Test
@@ -91,7 +95,8 @@ class RbelJexlExecutorTest {
     void checkJexlParsingForDoubleHeaders() throws IOException {
         RbelElement doubleHeaderMessage = RbelLogger.build().getRbelConverter()
             .parseMessage(readCurlFromFileWithCorrectedLineBreaks
-                ("src/test/resources/sampleMessages/doubleHeader.curl").getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+                    ("src/test/resources/sampleMessages/doubleHeader.curl").getBytes(), null, null,
+                Optional.of(ZonedDateTime.now()));
 
         assertThat(TigerJexlExecutor.matchesAsJexlExpression(
             doubleHeaderMessage, "isResponse", Optional.empty()))
@@ -181,12 +186,12 @@ class RbelJexlExecutorTest {
     }
 
     @ParameterizedTest
-    @CsvSource( textBlock = """
-            $..scopes.[?(@.content=='test')] =~ '.*',$..scopes.[?(@.content=='test')]
-            $..scopes.[?(@.content == 'test')] =~ '.*',$..scopes.[?(@.content == 'test')]
-            $..scopes.[?(@.content == 'test')]=~'.*',$..scopes.[?(@.content == 'test')]
-            $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
-           """
+    @CsvSource(textBlock = """
+         $..scopes.[?(@.content=='test')] =~ '.*',$..scopes.[?(@.content=='test')]
+         $..scopes.[?(@.content == 'test')] =~ '.*',$..scopes.[?(@.content == 'test')]
+         $..scopes.[?(@.content == 'test')]=~'.*',$..scopes.[?(@.content == 'test')]
+         $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
+        """
     )
     void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
         assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))
@@ -194,17 +199,26 @@ class RbelJexlExecutorTest {
     }
 
     @ParameterizedTest
-    @CsvSource( textBlock = """
-            content == 'test'
-            content=='test'
-            $content =='test'
-            @content== 'test'
-            $content=='test'
-            @content=='test'
-           """
+    @CsvSource(textBlock = """
+         content == 'test'
+         content=='test'
+         $content =='test'
+         @content== 'test'
+         $content=='test'
+         @content=='test'
+        """
     )
     void testRbelPathExtractorEmptyResults(String jexlExpression) {
         assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))
             .isEmpty();
+    }
+
+    @Test
+    void nonUniqueExpression_expectException() {
+        assertThatThrownBy(() -> RbelJexlExecutor.evaluateJexlExpression("$.. == 'test'",
+            new TigerJexlContext().withRootElement(request)))
+            .isInstanceOf(TigerJexlException.class)
+            .hasMessageContaining(
+                "Evaluated '$.. == 'test'' and got more then one result. Expected one ore zero results.");
     }
 }
