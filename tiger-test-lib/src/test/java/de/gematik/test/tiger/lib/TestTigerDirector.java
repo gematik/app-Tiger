@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
+
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
@@ -17,12 +18,14 @@ import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+
 import kong.unirest.Unirest;
 import lombok.SneakyThrows;
 import net.serenitybdd.rest.SerenityRest;
@@ -68,14 +71,14 @@ class TestTigerDirector {
             assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
             assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isNotNull();
             assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getBaseUrl()).startsWith(
-                "http://localhost");
+                    "http://localhost");
             assertThat(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getRbelLogger()).isNotNull();
             assertThat(
-                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions()
-                    .getArguments()).hasSize(2);
+                    TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions()
+                            .getArguments()).hasSize(2);
             assertThat(
-                TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions()
-                    .getArguments().get(1)).isEqualTo("--webroot=.");
+                    TigerDirector.getTigerTestEnvMgr().getServers().get("testExternalJar").getConfiguration().getExternalJarOptions()
+                            .getArguments().get(1)).isEqualTo("--webroot=.");
         });
     }
 
@@ -88,14 +91,14 @@ class TestTigerDirector {
                 TigerDirector.start();
 
                 System.out.println(
-                    "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
+                        "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
                 System.out.println(
-                    "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
+                        "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
 
                 assertThat(TigerDirector.isInitialized()).isTrue();
                 assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
                 assertThatThrownBy(() -> TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()).isInstanceOf(
-                    TigerTestEnvException.class);
+                        TigerTestEnvException.class);
 
                 final var url = new URL("http://idp-rise-tu-noproxy");
 
@@ -105,7 +108,7 @@ class TestTigerDirector {
                 con.setConnectTimeout(1000);
 
                 assertThat(capturedOutput.getOut()).contains(
-                    "SKIPPING TIGER PROXY settings as localProxyActive==false...");
+                        "SKIPPING TIGER PROXY settings as localProxyActive==false...");
                 assertThatThrownBy(con::connect).isInstanceOf(Exception.class);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
@@ -118,26 +121,25 @@ class TestTigerDirector {
     void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
         System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
         executeWithSecureShutdown(() -> {
-            try {
-                TigerDirector.start();
+            assertThatNoException().isThrownBy(
+                    () -> {
+                        TigerDirector.start();
 
-                System.out.println(
-                    "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
-                System.out.println(
-                    "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
+                        System.out.println(
+                                "PROXY:" + System.getProperty("http.proxyHost") + " / " + System.getProperty("https.proxyHost"));
+                        System.out.println(
+                                "PORTS:" + System.getProperty("http.proxyPort") + " / " + System.getProperty("https.proxyPort"));
 
-                final var url = new URL("https://github.com/");
+                        final var url = new URL("https://github.com/");
 
-                final URLConnection con;
-                con = url.openConnection();
-                InsecureTrustAllManager.allowAllSsl(con);
+                        final URLConnection con;
+                        con = url.openConnection();
+                        InsecureTrustAllManager.allowAllSsl(con);
 
-                con.connect();
+                        con.connect();
+                    }
+            );
 
-                assertThatNoException();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         });
     }
 
@@ -147,8 +149,8 @@ class TestTigerDirector {
         final Path nonExistingPath = Paths.get("non", "existing", "file.yaml");
         new EnvironmentVariables("TIGER_TESTENV_CFGFILE", nonExistingPath.toString()).execute(() -> {
             assertThatThrownBy(TigerDirector::start)
-                .isInstanceOf(TigerConfigurationException.class)
-                .hasMessageContaining(nonExistingPath.toString());
+                    .isInstanceOf(TigerConfigurationException.class)
+                    .hasMessageContaining(nonExistingPath.toString());
         });
     }
 
@@ -163,27 +165,27 @@ class TestTigerDirector {
             assertThat(System.getProperty("https.proxyPort")).isNotNull();
             assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
             assertThat(SerenityRest.get("http://testExternalJar/").getStatusCode())
-                .isEqualTo(200);
+                    .isEqualTo(200);
             assertThat(Unirest.get("http://testExternalJar/").asEmpty().getStatus())
-                .isEqualTo(200);
+                    .isEqualTo(200);
         });
     }
 
     @Test
     void checkComplexKeyOverriding() throws Exception {
         final Configuration config = new EnvironmentVariables(
-            "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
-            .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/idpError.yaml")
-            .execute(() -> {
-                TigerGlobalConfiguration.reset();
-                return TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "TIGER_TESTENV")
-                    .get();
-            });
+                "TIGER_TESTENV_SERVERS_IDP_EXTERNALJAROPTIONS_ARGUMENTS_0", "foobar")
+                .and("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/idpError.yaml")
+                .execute(() -> {
+                    TigerGlobalConfiguration.reset();
+                    return TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "TIGER_TESTENV")
+                            .get();
+                });
 
         assertThat(config.getServers().get("idp")
-            .getExternalJarOptions()
-            .getArguments().get(0))
-            .isEqualTo("foobar");
+                .getExternalJarOptions()
+                .getArguments().get(0))
+                .isEqualTo("foobar");
     }
 
     @Test
@@ -199,21 +201,21 @@ class TestTigerDirector {
     void testPauseExecutionViaWorkflowUI() {
         executeWithSecureShutdown(() -> {
             new EnvironmentVariables("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")
-                .and("fds", "fds")
-                .execute(() -> {
-                TigerDirector.start();
-                EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
-                    TigerBuildPropertiesService.class));
-                TigerDirector.getLibConfig().activateWorkflowUi = true;
-                new Thread(() -> {
-                    TigerDirector.pauseExecution();
-                    System.out.println("Execution resumes!");
-                }).start();
+                    .and("fds", "fds")
+                    .execute(() -> {
+                        TigerDirector.start();
+                        EnvStatusController envStatusController = new EnvStatusController(TigerDirector.getTigerTestEnvMgr(), mock(
+                                TigerBuildPropertiesService.class));
+                        TigerDirector.getLibConfig().activateWorkflowUi = true;
+                        new Thread(() -> {
+                            TigerDirector.pauseExecution();
+                            System.out.println("Execution resumes!");
+                        }).start();
 
-                envStatusController.getConfirmContinueExecution();
-                await().atMost(2000, TimeUnit.MILLISECONDS)
-                    .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi());
-            });
+                        envStatusController.getConfirmContinueExecution();
+                        await().atMost(2000, TimeUnit.MILLISECONDS)
+                                .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi());
+                    });
         });
     }
 
@@ -235,7 +237,7 @@ class TestTigerDirector {
     void testQuitTestRunViaWorkFlowUi() throws Exception {
         TigerDirector.start();
         EnvStatusController envStatusController = new EnvStatusController(
-            TigerDirector.getTigerTestEnvMgr(), mock(TigerBuildPropertiesService.class));
+                TigerDirector.getTigerTestEnvMgr(), mock(TigerBuildPropertiesService.class));
         TigerDirector.getLibConfig().activateWorkflowUi = true;
 
         new Thread(TigerDirector::waitForAcknowledgedQuit).start();

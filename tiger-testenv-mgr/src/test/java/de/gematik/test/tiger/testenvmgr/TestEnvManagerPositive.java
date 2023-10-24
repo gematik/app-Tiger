@@ -78,19 +78,25 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
     @Test
     void testExternalUrlViaProxy() {
-        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml"));
+        assertThatNoException().isThrownBy(
+                ()->{
+                TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl.yaml"));
         createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
-        assertThatNoException();
+                }
+        );
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"withPkiKeys", "withUrlMappings"})
     void testExternalUrl_withDetails(String cfgFileName) {
-        TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_" + cfgFileName + ".yaml"));
+        assertThatNoException().isThrownBy(
+                ()->{
+                TigerGlobalConfiguration.initializeWithCliProperties(Map.of("TIGER_TESTENV_CFGFILE",
+                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_" + cfgFileName + ".yaml"));
         createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
-        assertThatNoException();
+                }
+        );
     }
 
     @Test

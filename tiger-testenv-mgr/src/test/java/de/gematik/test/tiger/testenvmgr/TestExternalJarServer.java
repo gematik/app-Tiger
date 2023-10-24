@@ -33,11 +33,11 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
         + "        - --httpPort=${free.port.0}\n"
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
+
     void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
-        executeWithSecureShutdown(() -> {
-            envMgr.setUpEnvironment();
-            assertThatNoException();
-        }, envMgr);
+        assertThatNoException().isThrownBy(
+                () -> executeWithSecureShutdown(envMgr::setUpEnvironment, envMgr)
+        );
     }
 
     @Test
@@ -54,10 +54,9 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
     void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
-        executeWithSecureShutdown(() -> {
-            envMgr.setUpEnvironment();
-            assertThatNoException();
-        }, envMgr);
+        assertThatNoException().isThrownBy(
+                () -> executeWithSecureShutdown(envMgr::setUpEnvironment, envMgr))
+        ;
     }
 
     @Test
@@ -75,10 +74,11 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
         + "        - --webroot=.\n",
         skipEnvironmentSetup = true)
     void testCreateExternalJarRelativePathWithRelativeWorkingDir(TigerTestEnvMgr envMgr) {
-        executeWithSecureShutdown(() -> {
-            envMgr.setUpEnvironment();
-            assertThatNoException();
-        }, envMgr);
+        assertThatNoException().isThrownBy(
+                ()-> {
+                    executeWithSecureShutdown(envMgr::setUpEnvironment, envMgr);
+                }
+        );
     }
 
     @Test
@@ -93,9 +93,8 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
             srv.getExternalJarOptions().setWorkingDir("NonExistingFolder");
             srv.setHealthcheckUrl("NONE");
             srv.setStartupTimeoutSec(1);
-            try {
-                envMgr.setUpEnvironment();
-                assertThatNoException();
+            try {assertThatNoException().isThrownBy(envMgr::setUpEnvironment);
+
             } finally {
                 FileUtils.forceDeleteOnExit(folder);
             }
