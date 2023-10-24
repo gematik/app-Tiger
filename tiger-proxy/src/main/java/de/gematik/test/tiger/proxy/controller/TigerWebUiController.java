@@ -240,18 +240,11 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 )
                         ),
 
-                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED + " ms-3").with(
+                        div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
                             button().withId("resetMsgs").withClass("btn btn-outline-danger").with(
                                 i().withClass("far fa-trash-alt"),
                                 span("Reset").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
-                        ),
-                        div().withClass(CSS_NAVBAR_ITEM).with(
-                            button().withId("saveMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS)
-                                .with(
-                                    i().withClass("far fa-save"),
-                                    span("Save").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
-                                )
                         ),
                         div().withClass(CSS_NAVBAR_ITEM).with(
                             div().withId("dropdown-page-selection").withClass("btn-group dropup").with(
@@ -272,7 +265,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                             )
                         ),
                         div().withClass(CSS_NAVBAR_ITEM).with(
-                            div().withId("dropdown-page-size").withClass("dropup").with(
+                            div().withId("dropdown-page-size").withClass("btn-group dropup").with(
                                 button().withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
                                     .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
                                     .attr(ATTR_ARIA_HASPOPUP, "true")
@@ -296,10 +289,17 @@ public class TigerWebUiController implements ApplicationContextAware {
                         ),
                         div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
                             button().withId("importMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS).with(
-                                i().withClass("far fa-folder-open"),
+                                i().withClass("fa-solid fa-file-import"),
                                 span("Import").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
                             )
                         ),
+                            div().withClass(CSS_NAVBAR_ITEM).with(
+                                    button().withId("exportMsgs").withClass(CSS_BTN_OUTLINE_SUCCESS)
+                                            .with(
+                                                    i().withClass("fa-solid fa-file-export"),
+                                                    span("Export").withClass("ms-2").withStyle(CSS_COLOR_INHERIT)
+                                            )
+                            ),
                         div().withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED).with(
                             span("Proxy port "),
                             b(String.valueOf(tigerProxy.getProxyPort())).withClass("ms-3")

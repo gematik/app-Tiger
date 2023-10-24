@@ -187,34 +187,45 @@ class RbelMessageValidatorTest {
 
     @Test
     void testSourceNoComment_OK() {
-        RbelMessageValidator.instance.compareXMLStructure(
-            "<root><header></header><body><!-- test comment --></body></root>",
-            "<root><header></header><body></body></root>", "nocomment");
-        assertThatNoException();
+        assertThatNoException().isThrownBy(
+                ()-> {
+                    RbelMessageValidator.instance.compareXMLStructure(
+                            "<root><header></header><body><!-- test comment --></body></root>",
+                            "<root><header></header><body></body></root>", "nocomment");
+                }
+        );
     }
 
     @Test
     void testSourceNoCommetTxtTrim_OK() {
-        RbelMessageValidator.instance.compareXMLStructure(
-            "<root><header></header><body>test     <!-- test comment --></body></root>",
-            "<root><header></header><body>test</body></root>", "nocomment,txttrim");
-        assertThatNoException();
-    }
+        assertThatNoException().isThrownBy(
+                () -> {
+                    RbelMessageValidator.instance.compareXMLStructure(
+                            "<root><header></header><body>test     <!-- test comment --></body></root>",
+                            "<root><header></header><body>test</body></root>", "nocomment,txttrim");
+                });
+        }
 
     @Test
     void testSourceNoCommetTxtTrim2_OK() {
-        RbelMessageValidator.instance.compareXMLStructure(
-            "<root><header></header><body>    test     <!-- test comment --></body></root>",
-            "<root><header></header><body>test</body></root>", "nocomment,txttrim");
-        assertThatNoException();
+        assertThatNoException().isThrownBy(
+                ()-> {
+                    RbelMessageValidator.instance.compareXMLStructure(
+                            "<root><header></header><body>    test     <!-- test comment --></body></root>",
+                            "<root><header></header><body>test</body></root>", "nocomment,txttrim");
+                }
+        );
     }
 
     @Test
     void testSourceNoCommetTxtTrim3_OK() {
-        RbelMessageValidator.instance.compareXMLStructure(
-            "<root><header></header><body>    test xxx    <!-- test comment --></body></root>",
-            "<root><header></header><body>test xxx</body></root>", "nocomment,txttrim");
-        assertThatNoException();
+        assertThatNoException().isThrownBy(
+                ()-> {
+                    RbelMessageValidator.instance.compareXMLStructure(
+                            "<root><header></header><body>    test xxx    <!-- test comment --></body></root>",
+                            "<root><header></header><body>test xxx</body></root>", "nocomment,txttrim");
+                }
+        );
     }
 
     @Test
@@ -227,18 +238,23 @@ class RbelMessageValidatorTest {
 
     @Test
     void testSourceNoCommetTxtNormalize_OK() {
-        RbelMessageValidator.instance.compareXMLStructure(
-            "<root><header></header><body>  test    xxxx   </body>  <!-- test comment --></root>",
-            "<root><header></header><body>test xxxx </body></root>", "nocomment,txtnormalize");
-        assertThatNoException();
+        assertThatNoException().isThrownBy(
+                ()-> {
+                    RbelMessageValidator.instance.compareXMLStructure(
+                            "<root><header></header><body>  test    xxxx   </body>  <!-- test comment --></root>",
+                            "<root><header></header><body>test xxxx </body></root>", "nocomment,txtnormalize");
+                }
+        );
     }
 
     @Test
     void testSourceAttrOrder_OK() {
-        RbelMessageValidator.instance.compareXMLStructure(
-            "<root><header></header><body attr1='1'   attr2='2'></body></root>",
-            "<root><header></header><body attr2='2' attr1='1'></body></root>");
-        assertThatNoException();
+        assertThatNoException().isThrownBy(
+                ()->{
+                    RbelMessageValidator.instance.compareXMLStructure(
+                            "<root><header></header><body attr1='1'   attr2='2'></body></root>",
+                            "<root><header></header><body attr2='2' attr1='1'></body></root>");
+                });
     }
 
     @ParameterizedTest

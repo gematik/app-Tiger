@@ -108,7 +108,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
             () -> assertThat(externalPage.locator("#dropdown-hide-button").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#filterModalBtn").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#resetMsgs").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#saveMsgs").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#exportMsgs").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#dropdown-page-selection").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#dropdown-page-size").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#importMsgs").isVisible()).isTrue()
@@ -161,7 +161,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
     void testGSaveModal() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
         assertAll(
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveModalDialog").isVisible()).isTrue(),
             () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").isVisible()).isTrue(),
@@ -178,7 +178,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
     void testASaveModalDownloadHtml() throws InterruptedException {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
         Download download = page.waitForDownload(() -> page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").click());
         // wait for download to complete
         sleep(1000);
@@ -197,7 +197,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
     void testASaveModalDownloadTgr() throws InterruptedException {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
+        page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
         Download download = page.waitForDownload(() -> page.frameLocator("#rbellog-details-iframe").locator("#saveTrafficBtn").click());
         // wait for download to complete
         sleep(1000);

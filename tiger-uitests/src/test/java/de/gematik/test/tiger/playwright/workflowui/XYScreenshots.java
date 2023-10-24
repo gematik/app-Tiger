@@ -131,7 +131,7 @@ class XYScreenshots extends AbstractTests {
         screenshot(externalPage,"webui_filter_open.png");
         externalPage.locator("#filterModalButtonClose").click();
 
-        externalPage.locator("#saveMsgs").click();
+        externalPage.locator("#exportMsgs").click();
         screenshot(externalPage,"webui_save_open.png");
         externalPage.locator("#saveModalButtonClose").click();
 

@@ -19,7 +19,7 @@ let empty = "empty";
 const NO_REQUEST = "no requests";
 
 let resetBtn;
-let saveBtn;
+let exportBtn;
 let quitBtn;
 let importBtn;
 let includeFilterInDownload = false;
@@ -116,7 +116,7 @@ function createDownloadOptionsQueryString() {
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
   resetBtn = document.getElementById("resetMsgs");
-  saveBtn = document.getElementById("saveMsgs");
+  exportBtn = document.getElementById("exportMsgs");
   importBtn = document.getElementById("importMsgs");
   quitBtn = document.getElementById("quitProxy");
   jexlInspectionResultDiv = document.getElementById("jexlResult");
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   btnOpenRouteModal.addEventListener('click', showModalsCB);
   btnOpenFilterModal.addEventListener('click', showModalsCB);
-  saveBtn.addEventListener('click', showModalSave);
+  exportBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
 
   collapsibleDetails = document.getElementById("collapsibleMessageDetails");

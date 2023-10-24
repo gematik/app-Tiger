@@ -32,7 +32,7 @@ class XLaterTests extends AbstractTests {
                 page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").isVisible()).isTrue(),
             () -> assertThat(
                 page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").isVisible()).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").isVisible()).isTrue(),
+            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").isVisible()).isTrue(),
             () -> assertThat(
                 page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").isVisible()).isTrue(),
             () -> assertThat(
@@ -104,7 +104,7 @@ class XLaterTests extends AbstractTests {
             () -> assertThat(externalPage.locator("#dropdown-hide-button").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#filterModalBtn").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#resetMsgs").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#saveMsgs").isVisible()).isTrue(),
+            () -> assertThat(externalPage.locator("#exportMsgs").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#dropdown-page-selection").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#dropdown-page-size").isVisible()).isTrue(),
             () -> assertThat(externalPage.locator("#importMsgs").isVisible()).isTrue()
