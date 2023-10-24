@@ -358,7 +358,7 @@ public class TigerGlobalConfiguration {
 
         throw new TigerConfigurationException(
             "The file " + additionalYaml + " relative to parent folder of tiger.yaml " +
-                configFileLocation + " or current working directory " + currentDirectory + " not found.");
+                configFileLocation + " or current working directory " + currentDirectory + " is not found.");
     }
 
     static String getComputerName() {
@@ -381,9 +381,11 @@ public class TigerGlobalConfiguration {
             } else {
                 readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), sourceType);
             }
+        } catch (TigerConfigurationException tcex) {
+            throw tcex;
         } catch (IOException | RuntimeException e) {
             throw new TigerConfigurationException(
-                "Error while reading configuration from file '" + file.getAbsolutePath() + "'", e);
+                "Error while reading configuration from file '" + file.getAbsolutePath() + "' with cause '" + e + "'", e);
         }
     }
 

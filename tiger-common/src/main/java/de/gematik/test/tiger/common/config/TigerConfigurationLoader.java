@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.common.config;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.Module;
@@ -19,11 +18,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
-import java.io.IOException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -32,6 +26,14 @@ import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
 
 @Slf4j
 public class TigerConfigurationLoader {
@@ -158,9 +160,13 @@ public class TigerConfigurationLoader {
         } catch (JacksonException e) {
             log.debug("Error while converting the following tree: {}", objectMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(targetTree));
+            Throwable ex = e;
+            while (ex.getCause() != null) {
+                ex = ex.getCause();
+            }
             throw new TigerConfigurationException(
                 "Error while reading configuration for class " + configurationBeanClass.getName() + " with base-keys "
-                    + Arrays.toString(baseKeys), e);
+                    + Arrays.toString(baseKeys) + " and root cause '" + ex.getMessage() + "'", e);
         }
     }
 

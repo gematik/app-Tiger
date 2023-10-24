@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 import static org.awaitility.Awaitility.await;
@@ -84,6 +83,8 @@ public class TigerDirector {
             registerRestAssuredFilter();
             applyLoggingLevels();
             applyTestLibConfig();
+        } catch (TigerConfigurationException tcex) {
+            throw tcex;
         } catch (RuntimeException rte) {
             throw new TigerConfigurationException("Unable to read/process configuration - " + rte.getMessage(), rte);
         }
@@ -353,10 +354,7 @@ public class TigerDirector {
         }
     }
 
-    private final static Pattern showSteps = Pattern.compile(
-        ".*TGR (zeige|show) ([\\w|üß]*) (Banner|banner|text|Text) \"(.*)\"");//NOSONAR
-
-    private static void assertThatTigerIsInitialized() {
+    public static void assertThatTigerIsInitialized() {
         if (!initialized) {
             throw new TigerStartupException("Tiger test environment has not been initialized successfully!");
         }

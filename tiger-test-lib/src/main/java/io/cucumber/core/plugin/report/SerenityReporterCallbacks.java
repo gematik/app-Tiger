@@ -114,6 +114,7 @@ public class SerenityReporterCallbacks {
             }
             showTigerVersion();
             initializeTiger();
+            TigerDirector.assertThatTigerIsInitialized();
             shouldAbortTestExecution();
         }
     }
@@ -593,7 +594,6 @@ public class SerenityReporterCallbacks {
 
     private void shouldAbortTestExecution() {
       if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
-        // Fail.fail()
         throw new AssertionError("Aborted test execution on user request");
       }
     }

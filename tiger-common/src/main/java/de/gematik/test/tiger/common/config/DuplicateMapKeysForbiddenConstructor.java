@@ -34,8 +34,10 @@ public class DuplicateMapKeysForbiddenConstructor extends SafeConstructor {
             Set<String> duplicates = findDuplicates(keys);
             if (!duplicates.isEmpty()) {
                 throw new TigerConfigurationException(
-                    "Duplicate keys in yaml file ('" + String.join(",", duplicates) + "')!");
+                        "Duplicate keys in yaml file ('" + String.join(",", duplicates) + "')!");
             }
+        } catch (TigerConfigurationException tcex) {
+            throw tcex;
         } catch (Exception e) {
             throw new TigerConfigurationException("Duplicate keys in yaml file!", e);
         }
