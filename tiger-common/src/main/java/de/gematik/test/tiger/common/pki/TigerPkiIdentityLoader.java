@@ -46,8 +46,8 @@ public class TigerPkiIdentityLoader {
      * <p>
      * Each part can be one of: * filename * password * store-type (accepted are P12, PKCS12, JKS)
      *
-     * @param information
-     * @return
+     * @param information the information string a semi colon separated list of values being filename, password, type
+     * @return pki identity object as used within the Tiger platform
      */
     public static TigerPkiIdentity loadRbelPkiIdentity(String information) {
         return loadRbelPkiIdentity(Optional.empty(), information);
@@ -89,7 +89,7 @@ public class TigerPkiIdentityLoader {
         }
 
         if (storeType.isKeystore()) {
-            return loadKeystore(fileNamesAndContent.get(0).getRight(), guessPasswordField(informationSplits, fileNames, storeType), storeType.name());
+            return loadKeystoreFrom(fileNamesAndContent.get(0), guessPasswordField(informationSplits, fileNames, storeType), storeType.name());
         } else {
             final TigerPkiIdentity rbelPkiIdentity = loadCertKeyPair(storeType, fileNamesAndContent);
             final TigerPkiIdentity tigerPkiIdentity = new TigerPkiIdentity();
@@ -152,10 +152,10 @@ public class TigerPkiIdentityLoader {
             .findAny();
     }
 
-    private static TigerPkiIdentity loadKeystore(byte[] content, String password, String keystoreType) {
+    private static TigerPkiIdentity loadKeystoreFrom(Pair<String,byte[]> keyStore, String password, String keystoreType) {
         try {
             KeyStore ks = KeyStore.getInstance(keystoreType);
-            ks.load(new ByteArrayInputStream(content), password.toCharArray());
+            ks.load(new ByteArrayInputStream(keyStore.getRight()), password.toCharArray());
             TigerPkiIdentity result = new TigerPkiIdentity();
             for (Iterator<String> it = ks.aliases().asIterator(); it.hasNext(); ) {
                 String alias = it.next();
@@ -171,12 +171,13 @@ public class TigerPkiIdentityLoader {
                 }
             }
             if (result.getPrivateKey() == null) {
-                throw new TigerPkiIdentityLoaderException("Error while loading keystore: No matching entry found!");
+                throw new TigerPkiIdentityLoaderException("Error while loading keystore from '" + keyStore.getLeft() +
+                        "': No matching entry found!");
             } else {
                 return result;
             }
         } catch (Exception e) {
-            throw new TigerPkiIdentityLoaderException("Error while loading keystore", e);
+            throw new TigerPkiIdentityLoaderException("Error while loading keystore from '" + keyStore.getLeft() + "'", e);
         }
     }
 

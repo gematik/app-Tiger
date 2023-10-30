@@ -10,6 +10,7 @@
 * TGR-1139/TGR-1140: Fixed various minor problems with recursive descent and attributes in RbelPath-expressions
 * TGR-1038: Changed assertThatNo()-exceptions to assertThatNo.isThrownBy so the tests are not ignored
 * TGR-935: Removed unnecessary encapsulation of tiger exceptions to reduce stacktrace flooding, added root cause to exception message so that maven shows the root cause in the error line too.
+* TGR-1154: Improved error message in case the PKI Loader fails to open a key store (including the filename) 
 
 # Release 2.2.1
 
