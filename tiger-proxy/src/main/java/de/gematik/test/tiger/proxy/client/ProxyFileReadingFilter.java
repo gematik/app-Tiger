@@ -7,8 +7,8 @@ package de.gematik.test.tiger.proxy.client;
 import static de.gematik.test.tiger.proxy.AbstractTigerProxy.PAIRED_MESSAGE_UUID;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.util.RbelMessagePostProcessor;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,6 @@ import org.json.JSONObject;
 @Slf4j
 public class ProxyFileReadingFilter implements RbelMessagePostProcessor {
 
-    private final RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
     private final String filterExpression;
     private final Map<String, RbelElement> deletedMessages = new HashMap<>();
 
@@ -47,6 +46,6 @@ public class ProxyFileReadingFilter implements RbelMessagePostProcessor {
     }
 
     private boolean isKeepMessage(RbelElement message) {
-        return jexlExecutor.matchesAsJexlExpression(message, filterExpression);
+        return TigerJexlExecutor.matchesAsJexlExpression(message, filterExpression);
     }
 }

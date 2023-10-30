@@ -19,7 +19,6 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -68,7 +67,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean, AutoCloseable {
 
     static {
-        TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
+        RbelJexlExecutor.initialize();
     }
 
     public static final String HTTP = "http://";

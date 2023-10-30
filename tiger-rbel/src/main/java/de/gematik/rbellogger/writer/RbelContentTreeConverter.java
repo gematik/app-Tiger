@@ -9,7 +9,6 @@ import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelNestedFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.exceptions.RbelContentTreeConversionException;
-import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.writer.tree.*;
 import de.gematik.test.tiger.common.config.*;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
@@ -115,7 +114,7 @@ public class RbelContentTreeConverter {
     private List<RbelContentTreeNode> executeTgrForLoop(RbelElement input, String key, TigerConfigurationLoader conversionContext) {
         String loopStatement = findLoopStatement(input);
         final TigerJexlContext context = buildNewExpressionEvaluationContext();
-        final RbelJexlExecutor rbelJexlExecutor = new RbelJexlExecutor();
+        final TigerJexlExecutor rbelJexlExecutor = new TigerJexlExecutor();
         final Map<String, Object> jexlMapContext = rbelJexlExecutor.buildJexlMapContext(context.getRootElement(), Optional.ofNullable(key));
         context.putAll(jexlMapContext);
         rbelJexlExecutor.buildScript("t = " + loopStatement.split(":")[1]).execute(context);

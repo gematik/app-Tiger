@@ -12,7 +12,7 @@ import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet.RbelHostnameFacetBuilder;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.util.RbelJexlExecutor;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class RbelBundledMessagesPlugin implements RbelConverterPlugin {
 
-    private final RbelJexlExecutor executor = new RbelJexlExecutor();
+    private final TigerJexlExecutor executor = new TigerJexlExecutor();
 
     @Override
     public void consumeElement(RbelElement messageElement, RbelConverter converter) {

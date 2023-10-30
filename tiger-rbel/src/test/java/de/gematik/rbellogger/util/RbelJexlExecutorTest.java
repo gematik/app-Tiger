@@ -17,7 +17,6 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,11 +26,6 @@ class RbelJexlExecutorTest {
 
     private RbelElement response;
     private RbelElement request;
-
-    @BeforeAll
-    public static void init() {
-        TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
-    }
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -215,7 +209,7 @@ class RbelJexlExecutorTest {
 
     @Test
     void nonUniqueExpression_expectException() {
-        assertThatThrownBy(() -> RbelJexlExecutor.evaluateJexlExpression("$.. == 'test'",
+        assertThatThrownBy(() -> TigerJexlExecutor.evaluateJexlExpression("$.. == 'test'",
             new TigerJexlContext().withRootElement(request)))
             .isInstanceOf(TigerJexlException.class)
             .hasMessageContaining(

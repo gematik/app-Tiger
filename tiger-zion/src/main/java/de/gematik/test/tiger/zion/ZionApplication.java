@@ -6,7 +6,6 @@ import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.writer.RbelWriter;
-import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,7 @@ import org.springframework.context.annotation.Bean;
 public class ZionApplication {
 
     static {
-        TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
+        RbelJexlExecutor.initialize();
     }
 
     public static void main(String[] args) { //NOSONAR

@@ -7,10 +7,10 @@ package de.gematik.test.tiger.proxy.client;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import jakarta.websocket.ContainerProvider;
@@ -273,7 +273,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         if (StringUtils.isEmpty(getTigerProxyConfiguration().getTrafficEndpointFilterString())) {
             return true;
         }
-        return new RbelJexlExecutor().matchesAsJexlExpression(
+        return TigerJexlExecutor.matchesAsJexlExpression(
             rbelMessage,
             getTigerProxyConfiguration().getTrafficEndpointFilterString(),
             Optional.empty());

@@ -6,10 +6,12 @@ package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
+import org.apache.commons.lang3.function.TriConsumer;
 
 @Slf4j
 public class TigerJexlExecutor {
@@ -17,9 +19,14 @@ public class TigerJexlExecutor {
     public static boolean ACTIVATE_JEXL_DEBUGGING = false;
     public static Supplier<TigerJexlExecutor> executorSupplier = TigerJexlExecutor::new;
     private static final Map<String, Object> NAMESPACE_MAP = new HashMap<>();
+    public static BiFunction<String, TigerJexlContext, List<String>> EXPRESSION_PRE_MAPPER
+        = (exp, ctx) -> List.of(exp);
+    public static List<TriConsumer<Object, Optional<String>, TigerJexlContext>> CONTEXT_DECORATORS
+        = new ArrayList<>();
 
     static {
         NAMESPACE_MAP.put(null, InlineJexlToolbox.class);
+        CONTEXT_DECORATORS.add(TigerJexlExecutor::tigerJexlMapDecorator);
     }
 
     public static boolean matchesAsJexlExpression(Object element, String jexlExpression) {
@@ -27,7 +34,8 @@ public class TigerJexlExecutor {
             .matchesAsJexlExpressionInternal(element, jexlExpression);
     }
 
-    public static boolean matchesAsJexlExpression(Object element, String jexlExpression, Optional<String> keyInParentElement) {
+    public static boolean matchesAsJexlExpression(Object element, String jexlExpression,
+        Optional<String> keyInParentElement) {
         return matchesAsJexlExpression(jexlExpression,
             new TigerJexlContext()
                 .withKey(keyInParentElement.orElse(null))
@@ -43,7 +51,8 @@ public class TigerJexlExecutor {
         final List<Object> resultList = executorSupplier.get()
             .evaluateJexlExpressionInternal(jexlExpression, context);
         if (resultList.size() > 1) {
-            throw new TigerJexlException("Evaluated '"+jexlExpression+"' and got more then one result. Expected one ore zero results.");
+            throw new TigerJexlException(
+                "Evaluated '" + jexlExpression + "' and got more then one result. Expected one ore zero results.");
         }
         if (resultList.size() == 1) {
             return Optional.of(resultList.get(0));
@@ -104,24 +113,31 @@ public class TigerJexlExecutor {
         log.trace("Found match: '{}' matches '{}'", element, jexlExpression);
     }
 
-    protected TigerJexlContext buildJexlMapContext(Object element, Optional<String> key) {
+    public static TigerJexlContext buildJexlMapContext(Object element, Optional<String> key) {
         final TigerJexlContext mapContext = new TigerJexlContext();
 
-        mapContext.put("element", element);
-        if (element != null) {
-            mapContext.put("type", element.getClass().getSimpleName());
-            mapContext.put("content", getContent(element));
-        }
+       CONTEXT_DECORATORS
+           .forEach(decorator -> decorator.accept(element, key, mapContext));
 
         return mapContext;
     }
 
-    protected String getContent(Object element) {
+    private static void tigerJexlMapDecorator(Object element, Optional<String> key, TigerJexlContext context) {
+        context.put("element", element);
+        if (element != null) {
+            context.put("type", element.getClass().getSimpleName());
+            context.put("content", getContent(element));
+        }
+    }
+
+    private static String getContent(Object element) {
         return element.toString();
     }
 
-    protected List<JexlExpression> buildExpressions(String jexlExpression, TigerJexlContext mapContext) {
-        return List.of(getJexlEngine().createExpression(jexlExpression));
+    private List<JexlExpression> buildExpressions(String jexlExpression, TigerJexlContext mapContext) {
+        return EXPRESSION_PRE_MAPPER.apply(jexlExpression, mapContext).stream()
+            .map(getJexlEngine()::createExpression)
+            .toList();
     }
 
     private static JexlEngine getJexlEngine() {

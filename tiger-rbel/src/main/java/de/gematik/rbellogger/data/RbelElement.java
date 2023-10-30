@@ -11,7 +11,6 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.util.RbelException;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.util.RbelPathExecutor;
-import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -30,8 +29,8 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class RbelElement implements RbelContent {
 
-    static {
-        TigerJexlExecutor.executorSupplier = RbelJexlExecutor::new;
+    {
+        RbelJexlExecutor.initialize();
     }
 
     private final String uuid;

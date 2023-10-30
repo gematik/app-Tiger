@@ -352,11 +352,10 @@ public class TigerWebUiController implements ApplicationContextAware {
     public JexlQueryResponseDto testJexlQuery(
         @RequestParam(name = "msgUuid") final String msgUuid,
         @RequestParam(name = "query") final String query) {
-        RbelJexlExecutor jexlExecutor = new RbelJexlExecutor();
         final RbelElement targetMessage = getTigerProxy().getRbelLogger().getMessageHistory().stream()
             .filter(msg -> msg.getUuid().equals(msgUuid))
             .findFirst().orElseThrow();
-        final Map<String, Object> messageContext = jexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
+        final Map<String, Object> messageContext = TigerJexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
         try {
             return JexlQueryResponseDto.builder()
                 .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
