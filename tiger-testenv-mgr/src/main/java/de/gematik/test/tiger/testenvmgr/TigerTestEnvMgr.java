@@ -47,6 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +91,7 @@ public class TigerTestEnvMgr implements TigerEnvUpdateSender, TigerUpdateListene
     private final List<TigerServerLogListener> logListeners = new ArrayList<>();
 
     private final DownloadManager downloadManager = new DownloadManager();
+    @Getter(AccessLevel.PRIVATE)
     private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
     private boolean userAcknowledgedOnWorkflowUi = false;

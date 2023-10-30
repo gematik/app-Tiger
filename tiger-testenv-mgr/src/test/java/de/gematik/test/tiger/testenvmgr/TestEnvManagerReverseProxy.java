@@ -17,23 +17,25 @@ import org.junit.jupiter.api.Test;
 public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
 
     @Test
-    @TigerTest(tigerYaml = "servers:\n"
-        + "  testWinstone2:\n"
-        + "    type: externalJar\n"
-        + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-        + "    healthcheckReturnCode: 200\n"
-        + "    source:\n"
-        + "      - http://localhost:${mockserver.port}/download\n"
-        + "    externalJarOptions:\n"
-        + "      arguments:\n"
-        + "        - --httpPort=${free.port.0}\n"
-        + "        - --webroot=.\n"
-        + "  reverseproxy1:\n"
-        + "    type: tigerProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.2}\n"
-        + "      proxiedServer: testWinstone2\n"
-        + "      proxyPort: ${free.port.3}\n")
+    @TigerTest(tigerYaml = """
+        servers:
+          testWinstone2:
+            type: externalJar
+            healthcheckUrl: http://127.0.0.1:${free.port.0}
+            healthcheckReturnCode: 200
+            source:
+              - http://localhost:${mockserver.port}/download
+            externalJarOptions:
+              arguments:
+                - --httpPort=${free.port.0}
+                - --webroot=.
+          reverseproxy1:
+            type: tigerProxy
+            tigerProxyCfg:
+              adminPort: ${free.port.2}
+              proxiedServer: testWinstone2
+              proxyPort: ${free.port.3}
+                """)
     void testReverseProxy() {
         final kong.unirest.HttpResponse<String> httpResponse = Unirest.get(
             "http://127.0.0.1:" + TigerGlobalConfiguration.readStringOptional("free.port.3").get()).asString();

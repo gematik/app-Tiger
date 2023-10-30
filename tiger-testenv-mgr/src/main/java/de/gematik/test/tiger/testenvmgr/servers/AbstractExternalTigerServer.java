@@ -7,6 +7,9 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
@@ -14,6 +17,7 @@ import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.net.*;
+import java.net.Proxy.Type;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -24,12 +28,13 @@ import javax.net.ssl.SSLHandshakeException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.awaitility.core.ConditionTimeoutException;
+import org.mockserver.proxyconfiguration.ProxyConfiguration;
 
 public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
 
     /**
-     * Container to store exceptions while performing startup of server, useful if you start external processes and want to monitor them in a separate
-     * thread...
+     * Container to store exceptions while performing startup of server, useful if you start external processes and want
+     * to monitor them in a separate thread...
      *
      * @see de.gematik.test.tiger.testenvmgr.servers.ExternalJarServer
      */
@@ -79,11 +84,12 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
                 await().atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
                     .pollInterval(200, TimeUnit.MILLISECONDS)
                     .until(() -> updateStatus(quiet) != TigerServerStatus.STARTING
-                        && getStatus() != TigerServerStatus.NEW);
+                                 && getStatus() != TigerServerStatus.NEW);
             } catch (ConditionTimeoutException cte) {
                 if (!quiet) {
                     throw new TigerTestEnvException("Timeout waiting for external server '"
-                        + getServerId() + "' to respond at '" + getHealthcheckUrl().orElse("<null>") + "'!");
+                                                    + getServerId() + "' to respond at '" + getHealthcheckUrl().orElse(
+                        "<null>") + "'!");
                 }
             }
         }
@@ -125,19 +131,38 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     }
 
     private void checkUrlOrThrowException(URL url) throws IOException {
-        URLConnection con = url.openConnection();
-        InsecureTrustAllManager.allowAllSsl(con);
-        con.setConnectTimeout(1000);
-        con.connect();
-        if (getConfiguration().getHealthcheckReturnCode() != null
-            && con instanceof HttpURLConnection) {
-            final HttpURLConnection httpConnection = (HttpURLConnection) con;
-            if (!getConfiguration().getHealthcheckReturnCode()
-                .equals(httpConnection.getResponseCode())) {
+        final URLConnection con = getUrlConnectionToServer(url);
+        if (con instanceof HttpURLConnection httpConnection) {
+            InsecureTrustAllManager.allowAllSsl(con);
+            con.setConnectTimeout(1000);
+            con.connect();
+            final int responseCode = httpConnection.getResponseCode();
+            if (getConfiguration().getHealthcheckReturnCode() != null
+                && !getConfiguration().getHealthcheckReturnCode().equals(responseCode)) {
                 throw new TigerEnvironmentStartupException(
                     "Return code for server '%s' does not match: %nExpected %d but got %d",
-                    getServerId(), getConfiguration().getHealthcheckReturnCode(), httpConnection.getResponseCode());
+                    getServerId(), getConfiguration().getHealthcheckReturnCode(), responseCode);
             }
+        }
+    }
+
+    private URLConnection getUrlConnectionToServer(URL url) throws IOException {
+        final Optional<ProxyConfiguration> forwardProxyInfo = this.getTigerTestEnvMgr().getLocalTigerProxyOptional()
+            .map(TigerProxy::getTigerProxyConfiguration)
+            .map(TigerProxyConfiguration::getForwardToProxy)
+            .filter(Objects::nonNull)
+            .flatMap(ProxyConfigurationConverter::createMockServerProxyConfiguration)
+            .filter(pc -> pc.getProxyAddress() != null)
+            .filter(pc -> StringUtils.isNotEmpty(pc.getProxyAddress().getHostName()));
+
+        if (forwardProxyInfo.isPresent()
+            && !url.getHost().matches("((127\\.0\\.0\\.1)|(localhost))")) {
+            Proxy proxy = new Proxy(Type.HTTP,
+                new InetSocketAddress(forwardProxyInfo.get().getProxyAddress().getHostName(),
+                    forwardProxyInfo.get().getProxyAddress().getPort()));
+            return url.openConnection(proxy);
+        } else {
+            return url.openConnection();
         }
     }
 
@@ -169,7 +194,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(
                 "Could not build healthcheck URL from '" + getHealthcheckUrl()
-                    + "'!", e);
+                + "'!", e);
         }
     }
 

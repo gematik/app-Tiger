@@ -67,7 +67,7 @@ public class ProxyConfigurationConverter {
                 Optional.ofNullable(forwardProxyInfo.getType())
                     .map(ProxyConfigurationConverter::toMockServerType)
                     .orElse(ProxyConfiguration.Type.HTTPS),
-                forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.getProxyPort(String.valueOf(forwardProxyInfo.getPort()), forwardProxyInfo.getType()),
+                forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.calculateProxyPort(),
                 forwardProxyInfo.getUsername(), forwardProxyInfo.getPassword()));
         }
     }
@@ -92,11 +92,11 @@ public class ProxyConfigurationConverter {
                     "Could not convert proxy configuration: proxyUser != null, proxyPassword == null");
             }
             return Optional.of(proxyConfiguration(proxyType,
-                proxyHost + ":" + forwardProxyInfo.getProxyPort(proxyPort, forwardProxyInfo.getProxyProtocol(proxyProtocol)),
+                proxyHost + ":" + ForwardProxyInfo.mapProxyPort(proxyPort, forwardProxyInfo.getProxyProtocol(proxyProtocol)),
                 proxyUser, proxyPassword));
         } else {
             return Optional.of(proxyConfiguration(proxyType,
-                proxyHost + ":" + forwardProxyInfo.getProxyPort(proxyPort, forwardProxyInfo.getProxyProtocol(proxyProtocol))));
+                proxyHost + ":" + ForwardProxyInfo.mapProxyPort(proxyPort, forwardProxyInfo.getProxyProtocol(proxyProtocol))));
         }
     }
 
@@ -115,7 +115,7 @@ public class ProxyConfigurationConverter {
 
         ProxyConfiguration.Type proxyType = toMockServerType(forwardProxyInfo.getProxyProtocol(proxyAsUri.getScheme()));
         String proxyUsernamePassword = proxyAsUri.getUserInfo();
-        String proxyPort = forwardProxyInfo.getProxyPort(String.valueOf(proxyAsUri.getPort()),
+        String proxyPort = ForwardProxyInfo.mapProxyPort(String.valueOf(proxyAsUri.getPort()),
             forwardProxyInfo.getProxyProtocol(proxyAsUri.getScheme()));
 
         if (proxyUsernamePassword == null) {

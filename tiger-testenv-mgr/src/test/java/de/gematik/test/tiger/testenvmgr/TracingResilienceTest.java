@@ -55,24 +55,25 @@ class TracingResilienceTest {
      * Receiving <-- Aggregating <-- Sending (local)
      */
     @Test
-    @TigerTest(tigerYaml =
-        "tigerProxy:\n"
-            + "  adminPort: ${free.port.12}\n"
-            + "  proxyPort: ${free.port.22}\n"
-            + "  rbelBufferSizeInMb: 50\n"
-            + "  name: Sending proxy\n"
-            + "\n"
-            + "servers:\n"
-            + "  receivingTigerProxy:\n"
-            + "    type: tigerProxy\n"
-            + "    tigerProxyCfg:\n"
-            + "      trafficEndpoints:\n"
-            + "        - http://localhost:${aggregating.proxy.port}\n"
-            + "      adminPort: ${free.port.10}\n"
-            + "      proxyPort: ${free.port.20}\n"
-            + "      name: Receiving Proxy\n"
-            + "      downloadInitialTrafficFromEndpoints: true\n"
-            + "      connectionTimeoutInSeconds: 100", skipEnvironmentSetup = true)
+    @TigerTest(tigerYaml = """
+        tigerProxy:
+          adminPort: ${free.port.12}
+          proxyPort: ${free.port.22}
+          rbelBufferSizeInMb: 50
+          name: Sending proxy
+
+        servers:
+          receivingTigerProxy:
+            type: tigerProxy
+            tigerProxyCfg:
+              trafficEndpoints:
+                - http://localhost:${aggregating.proxy.port}
+              adminPort: ${free.port.10}
+              proxyPort: ${free.port.20}
+              name: Receiving Proxy
+              downloadInitialTrafficFromEndpoints: true
+              connectionTimeoutInSeconds: 100
+        """, skipEnvironmentSetup = true)
     @Disabled("deactivated due to buildserver problems") // TODO TGR-794
     void generateTrafficAndBounceViaRemoteProxy(TigerTestEnvMgr testEnvMgr) throws IOException {
         int aggregatingAdminPort;

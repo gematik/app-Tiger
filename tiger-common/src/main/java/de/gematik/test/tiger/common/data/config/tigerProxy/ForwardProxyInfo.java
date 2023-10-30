@@ -36,7 +36,20 @@ public class ForwardProxyInfo {
         }
     }
 
-    public String getProxyPort(String proxyPort, TigerProxyType type) {
+    public int calculateProxyPort() {
+        if (port == null || port == -1) {
+            if (type == TigerProxyType.HTTP) {
+                return 80;
+            } else if (type == TigerProxyType.HTTPS) {
+                return 443;
+            } else {
+                return -1;
+            }
+        }
+        return port;
+    }
+
+    public static String mapProxyPort(String proxyPort, TigerProxyType type) {
         if (proxyPort == null || proxyPort.equals("null") || proxyPort.equals("-1")) {
             if (type == TigerProxyType.HTTP) {
                 return "80";

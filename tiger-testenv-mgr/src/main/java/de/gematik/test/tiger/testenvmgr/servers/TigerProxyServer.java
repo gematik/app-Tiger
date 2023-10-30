@@ -15,6 +15,7 @@ import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandalon
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
@@ -32,8 +33,8 @@ import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 @TigerServerType("tigerProxy")
 public class TigerProxyServer extends AbstractExternalTigerServer {
 
+    @Getter
     private ConfigurableApplicationContext applicationContext;
-
 
     public TigerProxyServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
         super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
