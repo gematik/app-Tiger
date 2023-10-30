@@ -10,7 +10,7 @@ pipeline {
           disableConcurrentBuilds()
           buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '10')
       }
-      agent { label 'k8-maven-large' }
+      agent { label 'k8-backend-large' }
 
       tools {
           maven 'Default'

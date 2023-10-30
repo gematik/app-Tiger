@@ -8,7 +8,7 @@ pipeline {
         buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')
     }
 
-    agent { label 'k8-maven' }
+    agent { label 'k8-backend-large' }
 
     tools {
         maven 'Default'
