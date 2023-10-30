@@ -96,10 +96,13 @@ public class RbelJexlExecutor {
         List<String> rbelPaths = new ArrayList<>();
         boolean insideRbelPath = false;
         boolean insideNestedJexlExpression = false;
+        boolean insideVerbatimBracket = false;
         int jexlExpressionStart = -1;
         int pos = 0;
-        IntPredicate closingJexlBracketIsNext = p -> jexlExpression.startsWith(")]", p);
         IntPredicate openingJexlBracketIsNext = p -> jexlExpression.startsWith("[?(", p);
+        IntPredicate closingJexlBracketIsNext = p -> jexlExpression.startsWith(")]", p);
+        IntPredicate openingVerbatimBracketIsNext = p -> jexlExpression.startsWith("['", p);
+        IntPredicate closingVerbatimBracketIsNext = p -> jexlExpression.startsWith("']", p);
         IntPredicate nextCharIsNotStillRbelPath = p -> !jexlExpression.substring(p).matches(RBEL_PATH_CHARS); //NOSONAR
         IntPredicate startingRbelPathIsNext = p -> jexlExpression.startsWith("$.", p) || jexlExpression.startsWith("@.",
             p);
@@ -110,10 +113,17 @@ public class RbelJexlExecutor {
                     insideNestedJexlExpression = false;
                     pos++;
                 }
+            } else if (insideVerbatimBracket) {
+                if (closingVerbatimBracketIsNext.test(pos)) {
+                    insideVerbatimBracket = false;
+                    pos++;
+                }
             } else if (insideRbelPath) {
                 if (openingJexlBracketIsNext.test(pos)) {
                     insideNestedJexlExpression = true;
                     pos += 2;
+                } else if (openingVerbatimBracketIsNext.test(pos)) {
+                    insideVerbatimBracket = true;
                 } else if (nextCharIsNotStillRbelPath.test(pos)) {
                     rbelPaths.add(jexlExpression.substring(jexlExpressionStart, pos));
                     insideRbelPath = false;

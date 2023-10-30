@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelJexlExecutorTest {
 
@@ -108,67 +109,36 @@ class RbelJexlExecutorTest {
             .isTrue();
     }
 
-    @Test
-    void checkMatchTextExpression() {
+    @ParameterizedTest
+    @ValueSource(strings = {"localhost","Keep-Alive"})
+    void checkMatchTextExpression(String expression) {
         assertThat(RbelJexlExecutor.matchAsTextExpression(
-            request, "localhost"))
-            .isTrue();
-        assertThat(RbelJexlExecutor.matchAsTextExpression(
-            response, "nbf"))
-            .isTrue();
-        assertThat(RbelJexlExecutor.matchAsTextExpression(
-            request, "Keep-Alive"))
+            request, expression))
             .isTrue();
     }
 
-    @Test
-    void checkMatchRegexExpression() {
-        assertThat(RbelJexlExecutor.matchAsTextExpression(
-            request, "\\w+host"))
-            .isTrue();
-        assertThat(RbelJexlExecutor.matchAsTextExpression(
-            request, "[a-zA-Z0-9_]+hos"))
-            .isTrue();
-        assertThat(RbelJexlExecutor.matchAsTextExpression(
-            response, ".*nbf"))
-            .isTrue();
-        assertThat(RbelJexlExecutor.matchAsTextExpression(
-            request, "Keep[-/_]Alive"))
-            .isTrue();
-        assertThat(RbelJexlExecutor.matchAsTextExpression(
-            request, "Keep-[a-zA-Z0-9_]+Alive"))
-            .isFalse();
+    @ParameterizedTest
+    @CsvSource({"\\w+host,true",
+        "[a-zA-Z0-9_]+hos,true",
+        ".*Connection,true",
+        "Keep[-/_]Alive,true",
+        "Keep-[a-zA-Z0-9_]+Alive,false"})
+    void checkMatchRegexExpression(String expression, boolean shouldMatch) {
+        assertThat(RbelJexlExecutor.matchAsTextExpression(request, expression))
+            .isEqualTo(shouldMatch);
     }
 
-    @Test
-    void testValueFacetComparison() {
-        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response, "$..signature.isValid == 'true'"))
-            .isTrue();
-    }
-
-    @Test
-    void testRbelEscaping() {
-        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response, "$.body.header=~'.*discSig.*'"))
-            .isTrue();
-    }
-
-    @Test
-    void conditionalDescent() {
-        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response, "$.body.header =~ '.*discSig.*'"))
-            .isTrue();
-    }
-
-    @Test
-    void nestedRbelPathsTest() {
-        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response,
-            "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'"))
-            .isTrue();
-    }
-
-    @Test
-    void deeperNestedRbelPathsTest() {
-        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response,
-            "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'"))
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "$..signature.isValid == 'true'",
+        "$.body.header=~'.*discSig.*'",
+        "$.body.header =~ '.*discSig.*'",
+        "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
+        "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
+        "$.header.['Cache-Control'] =~ 'max-age=300'"
+    })
+    void testVariousJexlExpressions(String jexlExpression) {
+        assertThat(TigerJexlExecutor.matchesAsJexlExpression(response, jexlExpression))
             .isTrue();
     }
 
@@ -185,6 +155,8 @@ class RbelJexlExecutorTest {
          $..scopes.[?(@.content == 'test')] =~ '.*',$..scopes.[?(@.content == 'test')]
          $..scopes.[?(@.content == 'test')]=~'.*',$..scopes.[?(@.content == 'test')]
          $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
+         $.header.['Cache-Control'] =~ 'max-age=300',$.header.['Cache-Control']
+         $.header.['Cache-Control'].blub =~ 'max-age=300',$.header.['Cache-Control'].blub
         """
     )
     void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
