@@ -44,8 +44,8 @@ public class RbelJexlExecutor {
                 .map(el -> el.printValue()
                     .orElseGet(el::getRawStringContent)))
         );
-        TigerJexlExecutor.EXPRESSION_PRE_MAPPER = RbelJexlExecutor::evaluateRbelPathExpressions;
-        TigerJexlExecutor.CONTEXT_DECORATORS.add(RbelContextDecorator::buildJexlMapContext);
+        TigerJexlExecutor.setExpressionPreMapper(RbelJexlExecutor::evaluateRbelPathExpressions);
+        TigerJexlExecutor.addContextDecorator(RbelContextDecorator::buildJexlMapContext);
         IS_INITIALIZED = true;
     }
 

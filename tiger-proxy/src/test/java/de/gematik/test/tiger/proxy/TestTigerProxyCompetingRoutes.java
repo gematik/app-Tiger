@@ -7,13 +7,11 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.TriConsumer;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -25,7 +23,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
 
     @Test
-    @Disabled("NICHT mergen!")
+    @Disabled("Fails on build server")
     void competingRoutes_shouldSelectSecondRoute() {
         final String wrongDst = "http://localhost:" + fakeBackendServerPort + "/wrong";
         final String correctDst = "http://localhost:" + fakeBackendServerPort + "/right";
@@ -42,7 +40,6 @@ class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
                 .asString();
             awaitMessagesInTiger(2);
 
-            System.out.println(tigerProxy.getRbelMessages().getLast().printTreeStructure());
             assertThat(tigerProxy.getRbelMessages()).last()
                 // get the last request
                 .extracting(response -> response.getFacetOrFail(RbelHttpResponseFacet.class).getRequest())

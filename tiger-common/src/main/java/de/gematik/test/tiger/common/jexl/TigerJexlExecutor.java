@@ -7,22 +7,18 @@ package de.gematik.test.tiger.common.jexl;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
-import org.apache.commons.lang3.function.TriConsumer;
 
 @Slf4j
 public class TigerJexlExecutor {
 
     public static boolean ACTIVATE_JEXL_DEBUGGING = false;
-    public static Supplier<TigerJexlExecutor> executorSupplier = TigerJexlExecutor::new;
     private static final Map<String, Object> NAMESPACE_MAP = new HashMap<>();
-    public static BiFunction<String, TigerJexlContext, List<String>> EXPRESSION_PRE_MAPPER
+    private static BiFunction<String, TigerJexlContext, List<String>> EXPRESSION_PRE_MAPPER
         = (exp, ctx) -> List.of(exp);
-    public static List<TriConsumer<Object, Optional<String>, TigerJexlContext>> CONTEXT_DECORATORS
-        = new ArrayList<>();
+    private static final List<TigerJexlContextDecorator> CONTEXT_DECORATORS = new ArrayList<>();
 
     static {
         NAMESPACE_MAP.put(null, InlineJexlToolbox.class);
@@ -30,7 +26,7 @@ public class TigerJexlExecutor {
     }
 
     public static boolean matchesAsJexlExpression(Object element, String jexlExpression) {
-        return executorSupplier.get()
+        return createNewExecutor()
             .matchesAsJexlExpressionInternal(element, jexlExpression);
     }
 
@@ -43,12 +39,12 @@ public class TigerJexlExecutor {
     }
 
     public static boolean matchesAsJexlExpression(String jexlExpression, TigerJexlContext context) {
-        return executorSupplier.get()
+        return createNewExecutor()
             .matchesAsJexlExpressionInternal(jexlExpression, context);
     }
 
     public static Optional<Object> evaluateJexlExpression(String jexlExpression, TigerJexlContext context) {
-        final List<Object> resultList = executorSupplier.get()
+        final List<Object> resultList = createNewExecutor()
             .evaluateJexlExpressionInternal(jexlExpression, context);
         if (resultList.size() > 1) {
             throw new TigerJexlException(
@@ -61,13 +57,25 @@ public class TigerJexlExecutor {
         }
     }
 
+    public static void addContextDecorator(TigerJexlContextDecorator decorator) {
+        CONTEXT_DECORATORS.add(decorator);
+    }
+
+    public static void setExpressionPreMapper(BiFunction<String, TigerJexlContext, List<String>> preMapper) {
+        EXPRESSION_PRE_MAPPER = preMapper;
+    }
+
+    private static TigerJexlExecutor createNewExecutor() {
+        return new TigerJexlExecutor();
+    }
+
     private boolean matchesAsJexlExpressionInternal(Object element, String jexlExpression) {
         return matchesAsJexlExpression(jexlExpression, new TigerJexlContext()
             .withCurrentElement(element));
     }
 
     private boolean matchesAsJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
-        final boolean result = executorSupplier.get()
+        final boolean result = createNewExecutor()
             .evaluateJexlExpressionInternal(jexlExpression, context).stream()
             .filter(Boolean.class::isInstance)
             .map(Boolean.class::cast)
@@ -91,7 +99,7 @@ public class TigerJexlExecutor {
 
             return buildExpressions(jexlExpression, contextMap).stream()
                 .map(expression -> expression.evaluate(contextMap))
-                .peek(result -> {
+                .peek(result -> { //NOSONAR
                     if (ACTIVATE_JEXL_DEBUGGING) {
                         log.debug("Evaluated \"{}\" to '{}'", jexlExpression, result);
                     }
@@ -117,7 +125,7 @@ public class TigerJexlExecutor {
         final TigerJexlContext mapContext = new TigerJexlContext();
 
        CONTEXT_DECORATORS
-           .forEach(decorator -> decorator.accept(element, key, mapContext));
+           .forEach(decorator -> decorator.decorate(element, key, mapContext));
 
         return mapContext;
     }
