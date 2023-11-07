@@ -12,6 +12,12 @@
 * TGR-935: Removed unnecessary encapsulation of tiger exceptions to reduce stacktrace flooding, added root cause to exception message so that maven shows the root cause in the error line too.
 * TGR-1154: Improved error message in case the PKI Loader fails to open a key store (including the filename) 
 
+## Features
+* TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english 
+
+## Features
+* TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english 
+
 # Release 2.2.1
 
 ## Features

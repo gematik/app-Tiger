@@ -1,67 +1,72 @@
-# Frequently asked questions
-#English below
+= Frequently asked questions
 
-## Maven
+== Maven
 
-### FM01 Welches Serenity benutzen wir aktuell
-Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)
+=== FM01 Which Serenity are we currently using?
+You can find the Serenity compatible with each Tiger version in the [ReleaseNotes](ReleaseNotes.md)
 
-### FM02 Bei der Nutzung von maven werden keine Tests ausgeführt
+=== FM02 When using maven, no tests are executed.
 
-Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird. Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.
+Please first make sure that either the surefire or failsafe plugin is enabled and shown as running in the console. If you use Junit4 test annotations, you have to make sure that the junit vintage engine from the Junit5 library is included in the dependencies.
 
-```xml
+[source,xml]
+----
 <dependency>
     <groupId>org.junit.vintage</groupId>
     <artifactId>junit-vintage-engine</artifactId>
     <version>${version.junit5}</version>
 </dependency>
-```
+----
 
 
-### FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab
+=== FM03 When running tests in Tiger, the test run aborts with a java.lang.NoSuchMethodError.
 
-Genauer geht es um folgenden Fehler:
-```java
+More specifically, the error is as follows:
+
+[source,java]
+----
 Exception in thread 'main' java.lang.NoSuchMethodError: 'java.util.Set org.json.JSONObject.keySet()'
-```
-    
-Der Grund hierfür ist ein Dependency Konflikt und kann durch eine Exklusion in der tiger-test-lib dependency aufgelöst werden:
-```xml
+----
+
+This is due to a dependency conflict which may be solved by an exclusion in the tiger-test-lib:
+
+[source,xml]
+----
 <exclusion>
     <groupId>com.vaadin.external.google</groupId>
     <artifactId>android-json</artifactId>
 </exclusion>
-```
+----
 
-### FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen
+=== FM04 I don't see any log output, there are only warnings about outdated versions at the beginning
 
-Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.
-Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!  
+Apparently you included SLF4J V2 dependencies.
+We currently use the logback classic 1.2.x branch, which is delivered in the most recent SpringBoot version. This is not compatible to SLF4J 2.x.x.
 
-### FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium
+=== FM05 There are selenium version conflicts when I want to run my project with SpringBoot and tiger with selenium
 
-Spring Boot liefert eine veraltete Version von Selenium aus. Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.
+SpringBoot deploys an outdated selenium version. To solve the conflicts, please use the versions stated in the release notes via dependency managent in the maven pom.xml.
 
-## Extensions
+== Extensions
 
-### FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.
-Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als dependency hinzugefügt hast.
+=== FE01 When I start a docker image in tiger.yaml, the TestenvironmentManager's startup fails
+Please make sure that you added the tiger-cloud-extension dependency in the most recent version.
 
-```xml
+[source,xml]
+----
 <dependency>
     <groupId>de.gematik</groupId>
     <artifactId>tiger-cloud-extension</artifactId>
     <version>x.y.z</version>
 </dependency>
-```
+----
 
-### FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl
+=== FE02 When using the tiger-cloud-extensions, healthcheck at docker servertypes in Gematik SW factory fails
+Tiger expects that Docker Daemon starts the container locally.
+However, if this is not the case, you may use the environment variable TIGER_DOCKER_HOST to share on which server instance the container is started and the HealthcheckURL is adjusted accordingly. For purposes of the Gematik SW-factory, the following code snippet is recommended for the pipeline script:
 
-Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.
-Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:
-
-```
+[source]
+----
 stage('Test') {
     environment {
         TIGER_DOCKER_HOST = dockerGetCurrentHostname()
@@ -70,122 +75,136 @@ stage('Test') {
         mavenVerify(POM_PATH)
     }
 }
-```
+----
 
-## Workflow UI
+== Workflow UI
 
-### FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)
-Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird. Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird. Durch den manuellen Eintrag laufen also dann zwei Listener, welche die Szenarien dann auch doppelt an die Workflow UI kommunizieren ...
-Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfiguration des tiger-maven-plugins überprüfen, bzw. die generierten Treiberklassen bezüglich zusätzlicher Plugins in den CucumberOptions checken.
+=== FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)
+Usually, this only happens when the test suite is started in intellij and TigerCucumberListener is delivered as a plugin in TigerCucumberListener.
+This is no longer necessary since v1.3 because the listener is added automatically. Due to this manual adjustment, two listeners are running that communicate the scenarios twice to the workflow UI.
+If this happens in a mvn call, please check the tiger-maven-plugin configuration or the generated driver classes in terms of additional plugins in CucumberOptions.
 
-### FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen
+=== FW02 After having pressed shutdown in the workflow UI, I cannot see messages in RbelLog Details Pane anymore
+By stopping the test runs, the workflow UI backend is terminated as well. You may recognize this by the light-red color of the side bar. However, navigating in the RbelLog Details Pane requires a running backend. In addition, RbelPath- and JEXL inspect dialogues are not working.
 
-Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden. Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist. Das Navigieren in der RbelLog Details Pane benötigt aber das Backend und klappt daher zum jetzigen Zeitpunkt nicht mehr. Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.
+== Other topics
 
-## Other topics
+=== FO01 How can I change the logging levels of loggers used by Tiger
+Inside the tiger.yaml file, you can add a section logging.level: and add a list of packages / classes and the desired logging level.
 
-### FO01 How can I change the logging levels of loggers used by Tiger
-Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level. 
-
-```yaml
+[source,yaml]
+----
 logging:
   level:
     de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr: TRACE
     de.gematik.test.tiger.lib.TigerDirector: TRACE
     de.gematik.test.tiger.proxy: TRACE
     localTigerProxy: TRACE
-```
+----
 
-### FO02 Docker container creation fails
+=== FO02 Docker container creation fails
 Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.
-```
+
+[source]
+----
 docker system prune
-```
+----
 Last resort:
-```
+
+[source]
+----
 netcfg -d
-```
+----
 and restart docker
 
 
-### FO03 Adding alternative names programatically throws SSLException
+=== FO03 Adding alternative names programatically throws SSLException
 
 When using directly the method `de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()` to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:
 
-```
+[source]
+----
 12:17:48.604 [MockServer-EventLog13] ERROR o.mockserver.log.MockServerEventLog - 58165 exception creating SSL context for serverfailed to set certificate and key
 javax.net.ssl.SSLException: failed to set certificate and key
-```
+----
 
 The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request. Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.
 
 A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name. E.g.:
 
-```
+[source]
+----
 TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
 proxy.addAlternativeName(host);
 proxy.restartMockserver();
-```
-_____________________________________________
-### FM01 What serenity do we use currently?
+----
+
+=== FM01 What serenity do we use currently?
 Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)
 
-### FM02 Bei der Nutzung von maven werden keine Tests ausgeführt
+=== FM02 Bei der Nutzung von maven werden keine Tests ausgeführt
 
 Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird. Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.
 
-```xml
+[source,xml]
+----
 <dependency>
     <groupId>org.junit.vintage</groupId>
     <artifactId>junit-vintage-engine</artifactId>
     <version>${version.junit5}</version>
 </dependency>
-```
+----
 
 
-### FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab
+=== FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab
 
 Genauer geht es um folgenden Fehler:
-```java
+
+[source,java]
+----
 Exception in thread 'main' java.lang.NoSuchMethodError: 'java.util.Set org.json.JSONObject.keySet()'
-```
+----
 
 Der Grund hierfür ist ein Dependency Konflikt und kann durch eine Exklusion in der tiger-test-lib dependency aufgelöst werden:
-```xml
+
+[source,xml]
+----
 <exclusion>
     <groupId>com.vaadin.external.google</groupId>
     <artifactId>android-json</artifactId>
 </exclusion>
-```
+----
 
-### FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen
+=== FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen
 
 Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.
 Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!
 
-### FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium
+=== FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium
 
 Spring Boot liefert eine veraltete Version von Selenium aus. Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.
 
-## Extensions
+== Extensions
 
-### FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.
+=== FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.
 Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als dependency hinzugefügt hast.
 
-```xml
+[source,xml]
+----
 <dependency>
     <groupId>de.gematik</groupId>
     <artifactId>tiger-cloud-extension</artifactId>
     <version>x.y.z</version>
 </dependency>
-```
+----
 
-### FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl
+=== FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl
 
 Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.
 Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:
 
-```
+[source]
+----
 stage('Test') {
     environment {
         TIGER_DOCKER_HOST = dockerGetCurrentHostname()
@@ -194,59 +213,66 @@ stage('Test') {
         mavenVerify(POM_PATH)
     }
 }
-```
+----
 
-## Workflow UI
+== Workflow UI
 
-### FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)
+=== FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)
 Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird. Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird. Durch den manuellen Eintrag laufen also dann zwei Listener, welche die Szenarien dann auch doppelt an die Workflow UI kommunizieren ...
 Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfiguration des tiger-maven-plugins überprüfen, bzw. die generierten Treiberklassen bezüglich zusätzlicher Plugins in den CucumberOptions checken.
 
-### FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen
+=== FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen
 
 Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden. Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist. Das Navigieren in der RbelLog Details Pane benötigt aber das Backend und klappt daher zum jetzigen Zeitpunkt nicht mehr. Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.
 
-## Other topics
+== Other topics
 
-### FO01 How can I change the logging levels of loggers used by Tiger
+=== FO01 How can I change the logging levels of loggers used by Tiger
 Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level.
 
-```yaml
+[source,yaml]
+----
 logging:
   level:
     de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr: TRACE
     de.gematik.test.tiger.lib.TigerDirector: TRACE
     de.gematik.test.tiger.proxy: TRACE
     localTigerProxy: TRACE
-```
+----
 
-### FO02 Docker container creation fails
+=== FO02 Docker container creation fails
 Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.
-```
+
+[source]
+----
 docker system prune
-```
+----
 Last resort:
-```
+
+[source]
+----
 netcfg -d
-```
+----
 and restart docker
 
 
-### FO03 Adding alternative names programatically throws SSLException
+=== FO03 Adding alternative names programatically throws SSLException
 
 When using directly the method `de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()` to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:
 
-```
+[source]
+----
 12:17:48.604 [MockServer-EventLog13] ERROR o.mockserver.log.MockServerEventLog - 58165 exception creating SSL context for serverfailed to set certificate and key
 javax.net.ssl.SSLException: failed to set certificate and key
-```
+----
 
 The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request. Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.
 
 A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name. E.g.:
 
-```
+[source]
+----
 TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
 proxy.addAlternativeName(host);
 proxy.restartMockserver();
-```
+----
