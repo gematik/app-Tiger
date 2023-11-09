@@ -5,45 +5,55 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
-import org.junit.jupiter.api.Test;
+import java.util.Optional;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class TigerExceptionUtilsTest {
 
-    @Test
-    public void standardCase() {
-        assertThat(TigerExceptionUtils.getCauseWithType(new RuntimeException("blub", new SocketException("root cause message")), SocketException.class))
-            .get()
-            .hasSameClassAs(new SocketException())
-            .matches(e -> e.getMessage().equals("root cause message"));
+    public static Stream<Arguments> causeWithTypeTestCases() {
+        final SocketException flatCauseMessage = new SocketException("flat cause message");
+        final SocketException innerException = new SocketException("root cause message");
+        final RuntimeException outerException = new RuntimeException("blub", innerException);
+        return Stream.of(
+            arguments(new RuntimeException("blub"), IOException.class, Optional.empty()),
+            arguments(flatCauseMessage, SocketException.class, Optional.of(flatCauseMessage)),
+            arguments(outerException, SocketException.class, Optional.of(innerException)),
+            arguments(outerException, RuntimeException.class, Optional.of(outerException)),
+            arguments(outerException, FileNotFoundException.class, Optional.empty())
+        );
     }
 
-    @Test
-    public void flatExceptionCase() {
-        assertThat(TigerExceptionUtils.getCauseWithType(new SocketException("flat cause message"), SocketException.class))
-            .get()
-            .hasSameClassAs(new SocketException())
-            .matches(e -> e.getMessage().equals("flat cause message"));
+    @ParameterizedTest
+    @MethodSource("causeWithTypeTestCases")
+    void testGetCauseWithType(Exception exception, Class<Exception> clazz, Optional<Exception> expected) {
+        assertThat(TigerExceptionUtils.getCauseWithType(exception, clazz))
+            .isEqualTo(expected);
     }
 
-    @Test
-    public void couldNotMatchException_rootCausePresent() {
-        assertThat(TigerExceptionUtils.getCauseWithType(new RuntimeException("blub", new SocketException("root cause message")), FileNotFoundException.class))
-            .isEmpty();
+    public static Stream<Arguments> causeWithMessageTestCases() {
+        final SocketException flatCauseMessage = new SocketException("flat cause message");
+        final SocketException innerException = new SocketException("root cause message");
+        final RuntimeException outerException = new RuntimeException("blub", innerException);
+        return Stream.of(
+            arguments(new RuntimeException("blub"), "blab", Optional.empty()),
+            arguments(flatCauseMessage, "flat cause message", Optional.of(flatCauseMessage)),
+            arguments(outerException, "root cause message", Optional.of(innerException)),
+            arguments(outerException, "blub", Optional.of(outerException)),
+            arguments(outerException, "blab", Optional.empty())
+        );
     }
 
-    @Test
-    public void couldNotMatchException_noRootCausePresent() {
-        assertThat(TigerExceptionUtils.getCauseWithType(new RuntimeException("blub"), IOException.class))
-            .isEmpty();
-    }
-
-    @Test
-    public void nullCase() {
-        assertThat(TigerExceptionUtils.getCauseWithType(null, IOException.class))
-            .isEmpty();
+    @ParameterizedTest
+    @MethodSource("causeWithMessageTestCases")
+    void testGetCauseWithMessage(Exception exception, String predicateMatcherString, Optional<Exception> expected) {
+        assertThat(TigerExceptionUtils.getCauseWithMessageMatching(exception, s -> s.equals(predicateMatcherString)))
+            .isEqualTo(expected);
     }
 }

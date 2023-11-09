@@ -4,12 +4,14 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.EXTERNAL_SERVER_CONNECTION_TIMEOUT;
 import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
+import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
@@ -18,7 +20,6 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.net.*;
 import java.net.Proxy.Type;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -134,26 +135,32 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         final URLConnection con = getUrlConnectionToServer(url);
         if (con instanceof HttpURLConnection httpConnection) {
             InsecureTrustAllManager.allowAllSsl(con);
-            con.setConnectTimeout(1000);
+            con.setConnectTimeout(EXTERNAL_SERVER_CONNECTION_TIMEOUT.getValueOrDefault());
             con.connect();
-            final int responseCode = httpConnection.getResponseCode();
-            if (getConfiguration().getHealthcheckReturnCode() != null
-                && !getConfiguration().getHealthcheckReturnCode().equals(responseCode)) {
-                throw new TigerEnvironmentStartupException(
-                    "Return code for server '%s' does not match: %nExpected %d but got %d",
-                    getServerId(), getConfiguration().getHealthcheckReturnCode(), responseCode);
+            try {
+                final int responseCode = httpConnection.getResponseCode();
+                if (getConfiguration().getHealthcheckReturnCode() != null
+                    && !getConfiguration().getHealthcheckReturnCode().equals(responseCode)) {
+                    throw new TigerEnvironmentStartupException(
+                        "Return code for server '%s' does not match: %nExpected %d but got %d",
+                        getServerId(), getConfiguration().getHealthcheckReturnCode(), responseCode);
+                }
+            } catch (SocketException e) {
+                if (e.getClass() != SocketException.class
+                    || getConfiguration().getHealthcheckReturnCode() != null
+                    || TigerExceptionUtils.getCauseWithMessageMatching(e,
+                        message -> "Connection reset".equals(message)
+                                   || "Unexpected end of file from server".equals(message))
+                        .isEmpty()) {
+                    throw e;
+                }
+                // ignore
             }
         }
     }
 
     private URLConnection getUrlConnectionToServer(URL url) throws IOException {
-        final Optional<ProxyConfiguration> forwardProxyInfo = this.getTigerTestEnvMgr().getLocalTigerProxyOptional()
-            .map(TigerProxy::getTigerProxyConfiguration)
-            .map(TigerProxyConfiguration::getForwardToProxy)
-            .filter(Objects::nonNull)
-            .flatMap(ProxyConfigurationConverter::createMockServerProxyConfiguration)
-            .filter(pc -> pc.getProxyAddress() != null)
-            .filter(pc -> StringUtils.isNotEmpty(pc.getProxyAddress().getHostName()));
+        final Optional<ProxyConfiguration> forwardProxyInfo = createProxyConfiguration();
 
         if (forwardProxyInfo.isPresent()
             && !url.getHost().matches("((127\\.0\\.0\\.1)|(localhost))")) {
@@ -164,6 +171,15 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         } else {
             return url.openConnection();
         }
+    }
+
+    private Optional<ProxyConfiguration> createProxyConfiguration() {
+        return this.getTigerTestEnvMgr().getLocalTigerProxyOptional()
+            .map(TigerProxy::getTigerProxyConfiguration)
+            .map(TigerProxyConfiguration::getForwardToProxy)
+            .flatMap(ProxyConfigurationConverter::createMockServerProxyConfiguration)
+            .filter(pc -> pc.getProxyAddress() != null)
+            .filter(pc -> StringUtils.isNotEmpty(pc.getProxyAddress().getHostName()));
     }
 
     void printServerUpMessage() {
@@ -218,11 +234,10 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     }
 
     boolean isHealthCheckNone() {
-        return !getHealthcheckUrl()
-            .filter(Objects::nonNull)
+        return getHealthcheckUrl()
             .filter(StringUtils::isNotEmpty)
             .filter(s -> !s.equals("NONE"))
-            .isPresent();
+            .isEmpty();
     }
 
     protected void applyEnvPropertiesToProcess(ProcessBuilder processBuilder) {

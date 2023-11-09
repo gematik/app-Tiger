@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +27,25 @@ public class TigerExceptionUtils {
             return Optional.empty();
         } else {
             return getCauseWithType(exception.getCause(), causeClassToDetect);
+        }
+    }
+
+    /**
+     * Looks if a cause with matching message is found
+     *
+     * @param exception The exception to be inspected
+     * @param messageMatcher The matcher for the exception-message
+     */
+    public static Optional<Throwable> getCauseWithMessageMatching(
+        Throwable exception, Predicate<String> messageMatcher) {
+        if (exception == null) {
+            return Optional.empty();
+        } else if (messageMatcher.test(exception.getMessage())) {
+            return Optional.of(exception);
+        } else if (exception.getCause() == null) {
+            return Optional.empty();
+        } else {
+            return getCauseWithMessageMatching(exception.getCause(), messageMatcher);
         }
     }
 }

@@ -23,5 +23,7 @@ public class TigerConfigurationKeys {
         new TigerTypedConfigurationKey<>("tiger.yaml", String.class);
     public static final TigerTypedConfigurationKey<String> TIGER_TESTENV_CFGFILE_LOCATION =
         new TigerTypedConfigurationKey<>("tiger.testenv.cfgfile", String.class);
+    public static final TigerTypedConfigurationKey<Integer> EXTERNAL_SERVER_CONNECTION_TIMEOUT =
+        new TigerTypedConfigurationKey<>("tiger.internal.externalServer.connectionTimeout", Integer.class, 1000);
 
 }
